@@ -16,6 +16,7 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 
 import diskCacheV111.vehicles.ProtocolInfo;
+import org.dcache.vehicles.FileAttributes;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,18 +81,24 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     private final T _protocolInfo;
 
     /**
+     * The FileAttributes associated with the file being transfered.
+     */
+    private final FileAttributes _fileAttributes;
+
+    /**
      * The number of bytes reserved in the space allocator. Only
      * accessed while the monitor lock is held.
      */
     private long _reserved;
 
-    public MoverChannel(IoMode mode, T protocolInfo, RepositoryChannel channel,
-                        Allocator allocator)
+    public MoverChannel(IoMode mode, FileAttributes attributes, T protocolInfo,
+            RepositoryChannel channel, Allocator allocator)
     {
         _mode = mode;
         _protocolInfo = protocolInfo;
         _channel = channel;
         _allocator = allocator;
+        _fileAttributes = attributes;
     }
 
     @Override
@@ -281,6 +288,10 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
 
     public T getProtocolInfo() {
         return _protocolInfo;
+    }
+
+    public FileAttributes getFileAttributes() {
+        return _fileAttributes;
     }
 
     public long getBytesTransferred() {

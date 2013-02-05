@@ -156,8 +156,8 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
         } else {
             channel = fileChannel;
         }
-        _wrappedChannel =
-            new MoverChannel<>(access, _protocolInfo, channel, allocator);
+        _wrappedChannel = new MoverChannel<>(access, fileAttributes,
+                _protocolInfo, channel, allocator);
 
         try {
             UUID uuid = _server.register(_wrappedChannel);

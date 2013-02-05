@@ -26,14 +26,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
+import io.milton.http.Range;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 
 import static io.milton.http.Response.Status.*;
+import io.milton.http.exceptions.BadRequestException;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.NotFoundException;
+import io.milton.resource.GetableResource;
 
 /**
- * Response handler that contains workarounds for bugs in Milton.
+ * This class controls how Milton responds under different circumstances by
+ * decorating the standard response handler.  This is done to provide template-
+ * based custom error pages, to add support for additional headers in the
+ * response, and to work-around some bugs.
  */
 public class DcacheResponseHandler extends AbstractWrappingResponseHandler
 {
@@ -209,5 +217,46 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
             }
         }
         super.respondPropFind(propFindResponses, response, request, r);
+    }
+
+
+    @Override
+    public void respondHead(Resource resource, Response response, Request request)
+    {
+        super.respondHead(resource, response, request);
+        rfc3230(resource, response);
+    }
+
+    @Override
+    public void respondPartialContent(GetableResource resource,
+            Response response, Request request, Map<String,String> params,
+            Range range) throws NotAuthorizedException, BadRequestException,
+            NotFoundException
+    {
+        super.respondPartialContent(resource, response, request, params, range);
+        rfc3230(resource, response);
+    }
+
+    @Override
+    public void respondContent(Resource resource,  Response response,
+            Request request, Map<String, String> params)
+            throws NotAuthorizedException, BadRequestException,
+            NotFoundException
+    {
+        super.respondContent(resource, response, request, params);
+        rfc3230(resource, response);
+    }
+
+
+    private void rfc3230(Resource resource, Response response)
+    {
+        if(resource instanceof DcacheFileResource) {
+            DcacheFileResource file = (DcacheFileResource) resource;
+            String digest = file.getRfc3230Digest();
+
+            if(!digest.isEmpty()) {
+                response.setNonStandardHeader("Digest", digest);
+            }
+        }
     }
 }

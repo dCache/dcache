@@ -45,6 +45,11 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import org.dcache.pool.movers.MoverChannel;
 import dmg.util.HttpException;
+import java.util.Set;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Checksum;
+import org.dcache.util.Checksums;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication.
@@ -53,6 +58,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 {
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpPoolRequestHandler.class);
+
+    private static final String DIGEST = "Digest";
 
     private static final String RANGE_SEPARATOR = "-";
     private static final String RANGE_PRE_TOTAL = "/";
@@ -101,7 +108,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             ChannelHandlerContext context,
             long lower,
             long upper,
-            long total)
+            long total,
+            String digest)
     {
         HttpResponse response =
                 new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
@@ -112,19 +120,24 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         response.setHeader(ACCEPT_RANGES, BYTES);
         response.setHeader(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
         response.setHeader(CONTENT_RANGE, contentRange);
+        if(!digest.isEmpty()) {
+            response.setHeader(DIGEST, digest);
+        }
 
         return context.getChannel().write(response);
     }
 
     private static ChannelFuture sendMultipartHeader(
-            ChannelHandlerContext context)
+            ChannelHandlerContext context, String digest)
     {
         HttpResponse response =
                 new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
 
         response.setHeader(ACCEPT_RANGES, BYTES);
         response.setHeader(CONTENT_TYPE, MULTIPART_TYPE);
-
+        if(!digest.isEmpty()) {
+            response.setHeader(DIGEST, digest);
+        }
         return context.getChannel().write(response);
     }
 
@@ -172,6 +185,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
         response.setHeader(CONTENT_LENGTH, file.size());
+        String digest = buildDigest(file);
+        if(!digest.isEmpty()) {
+            response.setHeader(DIGEST, digest);
+        }
         response.setHeader("Content-Disposition", contentDisposition(path
                 .getName()));
         if (file.getProtocolInfo().getLocation() != null) {
@@ -378,7 +395,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 future = sendPartialHeader(context,
                         range.getLower(),
                         range.getUpper(),
-                        fileSize);
+                        fileSize,
+                        buildDigest(file));
                 responseContent = read(file,
                                        range.getLower(),
                                        range.getUpper());
@@ -387,7 +405,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 /*
                  * GET for multiple ranges
                  */
-                future = sendMultipartHeader(context);
+                future = sendMultipartHeader(context, buildDigest(file));
                 for(HttpByteRange range: ranges) {
                     responseContent = read(file,
                                            range.getLower(),
@@ -639,5 +657,17 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             }
         }
         return bytes;
+    }
+
+    private static String buildDigest(MoverChannel<HttpProtocolInfo> file)
+    {
+        FileAttributes attributes = file.getFileAttributes();
+
+        if(attributes.isDefined(FileAttribute.CHECKSUM)) {
+            Set<Checksum> checksums = attributes.getChecksums();
+            return Checksums.rfc3230Encoded(checksums);
+        } else {
+            return "";
+        }
     }
 }

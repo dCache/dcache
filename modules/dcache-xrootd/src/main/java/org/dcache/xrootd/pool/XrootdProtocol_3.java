@@ -235,7 +235,8 @@ public class XrootdProtocol_3
         _log.debug("Received opaque information {}", uuid);
 
         _wrappedChannel =
-            new MoverChannel<>(access, _protocolInfo, fileChannel, allocator);
+            new MoverChannel<>(access, fileAttributes, _protocolInfo,
+                fileChannel, allocator);
         try {
             _server.register(_wrappedChannel, uuid);
 

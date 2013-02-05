@@ -21,6 +21,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Checksums;
 
 import org.dcache.vehicles.FileAttributes;
 
@@ -107,6 +109,15 @@ public class DcacheFileResource
             throw new NotAuthorizedException(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
+        }
+    }
+
+    public String getRfc3230Digest()
+    {
+        if(_attributes.isDefined(FileAttribute.CHECKSUM)) {
+            return Checksums.rfc3230Encoded(_attributes.getChecksums());
+        } else {
+            return "";
         }
     }
 }

@@ -81,6 +81,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.Sets;
 
 import org.dcache.auth.SubjectWrapper;
 import org.stringtemplate.v4.AutoIndentWriter;
@@ -527,8 +528,13 @@ public class DcacheResourceFactory
             while(true) {
                 try {
                     PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
+                    Set<FileAttribute> requestedAttributes =
+                            EnumSet.copyOf(REQUIRED_ATTRIBUTES);
+                    if (isDigestRequested()) {
+                        requestedAttributes.add(CHECKSUM);
+                    }
                     FileAttributes attributes =
-                        pnfs.getFileAttributes(path.toString(), REQUIRED_ATTRIBUTES);
+                        pnfs.getFileAttributes(path.toString(), requestedAttributes);
                     return getResource(path, attributes);
                 } catch (FileNotFoundCacheException e) {
                     if(haveRetried) {
@@ -889,6 +895,7 @@ public class DcacheResourceFactory
 
         String uri = null;
         ReadTransfer transfer = new ReadTransfer(_pnfs, subject, path, pnfsid);
+        transfer.setIsChecksumNeeded(isDigestRequested());
         _transfers.put((int) transfer.getSessionId(), transfer);
         try {
             transfer.readNameSpaceEntry();
@@ -1047,6 +1054,15 @@ public class DcacheResourceFactory
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
     }
 
+    private static boolean isDigestRequested()
+    {
+        // TODO: parse the Want-Digest to see if the requested digest(s) are
+        //       supported.  If not then we can omit fetching the checksum
+        //       values.
+        return HttpManager.request().getHeaders().containsKey("Want-Digest");
+    }
+
+
     /**
      * Specialisation of the Transfer class for HTTP transfers.
      */
@@ -1105,6 +1121,15 @@ public class DcacheResourceFactory
         {
             super(pnfs, subject, path);
             setPnfsId(pnfsid);
+        }
+
+        public void setIsChecksumNeeded(boolean isChecksumNeeded)
+        {
+            if(isChecksumNeeded) {
+                setAdditionalAttributes(Collections.singleton(CHECKSUM));
+            } else {
+                setAdditionalAttributes(Collections.<FileAttribute>emptySet());
+            }
         }
 
         public void relayData(OutputStream outputStream, Range range)

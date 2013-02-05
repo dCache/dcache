@@ -43,6 +43,11 @@ import org.mockito.ArgumentMatcher;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Preconditions.checkArgument;
+import com.google.common.collect.Sets;
+import java.util.HashSet;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+import org.dcache.vehicles.FileAttributes;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -66,6 +71,9 @@ public class HttpPoolRequestHandlerTests
     /* Just some UUID that is different from SOME_UUID */
     private static final UUID ANOTHER_UUID =
             UUID.fromString("f92e2faf-29d7-416c-9637-0ed7ba73fc36");
+
+    private static final String DIGEST = "Digest";
+    private static final String CONTENT_DISPOSITION = "Content-Disposition";
 
     private static final int SOME_CHUNK_SIZE = 4096;
 
@@ -135,8 +143,32 @@ public class HttpPoolRequestHandlerTests
 
         assertThat(_response.getStatus(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
-        assertThat(_response, hasHeader("Content-Disposition",
+        assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=file"));
+        assertThat(_response, not(hasHeader(DIGEST)));
+        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, not(hasHeader(CONTENT_RANGE)));
+
+        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites.get(0), isCompleteRead("/path/to/file"));
+    }
+
+    @Test
+    public void shouldDeliverCompleteFileWithChecksumIfReceivesRequestForWholeFileWithChecksum()
+            throws URISyntaxException
+    {
+        givenPoolHas(file("/path/to/file").withSize(100));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
+                withAdler32("03da0195"));
+
+        whenClientMakes(a(GET).
+                forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
+
+        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
+        assertThat(_response, hasHeader(CONTENT_DISPOSITION,
+                "attachment;filename=file"));
+        assertThat(_response, hasHeader(DIGEST, "adler32:03da0195"));
         assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
@@ -157,8 +189,9 @@ public class HttpPoolRequestHandlerTests
 
         assertThat(_response.getStatus(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
-        assertThat(_response, hasHeader("Content-Disposition",
+        assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=\"file?here\""));
+        assertThat(_response, not(hasHeader(DIGEST)));
         assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
@@ -180,8 +213,9 @@ public class HttpPoolRequestHandlerTests
 
         assertThat(_response.getStatus(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
-        assertThat(_response, hasHeader("Content-Disposition",
+        assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=\"file\\\\\\\"here\""));
+        assertThat(_response, not(hasHeader(DIGEST)));
         assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
@@ -208,8 +242,9 @@ public class HttpPoolRequestHandlerTests
 
         assertThat(_response.getStatus(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
-        assertThat(_response, hasHeader("Content-Disposition",
+        assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename*=UTF-8''%E1%9A%A0%E1%9B%87%E1%9A%BB"));
+        assertThat(_response, not(hasHeader(DIGEST)));
         assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
@@ -233,7 +268,31 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "500"));
         assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-499/1024"));
-        assertThat(_response, not(hasHeader("Content-Disposition")));
+        assertThat(_response, not(hasHeader(DIGEST)));
+        assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
+
+        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites.get(0),
+                isPartialRead("/path/to/file", 0, 499));
+    }
+
+    @Test
+    public void shouldDeliverPartialFileIfReceivesRequestWithSingleRangeForFileWithChecksum()
+            throws URISyntaxException
+    {
+        givenPoolHas(file("/path/to/file").withSize(1024));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
+                withAdler32("03da0195"));
+
+        whenClientMakes(a(GET).withHeader("Range", "bytes=0-499").
+                forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
+
+        assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "500"));
+        assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-499/1024"));
+        assertThat(_response, hasHeader(DIGEST, "adler32:03da0195"));
+        assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0),
@@ -254,7 +313,8 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-99/100"));
-        assertThat(_response, not(hasHeader("Content-Disposition")));
+        assertThat(_response, not(hasHeader(DIGEST)));
+        assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
         assertThat(_additionalWrites, hasSize(1));
         assertThat(_additionalWrites.get(0),
@@ -266,7 +326,8 @@ public class HttpPoolRequestHandlerTests
             throws URISyntaxException
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
-        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
+                withAdler32("03da0195"));
 
         whenClientMakes(a(GET).withHeader("Range", "bytes=0-0,-1").
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
@@ -275,9 +336,10 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_TYPE,
                 "multipart/byteranges; boundary=\"__AAAAAAAAAAAAAAAA__\""));
+        assertThat(_response, hasHeader(DIGEST, "adler32:03da0195"));
         assertThat(_response, not(hasHeader(CONTENT_LENGTH)));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
-        assertThat(_response, not(hasHeader("Content-Disposition")));
+        assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
         assertThat(_additionalWrites, hasSize(5));
         assertThat(_additionalWrites.get(0), isMultipart().
@@ -419,7 +481,7 @@ public class HttpPoolRequestHandlerTests
                     new InetSocketAddress((InetAddress) null, 0),
                     null, null, path,
                     new URI("http", "localhost", path, null)));
-
+        given(channel.getFileAttributes()).willReturn(file.getFileAttributes());
         given(_server.open(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }
 
@@ -462,6 +524,7 @@ public class HttpPoolRequestHandlerTests
         private final String _path;
         private long _size;
         private UUID _uuid;
+        private FileAttributes _attributes = new FileAttributes();
 
         public FileInfo(String path)
         {
@@ -477,6 +540,13 @@ public class HttpPoolRequestHandlerTests
         public FileInfo with(UUID uuid)
         {
             _uuid = uuid;
+            return this;
+        }
+
+        public FileInfo withAdler32(String value)
+        {
+            Checksum checksum = new Checksum(ChecksumType.ADLER32, value);
+            _attributes.setChecksums(Sets.newHashSet(checksum));
             return this;
         }
 
@@ -504,6 +574,11 @@ public class HttpPoolRequestHandlerTests
         public URI getUri()
         {
             return URI.create(_path);
+        }
+
+        public FileAttributes getFileAttributes()
+        {
+            return _attributes;
         }
     }
 

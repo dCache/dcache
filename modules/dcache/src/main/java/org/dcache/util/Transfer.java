@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import static com.google.common.base.Preconditions.*;
+import com.google.common.collect.Sets;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
@@ -98,6 +99,9 @@ public class Transfer implements Comparable<Transfer>
     private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
     private boolean _isBillingNotified;
     private boolean _isOverwriteAllowed;
+
+    private Set<FileAttribute> _additionalAttributes =
+            EnumSet.noneOf(FileAttribute.class);
 
     /**
      * Constructs a new Transfer object.
@@ -610,6 +614,7 @@ public class Transfer implements Comparable<Transfer>
         try {
             Set<FileAttribute> request =
                 EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
+            request.addAll(_additionalAttributes);
             request.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
             Set<AccessMask> mask = EnumSet.of(AccessMask.READ_DATA);
             PnfsId pnfsId = getPnfsId();
@@ -632,6 +637,28 @@ public class Transfer implements Comparable<Transfer>
         } finally {
             setStatus(null);
         }
+    }
+
+    /**
+     * Specify a set of additional attributes as part of this transfer's
+     * namespace operation.  Any prior specified extra attributes are removed.
+     * In addition, some attributes required by this class and are always
+     * fetched.
+     */
+    protected void setAdditionalAttributes(Set<FileAttribute> attributes)
+    {
+        _additionalAttributes = Sets.immutableEnumSet(attributes);
+    }
+
+    /**
+     * Discover the set of additional attributes that will be fetched as part
+     * of this transfer's namespace operation.  In addition to the returned
+     * set, this class will always fetch certain attributes, which may not be
+     * reflected in the returned set.
+     */
+    protected Set<FileAttribute> getAdditionalAttributes()
+    {
+        return _additionalAttributes;
     }
 
     /**
