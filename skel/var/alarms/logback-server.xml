@@ -2,7 +2,7 @@
 
 <configuration>
     <appender name="ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>logback-server.log</File>
+        <File>${alarms.dir}/logback-server.log</File>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
             <FileNamePattern>logback-server.%i.log</FileNamePattern>
@@ -19,6 +19,26 @@
         </layout>
     </appender>
 
+    <appender name="ALARM_HISTORY" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
+
+        <File>${alarms.dir}/alarms.log</File>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>alarms.%i.log</FileNamePattern>
+            <MinIndex>1</MinIndex>
+            <MaxIndex>3</MaxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>8MB</MaxFileSize>
+        </triggeringPolicy>
+
+        <encoder>
+            <pattern>%d{dd MMM yyyy HH:mm:ss} %m%n</pattern>
+        </encoder>
+    </appender>
+
     <!--
         this appender will intercept all logging messages sent with the
         ALARM marker and store them in the alarms (XML) database
@@ -27,7 +47,12 @@
         <!-- this filter ensures that only events sent marked as ALARM
              are received by this appender -->
         <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
-        <xmlPath>${alarms.store.path}</xmlPath>
+        <storePath>${alarms.store.path}</storePath>
+        <url>${alarms.store.db.url}</url>
+        <user>${alarms.store.db.user}</user>
+        <pass>${alarms.store.db.pass}</pass>
+        <driver>${alarms.store.db.driver}</driver>
+        <propertiesPath>${alarms.store.db.properties}</propertiesPath>
     </appender>
 
     <!--
@@ -57,6 +82,7 @@
         <level value="warn"/>
         <appender-ref ref="ALL"/>
         <appender-ref ref="ALARM"/>
+        <appender-ref ref="ALARM_HISTORY"/>
     <!-- uncomment this in order to receive alarm mails;
          see above how to set mail appender -->
     <!-- <appender-ref ref="ALARM_MAIL"/> -->

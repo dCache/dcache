@@ -145,7 +145,7 @@ public class ChecksumAlarmTest {
         assertThat(entry.getType(), is(json.getString(IAlarms.TYPE_TAG)));
         assertThat(Severity.fromOrdinal(entry.getSeverity()).toString(),
                         is(json.getString(IAlarms.SEVERITY_TAG)));
-        assertThat(entry.getTimestamp().toString(),
+        assertThat(entry.getLastUpdate().toString(),
                         is(json.getString(IAlarms.TIMESTAMP_TAG)));
         assertThat(entry.getHost(), is(json.getString(IAlarms.HOST_TAG)));
         assertThat(entry.getDomain(), is(json.getString(IAlarms.DOMAIN_TAG)));

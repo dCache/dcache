@@ -229,7 +229,7 @@ public class AlarmDefinition {
     /*
      * optional
      */
-    private Severity severity = Severity.INDETERMINATE;
+    private Severity severity = Severity.MODERATE;
     private String logger;
     private String thread;
     private Pattern regex;

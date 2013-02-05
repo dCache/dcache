@@ -173,7 +173,6 @@ public class AlarmDefinitionAppender extends AppenderBase<ILoggingEvent>
                 }
             }
         } catch (Exception t) {
-            t.printStackTrace();
             addError(t.getMessage() + ", " + t.getCause());
         }
     }

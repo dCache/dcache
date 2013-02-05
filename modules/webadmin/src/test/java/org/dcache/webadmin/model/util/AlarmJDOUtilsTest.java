@@ -160,7 +160,7 @@ public class AlarmJDOUtilsTest {
     private void givenSizeOfAlarmEntryListIs(int size) {
         for (int i = 0; i < size; i++) {
             AlarmEntry alarm = new AlarmEntry();
-            alarm.setTimestamp(System.currentTimeMillis());
+            alarm.setFirstArrived(System.currentTimeMillis());
             alarm.setKey("" + i);
             alarms.add(alarm);
         }

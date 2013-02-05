@@ -69,11 +69,11 @@ import com.google.common.collect.ImmutableList;
  * @author arossi
  */
 public enum Severity {
-    INDETERMINATE, LOW, MODERATE, HIGH, CRITICAL;
+    LOW, MODERATE, HIGH, CRITICAL;
 
     private static final List<String> labels = ImmutableList.of(
-                    INDETERMINATE.toString(), LOW.toString(),
-                    MODERATE.toString(), HIGH.toString(), CRITICAL.toString());
+                    LOW.toString(), MODERATE.toString(),
+                    HIGH.toString(), CRITICAL.toString());
 
     public static List<String> asList() {
         return labels;
@@ -91,6 +91,6 @@ public enum Severity {
                 }
             }
         }
-        return INDETERMINATE;
+        return MODERATE;
     }
 }

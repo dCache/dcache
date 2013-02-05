@@ -62,7 +62,7 @@ package org.dcache.webadmin.view.panels.alarms;
 import java.util.UUID;
 
 import org.apache.wicket.Component;
-import org.apache.wicket.behavior.AbstractBehavior;
+import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.AbstractColumn;
 import org.apache.wicket.markup.ComponentTag;
@@ -117,7 +117,7 @@ public final class CheckPanel extends Panel {
         public Component getHeader(String componentId) {
             CheckPanel panel = new CheckPanel(componentId, headerLabel,
                             new Model<Boolean>(), uuid);
-            panel.get("check").add(new AbstractBehavior() {
+            panel.get("check").add(new Behavior() {
                 private static final long serialVersionUID = -4210875030052297922L;
 
                 @Override

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:jee="http://www.springframework.org/schema/jee"
     xsi:schemaLocation="http://www.springframework.org/schema/jee
-                            http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
-                            http://www.springframework.org/schema/beans
-                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+                        http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
+                        http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
     <jee:jndi-lookup id="serviceCellEndpoint" jndi-name="java:comp/env/serviceCellEndpoint"/>
     <jee:jndi-lookup id="adminGid" jndi-name="java:comp/env/adminGid"/>
@@ -18,11 +19,15 @@
     <jee:jndi-lookup id="generatePlots" jndi-name="java:comp/env/generatePlots"/>
     <jee:jndi-lookup id="plotsDir" jndi-name="java:comp/env/plotsDir"/>
     <jee:jndi-lookup id="exportExt" jndi-name="java:comp/env/exportExt"/>
-    <jee:jndi-lookup id="alarmXMLPath" jndi-name="java:comp/env/alarmXMLPath"/>
-    <jee:jndi-lookup id="alarmCleanerEnabled" jndi-name="java:comp/env/alarmCleanerEnabled"/>
-    <jee:jndi-lookup id="alarmCleanerSleepInterval" jndi-name="java:comp/env/alarmCleanerSleepInterval"/>
-    <jee:jndi-lookup id="alarmCleanerDeleteThreshold" jndi-name="java:comp/env/alarmCleanerDeleteThreshold"/>
-    <jee:jndi-lookup id="alarmDAOProperties" jndi-name="java:comp/env/alarmDAOProperties"/>
+    <jee:jndi-lookup id="alarmsXMLPath" jndi-name="java:comp/env/alarmsXMLPath"/>
+    <jee:jndi-lookup id="alarmsDbDriver" jndi-name="java:comp/env/alarmsDbDriver"/>
+    <jee:jndi-lookup id="alarmsDbUrl" jndi-name="java:comp/env/alarmsDbUrl"/>
+    <jee:jndi-lookup id="alarmsDbUser" jndi-name="java:comp/env/alarmsDbUser"/>
+    <jee:jndi-lookup id="alarmsDbPass" jndi-name="java:comp/env/alarmsDbPass"/>
+    <jee:jndi-lookup id="alarmsPropertiesPath" jndi-name="java:comp/env/alarmsPropertiesPath"/>
+    <jee:jndi-lookup id="alarmsCleanerEnabled" jndi-name="java:comp/env/alarmsCleanerEnabled"/>
+    <jee:jndi-lookup id="alarmsCleanerSleepInterval" jndi-name="java:comp/env/alarmsCleanerSleepInterval"/>
+    <jee:jndi-lookup id="alarmsCleanerDeleteThreshold" jndi-name="java:comp/env/alarmsCleanerDeleteThreshold"/>
     <jee:jndi-lookup id="pqpEnabled" jndi-name="java:comp/env/pqpEnabled"/>
     <jee:jndi-lookup id="pqpRefreshInterval" jndi-name="java:comp/env/pqpRefreshInterval"/>
     <jee:jndi-lookup id="pqpRefreshIntervalUnit" jndi-name="java:comp/env/pqpRefreshIntervalUnit"/>
@@ -184,11 +189,15 @@
     <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
         <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
         <property name="pageCache" ref="PageInfoCache"/>
-        <property name="alarmXMLPath" ref="alarmXMLPath"/>
-        <property name="alarmCleanerEnabled" ref="alarmCleanerEnabled"/>
-        <property name="alarmCleanerSleepInterval" ref="alarmCleanerSleepInterval"/>
-        <property name="alarmCleanerDeleteThreshold" ref="alarmCleanerDeleteThreshold"/>
-        <property name="alarmDAOProperties" ref="alarmDAOProperties"/>
+        <property name="alarmsXMLPath" ref="alarmsXMLPath"/>
+        <property name="alarmsDbDriver" ref="alarmsDbDriver"/>
+        <property name="alarmsDbUrl" ref="alarmsDbUrl"/>
+        <property name="alarmsDbUser" ref="alarmsDbUser"/>
+        <property name="alarmsDbPass" ref="alarmsDbPass"/>
+        <property name="alarmsPropertiesPath" ref="alarmsPropertiesPath"/>
+        <property name="alarmsCleanerEnabled" ref="alarmsCleanerEnabled"/>
+        <property name="alarmsCleanerSleepInterval" ref="alarmsCleanerSleepInterval"/>
+        <property name="alarmsCleanerDeleteThreshold" ref="alarmsCleanerDeleteThreshold"/>
     </bean>
 
     <bean id="PoolSpaceService" class="org.dcache.webadmin.controller.impl.StandardPoolSpaceService">

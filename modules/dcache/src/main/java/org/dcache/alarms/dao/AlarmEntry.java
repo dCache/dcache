@@ -90,7 +90,8 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
 
     @Nonnull
     private String key;
-    private Long timestamp;
+    private Long firstArrived;
+    private Long lastUpdate;
     private String type;
     private Integer severity;
     private String host;
@@ -98,8 +99,8 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
     private String service;
     private String info;
     private String notes;
-    private boolean closed = false;
-    private int count = 1;
+    private Boolean closed = false;
+    private Integer received = 1;
 
     /**
      * Needs to be here for database dehydration.
@@ -117,9 +118,10 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         host = String.valueOf(json.get(HOST_TAG));
         domain = String.valueOf(json.get(DOMAIN_TAG));
         service = String.valueOf(json.get(SERVICE_TAG));
-        timestamp = (Long) json.get(TIMESTAMP_TAG);
+        lastUpdate = (Long) json.get(TIMESTAMP_TAG);
         severity = Severity.valueOf((String) json.get(SEVERITY_TAG)).ordinal();
         info = String.valueOf(json.get(MESSAGE_TAG));
+        firstArrived = lastUpdate;
     }
 
     @Override
@@ -136,22 +138,28 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         return key.equals(((AlarmEntry) other).key);
     }
 
-    public int getCount() {
-        return count;
+    public Date getDateOfFirstArrival() {
+        return new Date(firstArrived);
     }
 
-    public Date getDate() {
-        return new Date(timestamp);
+    public Date getDateOfLastUpdate() {
+        return new Date(lastUpdate);
     }
 
     public String getDomain() {
         return domain;
     }
 
-    public String getFormattedDate() {
-        DateFormat format = new SimpleDateFormat(FORMAT);
-        format.setLenient(false);
-        return format.format(getDate());
+    public Long getFirstArrived() {
+        return firstArrived;
+    }
+
+    public String getFormattedDateOfFirstArrival() {
+        return getFormattedDate(getDateOfFirstArrival());
+    }
+
+    public String getFormattedDateOfLastUpdate() {
+        return getFormattedDate(getDateOfLastUpdate());
     }
 
     public String getHost() {
@@ -166,8 +174,16 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         return key;
     }
 
+    public Long getLastUpdate() {
+        return lastUpdate;
+    }
+
     public String getNotes() {
         return notes;
+    }
+
+    public Integer getReceived() {
+        return received;
     }
 
     public String getService() {
@@ -182,10 +198,6 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         return Severity.fromOrdinal(severity);
     }
 
-    public Long getTimestamp() {
-        return timestamp;
-    }
-
     public String getType() {
         return type;
     }
@@ -195,28 +207,28 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         return key.hashCode();
     }
 
-    public void incrementCount() {
-        ++count;
-    }
-
-    public boolean isClosed() {
+    public Boolean isClosed() {
         return closed;
     }
 
-    public void setClosed(boolean closed) {
+    public void setClosed(Boolean closed) {
         this.closed = closed;
     }
 
-    public void setCount(int count) {
-        this.count = count;
+    public void setDateOfFirstArrival(Date date) {
+        firstArrived = date.getTime();
     }
 
-    public void setDate(Date date) {
-        timestamp = date.getTime();
+    public void setDateOfLastUpdate(Date date) {
+        lastUpdate = date.getTime();
     }
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public void setFirstArrived(Long timestamp) {
+        this.firstArrived = timestamp;
     }
 
     public void setHost(String host) {
@@ -232,8 +244,16 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         this.key = key;
     }
 
+    public void setLastUpdate(Long lastUpdate) {
+        this.lastUpdate = lastUpdate;
+    }
+
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public void setReceived(Integer received) {
+        this.received = received;
     }
 
     public void setService(String service) {
@@ -244,17 +264,15 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         this.severity = severity;
     }
 
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
-    }
-
     public void setType(String type) {
         this.type = type;
     }
 
     public String toFilterableString() {
-        return getFormattedDate() + " " + type + " " + getSeverityEnum() + " " + count + " " + host + " " + domain + " "
-            + info + " " + service + " " + notes;
+        return getFormattedDateOfFirstArrival() + " "
+                        + getFormattedDateOfLastUpdate() + " " + type + " "
+                        + getSeverityEnum() + " " + received + " " + host + " "
+                        + domain + " " + info + " " + service + " " + notes;
     }
 
     @Override
@@ -274,5 +292,11 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         }
         closed = alarmEntry.isClosed();
         notes = alarmEntry.getNotes();
+    }
+
+    private String getFormattedDate(Date date) {
+        DateFormat format = new SimpleDateFormat(FORMAT);
+        format.setLenient(false);
+        return format.format(date);
     }
 }

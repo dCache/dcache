@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
-    xmlns:context="http://www.springframework.org/schema/context"
-    xsi:schemaLocation="
+<beans  xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:tx="http://www.springframework.org/schema/tx"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xsi:schemaLocation="
            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
@@ -14,9 +16,29 @@
 
     <bean id="server" class="org.dcache.alarms.server.AlarmServerWrapper"
         init-method="startUp" destroy-method="shutDown">
-        <constructor-arg value="${alarms.server.port}"/>
-        <constructor-arg value="${alarms.server.config}"/>
-        <constructor-arg value="${alarms.store.path.property}"/>
-        <constructor-arg value="${alarms.store.path}"/>
+        <property name="port" value="${alarms.server.port}"/>
+        <property name="baseDir" value="${alarms.dir}"/>
+        <property name="configFile" value="${alarms.server.config}"/>
+        <property name="path" value="${alarms.store.path}"/>
+        <property name="driver" value="${alarms.store.db.driver}"/>
+        <property name="url" value="${alarms.store.db.url}"/>
+        <property name="user" value="${alarms.store.db.user}"/>
+        <property name="pass" value="${alarms.store.db.pass}"/>
+        <property name="properties" value="${alarms.store.db.properties}"/>
     </bean>
+
+    <beans profile="rdbms">
+        <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+            <description>Database schema manager</description>
+            <property name="dataSource">
+                <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+                    <property name="driverClassName" value="${alarms.store.db.driver}"/>
+                    <property name="url" value="${alarms.store.db.url}"/>
+                    <property name="username" value="${alarms.store.db.user}"/>
+                    <property name="password" value="{alarms.store.db.pass}"/>
+                </bean>
+            </property>
+            <property name="changeLog" value="classpath:${alarms.store.db.changelog}"/>
+        </bean>
+    </beans>
 </beans>

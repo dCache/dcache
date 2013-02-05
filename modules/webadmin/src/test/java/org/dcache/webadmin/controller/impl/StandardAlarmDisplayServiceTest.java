@@ -71,6 +71,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
+import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
@@ -118,7 +119,7 @@ public class StandardAlarmDisplayServiceTest {
         delete.clear();
         inOrder.verify(mocked).update(update);
         inOrder.verify(mocked).remove(delete);
-        inOrder.verify(mocked).get(null, null, null, null);
+        inOrder.verify(mocked).get(null, null, Severity.MODERATE, null);
     }
 
     @Test
@@ -219,7 +220,7 @@ public class StandardAlarmDisplayServiceTest {
                         numberOfEntries);
         int lastCount = 0;
         while (it.hasNext()) {
-            int currentCount = it.next().getCount();
+            int currentCount = it.next().getReceived();
             assertThat(lastCount, lessThanOrEqualTo(currentCount));
             lastCount = currentCount;
         }
@@ -247,11 +248,12 @@ public class StandardAlarmDisplayServiceTest {
         for (int i = 0; i < n; i++) {
             AlarmEntry entry = new AlarmEntry();
             entry.setKey(UUID.randomUUID().toString());
-            entry.setTimestamp(System.currentTimeMillis()
+            entry.setFirstArrived(System.currentTimeMillis()
                             + TimeUnit.MINUTES.toMillis(i));
+            entry.setLastUpdate(entry.getFirstArrived());
             entry.setSeverity(2);
             entry.setType("ALARM_" + i);
-            entry.setCount(n - i);
+            entry.setReceived(n - i);
             set.add(entry);
         }
         return set;
