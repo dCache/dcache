@@ -13,7 +13,7 @@ import org.glite.authz.common.model.Result;
 import org.glite.authz.pep.client.PEPClient;
 import org.glite.authz.pep.client.PEPClientException;
 import org.glite.authz.pep.client.config.PEPClientConfiguration;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Test;
 
 /**
