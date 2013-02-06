@@ -1,5 +1,7 @@
 package diskCacheV111.vehicles;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
@@ -14,6 +16,10 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private String _name  = "Unkown" ;
   private int    _minor;
   private int    _major;
+  @Deprecated // Can be removed in 2.7
+  private final String [] _hosts;
+  @Deprecated // Can be removed in 2.7
+  private int    _port;
   private InetSocketAddress _clientSocketAddress;
   private long   _transferTime;
   private long   _bytesTransferred;
@@ -39,6 +45,8 @@ public class HttpProtocolInfo implements IpProtocolInfo
     _name  = protocol ;
     _minor = minor ;
     _major = major ;
+    _hosts = new String[] { clientSocketAddress.getAddress().getHostAddress() };
+    _port = clientSocketAddress.getPort();
     _clientSocketAddress = clientSocketAddress;
     this.httpDoorCellName = httpDoorCellName;
     this.httpDoorDomainName = httpDoorDomainName;

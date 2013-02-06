@@ -1,5 +1,7 @@
 package diskCacheV111.vehicles.transferManager;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 
@@ -16,7 +18,11 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     private final String name;
     private final int minor;
     private final int major;
-    private final InetSocketAddress addr;
+    @Deprecated // Can be removed in 2.7
+    private final String [] hosts;
+    @Deprecated // Can be removed in 2.7
+    private final int port;
+    private InetSocketAddress addr;
     private final String gsiftpUrl;
     private long transferTime;
     private long bytesTransferred;
@@ -78,6 +84,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         this.name = protocol;
         this.minor = minor;
         this.major = major;
+        this.hosts = new String[] { addr.getHostString() };
+        this.port = addr.getPort();
         this.addr = addr;
         this.gsiftpUrl = gsiftpUrl;
         this.gsiftpTranferManagerName = gsiftpTranferManagerName;
@@ -210,6 +218,16 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     public GSSCredential getCredential()
     {
         return credential;
+    }
+
+    // For compatibility with pre 2.6
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (addr == null && hosts.length > 0) {
+            addr = new InetSocketAddress(hosts[0], port);
+        }
     }
 }
 

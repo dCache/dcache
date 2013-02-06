@@ -1,5 +1,7 @@
 package diskCacheV111.vehicles;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 
 /**
@@ -13,6 +15,10 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
   private String name  = "Unkown" ;
   private int    minor;
   private int    major;
+  @Deprecated // Can be removed in 2.7
+  private String [] hosts;
+  @Deprecated // Can be removed in 2.7
+  private int    port;
   private InetSocketAddress addr;
   private String gsiftpUrl;
   private long   transferTime;
@@ -40,8 +46,8 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
     this.minor = minor ;
     this.major = major ;
     this.addr = addr ;
-    // FIXME: do we need it?
-    // this.port  = port ;
+    this.hosts = new String[] { addr.getHostString() };
+    this.port  = addr.getPort();
     this.initiatorCellName = initiatorCellName;
     this.initiatorCellDomain = initiatorCellDomain;
     this.id = id;
@@ -142,6 +148,16 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
     @Override
     public InetSocketAddress getSocketAddress() {
         return addr;
+    }
+
+    // For compatibility with pre 2.6
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (addr == null && hosts.length > 0) {
+            addr = new InetSocketAddress(hosts[0], port);
+        }
     }
 }
 
