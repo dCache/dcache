@@ -1,48 +1,77 @@
 package org.dcache.util;
 
+import com.google.common.base.CharMatcher;
 import java.io.Serializable;
-
 import static org.dcache.util.ChecksumType.*;
+import static com.google.common.base.Strings.padStart;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Checksum  implements Serializable
 {
     private static final long serialVersionUID = 7338775749513974986L;
 
+    private static final String HEX_DIGITS = "0123456789abcdef";
+
+    private static final CharMatcher HEXADECIMAL =
+            CharMatcher.anyOf(HEX_DIGITS);
+
     private final static char DELIMITER = ':';
-    private final static String[] HEX = {
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-        "a", "b", "c", "d", "e", "f"
-    };
 
     private final ChecksumType type;
     private final String value;
 
-    /** Creates a new instance of Checksum */
+    /**
+     * Creates a new instance of Checksum.
+     * @throws IllegalArugmentException if the number of bytes in value is
+     * incorrect for the supplied type
+     * @throws NullPointerException if either argument is null
+     */
     public Checksum(ChecksumType type, byte[] value)
     {
         this(type, bytesToHexString(value));
     }
 
-    /** Creates a new instance of Checksum */
+    /**
+     * Creates a new instance of Checksum based on supplied type and a
+     * string of the checksum value in hexadecimal.  If the type is ADLER32
+     * then the value may omit any leading zeros.
+     * @throws IllegalArugmentException if the value is inappropriate for
+     * the supplied checksum type.
+     * @throws NullPointerException if either argument is null
+     */
     public Checksum(ChecksumType type, String value)
     {
-        if (value == null) {
-            throw new IllegalArgumentException("Null value is not allowed");
-        }
+        checkNotNull(type, "type may not be null");
+        checkNotNull(value, "value may not be null");
+
+        this.type = type;
+        this.value = normalise(value);
+    }
+
+    private String normalise(String original)
+    {
+        String normalised = original.trim().toLowerCase();
 
         /**
          * Due to bug in checksum calculation module, some ADLER32
          * sums are stored without leading zeros.
          */
-        if (type == ADLER32 && value.length() < 8) {
-            char[] newValue =
-                new char[] { '0', '0', '0', '0', '0', '0', '0', '0' };
-            value.getChars(0, value.length(),
-                           newValue, newValue.length - value.length());
-            value = String.valueOf(newValue);
+        if (type == ADLER32) {
+            normalised = padStart(normalised, type.getNibbles(), '0');
         }
-        this.type = type;
-        this.value = value;
+
+        if (!HEXADECIMAL.matchesAllOf(normalised)) {
+            throw new IllegalArgumentException("checksum value \"" +
+                    original + "\" contains non-hexadecimal digits");
+        }
+
+        if (normalised.length() != type.getNibbles()) {
+            throw new IllegalArgumentException(type.getName() + " requires " +
+                    type.getNibbles() + " hexadecimal digits but \"" +
+                    original + "\" has " + normalised.length());
+        }
+
+        return normalised;
     }
 
     public ChecksumType getType()
@@ -96,16 +125,14 @@ public class Checksum  implements Serializable
         return (useStringKey ? type.getName() : String.valueOf(type.getType())) + ":" + value;
     }
 
-    private static String byteToHexString(byte b)
-    {
-        return HEX[(b >> 4) & 0xf] + HEX[(b) & 0xf];
-    }
-
     public static String bytesToHexString(byte[] bytes)
     {
+        checkNotNull(bytes, "byte array may not be null");
+
         StringBuilder sb = new StringBuilder();
         for (byte aByte : bytes) {
-            sb.append(byteToHexString(aByte));
+            sb.append(HEX_DIGITS.charAt((aByte >> 4) & 0xf));
+            sb.append(HEX_DIGITS.charAt(aByte & 0xf));
         }
         return sb.toString();
     }
@@ -130,9 +157,13 @@ public class Checksum  implements Serializable
      *
      * @param digest the input must have the following format:
      *            <type>:<hexadecimal digest>
+     * @throws IllegalArgumentException if argument has wrong form
+     * @throws NullPointerException if argument is null
      */
     public static Checksum parseChecksum(String digest)
     {
+        checkNotNull(digest, "value may not be null");
+
         int del = digest.indexOf(DELIMITER);
         if (del < 1) {
             throw new IllegalArgumentException("Not a dCache checksum");
