@@ -1009,6 +1009,8 @@ public class Transfer implements Comparable<Transfer>
                         readNameSpaceEntry();
                     }
                     continue;
+                case CacheException.FILE_IN_CACHE:
+                    throw e;
                 default:
                     _log.error(e.toString());
                     break;

@@ -16,6 +16,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.vehicles.Message;
 import static diskCacheV111.util.CacheException.*;
+import diskCacheV111.util.FileInCacheException;
 
 /**
  *CacheException factory.
@@ -60,6 +61,8 @@ public class CacheExceptionFactory {
                 return new TimeoutCacheException(message);
             case OUT_OF_DATE:
                 return new OutOfDateCacheException(message);
+            case FILE_IN_CACHE:
+                return new FileInCacheException(message);
 
             /*
              * these do not have exception classes

@@ -24,6 +24,11 @@ public class CacheException extends Exception {
     public final static int ERROR_IO_DISK = 204 ;
 
     /**
+     * Pool already contains a replica.
+     */
+    public final static int FILE_IN_CACHE = 210;
+
+    /**
      * Usually followed by component shutdown.
      */
     public final static int PANIC             = 10000 ;

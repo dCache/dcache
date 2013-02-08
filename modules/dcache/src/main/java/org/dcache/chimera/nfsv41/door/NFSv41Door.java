@@ -30,6 +30,7 @@ import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -364,6 +365,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             return new Layout(true, stateid, new layout4[]{layout});
 
+        } catch (FileInCacheException e) {
+            throw new ChimeraNFSException(nfsstat.NFSERR_IO, e.getMessage());
         } catch (InterruptedException | CacheException e) {
             throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTTRYLATER,
                     e.getMessage());
