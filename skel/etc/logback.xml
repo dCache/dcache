@@ -123,12 +123,92 @@
       -->
       <filter class="org.dcache.alarms.logback.AlarmDefinitionFilter">
             <alarmType>
+                regex:"(.+) from ac_create",
+                type:SERVICE_CREATION_FAILURE,
+                level:ERROR,
+                severity:CRITICAL,
+                include-in-key:group1 type host domain service
+            </alarmType>
+            <alarmType>
+                regex:"Failed to acquire connection.+Attempts left: 0",
+                type:DB_OUT_OF_CONNECTIONS,
+                level:ERROR,
+                severity:CRITICAL,
+                include-in-key:type host
+            </alarmType>
+            <alarmType>
+                regex:"Unable to open a test connection to the given database|Connections could not be acquired from the underlying database",
+                match-exception:true,
+                depth:1,
+                type:DB_UNAVAILABLE,
+                level:ERROR,
+                severity:CRITICAL,
+                include-in-key:type host
+            </alarmType>
+            <alarmType>
+                regex:"OutOfMemory",
+                type:JVM_OUT_OF_MEMORY,
+                level:ERROR,
+                severity:CRITICAL,
+                include-in-key:type host domain
+            </alarmType>
+            <alarmType>
+                regex:"[Tt]oo many open files",
+                type:OUT_OF_FILE_DESCRIPTORS,
+                match-exception:true,
+                level:ERROR,
+                severity:CRITICAL,
+                include-in-key:type host domain
+            </alarmType>
+            <alarmType>
+                regex:"I/O.*failed(.+)|I/O error occur.*ed(.+)",
+                type:IO_ERROR,
+                level:WARN,
+                severity:HIGH,
+                include-in-key:group1 type host service domain
+            </alarmType>
+            <alarmType>
+                regex:"Fetch failed: HSM script failed",
+                type:HSM_READ_FAILURE,
+                level:WARN,
+                severity:HIGH,
+                include-in-key:type host service domain
+            </alarmType>
+            <alarmType>
+                regex:"Store failed: HSM script failed",
+                type:HSM_WRITE_FAILURE,
+                level:WARN,
+                severity:HIGH,
+                include-in-key:type host service domain
+            </alarmType>
+            <alarmType>
+                regex:"Timeout querying location manager",
+                type:LOCATION_MANAGER_UNAVAILABLE,
+                level:WARN,
+                severity:HIGH,
+                include-in-key:type host service domain
+            </alarmType>
+            <alarmType>
+                regex:"PoolManager.+not found",
+                type:POOL_MANAGER_UNAVAILABLE,
+                level:WARN,
+                severity:HIGH,
+                include-in-key:type host service domain
+            </alarmType>
+            <alarmType>
+                regex:"Pool mode changed to disabled",
+                type:POOL_DISABLED,
+                level:WARN,
+                severity:MODERATE,
+                include-in-key:type host service domain
+            </alarmType>
+            <alarmType>
                 logger:org.dcache.pool.classic.ChecksumScanner,
-                regex:"Checksum mismatch",
+                regex:"Checksum mismatch detected for (.+) - marking as BROKEN",
                 type:CHECKSUM,
                 level:ERROR,
                 severity:MODERATE,
-                include-in-key:message type host service domain
+                include-in-key:group1 type host service domain
             </alarmType>
       </filter>
       <appender-ref ref="remote"/>
