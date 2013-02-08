@@ -65,6 +65,7 @@ import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.protocol.https.RequireHttps;
 import org.apache.wicket.util.time.Duration;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
@@ -77,6 +78,7 @@ import org.dcache.webadmin.view.panels.alarms.QueryPanel;
  *
  * @author arossi
  */
+@RequireHttps
 public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
 
     private static final long serialVersionUID = 993708875580341999L;

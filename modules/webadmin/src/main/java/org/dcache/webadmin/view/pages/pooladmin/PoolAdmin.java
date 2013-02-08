@@ -2,6 +2,7 @@ package org.dcache.webadmin.view.pages.pooladmin;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.basic.MultiLineLabel;
@@ -14,6 +15,7 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.protocol.https.RequireHttps;
 import org.dcache.webadmin.controller.PoolAdminService;
 import org.dcache.webadmin.controller.exceptions.PoolAdminServiceException;
 import org.dcache.webadmin.view.beans.PoolAdminBean;
@@ -23,13 +25,14 @@ import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
 import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.SelectableWrapper;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The PoolAdmin Webpage
  * @author jans
  */
+@RequireHttps
 public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
     private static final String EMPTY_STRING = "";

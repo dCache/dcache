@@ -17,6 +17,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.protocol.https.RequireHttps;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.exceptions.CellAdminServiceException;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
@@ -29,6 +30,7 @@ import org.slf4j.Logger;
  * The cellAdmin Webpage
  * @author jans
  */
+@RequireHttps
 public class CellAdmin extends BasePage implements AuthenticatedWebPage {
 
     private static final String EMPTY_STRING = "";
