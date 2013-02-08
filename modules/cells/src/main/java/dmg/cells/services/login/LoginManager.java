@@ -126,12 +126,14 @@ public class       LoginManager
 
          int listenPort    = Integer.parseInt( args.argv(0) ) ;
          args.shift() ;
+         _childArgs.shift();
 
          // which cell to start
          if( args.argc() > 0 ){
             _loginClass = Class.forName( args.argv(0) ) ;
             _log.info( "Using login class : {}", _loginClass.getName() ) ;
             args.shift() ;
+            _childArgs.shift();
          }
          // get the authentication
          _authenticator = args.getOpt("authenticator") ;
