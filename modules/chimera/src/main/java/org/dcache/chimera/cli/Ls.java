@@ -59,9 +59,6 @@ public class Ls
             System.exit(4);
         }
 
-        FileSystemProvider fs = FsFactory.createFileSystem(args);
-        FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
-
         List<HimeraDirectoryEntry> entries = new LinkedList<>();
 
         long totalBlocks = 0;
@@ -69,16 +66,18 @@ public class Ls
         HimeraDirectoryEntry dot = null;
         HimeraDirectoryEntry dotdot = null;
 
-        try {
+        try (FileSystemProvider fs = FsFactory.createFileSystem(args)) {
+            FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
+
             try (DirectoryStreamB<HimeraDirectoryEntry> dirStream = inode
                     .newDirectoryStream()) {
                 for (HimeraDirectoryEntry entry : dirStream) {
                     String name = entry.getName();
                     Stat stat = entry.getStat();
 
-                    if(name.equals(".")) {
+                    if (name.equals(".")) {
                         dot = entry;
-                    } else if(name.equals("..")) {
+                    } else if (name.equals("..")) {
                         dotdot = entry;
                     } else {
                         entries.add(entry);
@@ -91,9 +90,6 @@ public class Ls
                     sizeWidth = updateMaxWidth(sizeWidth, stat.getSize());
                 }
             }
-
-        } finally {
-            fs.close();
         }
 
         System.out.println("total " + totalBlocks);

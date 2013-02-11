@@ -152,7 +152,7 @@ public class AbstractCell extends CellAdapter
      * it is important that the timer is not used for long-running or
      * blocking tasks, nor for time critical tasks.
      */
-    protected final static Timer _timer = new Timer(true);
+    protected final static Timer _timer = new Timer("Cell timer", true);
 
     /**
      * Task for calling the Cell nucleus message timeout mechanism.

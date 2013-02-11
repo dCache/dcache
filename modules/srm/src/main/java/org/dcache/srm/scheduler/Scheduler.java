@@ -225,13 +225,13 @@ public final class Scheduler implements Runnable  {
 		thread.start();
 	}
 
-	public void stop() {
-	    retryTimer.cancel();
-	    pooledExecutor.shutdownNow();
-	    running = false;
-	    synchronized(this) {
-	        notify();
-	    }
+	public synchronized void stop()
+        {
+            running = false;
+            notified = true;
+            retryTimer.cancel();
+            pooledExecutor.shutdownNow();
+            notify();
 	}
 
 
@@ -464,7 +464,9 @@ public final class Scheduler implements Runnable  {
 
 	// this is supposed to be the only place that removes the jobs from
 	private void updatePriorityThreadQueue()
-            throws java.sql.SQLException, SRMInvalidRequestException {
+                throws java.sql.SQLException, SRMInvalidRequestException,
+                       InterruptedException
+        {
 		while(true) {
 			Job job = null;
 			if(useFairness) {
@@ -542,7 +544,7 @@ public final class Scheduler implements Runnable  {
                                 job.getId()+" at this time: RejectedExecutionException");
 				return;
 			}
-			catch(RuntimeException | InterruptedException re) {
+			catch(RuntimeException re) {
 				logger.debug("updatePriorityThreadQueue() cannot execute job id="+job.getId()+" at this time");
 				return;
                         }
@@ -551,7 +553,9 @@ public final class Scheduler implements Runnable  {
 
 	// this is supposed to be the only place that removes the jobs from
 	private void updateThreadQueue()
-            throws java.sql.SQLException, SRMInvalidRequestException {
+                throws java.sql.SQLException, SRMInvalidRequestException,
+                       InterruptedException
+        {
 
         while(true) {
             Job job = null;
@@ -624,7 +628,7 @@ public final class Scheduler implements Runnable  {
                         job.getId()+" at this time: RejectedExecutionException");
                     return;
             }
-            catch(InterruptedException | RuntimeException ie) {
+            catch(RuntimeException ie) {
                 logger.error("updateThreadQueue() cannot execute job id=" + job
                         .getId() + " at this time");
                 return;
@@ -740,47 +744,41 @@ public final class Scheduler implements Runnable  {
 
     @Override
     public void run() {
-        while(running) {
-            try {
+        try {
+            while(running) {
+                try {
+                    //logger.debug("Scheduler(id="+getId()+").run() updating Priority Thread queue...");
+                    updatePriorityThreadQueue();
+                    //logger.debug("Scheduler(id="+getId()+").run() updating Thread queue...");
+                    updateThreadQueue();
+                    // logger.debug("Scheduler(id="+getId()+").run() updating Ready queue...");
+                    // Do not update ready queue, let users ask for statuses
+                    // which will lead to the updates
+                    // updateReadyQueue();
+                    // logger.debug("Scheduler(id="+getId()+").run() done updating queues");
 
-                synchronized(this) {
-                    if(!notified) {
-                        //logger.debug("Scheduler(id="+getId()+").run() waiting for events...");
-                        wait(queuesUpdateMaxWait);
+                    synchronized (this) {
+                        if (!notified) {
+                            //logger.debug("Scheduler(id="+getId()+").run() waiting for events...");
+                            wait(queuesUpdateMaxWait);
+                        }
+                        notified = false;
                     }
-                    notified =false;
+                } catch( java.sql.SQLException e) {
+                    logger.error("Sheduler(id={}) detected a database error: {}", getId(), e.toString());
+                } catch (SRMInvalidRequestException e) {
+                    logger.error("Sheduler(id={}) detected an SRM error: {}", getId(), e.toString());
+                } catch (RuntimeException e) {
+                    logger.error("Sheduler(id=" + getId() + ") detected a bug", e);
                 }
-                //logger.debug("Scheduler(id="+getId()+").run() updating Priority Thread queue...");
-                updatePriorityThreadQueue();
-                //logger.debug("Scheduler(id="+getId()+").run() updating Thread queue...");
-                updateThreadQueue();
-                // logger.debug("Scheduler(id="+getId()+").run() updating Ready queue...");
-                // Do not update ready queue, let users ask for statuses
-                // which will lead to the updates
-                // updateReadyQueue();
-                // logger.debug("Scheduler(id="+getId()+").run() done updating queues");
-
             }
-            catch(InterruptedException ie) {
-                logger.error("Sheduler(id="+getId()+
-                        ") terminating update thread, since it caught an " +
-                        "InterruptedException !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
-                        ie);
-
-            }
-            catch( java.sql.SQLException sqle) {
-                logger.error(sqle.toString());
-            }
-            catch(Throwable t)
-            {
-                logger.error("Sheduler(id="+getId()+
-                        ") update thread caught an exception " +
-                        "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",t);
-            }
+        } catch(InterruptedException e) {
+            logger.error("Sheduler(id=" + getId() +
+                    ") terminating update thread, since it caught an InterruptedException",
+                    e);
         }
         //we are interrupted,
         //terminating thread
-
     }
 
     private class JobWrapper implements Runnable {

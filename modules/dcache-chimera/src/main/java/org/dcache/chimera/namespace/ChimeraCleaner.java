@@ -73,6 +73,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private static final Logger _log =
         LoggerFactory.getLogger(ChimeraCleaner.class);
 
+    private static final long BROADCAST_REGISTRATION_PERIOD =
+            TimeUnit.MINUTES.toMillis(5);
+    private static final long BROADCAST_REGISTRATION_EXPIRATION =
+            TimeUnit.MINUTES.toMillis(6);
+
     @Option(
         name="refresh",
         description="Refresh interval",
@@ -149,7 +154,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _cleanerTask;
     private PoolInformationBase _pools = new PoolInformationBase();
-    private DataSource _dataSource;
+    private BoneCPDataSource _dataSource;
     private JdbcTemplate _db;
     private BroadcastRegistrationTask _broadcastRegistration;
     private CellStub _broadcasterStub;
@@ -223,8 +228,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         CellPath me = new CellPath(getCellName(), getCellDomainName());
         _broadcastRegistration =
             new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
-        _executor.scheduleAtFixedRate(_broadcastRegistration, 0, 5,
-                                      TimeUnit.MINUTES);
+        _broadcastRegistration.setExpires(BROADCAST_REGISTRATION_EXPIRATION);
+        _executor.scheduleAtFixedRate(
+                _broadcastRegistration, 0, BROADCAST_REGISTRATION_PERIOD, TimeUnit.MILLISECONDS);
 
         _cleanerTask =
             _executor.scheduleWithFixedDelay(this,
@@ -269,6 +275,12 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     {
         if (_executor != null) {
             _executor.shutdownNow();
+        }
+        if (_dataSource != null) {
+            _dataSource.close();
+        }
+        if (_broadcastRegistration != null) {
+            _broadcastRegistration.unregister();
         }
     }
 

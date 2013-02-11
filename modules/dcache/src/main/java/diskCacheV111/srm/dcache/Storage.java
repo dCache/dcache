@@ -479,6 +479,7 @@ public final class Storage
     public void stop()
     {
         srm.stop();
+        storageInfoUpdateThread.interrupt();
     }
 
     @Required

@@ -435,12 +435,36 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   // methods from the cellEventListener Interface
   @Override
-  public void cleanUp() {
-    _log.debug("=== cleanUp called ===");
-    _stopThreads     = true;
-    _runPoolWatchDog = false;
-    super.cleanUp();
+  public void cleanUp()
+  {
+      _log.debug("=== cleanUp called ===");
+      _stopThreads     = true;
+      _runPoolWatchDog = false;
+      try {
+          if (_dbThread != null) {
+              _dbThread.interrupt();
+          }
+          if (_adjThread != null) {
+              _adjThread.interrupt();
+          }
+          if (_watchDog != null) {
+              _watchDog.interrupt();
+          }
+          if (_dbThread != null) {
+              _dbThread.join(500);
+          }
+          if (_adjThread != null) {
+              _adjThread.join(500);
+          }
+          if (_watchDog != null) {
+              _watchDog.join(500);
+          }
+      } catch (InterruptedException e) {
+          _log.warn("Replica manager failed to shut down", e);
+      }
+      super.cleanUp();
   }
+
   @Override
   public void cellCreated( CellEvent ce ) {
     super.cellCreated(ce);

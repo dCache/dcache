@@ -3,8 +3,6 @@ package org.dcache.pool.classic;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
 

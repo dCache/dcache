@@ -8,7 +8,6 @@
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
     <jee:jndi-lookup id="serviceCellEndpoint" jndi-name="java:comp/env/serviceCellEndpoint"/>
-    <jee:jndi-lookup id="serviceCellNucleus" jndi-name="java:comp/env/serviceCellNucleus"/>
     <jee:jndi-lookup id="adminGid" jndi-name="java:comp/env/adminGid"/>
     <jee:jndi-lookup id="gPlazmaName" jndi-name="java:comp/env/gPlazmaName"/>
     <jee:jndi-lookup id="dCacheInstanceName" jndi-name="java:comp/env/dCacheInstanceName"/>
@@ -63,8 +62,7 @@
         <property name="timeout" ref="collectorTimeout"/>
     </bean>
 
-    <bean id="PageInfoCache" class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache" init-method="init">
-        <constructor-arg ref="serviceCellNucleus"/>
+    <bean id="PageInfoCache" class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache" init-method="init" destroy-method="stop">
         <constructor-arg>
             <list>
                 <bean id="ActiveTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">

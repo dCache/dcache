@@ -251,12 +251,23 @@ public final class Manager
                 _poolManagerStub.setCellEndpoint(this);
                 _poolManagerStub.setTimeout(_poolManagerTimeout*1000L);
                 dbinit();
-                start();
                 (updateLinkGroups = new Thread(this,"UpdateLinkGroups")).start();
                 (expireSpaceReservations = new Thread(this,"ExpireThreadReservations")).start();
         }
 
-        private boolean isOptionSetToTrueOrYes(String value,
+    @Override
+    public void cleanUp()
+    {
+        if (updateLinkGroups != null) {
+            updateLinkGroups.interrupt();
+        }
+        if (expireSpaceReservations != null) {
+            expireSpaceReservations.interrupt();
+        }
+        super.cleanUp();
+    }
+
+    private boolean isOptionSetToTrueOrYes(String value,
                                                boolean default_value) {
                 String tmpstr=_args.getOpt(value);
                 if (tmpstr!=null) {
@@ -3834,7 +3845,7 @@ public final class Manager
                                         Thread.sleep(expireSpaceReservationsPeriod);
                                 }
                                 catch (InterruptedException ie) {
-                                        logger.error("expire SpaceReservations thread has been interrupted");
+                                        logger.debug("expire SpaceReservations thread has been interrupted");
                                         return;
                                 }
                         }
@@ -3847,7 +3858,7 @@ public final class Manager
                                                 updateLinkGroupsSyncObject.wait(currentUpdateLinkGroupsPeriod);
                                         }
                                         catch (InterruptedException ie) {
-                                                logger.error("update LinkGroup thread has been interrupted");
+                                                logger.debug("update LinkGroup thread has been interrupted");
                                                 return;
                                         }
                                 }
