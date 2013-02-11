@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 public class PageInfoCache {
 
     private List<Collector> _collectors;
-    private final List<Thread> _threads = new ArrayList<>();
+    private final List<Thread> _threads = new ArrayList<Thread>();
     private final Map<String, Object> _cache =
             new ConcurrentHashMap<String, Object>();
     private final static Logger _log = LoggerFactory.getLogger(PageInfoCache.class);
