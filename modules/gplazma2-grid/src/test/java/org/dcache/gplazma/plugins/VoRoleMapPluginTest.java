@@ -18,7 +18,7 @@ import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.util.NameRolePair;
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Test;
 import org.hamcrest.Matcher;
 

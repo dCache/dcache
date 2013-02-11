@@ -7,7 +7,7 @@ import static org.junit.Assert.assertNull;
 
 import javax.security.auth.Subject;
 
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Test;
 

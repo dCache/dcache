@@ -17,7 +17,7 @@ import org.dcache.auth.UidPrincipal;
 import org.dcache.gplazma.monitor.LoginResult.MapPhaseResult;
 import org.dcache.auth.FQANPrincipal;
 import com.google.common.collect.Sets;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
 import java.security.Principal;
 import java.util.Set;
