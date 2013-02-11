@@ -27,6 +27,7 @@ import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 
+import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import static com.google.common.collect.Iterables.transform;
@@ -231,12 +232,14 @@ public class BootLoader
 
     public static void main(String arguments[])
     {
+        String command = null;
+
         try {
             Args args = new Args(arguments);
             if (args.argc() < 1) {
                 help();
             }
-            String command = args.argv(0);
+            command = args.argv(0);
 
             /* Redirects Java util logging to SLF4J.
              */
@@ -291,15 +294,30 @@ public class BootLoader
                 throw new IllegalArgumentException("Invalid command: " + command);
             }
         } catch (IllegalArgumentException | CommandException | URISyntaxException | FileNotFoundException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
+            handleFatalError(e.getMessage(), command);
         } catch (IOException e) {
-            System.err.println(e.toString());
-            System.exit(1);
+            handleFatalError(e.toString(), command);
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            System.exit(1);
+            handleFatalError(e, command);
         }
+    }
+
+    private static void handleFatalError(Object message, String command) {
+        String logMessage;
+
+        if (message instanceof RuntimeException) {
+            logMessage = "Unexpected failure at startup; this is probably a bug";
+            ((RuntimeException)message).printStackTrace();
+        } else {
+            logMessage = "Failure at startup: {}";
+            System.err.println(message);
+        }
+
+        if (CMD_START.equals(command)) {
+            LoggerFactory.getLogger("root").error(logMessage, message);
+        }
+
+        System.exit(1);
     }
 
     private static LayoutPrinter printerForArgs(Args args, Layout layout)
