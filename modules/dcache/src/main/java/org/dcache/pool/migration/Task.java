@@ -1,7 +1,5 @@
 package org.dcache.pool.migration;
 
-import java.util.TimerTask;
-import java.util.Timer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,8 +31,6 @@ import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 import org.dcache.util.ReflectionUtils;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

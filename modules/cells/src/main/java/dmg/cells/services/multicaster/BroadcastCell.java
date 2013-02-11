@@ -115,7 +115,7 @@ public class BroadcastCell extends CellAdapter {
 
     /** Creates a new instance of BroadcastCell */
     public BroadcastCell(String name , String args ) {
-        super( name , args , false ) ;
+        super( name , "System", args , false ) ;
         _args    = getArgs() ;
         _nucleus = getNucleus() ;
 
@@ -257,22 +257,22 @@ public class BroadcastCell extends CellAdapter {
         CellAddressCore core = destination.getDestinationAddress() ;
 
         Map map = (Map)_eventClassMap.get( eventClass ) ;
-        if(  map == null )
-            throw new
-            NoSuchElementException("Not an entry "+core+"/"+eventClass);
+        if(  map == null ) {
+            throw new NoSuchElementException("Not an entry " + core + "/" + eventClass);
+        }
 
         Entry e = (Entry) map.remove( core ) ;
-        if( e == null )
-            throw new
-            NoSuchElementException("Not an entry "+core+"/"+eventClass);
+        if( e == null ) {
+            throw new NoSuchElementException("Not an entry " + core + "/" + eventClass);
+        }
 
         if( map.size() == 0 )_eventClassMap.remove( eventClass ) ;
 
 
         map = (Map)_destinationMap.get( core ) ;
-        if( map == null )
-            throw new
-            NoSuchElementException("PANIC : inconsitent db : "+core+"/"+eventClass);
+        if( map == null ) {
+            throw new RuntimeException("PANIC : inconsitent db : " + core + "/" + eventClass);
+        }
 
         e = (Entry)map.remove( eventClass ) ;
         if( map.size() == 0 )_destinationMap.remove( core ) ;
@@ -327,15 +327,17 @@ public class BroadcastCell extends CellAdapter {
                 throw new
                 IllegalArgumentException("Not a valid Broadcast command " +event.getClass());
             }
-        }catch(Exception ee ){
-            _log.warn("Problem with {"+command+"}"+ee, ee);
-            event.setReturnValues(1,ee);
+        } catch (NoSuchElementException e) {
+            event.setReturnValues(1, e);
+        } catch (RuntimeException e) {
+            _log.warn("Problem with {"+command+"}" + e, e);
+            event.setReturnValues(1, e);
         }
         msg.revertDirection() ;
-        try{
+        try {
             sendMessage(msg);
-        }catch(Exception ee ){
-            _log.warn("Couldn't reply : "+ee);
+        }catch (NoRouteToCellException e) {
+            _log.debug("Could not send reply: {}", e.toString());
         }
     }
     public void getInfo(  PrintWriter pw ){
@@ -427,15 +429,20 @@ public class BroadcastCell extends CellAdapter {
             //
             //  make sure a reply will find its way back.
             //
-            msg.getSourcePath().add( message.getSourcePath() );
-            try{
-                _log.info("forwardMessage : "+classEvent+" forwarding to "+origin);
+            msg.getSourcePath().add(message.getSourcePath());
+            try {
+                _log.debug("Forwarding to {}", origin);
                 sendMessage(msg);
-                _sent++ ;
-            }catch(Exception ee ){
-                _log.warn("forwardMessage : FAILED "+classEvent+" forwarding to "+origin+" "+ee);
-                if( entry.isCancelOnFailure() )list.add( entry ) ;
+                _sent++;
+            } catch (NoRouteToCellException e) {
+                _log.warn("No route to {}", origin);
+                if (entry.isCancelOnFailure()) {
+                    list.add(entry);
+		}
                 entry._failed ++ ;
+            } catch (RuntimeException e) {
+                _log.error("FAILED to forwared to " + origin, e);
+                entry._failed++;
             }
         }
         unregister(list);

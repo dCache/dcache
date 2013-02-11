@@ -1,10 +1,12 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadFactory;
+
 import org.dcache.webadmin.model.dataaccess.communication.collectors.Collector;
 import org.dcache.webadmin.model.exceptions.NoSuchContextException;
 import org.slf4j.Logger;
@@ -16,16 +18,14 @@ import org.slf4j.LoggerFactory;
  */
 public class PageInfoCache {
 
-    private ThreadFactory _threadFactory;
     private List<Collector> _collectors;
+    private final List<Thread> _threads = new ArrayList<>();
     private final Map<String, Object> _cache =
             new ConcurrentHashMap<String, Object>();
     private final static Logger _log = LoggerFactory.getLogger(PageInfoCache.class);
 
-    public PageInfoCache(ThreadFactory threadFactory, List<Collector> collectors) {
-        checkNotNull(threadFactory);
+    public PageInfoCache(List<Collector> collectors) {
         checkNotNull(collectors);
-        _threadFactory = threadFactory;
         _collectors = collectors;
     }
 
@@ -42,7 +42,16 @@ public class PageInfoCache {
         for (Collector collector : _collectors) {
             collector.setPageCache(_cache);
             _log.info("Collector {} started", collector.getName());
-            _threadFactory.newThread(collector).start();
+            Thread thread = new Thread(collector, collector.getName());
+            _threads.add(thread);
+            thread.start();
+        }
+    }
+
+    public void stop()
+    {
+        for (Thread thread: _threads) {
+            thread.interrupt();
         }
     }
 }

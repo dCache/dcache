@@ -29,6 +29,9 @@ public class BroadcastRegistrationTask implements Runnable
     private static final Logger _logger =
         LoggerFactory.getLogger(BroadcastRegistrationTask.class);
 
+    private long _expires;
+    private boolean _isCancelOnFailure;
+
     public BroadcastRegistrationTask(CellEndpoint cellEndpoint, Class<?> eventClass, CellPath target)
     {
         _cellEndpoint = cellEndpoint;
@@ -41,6 +44,16 @@ public class BroadcastRegistrationTask implements Runnable
         register();
     }
 
+    public void setExpires(long millis)
+    {
+        _expires = millis;
+    }
+
+    public void setCancelOnFailure(boolean isCancelOnFailure)
+    {
+        _isCancelOnFailure = isCancelOnFailure;
+    }
+
     /**
      * Sends a registration message to the broadcast cell.
      *
@@ -51,6 +64,8 @@ public class BroadcastRegistrationTask implements Runnable
         try {
             BroadcastRegisterMessage message =
                 new BroadcastRegisterMessage(_eventClass, _target);
+            message.setExpires(_expires);
+            message.setCancelOnFailure(_isCancelOnFailure);
             _cellEndpoint.sendMessage(new CellMessage(_broadcast, message));
         } catch (NoRouteToCellException e) {
             _logger.error("Failed to register with broadcast cell: No route to cell");
@@ -69,7 +84,7 @@ public class BroadcastRegistrationTask implements Runnable
                 new BroadcastUnregisterMessage(_eventClass, _target);
             _cellEndpoint.sendMessage(new CellMessage(_broadcast, message));
         } catch (NoRouteToCellException e) {
-            _logger.error("Failed to register with broadcast cell: No route to cell");
+            _logger.info("Failed to unregister with broadcast cell: No route to cell");
         }
     }
 }

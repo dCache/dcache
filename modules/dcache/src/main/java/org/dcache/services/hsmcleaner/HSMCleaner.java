@@ -53,6 +53,9 @@ import dmg.cells.nucleus.CellPath;
  */
 public class HSMCleaner extends AbstractCell
 {
+    private static final long BROADCAST_REGISTRATION_PERIOD = TimeUnit.MINUTES.toMillis(5);
+    private static final long BROADCAST_REGISTRATION_EXPIRATION = TimeUnit.MINUTES.toMillis(6);
+
     private final EventHistogram _histogram =
         new EventHistogram(12, 60 * 60 * 1000);
 
@@ -179,6 +182,7 @@ public class HSMCleaner extends AbstractCell
         CellPath me = new CellPath(getCellName(), getCellDomainName());
         _broadcastRegistration =
             new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
+        _broadcastRegistration.setExpires(BROADCAST_REGISTRATION_EXPIRATION);
         _trash = new OSMTrash(_trashLocation);
         _requests = new RequestTracker();
         _failures = new FailureRepository(_failureLocation);
@@ -212,8 +216,8 @@ public class HSMCleaner extends AbstractCell
                                          _recoverInterval, TimeUnit.SECONDS);
         _executor.scheduleWithFixedDelay(_flushTask, _flushInterval,
                                          _flushInterval, TimeUnit.SECONDS);
-        _executor.scheduleAtFixedRate(_broadcastRegistration, 0, 5,
-                                      TimeUnit.MINUTES);
+        _executor.scheduleAtFixedRate(_broadcastRegistration, 0, BROADCAST_REGISTRATION_PERIOD,
+                                      TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -224,6 +228,9 @@ public class HSMCleaner extends AbstractCell
         }
         if (_executor != null) {
             _executor.shutdownNow();
+        }
+        if (_broadcastRegistration != null) {
+            _broadcastRegistration.unregister();
         }
         super.cleanUp();
     }

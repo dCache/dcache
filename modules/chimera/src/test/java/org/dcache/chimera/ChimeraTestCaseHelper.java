@@ -50,6 +50,7 @@ public abstract class ChimeraTestCaseHelper {
 
     @After
     public void tearDown() throws Exception {
+        _fs.close();
         _conn.createStatement().execute("SHUTDOWN;");
         _conn.close();
     }

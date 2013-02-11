@@ -899,7 +899,7 @@ public void cleanUp(){
             try {
                 new Socket("localhost", _listenPort).close();
             } catch (IOException e) {
-                _log.warn("ServerSocket faked connect : " + e.getMessage());
+                _log.debug("ServerSocket faked connect: {}", e.getMessage());
             }
         }
 

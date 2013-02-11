@@ -777,7 +777,7 @@ public class CellNucleus implements ThreadFactory
     void sendKillEvent(KillEvent ce)
     {
         _logNucleus.info("sendKillEvent : received {}", ce);
-        Thread thread = new KillerThread(ce);
+        Thread thread = new Thread(__cellGlue.getKillerThreadGroup(), wrapLoggingContext(new KillerTask(ce)), "killer-" + _cellName);
         thread.start();
         _logNucleus.info("sendKillEvent : {} started on group {}",
                          thread.getName(), thread.getThreadGroup().getName());
@@ -924,13 +924,12 @@ public class CellNucleus implements ThreadFactory
 
     private static final CellEvent LAST_MESSAGE_EVENT = new LastMessageEvent();
 
-    private class KillerThread extends Thread
+    private class KillerTask implements Runnable
     {
         private final KillEvent _event;
 
-        public KillerThread(KillEvent event)
+        public KillerTask(KillEvent event)
         {
-            super(__cellGlue.getKillerThreadGroup(), "killer-" + _cellName);
             _event = event;
         }
 

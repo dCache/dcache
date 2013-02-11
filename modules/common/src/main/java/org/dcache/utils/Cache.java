@@ -119,7 +119,7 @@ public class Cache<K, V> extends  TimerTask {
     /**
      * 'Expire threads' used to detect and remove expired entries.
      */
-    private final Timer _cleaner = new Timer();
+    private final Timer _cleaner;
 
     /**
      * Internal storage access lock.
@@ -176,6 +176,7 @@ public class Cache<K, V> extends  TimerTask {
         _storage = new HashMap<K, CacheElement<V>>(_size);
         _eventListener = eventListener;
         _mxBean = new CacheMXBeanImpl<K, V>(this);
+        _cleaner = new Timer(_name + " cleaner", true);
         _cleaner.schedule(this, 0, timeUnit.toMillis(timeValue));
     }
 

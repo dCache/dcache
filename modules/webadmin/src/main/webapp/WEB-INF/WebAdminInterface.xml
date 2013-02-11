@@ -45,11 +45,8 @@
         <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
     </bean>
 
-    <bean id="PageInfoCache"
-        class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache"
-        init-method="init">
-        <constructor-arg value="#{ ConfigHolder.threadFactory }"/>
-        <constructor-arg >
+    <bean id="PageInfoCache" class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache" init-method="init" destroy-method="stop">
+        <constructor-arg>
             <list>
                 <bean id="ActiveTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">
                     <property name="cellStub" ref="ActiveTransfersCollectorCellStub"/>
