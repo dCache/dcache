@@ -31,7 +31,7 @@ import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

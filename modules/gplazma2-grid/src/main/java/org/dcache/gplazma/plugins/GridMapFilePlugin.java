@@ -19,7 +19,7 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 
 /**
  * Maps GlobusPrincipal and KerberosPrincipal to UserNamePrincipal

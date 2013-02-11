@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.Set;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.UidPrincipal;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 
 /**
  * The PrincipalSetMaker is a class that allows code to easily build a

@@ -15,7 +15,7 @@ import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
