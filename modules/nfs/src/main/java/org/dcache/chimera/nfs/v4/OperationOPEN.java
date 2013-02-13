@@ -102,28 +102,6 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
                         try {
 
-                            inode = context.currentInode().inodeOf(name);
-
-                            if (exclusive) {
-                                throw new ChimeraNFSException(nfsstat.NFSERR_EXIST, "file already exist");
-                            }
-
-                            _log.debug("Opening existing file: {}", name);
-
-                            _log.trace("Check permission");
-                            // check file permissions
-                            Stat fileStat = inode.statCache();
-                            _log.debug("UID  : {}", fileStat.getUid());
-                            _log.debug("GID  : {}", fileStat.getGid());
-                            _log.debug("Mode : 0{}", Integer.toOctalString(fileStat.getMode() & 0777));
-                            UnixAcl fileAcl = new UnixAcl(fileStat.getUid(), fileStat.getGid(), fileStat.getMode() & 0777);
-                            if (!context.getAclHandler().isAllowed(fileAcl, context.getUser(), AclHandler.ACL_WRITE)) {
-                                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
-                            }
-
-                            OperationSETATTR.setAttributes(_args.opopen.openhow.how.createattrs, inode, context);
-                        } catch (FileNotFoundHimeraFsException he) {
-
                             // check parent permissions
                             Stat parentStat = context.currentInode().statCache();
                             UnixAcl parentAcl = new UnixAcl(parentStat.getUid(), parentStat.getGid(), parentStat.getMode() & 0777);
@@ -144,6 +122,28 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                                 case createmode4.EXCLUSIVE4:
                                 case createmode4.EXCLUSIVE4_1:
                             }
+                        } catch (FileExistsChimeraFsException e) {
+
+                            if (exclusive) {
+                                throw new ChimeraNFSException(nfsstat.NFSERR_EXIST, "file already exist");
+                            }
+
+                            inode = context.currentInode().inodeOf(name);
+
+                            _log.debug("Opening existing file: {}", name);
+
+                            _log.trace("Check permission");
+                            // check file permissions
+                            Stat fileStat = inode.statCache();
+                            _log.debug("UID  : {}", fileStat.getUid());
+                            _log.debug("GID  : {}", fileStat.getGid());
+                            _log.debug("Mode : 0{}", Integer.toOctalString(fileStat.getMode() & 0777));
+                            UnixAcl fileAcl = new UnixAcl(fileStat.getUid(), fileStat.getGid(), fileStat.getMode() & 0777);
+                            if (!context.getAclHandler().isAllowed(fileAcl, context.getUser(), AclHandler.ACL_WRITE)) {
+                                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
+                            }
+
+                            OperationSETATTR.setAttributes(_args.opopen.openhow.how.createattrs, inode, context);
                         }
 
                     } else {
