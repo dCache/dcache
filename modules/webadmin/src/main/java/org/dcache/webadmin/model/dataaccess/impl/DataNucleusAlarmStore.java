@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.webadmin.model.dataaccess.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -105,21 +104,6 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
     private PersistenceManagerFactory pmf;
 
     /**
-     * path to the default implementation (XML) alarm file.
-     */
-    private final String xmlPath;
-
-    /**
-     * for optional overriding of the internal properties resource
-     */
-    private final String propertiesPath;
-
-    /**
-     * whether to run the cleaner daemon or not
-     */
-    private final boolean enableCleaner;
-
-    /**
      * how long (in milliseconds) the alarm cleaner should sleep
      * before running.
      */
@@ -133,19 +117,16 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
     private long cleanerDeleteThreshold;
 
     public DataNucleusAlarmStore(String xmlPath,
-                    String propertiesPath,
+                    Properties properties,
                     boolean enableCleaner,
                     int cleanerSleepInterval,
                     int cleanerDeleteThreshold)
                                     throws DAOException {
-        this.xmlPath = xmlPath;
-        this.propertiesPath = propertiesPath;
-        this.enableCleaner = enableCleaner;
         this.cleanerSleepInterval
             = TimeUnit.HOURS.toMillis(cleanerSleepInterval);
         this.cleanerDeleteThreshold
             = TimeUnit.HOURS.toMillis(cleanerDeleteThreshold);
-        initialize();
+        initialize(xmlPath, properties, enableCleaner);
     }
 
     @Override
@@ -273,30 +254,16 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
         }
     }
 
-    private void initialize() throws DAOException {
+    private void initialize(String xmlPath, Properties properties,
+                    boolean enableCleaner) throws DAOException {
         try {
-            /*
-             * in the case of an undefined path, this call is essentially NOP.
-             */
-            waitForXmlFile();
-
-            if (propertiesPath != null && !"".equals(propertiesPath.trim())) {
-                File file = new File(propertiesPath);
-                if (!file.exists()) {
-                    throw new FileNotFoundException("Cannot initialize "
-                                    + this.getClass()
-                                    + " for properties file: " + file);
-                }
-                pmf = JDOHelper.getPersistenceManagerFactory(file);
-            } else {
-                checkNotNull(xmlPath);
-                checkArgument(!"".equals(xmlPath));
-                Properties properties = new Properties();
-                properties.put("javax.jdo.PersistenceManagerFactoryClass",
-                                "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-                properties.put("datanucleus.ConnectionURL", "xml:file:" + xmlPath);
-                pmf = JDOHelper.getPersistenceManagerFactory(properties);
+            if (properties.getProperty("datanucleus.ConnectionURL")
+                            .startsWith("xml:")) {
+                waitForXmlFile(xmlPath);
             }
+            properties.put("javax.jdo.PersistenceManagerFactoryClass",
+                            "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+            pmf = JDOHelper.getPersistenceManagerFactory(properties);
         } catch (IOException t) {
             throw new DAOException(t);
         }
@@ -345,21 +312,19 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
      * intercepting and storing alarms. Throws exception if wait limit is
      * reached.
      */
-    private void waitForXmlFile() throws IOException {
-        if (xmlPath != null && !"".equals(xmlPath)) {
-            final File file = new File(xmlPath);
-            long start = System.currentTimeMillis();
-            long elapsed = 0;
-            while (!file.exists() && elapsed < WAIT_FOR_FILE) {
-                try {
-                    Thread.sleep(WAIT_FOR_FILE);
-                } catch (InterruptedException e) {
-                }
-                elapsed = System.currentTimeMillis() - start;
+    private void waitForXmlFile(String xmlPath) throws IOException {
+        final File file = new File(xmlPath);
+        long start = System.currentTimeMillis();
+        long elapsed = 0;
+        while (!file.exists() && elapsed < WAIT_FOR_FILE) {
+            try {
+                Thread.sleep(WAIT_FOR_FILE);
+            } catch (InterruptedException e) {
             }
-            if (!file.exists()) {
-                throw new FileNotFoundException(file.getAbsolutePath());
-            }
+            elapsed = System.currentTimeMillis() - start;
+        }
+        if (!file.exists()) {
+            throw new FileNotFoundException(file.getAbsolutePath());
         }
     }
 

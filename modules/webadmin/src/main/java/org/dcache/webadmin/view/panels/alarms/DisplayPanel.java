@@ -108,14 +108,16 @@ public class DisplayPanel extends Panel {
     }
 
     private void addAttributeColumns(List<IColumn<AlarmEntry>> columns) {
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Date"), "date",
-                        "formattedDate"));
+        columns.add(new PropertyColumn<AlarmEntry>(Model.of("First"), "first",
+                        "formattedDateOfFirstArrival"));
+        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Last"), "last",
+                        "formattedDateOfLastUpdate"));
         columns.add(new PropertyColumn<AlarmEntry>(Model.of("Severity"),
                         "severity", "severityEnum"));
         columns.add(new PropertyColumn<AlarmEntry>(Model.of("Type"), "type",
                         "type"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Count"), "count",
-                        "count"));
+        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Count"), "received",
+                        "received"));
         columns.add(new PropertyColumn<AlarmEntry>(Model.of("Host"), "host",
                         "host"));
         columns.add(new PropertyColumn<AlarmEntry>(Model.of("Domain"),

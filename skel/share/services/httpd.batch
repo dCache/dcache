@@ -57,11 +57,15 @@ define context webadmin.exe endDefine
      -generatePlots=${generatePlots} \
      -plotsDir=${httpd.static-content.plots} \
      -exportExt=.${billingPlotsExportType} \
-     -alarmXMLPath=${alarms.store.path} \
-     -alarmCleanerEnabled=${webadmin.alarm.cleaner.enabled} \
-     -alarmCleanerSleepInterval=${webadmin.alarm.cleaner.timeout} \
-     -alarmCleanerDeleteThreshold=${webadmin.alarm.cleaner.delete-threshold} \
-     -alarmDAOProperties=${webadmin.alarm.dao.properties}
+     -alarmsXMLPath=${alarms.store.path} \
+     -alarmsDbDriver=${alarms.store.db.driver} \
+     -alarmsDbUrl=${alarms.store.db.url} \
+     -alarmsDbUser=${alarms.store.db.user} \
+     -alarmsDbPass=${alarms.store.db.pass} \
+     -alarmsPropertiesPath=${alarms.store.db.properties} \
+     -alarmsCleanerEnabled=${webadmin.alarm.cleaner.enabled} \
+     -alarmsCleanerSleepInterval=${webadmin.alarm.cleaner.timeout} \
+     -alarmsCleanerDeleteThreshold=${webadmin.alarm.cleaner.delete-threshold}
 endDefine
 
 define context ${cell.name}Setup endDefine

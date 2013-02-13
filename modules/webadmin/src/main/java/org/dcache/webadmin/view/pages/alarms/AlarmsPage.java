@@ -81,6 +81,7 @@ import org.dcache.webadmin.view.panels.alarms.QueryPanel;
 @RequireHttps
 public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
 
+    private static final long serialVersionUID = 993708875580341999L;
     private Button refreshButton;
 
     public AlarmsPage() {

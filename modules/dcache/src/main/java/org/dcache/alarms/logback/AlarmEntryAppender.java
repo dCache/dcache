@@ -59,6 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.alarms.dao.AlarmStorageException;
 import org.dcache.alarms.dao.IAlarmLoggingDAO;
@@ -73,19 +80,13 @@ import com.google.common.base.Preconditions;
 
 /**
  * For server-side interception of Alarm messages. Will store them to the
- * AlarmEntry store used by the dCache installation. If a special properties
- * file is used with dCache, the <code>propertiesPath</code> element must be set
- * in the XML configuration for this appender as well. If the storage plugin is
+ * AlarmEntry store used by the dCache installation. If the storage plugin is
  * file-based (e.g., XML), the dCache alarm display service (webadmin) must be
  * running on a shared file-system with the logging server.
  *
  * @author arossi
  */
 public class AlarmEntryAppender extends AppenderBase<ILoggingEvent> {
-
-    private String xmlPath;
-    private String propertiesPath;
-    private IAlarmLoggingDAO store;
 
     /**
      * Creates an entry object from event message, which is assumed to be
@@ -102,40 +103,61 @@ public class AlarmEntryAppender extends AppenderBase<ILoggingEvent> {
         JSONObject json = new JSONObject(alarmInfo);
         return new AlarmEntry(json);
     }
+    private final Properties properties = new Properties();
+    private String path;
+    private String propertiesPath;
 
-    public void setPropertiesPath(String propertiesPath) {
-        this.propertiesPath = propertiesPath;
+    private IAlarmLoggingDAO store;
+
+    public void setDriver(String driver) {
+        properties.setProperty("datanucleus.ConnectionDriverName", driver);
     }
 
-    /**
-     * NB: there is no default path defined; if the standard
-     * implementation is used, the configuration file property ${alarms.store.path}
-     * is resolved from dcache.config or the layout file.
-     *
-     * @param xmlPath
-     */
-    public void setXmlPath(String xmlPath) {
-        this.xmlPath = xmlPath;
+    public void setPass(String pass) {
+        properties.setProperty("datanucleus.ConnectionPassword", pass);
+    }
+
+    public void setPropertiesPath(String propertiesPath) {
+       this.propertiesPath = propertiesPath;
+    }
+
+    public void setStorePath(String path) {
+        this.path = path;
+    }
+
+    public void setUrl(String url) {
+        properties.setProperty("datanucleus.ConnectionURL", url);
+    }
+
+    public void setUser(String user) {
+        properties.setProperty("datanucleus.ConnectionUserName", user);
     }
 
     @Override
     public void start() {
         try {
             if (store == null) {
-                store = new DataNucleusAlarmStore(xmlPath, propertiesPath);
+                if (propertiesPath != null
+                                && propertiesPath.trim().length() > 0) {
+                    File file = new File(propertiesPath);
+                    if (!file.exists()) {
+                        throw new FileNotFoundException(
+                                   "Cannot find properties file: " + file);
+                    }
+                    try (InputStream stream = new FileInputStream(file)) {
+                        properties.load(stream);
+                    }
+                }
+                store = new DataNucleusAlarmStore(path, properties);
             }
             super.start();
         } catch (AlarmStorageException t) {
             addError(t.getMessage() + "; " + t.getCause());
             // do not set started to true
+        } catch (IOException t) {
+            addError(t.getMessage() + "; " + t.getCause());
+            // do not set started to true
         }
-    }
-
-    /**
-     * Largely a convenience for internal testing.
-     */
-    void setStore(IAlarmLoggingDAO store) {
-        this.store = store;
     }
 
     @Override
@@ -147,5 +169,12 @@ public class AlarmEntryAppender extends AppenderBase<ILoggingEvent> {
         } catch (Exception t) {
             addError(t.getMessage() + "; " + t.getCause());
         }
+    }
+
+    /**
+     * Largely a convenience for internal testing.
+     */
+    void setStore(IAlarmLoggingDAO store) {
+        this.store = store;
     }
 }

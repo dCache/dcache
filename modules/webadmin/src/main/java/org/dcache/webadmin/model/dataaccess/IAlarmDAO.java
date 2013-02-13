@@ -87,7 +87,7 @@ public interface IAlarmDAO {
      *            <code>null</code>.
      * @param severity
      *            <code>null</code> will be treated as equivalent to
-     *            <code>Severity.INDETERMINATE</code>.
+     *            <code>Severity.MODERATE</code>.
      * @param type
      *            may be <code>null</code>.
      */

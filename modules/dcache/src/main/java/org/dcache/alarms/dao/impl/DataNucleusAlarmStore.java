@@ -59,9 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -92,22 +89,15 @@ import org.slf4j.LoggerFactory;
  */
 public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final String xmlPath;
+    private final Properties properties = new Properties();
+
     private PersistenceManagerFactory pmf;
 
-    /**
-     * path to the default implementation (XML) alarm file.
-     */
-    private final String xmlPath;
-
-    /**
-     * for optional overriding of the internal properties resource
-     */
-    private final String propertiesPath;
-
-    public DataNucleusAlarmStore(String xmlPath, String propertiesPath)
+    public DataNucleusAlarmStore(String xmlPath, Properties properties)
                     throws AlarmStorageException {
         this.xmlPath = xmlPath;
-        this.propertiesPath = propertiesPath;
+        this.properties.putAll(properties);
         initialize();
     }
 
@@ -119,13 +109,18 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
         query.setFilter("key==k");
         query.declareParameters("java.lang.String k");
         query.addExtension("datanucleus.query.resultCacheType", "none");
+        /*
+         * looks like DataNucleus 3.1.3+ needs this to get the most recent
+         * updates made from another JVM
+         */
+        query.setIgnoreCache(true);
         query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
 
         try {
             tx.begin();
             Collection<AlarmEntry> dup =
                             (Collection<AlarmEntry>)query.executeWithArray
-                                (new Object[] { alarm.getKey() });
+                                (alarm.getKey());
             logger.trace("duplicate? {}", dup);
             if (dup != null && !dup.isEmpty()) {
                 if (dup.size() > 1) {
@@ -134,7 +129,8 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
                                     + alarm.getKey());
                 }
                 AlarmEntry original = dup.iterator().next();
-                original.incrementCount();
+                original.setLastUpdate(alarm.getLastUpdate());
+                original.setReceived(original.getReceived() + 1);
                 /*
                  * original is not detached so it will be updated on commit
                  */
@@ -147,7 +143,7 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
                 logger.trace("committing");
             }
             tx.commit();
-            logger.debug("finished putting alarm, key={}", alarm.getKey());
+            logger.error("finished putting alarm, key={}", alarm.getKey());
         } catch (Throwable t) {
             if (tx.isActive()) {
                 tx.rollback();
@@ -164,28 +160,13 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
 
     private void initialize() throws AlarmStorageException {
         try {
-            /*
-             * in the case of an undefined path, this call is essentially NOP.
-             */
-            initializeXmlFile();
-
-            if (propertiesPath != null && !"".equals(propertiesPath.trim())) {
-                File file = new File(propertiesPath);
-                if (!file.exists()) {
-                    throw new FileNotFoundException("Cannot initialize "
-                                    + this.getClass()
-                                    + " for properties file: " + file);
-                }
-                pmf = JDOHelper.getPersistenceManagerFactory(file);
-            } else {
-                checkNotNull(xmlPath);
-                checkArgument(!"".equals(xmlPath));
-                Properties properties = new Properties();
-                properties.put("javax.jdo.PersistenceManagerFactoryClass",
-                                "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-                properties.put("datanucleus.ConnectionURL", "xml:file:" + xmlPath);
-                pmf = JDOHelper.getPersistenceManagerFactory(properties);
+            if (properties.getProperty("datanucleus.ConnectionURL")
+                            .startsWith("xml:")) {
+                initializeXmlFile();
             }
+            properties.put("javax.jdo.PersistenceManagerFactoryClass",
+                            "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+            pmf = JDOHelper.getPersistenceManagerFactory(properties);
         } catch (IOException t) {
             throw new AlarmStorageException(t);
         }
@@ -197,23 +178,21 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
      * implicit. If the parent does not exist, an exception will be thrown.
      */
     private void initializeXmlFile() throws IOException {
-        if (xmlPath != null && !"".equals(xmlPath)) {
-            File file = new File(xmlPath);
-            if (!file.exists()) {
-                if (!file.getParentFile().isDirectory()) {
-                    String parent = file.getParentFile().getAbsolutePath();
+        File file = new File(xmlPath);
+        if (!file.exists()) {
+           if (!file.getParentFile().isDirectory()) {
+               String parent = file.getParentFile().getAbsolutePath();
                     throw new FileNotFoundException(parent
                                     + " is not a directory");
-                }
-                PrintWriter pw = new PrintWriter(new FileWriter(file));
-                try {
-                    pw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-                    pw.println("<alarms></alarms>");
-                    pw.flush();
-                } finally {
-                    pw.close();
-                }
-            }
+           }
+           PrintWriter pw = new PrintWriter(new FileWriter(file));
+           try {
+               pw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+               pw.println("<alarms></alarms>");
+               pw.flush();
+           } finally {
+               pw.close();
+           }
         }
     }
 }

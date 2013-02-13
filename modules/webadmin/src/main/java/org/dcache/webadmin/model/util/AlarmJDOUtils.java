@@ -91,11 +91,8 @@ public class AlarmJDOUtils {
 
         @Override
         public String toString() {
-            return filter
-                            + ", "
-                            + parameters
-                            + (values == null ? null : ", "
-                                            + Arrays.asList(values));
+            return filter + ", " + parameters
+                    + (values == null ? null : ", " + Arrays.asList(values));
         }
 
         public String getFilter() {
@@ -139,6 +136,8 @@ public class AlarmJDOUtils {
         query.setFilter(expression);
         query.declareParameters(parameters);
         query.addExtension("datanucleus.query.resultCacheType", "none");
+        query.addExtension("datanucleus.rdbms.query.resultSetType",
+                        "scroll-insensitive");
         query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
         return query;
     }
@@ -152,6 +151,11 @@ public class AlarmJDOUtils {
     public static Collection<AlarmEntry> execute(PersistenceManager pm,
                     AlarmDAOFilter filter) {
         Query query = AlarmJDOUtils.createQuery(pm, filter);
+        /*
+         * evidently required by DataNucleus 3.1.3+ to get most recent
+         * updates from other JVMs
+         */
+        query.setIgnoreCache(true);
         return (Collection<AlarmEntry>) (filter.values == null ? query.execute()
                         : query.executeWithArray(filter.values));
     }
@@ -162,9 +166,9 @@ public class AlarmJDOUtils {
     public static AlarmDAOFilter getDeleteBeforeFilter(Long before) {
         Preconditions.checkNotNull(before);
         AlarmDAOFilter filter = new AlarmDAOFilter();
-        filter.filter = "timestamp<=b && closed==t";
+        filter.filter = "lastUpdate<=b && closed==t";
         filter.parameters = "java.lang.Long b, java.lang.Boolean t";
-        filter.values = new Object[]{before, true};
+        filter.values = new Object[] { before, true };
         return filter;
     }
 
@@ -178,7 +182,7 @@ public class AlarmJDOUtils {
         List<Object> values = new ArrayList<>();
 
         if (after != null) {
-            f.append("timestamp>=a");
+            f.append("lastUpdate>=a");
             p.append("java.lang.Long a");
             values.add(after.getTime());
         }
@@ -188,7 +192,7 @@ public class AlarmJDOUtils {
                 f.append(" && ");
                 p.append(", ");
             }
-            f.append("timestamp<=b");
+            f.append("lastUpdate<=b");
             p.append("java.lang.Long b");
             values.add(before.getTime());
         }

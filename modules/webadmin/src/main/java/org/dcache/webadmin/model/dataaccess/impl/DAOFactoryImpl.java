@@ -1,5 +1,12 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
@@ -16,6 +23,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Factory class for the DAOs. The whole design with an factory is mainly
  * introduced for better testablility with Unittests
+ *
  * @author jans
  */
 public class DAOFactoryImpl implements DAOFactory {
@@ -24,8 +32,12 @@ public class DAOFactoryImpl implements DAOFactory {
     private CommandSenderFactory _defaultCommandSenderFactory;
     private PageInfoCache _pageCache;
     private IAlarmDAO _alarmDAO;
-    private String _alarmDAOProperties;
-    private String _alarmXMLPath;
+    private String _alarmsXMLPath;
+    private String _alarmsDbDriver;
+    private String _alarmsDbUrl;
+    private String _alarmsDbUser;
+    private String _alarmsDbPass;
+    private String _alarmsPropertiesPath;
     private boolean _alarmCleanerEnabled;
     private int _alarmCleanerSleepInterval;
     private int _alarmCleanerDeleteThreshold;
@@ -33,45 +45,13 @@ public class DAOFactoryImpl implements DAOFactory {
     @Override
     public synchronized IAlarmDAO getAlarmDAO() throws DAOException {
         if (_alarmDAO == null) {
-            _alarmDAO = new DataNucleusAlarmStore(_alarmXMLPath,
-                            _alarmDAOProperties,
-                            _alarmCleanerEnabled,
-                            _alarmCleanerSleepInterval,
-                            _alarmCleanerDeleteThreshold);
+            _alarmDAO = new DataNucleusAlarmStore(_alarmsXMLPath,
+                                                  getAlarmsProperties(),
+                                                  _alarmCleanerEnabled,
+                                                  _alarmCleanerSleepInterval,
+                                                  _alarmCleanerDeleteThreshold);
         }
         return _alarmDAO;
-    }
-
-    public synchronized void setAlarmDAOProperties(String alarmDAOProperties) {
-        _alarmDAOProperties = alarmDAOProperties;
-    }
-
-    public synchronized void setAlarmXMLPath(String alarmXMLPath) {
-        _alarmXMLPath = alarmXMLPath;
-    }
-
-    public synchronized void setAlarmCleanerEnabled(boolean alarmCleanerEnabled) {
-        _alarmCleanerEnabled = alarmCleanerEnabled;
-    }
-
-    public synchronized void setAlarmCleanerSleepInterval(int alarmCleanerSleepInterval) {
-        _alarmCleanerSleepInterval = alarmCleanerSleepInterval;
-    }
-
-    public synchronized void setAlarmCleanerDeleteThreshold(int alarmCleanerDeleteThreshold) {
-        _alarmCleanerDeleteThreshold = alarmCleanerDeleteThreshold;
-    }
-
-    @Override
-    public PoolsDAO getPoolsDAO() {
-        checkDefaultsSet();
-        return new StandardPoolsDAO(_pageCache, _defaultCommandSenderFactory);
-    }
-
-    @Override
-    public InfoDAO getInfoDAO() {
-        checkDefaultsSet();
-        return new StandardInfoDAO(_defaultCommandSenderFactory);
     }
 
     @Override
@@ -81,21 +61,77 @@ public class DAOFactoryImpl implements DAOFactory {
     }
 
     @Override
+    public InfoDAO getInfoDAO() {
+        checkDefaultsSet();
+        return new StandardInfoDAO(_defaultCommandSenderFactory);
+    }
+
+    @Override
     public LinkGroupsDAO getLinkGroupsDAO() {
         checkDefaultsSet();
-        return new StandardLinkGroupsDAO(_pageCache, _defaultCommandSenderFactory);
+        return new StandardLinkGroupsDAO(_pageCache,
+                        _defaultCommandSenderFactory);
     }
 
     @Override
     public MoverDAO getMoverDAO() {
         checkDefaultsSet();
-        return new StandardMoverDAO(_pageCache,
-                        _defaultCommandSenderFactory);
+        return new StandardMoverDAO(_pageCache, _defaultCommandSenderFactory);
     }
 
     @Override
-    public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory) {
-        _log.debug("DefaultCommandSenderFactory set {}", commandSenderFactory.toString());
+    public PoolsDAO getPoolsDAO() {
+        checkDefaultsSet();
+        return new StandardPoolsDAO(_pageCache, _defaultCommandSenderFactory);
+    }
+
+    public void setAlarmsCleanerDeleteThreshold(
+                    int alarmCleanerDeleteThreshold) {
+        _alarmCleanerDeleteThreshold = alarmCleanerDeleteThreshold;
+    }
+
+    public void setAlarmsCleanerEnabled(boolean alarmCleanerEnabled) {
+        _alarmCleanerEnabled = alarmCleanerEnabled;
+    }
+
+    public void setAlarmsCleanerSleepInterval(
+                    int alarmCleanerSleepInterval) {
+        _alarmCleanerSleepInterval = alarmCleanerSleepInterval;
+    }
+
+    public void setAlarmDAO(IAlarmDAO alarmDAO) {
+        _alarmDAO = alarmDAO;
+    }
+
+    public void setAlarmsDbDriver(String alarmsDbDriver) {
+        _alarmsDbDriver = alarmsDbDriver;
+    }
+
+    public void setAlarmsDbPass(String alarmsDbPass) {
+        _alarmsDbPass = alarmsDbPass;
+    }
+
+    public void setAlarmsDbUrl(String alarmsDbUrl) {
+        _alarmsDbUrl = alarmsDbUrl;
+    }
+
+    public void setAlarmsDbUser(String alarmsDbUser) {
+        _alarmsDbUser = alarmsDbUser;
+    }
+
+    public void setAlarmsPropertiesPath(String alarmsPropertiesPath) {
+        _alarmsPropertiesPath = alarmsPropertiesPath;
+    }
+
+    public void setAlarmsXMLPath(String alarmsXMLPath) {
+        _alarmsXMLPath = alarmsXMLPath;
+    }
+
+    @Override
+    public void setDefaultCommandSenderFactory(
+                    CommandSenderFactory commandSenderFactory) {
+        _log.debug("DefaultCommandSenderFactory set {}",
+                        commandSenderFactory.toString());
         _defaultCommandSenderFactory = commandSenderFactory;
     }
 
@@ -104,20 +140,45 @@ public class DAOFactoryImpl implements DAOFactory {
         _pageCache = pageCache;
     }
 
-    private void checkDefaultsSet() {
-        checkDefaultCommandSenderSet();
-        checkPageCacheSet();
-    }
-
     private void checkDefaultCommandSenderSet() {
         if (_defaultCommandSenderFactory == null) {
             throw new IllegalStateException("DefaultPoolCommandSender not set");
         }
     }
 
+    private void checkDefaultsSet() {
+        checkDefaultCommandSenderSet();
+        checkPageCacheSet();
+    }
+
     private void checkPageCacheSet() {
         if (_pageCache == null) {
             throw new IllegalStateException("PageCache not set");
+        }
+    }
+
+    private Properties getAlarmsProperties() throws DAOException {
+        Properties properties = new Properties();
+        properties.setProperty("datanucleus.ConnectionDriverName",
+                        _alarmsDbDriver);
+        properties.setProperty("datanucleus.ConnectionPassword", _alarmsDbPass);
+        properties.setProperty("datanucleus.ConnectionURL", _alarmsDbUrl);
+        properties.setProperty("datanucleus.ConnectionUserName", _alarmsDbUser);
+        try {
+            if (_alarmsPropertiesPath != null
+                            && _alarmsPropertiesPath.trim().length() > 0) {
+                File file = new File(_alarmsPropertiesPath);
+                if (!file.exists()) {
+                    throw new FileNotFoundException(
+                                    "Cannot find properties file: " + file);
+                }
+                try (InputStream stream = new FileInputStream(file)) {
+                    properties.load(stream);
+                }
+            }
+            return properties;
+        } catch (IOException e) {
+            throw new DAOException(e);
         }
     }
 }

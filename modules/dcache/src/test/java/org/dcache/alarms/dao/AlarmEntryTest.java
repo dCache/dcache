@@ -104,7 +104,7 @@ public class AlarmEntryTest {
         assertThat(e.getHost(), is(original.get(IAlarms.HOST_TAG)));
         assertThat(e.getDomain(), is(original.get(IAlarms.DOMAIN_TAG)));
         assertThat(e.getService(), is(original.get(IAlarms.SERVICE_TAG)));
-        assertThat(e.getTimestamp(), is(original.get(IAlarms.TIMESTAMP_TAG)));
+        assertThat(e.getLastUpdate(), is(original.get(IAlarms.TIMESTAMP_TAG)));
         assertThat(e.getSeverity(),
                         is(Severity.valueOf(
                                         original.getString(IAlarms.SEVERITY_TAG)).ordinal()));
@@ -135,15 +135,15 @@ public class AlarmEntryTest {
         e1.setKey("non-unique");
         e2.setKey("non-unique");
         long t = System.currentTimeMillis();
-        e1.setTimestamp(t + TimeUnit.MINUTES.toMillis(1));
-        e2.setTimestamp(t + TimeUnit.MINUTES.toMillis(2));
+        e1.setFirstArrived(t + TimeUnit.MINUTES.toMillis(1));
+        e2.setFirstArrived(t + TimeUnit.MINUTES.toMillis(2));
     }
 
     private void givenDifferentKeys(AlarmEntry e1, AlarmEntry e2) {
         e1.setKey("key1");
         e2.setKey("key2");
         long t = System.currentTimeMillis();
-        e1.setTimestamp(t);
-        e2.setTimestamp(t);
+        e1.setFirstArrived(t);
+        e2.setFirstArrived(t);
     }
 }

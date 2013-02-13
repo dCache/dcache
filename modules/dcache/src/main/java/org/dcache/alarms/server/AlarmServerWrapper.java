@@ -68,6 +68,8 @@ package org.dcache.alarms.server;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.File;
+
 import org.dcache.cells.UniversalSpringCell;
 import org.slf4j.LoggerFactory;
 
@@ -84,31 +86,85 @@ import ch.qos.logback.core.joran.spi.JoranException;
  */
 public class AlarmServerWrapper {
 
-    private final SimpleSocketServer server;
+    private String baseDir;
+    private String configFile;
+    private String path;
+    private String properties;
+    private String driver;
+    private String url;
+    private String user;
+    private String pass;
+    private Integer port;
 
-    public AlarmServerWrapper(int port, String configFile, String pathProperty,
-                    String path) throws JoranException {
-        checkNotNull(configFile);
-        checkNotNull(pathProperty);
-        checkNotNull(path);
-        checkArgument(port > 0);
+    private SimpleSocketServer server;
 
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.reset();
-        loggerContext.putProperty(pathProperty, path);
+    public void setBaseDir(String baseDir) {
+        this.baseDir = baseDir;
+    }
 
-        JoranConfigurator configurator = new JoranConfigurator();
-        configurator.setContext(loggerContext);
-        configurator.doConfigure(configFile);
+    public void setConfigFile(String configFile) {
+        this.configFile = configFile;
+    }
 
-        server = new SimpleSocketServer(loggerContext, port);
+    public void setDriver(String driver) {
+        this.driver = driver;
+    }
+
+    public void setPass(String pass) {
+        this.pass = pass;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public void setPort(Integer port) {
+        this.port = port;
+    }
+
+    public void setProperties(String properties) {
+        this.properties = properties;
+    }
+
+    public void setServer(SimpleSocketServer server) {
+        this.server = server;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 
     public void shutDown() {
         server.close();
     }
 
-    public void startUp() {
+    public void startUp() throws JoranException {
+        checkNotNull(configFile);
+        checkNotNull(baseDir);
+        File f = new File(baseDir);
+        checkArgument(f.isDirectory());
+        checkNotNull(port);
+        checkArgument(port > 0);
+        LoggerContext loggerContext
+            = (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.reset();
+        loggerContext.putProperty("alarms.dir", f.getAbsolutePath());
+        loggerContext.putProperty("alarms.store.path", path);
+        loggerContext.putProperty("alarms.store.db.driver", driver);
+        loggerContext.putProperty("alarms.store.db.url", url);
+        loggerContext.putProperty("alarms.store.db.user", user);
+        loggerContext.putProperty("alarms.store.db.pass", pass);
+        loggerContext.putProperty("alarms.store.db.properties", properties);
+
+        JoranConfigurator configurator = new JoranConfigurator();
+        configurator.setContext(loggerContext);
+        configurator.doConfigure(configFile);
+
+        server = new SimpleSocketServer(loggerContext, port);
         server.start();
     }
 }

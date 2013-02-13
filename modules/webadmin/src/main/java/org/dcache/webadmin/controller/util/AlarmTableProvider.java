@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
@@ -76,7 +77,7 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  * Encapsulates the in-memory datasets used to display the alarms and to update
  * the underlying data store via user input. Implements iterator as sorted
  * stream.
- * 
+ *
  * @author arossi
  */
 public class AlarmTableProvider extends
@@ -88,7 +89,11 @@ public class AlarmTableProvider extends
 
     private Date after;
     private Date before;
-    private String severity;
+    /*
+     * give this a default value so that the drop-down box displays this instead
+     * of the "SELECT ONE" message
+     */
+    private String severity = Severity.MODERATE.toString();
     private String type;
     private boolean showClosed;
 
@@ -191,6 +196,11 @@ public class AlarmTableProvider extends
     @Override
     protected Comparator<AlarmEntry> getComparator() {
         return new Comparator<AlarmEntry>() {
+
+            private <T extends Comparable<T>> int compare(int dir, T a, T b) {
+                return (a == null) ? dir : dir * a.compareTo(b);
+            }
+
             @Override
             public int compare(AlarmEntry alarm0, AlarmEntry alarm1) {
                 SortParam sort = getSort();
@@ -198,50 +208,38 @@ public class AlarmTableProvider extends
                 String property;
                 if (sort == null) {
                     dir = -1;
-                    property = "date";
+                    property = "last";
                 } else {
                     dir = sort.isAscending() ? 1 : -1;
                     property = sort.getProperty();
                 }
 
-                Comparable c0;
-                Comparable c1;
                 switch (property) {
-                    case "date":
-                        c0 = alarm0.getDate();
-                        c1 = alarm1.getDate();
-                        break;
+                    case "first":
+                        return compare(dir, alarm0.getDateOfFirstArrival(),
+                                        alarm1.getDateOfFirstArrival());
+                    case "last":
+                        return compare(dir, alarm0.getDateOfLastUpdate(),
+                                        alarm1.getDateOfLastUpdate());
                     case "severity":
-                        c0 = alarm0.getSeverity();
-                        c1 = alarm1.getSeverity();
-                        break;
+                        return compare(dir, alarm0.getSeverity(),
+                                        alarm1.getSeverity());
                     case "type":
-                        c0 = alarm0.getType();
-                        c1 = alarm1.getType();
-                        break;
+                        return compare(dir, alarm0.getType(), alarm1.getType());
                     case "count":
-                        c0 = alarm0.getCount();
-                        c1 = alarm1.getCount();
-                        break;
+                        return compare(dir, alarm0.getReceived(),
+                                            alarm1.getReceived());
                     case "host":
-                        c0 = alarm0.getHost();
-                        c1 = alarm1.getHost();
-                        break;
+                        return compare(dir, alarm0.getHost(), alarm1.getHost());
                     case "domain":
-                        c0 = alarm0.getDomain();
-                        c1 = alarm1.getDomain();
-                        break;
+                        return compare(dir, alarm0.getDomain(),
+                                        alarm1.getDomain());
                     case "service":
-                        c0 = alarm0.getService();
-                        c1 = alarm1.getService();
-                        break;
+                        return compare(dir, alarm0.getService(),
+                                        alarm1.getService());
                     default:
                         return 0;
                 }
-                if (c0 == null) {
-                    return dir;
-                }
-                return dir * c0.compareTo(c1);
             }
         };
     }
