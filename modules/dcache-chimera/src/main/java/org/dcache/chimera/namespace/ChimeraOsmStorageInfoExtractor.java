@@ -33,54 +33,56 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
 
         OSMStorageInfo info;
 
-        Stat stat;
-        FsInode level2 = new FsInode(inode.getFs(), inode.toString(), 2);
-
         try {
+            Stat stat = inode.statCache();
+            FsInode level2 = new FsInode(inode.getFs(), inode.toString(), 2);
 
-            List<StorageLocatable> locations = inode.getFs().getInodeLocations(inode, StorageGenericLocation.TAPE );
+            boolean isNew = (stat.getSize() == 0) && (!level2.exists());
 
-            if ( locations.isEmpty() ) {
-                info = (OSMStorageInfo) getDirStorageInfo(inode);
-                AccessLatency al = inode.getFs().getAccessLatency(inode);
+            if (!isNew) {
+                List<StorageLocatable> locations = inode.getFs().getInodeLocations(inode, StorageGenericLocation.TAPE);
 
-                /*
-                 * currently storage class and AL and RP are asymmetric:
-                 *   storage class of the file is bound to directory as log as file is not stored on tape,
-                 *   while AL and RP are bound to file
-                 */
-                if(al != null) {
-                    info.setAccessLatency(AccessLatency.getAccessLatency(al.getId()));
-                }
+                if (locations.isEmpty()) {
+                    info = (OSMStorageInfo) getDirStorageInfo(inode);
+                    AccessLatency al = inode.getFs().getAccessLatency(inode);
 
-                RetentionPolicy rp = inode.getFs().getRetentionPolicy(inode);
-                if( rp != null ) {
-                    info.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp.getId()));
-                }
-            }
-            else {
-                InodeStorageInformation inodeStorageInfo = inode.getFs().getSorageInfo(inode);
+                    /*
+                     * currently storage class and AL and RP are asymmetric:
+                     *   storage class of the file is bound to directory as long as file is not stored on tape,
+                     *   while AL and RP are bound to file
+                     */
+                    if (al != null) {
+                        info.setAccessLatency(AccessLatency.getAccessLatency(al.getId()));
+                    }
 
-                info = new OSMStorageInfo( inodeStorageInfo.storageGroup(),
-                                           inodeStorageInfo.storageSubGroup() );
+                    RetentionPolicy rp = inode.getFs().getRetentionPolicy(inode);
+                    if (rp != null) {
+                        info.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp.getId()));
+                    }
+                } else {
+                    InodeStorageInformation inodeStorageInfo = inode.getFs().getSorageInfo(inode);
 
-                info.setIsNew(false);
-                info.setAccessLatency(inodeStorageInfo.accessLatency());
-                info.setRetentionPolicy(inodeStorageInfo.retentionPolicy());
+                    info = new OSMStorageInfo(inodeStorageInfo.storageGroup(),
+                            inodeStorageInfo.storageSubGroup());
+                    info.setAccessLatency(inodeStorageInfo.accessLatency());
+                    info.setRetentionPolicy(inodeStorageInfo.retentionPolicy());
 
-                for(StorageLocatable location: locations) {
-                    if( location.isOnline() ) {
-                        try {
-                            info.addLocation( new URI(location.location()) );
-                        } catch (URISyntaxException e) {
-                            // bad URI
+                    for (StorageLocatable location : locations) {
+                        if (location.isOnline()) {
+                            try {
+                                info.addLocation(new URI(location.location()));
+                            } catch (URISyntaxException e) {
+                                // bad URI
+                            }
                         }
                     }
                 }
+            } else {
+                info = (OSMStorageInfo) getDirStorageInfo(inode);
             }
-            stat = inode.stat();
+
             info.setFileSize(stat.getSize());
-            info.setIsNew((stat.getSize() == 0) && (!level2.exists()));
+            info.setIsNew(isNew);
 
         } catch (ChimeraFsException e) {
             throw new CacheException(e.getMessage());
