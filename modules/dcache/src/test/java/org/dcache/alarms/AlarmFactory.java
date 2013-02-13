@@ -82,13 +82,19 @@ public class AlarmFactory {
     public static AlarmDefinition givenChecksumAlarmDefinition(String logger)
                     throws JSONException {
         return givenAlarmDefinition(logger, "CHECKSUM", Level.ERROR.toString(),
-                        null);
+                        "Checksum mismatch detected for (.+)", null);
     }
 
     public static AlarmDefinition givenAlarmDefinition(String logger,
                     String type, String level, String regex)
                     throws JSONException {
-        StringBuffer def = new StringBuffer().append("{type:").append(
+        return givenAlarmDefinition(logger, type, level, regex, null);
+    }
+
+    public static AlarmDefinition givenAlarmDefinition(String logger,
+                    String type, String level, String regex, Integer recur)
+                    throws JSONException {
+        StringBuilder def = new StringBuilder().append("{type:").append(
                         type).append(",").append("level:").append(level);
 
         if (logger != null) {
@@ -99,8 +105,13 @@ public class AlarmFactory {
             def.append(",").append("regex:").append(regex);
         }
 
+        if (recur != null) {
+            def.append(",").append("match-exception:true");
+            def.append(",").append("depth:").append(recur);
+        }
+
         def.append(",").append("severity:MODERATE").append(",").append(
-                        "include-in-key:host domain service message type}");
+                        "include-in-key:host domain service group1 type}");
         return new AlarmDefinition(def.toString());
     }
 

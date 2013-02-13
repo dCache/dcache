@@ -111,7 +111,7 @@ public class ChecksumAlarmSimulator {
                              * Alarm events determined by the configuration
                              * of the logback appender using the AlarmDefinitionFilter
                              */
-                            logger.error("simulator {}, Checksum mismatch for {}",
+                            logger.error("simulator {}, Checksum mismatch detected for {} - marking as BROKEN",
                                             id, pnfsId);
                             break;
                         default:
