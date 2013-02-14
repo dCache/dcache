@@ -9,6 +9,7 @@ import psycopg2
 import csv
 from subprocess import Popen, PIPE
 from string import maketrans
+from random import randint
 
 #  Load in dCache configuration
 d = Popen(["dcache", "loader", "-q", "compile", "-python"], stdout=PIPE)
@@ -218,20 +219,28 @@ def fetch_logical_record_data():
     return sums, counts
 
 
-def open_records_file(now):
+def open_records_file():
     record_dir = properties.get('star.spool.dir')
 
     if not os.path.exists(record_dir):
         os.makedirs(record_dir)
 
-    filename = now.replace(':', '').replace('-','') + ".star"
-    file_path = os.path.join(record_dir, filename)
+    now = time.time()
+
+    time_dir_granularity = int(properties.get('star.spool.dir-granularity')) * 60
+    time_dir = os.path.join(record_dir, '%08x'%(now/time_dir_granularity))
+
+    if not os.path.exists(time_dir):
+        os.makedirs(time_dir)
+
+    filename = '%08x'%now + '%05x'%((now - int(now))*1000000) + '%x'%randint(0,15)
+    file_path = os.path.join(time_dir, filename)
     return open(file_path, 'w')
 
 
 
 def write_records(now):
-    f = open_records_file(now)
+    f = open_records_file()
     try:
        f.write("<?xml version='1.0' encoding='UTF-8' ?>\n")
        f.write("<sr:StorageUsageRecords xmlns:sr='http://eu-emi.eu/namespaces/2011/02/storagerecord'>\n")
