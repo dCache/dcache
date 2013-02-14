@@ -14,13 +14,14 @@ package diskCacheV111.services.space.message;
 import java.util.Set;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.services.space.Space;
+import java.util.Collections;
 
 public class GetSpaceTokensMessage extends Message {
 
 	private static final long serialVersionUID = -419540669938740860L;
 	private Long spacetokenId;
 
-	private Set<Space> list;
+	private Set<Space> list = Collections.emptySet();
 
 	public void setSpaceTokenId(long id) {
 		spacetokenId = id;

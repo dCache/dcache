@@ -13,13 +13,14 @@ package diskCacheV111.services.space.message;
 import java.util.Set;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.services.space.LinkGroup;
+import java.util.Collections;
 
 public class GetLinkGroupsMessage extends Message {
 
 	private static final long serialVersionUID = 2889995137324365133L;
 	private Long linkGroupId;
 
-	private Set<LinkGroup> list;
+	private Set<LinkGroup> list = Collections.emptySet();
 
 	public void setLinkGroupidI(long id) {
 		linkGroupId = id;

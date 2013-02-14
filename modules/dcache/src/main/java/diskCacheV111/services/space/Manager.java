@@ -82,6 +82,8 @@ import diskCacheV111.util.DBManager;
 import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.namespace.NameSpaceProvider;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.SerializationException;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.JdbcConnectionPool;
 import org.slf4j.Logger;
@@ -3585,13 +3587,49 @@ public final class Manager
         }
 
         @Override
-        public void messageArrived( final CellMessage cellMessage ) {
+        public void messageArrived(final CellMessage cellMessage)
+        {
+            if(spaceManagerEnabled) {
                 ThreadManager.execute(new Runnable() {
-                                @Override
-                                public void run() {
-                                        processMessage(cellMessage);
-                                }
-                        });
+                        @Override
+                        public void run()
+                        {
+                                processMessage(cellMessage);
+                        }
+                    });
+            } else {
+                handleMessageAsDisabled(cellMessage);
+            }
+        }
+
+        private void handleMessageAsDisabled(CellMessage cellMessage)
+        {
+            Object rawPayload = cellMessage.getMessageObject();
+
+            if (!(rawPayload instanceof Message)) {
+                logger.warn("Unknown payload {}: {}", rawPayload.getClass().
+                        getCanonicalName(), rawPayload);
+                return;
+            }
+
+            Message message = (Message) cellMessage.getMessageObject();
+
+            if (message instanceof PoolMgrSelectPoolMsg) {
+
+                forwardToPoolmanager(cellMessage);
+
+            } else if (message instanceof PoolFileFlushedMessage ||
+                    message instanceof PoolRemoveFilesMessage ||
+                    message instanceof PnfsDeleteEntryNotificationMessage) {
+
+                // Simply ignore these notification messages
+
+            } else if (message.getReplyRequired()) {
+
+                returnFailedResponse("SpaceManager is disabled in configuration",
+                        message, cellMessage);
+
+            }
         }
 
         private void processMessage( CellMessage cellMessage ) {
@@ -3704,12 +3742,7 @@ public final class Manager
                         }
                 }
                 catch(SpaceException se) {
-                        if(spaceManagerEnabled) {
-                                logger.error("SpaceException: {}", se.getMessage());
-                        } else {
-                                logger.debug("SpaceException: {}", se.getMessage());
-                        }
-
+                        logger.error("SpaceException: {}", se.getMessage());
                         spaceMessage.setFailed(-2,se);
                 }
                 catch(SQLException e) {
@@ -3741,14 +3774,20 @@ public final class Manager
                 }
         }
 
-    @Override
-        public void messageToForward(final CellMessage cellMessage ){
+        @Override
+        public void messageToForward(final CellMessage cellMessage)
+        {
+            if (spaceManagerEnabled) {
                 ThreadManager.execute(new Runnable() {
-                                @Override
-                                public void run() {
-                                        processMessageToForward(cellMessage);
-                                }
-                        });
+                        @Override
+                        public void run()
+                        {
+                            processMessageToForward(cellMessage);
+                        }
+                    });
+            } else {
+                super.messageToForward(cellMessage);
+            }
         }
 
         public void processMessageToForward(CellMessage cellMessage ) {
@@ -3805,7 +3844,7 @@ public final class Manager
                 super.messageToForward(cellMessage) ;
         }
 
-    @Override
+        @Override
         public void exceptionArrived(ExceptionEvent ee) {
                 logger.error("Exception Arrived: "+ee);
                 super.exceptionArrived(ee);
@@ -4108,9 +4147,7 @@ public final class Manager
                 if (logger.isDebugEnabled()) {
                         logger.debug("releaseSpace("+release+")");
                 }
-                if(!spaceManagerEnabled) {
-                        throw new SpaceException("SpaceManager is disabled in configuration");
-                }
+
                 long spaceToken = release.getSpaceToken();
                 Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
                 Space space = getSpace(spaceToken);
@@ -4130,10 +4167,6 @@ public final class Manager
 
         private void reserveSpace(Reserve reserve)
                 throws SQLException, SpaceException{
-
-                if(!spaceManagerEnabled) {
-                        throw new SpaceException("SpaceManager is disabled in configuration");
-                }
 
                 if (reserve.getRetentionPolicy()==null) {
                         throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
@@ -4198,9 +4231,6 @@ public final class Manager
 
         private void useSpace(Use use)
                 throws SQLException, SpaceException{
-                if(!spaceManagerEnabled) {
-                        throw new SpaceException("SpaceManager is disabled in configuration");
-                }
                 if (logger.isDebugEnabled()) {
                         logger.debug("useSpace("+use+")");
                 }
@@ -4222,9 +4252,6 @@ public final class Manager
         }
 
         private void transferToBeStarted(PoolAcceptFileMessage poolRequest){
-                if (!spaceManagerEnabled) {
-                    return;
-                }
                 PnfsId pnfsId = poolRequest.getPnfsId();
                 if (logger.isDebugEnabled()) {
                         logger.debug("transferToBeStarted("+pnfsId+")");
@@ -4272,9 +4299,6 @@ public final class Manager
         private void transferStarted(PnfsId pnfsId,boolean success) {
                 if (logger.isDebugEnabled()) {
                         logger.debug("transferStarted("+pnfsId+","+success+")");
-                }
-                if ( !spaceManagerEnabled) {
-                    return;
                 }
                 Connection connection = null;
                 try {
@@ -4353,9 +4377,6 @@ public final class Manager
         }
 
         private void transferFinished(DoorTransferFinishedMessage finished) throws Exception {
-                if (!spaceManagerEnabled) {
-                    return;
-                }
                 boolean weDeleteStoredFileRecord = deleteStoredFileRecord;
                 PnfsId pnfsId = finished.getPnfsId();
                 StorageInfo storageInfo = finished.getStorageInfo();
@@ -4463,9 +4484,6 @@ public final class Manager
         }
 
         private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws Exception {
-                if (!spaceManagerEnabled) {
-                    return;
-                }
                 if(!returnFlushedSpaceToReservation) {
                         return;
                 }
@@ -4561,9 +4579,6 @@ public final class Manager
 
         private void  fileRemoved(PoolRemoveFilesMessage fileRemoved)
         {
-                if ( !spaceManagerEnabled) {
-                    return;
-                }
                 if (logger.isDebugEnabled()) {
                         logger.debug("fileRemoved()");
                 }
@@ -4633,9 +4648,6 @@ public final class Manager
 
         private void cancelUseSpace(CancelUse cancelUse)
                 throws SQLException,SpaceException {
-                if(!spaceManagerEnabled) {
-                        throw new SpaceException("SpaceManager is disabled in configuration");
-                }
                 if (logger.isDebugEnabled()) {
                         logger.debug("cancelUseSpace("+cancelUse+")");
                 }
@@ -4961,17 +4973,6 @@ public final class Manager
                                boolean isReply )
                 throws Exception{
                 PoolMgrSelectPoolMsg selectPool = (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
-                if(!spaceManagerEnabled ) {
-                        if(!isReply) {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("just forwarding the message to "+ poolManager);
-                                }
-                                cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
-                                cellMessage.nextDestination() ;
-                                sendMessage(cellMessage) ;
-                        }
-                        return;
-                }
                 if (logger.isDebugEnabled()) {
                         logger.debug("selectPool("+selectPool +")");
                 }
@@ -5051,12 +5052,7 @@ public final class Manager
                                                              +(authRecord!=null?authRecord:"none"));
                                         }
                                         if(!isReply) {
-                                                if (logger.isDebugEnabled()) {
-                                                        logger.debug("just forwarding the message to "+ poolManager);
-                                                }
-                                                cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
-                                                cellMessage.nextDestination() ;
-                                                sendMessage(cellMessage) ;
+                                            forwardToPoolmanager(cellMessage);
                                         }
                                         return;
                                 }
@@ -5144,6 +5140,19 @@ public final class Manager
                 }
         }
 
+        private void forwardToPoolmanager(CellMessage cellMessage)
+        {
+            logger.debug("just forwarding the message to {}", poolManager);
+            cellMessage.getDestinationPath().add(new CellPath(poolManager));
+            cellMessage.nextDestination();
+
+            try {
+                sendMessage(cellMessage);
+            } catch (NoRouteToCellException | SerializationException e) {
+                logger.error("Failed to forward message: {}", e.getMessage());
+            }
+        }
+
         public void markFileDeleted(PnfsDeleteEntryNotificationMessage msg) throws Exception {
                 if (msg.getReturnCode()!=0) {
                     return;
@@ -5212,9 +5221,6 @@ public final class Manager
         }
 
         public void getSpaceMetaData(GetSpaceMetaData gsmd) throws Exception{
-                if(!spaceManagerEnabled) {
-                        throw new SpaceException("SpaceManager is disabled in configuration");
-                }
                 long[] tokens = gsmd.getSpaceTokens();
                 if(tokens == null) {
                         throw new IllegalArgumentException("null space tokens");
@@ -5233,9 +5239,6 @@ public final class Manager
         }
 
         public void getSpaceTokens(GetSpaceTokens gst) throws Exception{
-                if(!spaceManagerEnabled) {
-                        throw new SpaceException("SpaceManager is disabled in configuration");
-                }
                 String description = gst.getDescription();
 
                 long [] tokens = getSpaceTokens(gst.getAuthRecord(), description);
@@ -5243,9 +5246,6 @@ public final class Manager
         }
 
         public void getFileSpaceTokens(GetFileSpaceTokensMessage getFileTokens) throws Exception{
-                if(!spaceManagerEnabled) {
-                        throw new SpaceException("SpaceManager is disabled in configuration");
-                }
                 PnfsId pnfsId = getFileTokens.getPnfsId();
                 String pnfsPath = getFileTokens.getPnfsPath();
                 if(pnfsId == null && pnfsPath == null) {
@@ -5256,9 +5256,6 @@ public final class Manager
         }
 
         public void extendLifetime(ExtendLifetime extendLifetime) throws Exception{
-                if(!spaceManagerEnabled) {
-                        throw new SpaceException("SpaceManager is disabled in configuration");
-                }
                 long token            = extendLifetime.getSpaceToken();
                 long newLifetime      = extendLifetime.getNewLifetime();
                 Connection connection = null;
