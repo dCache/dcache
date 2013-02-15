@@ -20,9 +20,12 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.auth.Origin;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.slf4j.Logger;
@@ -51,9 +54,10 @@ import org.slf4j.LoggerFactory;
 public class SecurityFilter implements Filter
 {
     private final Logger _log = LoggerFactory.getLogger(SecurityFilter.class);
-
     private static final String X509_CERTIFICATE_ATTRIBUTE =
         "javax.servlet.request.X509Certificate";
+    public static final String USER_ROOT_DIRECTORY="org.dcache.user.root";
+    public static final String USER_HOME_DIRECTORY="org.dcache.user.home";
 
     private String _realm;
     private boolean _isReadOnly;
@@ -86,7 +90,18 @@ public class SecurityFilter implements Filter
             if (!isAuthorizedMethod(request.getMethod(), login)) {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
-
+            /*
+             * Add user root and home directory to request
+             */
+            for (LoginAttribute attribute: login.getLoginAttributes()) {
+                if (attribute instanceof RootDirectory) {
+                    request.getAttributes().put(USER_ROOT_DIRECTORY,
+                                                new FsPath(((RootDirectory) attribute).getRoot()));
+                } else if (attribute instanceof HomeDirectory) {
+                    request.getAttributes().put(USER_HOME_DIRECTORY,
+                                                new FsPath(((HomeDirectory) attribute).getHome()));
+                }
+            }
             /* Add the origin of the request to the subject. This
              * ought to be processed in the LoginStrategy, but our
              * LoginStrategies currently do not process the Origin.

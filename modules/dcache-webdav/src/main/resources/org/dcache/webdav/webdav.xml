@@ -110,6 +110,7 @@
       <property name="missingFileStrategy" ref="missing-file-strategy"/>
       <property name="listHandler" ref="list-handler"/>
       <property name="rootPath" value="${webdavRootPath}"/>
+      <property name="chrootToUserRoot" value="${webdavChrootToUserRoot}"/>
       <property name="allowedPaths" value="${webdavAllowedPaths}"/>
       <property name="ioQueue" value="${webdavIoQueue}"/>
       <property name="executor" ref="scheduled-thread-pool"/>

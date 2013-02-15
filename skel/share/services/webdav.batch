@@ -129,6 +129,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdavTransferConfirmationTimeout=${webdavTransferConfirmationTimeout} \
     -webdavWantClientAuth=${webdavWantClientAuth} \
     -webdavNeedClientAuth=${webdavNeedClientAuth} \
+    -webdavChrootToUserRoot=${webdavChrootToUserRoot} \
     -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod} \
     -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod} \
     -pnfsmanager=${pnfsmanager} \
