@@ -179,9 +179,7 @@ public final class Manager
                 connection_pool = manager.getConnectionPool();
                 spaceManagerEnabled =
                         isOptionSetToTrueOrYes("spaceManagerEnabled",spaceManagerEnabled);
-                if (logger.isDebugEnabled()) {
-                        logger.debug("USING LOGGER spaceManagerEnabled="+spaceManagerEnabled);
-                }
+                logger.debug("spaceManagerEnabled={}", spaceManagerEnabled);
                 if(_args.hasOption("poolManager")) {
                         poolManager = _args.getOpt("poolManager");
                 }
@@ -628,10 +626,6 @@ public final class Manager
                 }
                 if (linkGroupName==null&&linkGroupId==null&&description==null&&group==null&&role==null){
                         try {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("executing statement: "
-                                                + SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-                                }
                                 spaces=manager.selectPrepared(spaceReservationIO,
                                                               SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
                                 int count = spaces.size();
@@ -683,19 +677,11 @@ public final class Manager
                 if (description!=null) {
                         try {
                                 if (lg==null) {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("executing statement: "+
-                                                             SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC);
-                                        }
                                         spaces=manager.selectPrepared(spaceReservationIO,
                                                                                  SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC,
                                                                                  description);
                                 }
                                 else {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("executing statement: "+
-                                                             SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC_AND_LINKGROUP_ID);
-                                        }
                                         spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC_AND_LINKGROUP_ID,
                                                                       description,
@@ -743,20 +729,12 @@ public final class Manager
                 if (role!=null&&group!=null) {
                         try {
                                 if (lg==null) {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("executing statement: "+
-                                                             SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE);
-                                        }
                                         spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE,
                                                                       group,
                                                                       role);
                                 }
                                 else {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("executing statement: "+
-                                                             SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE_AND_LINKGROUP_ID);
-                                        }
                                         spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE_AND_LINKGROUP_ID,
                                                                       group,
@@ -814,19 +792,11 @@ public final class Manager
                 if (group!=null) {
                         try {
                                 if (lg==null) {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("executing statement: "
-                                                        + SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP);
-                                        }
                                         spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP,
                                                                       group);
                                 }
                                 else {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("executing statement: "
-                                                        + SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_LINKGROUP_ID);
-                                        }
                                         spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_LINKGROUP_ID,
                                                                       group,
@@ -874,20 +844,11 @@ public final class Manager
                 if (role!=null) {
                         try {
                                 if (lg==null) {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug(
-                                                        "executing statement: "
-                                                        + SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE);
-                                        }
                                         spaces=manager.selectPrepared(spaceReservationIO,
                                                                         SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE,
                                                                       group);
                                 }
                                 else {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("executing statement: "
-                                                        + SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE_AND_LINKGROUP_ID);
-                                        }
                                         spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE_AND_LINKGROUP_ID,
                                                                       group,
@@ -954,20 +915,10 @@ public final class Manager
                 }
                 try {
                         if(all) {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("executing statement: "+
-                                                     LinkGroupIO.SELECT_ALL_LINKGROUPS);
-                                }
                                 groups=manager.selectPrepared(linkGroupIO,
                                                               LinkGroupIO.SELECT_ALL_LINKGROUPS);
                         }
                         else {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("executing statement: "+
-                                                     LinkGroupIO.SELECT_CURRENT_LINKGROUPS+
-                                                     " ?,"+
-                                                     latestLinkGroupUpdateTime);
-                                }
                                 groups=manager.selectPrepared(linkGroupIO,
                                                               LinkGroupIO.SELECT_CURRENT_LINKGROUPS,
                                                               latestLinkGroupUpdateTime);
@@ -1241,10 +1192,8 @@ public final class Manager
                 // Note that we return an empty list if "set" is empty.
                 List< Space > result = new ArrayList<>();
                 try {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug( "executing statement: " + query );
-                        }
                         con = connection_pool.getConnection();
+                        logger.debug("executing statement: {}", query);
                         PreparedStatement sqlStatement = con.prepareStatement( query );
                         con.setAutoCommit(false);
                         sqlStatement.setFetchSize(10000);
@@ -1377,7 +1326,8 @@ public final class Manager
                                 catch (SQLException e) {
                                         sb.append("Failed to remove file ").
                                                 append(file).append("\n");
-                                        logger.warn(e.getMessage());
+                                        logger.warn("failed to remove file " +
+                                                "{}: {}", file, e.getMessage());
                                 }
                         }
                 }
@@ -1420,18 +1370,17 @@ public final class Manager
                         try {
                                 PnfsHandler pnfs=new PnfsHandler(new CellPath(pnfsManager));
                                 pnfs.setCellEndpoint(this);
-                                logger.info("fix missing size: Searching for files...");
+                                logger.info("fix missing size: Searching for " +
+                                        "files...");
                                 Set<File> files=
                                         manager.select(fileIO,
                                                        SELECT_RECORDS_WITH_MISSING_SIZE);
                                 int counter=0;
                                 for (File file : files) {
                                         if (counter%1000==0) {
-                                                logger.info(String.format(
-                                                        "fix missing size: Processed %d of %d files.",
-                                                        counter,
-                                                        files.
-                                                        size()));
+                                            logger.info("fix missing size: " +
+                                                    "Processed {} of {} files.",
+                                                    counter, files.size());
                                         }
                                         long size=pnfs.getFileAttributes(file.getPnfsId(),
                                                                          EnumSet.of(FileAttribute.SIZE)).getSize();
@@ -1447,8 +1396,8 @@ public final class Manager
                                 logger.info("fix missing size: Done");
                         }
                         catch (SQLException | CacheException e) {
-                                logger.error("Failure in 'fix missing size': "
-                                             +e.getMessage());
+                                logger.error("failed to fix missing size: {}",
+                                        e.getMessage());
                         }
                 }
         }
@@ -1506,13 +1455,15 @@ public final class Manager
                         created.put(table, Boolean.FALSE);
                         try {
                             if( manager.hasTable(table)) {
-                                logger.info("Presence of table \"" + table + "\" verified");
+                                logger.info("presence of table \"{}\" verified",
+                                        table);
                             } else {
                                 manager.createTable(table, createTables[i]);
                                 created.put(table, Boolean.TRUE);
                             }
                         } catch (SQLException e) {
-                                logger.error(e.getMessage());
+                                logger.error("verfying table {} failed: {}",
+                                        table, e.getMessage());
                         }
                 }
                 updateSchemaVersion(created);
@@ -1590,10 +1541,9 @@ public final class Manager
                         updateSchema();
                 }
                 catch (SQLException e) {
-                        logger.error("failed to update schema from "+
-                                     previousSchemaVersion+" to "+
-                                     currentSchemaVersion);
-                        logger.error(e.getMessage());
+                        logger.error("failed to update schema from {} to {}: {}",
+                                previousSchemaVersion, currentSchemaVersion,
+                                e.getMessage());
                 }
         }
 
@@ -1626,7 +1576,9 @@ public final class Manager
                 if(previousSchemaVersion == currentSchemaVersion) {
                         return;
                 }
-                logger.info("updating Schema, previous schema version number="+previousSchemaVersion+", updadting to current version number "+currentSchemaVersion);
+                logger.info("updating Schema, previous schema version " +
+                        "number={}, updating to current version number {}",
+                        previousSchemaVersion, currentSchemaVersion);
                 if(previousSchemaVersion == 0) {
                         manager.batchUpdates(alterLinkGroupTable,
                                              updateLinkGroupTable,
@@ -1654,12 +1606,17 @@ public final class Manager
                                                                space.getId());
                                         }
                                         catch(SQLException e) {
-                                                logger.error("failed to execute "+ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID+",?="+space.getId());
+                                            logger.error("failed to execute " +
+                                                    "{},?={}: {}",
+                                                    ManagerSchemaConstants.
+                                                    POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
+                                                    space.getId(),
+                                                    e.getMessage());
                                         }
                                 }
                         }
                         catch (SQLException e) {
-                                logger.error(e.getMessage());
+                            logger.error("selectPrepare failed: {}", e.getMessage());
                         }
                         //
                         // Do the same with linkgroups
@@ -1675,12 +1632,17 @@ public final class Manager
                                                                group.getId());
                                         }
                                         catch(SQLException e) {
-                                                logger.error("failed to execute "+ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID+",?="+group.getId());
+                                            logger.error("failed to execute " +
+                                                    "{},?={}: {}",
+                                                    ManagerSchemaConstants.
+                                                    POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
+                                                    group.getId(),
+                                                    e.getMessage());
                                         }
                                 }
                         }
                         catch (SQLException e) {
-                                logger.error(e.getMessage());
+                            logger.error("selectPrepare failed: {}", e.getMessage());
                         }
                         previousSchemaVersion=2;
                 }
@@ -1698,8 +1660,9 @@ public final class Manager
                                                                               "pnfspath,state");
                                                 }
                                                 catch (SQLException e) {
-                                                        logger.error("Failed to create index on table {} columns , \"pnfspath,state\"",
-                                                                     ManagerSchemaConstants.SpaceFileTableName);
+                                                    logger.error("failed to create index on table {} columns , \"pnfspath,state\": {}",
+                                                            ManagerSchemaConstants.SpaceFileTableName,
+                                                            e.getMessage());
                                                 }
                                         }
                                 }
@@ -1727,7 +1690,8 @@ public final class Manager
                     manager.insert(insertPolicy, policy.getId(), policy
                             .toString());
                 } catch (SQLException sqle) {
-                    logger.error(sqle.getMessage());
+                    logger.error("insert retention policy {} failed: {}",
+                            policy, sqle.getMessage());
                 }
             }
         }
@@ -1750,7 +1714,8 @@ public final class Manager
                     manager.insert(insertLatency, latency.getId(), latency
                             .toString());
                 } catch (SQLException sqle) {
-                    logger.error(sqle.getMessage());
+                    logger.error("insert access latency {} failed: {}",
+                            latency, sqle.getMessage());
                 }
             }
         }
@@ -1779,9 +1744,7 @@ public final class Manager
                         incrementNextLongBase();
                 }
                 long nextLong = nextLongBase +(nextLongIncrement++);
-                if (logger.isDebugEnabled()) {
-                        logger.debug(" return nextLong="+nextLong);
-                }
+                logger.debug("return nextLong={}", nextLong);
                 return nextLong;
         }
 
@@ -1793,7 +1756,8 @@ public final class Manager
                                 incrementNextLongBase(connection);
                         }
                         catch(SQLException e) {
-                                logger.error(e.getMessage());
+                                logger.error("incrementNextLongBase failed: {}",
+                                        e.getMessage());
                                 if (connection!=null) {
                                         try {
                                                 connection.rollback();
@@ -1806,17 +1770,13 @@ public final class Manager
                 }
 
                 long nextLong = nextLongBase +(nextLongIncrement++);
-                if (logger.isDebugEnabled()) {
-                        logger.debug(" return nextLong="+nextLong);
-                }
+                logger.debug("return nextLong={}", nextLong);
                 return nextLong;
         }
 
         private void incrementNextLongBase(Connection connection) throws SQLException{
                 PreparedStatement s = connection.prepareStatement(selectNextIdForUpdate);
-                if (logger.isDebugEnabled()) {
-                        logger.debug("getNextToken trying "+selectNextIdForUpdate);
-                }
+                logger.debug("getNextToken trying {}", selectNextIdForUpdate);
                 ResultSet set = s.executeQuery();
                 if(!set.next()) {
                         s.close();
@@ -1824,13 +1784,9 @@ public final class Manager
                 }
                 nextLongBase = set.getLong(1);
                 s.close();
-                if (logger.isDebugEnabled()) {
-                        logger.debug("nextLongBase is ="+nextLongBase);
-                }
+                logger.debug("nextLongBase is = {}", nextLongBase);
                 s = connection.prepareStatement(increaseNextId);
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+increaseNextId);
-                }
+                logger.debug("executing statement: {}", increaseNextId);
                 int i = s.executeUpdate();
                 s.close();
                 connection.commit();
@@ -2009,13 +1965,10 @@ public final class Manager
                                         RetentionPolicy rp)
                 throws SQLException {
                 try {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("findLinkGroupIds(sizeInBytes="+sizeInBytes+
-                                             ", voGroup="+voGroup+" voRole="+voRole+
-                                             ", AccessLatency="+al+
-                                             ", RetentionPolicy="+rp+
-                                             ")");
-                        }
+                        logger.debug("findLinkGroupIds(sizeInBytes={}, " +
+                                "voGroup={} voRole={}, AccessLatency={}, " +
+                                "RetentionPolicy={})", sizeInBytes, voGroup,
+                                voRole, al, rp);
                         String select;
                         if(al.equals(AccessLatency.ONLINE)) {
                                 if(rp.equals(RetentionPolicy.REPLICA)) {
@@ -2042,14 +1995,9 @@ public final class Manager
                                                 select = selectNearlineCustodialLinkGroup;
                                         }
                         }
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("executing statement: "+select+
-                                             "?="+latestLinkGroupUpdateTime+
-                                             "?="+voGroup+
-                                             "?="+voRole+
-                                             "?="+sizeInBytes
-                                             );
-                        }
+                        logger.debug("executing statement: {}?={}?={}?={}?={}",
+                                select, latestLinkGroupUpdateTime, voGroup,
+                                voRole, sizeInBytes);
                         Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
                                                                      select,
                                                                      latestLinkGroupUpdateTime,
@@ -2063,8 +2011,8 @@ public final class Manager
                         return idlist.toArray(new Long[idlist.size()]);
                 }
                 catch(SQLException sqle) {
-                        logger.error("select failed with "+sqle.getMessage());
-                        throw sqle;
+                    logger.error("select failed: {}", sqle.getMessage());
+                    throw sqle;
                 }
         }
 
@@ -2073,12 +2021,9 @@ public final class Manager
                                                 AccessLatency al,
                                                 RetentionPolicy rp) throws SQLException {
                 try {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("findLinkGroupIds(sizeInBytes="+sizeInBytes+
-                                             ", AccessLatency="+al+
-                                             ", RetentionPolicy="+rp+
-                                             ")");
-                        }
+                        logger.debug("findLinkGroupIds(sizeInBytes={}, " +
+                                "AccessLatency={}, RetentionPolicy={})",
+                                sizeInBytes, al, rp);
                         String select;
                         if(al.equals(AccessLatency.ONLINE)) {
                                 if(rp.equals(RetentionPolicy.REPLICA)) {
@@ -2105,11 +2050,8 @@ public final class Manager
                                                 select = selectAllNearlineCustodialLinkGroup;
                                         }
                         }
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("executing statement: "+select+
-                                             "?="+latestLinkGroupUpdateTime+
-                                             "?="+sizeInBytes);
-                        }
+                        logger.debug("executing statement: {} ?={}?={}",
+                                select, latestLinkGroupUpdateTime, sizeInBytes);
                         Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
                                                                      select,
                                                                      latestLinkGroupUpdateTime,
@@ -2117,17 +2059,14 @@ public final class Manager
                         return groups;
                 }
                 catch(SQLException sqle) {
-                        logger.error("select failed with "+sqle.getMessage());
+                        logger.error("select failed: {}", sqle.getMessage());
                         throw sqle;
                 }
         }
 
         public Space getSpace(long id)  throws SQLException{
-                if (logger.isDebugEnabled()) {
-                        logger.debug("Executing: "+
-                                     SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID+
-                                     ",?="+id);
-                }
+                logger.debug("Executing: {},?={}", SpaceReservationIO.
+                        SELECT_SPACE_RESERVATION_BY_ID, id);
                 Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
                                                          SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
                                                          id);
@@ -2176,9 +2115,6 @@ public final class Manager
 
 
         public LinkGroup selectLinkGroupForUpdate(Connection connection,long id)  throws SQLException{
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_ID+",?="+id);
-                }
                 try {
                         return manager.selectForUpdate(connection,
                                                        linkGroupIO,
@@ -2191,9 +2127,6 @@ public final class Manager
         }
 
         public Space selectSpaceForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID_AND_SIZE+",?="+id+","+sizeInBytes);
-                }
                 try {
                         return manager.selectForUpdate(connection,
                                                        spaceReservationIO,
@@ -2207,9 +2140,6 @@ public final class Manager
         }
 
         public Space selectSpaceForUpdate(Connection connection,long id)  throws SQLException{
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID+",?="+id);
-                }
                 try {
                         return manager.selectForUpdate(connection,
                                                        spaceReservationIO,
@@ -2225,11 +2155,6 @@ public final class Manager
                                         String pnfsPath)
                 throws SQLException {
                 pnfsPath=new FsPath(pnfsPath).toString();
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+
-                                     FileIO.SELECT_FOR_UPDATE_BY_PNFSPATH+",?="+
-                                     pnfsPath);
-                }
                 try {
                         return manager.selectForUpdate(connection,
                                                        fileIO,
@@ -2245,11 +2170,6 @@ public final class Manager
         public File selectFileForUpdate(Connection connection,
                                         PnfsId pnfsId)
                 throws SQLException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+
-                                     FileIO.SELECT_FOR_UPDATE_BY_PNFSID+",?="+
-                                     pnfsId);
-                }
                 try {
                         return manager.selectForUpdate(connection,
                                                        fileIO,
@@ -2265,10 +2185,6 @@ public final class Manager
         public File selectFileForUpdate(Connection connection,
                                         long id)
                 throws SQLException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+
-                                     FileIO.SELECT_FOR_UPDATE_BY_ID+",?="+id);
-                }
                 try {
                         return manager.selectForUpdate(connection,
                                                        fileIO,
@@ -2285,11 +2201,6 @@ public final class Manager
                                                  long reservationId)
 
                 throws SQLException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+
-                                     FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID+
-                                     ",?="+pnfsPath+","+reservationId);
-                }
                 return manager.selectForUpdate(connection,
                                                fileIO,
                                                FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID,
@@ -2309,7 +2220,7 @@ public final class Manager
                         connection = null;
                 }
                 catch(SQLException sqle) {
-                        logger.error("delete failed with "+sqle.getMessage());
+                        logger.error("delete failed: {}", sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -2365,7 +2276,7 @@ public final class Manager
                         connection = null;
                 }
                 catch(SQLException sqle) {
-                        logger.error("update failed with "+sqle.getMessage());
+                        logger.error("update failed: {}", sqle.getMessage());
                         if(connection != null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -2477,9 +2388,6 @@ public final class Manager
                         }
                         space.setState(state);
                 }
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+SpaceReservationIO.UPDATE+",?="+space.getId());
-                }
                 manager.update(connection,
                                SpaceReservationIO.UPDATE,
                                space.getVoGroup(),
@@ -2544,7 +2452,7 @@ public final class Manager
                         connection = null;
                 }
                 catch(SQLException sqle) {
-                        logger.error("update failed with "+sqle.getMessage());
+                        logger.error("update failed: {}", sqle.getMessage());
                         if(connection != null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -2560,17 +2468,10 @@ public final class Manager
         }
 
         public void expireSpaceReservations()  {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("expireSpaceReservations()...");
-                }
+                logger.debug("expireSpaceReservations()...");
                 try {
                         if (cleanupExpiredSpaceFiles) {
                                 long time = System.currentTimeMillis();
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("Executing: "+
-                                                     SpaceReservationIO.SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES+
-                                                     "?="+time);
-                                }
                                 Set<Space> spaces = manager.selectPrepared(spaceReservationIO,
                                                                            SpaceReservationIO.SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES,
                                                                            time);
@@ -2587,17 +2488,14 @@ public final class Manager
                                                         removeFileFromSpace(file.getId());
                                                 }
                                                 catch (SQLException e) {
-                                                        logger.error("Failed to remove file "+
-                                                                     file+
-                                                                     " due to "+
-                                                                     e.getMessage());
+                                                        logger.error("failed to remove file {}: {}",
+                                                                file, e.getMessage());
                                                 }
                                         }
                                 }
                         }
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("Executing: "+SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1);
-                        }
+                        logger.debug("Executing: {}",
+                                SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1);
                         Set<Space> spaces = manager.selectPrepared(spaceReservationIO,
                                                                    SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1,
                                                                    System.currentTimeMillis());
@@ -2615,15 +2513,15 @@ public final class Manager
                                                                SpaceState.EXPIRED);
                                 }
                                 catch (SQLException e) {
-                                        logger.error("Failed to expire space resevation ="+
-                                                     space+" ("+e.getMessage()+
-                                                     ")");
+                                        logger.error("failed to remove expired " +
+                                                "reservation {}: {}", space,
+                                                e.getMessage());
                                 }
                         }
                 }
                 catch(SQLException sqle) {
-                        logger.error("expireSpaceReservations failed with "+
-                                     sqle.getMessage());
+                        logger.error("expireSpaceReservations failed: {}",
+                                sqle.getMessage());
                 }
         }
 
@@ -2663,7 +2561,8 @@ public final class Manager
                         return id;
                 }
                 catch(SQLException sqle) {
-                        logger.error(sqle.getMessage());
+                        logger.error("failed to insert space reservation: {}",
+                                sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -2692,10 +2591,6 @@ public final class Manager
                                            long used,
                                            long allocated) throws SQLException {
                 long creationTime=System.currentTimeMillis();
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+
-                                     SpaceReservationIO.INSERT);
-                }
                 LinkGroup g=selectLinkGroupForUpdate(connection,
                                                      linkGroupId,
                                                      sizeInBytes);
@@ -2737,10 +2632,6 @@ public final class Manager
                         spaces.add(space);
                 }
                 else {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("executing statement: "+
-                                             SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-                        }
                         spaces=manager.selectPrepared(spaceReservationIO,
                                                       SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
                 }
@@ -2749,10 +2640,6 @@ public final class Manager
 
 
         public void getValidSpaceTokenIds(GetSpaceTokenIdsMessage msg) throws SQLException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+
-                                     SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-                }
                 Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
                                                          SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
 
@@ -2772,9 +2659,6 @@ public final class Manager
                         groups.add(lg);
                 }
                 else {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
-                        }
                         groups=manager.selectPrepared(linkGroupIO,
                                                       LinkGroupIO.SELECT_ALL_LINKGROUPS);
                 }
@@ -2782,10 +2666,6 @@ public final class Manager
         }
 
         public void getLinkGroupNames(GetLinkGroupNamesMessage msg) throws SQLException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+
-                                     LinkGroupIO.SELECT_ALL_LINKGROUPS);
-                }
                 Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
                                                              LinkGroupIO.SELECT_ALL_LINKGROUPS);
                 String[] names = new String[groups.size()];
@@ -2797,10 +2677,6 @@ public final class Manager
         }
 
         public void getLinkGroupIds(GetLinkGroupIdsMessage msg) throws SQLException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("executing statement: "+
-                                     LinkGroupIO.SELECT_ALL_LINKGROUPS);
-                }
                 Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
                                                              LinkGroupIO.SELECT_ALL_LINKGROUPS);
                 long[] ids = new long[groups.size()];
@@ -2964,7 +2840,8 @@ public final class Manager
                         connection = null;
                 }
                 catch(SQLException sqle) {
-                        logger.error(sqle.getMessage());
+                        logger.error("failed to delete space reservation: {}",
+                                sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -2997,7 +2874,7 @@ public final class Manager
                         connection=null;
                 }
                 catch (SQLException sqle) {
-                        logger.error("update failed with "+sqle.getMessage());
+                        logger.error("update failed: {}", sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -3076,7 +2953,8 @@ public final class Manager
                                         newConnection=null;
                                 }
                                 catch (SQLException e) {
-                                        logger.error(e.getMessage());
+                                        logger.error("failed to update space " +
+                                                "reservation: {}", e.getMessage());
                                         if (newConnection!=null) {
                                                 newConnection.rollback();
                                                 connection_pool.returnFailedConnection(newConnection);
@@ -3213,7 +3091,7 @@ public final class Manager
                         return id;
                 }
                 catch(SQLException | SpaceException sqle) {
-                        logger.error("insert failed with "+sqle.getMessage());
+                        logger.error("insert failed: {}", sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -3312,10 +3190,6 @@ public final class Manager
                                                        " does not have enough space");
                 }
                 if (pnfsId==null) {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("executing statement: "+
-                                             FileIO.INSERT_WO_PNFSID);
-                        }
                         rc=manager.insert(connection,
                                           FileIO.INSERT_WO_PNFSID,
                                           id,
@@ -3329,10 +3203,6 @@ public final class Manager
                                           state);
                 }
                 else {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("executing statement: "+
-                                             FileIO.INSERT_W_PNFSID);
-                        }
                         rc=manager.insert(connection,
                                           FileIO.INSERT_W_PNFSID,
                                           id,
@@ -3607,7 +3477,7 @@ public final class Manager
             Object rawPayload = cellMessage.getMessageObject();
 
             if (!(rawPayload instanceof Message)) {
-                logger.warn("Unknown payload {}: {}", rawPayload.getClass().
+                logger.warn("unknown payload {}: {}", rawPayload.getClass().
                         getCanonicalName(), rawPayload);
                 return;
             }
@@ -3634,11 +3504,11 @@ public final class Manager
 
         private void processMessage( CellMessage cellMessage ) {
                 Object object = cellMessage.getMessageObject();
-                if (logger.isDebugEnabled()) {
-                        logger.debug("Message  arrived: "+object +" from "+cellMessage.getSourcePath());
-                }
+                logger.debug("Message  arrived: {} from {}", object,
+                        cellMessage.getSourcePath());
                 if (!(object instanceof Message)) {
-                        logger.error("Unexpected message class "+object.getClass());
+                        logger.error("unexpected message class {}",
+                                object.getClass());
                         return;
                 }
                 Message spaceMessage = (Message)object;
@@ -3724,7 +3594,7 @@ public final class Manager
                                 PnfsSetStorageInfoMessage setStorageInfoMessage =
                                         (PnfsSetStorageInfoMessage) spaceMessage;
                                 if (setStorageInfoMessage.getReturnCode()!=0) {
-                                        logger.error("Failed to set storageinfo");
+                                        logger.error("failed to set storageinfo");
                                 }
                                 return;
                         }
@@ -3734,43 +3604,41 @@ public final class Manager
                                 markFileDeleted(msg);
                         }
                         else {
-                                logger.error("unknown Space Manager message type :"+
-                                             spaceMessage.getClass().getName()+
-                                             " value: "+spaceMessage);
+                                logger.error("unknown message, type {} " +
+                                        "value {}",
+                                        spaceMessage.getClass().getName(),
+                                        spaceMessage);
                                 super.messageArrived(cellMessage);
                                 return;
                         }
                 }
                 catch(SpaceException se) {
-                        logger.error("SpaceException: {}", se.getMessage());
+                        logger.error("failed to process message: {}", se.getMessage());
                         spaceMessage.setFailed(-2,se);
                 }
                 catch(SQLException e) {
-                        logger.error(e.getMessage());
+                        logger.error("database activity failed: {}",
+                                e.getMessage());
                         spaceMessage.setFailed(-1,e);
                 }
                 catch(Throwable t) {
-                        logger.error(t.getMessage(),t);
+                        logger.error("an operation failed: {}", t.getMessage(),
+                                t);
                         spaceMessage.setFailed(-1,t);
                 }
                 if (replyRequired) {
                         try {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("Sending reply "+
-                                                     spaceMessage);
-                                }
+                                logger.debug("Sending reply {}", spaceMessage);
                                 cellMessage.revertDirection();
                                 sendMessage(cellMessage);
                         }
                         catch (Exception e) {
-                                logger.error("Can't reply message : "+
-                                             e.getMessage());
+                                logger.error("can't reply message: {}",
+                                        e.getMessage());
                         }
                 }
                 else {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("reply is not required, finished processing");
-                        }
+                    logger.debug("reply is not required, finished processing");
                 }
         }
 
@@ -3792,14 +3660,11 @@ public final class Manager
 
         public void processMessageToForward(CellMessage cellMessage ) {
                 Object object = cellMessage.getMessageObject();
-                if (logger.isDebugEnabled()) {
-                        logger.debug("messageToForward,  arrived: type="+
-                                     object.getClass().getName()+
-                                     " value="+object +" from "+
-                                     cellMessage.getSourcePath()+
-                                     " going to "+cellMessage.getDestinationPath()+
-                                     cellMessage.isAcknowledge());
-                }
+                logger.debug("messageToForward,  arrived: type={} value={} " +
+                        "from {} going to {}", object.getClass().getName(),
+                        object, cellMessage.getSourcePath(),
+                        cellMessage.getDestinationPath(),
+                        cellMessage.isAcknowledge());
                 try {
                         if( object instanceof PoolMgrSelectPoolMsg) {
                                 selectPool(cellMessage,true);
@@ -3839,14 +3704,15 @@ public final class Manager
                         }
                 }
                 catch (Exception e){
-                        logger.error(e.getMessage(),e);
+                        logger.error("forwarding msg failed: {}",
+                                e.getMessage(), e);
                 }
                 super.messageToForward(cellMessage) ;
         }
 
         @Override
         public void exceptionArrived(ExceptionEvent ee) {
-                logger.error("Exception Arrived: "+ee);
+                logger.error("exception arrived: {}", ee.toString());
                 super.exceptionArrived(ee);
         }
 
@@ -3863,7 +3729,8 @@ public final class Manager
                         sendMessage(cellMessage);
                 }
                 catch(Exception e) {
-                        logger.error("can not send a failed response "+e.getMessage());
+                        logger.error("cannot send a failed response: {}",
+                                e.getMessage());
                 }
         }
 
@@ -3874,7 +3741,8 @@ public final class Manager
                         sendMessage(cellMessage);
                 }
                 catch(Exception e) {
-                        logger.error("can not send a response "+e.getMessage());
+                        logger.error("cannot send a response: {}",
+                                e.getMessage());
                 }
         }
 
@@ -3930,7 +3798,9 @@ public final class Manager
                                         new LinkGroupAuthorizationFile(linkGroupAuthorizationFileName);
                         }
                         catch(Exception e) {
-                                logger.error(e.getMessage());
+                                logger.error("failed to parse LinkGroup" +
+                                        "AuthorizationFile: {}",
+                                        e.getMessage());
                         }
                 }
         }
@@ -3944,11 +3814,13 @@ public final class Manager
                 try {
                         cellMessage = sendAndWait(cellMessage,1000*5*60);
                         if(cellMessage == null ) {
-                                logger.error("updateLinkGroups() : request timed out");
+                                logger.error("failed to update linkgroups: " +
+                                        "request timed out");
                                 return;
                         }
                         if (cellMessage.getMessageObject() == null ) {
-                                logger.error("updateLinkGroups() : reply message is null");
+                                logger.error("failed to update linkgroups: " +
+                                        "reply message is null");
                                 return;
                         }
                         if( ! (cellMessage.getMessageObject() instanceof PoolMgrGetPoolLinkGroups)){
@@ -3956,15 +3828,16 @@ public final class Manager
                         }
                         getLinkGroups = (PoolMgrGetPoolLinkGroups)cellMessage.getMessageObject();
                         if(getLinkGroups.getReturnCode() != 0) {
-                                logger.error("  PoolMgrGetPoolLinkGroups reply return code ="+
-                                             getLinkGroups.getReturnCode()+
-                                             " error Object= "+
-                                             getLinkGroups.getErrorObject());
+                                logger.error("PoolMgrGetPoolLinkGroups reply " +
+                                        "return code ={} error Object= {}",
+                                        getLinkGroups.getReturnCode(),
+                                        getLinkGroups.getErrorObject());
                                 return;
                         }
                 }
                 catch(Exception e) {
-                        logger.error("update failed "+e.getMessage());
+                        logger.error("failed to update linkgroups: {}",
+                                e.getMessage());
                         return;
                 }
 
@@ -4003,10 +3876,8 @@ public final class Manager
                             custodialAllowed,
                             vos);
                 } catch (SQLException sqle) {
-                    logger.error("update of linkGroup " +
-                            linkGroupName +
-                            " failed with exception: " +
-                            sqle.getMessage());
+                    logger.error("update of linkGroup {} failed: {}",
+                            linkGroupName, sqle.getMessage());
                 }
             }
                 latestLinkGroupUpdateTime = currentTime;
@@ -4042,7 +3913,8 @@ public final class Manager
                                 id=group.getId();
                         }
                         catch (SQLException e) {
-                                logger.error(e.getMessage());
+                                logger.error("failed to update linkgroup {}: {}",
+                                        linkGroupName, e.getMessage());
                                 try {
                                         connection.rollback();
                                 }
@@ -4064,9 +3936,8 @@ public final class Manager
                                                        0);
                                 }
                                 catch (SQLException e1) {
-                                        logger.error("Failed to insert Link Group = "+
-                                                     linkGroupName+" "+
-                                                     e1.getMessage());
+                                        logger.error("failed to insert linkgroup {}: {}",
+                                                linkGroupName, e1.getMessage());
                                         if (connection!=null) {
                                                 connection.rollback();
                                                 connection_pool.returnFailedConnection(connection);
@@ -4127,7 +3998,7 @@ public final class Manager
                         return id;
                 }
                 catch(SQLException sqle) {
-                        logger.error("update failed with "+sqle.getMessage());
+                        logger.error("update failed: {}", sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -4144,9 +4015,7 @@ public final class Manager
 
         private void releaseSpace(Release release) throws
                 SQLException,SpaceException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("releaseSpace("+release+")");
-                }
+                logger.debug("releaseSpace({})", release);
 
                 long spaceToken = release.getSpaceToken();
                 Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
@@ -4231,9 +4100,7 @@ public final class Manager
 
         private void useSpace(Use use)
                 throws SQLException, SpaceException{
-                if (logger.isDebugEnabled()) {
-                        logger.debug("useSpace("+use+")");
-                }
+                logger.debug("useSpace({})", use);
                 long reservationId = use.getSpaceToken();
                 long sizeInBytes = use.getSizeInBytes();
                 String voGroup = use.getAuthRecord().getVoGroup();
@@ -4253,9 +4120,7 @@ public final class Manager
 
         private void transferToBeStarted(PoolAcceptFileMessage poolRequest){
                 PnfsId pnfsId = poolRequest.getPnfsId();
-                if (logger.isDebugEnabled()) {
-                        logger.debug("transferToBeStarted("+pnfsId+")");
-                }
+                logger.debug("transferToBeStarted({})", pnfsId);
                 try {
                         File f  = getFile(pnfsId);
                         Space s = getSpace(f.getSpaceId());
@@ -4272,13 +4137,10 @@ public final class Manager
                         //
                         // send message to PnfsManager
                         //
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("transferToBeStarted(), set AL to "+
-                                             s.getAccessLatency()+
-                                             " RP to "+s.getRetentionPolicy()+
-                                             " , sending message to "+
-                                             pnfsManager);
-                        }
+                        logger.debug("transferToBeStarted(), set AL to {} " +
+                                "RP to {}, sending message to {}",
+                                s.getAccessLatency(), s.getRetentionPolicy(),
+                                pnfsManager);
                         try {
                                 PnfsSetStorageInfoMessage msg = new PnfsSetStorageInfoMessage(pnfsId,
                                                                                               info,
@@ -4287,19 +4149,19 @@ public final class Manager
                                 sendMessage(new CellMessage(new CellPath(pnfsManager),msg));
                         }
                         catch (Exception e) {
-                                logger.error("Can't send PnfsSetStorageInfoMessage message to pnfsmanager"+
-                                             e.getMessage());
+                                logger.error("failed to send PnfsSetStorageInfoMessage " +
+                                        "message to pnfsmanager: {}",
+                                        e.getMessage());
                         }
                 }
                 catch(SQLException sqle){
-                        logger.error("transferToBeStarted(): could not get space reservation related to this transfer ");
+                        logger.error("failed to get space reservation: {}",
+                                sqle.getMessage());
                 }
         }
 
         private void transferStarted(PnfsId pnfsId,boolean success) {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("transferStarted("+pnfsId+","+success+")");
-                }
+                logger.debug("transferStarted({},{})", pnfsId, success);
                 Connection connection = null;
                 try {
                         connection = connection_pool.getConnection();
@@ -4359,7 +4221,8 @@ public final class Manager
 
                 }
                 catch(SQLException sqle) {
-                        logger.error("transferStarted failed with "+sqle.getMessage());
+                        logger.error("transferStarted failed: {}",
+                                sqle.getMessage());
                         if (connection!=null) {
                                 try {
                                         connection.rollback();
@@ -4382,9 +4245,7 @@ public final class Manager
                 StorageInfo storageInfo = finished.getStorageInfo();
                 long size = storageInfo.getFileSize();
                 boolean success = finished.getReturnCode() == 0;
-                if (logger.isDebugEnabled()) {
-                        logger.debug("transferFinished("+pnfsId+","+success+")");
-                }
+                logger.debug("transferFinished({},{})", pnfsId, success);
                 Connection connection = null;
                 try {
                         connection = connection_pool.getConnection();
@@ -4400,7 +4261,8 @@ public final class Manager
                                 }
                         }
                         catch (Exception e) {
-                                logger.error("file "+pnfsId+":"+e.getMessage());
+                                logger.error("failed to find file {}: {}", pnfsId,
+                                        e.getMessage());
                                 if (connection!=null) {
                                         connection.rollback();
                                         connection_pool.returnConnection(connection);
@@ -4422,9 +4284,8 @@ public final class Manager
                                                 }
                                         }
                                         if(weDeleteStoredFileRecord) {
-                                                if (logger.isDebugEnabled()) {
-                                                        logger.debug("file transfered, deleting file record");
-                                                }
+                                                logger.debug("file transfered, " +
+                                                        "deleting file record");
                                                 removeFileFromSpace(connection,f);
                                         }
                                         else {
@@ -4456,16 +4317,16 @@ public final class Manager
                                 connection = null;
                         }
                         else {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("transferFinished("+pnfsId+"): file state=" +f.getState() );
-                                }
+                                logger.debug("transferFinished({}): file state={}",
+                                        pnfsId, f.getState());
                                 connection.commit();
                                 connection_pool.returnConnection(connection);
                                 connection = null;
                         }
                 }
                 catch(SQLException sqle) {
-                        logger.error("transferFinished failed with "+sqle.getMessage());
+                        logger.error("transferFinished failed: {}",
+                                sqle.getMessage());
                         if (connection!=null) {
                                 try {
                                         connection.rollback();
@@ -4497,15 +4358,12 @@ public final class Manager
                 if (files.isEmpty()==true) {
                     return;
                 }
-                if (logger.isDebugEnabled()) {
-                        logger.debug("fileFlushed("+pnfsId+")");
-                }
+                logger.debug("fileFlushed({})", pnfsId);
                 StorageInfo storageInfo = fileFlushed.getStorageInfo();
                 AccessLatency ac = storageInfo.getAccessLatency();
                 if ( ac != null && ac.equals(AccessLatency.ONLINE)) {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("File Access latency is ONLINE fileFlushed does nothing");
-                        }
+                        logger.debug("File Access latency is ONLINE " +
+                                "fileFlushed does nothing");
                         return;
                 }
                 long size               = storageInfo.getFileSize();
@@ -4518,17 +4376,14 @@ public final class Manager
                                 connection.rollback();
                                 connection_pool.returnConnection(connection);
                                 connection = null;
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("fileFlushed("+pnfsId+
-                                                     "): file not in a reservation, do nothing");
-                                }
+                                logger.debug("fileFlushed({}): file not in a " +
+                                        "reservation, doing nothing", pnfsId);
                                 return;
                         }
                         if(f.getState() == FileState.STORED) {
                                 if(deleteStoredFileRecord) {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("returnSpaceToReservation, deleting file record");
-                                        }
+                                        logger.debug("returnSpaceToReservation, " +
+                                                "deleting file record");
                                         removeFileFromSpace(connection,f);
                                 }
                                 else {
@@ -4547,11 +4402,8 @@ public final class Manager
                                 }
                         }
                         else {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("returnSpaceToReservation("+
-                                                     pnfsId+"): file state="+
-                                                     f.getState());
-                                }
+                                logger.debug("returnSpaceToReservation({}): " +
+                                        "file state={}", pnfsId, f.getState());
                                 connection.commit();
                                 connection_pool.returnConnection(connection);
                                 connection = null;
@@ -4559,8 +4411,8 @@ public final class Manager
 
                 }
                 catch(SQLException sqle) {
-                        logger.error("returnSpaceToReservation failed with "+
-                                     sqle.getMessage());
+                        logger.error("failed to return space to reservation: {}",
+                                sqle.getMessage());
                         if (connection!=null) {
                                 try {
                                         connection.rollback();
@@ -4579,9 +4431,7 @@ public final class Manager
 
         private void  fileRemoved(PoolRemoveFilesMessage fileRemoved)
         {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("fileRemoved()");
-                }
+                logger.debug("fileRemoved()");
                 String[] pnfsIdStrings = fileRemoved.getFiles();
                 if(pnfsIdStrings == null || pnfsIdStrings.length == 0) {
                         return;
@@ -4592,12 +4442,11 @@ public final class Manager
                                 pnfsId = new PnfsId(pnfsIdString);
                         }
                         catch(Exception e) {
-                                logger.error(e.getMessage());
+                                logger.error("badly formed PNFS-ID: {}",
+                                        e.getMessage());
                                 continue;
                         }
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("fileRemoved("+pnfsId+")");
-                        }
+                        logger.debug("fileRemoved({})", pnfsId);
                         if(!returnRemovedSpaceToReservation) {
                             return;
                         }
@@ -4610,11 +4459,9 @@ public final class Manager
                                         connection.rollback();
                                         connection_pool.returnConnection(connection);
                                         connection = null;
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("fileRemoved("+
-                                                             pnfsId+
-                                                             "): file not in a reservation, do nothing");
-                                        }
+                                        logger.debug("fileRemoved({}): file " +
+                                                "not in a reservation, do " +
+                                                "nothing", pnfsId);
                                         return;
                                 }
                                 removeFileFromSpace(connection,f);
@@ -4623,11 +4470,10 @@ public final class Manager
                                 connection = null;
                         }
                         catch(SQLException sqle) {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug(sqle.getMessage());
-                                        logger.debug("fileRemoved("+pnfsId+
-                                                     "): file not in a reservation, do nothing");
-                                }
+                                logger.debug("failed to remove file from space: {}",
+                                        sqle.getMessage());
+                                logger.debug("fileRemoved({}): file not in a " +
+                                        "reservation, do nothing", pnfsId);
                                 if (connection!=null) {
                                         try {
                                                 connection.rollback();
@@ -4648,9 +4494,7 @@ public final class Manager
 
         private void cancelUseSpace(CancelUse cancelUse)
                 throws SQLException,SpaceException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("cancelUseSpace("+cancelUse+")");
-                }
+                logger.debug("cancelUseSpace({})", cancelUse);
                 long reservationId = cancelUse.getSpaceToken();
                 String pnfsPath    = cancelUse.getPnfsName();
                 Connection connection = null;
@@ -4683,7 +4527,9 @@ public final class Manager
                                 }
                                 finally {
                                         if (connection!=null) {
-                                                logger.warn("Failed to remove file "+pnfsPath);
+                                                logger.warn("failed to " +
+                                                        "remove file {}",
+                                                        pnfsPath);
                                                 connection_pool.returnFailedConnection(connection);
                                                 connection = null;
                                         }
@@ -4707,16 +4553,13 @@ public final class Manager
                                   String description)
                 throws SQLException,
                        SpaceException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("reserveSpace(group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
-                                     ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
-                                     ", description="+description);
-                }
+                logger.debug("reserveSpace(group={}, role={}, sz={}, " +
+                        "latency={}, policy={}, lifetime={}, description={}",
+                        voGroup, voRole, sizeInBytes, latency, policy, lifetime,
+                        description);
                 boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
-                if (logger.isDebugEnabled()) {
-                        logger.debug("policy is "+policy+", needHsmBackup is "+
-                                     needHsmBackup);
-                }
+                logger.debug("policy is {}, needHsmBackup is {}", policy,
+                        needHsmBackup);
                 Long[] linkGroups = findLinkGroupIds(sizeInBytes,
                                                      voGroup,
                                                      voRole,
@@ -4749,20 +4592,16 @@ public final class Manager
                                   PnfsId pnfsId)
                 throws SQLException,
                        SpaceException {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("reserveSpace( ar="+authRecord+", sz="+sizeInBytes+
-                                     ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
-                                     ", description="+description);
-                }
+                logger.debug("reserveSpace( ar={}, sz={}, latency={}, " +
+                        "policy={}, lifetime={}, description={}", authRecord,
+                        sizeInBytes, latency, policy, lifetime, description);
                 boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
-                if (logger.isDebugEnabled()) {
-                        logger.debug("policy is "+policy+", needHsmBackup is "+needHsmBackup);
-                }
+                logger.debug("policy is {}, needHsmBackup is {}", policy, needHsmBackup);
                 Set<LinkGroup> linkGroups = findLinkGroupIds(sizeInBytes,
                                                              latency,
                                                              policy);
                 if(linkGroups.isEmpty()) {
-                        logger.warn("find LinkGroups returned 0 linkGroups, no linkGroups found");
+                        logger.warn("failed to find matching linkgroup");
                         throw new NoFreeSpaceException(" no space available");
                 }
                 //
@@ -4780,18 +4619,14 @@ public final class Manager
                         }
                 }
                 if(linkGroupNameVoInfoMap.isEmpty()) {
-                        logger.warn("Failed to find LinkGroup where user is authorized to reserve space.");
+                        logger.warn("failed to find linkgroup where user is " +
+                                "authorized to reserve space.");
                         throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
                 }
                 List<String> linkGroupNames = new ArrayList<>(linkGroupNameVoInfoMap.keySet());
-                if (logger.isDebugEnabled()) {
-                        logger.debug("Found "+linkGroups.size()+
-                                     " linkgroups "+
-                                     "protocolInfo="+(protocolInfo!=null?protocolInfo:"null")+
-                                     ", storageInfo="+(storageInfo!=null?storageInfo:"null")+
-                                     ", pnfsId="+pnfsId);
-
-                }
+                logger.debug("Found {} linkgroups protocolInfo={}, " +
+                        "storageInfo={}, pnfsId={}", linkGroups.size(),
+                        protocolInfo, storageInfo, pnfsId);
                 if (linkGroupNameVoInfoMap.size()>1 &&
                     protocolInfo != null &&
                     storageInfo  != null) {
@@ -4805,10 +4640,9 @@ public final class Manager
                                 logger.debug("Sending PoolManagerSelectLinkGroupForWriteMessage");
                                 msg=_poolManagerStub.sendAndWait(msg);
                                 linkGroupNames=msg.getLinkGroups();
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("received PoolManagerSelectLinkGroupForWriteMessage reply, number of LinkGroups="+
-                                                     linkGroupNames.size());
-                                }
+                                logger.debug("received PoolManagerSelectLink" +
+                                        "GroupForWriteMessage reply, number " +
+                                        "of LinkGroups={}", linkGroupNames.size());
                                 if(linkGroupNames.isEmpty()) {
                                         throw new SpaceAuthorizationException("PoolManagerSelectLinkGroupForWriteMessage: Failed to find LinkGroup where user is authorized to reserve space.");
                                 }
@@ -4827,7 +4661,8 @@ public final class Manager
                                                        e);
                         }
                         catch (SpaceAuthorizationException e)  {
-                                logger.warn(e.getMessage());
+                                logger.warn("authorization problem: {}",
+                                        e.getMessage());
                                 throw e;
                         }
                         catch(Exception e) {
@@ -4844,7 +4679,7 @@ public final class Manager
                                 break;
                         }
                 }
-                logger.debug("Chose likgroup {}",linkGroup);
+                logger.debug("Chose linkgroup {}",linkGroup);
                 return reserveSpaceInLinkGroup(linkGroup.getId(),
                                                voInfo.getVoGroup(),
                                                voInfo.getVoRole(),
@@ -4865,17 +4700,11 @@ public final class Manager
                                              String description)
                 throws SQLException
         {
-                if (logger.isDebugEnabled()) {
-                        logger.debug("reserveSpaceInLinkGroup(linkGroupId="
-                                     +linkGroupId
-                                     +"group="+voGroup
-                                     +", role="+voRole
-                                     +", sz="+sizeInBytes
-                                     +", latency="+latency
-                                     +", policy="+policy
-                                     +", lifetime="+lifetime+
-                                     ", description="+description);
-                }
+                logger.debug("reserveSpaceInLinkGroup(linkGroupId={}, " +
+                        "group={}, role={}, sz={}, latency={}, policy={}, " +
+                        "lifetime={}, description={})", linkGroupId, voGroup,
+                        voRole, sizeInBytes, latency, policy, lifetime,
+                        description);
                 Connection connection =null;
                 try {
                         connection = connection_pool.getConnection();
@@ -4900,7 +4729,8 @@ public final class Manager
                         return spaceReservationId;
                 }
                 catch(SQLException sqle) {
-                        logger.error("failed to reserve space "+sqle.getMessage());
+                        logger.error("failed to reserve space: {}",
+                                sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -4955,7 +4785,8 @@ public final class Manager
                         return fileId;
                 }
                 catch(SQLException | SpaceException sqle) {
-                        logger.error("useSpace(): insertFileInSpace failed with "+sqle.getMessage());
+                        logger.error("failed to insert file into space: {}",
+                                sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -4973,19 +4804,13 @@ public final class Manager
                                boolean isReply )
                 throws Exception{
                 PoolMgrSelectPoolMsg selectPool = (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
-                if (logger.isDebugEnabled()) {
-                        logger.debug("selectPool("+selectPool +")");
-                }
+                logger.debug("selectPool({})", selectPool);
                 String pnfsPath = selectPool.getPnfsPath();
                 PnfsId pnfsId   = selectPool.getPnfsId();
                 if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("selectPool: pnfsPath is null");
-                        }
+                        logger.debug("selectPool: pnfsPath is null");
                         if(!isReply) {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("just forwarding the message to "+ poolManager);
-                                }
+                                logger.debug("just forwarding the message to {}", poolManager);
                                 cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
                                 cellMessage.nextDestination() ;
                                 sendMessage(cellMessage) ;
@@ -4994,9 +4819,7 @@ public final class Manager
                 }
                 File file = null;
                 try {
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("selectPool: getFiles("+pnfsPath+")");
-                        }
+                        logger.debug("selectPool: getFiles({})", pnfsPath);
                         Set<File> files = getFiles(pnfsPath);
                         for (File f: files) {
                                 if (f.getPnfsId()==null) {
@@ -5006,7 +4829,7 @@ public final class Manager
                         }
                 }
                 catch (Exception e) {
-                        logger.info(e.getMessage());
+                        logger.info("failed to find pool: {}", e.getMessage());
                 }
                 if(file==null) {
                         StorageInfo storageInfo = selectPool.getStorageInfo();
@@ -5028,9 +4851,10 @@ public final class Manager
                         }
                         if (defaultSpaceToken==null) {
                                 if(reserveSpaceForNonSRMTransfers && authRecord != null) {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("selectPool: file is not found, no prior reservations for this file, calling reserveAndUseSpace()");
-                                        }
+                                        logger.debug("selectPool: file is " +
+                                                "not found, no prior " +
+                                                "reservations for this file, " +
+                                                "calling reserveAndUseSpace()");
 
                                         file = reserveAndUseSpace(pnfsPath,
                                                                   null, //  selectPool.getPnfsId(),
@@ -5040,17 +4864,18 @@ public final class Manager
                                                                   authRecord,
                                                                   protocolInfo,
                                                                   storageInfo);
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("selectPool: file is not found, reserveAndUseSpace() returned "+file);
-                                        }
+                                        logger.debug("selectPool: file is " +
+                                                "not found, reserveAndUseSpace() " +
+                                                "returned {}", file);
                                 }
                                 else {
-                                        if (logger.isDebugEnabled()) {
-                                                logger.debug("selectPool: file is not found, no prior reservations for this file reserveSpaceForNonSRMTransfers="+
-                                                             reserveSpaceForNonSRMTransfers+
-                                                             " authrecord="
-                                                             +(authRecord!=null?authRecord:"none"));
-                                        }
+                                        logger.debug("selectPool: file is " +
+                                                "not found, no prior " +
+                                                "reservations for this file " +
+                                                "reserveSpaceForNonSRMTransfers={} " +
+                                                "authrecord={}",
+                                                reserveSpaceForNonSRMTransfers,
+                                                authRecord != null ? authRecord : "none");
                                         if(!isReply) {
                                             forwardToPoolmanager(cellMessage);
                                         }
@@ -5058,9 +4883,9 @@ public final class Manager
                                 }
                         }
                         else {
-                                if (logger.isDebugEnabled()) {
-                                        logger.debug("selectPool: file is not found, found default space token, calling useSpace()");
-                                }
+                                logger.debug("selectPool: file is not " +
+                                        "found, found default space " +
+                                        "token, calling useSpace()");
                                 String voGroup   = null;
                                 String voRole    = null;
                                 long lifetime    = 1000*60*60;
@@ -5081,7 +4906,8 @@ public final class Manager
                 }
                 else {
                         if (isReply&&selectPool.getReturnCode()==0) {
-                                logger.debug("selectPool: file is not null, calling updateSpaceFile()");
+                                logger.debug("selectPool: file is not null, " +
+                                        "calling updateSpaceFile()");
                                 updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
                         }
                 }
@@ -5096,7 +4922,8 @@ public final class Manager
                                 connection = null;
                         }
                         catch(SQLException sqle) {
-                                logger.error(sqle.getMessage());
+                                logger.error("failed to remove file {}: {}",
+                                        file, sqle.getMessage());
                                 if (connection!=null) {
                                         try {
                                                 connection.rollback();
@@ -5133,9 +4960,8 @@ public final class Manager
                         }
                         cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
                         cellMessage.nextDestination() ;
-                        if (logger.isDebugEnabled()) {
-                                logger.debug("selectPool: found linkGroup = "+linkGroupName+", forwarding message");
-                        }
+                        logger.debug("selectPool: found linkGroup = {}, " +
+                                "forwarding message", linkGroupName);
                         sendMessage(cellMessage) ;
                 }
         }
@@ -5149,7 +4975,7 @@ public final class Manager
             try {
                 sendMessage(cellMessage);
             } catch (NoRouteToCellException | SerializationException e) {
-                logger.error("Failed to forward message: {}", e.getMessage());
+                logger.error("failed to forward message: {}", e.getMessage());
             }
         }
 
@@ -5174,16 +5000,13 @@ public final class Manager
                         file=Iterables.getFirst(files,null);
                 }
                 catch (Exception e) {
-                        logger.error("Failed to retrieve file by pnfs id "+ (msg.getPnfsId()!=null?msg.getPnfsId():"null")+" "
-                             +(msg.getPnfsPath()!=null?msg.getPnfsPath():"null"));
-                        if (logger.isDebugEnabled()) {
-                                logger.debug(e.getMessage(),e);
-                        }
+                        logger.error("failed to retrieve file {} {}: {}",
+                                msg.getPnfsId() != null ? msg.getPnfsId() : "(no PNFS-ID)",
+                                msg.getPnfsPath() != null ? msg.getPnfsPath() : "(no path)",
+                                e.getMessage());
                         return;
                 }
-                if (logger.isDebugEnabled()) {
-                        logger.debug("Marking file as deleted "+file);
-                }
+                logger.debug("Marking file as deleted {}", file);
                 Connection connection = null;
                 int rc;
                 try {
@@ -5202,7 +5025,8 @@ public final class Manager
                         connection=null;
                 }
                 catch (SQLException e) {
-                        logger.error(e.getMessage());
+                        logger.error("failed to mark file {} as deleted: {}",
+                                file, e.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
@@ -5231,7 +5055,8 @@ public final class Manager
                                 spaces[i] = getSpace(tokens[i]);
                         }
                         catch(Exception e) {
-                                logger.error(e.getMessage());
+                                logger.error("failed to find space {}: {}",
+                                        tokens[i], e.getMessage());
                                 spaces[i]= null;
                         }
                 }
@@ -5305,7 +5130,8 @@ public final class Manager
 
                 }
                 catch(SQLException sqle) {
-                        logger.error("Failed to extend lifetime "+sqle.getMessage());
+                        logger.error("failed to extend lifetime for {}: {}",
+                                token, sqle.getMessage());
                         if (connection!=null) {
                                 connection.rollback();
                                 connection_pool.returnFailedConnection(connection);
