@@ -2024,6 +2024,33 @@ public final class Storage
         }
     }
 
+    private static int portFor(URI target) throws SRMException
+    {
+        if(target.getPort() != -1) {
+            return target.getPort();
+        }
+
+        String scheme = target.getScheme();
+
+        if(scheme == null) {
+            throw new SRMException("No scheme in URI " + target.toString());
+        }
+
+        // REVISIT consider taking default port numbers from /etc/services
+
+        switch(scheme.toLowerCase()) {
+            case "http":
+                return 80;
+            case "https":
+                return 443;
+            case "gsiftp":
+                return 2811;
+            default:
+                throw new SRMException("No default port number for " +
+                        target.toString());
+        }
+    }
+
     private String performRemoteTransfer(SRMUser user,
                                          URI remoteTURL,
                                          FsPath actualFilePath,
@@ -2045,6 +2072,8 @@ public final class Storage
 
         IpProtocolInfo protocolInfo;
 
+        int port = portFor(remoteTURL);
+
         if (remoteTURL.getScheme().equals("gsiftp")) {
             RequestCredential credential =
                 RequestCredential.getRequestCredential(remoteCredentialId);
@@ -2057,7 +2086,7 @@ public final class Storage
             RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
                 new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
                                                      1, 1,
-                                                     new InetSocketAddress(remoteTURL.getHost(), remoteTURL.getPort()),
+                                                     new InetSocketAddress(remoteTURL.getHost(), port),
                                                      remoteTURL.toString(),
                                                      getCellName(),
                                                      getCellDomainName(),
@@ -2073,7 +2102,7 @@ public final class Storage
             protocolInfo =
                 new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
                                                        1, 1,
-                                                       new InetSocketAddress(remoteTURL.getHost(), remoteTURL.getPort()),
+                                                       new InetSocketAddress(remoteTURL.getHost(), port),
                                                        config.getBuffer_size(),
                                                        remoteTURL.toString());
         } else {
