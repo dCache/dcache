@@ -136,8 +136,7 @@ public class       LoginManager
             _childArgs.shift();
          }
          // get the authentication
-         _authenticator = args.getOpt("authenticator") ;
-         _authenticator = _authenticator == null ? "pam" : _authenticator ;
+         _authenticator = args.getOption("authenticator", "pam") ;
 
          if( ( _authClassName = args.getOpt("auth") ) == null ){
              switch (_protocol) {
@@ -210,14 +209,7 @@ public class       LoginManager
          }
 
          // keep alive
-         String keepAliveValue = args.getOpt("keepAlive");
-         long   keepAlive      = 0L ;
-         try{
-            keepAlive = keepAliveValue == null ? 0L :
-                        Long.parseLong(keepAliveValue);
-         }catch(NumberFormatException ee ){
-            _log.warn("KeepAlive value not valid : "+keepAliveValue ) ;
-         }
+         long   keepAlive      = args.getLongOption("keepAlive", 0L) ;
          _log.info("Keep Alive set to "+keepAlive+" seconds") ;
          keepAlive *= 1000L ;
          _keepAlive = new KeepAliveThread(keepAlive) ;
@@ -275,7 +267,7 @@ public CellVersion getCellVersion(){
      private String _loginBroker;
      private String _protocolFamily;
      private String _protocolVersion;
-     private long   _brokerUpdateTime   = 5*60*1000 ;
+     private long   _brokerUpdateTime   = 5*60 ;
      private long   _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
      private double _brokerUpdateOffset = 0.1 ;
      private LoginBrokerInfo _info;
@@ -285,24 +277,10 @@ public CellVersion getCellVersion(){
      private LoginBrokerHandler(String loginBroker){
 
         _loginBroker = loginBroker;
-        _protocolFamily    = _args.getOpt("protocolFamily" ) ;
-        if( _protocolFamily == null ) {
-            _protocolFamily = _protocol;
-        }
-        _protocolVersion = _args.getOpt("protocolVersion") ;
-        if( _protocolVersion == null ) {
-            _protocolVersion = "0.1";
-        }
-        String tmp = _args.getOpt("brokerUpdateTime") ;
-        try{
-           _brokerUpdateTime = Long.parseLong(tmp) * 1000 ;
-        }catch(NumberFormatException e ){/* bad values ignored */ }
-        tmp = _args.getOpt("brokerUpdateOffset") ;
-        if(tmp != null) {
-            try{
-               _brokerUpdateOffset = Double.parseDouble(tmp) ;
-            }catch(NumberFormatException e ){/* bad values ignored */ }
-        }
+        _protocolFamily    = _args.getOption("protocolFamily", _protocol) ;
+        _protocolVersion = _args.getOption("protocolVersion", "1.0") ;
+        _brokerUpdateTime = _args.getLongOption("brokerUpdateTime", _brokerUpdateTime) * 1000 ;
+        _brokerUpdateOffset =  _args.getDoubleOption("brokerUpdateOffset", _brokerUpdateOffset) ;
 
         _info = new LoginBrokerInfo(
                      _nucleus.getCellName() ,
