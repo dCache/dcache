@@ -192,15 +192,15 @@ public class       LoginManager
             }catch(NumberFormatException ee){/* bad values ignored */}
          }
 
-         //  using the LoginBroker ?
-         _loginBrokerHandler = new LoginBrokerHandler() ;
-         addCommandListener( _loginBrokerHandler ) ;
+         String loginBroker = _args.getOpt("loginBroker");
+          if ( loginBroker != null) {
+              _loginBrokerHandler = new LoginBrokerHandler(loginBroker);
+              addCommandListener(_loginBrokerHandler);
 
-         // enforce 'maxLogin' if 'loginBroker' is defined
-         if( ( _loginBrokerHandler.isActive() ) &&
-             ( _maxLogin < 0                  )    ) {
-             _maxLogin = 100000;
-         }
+              if (_maxLogin < 0) {
+                  _maxLogin = 100000;
+              }
+          }
 
          if( _maxLogin < 0 ){
             _log.info("MaxLogin feature disabled") ;
@@ -225,7 +225,7 @@ public class       LoginManager
          // get the location manager
          _locationManager = args.getOpt("lm") ;
 
-         _listenThread  = new ListenThread( listenPort ) ;
+         _listenThread  = new ListenThread(listenPort) ;
          _log.info( "Listening on port "+_listenThread.getListenPort() ) ;
 
 
@@ -280,14 +280,11 @@ public CellVersion getCellVersion(){
      private double _brokerUpdateOffset = 0.1 ;
      private LoginBrokerInfo _info;
      private double _currentLoad;
+     private final Thread _thread;
 
-     private LoginBrokerHandler(){
+     private LoginBrokerHandler(String loginBroker){
 
-        _loginBroker = _args.getOpt( "loginBroker" ) ;
-        if( _loginBroker == null ) {
-            return;
-        }
-
+        _loginBroker = loginBroker;
         _protocolFamily    = _args.getOpt("protocolFamily" ) ;
         if( _protocolFamily == null ) {
             _protocolFamily = _protocol;
@@ -315,10 +312,17 @@ public CellVersion getCellVersion(){
                      _loginClass.getName() ) ;
 
         _info.setUpdateTime( _brokerUpdateTime ) ;
-
-        _nucleus.newThread( this , "loginBrokerHandler" ).start() ;
-
+        _thread = _nucleus.newThread(this, "loginBrokerHandler");
      }
+
+     public void start() {
+         _thread.start();
+     }
+
+      public void stop() {
+          _thread.interrupt();
+      }
+
      @Override
      public void run(){
         try{
@@ -370,10 +374,6 @@ public CellVersion getCellVersion(){
      }
      private synchronized void runUpdate(){
 
-        if( _listenThread == null ) {
-            return;
-        }
-
         InetAddress[] addresses = _listenThread.getInetAddress();
 
         if( (addresses == null) || ( addresses.length == 0 ) ) {
@@ -423,11 +423,9 @@ public CellVersion getCellVersion(){
                     ((int)(_brokerUpdateOffset*100.))+" %" ) ;
 
      }
-     private boolean isActive(){ return _loginBroker != null ; }
+
      private void loadChanged( int children , int maxChildren ){
-       if( _loginBroker == null ) {
-           return;
-       }
+
        synchronized( this ){
           _currentLoad = (double)children / (double) maxChildren ;
           if(  Math.abs( _info.getLoad() - _currentLoad ) > _brokerUpdateOffset ){
@@ -662,7 +660,7 @@ public void cleanUp(){
      private long         _acceptErrorTimeout;
      private boolean      _isDedicated;
 
-     private ListenThread( int listenPort) throws Exception {
+     private ListenThread(int listenPort) throws Exception {
         _listenPort   = listenPort ;
 
         try{
@@ -671,6 +669,19 @@ public void cleanUp(){
 
          openPort() ;
      }
+
+     private void startLoginBrokerUpdates() {
+         if(_loginBrokerHandler != null) {
+             _loginBrokerHandler.start();
+         }
+     }
+
+     private void stopLoginBrokerUpdates() {
+         if(_loginBrokerHandler != null) {
+             _loginBrokerHandler.stop();
+         }
+     }
+
      private void openPort() throws Exception  {
 
         String ssf = _args.getOpt("socketfactory") ;
@@ -804,75 +815,91 @@ public void cleanUp(){
      @Override
      public void run(){
          _this = Thread.currentThread() ;
-         while( true ){
-            Socket socket;
-            try{
-               socket = _serverSocket.accept() ;
-               socket.setKeepAlive(true);
-               socket.setTcpNoDelay(true);
-                if (_logSocketIO.isDebugEnabled()) {
-                    _logSocketIO.debug("Socket OPEN (ACCEPT) remote = " +
-                            socket.getInetAddress() + ":" + socket.getPort() +
-                            " local = " + socket.getLocalAddress() + ":" +
-                            socket.getLocalPort());
-                }
-               _log.info("Nio Channel (accept) : "+(socket.getChannel()!=null));
 
-               int currentChildHash;
-                synchronized( _childHash ){ currentChildHash = _childCount ; }
-               _log.info("New connection : "+currentChildHash);
-                if ((_maxLogin > 0) && (currentChildHash > _maxLogin)) {
-                    _connectionDeniedCounter++;
-                    _log.warn("Connection denied " + currentChildHash + " > " + _maxLogin);
-                    _logSocketIO.warn("number of allowed logins exceeded.");
-                    ShutdownEngine engine = new ShutdownEngine(socket);
-                    engine.start();
-                    continue;
-                }
-               _log.info( "Connection request from "+socket.getInetAddress() ) ;
-                synchronized( _childHash ){ _childCount ++; }
-               _nucleus.newThread(
-                   new RunEngineThread(socket) ,
-                   "ClientThread-" + socket.getInetAddress() + ":" + socket.getPort()    ).start() ;
+         try {
+             startLoginBrokerUpdates();
+             while (true) {
+                 Socket socket;
+                 try {
+                     socket = _serverSocket.accept();
+                     socket.setKeepAlive(true);
+                     socket.setTcpNoDelay(true);
+                     if (_logSocketIO.isDebugEnabled()) {
+                         _logSocketIO.debug("Socket OPEN (ACCEPT) remote = "
+                                 + socket.getInetAddress() + ":" + socket.getPort()
+                                 + " local = " + socket.getLocalAddress() + ":"
+                                 + socket.getLocalPort());
+                     }
+                     _log.info("Nio Channel (accept) : " + (socket.getChannel() != null));
 
-            }catch( InterruptedIOException ioe ){
-               _log.warn("Listen thread interrupted") ;
-               try{ _serverSocket.close() ; }catch(IOException ee){}
-               break ;
-            }catch( IOException ioe ){
-                if (_serverSocket.isClosed()) {
-                    break;
-                }
+                     int currentChildHash;
+                     synchronized (_childHash) {
+                         currentChildHash = _childCount;
+                     }
+                     _log.info("New connection : " + currentChildHash);
+                     if ((_maxLogin > 0) && (currentChildHash > _maxLogin)) {
+                         _connectionDeniedCounter++;
+                         _log.warn("Connection denied " + currentChildHash + " > " + _maxLogin);
+                         _logSocketIO.warn("number of allowed logins exceeded.");
+                         ShutdownEngine engine = new ShutdownEngine(socket);
+                         engine.start();
+                         continue;
+                     }
+                     _log.info("Connection request from " + socket.getInetAddress());
+                     synchronized (_childHash) {
+                         _childCount++;
+                     }
+                     _nucleus.newThread(
+                             new RunEngineThread(socket),
+                             "ClientThread-" + socket.getInetAddress() + ":" + socket.getPort()).start();
 
-               _log.warn( "Got an IO Exception ( closing server ) : "+ioe ) ;
-               try{ _serverSocket.close() ; }catch(IOException ee){}
-               if( _acceptErrorTimeout <= 0L ) {
-                   break;
-               }
-               _log.warn( "Waiting "+_acceptErrorTimeout+" msecs");
-               try{
-                  Thread.sleep(_acceptErrorTimeout) ;
-               }catch(InterruptedException ee ){
-                  _log.warn("Recovery halt interrupted");
-                  break ;
-               }
-               _log.warn( "Resuming listener");
-               try{
+                 } catch (InterruptedIOException ioe) {
+                     _log.warn("Listen thread interrupted");
+                     try {
+                         _serverSocket.close();
+                     } catch (IOException ee) {
+                     }
+                     break;
+                 } catch (IOException ioe) {
+                     if (_serverSocket.isClosed()) {
+                         break;
+                     }
 
-                  openPort() ;
+                     _log.warn("Got an IO Exception ( closing server ) : " + ioe);
+                     try {
+                         _serverSocket.close();
+                     } catch (IOException ee) {
+                     }
+                     if (_acceptErrorTimeout <= 0L) {
+                         break;
+                     }
+                     _log.warn("Waiting " + _acceptErrorTimeout + " msecs");
+                     try {
+                         Thread.sleep(_acceptErrorTimeout);
+                     } catch (InterruptedException ee) {
+                         _log.warn("Recovery halt interrupted");
+                         break;
+                     }
+                     _log.warn("Resuming listener");
+                     try {
 
-               }catch(Exception ee ){
-                  _log.warn( "openPort reported : "+ee ) ;
-                  _log.warn( "Waiting "+_acceptErrorTimeout+" msecs");
-                  try{
-                     Thread.sleep(_acceptErrorTimeout) ;
-                  }catch(InterruptedException eee ){
-                     _log.warn("Recovery halt interrupted");
-                     break ;
-                  }
-               }
-            }
+                         openPort();
 
+                     } catch (Exception ee) {
+                         _log.warn("openPort reported : " + ee);
+                         _log.warn("Waiting " + _acceptErrorTimeout + " msecs");
+                         try {
+                             Thread.sleep(_acceptErrorTimeout);
+                         } catch (InterruptedException eee) {
+                             _log.warn("Recovery halt interrupted");
+                             break;
+                         }
+                     }
+                 }
+
+             }
+         }finally {
+             stopLoginBrokerUpdates();
          }
          _log.info( "Listen thread finished");
      }
