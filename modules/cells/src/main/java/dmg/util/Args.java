@@ -162,6 +162,11 @@ public class Args implements Serializable
         return values.isEmpty() ? null : values.get(values.size() - 1);
     }
 
+    public String getOption(String name, String defaultValue) {
+        ImmutableList<String> values = _options.get(name);
+        return values.isEmpty() ? defaultValue : values.get(values.size() - 1);
+    }
+
     public boolean hasOption(String name)
     {
         return !_options.get(name).isEmpty();

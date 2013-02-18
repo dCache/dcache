@@ -72,6 +72,17 @@ public class ArgsTest {
 
     }
 
+    @Test
+    public void testDefinedOpsDefault() {
+        Args args = new Args("-opt=foo");
+        assertEquals("specified opstion not detected", "foo", args.getOption("opt", "bar"));
+    }
+
+    @Test
+    public void testNotDefinedOpsDefault() {
+        Args args = new Args("-opt=foo");
+        assertEquals("default option is not detected", "bar", args.getOption("someopt", "bar"));
+    }
 
     @Test
     public void testDoubleOpts() {
