@@ -168,7 +168,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=file"));
-        assertThat(_response, hasHeader(DIGEST, "adler32:03da0195"));
+        assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
         assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
@@ -291,7 +291,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "500"));
         assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-499/1024"));
-        assertThat(_response, hasHeader(DIGEST, "adler32:03da0195"));
+        assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
         assertThat(_additionalWrites, hasSize(1));
@@ -336,7 +336,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_TYPE,
                 "multipart/byteranges; boundary=\"__AAAAAAAAAAAAAAAA__\""));
-        assertThat(_response, hasHeader(DIGEST, "adler32:03da0195"));
+        assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
         assertThat(_response, not(hasHeader(CONTENT_LENGTH)));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
