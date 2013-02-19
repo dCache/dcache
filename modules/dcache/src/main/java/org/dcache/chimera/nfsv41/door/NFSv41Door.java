@@ -329,7 +329,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         try {
             deviceid4 deviceid;
-            if (inode.type() != FsInodeType.INODE) {
+            if (inode.type() != FsInodeType.INODE || inode.getLevel() != 0) {
                 /*
                  * all non regular files ( AKA pnfs dot files ) provided by door itself.
                  */
