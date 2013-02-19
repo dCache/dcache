@@ -546,7 +546,7 @@ public class FsInode {
         return _ioEnabled;
     }
 
-    int getLevel() {
+    public int getLevel() {
         return _level;
     }
 
