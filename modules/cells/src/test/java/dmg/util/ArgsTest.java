@@ -1,13 +1,10 @@
-package org.dcache.tests.util;
+package dmg.util;
 
 import java.util.NoSuchElementException;
 
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
-
-import dmg.util.Args;
-
 
 public class ArgsTest {
 
