@@ -36,8 +36,8 @@ import org.dcache.webadmin.controller.PoolQueuesService;
 import org.dcache.webadmin.controller.PoolSelectionSetupService;
 import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.TapeTransfersService;
+import org.dcache.webadmin.controller.exceptions.LogInServiceException;
 import org.dcache.webadmin.controller.impl.AlwaysFailLoginService;
-import org.dcache.webadmin.controller.impl.GuestLogInDecorator;
 import org.dcache.webadmin.controller.impl.LoginStrategyLogInService;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
@@ -71,7 +71,6 @@ import dmg.cells.nucleus.CellPath;
 public class WebAdminInterface extends WebApplication {
 
     public static final String MISSING_RESOURCE_KEY = "missing.resource";
-
     private static final long LOGIN_CELLSTUB_TIMEOUT = 5000;
     private static final List<Class> ADMIN_PAGES = new ArrayList<Class>(
                     Arrays.asList(PoolAdmin.class, CellAdmin.class, AlarmsPage.class));
@@ -212,8 +211,8 @@ public class WebAdminInterface extends WebApplication {
         _adminGid = adminGid;
     }
 
-    public void setAlarmDisplayService(IAlarmDisplayService  alarmDisplayService) {
-        _alarmDisplayService =  alarmDisplayService;
+    public void setAlarmDisplayService(IAlarmDisplayService alarmDisplayService) {
+        _alarmDisplayService = alarmDisplayService;
     }
 
     public void setAuthDestination(String authDestination) {
@@ -305,7 +304,7 @@ public class WebAdminInterface extends WebApplication {
 
         if (isAuthenticatedMode()) {
             setRootRequestMapper(new HttpsMapper(getRootRequestMapper(),
-                    new HttpsConfig(_httpPort, _httpsPort)));
+                            new HttpsConfig(_httpPort, _httpsPort)));
         }
     }
 
@@ -346,35 +345,51 @@ public class WebAdminInterface extends WebApplication {
 
     private void setAuthorizationStrategies() {
         if (isAuthenticatedMode()) {
-            final LoginStrategy loginStrategy
+            LoginStrategy loginStrategy
                 = new RemoteLoginStrategy(new CellStub(_cellEndpoint,
                                           new CellPath(_authDestination),
                                           LOGIN_CELLSTUB_TIMEOUT));
-            final LoginStrategyLogInService loginService
+            LoginStrategyLogInService loginService
                 = new LoginStrategyLogInService();
             loginService.setLoginStrategy(loginStrategy);
             loginService.setAdminGid(_adminGid);
-            _logInService = new GuestLogInDecorator(loginService);
+            _logInService = loginService;
         }
 
-        final SimplePageAuthorizationStrategy simplePageStrategy
-            = new SimplePageAuthorizationStrategy(
-                        AuthenticatedWebPage.class, LogIn.class) {
+        SimplePageAuthorizationStrategy simplePageStrategy
+            = new SimplePageAuthorizationStrategy(AuthenticatedWebPage.class,
+                                                  LogIn.class) {
 
             @Override
             protected boolean isAuthorized() {
-                return ((WebAdminInterfaceSession) Session.get()).isSignedIn();
+                /*
+                 * we want the automatic sign-in here,
+                 * not on the beforeRender() of the LogIn page as it was;
+                 * we also want this to be only for cert signin
+                 */
+                boolean signedIn
+                    = ((WebAdminInterfaceSession) Session.get()).isSignedIn();
+                if (!signedIn) {
+                    try {
+                        LogIn.signInWithCert(_logInService);
+                        signedIn = true;
+                    } catch (IllegalArgumentException | LogInServiceException e) {
+                        _log.debug("could not automatically authorize {}: {}",
+                                   "using browser certificate", e.toString());
+                    }
+                }
+                return signedIn;
             }
         };
 
-        final RoleAuthorizationStrategy roleStrategy = new RoleAuthorizationStrategy(
+        RoleAuthorizationStrategy roleStrategy
+            = new RoleAuthorizationStrategy(
                         new IRoleCheckingStrategy() {
                             @Override
                             public boolean hasAnyRole(Roles roles) {
                                 _log.debug("checking {}", roles.toString());
-                                final boolean hasAnyRoles
-                                    = ((WebAdminInterfaceSession) Session.get())
-                                       .hasAnyRole(roles);
+                                boolean hasAnyRoles = ((WebAdminInterfaceSession)
+                                                Session.get()).hasAnyRole(roles);
                                 _log.debug("results in: {}", hasAnyRoles);
                                 return hasAnyRoles;
                             }
