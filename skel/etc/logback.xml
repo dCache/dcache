@@ -107,8 +107,8 @@
        note that remoteHost and port may require modification depending on
        the installation -->
   <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
-      <remoteHost>localhost</remoteHost>
-      <port>60001</port>
+      <remoteHost>${alarms.server.host}</remoteHost>
+      <port>${alarms.server.port}</port>
       <reconnectionDelay>10000</reconnectionDelay>
   </appender>
 
