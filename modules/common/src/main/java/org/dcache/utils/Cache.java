@@ -277,9 +277,10 @@ public class Cache<K, V> extends  TimerTask {
      * Remove entry associated with key.
      *
      * @param k key
-     * @return true if existing valid entry was removed.
+     * @return valid entry associated with the key or null if key not found or
+     *   expired.
      */
-    public boolean remove(K k) {
+    public V remove(K k) {
 
         V v;
         boolean valid;
@@ -288,9 +289,9 @@ public class Cache<K, V> extends  TimerTask {
         try {
             CacheElement<V> element = _storage.remove(k);
             if( element == null ) {
-                return false;
+                return null;
             }
-            valid =  element.validAt(System.currentTimeMillis());
+            valid = element.validAt(System.currentTimeMillis());
             v = element.getObject();
         } finally {
             _accessLock.unlock();
@@ -299,9 +300,9 @@ public class Cache<K, V> extends  TimerTask {
         _log.log(Level.FINEST, "Removing entry: active = [{0}] key = [{1}], value = [{2}]",
                 new Object[]{valid, k, v});
 
-         _eventListener.notifyRemove(this, v);
+        _eventListener.notifyRemove(this, v);
 
-        return valid;
+        return valid ? v : null;
     }
 
     /**

@@ -62,6 +62,25 @@ public class CacheTest {
     }
 
     @Test
+    public void testRemoveValid() throws Exception {
+        _cache.put("key1", "value1");
+        assertNotNull(_cache.remove("key1"));
+    }
+
+    @Test
+    public void testRemoveInValid() throws Exception {
+        _cache.put("key1", "value1");
+        assertNull(_cache.remove("key2"));
+    }
+
+    @Test
+    public void testRemoveExpired() throws Exception {
+        _cache.put("key1", "value1");
+        TimeUnit.SECONDS.sleep(6);
+        assertNull(_cache.remove("key1"));
+    }
+
+    @Test
     public void testExpiredByTime() throws Exception {
         _cache.put("key1", "value1");
         TimeUnit.MILLISECONDS.sleep(_cache.getEntryIdleTime() + 1000);

@@ -94,6 +94,9 @@ public class NFSv4StateHandler {
         return _clientsByVerifier.get(verifier);
     }
 
+    public synchronized NFSv41Session removeSessionById(sessionid4 id) {
+        return _sessionById.remove(id);
+    }
 
     public NFSv41Session sessionById( sessionid4 id) {
        return _sessionById.get(id);

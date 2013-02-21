@@ -40,7 +40,7 @@ public class OperationDESTROY_SESSION extends AbstractNFSv4Operation {
 
         try {
 
-            NFSv41Session session = context.getStateHandler().sessionById(_args.opdestroy_session.dsa_sessionid);
+            NFSv41Session session = context.getStateHandler().removeSessionById(_args.opdestroy_session.dsa_sessionid);
             if (session == null) {
                 throw new ChimeraNFSException(nfsstat.NFSERR_BADSESSION, "client not found");
             }
