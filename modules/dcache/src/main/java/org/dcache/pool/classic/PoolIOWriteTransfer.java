@@ -109,15 +109,20 @@ public class PoolIOWriteTransfer
         try {
             RepositoryChannel fileIoChannel = new FileRepositoryChannel(_file, "rw");
             try {
-                if (_checksumModule.checkOnTransfer() &&
-                    _mover instanceof ChecksumMover) {
+                if (_mover instanceof ChecksumMover) {
                     ChecksumMover cm = (ChecksumMover)_mover;
-                    _checksumFactory = cm.getChecksumFactory(_protocolInfo);
-                    if (_checksumFactory == null) {
+
+                    cm.setOnWriteEnabled(_checksumModule.checkOnWrite());
+
+                    if (_checksumModule.checkOnTransfer()) {
                         _checksumFactory =
-                            _checksumModule.getDefaultChecksumFactory();
+                                cm.getOnTransferChecksumFactory(_protocolInfo);
+                        if (_checksumFactory == null) {
+                            _checksumFactory =
+                                _checksumModule.getDefaultChecksumFactory();
+                        }
+                        cm.setOnTransferChecksumFactory(_checksumFactory);
                     }
-                    cm.setDigest(_checksumFactory);
                 }
                 runMover(fileIoChannel);
             } finally {
@@ -159,7 +164,7 @@ public class PoolIOWriteTransfer
                 }
 
                 if (_checksumFactory == null) {
-                    _checksumFactory = cm.getChecksumFactory(_protocolInfo);
+                    _checksumFactory = cm.getOnWriteChecksumFactory(_protocolInfo);
                 }
             }
 

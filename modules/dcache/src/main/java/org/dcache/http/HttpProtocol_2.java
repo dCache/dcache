@@ -271,13 +271,19 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
     }
 
     @Override
-    public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo)
+    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo protocolInfo)
     {
         return null;
     }
 
     @Override
-    public void setDigest(ChecksumFactory checksumFactory)
+    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo protocolInfo)
+    {
+        return null;
+    }
+
+    @Override
+    public void setOnTransferChecksumFactory(ChecksumFactory checksumFactory)
     {
         _checksumFactory = checksumFactory;
     }
@@ -292,5 +298,11 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
     public Checksum getTransferChecksum()
     {
         return (_checksumChannel == null) ? null : _checksumChannel.getChecksum();
+    }
+
+    @Override
+    public void setOnWriteEnabled(boolean enabled)
+    {
+        // Ignore setting
     }
 }

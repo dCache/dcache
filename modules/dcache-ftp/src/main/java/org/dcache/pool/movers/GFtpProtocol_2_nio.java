@@ -610,14 +610,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
     /** Part of the ChecksumMover interface. */
     @Override
-    public void setDigest(ChecksumFactory factory)
+    public void setOnTransferChecksumFactory(ChecksumFactory factory)
     {
         _digest = factory.create();
 	_checksumFactory = factory;
     }
 
-    @Override
-    public ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
+    private ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
     {
         if (protocol instanceof GFtpProtocolInfo) {
             GFtpProtocolInfo ftpp = (GFtpProtocolInfo)protocol;
@@ -633,6 +632,24 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             }
         }
         return null;
+    }
+
+    @Override
+    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo info)
+    {
+        return getChecksumFactory(info);
+    }
+
+    @Override
+    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo info)
+    {
+        return getChecksumFactory(info);
+    }
+
+    @Override
+    public void setOnWriteEnabled(boolean enabled)
+    {
+        // ignore value
     }
 
 
@@ -814,7 +831,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             mode.setPartialRetrieveParameters(offset, size);
 
 	    if (digest.length() > 0) {
-		mover.setDigest(ChecksumFactory.getFactory(ChecksumType.getChecksumType(digest)));
+		mover.setOnTransferChecksumFactory(ChecksumFactory.getFactory(ChecksumType.getChecksumType(digest)));
 	    }
 
             mover.setVerboseLogging(verbose);

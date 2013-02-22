@@ -1100,10 +1100,25 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     public boolean wasChanged(){ return _wasChanged; }
 
     @Override
-    public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo) { return null; }
+    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo protocolInfo)
+    {
+        return null;
+    }
 
     @Override
-    public void setDigest(ChecksumFactory factory){
+    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo protocolInfo)
+    {
+        return null;
+    }
+
+    @Override
+    public void setOnWriteEnabled(boolean enabled)
+    {
+        // Ignore value
+    }
+
+    @Override
+    public void setOnTransferChecksumFactory(ChecksumFactory factory){
         _checksumFactory = factory;
         _digest = factory.create();
     }

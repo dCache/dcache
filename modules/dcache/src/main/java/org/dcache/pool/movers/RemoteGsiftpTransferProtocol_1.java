@@ -332,8 +332,7 @@ public class RemoteGsiftpTransferProtocol_1
         }
     }
 
-    @Override
-    public ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
+    private ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
     {
         if (protocol instanceof RemoteGsiftpTransferProtocolInfo) {
 
@@ -359,11 +358,29 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     @Override
-    public void setDigest(ChecksumFactory factory)
+    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo info)
+    {
+        return getChecksumFactory(info);
+    }
+
+    @Override
+    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo info)
+    {
+        return getChecksumFactory(info);
+    }
+
+    @Override
+    public void setOnTransferChecksumFactory(ChecksumFactory factory)
     {
         _checksumFactory = factory;
         _transferMessageDigest =
             (factory != null) ? factory.create() : null;
+    }
+
+    @Override
+    public void setOnWriteEnabled(boolean enabled)
+    {
+        // ignore value
     }
 
     @Override
