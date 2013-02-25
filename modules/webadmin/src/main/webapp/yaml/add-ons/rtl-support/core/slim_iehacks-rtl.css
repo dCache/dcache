@@ -1,8 +1,0 @@
-@charset "UTF-8";
-/* "Yet Another Multicolumn Layout" v3.2 (c) by Alexander Hass, Dirk Jesse (http://www.yaml.de)
-* $Revision: 430 $ $Date: 2009-10-27 21:15:57 +0100 (Di, 27. Okt 2009) $ */
-@media all
-{
-#nav{direction:ltr}
-#nav *{direction:rtl}
-}
