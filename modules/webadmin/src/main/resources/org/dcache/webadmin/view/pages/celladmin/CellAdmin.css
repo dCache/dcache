@@ -1,18 +1,12 @@
 @CHARSET "UTF-8";
 
-h1{
+h2 {
     text-align: center;
-}
-
-h2{
-    text-align: center;
-    color: #aad000;
     font-weight: bold;
-    text-transform:none;
+    text-transform: none;
 }
 
-p{
-    text-align: left;
-    background: #dce3ba;
+p {
+    background: #d2dddd;
     padding: 15px;
 }

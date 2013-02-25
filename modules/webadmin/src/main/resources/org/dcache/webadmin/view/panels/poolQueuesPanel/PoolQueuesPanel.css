@@ -1,71 +1,27 @@
 @CHARSET "UTF-8";
-/*
-    Document   : poolListPanel
-    Created on : 06-Nov-2009, 15:22:42
-    Author     : jans
-    Description:
-        get the nice percentage bar out of these styles.
-*/
 
-h1{
-    text-align: center;
-}
-
-table
-{
-    border-spacing: 0;
-    border-collapse: collapse;
+table {
     width: 100%;
-    margin-top: 10px;
 }
 
-td, th
-{
-    padding: 4px;
-    border: 1px solid gray;
-}
-
-th
-{
+td {
     text-align: center;
-    background: #aad000;
-    color: white;
-    border: none;
-}
-
-th > a
-{
-    color: white;
-    text-decoration: none;
-}
-
-td
-{
-    text-align: center;
-}
-
-tr:nth-child(even) {
-    background:#ced5dc;
-}
-
-tr:nth-child(odd) {
-    background: #f4f4f4;
 }
 
 td:nth-child(6n-1) {
-    background:#ced5dc;
+    background: #d2dddd;
     opacity: 0.6;
-    color:#000;
+    color: #000;
 }
 
 td:nth-child(6n-2) {
-    background: #ced5dc;
+    background: #d2dddd;
     opacity: 0.6;
-    color:#000;
+    color: #000;
 }
 
 td:nth-child(6n-3) {
-    background:  #ced5dc;
+    background: #d2dddd;
     opacity: 0.6;
-    color:#000;
+    color: #000;
 }

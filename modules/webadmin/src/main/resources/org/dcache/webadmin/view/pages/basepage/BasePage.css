@@ -1,0 +1,150 @@
+@CHARSET "UTF-8";
+
+/*
+ *  These are the settings shared by all webadmin pages after the general
+ *  yaml settings are applied
+ */
+h1,h2,h3 {
+    color: #23587a;
+    text-transform: uppercase;
+}
+
+h1 {
+    text-align: center;
+}
+
+p {
+    text-align: left;
+}
+
+/*
+ *  Common table settings
+ */
+table {
+    border-spacing: 0;
+    margin-top: 10px;
+    table-layout: auto;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+td, th {
+    padding: 4px;
+    border: 1px solid gray;
+}
+
+th {
+    text-align: center;
+    background: #8ae234;
+    color: white;
+    border: none;
+}
+
+th > a {
+    color: white;
+    text-decoration: none;
+}
+
+td {
+    text-align: left;
+}
+
+tr:nth-child(even) {
+    background: #d2dddd;
+}
+
+tr:nth-child(odd) {
+    background: #eef3f3;
+}
+
+/*
+ *  Table sorter
+ */
+table.sortable thead tr .header {
+    background-image: url(../../images/bg.png);
+    background-repeat: no-repeat;
+    background-position: center right;
+    cursor: pointer;
+}
+
+table.sortable thead tr .headerSortUp {
+    background-image: url(../../images/asc.png);
+}
+
+table.sortable thead tr .headerSortDown {
+    background-image: url(../../images/desc.png);
+}
+
+.horizontalNav {
+    /* (en) containing floats in IE */
+    /* (de) Einfassen der Floats im IE */
+    width: 100%;
+    overflow: hidden;
+    /* (en) containing floats in all other browsers */
+    /* (de) Einfassen der Floats in allen anderen Browsern */
+    float: left;
+    display: inline;
+    /* (en|de) Bugfix:IE - collapsing horizontal margins */
+    position: relative;
+}
+
+.horizontalNav ul li {
+    /* (en|de) Bugfix:IE - Doubled Float Margin Bug */
+    display: inline;
+    float: left; /* LTR */
+    font-size: 1.0em;
+    line-height: 1em;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+}
+
+.horizontalNav ul li span {
+    background: transparent;
+    color: #23587a;
+    display: block;
+    font-size: 1em;
+    font-weight: bold;
+    margin: 0;
+    padding: 0.5em 0.8em 0.5em 0.8em;
+    text-decoration: none;
+    width: auto;
+    text-transform: uppercase;
+}
+
+.horizontalNav ul li.active {
+    /* (en) Repeat the main color from the image */
+    /* (de) Wiederholung der Hauptfarbe aus der Bilddatei */
+    background: #272727;
+    border-left: 1px #444 solid;
+    border-right: 1px #888 solid;
+}
+
+.horizontalNav ul li a:focus,
+.horizontalNav ul li a:hover,
+.horizontalNav ul li a:active {
+    background: #eee; 
+    color: #333; 
+    text-decoration: none; 
+    outline: 0 none; 
+}
+
+.horizontalNav ul li.active span,
+.horizontalNav ul li.active span:focus,
+.horizontalNav ul li.active span:hover,
+.horizontalNav ul li.active span:active {
+    background: transparent; 
+    color: #fff; 
+    text-decoration: none; 
+}
+
+#infobox {
+    background-color: #fffffc;
+    width: 100px;
+    padding: 10px;
+    margin: 0px;
+    border: 1px solid #7f8595;
+    font-size: 12px;
+    line-height: 130%;
+}

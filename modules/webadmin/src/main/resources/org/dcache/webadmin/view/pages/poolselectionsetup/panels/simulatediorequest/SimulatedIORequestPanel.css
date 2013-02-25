@@ -1,21 +1,14 @@
 @CHARSET "UTF-8";
 
-h1{
-    text-align: center;
+table.content {
+    margin-top: 10px;
+    table-layout: auto;
 }
 
-table.content
-{
-    margin-top:10px;
-    table-layout:auto;
-}
-
-input
-{
+input {
     width: 80%;
 }
 
-.submitButton
-{
+.submitButton {
     width: 120px;
 }

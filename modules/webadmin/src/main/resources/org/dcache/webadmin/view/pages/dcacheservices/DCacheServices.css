@@ -1,11 +1,8 @@
 @CHARSET "UTF-8";
-h1{
-    text-align: center;
-}
 
 #services {
     float: left;
-    width:100%;
+    width: 100%;
 }
 
 img.login, img.logout {
@@ -14,7 +11,7 @@ img.login, img.logout {
 }
 
 div.link_container {
-    background-color: #6699cc;
+    background-color: #82b4c8;
     border-width: medium;
     border-color: black;
     border-style: solid;
@@ -26,6 +23,7 @@ div.link {
     text-align: center;
     color: white;
 }
-p{
-    margin-left:45%;
+
+p {
+    margin-left: 45%;
 }

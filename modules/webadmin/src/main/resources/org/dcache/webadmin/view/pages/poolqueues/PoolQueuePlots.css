@@ -1,137 +1,63 @@
 @CHARSET "UTF-8";
 
-h1 {
-	text-align: center;
-}
-
 h2 {
-	text-align: center;
-	color: #aad000;
+    text-align: center;
 }
 
 h3 {
-	text-align: left;
-	color: #aad000;
+    text-align: left;
 }
 
 p {
-	text-align: left;
-}
-
-.control table {
-	border-spacing: 0;
-	border-collapse: collapse;
-	margin-top: 10px;
-	table-layout: auto;
-	word-wrap: break-word;
-}
-
-.control td,th {
-	padding: 4px;
-	border: 1px solid gray;
-}
-
-.control th {
-	text-align: center;
-	background: #aad000;
-	color: white;
-	border: none;
-}
-
-.control th>a {
-	color: white;
-	text-decoration: none;
+    text-align: left;
 }
 
 .control td {
-	text-align: center;
+    text-align: center;
 }
 
 .control tr:nth-child(odd) {
-	background: #cbcbcb;
+    background: #d2dddd;
 }
 
 .control tr:nth-child(even) {
-	background: #dcdcdc;
+    background: #eef3f3;
 }
 
 .display table {
-	border-spacing: 0;
-	border-collapse: collapse;
-	margin-top: 10px;
-	table-layout: auto;
-	word-wrap: break-word;
-	width: 100%
-}
-
-.display td,th {
-	padding: 4px;
-	border: 1px solid gray;
-}
-
-.display th {
-	text-align: center;
-	background: #aad000;
-	color: white;
-	border: none;
-}
-
-.display th>a {
-	color: white;
-	text-decoration: none;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .display td {
-	text-align: center;
+    text-align: center;
 }
 
 .display tr:nth-child(even) {
-    background: #eeeeee;
+    background: #ffffff;
 }
 
 .display tr:nth-child(odd) {
-    background: #eeeeee;
+    background: #ffffff;
 }
 
 .thumbnail table {
-	border-spacing: 0;
-    border-collapse: collapse;
-    margin-top: 10px;
-	table-layout: auto;
-	width: 100%
-}
-
-.thumbnail td,th {
-	padding: 4px;
-	border: 1px solid gray;
-}
-
-.thumbnail  th {
-	text-align: center;
-	background: #aad000;
-	color: white;
-	border: none;
-}
-
-.thumbnail th>a {
-	color: white;
-	text-decoration: none;
+    width: 100%
 }
 
 .thumbnail td {
-	text-align: center;
-	align: center;
-	width: 100%
+    text-align: center;
+    width: 100%
 }
 
 .thumbnail tr:nth-child(even) {
-	background: #d9d9d9;
+    background: #789498;
 }
 
 .thumbnail tr:nth-child(odd) {
-	background: #cfcfcf;
+    background: #d2dddd;
 }
 
 .thumbnail img {
-	width: 60%
+    width: 80%
 }

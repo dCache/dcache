@@ -5,16 +5,17 @@ span.userLogin {
     margin-top: 5px;
     margin-right: 10px;
     margin-bottom: 8px;
-    color:#aad000;
+    color: #8ae234;
 }
 
 span.userLogin a {
     text-decoration: none;
 }
+
 span.userLogin a:hover {
     text-decoration: none;
 }
-span.stripe  {
-    color: #316fa0;
-}
 
+span.stripe  {
+    color: #23587a;
+}

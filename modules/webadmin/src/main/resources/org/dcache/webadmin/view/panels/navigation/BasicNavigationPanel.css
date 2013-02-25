@@ -1,30 +1,40 @@
 @CHARSET "UTF-8";
 
 /*the adjustment to let the not clickable "adminlinks" look like the clickable*/
-  .hlist ul li span {
-    background:transparent;
-    color:#8db8cc;
-    display:block;
-    font-size:1em;
-    font-weight:bold;
-    margin:0;
-    padding:0.5em 0.8em 0.5em 0.8em;
-    text-decoration:none;
-    width:auto;
+  
+.hlist ul li span {
+    background: transparent;
+    color: #23587a;
+    display: block;
+    font-size: 1em;
+    font-weight: bold;
+    margin: 0;
+    padding: 0.5em 0.8em 0.5em 0.8em;
+    text-decoration: none;
+    width: auto;
     text-transform: uppercase;
-  }
+}
 
-  .hlist ul li span:focus,
-  .hlist ul li span:hover,
-  .hlist ul li span:active  { background:#eee; color:#333; text-decoration:none; outline: 0 none; }
+.hlist ul li span:focus,
+.hlist ul li span:hover,
+.hlist ul li span:active  {
+    background: #eee; 
+    color: #333; 
+    text-decoration: none; 
+    outline: 0 none; 
+}
 
-  .hlist ul li.active {
-    background:#272727;
-    border-left:1px #444 solid;
-    border-right:1px #888 solid;
-  }
+.hlist ul li.active {
+    background: #272727;
+    border-left: 1px #444 solid;
+    border-right: 1px #888 solid;
+}
 
-  .hlist ul li.active span,
-  .hlist ul li.active span:focus,
-  .hlist ul li.active span:hover,
-  .hlist ul li.active span:active { background:transparent; color:#fff; text-decoration:none; }
+.hlist ul li.active span,
+.hlist ul li.active span:focus,
+.hlist ul li.active span:hover,
+.hlist ul li.active span:active {
+    background: transparent; 
+    color: #fff; 
+    text-decoration:none; 
+}

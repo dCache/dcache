@@ -4,125 +4,64 @@ h1, h2, h3, h4, h5 {
     text-align: center;
 }
 
-h2{
-    text-align: center;
-    color: #aad000;
+h2 {
     font-weight: bold;
-    text-transform:none;
+    text-transform: none;
 }
 
-table.selection
-{
-    border-spacing: 0;
-    border-collapse: collapse;
+table.selection {
     width: 100%;
-    margin-top:10px;
-    text-transform:uppercase;
+    text-transform: uppercase;
     font-weight: bold;
-    border-bottom:2px #800 solid;
+    border-bottom: 2px #880000 solid;
 }
 
-
-table.selection td
-{
-    padding: 4px;
-    border: 1px solid gray;
-    background: #aad000;
+table.selection td {
+    background: #8ae234;
 }
-table.selection tbody td
-{
+
+table.selection tbody td {
     border-bottom:0px;
 }
 
-table.selection  a{
-
-    color: #004586;
+table.selection  a {
+    color: #003172;
 }
 
-table.selection  a:hover{
-
-    color: #800;
-}
-table.selection td
-{
-    border:none;
+table.selection  a:hover {
+    color: #880000;
 }
 
-table.content, table.content_1
-{
-    margin-top:10px;
-    table-layout:auto;
-    width:100%;
-    overflow-x:scroll;
-    word-wrap:break-word;
-}
-
-
-table.content td
-{
-    padding: 4px;
-    border: 1px solid gray;
-    background: #f4f4f4;
-}
-
-table.content th
-{
-    padding: 4px;
-    border: 1px solid gray;
-    background:  #aad000;
-    border-bottom:2px #800 solid;
-    border-right:0px;
-    border-left:0px;
-}
-
-table.content_1 th
-{
-    padding: 4px;
-    border: 1px solid gray;
-    background: #ced5dc;
-    border-right:0px;
-    border-left:0px;
-}
-
-table.content_1 td
-{
-    padding: 4px;
-    border: 1px solid gray;
-    background: #f4f4f4;
-}
-td
-{
-    text-align: center;
-}
-td, th
-{
-    padding: 4px;
-
-}
-
-th
-{
-    text-align: center;
-    background: #aad000;
-    color: white;
+table.selection td {
     border: none;
 }
 
-th > a
-{
-    color: white;
-    text-decoration: none;
+table.content, table.content_1 {
+    width: 100%;
+    overflow-x: scroll;
 }
 
-td
-{
-    text-align: center;
-}
-
-tr:nth-child(even) {
-    background:#ced5dc;
-}
-
-tr:nth-child(odd) {
+table.content td {
     background: #f4f4f4;
+}
+
+table.content th {
+    background:  #8ae234;
+    border-bottom: 2px #880000 solid;
+    border-right: 0px;
+    border-left: 0px;
+}
+
+table.content_1 th {
+    background: #ced5dc;
+    border-right: 0px;
+    border-left: 0px;
+}
+
+table.content_1 td {
+    background: #f4f4f4;
+}
+
+td {
+    text-align: center;
 }

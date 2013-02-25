@@ -1,11 +1,10 @@
 @CHARSET "UTF-8";
 
-/*the dcache bird in the middle please*/
 #bird_large {
     text-align: right;
 }
 
-img.bird{
+img.bird {
     width: 65px;
     border: 0;
 }

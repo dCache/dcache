@@ -62,11 +62,6 @@
   h5 { font-size:116.67%; }                         /* 14px */
   h6 { font-size:116.67%; }                         /* 14px */
 
-  h1,h2,h3 {
-      color:#aad000;
-      text-transform: uppercase;
-  }
-
   .feedbackPanel {
       width: 450px;
       position:relative;
@@ -107,7 +102,10 @@
 
   /* --- general text formatting | Allgemeine Textauszeichnung ------------------------------------------ */
 
-  p { line-height:1.5em; margin:0 0 1em 0; }
+  p {
+    line-height:1.5em;
+    margin:0 0 1em 0;
+  }
 
   blockquote, cite, q {
     font-family:Georgia, "Times New Roman", Times, serif;
@@ -147,14 +145,14 @@
 
   /*--- Links ----------------------------------------------------------------------------------------- */
 
-  a { color:#316fa0; background:transparent; text-decoration:none; }
-  a:visited  { color:#036; }
+  a { color:#23587a; background:transparent; text-decoration:none; }
+  a:visited  { color:#003172; }
 
   /* (en) maximum constrast for tab focus - change with great care */
   /* (en) Maximaler Kontrast fuer Tab Focus - Aendern Sie diese Regel mit Bedacht */
   a:focus { text-decoration:underline; color:#000; background: #fff; outline: 3px #f93 solid; }
   a:hover,
-  a:active { color:#182E7A; text-decoration:underline; outline: 0 none; }
+  a:active { color:#024585; text-decoration:underline; outline: 0 none; }
 
   /* --- images (with optional captions) | Bilder (mit optionaler Bildunterschrift) ------------------ */
 
@@ -202,7 +200,16 @@
   * @section content-tables
   */
 
-  table { width:auto; border-collapse:collapse; margin-bottom:0.5em; border-left:1px #888 solid; border-right:1px #888 solid; border-top:2px #888 solid; border-bottom:2px #888 solid; }
+  table {
+    width:auto;
+    border-collapse:collapse;
+    margin-bottom:0.5em;
+    border-left:1px #888 solid;
+    border-right:1px #888 solid;
+    border-top:2px #888 solid;
+    border-bottom:2px #888 solid;
+  }
+
   table caption { font-variant:small-caps; }
   table.full { width:100%; }
   table.fixed { table-layout:fixed; }
