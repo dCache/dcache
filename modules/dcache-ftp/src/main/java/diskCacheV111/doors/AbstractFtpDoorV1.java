@@ -4189,7 +4189,9 @@ public abstract class AbstractFtpDoorV1
         @Override
         protected void printName(FsPath dir, DirectoryEntry entry)
         {
-            _out.print(_pathRoot.relativize(new FsPath(dir, entry.getName())));
+            String name = entry.getName();
+            FsPath path = (dir == null) ? new FsPath(name) : new FsPath(dir, name);
+            _out.print(_pathRoot.relativize(path));
         }
     }
 }

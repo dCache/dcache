@@ -2443,7 +2443,9 @@ public final class Storage
         {
             FileAttributes attributes = entry.getFileAttributes();
             DcacheFileMetaData fmd = new DcacheFileMetaData(attributes);
-            fmd.SURL = _root.relativize(new FsPath(dir, entry.getName())).toString();
+            String name = entry.getName();
+            FsPath path = (dir == null) ? new FsPath(name) : new FsPath(dir, name);
+            fmd.SURL = _root.relativize(path).toString();
             return fmd;
         }
 

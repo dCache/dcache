@@ -124,14 +124,15 @@ public class ListDirectoryHandler
         throws InterruptedException, CacheException
     {
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
-        Set<FileAttribute> required =
-            printer.getRequiredAttributes();
-        FileAttributes attributes =
-            handler.getFileAttributes(path.toString(), required);
-        FileAttributes dirAttr =
-            handler.getFileAttributes(path.getParent().toString(), required);
-        printer.print(path.getParent(), dirAttr,
-                      new DirectoryEntry(path.getName(), attributes));
+        Set<FileAttribute> required = printer.getRequiredAttributes();
+        FileAttributes attributes = handler.getFileAttributes(path.toString(), required);
+        DirectoryEntry entry = new DirectoryEntry(path.getName(), attributes);
+        if (path.isEmpty()) {
+            printer.print(null, null, entry);
+        } else {
+            FileAttributes dirAttr = handler.getFileAttributes(path.getParent().toString(), required);
+            printer.print(path.getParent(), dirAttr, entry);
+        }
     }
 
     @Override

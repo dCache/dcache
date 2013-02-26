@@ -56,16 +56,22 @@ public class ACLPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateSubDir(Subject subject, FileAttributes attr)
+    public AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr)
     {
-        Permission permission = getPermission(subject, attr);
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+        Permission permission = getPermission(subject, parentAttr);
         return valueOf(AclNFSv4Matcher.isAllowed(permission, ADD_SUBDIRECTORY));
     }
 
     @Override
-    public AccessType canCreateFile(Subject subject, FileAttributes attr)
+    public AccessType canCreateFile(Subject subject, FileAttributes parentAttr)
     {
-        Permission permission = getPermission(subject, attr);
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+        Permission permission = getPermission(subject, parentAttr);
         return valueOf(AclNFSv4Matcher.isAllowed(permission, ADD_FILE));
     }
 
@@ -74,6 +80,10 @@ public class ACLPermissionHandler implements PermissionHandler
                                     FileAttributes parentAttr,
                                     FileAttributes childAttr)
     {
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+
         Permission permissionParent = getPermission(subject, parentAttr);
         AccessType ofParent =  valueOf(AclNFSv4Matcher.isAllowed(permissionParent,
                                                             DELETE_CHILD));
@@ -127,6 +137,10 @@ public class ACLPermissionHandler implements PermissionHandler
                                 FileAttributes newParentAttr,
                                 boolean isDirectory)
     {
+        if (parentAttr == null || newParentAttr == null) {
+            return ACCESS_DENIED;
+        }
+
         Permission permission1 = getPermission(subject, parentAttr);
         Permission permission2 = getPermission(subject, newParentAttr);
 

@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.RetentionPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -388,24 +389,29 @@ public class ChimeraNameSpaceProvider
     {
         try {
             FsInode inode = new FsInode(_fs, pnfsId.toIdString());
-            FsInode parentDir = _fs.getParentOf( inode );
-            FileAttributes parentDirAttributes =
-                getFileAttributesForPermissionHandler(parentDir);
+            FsPath source = new FsPath(_fs.inode2path(inode));
+            if (source.isEmpty()) {
+                throw new PermissionDeniedCacheException("Access denied: " + source);
+            }
 
-            String path = _fs.inode2path(inode);
-            File pathFile = new File(path);
-            String name = pathFile.getName();
+            FsInode sourceDir = _fs.getParentOf(inode);
+            FileAttributes sourceDirAttributes =
+                getFileAttributesForPermissionHandler(sourceDir);
 
-            File dest = new File(newName);
+            FsPath dest = new FsPath(newName);
+            if (dest.isEmpty()) {
+                throw new PermissionDeniedCacheException("Access denied: " + dest);
+            }
+
             FsInode destDir;
             FileAttributes destDirAttributes;
 
             try {
-                if( dest.getParent().equals( pathFile.getParent()) ) {
-                    destDir = parentDir;
-                    destDirAttributes = parentDirAttributes;
-                }else{
-                    destDir = pathToInode(subject, dest.getParent());
+                if (dest.getParent().equals(source.getParent())) {
+                    destDir = sourceDir;
+                    destDirAttributes = sourceDirAttributes;
+                } else {
+                    destDir = pathToInode(subject, dest.getParent().toString());
                     destDirAttributes =
                         getFileAttributesForPermissionHandler(destDir);
                 }
@@ -416,14 +422,14 @@ public class ChimeraNameSpaceProvider
 
             if (!Subjects.isRoot(subject) &&
                 _permissionHandler.canRename(subject,
-                                             parentDirAttributes,
+                                             sourceDirAttributes,
                                              destDirAttributes,
                                              inode.isDirectory()) != ACCESS_ALLOWED) {
                 throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
             }
 
             if (Subjects.isRoot(subject) && overwrite) {
-                _fs.move(parentDir, name, destDir, dest.getName());
+                _fs.move(sourceDir, source.getName(), destDir, dest.getName());
                 return;
             }
 
@@ -461,7 +467,7 @@ public class ChimeraNameSpaceProvider
                  */
             }
 
-            _fs.move(parentDir, name, destDir, dest.getName());
+            _fs.move(sourceDir, source.getName(), destDir, dest.getName());
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: "
                                                  + pnfsId);
@@ -643,8 +649,9 @@ public class ChimeraNameSpaceProvider
     private FileAttributes getFileAttributesForPermissionHandler(FsInode inode)
         throws IOException, ChimeraFsException, CacheException
     {
-        return getFileAttributes(Subjects.ROOT, inode,
-                                 _permissionHandler.getRequiredAttributes());
+        return (inode == null)
+                ? null
+                : getFileAttributes(Subjects.ROOT, inode, _permissionHandler.getRequiredAttributes());
     }
 
     private FileAttributes getFileAttributes(Subject subject, FsInode inode,
@@ -802,22 +809,10 @@ public class ChimeraNameSpaceProvider
              * attributes to avoid fetching the attributes twice.
              */
             FsInode inodeParent = _fs.getParentOf(inode);
-
-            if( inodeParent != null) {
-                FileAttributes parent =
+            FileAttributes parent =
                     getFileAttributesForPermissionHandler(inodeParent);
-
-                if (_permissionHandler.canGetAttributes(subject, parent, fileAttributes, attr) != ACCESS_ALLOWED) {
-                    throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
-                }
-            } else {
-                /* This means that the file doesn't have a parent.
-                 * That is we are fetching attributes of the
-                 * root directory. We cannot handle this situation
-                 * correctly with the current PermissionHandler. As a
-                 * temporary workaround we simply allow fetching
-                 * attributes of the root directory.
-                 */
+            if (_permissionHandler.canGetAttributes(subject, parent, fileAttributes, attr) != ACCESS_ALLOWED) {
+                throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
             }
             return fileAttributes;
         } catch (FileNotFoundHimeraFsException e) {

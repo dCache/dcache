@@ -17,8 +17,8 @@ public interface DirectoryListPrinter
     /**
      * Prints a DirectoryEntry.
      *
-     * @param dir The path of the directory the entry belongs to
-     * @param dirAttr The FileAttributes of the directory containing entry
+     * @param dir The path of the directory the entry belongs to, or null if entry is the file system root.
+     * @param dirAttr The FileAttributes of the directory containing entry, or null if entry is the file system root.
      * @param entry The DirectoryEntry to print
      */
     void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
