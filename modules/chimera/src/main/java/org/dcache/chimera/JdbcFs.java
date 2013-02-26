@@ -588,6 +588,9 @@ public class JdbcFs implements FileSystemProvider {
 
         FsInode inode = path2inode(path);
         FsInode parent = this.getParentOf(inode);
+        if (parent == null) {
+            return false;
+        }
 
         File filePath = new File(path);
         String name = filePath.getName();

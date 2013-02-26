@@ -83,10 +83,10 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateSubDir(Subject subject, FileAttributes attr)
+    public AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr)
     {
         for (PermissionHandler handler: _chain) {
-            AccessType res = handler.canCreateSubDir(subject, attr);
+            AccessType res = handler.canCreateSubDir(subject, parentAttr);
             if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
             }
@@ -95,10 +95,10 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateFile(Subject subject, FileAttributes attr)
+    public AccessType canCreateFile(Subject subject, FileAttributes parentAttr)
     {
         for (PermissionHandler handler: _chain) {
-            AccessType res = handler.canCreateFile(subject, attr);
+            AccessType res = handler.canCreateFile(subject, parentAttr);
             if (res != null && res != AccessType.ACCESS_UNDEFINED) {
                 return res;
             }
