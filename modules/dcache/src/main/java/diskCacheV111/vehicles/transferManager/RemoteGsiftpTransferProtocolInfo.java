@@ -4,8 +4,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
 
@@ -35,7 +40,9 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     @Deprecated // for compatibility with pools before 1.9.14
     private final Long requestCredentialId;
     private final String user;
-    private final GSSCredential credential;
+
+    private PrivateKey key;
+    private X509Certificate[] certChain;
 
     public RemoteGsiftpTransferProtocolInfo(String protocol,
                                             int major,
@@ -48,7 +55,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             int tcpBufferSize,
                                             @Deprecated
                                             Long requestCredentialId,
-                                            GSSCredential credential)
+                                            GlobusGSSCredentialImpl credential)
+            throws GSSException
     {
         this(protocol,
              major,
@@ -75,8 +83,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             int tcpBufferSize,
                                             @Deprecated
                                             Long requestCredentialId,
-                                            GSSCredential credential,
-                                            String user)
+                                            GlobusGSSCredentialImpl credential,
+                                            String user) throws GSSException
     {
         checkArgument(credential instanceof Serializable,
                       "Credential must be Serializable");
@@ -93,8 +101,9 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         this.bufferSize = bufferSize;
         this.tcpBufferSize = tcpBufferSize;
         this.requestCredentialId = requestCredentialId;
-        this.credential = credential;
         this.user = user;
+        this.key = credential.getPrivateKey();
+        this.certChain = credential.getCertificateChain();
     }
 
   public String getGsiftpUrl()
@@ -215,9 +224,10 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         return addr;
     }
 
-    public GSSCredential getCredential()
+    public GlobusGSSCredentialImpl getCredential() throws GSSException
     {
-        return credential;
+        return new GlobusGSSCredentialImpl(new X509Credential(key, certChain),
+                GSSCredential.INITIATE_ONLY);
     }
 
     // For compatibility with pre 2.6
@@ -230,6 +240,3 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         }
     }
 }
-
-
-
