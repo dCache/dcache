@@ -191,7 +191,9 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AccessMask;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import javax.naming.NamingException;
@@ -2201,20 +2203,29 @@ public final class Storage
             GSSCredential delegatedCredential =
                 credential.getDelegatedCredential();
 
+            if (!(delegatedCredential instanceof GlobusGSSCredentialImpl)) {
+                throw new SRMException("Delegated credential is not compatible with Globus");
+            }
+
             String[] hosts = new String[] { remoteTURL.getHost() };
-            RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
-                new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
-                                                     1, 1, hosts, 0,
-                                                     remoteTURL.toString(),
-                                                     getCellName(),
-                                                     getCellDomainName(),
-                                                     config.getBuffer_size(),
-                                                     config.getTcp_buffer_size(),
-                                                     remoteCredentialId,
-                                                     delegatedCredential);
-            gsiftpProtocolInfo.setEmode(true);
-            gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());
-            protocolInfo = gsiftpProtocolInfo;
+            try {
+                RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
+                        new RemoteGsiftpTransferProtocolInfo(
+                                "RemoteGsiftpTransfer",
+                                1, 1, hosts, 0,
+                                remoteTURL.toString(),
+                                getCellName(),
+                                getCellDomainName(),
+                                config.getBuffer_size(),
+                                config.getTcp_buffer_size(),
+                                remoteCredentialId,
+                                (GlobusGSSCredentialImpl) delegatedCredential);
+                gsiftpProtocolInfo.setEmode(true);
+                gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());
+                protocolInfo = gsiftpProtocolInfo;
+            } catch (GSSException e) {
+                throw new SRMException("Credential failure: " + e.getMessage(), e);
+            }
         } else if (remoteTURL.getScheme().equals("http")) {
             String[] hosts = new String[] { remoteTURL.getHost() };
             protocolInfo =

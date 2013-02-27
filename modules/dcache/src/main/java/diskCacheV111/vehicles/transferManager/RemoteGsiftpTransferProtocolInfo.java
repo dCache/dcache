@@ -1,9 +1,24 @@
 package diskCacheV111.vehicles.transferManager;
 
+import com.google.common.base.Throwables;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.util.Collections;
 
+import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
 
@@ -30,7 +45,12 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     @Deprecated // for compatibility with pools before 1.9.14
     private final Long requestCredentialId;
     private final String user;
+
+    @Deprecated // Must be removed before moving to JGlobus 2
     private final GSSCredential credential;
+
+    private PrivateKey key;
+    private X509Certificate[] certChain;
 
     public RemoteGsiftpTransferProtocolInfo(String protocol,
                                             int major,
@@ -44,7 +64,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             int tcpBufferSize,
                                             @Deprecated
                                             Long requestCredentialId,
-                                            GSSCredential credential)
+                                            GlobusGSSCredentialImpl credential)
+            throws GSSException
     {
         this(protocol,
              major,
@@ -73,8 +94,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             int tcpBufferSize,
                                             @Deprecated
                                             Long requestCredentialId,
-                                            GSSCredential credential,
-                                            String user)
+                                            GlobusGSSCredentialImpl credential,
+                                            String user) throws GSSException
     {
         checkArgument(credential instanceof Serializable,
                       "Credential must be Serializable");
@@ -92,6 +113,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         this.requestCredentialId = requestCredentialId;
         this.credential = credential;
         this.user = user;
+        this.key = credential.getPrivateKey();
+        this.certChain = credential.getCertificateChain();
     }
 
   public String getGsiftpUrl()
@@ -224,11 +247,45 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         return null;
     }
 
-    public GSSCredential getCredential()
+    public PrivateKey getPrivateKey()
     {
-        return credential;
+        return key;
+    }
+
+    public X509Certificate[] getCertificateChain()
+    {
+        return certChain;
+    }
+
+    public GlobusGSSCredentialImpl getCredential() throws IOException, GSSException
+    {
+        try {
+            CertificateFactory factory = CertificateFactory.getInstance("X.509", "BC");
+            X509Certificate[] bcCerts = new X509Certificate[certChain.length];
+            for (int i = 0; i < bcCerts.length; i++) {
+                InputStream in = new ByteArrayInputStream(certChain[i].getEncoded());
+                try {
+                    bcCerts[i] = (X509Certificate) factory.generateCertificate(in);
+                } finally {
+                    in.close();
+                }
+            }
+            return new GlobusGSSCredentialImpl(new GlobusCredential(key, bcCerts),
+                                               GSSCredential.INITIATE_ONLY);
+        } catch (CertificateException e) {
+            throw Throwables.propagate(e);
+        } catch (NoSuchProviderException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if ((key == null || certChain == null) && credential instanceof GlobusGSSCredentialImpl) {
+            key = ((GlobusGSSCredentialImpl) credential).getPrivateKey();
+            certChain = ((GlobusGSSCredentialImpl) credential).getCertificateChain();
+        }
     }
 }
-
-
-
