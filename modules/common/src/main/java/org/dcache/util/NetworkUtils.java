@@ -1,8 +1,11 @@
 package org.dcache.util;
 
 import static com.google.common.base.Predicates.instanceOf;
+import com.google.common.base.Splitter;
 import static com.google.common.collect.Collections2.filter;
+import com.google.common.collect.ImmutableList;
 import static com.google.common.collect.ImmutableList.copyOf;
+import com.google.common.net.InetAddresses;
 
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
@@ -26,6 +29,51 @@ public abstract class NetworkUtils {
 
     private static final int RANDOM_PORT = 23241;
     private static final int FIRST_CLIENT_HOST = 0;
+
+    private final static List<InetAddress> LOCAL_INET_ADDRESSES;
+    private final static boolean FAKED_ADDRESS;
+    public final static String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
+
+    static {
+        /*
+         * Get localcal Inet addresses
+         */
+        final String localaddresses = System.getProperty(LOCAL_HOST_ADDRESS_PROPERTY);
+        final List<InetAddress> localInetAddress = new ArrayList<InetAddress>();
+
+        if(localaddresses != null && !localaddresses.isEmpty()) {
+            FAKED_ADDRESS = true;
+            Splitter s = Splitter.on(',')
+                    .omitEmptyStrings()
+                    .trimResults();
+            for(String address: s.split(localaddresses)) {
+                localInetAddress.add(InetAddresses.forString(address));
+            }
+        } else {
+            FAKED_ADDRESS = false;
+            try {
+                Enumeration<NetworkInterface> interfaces =
+                        NetworkInterface.getNetworkInterfaces();
+
+                while (interfaces.hasMoreElements()) {
+                    NetworkInterface i = interfaces.nextElement();
+                    try {
+                        if (i.isUp() && !i.isLoopback()) {
+                            Enumeration<InetAddress> addresses = i.getInetAddresses();
+                            while (addresses.hasMoreElements()) {
+                                localInetAddress.add(addresses.nextElement());
+                            }
+                        }
+                    } catch (SocketException e) {
+                        // skip faulty interface
+                    }
+                }
+            } catch (SocketException e) {
+                // huh....
+            }
+        }
+        LOCAL_INET_ADDRESSES = ImmutableList.copyOf(localInetAddress);
+    }
 
     /**
      * Sorts addresses so that external addresses precede any internal interface
@@ -54,21 +102,8 @@ public abstract class NetworkUtils {
      * @return
      * @throws SocketException
      */
-    public static List<InetAddress> getLocalAddresses() throws SocketException {
-        List<InetAddress> result = new ArrayList<>();
-
-        Enumeration<NetworkInterface> interfaces =
-                NetworkInterface.getNetworkInterfaces();
-        while (interfaces.hasMoreElements()) {
-            NetworkInterface i = interfaces.nextElement();
-            if (i.isUp() && !i.isLoopback()) {
-                Enumeration<InetAddress> addresses = i.getInetAddresses();
-                while (addresses.hasMoreElements()) {
-                    result.add(addresses.nextElement());
-                }
-            }
-        }
-        return result;
+    public static List<InetAddress> getLocalAddresses() {
+        return LOCAL_INET_ADDRESSES;
     }
 
     /**
@@ -96,6 +131,11 @@ public abstract class NetworkUtils {
      */
     public static InetAddress getLocalAddress(InetAddress intendedDestination)
             throws SocketException {
+
+        if (FAKED_ADDRESS) {
+            return LOCAL_INET_ADDRESSES.get(0);
+        }
+
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.connect(intendedDestination, RANDOM_PORT);
             return socket.getLocalAddress();
