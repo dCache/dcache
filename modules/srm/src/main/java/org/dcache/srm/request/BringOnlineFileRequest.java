@@ -344,7 +344,6 @@ public final class BringOnlineFileRequest extends FileRequest {
         logger.debug("run()");
         try {
             if(getPinId() == null) {
-
                 // do not check explicitely if we can read the file
                 // this is done by pnfs manager when we call askFileId()
 
@@ -356,15 +355,14 @@ public final class BringOnlineFileRequest extends FileRequest {
                     return;
                 }
             }
-        } catch (SRMException e) {
-            logger.error(e.getMessage());
-            throw new NonFatalJobFailure(e.toString());
-        } catch(IllegalStateTransition ist) {
-            throw new NonFatalJobFailure("Illegal State Transition : " +ist.getMessage());
+        } catch(SRMException | IllegalStateTransition e) {
+            // FIXME some SRMExceptions are permanent failures while others
+            // are temporary.  Code currently doesn't distinguish, so will
+            // always retry internally even if problem isn't transitory.
+            throw new NonFatalJobFailure(e.getMessage());
         }
         logger.info("PinId is "+getPinId()+" returning, scheduler should change" +
             " state to \"Ready\"");
-
     }
 
     public void askFileId() throws NonFatalJobFailure, FatalJobFailure {

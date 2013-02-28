@@ -444,11 +444,11 @@ public final class GetFileRequest extends FileRequest {
                     return;
                 }
             }
-        } catch (SRMException e) {
-            logger.error(e.getMessage());
+        } catch (IllegalStateTransition | SRMException e) {
+            // FIXME some SRMException failures are temporary and others are
+            // permanent.  Code currently doesn't distinguish between them and
+            // always retries, even if problem isn't transitory.
             throw new NonFatalJobFailure(e.toString());
-        } catch(IllegalStateTransition ist) {
-            throw new NonFatalJobFailure("Illegal State Transition : " +ist.getMessage());
         }
         logger.info("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
 

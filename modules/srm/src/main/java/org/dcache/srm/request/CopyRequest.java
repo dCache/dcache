@@ -297,8 +297,10 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
      }
 
 
-    public void proccessRequest()  throws SQLException,Exception {
-
+    public void proccessRequest() throws SQLException, IOException,
+            SRMException, InterruptedException, IllegalStateTransition,
+            FatalJobFailure
+    {
         logger.debug("Proccessing request");
         if( getNumOfFileRequest() == 0) {
             try {
@@ -923,17 +925,14 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             else {
                 setState(State.ASYNCWAIT, "waiting for files to complete");
             }
-        }
-        catch(FatalJobFailure fje) {
-            throw fje;
-        }
-        catch(Exception e)
-        {
-            logger.error(e.toString());
-            logger.error("throwing nonfatal exception for retry");
+        } catch(SRMException | IllegalStateTransition | SQLException e) {
+            // FIXME some SRMException failures are temporary and others are
+            // permanent.  Code currently doesn't distinguish between them and
+            // always retries, even if problem isn't transitory.
             throw new NonFatalJobFailure(e.toString());
+        } catch(IOException | InterruptedException e) {
+            throw new FatalJobFailure(e.toString());
         }
-
     }
 
     @Override

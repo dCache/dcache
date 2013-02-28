@@ -84,6 +84,7 @@ import java.net.URLConnection;
 import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
+import java.io.FileNotFoundException;
 import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
@@ -106,6 +107,7 @@ import org.dcache.srm.util.ShellCommandExecuter;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -499,7 +501,9 @@ public final class CopyFileRequest extends FileRequest {
 
 	}
 
-	private void runScriptCopy() throws Exception {
+	private void runScriptCopy() throws SRMException, IOException,
+                GSSException
+        {
 		URI from =getFrom_turl();
 		URI to = getTo_turl();
 		if(from == null && getLocal_from_path() != null ) {
@@ -539,7 +543,7 @@ public final class CopyFileRequest extends FileRequest {
 		setStateToDone();
 	}
 
-	private void runLocalToLocalCopy() throws Exception {
+	private void runLocalToLocalCopy() throws IllegalStateTransition, SRMException {
 		logger.debug("copying from local to local ");
         FileMetaData fmd ;
         try {
@@ -653,7 +657,9 @@ public final class CopyFileRequest extends FileRequest {
         setStateToDone();
         }
 
-	private void runRemoteToLocalCopy() throws Exception {
+	private void runRemoteToLocalCopy() throws IllegalStateTransition,
+                SRMException, NonFatalJobFailure
+        {
 		logger.debug("copying from remote to local ");
 		RequestCredential credential = getCredential();
 		if(getToFileId() == null && getToParentFileId() == null) {
@@ -774,7 +780,7 @@ public final class CopyFileRequest extends FileRequest {
         }
 	}
 
-	private void setStateToFailed(String error) throws Exception {
+	private void setStateToFailed(String error) throws SRMInvalidRequestException {
         try {
             setState(State.FAILED, error);
         }
@@ -784,7 +790,9 @@ public final class CopyFileRequest extends FileRequest {
 		((CopyRequest)getRequest()).fileRequestCompleted();
 	}
 
-	private void runLocalToRemoteCopy() throws Exception {
+	private void runLocalToRemoteCopy() throws SRMException,
+                IllegalStateTransition, NonFatalJobFailure
+        {
 		if(getTransferId() == null) {
 			logger.debug("copying using storage.putToRemoteTURL");
 			RequestCredential credential = getCredential();
@@ -803,7 +811,7 @@ public final class CopyFileRequest extends FileRequest {
 	}
 
 	@Override
-        public void run() throws NonFatalJobFailure, FatalJobFailure{
+        public void run() throws NonFatalJobFailure, FatalJobFailure {
 		logger.debug("copying " );
 		try {
 			if(getFrom_turl() != null && getFrom_turl().getScheme().equalsIgnoreCase("dcap")  ||
@@ -812,14 +820,14 @@ public final class CopyFileRequest extends FileRequest {
 				try {
 					runScriptCopy();
 					return;
-				}
-				catch(Exception e) {
-					logger.error(e.toString());
-					logger.error("copying using script failed, trying java");
+				} catch(SRMException | IOException | GSSException e) {
+					logger.warn("script failed: {}",
+                                                e.toString());
+                                        // fall-through to try other methods
 				}
 			}
 			if(getLocal_to_path() != null && getLocal_from_path() != null) {
-                runLocalToLocalCopy();
+				runLocalToLocalCopy();
 				return;
 			}
 			if(getLocal_to_path() != null && getFrom_turl() != null) {
@@ -840,15 +848,9 @@ public final class CopyFileRequest extends FileRequest {
 				logger.error("Unknown combination of to/from ursl");
 				setStateToFailed("Unknown combination of to/from ursl");
 			}
-		}
-		catch(Exception e) {
-			logger.error(e.toString());
-			logger.error("copy  failed");
+		} catch (IllegalStateTransition | IOException | SRMException e) {
 			throw new NonFatalJobFailure(e.toString());
-		}
-		catch(Throwable t) {
-			throw new FatalJobFailure(t.toString());
-		}
+                }
 	}
 
 	private static long last_time;
@@ -859,7 +861,9 @@ public final class CopyFileRequest extends FileRequest {
 		return last_time;
 	}
 
-	public void scriptCopy(GlobusURL from, GlobusURL to, GSSCredential credential) throws Exception {
+        public void scriptCopy(GlobusURL from, GlobusURL to, GSSCredential credential)
+                throws IOException, GSSException
+        {
 		String proxy_file = null;
 		try {
 			String command = getConfiguration().getTimeout_script();
@@ -966,7 +970,7 @@ public final class CopyFileRequest extends FileRequest {
 					File f = new File(proxy_file);
 					if(!f.delete() ) {
      					logger.error("error deleting proxy cash "+proxy_file);
-                    }
+					}
 				}
 				catch(Exception e) {
 					logger.error("error deleting proxy cash "+proxy_file);
@@ -976,48 +980,43 @@ public final class CopyFileRequest extends FileRequest {
 		}
 	}
 
-	public void javaUrlCopy(URL from, URL to) throws Exception {
-		try {
-			InputStream in;
-			if(from.getProtocol().equals("file")) {
-				in = new FileInputStream(from.getPath());
-			}
-			else {
-				in = from.openConnection().getInputStream();
-			}
-			OutputStream out;
-			if(to.getProtocol().equals("file")) {
-				out = new FileOutputStream(to.getPath());
-			}
-			else {
-				URLConnection to_connect = to.openConnection();
-				to_connect.setDoInput(false);
-				to_connect.setDoOutput(true);
-				out = to_connect.getOutputStream();
-			}
-			try {
-				int buffer_size = 0;//configuration.getBuffer_size();
-				if(buffer_size <=0) {
-                                    buffer_size = 4096;
-                                }
-				byte[] bytes = new byte[buffer_size];
-				long total = 0;
-				int l;
-				while( (l = in.read(bytes)) != -1) {
-					total += l;
-					out.write(bytes,0,l);
-				}
-				logger.debug("done, copied "+total +" bytes");
-			}
-			finally {
-				in.close();
-				out.close();
-			}
-		}
-		catch(Exception e) {
-			logger.debug("failure : "+e.getMessage());
-			throw e;
-		}
+        public void javaUrlCopy(URL from, URL to) throws IOException
+        {
+            InputStream in;
+            if(from.getProtocol().equals("file")) {
+                    in = new FileInputStream(from.getPath());
+            }
+            else {
+                    in = from.openConnection().getInputStream();
+            }
+            OutputStream out;
+            if(to.getProtocol().equals("file")) {
+                    out = new FileOutputStream(to.getPath());
+            }
+            else {
+                    URLConnection to_connect = to.openConnection();
+                    to_connect.setDoInput(false);
+                    to_connect.setDoOutput(true);
+                    out = to_connect.getOutputStream();
+            }
+            try {
+                    int buffer_size = 0;//configuration.getBuffer_size();
+                    if(buffer_size <=0) {
+                        buffer_size = 4096;
+                    }
+                    byte[] bytes = new byte[buffer_size];
+                    long total = 0;
+                    int l;
+                    while( (l = in.read(bytes)) != -1) {
+                            total += l;
+                            out.write(bytes,0,l);
+                    }
+                    logger.debug("done, copied "+total +" bytes");
+            }
+            finally {
+                    in.close();
+                    out.close();
+            }
 	}
 
 	@Override

@@ -174,7 +174,7 @@ public final class LsFileRequest extends FileRequest {
                         }
                         setState(State.DONE, State.DONE.toString());
                 }
-                catch (Exception e) {
+                catch (SRMException | URISyntaxException | IllegalStateTransition e) {
                         wlock();
                         try {
                                 TReturnStatus status;
@@ -210,7 +210,7 @@ public final class LsFileRequest extends FileRequest {
                                 metaDataPathDetail =  new TMetaDataPathDetail();
                                 metaDataPathDetail.setPath(getPath(surl));
                                 metaDataPathDetail.setStatus(status);
-                                setState(State.FAILED,e.toString());
+                                setState(State.FAILED, e.toString());
                         }
                         catch(IllegalStateTransition ist) {
                                 logger.error("Illegal State Transition : " +ist.getMessage());

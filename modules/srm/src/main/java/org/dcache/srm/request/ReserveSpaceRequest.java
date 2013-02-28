@@ -247,23 +247,9 @@ public final class ReserveSpaceRequest extends Request {
             );
             setState(State.ASYNCWAIT,
                     "waiting Space Reservation completion");
-        } catch(Exception e) {
-            if(e instanceof NonFatalJobFailure ) {
-                throw (NonFatalJobFailure) e;
-            }
-            if(e instanceof FatalJobFailure ) {
-                throw (FatalJobFailure) e;
-            }
-
-            logger.error("can not reserve space: ");
-            logger.error(e.toString());
-            try {
-                setState(State.FAILED,e.toString());
-            } catch(IllegalStateTransition ist) {
-                logger.error("Illegal State Transition : " +ist.getMessage());
-            }
+        } catch(IllegalStateTransition e) {
+            throw new FatalJobFailure("cannot reserve space: " + e.getMessage());
         }
-
     }
 
     public SrmStatusOfReserveSpaceRequestResponse getSrmStatusOfReserveSpaceRequestResponse() {

@@ -856,21 +856,19 @@ public final class Scheduler implements Runnable  {
                 }
 
                 logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") exited sync block");
-                Throwable t = null;
+                Exception exception = null;
                 try {
                    logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") calling job.run()");
                    job.run();
                    logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") job.run() returned");
-                }
-                catch(Throwable t1)
+                } catch(NonFatalJobFailure | FatalJobFailure | RuntimeException e)
                 {
-                    logger.error(t1.toString());
-                    t = t1;
+                    exception = e;
                 }
                 job.wlock();
                 try {
                     // if no exception was thrown
-                    if(t == null) {
+                    if(exception == null) {
                         state = job.getState();
                         if(state == State.DONE) {
                         }
@@ -900,14 +898,14 @@ public final class Scheduler implements Runnable  {
 
                     } else {
 
-                        if(t instanceof NonFatalJobFailure) {
+                        if(exception instanceof NonFatalJobFailure) {
 
-                            NonFatalJobFailure failure = (NonFatalJobFailure)t;
+                            NonFatalJobFailure failure = (NonFatalJobFailure)exception;
                             if(job.getNumberOfRetries() < maxNumberOfRetries &&
                             job.getNumberOfRetries() < job.getMaxNumberOfRetries()) {
                                 try {
                                         job.setState(State.RETRYWAIT,
-                                        " nonfatal error ["+t.toString()+"] retrying");
+                                        " nonfatal error ["+exception.toString()+"] retrying");
                                 }
                                 catch( IllegalStateTransition ist) {
                                     logger.error("Illegal State Transition : " +ist.getMessage());
@@ -925,13 +923,11 @@ public final class Scheduler implements Runnable  {
                                 }
                             }
                         }
-                        else if(t instanceof FatalJobFailure) {
-                            FatalJobFailure failure = (FatalJobFailure)t;
+                        else if(exception instanceof FatalJobFailure) {
+                            FatalJobFailure failure = (FatalJobFailure)exception;
 
                             try {
-                                job.setState(State.FAILED,
-                                "non retriable error"+failure.toString());
-
+                                job.setState(State.FAILED, failure.getMessage());
                             }
                             catch( IllegalStateTransition ist) {
                                 logger.error("Illegal State Transition : " +ist.getMessage());
@@ -939,14 +935,18 @@ public final class Scheduler implements Runnable  {
                         }
                         else
                         {
+                            // Only possibility left is RuntimeException
                             try {
-
-                                logger.error(t.toString());
-                                job.setState(State.FAILED,t.toString());
-
+                                logger.error("Bug detected by SRM Scheduler",
+                                        exception);
+                                job.setState(State.FAILED, "Internal error: " +
+                                        exception.toString());
                             }
                             catch( IllegalStateTransition ist) {
-                                logger.error("Illegal State Transition : " +ist.getMessage());
+                                // FIXME how should we fail a request that is
+                                // already in a terminal state?
+                                logger.error("Illegal State Transition : {}",
+                                        ist.getMessage());
                             }
                         }
 

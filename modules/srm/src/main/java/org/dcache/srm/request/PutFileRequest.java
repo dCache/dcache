@@ -446,8 +446,8 @@ public final class PutFileRequest extends FileRequest {
     }
 
     @Override
-    public void run() throws NonFatalJobFailure,
-            FatalJobFailure {
+    public void run() throws NonFatalJobFailure, FatalJobFailure
+    {
         addDebugHistoryEvent("run method is executed");
         try {
             if (getFileId() == null && getParentFileId() == null) {
@@ -541,15 +541,8 @@ public final class PutFileRequest extends FileRequest {
             }
             logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
         }
-        catch(Exception e) {
-            logger.error("can not prepare to put : ",e);
-            String error ="can not prepare to put : "+e;
-            try {
-                setState(State.FAILED,error);
-            }
-            catch(IllegalStateTransition ist) {
-                logger.warn("Illegal State Transition : " +ist.getMessage());
-            }
+        catch(SRMException | IllegalStateTransition e) {
+            throw new FatalJobFailure("cannot prepare to put: " + e.getMessage());
         }
     }
 
