@@ -87,6 +87,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 /usr/bin/chimera-cli
 /usr/bin/dcache
+/usr/bin/dcache-star
 /usr/sbin/dcache-info-provider
 /usr/share/doc/dcache
 /usr/share/dcache
@@ -99,6 +100,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,dcache,dcache) /var/lib/dcache/billing
 %attr(-,dcache,dcache) /var/lib/dcache/plots
 %attr(-,dcache,dcache) /var/lib/dcache/statistics
+%attr(-,dcache,dcache) /var/lib/dcache/star
+%attr(-,dcache,dcache) /var/spool/dcache/star
 %attr(700,dcache,dcache) /var/lib/dcache/credentials
 
 %attr(0755,root,root) /etc/rc.d/init.d/dcache-server

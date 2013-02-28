@@ -27,6 +27,8 @@ Please fix this and reinstall this package." >&2
     chown dcache:dcache /var/lib/dcache/plots
     chown dcache:dcache /var/lib/dcache/statistics
     chown dcache:dcache /var/lib/dcache/credentials
+    chown dcache:dcache /var/lib/dcache/star
+    chown dcache:dcache /var/spool/dcache/star
 
     # delegated proxies should not be accessible to anybody else
     chmod 700 /var/lib/dcache/credentials
