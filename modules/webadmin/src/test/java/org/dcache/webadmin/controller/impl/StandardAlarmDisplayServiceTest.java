@@ -59,10 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.impl;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.inOrder;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
+import org.json.JSONException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -70,17 +71,17 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.model.exceptions.DAOException;
-import org.json.JSONException;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.inOrder;
 
 /**
  * Tests both the service refresh and the provider filtering and sorting.

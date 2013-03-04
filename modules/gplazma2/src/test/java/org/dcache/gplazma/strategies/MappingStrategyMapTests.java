@@ -1,24 +1,26 @@
 package org.dcache.gplazma.strategies;
 
-import java.security.Principal;
-import java.util.Set;
-import org.dcache.gplazma.AuthenticationException;
-import static org.junit.Assert.assertNotNull;
-import org.junit.Before;
-import org.junit.Test;
-import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
-import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
-import java.util.List;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UserNamePrincipal;
-
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.collect.ImmutableList;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.security.Principal;
+import java.util.List;
+import java.util.Set;
+
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor;
+import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
+
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
+import static org.junit.Assert.assertNotNull;
 
 /**
  *

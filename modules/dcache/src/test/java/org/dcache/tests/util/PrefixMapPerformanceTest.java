@@ -1,9 +1,10 @@
 package org.dcache.tests.util;
 
-import org.dcache.util.PrefixMap;
+import org.junit.Test;
+
 import diskCacheV111.util.FsPath;
 
-import org.junit.Test;
+import org.dcache.util.PrefixMap;
 
 public class PrefixMapPerformanceTest
 {

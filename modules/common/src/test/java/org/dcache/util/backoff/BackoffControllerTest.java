@@ -59,9 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.util.backoff;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertThat;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +68,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.util.backoff.BackoffControllerBuilder.BackoffController;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
-import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertThat;
 
 /**
  * Simple consistency tests for the {@link BackoffController}.

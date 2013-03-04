@@ -72,24 +72,25 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.scheduler.FatalJobFailure;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.v2_2.TAccessLatency;
-import org.dcache.srm.v2_2.TRetentionPolicy;
-import org.dcache.srm.v2_2.TRetentionPolicyInfo;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
-import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
 import org.apache.axis.types.UnsignedLong;
-import org.dcache.srm.SRMInvalidRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
+import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  * File request is an abstract "SRM file request"

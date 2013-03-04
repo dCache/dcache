@@ -1,7 +1,5 @@
 package diskCacheV111.vehicles;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 

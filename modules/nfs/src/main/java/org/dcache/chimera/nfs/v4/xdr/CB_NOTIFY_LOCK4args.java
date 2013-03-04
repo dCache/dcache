@@ -4,9 +4,13 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
-import org.dcache.chimera.nfs.v4.*;
-import org.dcache.xdr.*;
+
 import java.io.IOException;
+
+import org.dcache.xdr.OncRpcException;
+import org.dcache.xdr.XdrAble;
+import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.XdrEncodingStream;
 
 public class CB_NOTIFY_LOCK4args implements XdrAble {
     public nfs_fh4 cnla_fh;

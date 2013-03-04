@@ -1,11 +1,13 @@
 package org.dcache.webadmin.view.panels.layout;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Locale;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.model.Model;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Locale;
+
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 
 /**

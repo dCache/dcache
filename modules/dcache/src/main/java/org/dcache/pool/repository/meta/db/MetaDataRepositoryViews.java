@@ -5,13 +5,13 @@ import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.collections.StoredMap;
 
+import java.io.PrintWriter;
+import java.net.URI;
+import java.util.Map;
+
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.repository.StickyRecord;
-
-import java.util.Map;
-import java.io.PrintWriter;
-import java.net.URI;
 
 /**
  * MetaDataRepositoryViews encapsulates creation of views into

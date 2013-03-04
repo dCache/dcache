@@ -1,20 +1,21 @@
 package dmg.protocols.ssh ;
-import  dmg.security.cipher.* ;
+
+import dmg.security.cipher.StreamCipher;
 
 
 public class SshStringPacket extends SshPacket {
     String  _string ;
     byte [] _load ;
     byte [] _binary ;
-    
+
     public SshStringPacket( StreamCipher cipher , byte [] data , int len  ){
-    
+
         super( cipher , data , len ) ;
         byte [] payload = getPayload() ;
         convertString( payload , 0 , payload.length ) ;
     }
     public SshStringPacket( byte [] data , int len  ){
-    
+
         super( null , data , len ) ;
         byte [] payload = getPayload() ;
         convertString( payload , 0 , payload.length ) ;
@@ -34,7 +35,7 @@ public class SshStringPacket extends SshPacket {
        punchInt( _load , 0 , len ) ;
        System.arraycopy( data , 0 , _load , 4 , data.length ) ;
     }
-    public SshStringPacket( StreamCipher cipher , 
+    public SshStringPacket( StreamCipher cipher ,
                             byte [] binString , int off , int len   ){
        super(cipher) ;
        _load  = new byte[len+4] ;
@@ -77,4 +78,4 @@ public class SshStringPacket extends SshPacket {
     public byte [] getBinary(){ return _binary ; }
     public String toString(){ return getString() ; }
 }
- 
+

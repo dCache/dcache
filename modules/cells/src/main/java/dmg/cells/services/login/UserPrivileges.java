@@ -1,7 +1,10 @@
 package dmg.cells.services.login ;
 
-import dmg.util.* ;
-import java.util.* ;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.StringTokenizer;
+
+import dmg.util.Formats;
 
 
 public class UserPrivileges {
@@ -14,7 +17,7 @@ public class UserPrivileges {
    UserPrivileges( String userName ,
                    String [] allowedList ,
                    String [] deniedList     ){
-   
+
         _userName = userName ;
        for (String s : allowedList) {
            _allowed.put(s, s);
@@ -23,7 +26,7 @@ public class UserPrivileges {
            _denied.put(s, s);
            _allowed.remove(s);
        }
-            
+
    }
    public String getUserName(){ return _userName ; }
    void mergeHorizontal( UserPrivileges right ){
@@ -76,14 +79,14 @@ public class UserPrivileges {
        if( check.length() < 1 ) {
            return false;
        }
-       
+
        StringTokenizer st = new StringTokenizer(check,".") ;
        String [] tokens = new String[st.countTokens()] ;
-       
+
        for( int i = 0  ; i < tokens.length ; i++ ) {
            tokens[i] = st.nextToken();
        }
-        
+
        for( int i = tokens.length  ; i > 0 ; i-- ){
           StringBuilder sb = new StringBuilder() ;
           sb.append( base ) ;
@@ -137,7 +140,7 @@ public class UserPrivileges {
                        append("\n");
            }
        }
-      
+
        return sb.toString() ;
    }
 

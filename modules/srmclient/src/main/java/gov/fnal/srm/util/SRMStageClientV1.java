@@ -73,14 +73,15 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.RequestFileStatus;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.HashMap;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+
+import diskCacheV111.srm.RequestFileStatus;
+import diskCacheV111.srm.RequestStatus;
 /**
  *
  * @author  timur

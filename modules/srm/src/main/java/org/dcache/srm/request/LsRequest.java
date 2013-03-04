@@ -1,31 +1,31 @@
 package org.dcache.srm.request;
 
-import org.dcache.srm.scheduler.FatalJobFailure;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.dcache.srm.v2_2.TRequestType;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMTooManyResultsException;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.v2_2.SrmLsRequest;
-import org.dcache.srm.v2_2.SrmLsResponse;
-import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
-import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
-import org.dcache.srm.v2_2.TMetaDataPathDetail;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
-import org.dcache.srm.util.RequestStatusTool;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
-import java.net.URI;
+
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMTooManyResultsException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
+import org.dcache.srm.v2_2.SrmLsRequest;
+import org.dcache.srm.v2_2.SrmLsResponse;
+import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
+import org.dcache.srm.v2_2.TMetaDataPathDetail;
+import org.dcache.srm.v2_2.TRequestType;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TSURLReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 public final class LsRequest extends ContainerRequest {
     private final static Logger logger =

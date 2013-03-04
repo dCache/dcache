@@ -1,9 +1,22 @@
 package dmg.cells.applets.login ;
-import java.awt.* ;
-import java.awt.event.* ;
 
-public class HelloPanel 
-       extends Panel 
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class HelloPanel
+       extends Panel
        implements ActionListener {
 
    private static final long serialVersionUID = -4656680180977452566L;
@@ -15,10 +28,10 @@ public class HelloPanel
    private Color     _ourColor     = new Color( 10, 100 ,200 ) ;
    private Font _standardFont = new Font( "SansSerif" , 0 , 16 ) ;
    private Font _veryBigFont  = new Font( "SansSerif" , Font.BOLD | Font.ITALIC , 50 ) ;
-   
+
    private LoginPanel  _loginPanel;
    private SetupPanel  _setupPanel;
-   
+
    private int _b = 10 ;
    @Override
    public Insets getInsets(){ return new Insets( _b , _b ,_b , _b ) ; }
@@ -27,7 +40,7 @@ public class HelloPanel
       Dimension d = getSize() ;
       int h = _b / 2 ;
       g.setColor( _ourColor ) ;
-      int [] xs = new int[4] ; 
+      int [] xs = new int[4] ;
       int [] ys = new int[4] ;
       xs[0] = h           ; ys[0] = h ;
       xs[1] = d.width-h-1 ; ys[1] = h ;
@@ -77,11 +90,11 @@ public class HelloPanel
          setLayout( kvl ) ;
          Label login     = new Label( "Login" ) ;
          Label password  = new Label( "Password" ) ;
-   
+
          login.setFont( _standardFont ) ;
          password.setFont( _standardFont ) ;
 
-         
+
          _loginText.setBackground( Color.white ) ;
          _passwordText.setBackground( Color.white ) ;
          _passwordText.setEchoChar('*') ;
@@ -97,12 +110,12 @@ public class HelloPanel
          _password = _passwordText.getText() ;
          _passwordText.setText("") ;
       }
-      public void addActionListener( ActionListener al ){ 
+      public void addActionListener( ActionListener al ){
          _passwordText.addActionListener( al ) ;
-         
+
       }
       private String getUser(){ return _loginText.getText() ; }
-      private String getPassword(){ 
+      private String getPassword(){
           return _password ;
       }
       private void setUser( String user , boolean visible , boolean changable ){
@@ -129,14 +142,14 @@ public class HelloPanel
          setLayout( kvl ) ;
          Label hostLabel = new Label( "Hostname" ) ;
          Label portLabel = new Label( "Portnumber" ) ;
-   
+
          hostLabel.setFont( _standardFont ) ;
          portLabel.setFont( _standardFont ) ;
 
-         
+
          _hostText.setBackground( Color.white ) ;
          _portText.setBackground( Color.white ) ;
-         
+
          add( hostLabel ) ;
          add( _hostText ) ;
          add( portLabel ) ;
@@ -208,24 +221,24 @@ public class HelloPanel
        masterLayout.setHgap(10) ;
        masterLayout.setVgap(10) ;
        setLayout( masterLayout ) ;
-      
+
        add( _title , "North" ) ;
-       
+
        add( _picture , "West" ) ;
-       
+
        _loginPanel = new LoginPanel() ;
        _loginPanel.addActionListener( this ) ;
-       
+
        _setupPanel = new SetupPanel() ;
-       
+
        add( _loginPanel , "Center" ) ;
-       
+
        BorderLayout bottomLayout = new BorderLayout() ;
        bottomLayout.setHgap(10) ;
        bottomLayout.setVgap(10) ;
-       
+
        Panel bottomPanel = new Panel( bottomLayout ) ;
-       
+
        _setupButton.setFont( _standardFont ) ;
        _setupButton.addActionListener( this ) ;
        _exitButton.setFont( _standardFont ) ;
@@ -233,7 +246,7 @@ public class HelloPanel
        bottomPanel.add( _setupButton , "West" ) ;
        bottomPanel.add( _exitButton  , "East" ) ;
        bottomPanel.add( _messageLabel , "Center" ) ;
-       
+
        add( bottomPanel , "South") ;
    }
    @Override
@@ -269,8 +282,8 @@ public class HelloPanel
               setText( "Not enough arguments" ) ;
           }else{
              setText("");
-             informActionListeners( "go" ) ;  
-          }    
+             informActionListeners( "go" ) ;
+          }
        }
    }
 }

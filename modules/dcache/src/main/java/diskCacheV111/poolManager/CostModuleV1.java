@@ -1,51 +1,53 @@
 // $Id: CostModuleV1.java,v 1.21 2007-08-01 20:19:23 tigran Exp $
 
 package diskCacheV111.poolManager ;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Serializable;
-import java.io.ObjectInputStream;
+
+import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.regex.Pattern;
-
-import dmg.cells.nucleus.CellAddressCore;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageDispatcher;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellInfoProvider;
-import org.dcache.cells.CellSetupProvider;
-import org.dcache.poolmanager.PoolInfo;
 
 import diskCacheV111.pools.CostCalculatable;
 import diskCacheV111.pools.CostCalculationEngine;
 import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.CostModulePoolInfoTable;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
-import dmg.cells.nucleus.CellMessage;
+
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
 import dmg.util.Args;
 
-import com.google.common.collect.ImmutableMap;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellInfoProvider;
+import org.dcache.cells.CellMessageDispatcher;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellSetupProvider;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.PoolInfo;
+import org.dcache.vehicles.FileAttributes;
 
 public class CostModuleV1
     implements Serializable,

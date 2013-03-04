@@ -1,16 +1,18 @@
 package diskCacheV111.admin ;
 
-import org.dcache.auth.KAuthFile;
-import java.util.* ;
-
-import dmg.cells.nucleus.* ;
-import dmg.util.* ;
-
-import org.dcache.auth.UserAuthBase;
-import org.dcache.auth.UserAuthRecord;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.util.Args;
+import dmg.util.CollectionFactory;
+
+import org.dcache.auth.KAuthFile;
+import org.dcache.auth.UserAuthBase;
+import org.dcache.auth.UserAuthRecord;
 
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov

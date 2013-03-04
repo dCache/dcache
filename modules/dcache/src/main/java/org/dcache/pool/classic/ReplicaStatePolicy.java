@@ -2,10 +2,10 @@ package org.dcache.pool.classic;
 
 import java.util.List;
 
+import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
-
-import diskCacheV111.vehicles.StorageInfo;
 
 /**
  * A ReplicaStatePolicy defines the initial EntryState and

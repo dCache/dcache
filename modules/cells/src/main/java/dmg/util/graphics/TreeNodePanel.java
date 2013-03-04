@@ -1,11 +1,20 @@
 package dmg.util.graphics ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.LayoutManager;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Scrollbar;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 
 
-public class    TreeNodePanel 
-       extends  Panel 
+public class    TreeNodePanel
+       extends  Panel
        implements ComponentListener, AdjustmentListener {
 
     private static final long serialVersionUID = -7217744214025179627L;
@@ -23,7 +32,7 @@ public class    TreeNodePanel
        add( _bottom  ) ;
        add( _right   ) ;
        add( _tree ) ;
-       
+
        _tree.addComponentListener(this) ;
        _bottom.addAdjustmentListener(this);
        _right.addAdjustmentListener(this);
@@ -36,20 +45,20 @@ public class    TreeNodePanel
        if( event.getSource() == _right ){
 //           _tree.setOffset( new Point( 10, - event.getValue()  ) ) ;
             _tree.setLocation( new Point( 10 , - event.getValue() ) ) ;
-       }   
+       }
     }
     @Override
     public void componentMoved( ComponentEvent event ){
        System.out.println( "ComponentEvent : "+event ) ;
-    } 
+    }
     @Override
     public void componentHidden( ComponentEvent event ){
        System.out.println( "ComponentEvent : "+event ) ;
-    } 
+    }
     @Override
     public void componentShown( ComponentEvent event ){
        System.out.println( "ComponentEvent : "+event ) ;
-    } 
+    }
     @Override
     public void componentResized( ComponentEvent event ){
        System.out.println( "ComponentEvent : "+event ) ;
@@ -57,19 +66,19 @@ public class    TreeNodePanel
        Dimension ourDim = getSize() ;
        Dimension botDim = _bottom.getSize() ;
        Dimension rigDim = _right.getSize() ;
-       Dimension viewPort = 
+       Dimension viewPort =
               new Dimension( ourDim.width  - rigDim.width ,
                              ourDim.height - botDim.height ) ;
-       
+
        Dimension dim = c.getSize() ;
-       
+
        int vis = ourDim.height ;
        _right.setVisibleAmount( vis ) ;
        _right.setMaximum( dim.height - vis ) ;
        System.out.println( " dim : "+vis+ "  "+dim.width ) ;
-       
-    } 
-    
+
+    }
+
     public void setTree( TreeNodeable node ){
         _tree.setTree( node ) ;
     }
@@ -120,19 +129,19 @@ public class    TreeNodePanel
               Component c = target.getComponent(0) ;
               c.setLocation( 0 , dim.height - _scrollWidth ) ;
               c.setSize( dim.width - _scrollWidth , _scrollWidth ) ;
-              
+
               c = target.getComponent(1) ;
               c.setLocation( dim.width - _scrollWidth , 0 ) ;
               c.setSize( _scrollWidth , dim.height - _scrollWidth ) ;
-              
+
               c = target.getComponent(2) ;
               c.setLocation( 0 , 0 ) ;
               c.setSize( dim.width - _scrollWidth , dim.height - _scrollWidth ) ;
-               
-              
+
+
            }
         }
 
     }
 
-} 
+}

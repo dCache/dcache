@@ -2,10 +2,20 @@
 //
 package org.pcells.services.connection ;
 //
-import java.io.* ;
-import java.net.* ;
 
-import dmg.protocols.ssh.* ;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+
+import dmg.protocols.ssh.SshAuthMethod;
+import dmg.protocols.ssh.SshAuthPassword;
+import dmg.protocols.ssh.SshAuthRsa;
+import dmg.protocols.ssh.SshClientAuthentication;
+import dmg.protocols.ssh.SshRsaKey;
+import dmg.protocols.ssh.SshSharedKey;
+import dmg.protocols.ssh.SshStreamEngine;
 /**
  */
 public class Ssh1DomainConnection

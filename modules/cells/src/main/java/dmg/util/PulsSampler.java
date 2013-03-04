@@ -1,6 +1,7 @@
 package dmg.util ;
 
-import java.util.* ;
+import java.util.HashMap;
+import java.util.Random;
 
 public class PulsSampler {
    private HashMap<Integer, Sample> _map = new HashMap<>() ;
@@ -47,20 +48,20 @@ public class PulsSampler {
           return " samples="+_samples+";delta="+(_delta/1000)+";sum="+sum+
                  ";result="+getRate() ;
       }
-      public int getTicks(){ 
+      public int getTicks(){
           int sum = 0 ;
           synchronized( this ){
               for (int element : _sample) {
                   sum += element;
               }
           }
-          return sum ;   
+          return sum ;
       }
       public int getDelta(){ return _delta ; }
-      public int getRealDelta(){ 
-         return _swaps < _samples ? 
-                ( _swaps == 0 ? 1 : _deltaBySample * _swaps ) : 
-                _delta  ; 
+      public int getRealDelta(){
+         return _swaps < _samples ?
+                ( _swaps == 0 ? 1 : _deltaBySample * _swaps ) :
+                _delta  ;
       }
       public float getRate(){
          return ((float)getTicks())/((float)getRealDelta())*(float)1000.;
@@ -94,7 +95,7 @@ public class PulsSampler {
       sample[0] = sampler.newSample(60) ;
       sample[1] = sampler.newSample(5*60) ;
       sample[2] = sampler.newSample(10*60) ;
-      new Thread( 
+      new Thread(
          new Runnable(){
            @Override
            public void run(){
@@ -104,14 +105,14 @@ public class PulsSampler {
                  catch(Exception e ){ break ; }
               }
            }
-         } 
+         }
       ).start() ;
-      new Thread( 
+      new Thread(
          new Runnable(){
            @Override
            public void run(){
               Random random = new Random() ;
-              while(true){  
+              while(true){
                  int n = random.nextInt() ;
                  n = n > 0 ? n : -n ;
                  long l = (long)(n%100) ;
@@ -120,9 +121,9 @@ public class PulsSampler {
                  sampler.tick();
               }
            }
-         } 
+         }
       ).start() ;
-      
+
    }
    public static void mains( String [] args )
    {

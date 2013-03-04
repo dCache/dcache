@@ -1,7 +1,8 @@
 package org.dcache.auth;
 
-import java.util.Collection;
 import javax.security.auth.Subject;
+
+import java.util.Collection;
 
 /**
  * The class is a Wrapper for the Subject, used for StringTemplate

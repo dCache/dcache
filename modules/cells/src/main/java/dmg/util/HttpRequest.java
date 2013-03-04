@@ -1,8 +1,10 @@
 // $Id: HttpRequest.java,v 1.1 2001-09-17 15:08:32 cvs Exp $
 
 package dmg.util ;
-import java.io.* ;
-import java.util.* ;
+
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.Map;
 /**
   */
 public interface HttpRequest {

@@ -3,26 +3,30 @@
 
 package org.dcache.pool.classic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.StorageClassFlushInfo;
-import diskCacheV111.vehicles.*;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.AbstractCellComponent;
+import diskCacheV111.vehicles.PoolFlushControlInfoMessage;
+import diskCacheV111.vehicles.PoolFlushControlMessage;
+import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
+import diskCacheV111.vehicles.PoolFlushGainControlMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.Formats;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.io.PrintWriter;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 
 public class HsmFlushController
     extends AbstractCellComponent

@@ -1,24 +1,24 @@
 package dmg.util.db ;
 
-import java.io.* ;
+import java.io.File;
 
 public class DbResourceHandlerTest extends DbGLock {
 
     private DbResourceHandler _handler;
-    
+
     public DbResourceHandlerTest( String container ) throws Exception {
         _handler = new DbResourceHandler( new File( container ) , false ) ;
-        
+
         System.out.println( "Created : "+container ) ;
-        
+
         DbResourceHandle handle = _handler.createResource( "U0000" ) ;
-       
+
            handle.open(DbGLock.WRITE_LOCK) ;
            handle.setAttribute( "size" , "2000" ) ;
            handle.close() ;
-           
+
         DbResourceHandle handle2 = _handler.getResourceByName( "U0000" ) ;
-        
+
            handle2.open( DbGLock.READ_LOCK ) ;
            String sizeString = (String)handle2.getAttribute( "size" ) ;
            if( sizeString == null ){
@@ -27,16 +27,16 @@ public class DbResourceHandlerTest extends DbGLock {
                System.out.println( "Size : "+sizeString ) ;
            }
            handle2.close() ;
-           
+
         handle = _handler.getResourceByName( "U0000" ) ;
         handle.remove() ;
-        
+
         System.out.println( "Resource removed" ) ;
-        
+
         handle = _handler.getResourceByName( "U0000" ) ;
-        
+
         handle.open( DbGLock.WRITE_LOCK ) ;
-        
+
     }
     public static void main( String [] args )throws Exception {
         if( args.length < 1 ){
@@ -45,8 +45,8 @@ public class DbResourceHandlerTest extends DbGLock {
         }
        // System.runFinalizersOnExit(true);
         new DbResourceHandlerTest( args[0] ) ;
-        
-        System.exit(0) ; 
+
+        System.exit(0) ;
     }
 
 }

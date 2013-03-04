@@ -2,15 +2,18 @@ package org.dcache.webadmin.model.dataaccess.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.pools.PoolV2Mode;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolV2Mode;
+
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 

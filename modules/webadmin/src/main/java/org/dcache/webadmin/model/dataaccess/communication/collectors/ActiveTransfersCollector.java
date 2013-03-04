@@ -1,14 +1,9 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
 import com.google.common.collect.ImmutableList;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.IoDoorEntry;
-import diskCacheV111.vehicles.IoDoorInfo;
-import diskCacheV111.vehicles.IoJobInfo;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.services.login.LoginBrokerInfo;
-import dmg.cells.services.login.LoginManagerChildrenInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,11 +11,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.IoJobInfo;
+
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginManagerChildrenInfo;
+
+import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
-import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

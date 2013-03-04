@@ -5,17 +5,18 @@
  */
 
 package org.dcache.srm.util;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.TReturnStatus;
+
 import org.dcache.srm.SRMException;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  *
  * @author  timur
  */
 public class RequestStatusTool {
-    
-    public static final void checkValidity(TReturnStatus returnStatus) 
+
+    public static final void checkValidity(TReturnStatus returnStatus)
     throws SRMException {
             if(returnStatus == null) {
                 throw new SRMException(" null return status");
@@ -25,8 +26,8 @@ public class RequestStatusTool {
                 throw new SRMException(" null status code");
             }
      }
-    
-    public static final boolean isFailedRequestStatus(TReturnStatus returnStatus) 
+
+    public static final boolean isFailedRequestStatus(TReturnStatus returnStatus)
     throws SRMException {
            if(returnStatus == null) {
                 throw new SRMException(" null return status");
@@ -44,8 +45,8 @@ public class RequestStatusTool {
                statusCode != TStatusCode.SRM_DONE;
 
     }
-    
-    public static final boolean isFailedFileRequestStatus(TReturnStatus returnStatus) 
+
+    public static final boolean isFailedFileRequestStatus(TReturnStatus returnStatus)
     throws SRMException {
            if(returnStatus == null) {
                 throw new SRMException(" null return status");
@@ -54,7 +55,7 @@ public class RequestStatusTool {
            if(statusCode == null) {
                 throw new SRMException(" null status code");
            }
-           return 
+           return
                statusCode != TStatusCode.SRM_SPACE_AVAILABLE &&
                statusCode != TStatusCode.SRM_FILE_PINNED &&
                statusCode != TStatusCode.SRM_FILE_IN_CACHE &&
@@ -65,9 +66,9 @@ public class RequestStatusTool {
                statusCode != TStatusCode.SRM_REQUEST_SUSPENDED &&
                statusCode != TStatusCode.SRM_DONE;
     }
-    
 
-    public static final boolean isTransientStateStatus(TReturnStatus returnStatus) 
+
+    public static final boolean isTransientStateStatus(TReturnStatus returnStatus)
        throws SRMException {
            if(returnStatus == null) {
                 throw new SRMException(" null return status");
@@ -76,10 +77,10 @@ public class RequestStatusTool {
            if(statusCode == null) {
                 throw new SRMException(" null status code");
            }
-           return 
+           return
                statusCode == TStatusCode.SRM_REQUEST_QUEUED ||
                    statusCode == TStatusCode.SRM_REQUEST_INPROGRESS;
     }
-    
-    
+
+
 }

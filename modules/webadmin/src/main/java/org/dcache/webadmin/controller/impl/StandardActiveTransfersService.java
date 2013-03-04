@@ -1,11 +1,15 @@
 package org.dcache.webadmin.controller.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException;
@@ -15,8 +19,6 @@ import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 import org.dcache.webadmin.view.util.SelectableWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

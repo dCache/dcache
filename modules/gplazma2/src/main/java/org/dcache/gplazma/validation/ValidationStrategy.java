@@ -1,7 +1,7 @@
 package org.dcache.gplazma.validation;
 
-import org.dcache.gplazma.LoginReply;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.LoginReply;
 
 /**
  * Implementing classes will implement validate method where the loginReply will

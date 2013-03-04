@@ -1,5 +1,8 @@
 package org.dcache.services.login;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
@@ -7,18 +10,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.LoginReply;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellMessage;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.cells.CellMessageReceiver;
 
 public class MessageHandler
     implements CellMessageReceiver

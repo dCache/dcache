@@ -16,7 +16,10 @@
  */
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.*;
+import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
+import org.dcache.chimera.nfs.v4.xdr.nfsace4;
+import org.dcache.chimera.nfs.v4.xdr.server_owner4;
+import org.dcache.chimera.nfs.v4.xdr.uint64_t;
 
 public class HimeraNFS4Utils {
 

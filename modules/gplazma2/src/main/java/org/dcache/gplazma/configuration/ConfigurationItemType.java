@@ -1,11 +1,11 @@
 package org.dcache.gplazma.configuration;
 
-import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
-import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
-import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
+import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
+import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
 /**
  *

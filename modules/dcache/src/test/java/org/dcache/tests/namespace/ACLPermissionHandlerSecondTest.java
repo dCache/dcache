@@ -1,26 +1,27 @@
 package org.dcache.tests.namespace;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
+import javax.security.auth.Subject;
+
+import java.security.Principal;
 import java.util.EnumSet;
+
+import diskCacheV111.util.PnfsId;
 
 import org.dcache.acl.ACL;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACLParser;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.security.auth.Subject;
-import java.security.Principal;
-
-import org.dcache.namespace.ACLPermissionHandler;
-import org.dcache.vehicles.FileAttributes;
-import diskCacheV111.util.PnfsId;
-import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Origin;
-import static org.dcache.namespace.FileAttribute.*;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.namespace.FileAttribute.ACL;
+import static org.junit.Assert.assertTrue;
 
 public class ACLPermissionHandlerSecondTest {
 

@@ -1,6 +1,8 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 public class JdbmFileHeader implements JdbmSerializable {
     private final static int MAGIC = 0x13579acf ;
@@ -9,7 +11,7 @@ public class JdbmFileHeader implements JdbmSerializable {
     int   _blockSize;
     int   _elementsPerBucket;
     long  _nextUnallocatedAddress;
-    
+
     //
     // the expandable hash directory
     // (is not a class because we need all the space
@@ -24,11 +26,11 @@ public class JdbmFileHeader implements JdbmSerializable {
     //
     long              _avListAddress;
     JdbmAvElementList _avList;
-    
+
     public JdbmFileHeader(){}
     public JdbmFileHeader( int blockSize ){
        _blockSize = blockSize ;
-       
+
        initDirectory( _blockSize ) ;
     }
     //
@@ -43,12 +45,12 @@ public class JdbmFileHeader implements JdbmSerializable {
           throw new
                   IllegalArgumentException("block size not 2**n");
       }
-        
+
       _directorySize = size ;
       _directoryBits = bits ;
       _directoryChanged = true ;
       _directory = new long[_directorySize] ;
-      
+
     }
     public void expandDirectory(){
        _directorySize *= 2 ;
@@ -57,7 +59,7 @@ public class JdbmFileHeader implements JdbmSerializable {
        for( int i = 0 ; i < _directorySize ; i+= 2 , n++ ) {
            newAddr[i] = newAddr[i + 1] = _directory[n];
        }
-       _directoryBits ++ ; 
+       _directoryBits ++ ;
        _directory = newAddr ;
        _directoryChanged = true ;
     }
@@ -93,7 +95,7 @@ public class JdbmFileHeader implements JdbmSerializable {
            throw new
                    IOException("Not a JDBM file");
        }
-          
+
        _blockSize              = in.readInt() ;
        _elementsPerBucket      = in.readInt() ;
        _nextUnallocatedAddress = in.readLong() ;

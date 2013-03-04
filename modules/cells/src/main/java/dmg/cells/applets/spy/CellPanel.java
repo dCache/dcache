@@ -1,14 +1,24 @@
 package dmg.cells.applets.spy ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import dmg.cells.services.* ;
-import dmg.cells.nucleus.* ;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.services.MessageObjectFrame;
 
 
 class CellPanel
-      extends Panel 
+      extends Panel
       implements ActionListener, FrameArrivable {
 
    private static final long serialVersionUID = -1215043667501349548L;
@@ -27,10 +37,10 @@ class CellPanel
    private CellInfo _cellInfo;
    private String   _cellAddress;
    private boolean  _useColor;
-   
+
    CellPanel( DomainConnection connection ){
       _useColor   = System.getProperty( "bw" ) == null ;
-      _connection = connection ; 
+      _connection = connection ;
       if( _useColor ) {
           setBackground(Color.orange);
       }
@@ -40,25 +50,25 @@ class CellPanel
       _topLabel.setFont( _bigFont ) ;
       _updateButton = new Button( "Update This Cell" ) ;
       _updateButton.addActionListener( this ) ;
-      
+
       _classLabel = new Label("") ;
       _classLabel.setFont( _smallFont ) ;
       _shortInfoLabel = new Label( "" ) ;
       _shortInfoLabel.setFont( _smallFont ) ;
       _privateInfo = new TextArea() ;
       _privateInfo.setFont( _textFont ) ;
-      
+
       Panel labelPanel = new Panel( new GridLayout( 0 , 1 ) ) ;
       labelPanel.add( _topLabel ) ;
       labelPanel.add( _classLabel ) ;
       labelPanel.add( _shortInfoLabel ) ;
       Panel buttonPanel = new Panel( new FlowLayout() ) ;
       buttonPanel.add( _updateButton ) ;
-      
+
       add( labelPanel   , "North" ) ;
       add( _privateInfo , "Center" ) ;
       add( buttonPanel  , "South" ) ;
-      
+
    }
    public void clear(){
        _classLabel.setText("") ;
@@ -96,15 +106,15 @@ class CellPanel
       _classLabel.setText( info.getCellClass() ) ;
       _shortInfoLabel.setText( info.getShortInfo() ) ;
       _privateInfo.setText( info.getPrivatInfo() ) ;
-   
-   } 
+
+   }
    private void updateCell(){
       if( _cellAddress == null ) {
           return;
       }
-      _connection.send( _cellAddress , 
+      _connection.send( _cellAddress ,
                         "getcellinfo "+_cellInfo.getCellName() , this ) ;
-   
+
    }
-  
+
 }

@@ -1,7 +1,16 @@
 // $Id: UserMetaDb.java,v 1.2 2002-02-19 20:39:06 cvs Exp $
 package dmg.cells.services.login.user  ;
-import java.io.* ;
-import java.util.* ;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
 
 public class UserMetaDb {
 

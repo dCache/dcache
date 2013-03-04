@@ -1,13 +1,13 @@
 package org.dcache.util;
 
 import java.io.Serializable;
-import static com.google.common.net.InetAddresses.forString;
-
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import static com.google.common.net.InetAddresses.forString;
 
 public class Subnet implements Serializable {
     private static final long serialVersionUID = 9210530422244320383L;

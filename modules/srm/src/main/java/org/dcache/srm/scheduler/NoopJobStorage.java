@@ -2,8 +2,9 @@ package org.dcache.srm.scheduler;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Set;
 import java.util.Collections;
+import java.util.Set;
+
 import org.dcache.srm.request.Job;
 
 /**

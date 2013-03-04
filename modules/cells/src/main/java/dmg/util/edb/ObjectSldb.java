@@ -1,6 +1,11 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class ObjectSldb extends Sldb {
 
@@ -33,7 +38,7 @@ public class ObjectSldb extends Sldb {
       System.out.println( "Got "+data.length+" byte" ) ;
       ByteArrayInputStream bais = new ByteArrayInputStream(data) ;
       ObjectInputStream ois = new ObjectInputStream(bais) ;
-      
+
       return ois.readObject() ;
    }
    public static void main( String [] args ) throws Exception {

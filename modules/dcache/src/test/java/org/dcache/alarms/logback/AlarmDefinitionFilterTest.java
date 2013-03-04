@@ -59,18 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
-import org.dcache.alarms.AlarmFactory;
-import org.json.JSONException;
-import org.junit.Test;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
+import org.json.JSONException;
+import org.junit.Test;
+
+import org.dcache.alarms.AlarmFactory;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * Some basic correctness tests for {@link AlarmDefinitionFilter} matching.

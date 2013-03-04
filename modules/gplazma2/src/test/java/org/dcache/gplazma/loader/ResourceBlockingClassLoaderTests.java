@@ -1,17 +1,13 @@
 package org.dcache.gplazma.loader;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class ResourceBlockingClassLoaderTests {
 

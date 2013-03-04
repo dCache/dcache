@@ -4,23 +4,11 @@
 
 package javatunnel;
 
-import static org.dcache.util.Files.checkDirectory;
-import static org.dcache.util.Files.checkFile;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Iterator;
-
-import javax.security.auth.Subject;
-
-import org.dcache.auth.FQANPrincipal;
-import org.dcache.auth.util.GSSUtils;
 import org.glite.voms.FQAN;
 import org.glite.voms.PKIVerifier;
+import org.globus.gsi.CredentialException;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
-import org.globus.gsi.CredentialException;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
@@ -34,7 +22,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import javax.security.auth.Subject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Iterator;
+
 import dmg.util.Args;
+
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.util.GSSUtils;
+
+import static org.dcache.util.Files.checkDirectory;
+import static org.dcache.util.Files.checkFile;
 //jgss
 // globus gsi
 

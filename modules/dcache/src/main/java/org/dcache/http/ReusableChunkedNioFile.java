@@ -1,10 +1,11 @@
 package org.dcache.http;
 
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.handler.stream.ChunkedInput;
+
 import java.nio.ByteBuffer;
 
 import org.dcache.pool.repository.RepositoryChannel;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.stream.ChunkedInput;
 
 /*
  * Portions of this file based on JBoss Netty ChunkedNioFile which has the

@@ -1,8 +1,12 @@
 package diskCacheV111.clients.vsp ;
 
-import java.io.* ;
-import java.util.* ;
-import dmg.util.* ;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
+
+import dmg.util.Args;
 
 
 public class VspDeviceShell {

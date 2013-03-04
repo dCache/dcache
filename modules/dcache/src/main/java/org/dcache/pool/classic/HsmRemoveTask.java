@@ -1,23 +1,25 @@
 package org.dcache.pool.classic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
+
+import diskCacheV111.util.ExternalTask;
+import diskCacheV111.util.HsmSet;
+import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
+
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
-import diskCacheV111.util.HsmSet;
-import diskCacheV111.util.ExternalTask;
-import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
-
-import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.net.URI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates the task to process a PoolRemoveFilesFromHSMMessage.

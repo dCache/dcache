@@ -1,8 +1,5 @@
 package org.dcache.util.expression;
 
-import static org.dcache.util.expression.Type.*;
-import static org.dcache.util.expression.Token.*;
-
 /**
  * Interpreter for the expression language.
  */

@@ -1,17 +1,20 @@
 package org.dcache.srm.qos.lambdastation;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Properties;
+
 import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.qos.*;
+import org.dcache.srm.qos.QOSPlugin;
+import org.dcache.srm.qos.QOSTicket;
 import org.dcache.srm.util.Configuration;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.FileInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class LambdaStationPlugin implements QOSPlugin {
     private static final Logger logger =
@@ -21,9 +24,9 @@ public class LambdaStationPlugin implements QOSPlugin {
 	private String lambdaStationScript;
 	private AbstractStorageElement storage;
 	private Collection<LambdaStationTicket> tickets = new ArrayList();
-	
+
 	public LambdaStationPlugin(){}
-	
+
 	@Override
         public void setSrmConfiguration(Configuration configuration) {
 		lambdaStationConf = configuration.getQosConfigFile();
@@ -53,16 +56,16 @@ public class LambdaStationPlugin implements QOSPlugin {
         this.lambdaStationScript = properties.getProperty("l_station_script","/opt/d-cache/conf/l_station_script.sh");
 		this.lambdaStationMap = new LambdaStationMap(properties.getProperty("l_station_map","/opt/d-cache/conf/l_station_map.xml"));
 	}
-	
+
 	@Override
         public QOSTicket createTicket(
-			String credential, 
+			String credential,
 			Long bytes,
-			String srcURL, 
-			int srcPortMin, 
+			String srcURL,
+			int srcPortMin,
 			int srcPortMax,
 			String srcProtocol,
-			String dstURL, 
+			String dstURL,
 			int dstPortMin,
 			int dstPortMax,
 			String dstProtocol) {
@@ -77,12 +80,12 @@ public class LambdaStationPlugin implements QOSPlugin {
 		ticket.bytes = bytes;
 		return ticket;
 	}
-	
+
 	@Override
         public void addTicket(QOSTicket qosTicket) {
            if (qosTicket instanceof LambdaStationTicket) {
                 LambdaStationTicket ls_ticket =
-                    (LambdaStationTicket)qosTicket; 
+                    (LambdaStationTicket)qosTicket;
 		tickets.add(ls_ticket);
            }
 	}

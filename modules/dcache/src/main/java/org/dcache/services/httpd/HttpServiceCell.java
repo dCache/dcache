@@ -1,16 +1,6 @@
 package org.dcache.services.httpd;
 
-import java.io.PrintWriter;
-import java.net.URL;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-
-import org.dcache.cells.AbstractCell;
-import org.dcache.cells.Option;
-import org.dcache.services.httpd.handlers.HandlerDelegator;
-import org.dcache.services.httpd.util.AliasEntry;
+import com.google.common.collect.Maps;
 import org.eclipse.jetty.http.ssl.SslContextFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -24,10 +14,20 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
+
+import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
+import org.dcache.services.httpd.handlers.HandlerDelegator;
+import org.dcache.services.httpd.util.AliasEntry;
 
 public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
     private static final String IPV4_INETADDR_ANY = "0.0.0.0";

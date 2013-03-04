@@ -1,5 +1,8 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -9,8 +12,6 @@ import org.dcache.util.backoff.BackoffControllerBuilder.BackoffController;
 import org.dcache.util.backoff.IBackoffAlgorithm;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.util.backoff.IBackoffAlgorithmFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A collector is a runnable that can be run to collect information with cell-

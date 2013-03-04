@@ -1,23 +1,24 @@
 package org.dcache.services.httpd.handlers;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.net.URISyntaxException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import dmg.cells.nucleus.CellEndpoint;
-import org.dcache.services.httpd.HttpServiceCell;
-import org.dcache.services.httpd.util.StandardHttpRequest;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.net.URISyntaxException;
 
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
+
+import org.dcache.services.httpd.HttpServiceCell;
+import org.dcache.services.httpd.util.StandardHttpRequest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

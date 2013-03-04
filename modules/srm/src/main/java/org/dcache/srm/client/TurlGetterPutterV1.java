@@ -72,21 +72,22 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
-import diskCacheV111.srm.ISRM;
-import diskCacheV111.srm.RequestStatus;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.util.SrmUrl;
-import diskCacheV111.srm.RequestFileStatus;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.dcache.srm.SRMException;
-import org.dcache.srm.request.RequestCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
+import diskCacheV111.srm.ISRM;
+import diskCacheV111.srm.RequestFileStatus;
+import diskCacheV111.srm.RequestStatus;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.util.SrmUrl;
 /**
  *
  * @author  timur

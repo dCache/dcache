@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.Date;
 
@@ -69,8 +72,6 @@ import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provider does in-memory filtering and sorts on sortable fields; service

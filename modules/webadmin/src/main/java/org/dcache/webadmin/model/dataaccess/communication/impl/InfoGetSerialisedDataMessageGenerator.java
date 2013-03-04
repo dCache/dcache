@@ -1,20 +1,21 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.SerializationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
+
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.SerializationException;
+
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
-import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
 import org.dcache.webadmin.model.exceptions.DataGatheringException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

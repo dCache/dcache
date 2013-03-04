@@ -1,9 +1,10 @@
 package org.dcache.xrootd.door;
 
+import org.jboss.netty.channel.ChannelHandler;
+
 import org.dcache.auth.LoginStrategy;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.jboss.netty.channel.ChannelHandler;
 
 public class LoginAuthenticationHandlerFactory implements ChannelHandlerFactory
 {

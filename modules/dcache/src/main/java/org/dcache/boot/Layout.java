@@ -1,5 +1,7 @@
 package org.dcache.boot;
 
+import com.google.common.base.Joiner;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,15 +19,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import diskCacheV111.util.FsPath;
+
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 import org.dcache.util.NetworkUtils;
 
-import diskCacheV111.util.FsPath;
-
-import com.google.common.base.Joiner;
-
-import static org.dcache.boot.Properties.*;
+import static org.dcache.boot.Properties.PROPERTY_DOMAINS;
 
 /**
  * Layout encapsulates the configuration of a set of domains.

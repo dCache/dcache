@@ -1,21 +1,21 @@
 package  dmg.cells.network ;
 
-import java.io.Serializable ;
+import java.io.Serializable;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
 public class PingMessage implements Serializable {
    private static final long serialVersionUID = -2899727151648545028L;
-   
-   private final long    _millis ;   
+
+   private final long    _millis ;
    private final byte [] _payload ;
-   
+
    private boolean _wayback;
-   
+
    public PingMessage(){
 	   this(0);
    }
@@ -32,6 +32,6 @@ public class PingMessage implements Serializable {
    public String toString(){
       return "Transfer Time = "+getTransferTime()+
              " (payload="+_payload.length+" bytes)" ;
-   
+
    }
 }

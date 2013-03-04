@@ -1,9 +1,16 @@
 // $Id: AclCommander.java,v 1.1 2001-05-02 06:14:15 cvs Exp $
 package dmg.cells.services.login.user  ;
 
-import java.io.* ;
-import java.util.* ;
-import dmg.util.* ;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+
+import dmg.util.Args;
+import dmg.util.AuthorizedArgs;
+import dmg.util.CommandInterpreter;
 
 
 public class AclCommander extends CommandInterpreter {
@@ -19,11 +26,11 @@ public class AclCommander extends CommandInterpreter {
     {
         if( args.length > 0 ){
            _aclDb = new AclDb( new File( args[0] , "acls" ) ) ;
-           _userDb = new InMemoryUserRelation( 
-                       new FileUserRelation( 
+           _userDb = new InMemoryUserRelation(
+                       new FileUserRelation(
                            new File( args[0] , "relations" ) ) ) ;
            _userMetaDb = new UserMetaDb( new File( args[0] , "meta" ) ) ;
-           
+
         }
         UserAdminCommands uac = new UserAdminCommands( _userDb , _aclDb , _userMetaDb ) ;
         addCommandListener( uac ) ;
@@ -36,8 +43,8 @@ public class AclCommander extends CommandInterpreter {
     }
     public static final String hh_open_relations = "<userRelationDbDirectory>" ;
     public String ac_open_relations_$_1( Args args )throws Exception {
-       _userDb = new InMemoryUserRelation( 
-                   new FileUserRelation( 
+       _userDb = new InMemoryUserRelation(
+                   new FileUserRelation(
                        new File( args.argv(0) ) ) ) ;
        return "" ;
     }
@@ -250,15 +257,15 @@ public class AclCommander extends CommandInterpreter {
     }
     private void checkDatabase() throws Exception {
            if( ( _userMetaDb != null ) &&
-               ( _aclDb      != null ) && 
+               ( _aclDb      != null ) &&
                ( _userDb     != null )   ) {
                return;
            }
-        throw new 
+        throw new
         Exception( "Not all databases are open" ) ;
     }
     public Object exec( String line ) throws Exception {
-    
+
       if( _user.equals( "none" ) ) {
           return command(new Args(line));
       } else {
@@ -270,8 +277,8 @@ public class AclCommander extends CommandInterpreter {
        AclCommander commander = new AclCommander(args) ;
        BufferedReader br = new BufferedReader(
                                new InputStreamReader( System.in ) ) ;
-        
-        
+
+
        String line;
        while( true ){
           System.out.print("acl > ") ;
@@ -298,6 +305,6 @@ public class AclCommander extends CommandInterpreter {
 
        }
        System.exit(0) ;
-    
+
     }
 }

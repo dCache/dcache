@@ -1,23 +1,23 @@
 package org.dcache.pool.repository.v3.entry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.pool.repository.v3.entry.state.Sticky;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.MetaDataRecord;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.v3.entry.state.Sticky;
 
 public class CacheRepositoryEntryState
 {

@@ -1,10 +1,13 @@
 package org.dcache.webadmin.view.beans;
 
-import java.io.Serializable;
-import org.dcache.webadmin.view.util.DiskSpaceUnit;
-import diskCacheV111.pools.PoolV2Mode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Serializable;
+
+import diskCacheV111.pools.PoolV2Mode;
+
+import org.dcache.webadmin.view.util.DiskSpaceUnit;
 
 /**
  * Bean for the PoolUsage Page. Contains information concerning pools like

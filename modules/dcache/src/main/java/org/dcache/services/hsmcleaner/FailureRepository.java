@@ -1,20 +1,18 @@
 package org.dcache.services.hsmcleaner;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.PrintStream;
-import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.BufferedOutputStream;
-
-import java.util.Set;
-import java.util.HashSet;
-
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Encapsulation of the on-disk index of locations that could not be

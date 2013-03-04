@@ -1,7 +1,8 @@
 // $Id: VspConnection.java,v 1.4 2001-06-05 21:46:27 cvs Exp $
 //
 package diskCacheV111.clients.vsp ;
-import  java.io. * ;
+
+import java.io.IOException;
 
 public interface VspConnection {
 

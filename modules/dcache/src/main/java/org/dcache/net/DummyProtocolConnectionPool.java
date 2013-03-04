@@ -1,8 +1,9 @@
 package org.dcache.net;
 
-import java.net.* ;
-import java.io.* ;
-import java.nio.channels.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
+import java.nio.channels.SocketChannel;
 
 
 public class DummyProtocolConnectionPool  implements ChallengeReader {

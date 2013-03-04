@@ -2,17 +2,15 @@
 
 package diskCacheV111.util ;
 
-import java.util.List;
-import java.util.Collections;
-import java.util.Set;
-import java.util.EnumSet;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
+import javax.security.auth.Subject;
+
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
@@ -21,32 +19,33 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
+import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsSetLengthMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsGetParentMessage;
-import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+
+import org.dcache.acl.enums.AccessMask;
 import org.dcache.cells.CellMessageSender;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.vehicles.PnfsSetFileAttributes;
-import org.dcache.namespace.FileType;
-import org.dcache.acl.enums.AccessMask;
-import org.dcache.util.Checksum;
-
-import javax.security.auth.Subject;
-
-import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 
 public class PnfsHandler
     implements CellMessageSender

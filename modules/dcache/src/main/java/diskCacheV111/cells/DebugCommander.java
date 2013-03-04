@@ -1,11 +1,15 @@
 package diskCacheV111.cells ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolManagerGetReadPoolMessage;
 import diskCacheV111.vehicles.PoolManagerGetWritePoolMessage;
 import diskCacheV111.vehicles.PoolManagerMessage;
+
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
@@ -14,8 +18,6 @@ import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DebugCommander extends CellAdapter {
 

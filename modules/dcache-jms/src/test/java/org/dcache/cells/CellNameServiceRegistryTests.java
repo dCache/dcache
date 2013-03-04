@@ -1,7 +1,15 @@
 package org.dcache.cells;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Sets;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.StreamMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,17 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotWriteableException;
-import javax.jms.StreamMessage;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Set of tests to verify the CellNameServiceRegistry

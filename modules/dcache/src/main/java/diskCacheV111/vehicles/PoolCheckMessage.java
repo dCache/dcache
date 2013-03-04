@@ -1,7 +1,8 @@
 // $Id: PoolCheckMessage.java,v 1.2 2004-11-05 12:07:19 tigran Exp $
 
 package diskCacheV111.vehicles;
-import java.util.*;
+
+import java.util.Map;
 
 
 public class PoolCheckMessage

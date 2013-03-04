@@ -1,5 +1,10 @@
 package org.dcache.auth;
 
+import org.globus.gsi.jaas.GlobusPrincipal;
+
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,11 +13,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
-
-import org.globus.gsi.jaas.GlobusPrincipal;
 
 public class Subjects
 {

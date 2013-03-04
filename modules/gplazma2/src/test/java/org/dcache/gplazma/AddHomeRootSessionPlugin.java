@@ -1,10 +1,11 @@
 package org.dcache.gplazma;
 
+import com.google.common.base.Preconditions;
+
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
 
-import com.google.common.base.Preconditions;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;

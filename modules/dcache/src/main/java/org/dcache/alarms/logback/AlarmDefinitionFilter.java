@@ -59,14 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
-import org.json.JSONException;
-
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import org.json.JSONException;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * This filter can be added to an {@link AlarmDefinitionAppender}, which can

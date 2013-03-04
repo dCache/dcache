@@ -1,23 +1,25 @@
 package org.dcache.namespace;
 
-import java.util.EnumSet;
-import java.util.Set;
-import java.util.Collections;
 import javax.security.auth.Subject;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
+import org.dcache.acl.ACL;
+import org.dcache.acl.Owner;
+import org.dcache.acl.Permission;
+import org.dcache.acl.enums.AccessType;
+import org.dcache.acl.mapper.AclMapper;
+import org.dcache.acl.matcher.AclNFSv4Matcher;
+import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
-import org.dcache.acl.ACL;
-import org.dcache.acl.Permission;
-import org.dcache.acl.Owner;
-import org.dcache.acl.mapper.AclMapper;
-import org.dcache.acl.matcher.AclNFSv4Matcher;
-import org.dcache.acl.enums.AccessType;
-import org.dcache.auth.Origin;
-import static org.dcache.acl.enums.AccessType.*;
-import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.acl.enums.AccessMask.*;
+import static org.dcache.acl.enums.AccessType.*;
+import static org.dcache.acl.enums.AccessType.valueOf;
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * A PermissionHandler using the ACL module as a PDP.

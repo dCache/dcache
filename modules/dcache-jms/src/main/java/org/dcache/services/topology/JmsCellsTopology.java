@@ -1,25 +1,25 @@
 package org.dcache.services.topology;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+
 import dmg.cells.network.CellDomainNode;
 import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellNameService;
 import org.dcache.cells.CellNameServiceRegistry;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-
-import javax.jms.JMSException;
-import javax.jms.ConnectionFactory;
-import javax.jms.Connection;
-import javax.jms.Session;
-import javax.jms.MessageConsumer;
-import javax.jms.ExceptionListener;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * CellsTopology for JMS based dCache installations.

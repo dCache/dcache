@@ -9,8 +9,12 @@
 //______________________________________________________________________________
 
 package gov.fnal.srm.util;
+
 import java.io.Serializable;
-import java.util.* ;
+import java.util.Dictionary;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Vector;
 
 public class Args implements Serializable {
 

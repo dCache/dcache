@@ -1,11 +1,6 @@
 package org.dcache.xrootd.pool;
 
 import com.google.common.collect.Lists;
-import org.dcache.pool.movers.MoverChannel;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.xrootd.protocol.messages.ReadResponse;
-import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -16,14 +11,20 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
+import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.protocol.messages.ReadResponse;
+import org.dcache.xrootd.protocol.messages.ReadVRequest;
+
 import static org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 public class VectorReaderTest
 {

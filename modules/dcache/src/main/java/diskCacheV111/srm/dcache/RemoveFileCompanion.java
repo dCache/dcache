@@ -73,27 +73,29 @@
 
 package diskCacheV111.srm.dcache;
 
-import java.util.EnumSet;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.srm.RemoveFileCallbacks;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.dcache.namespace.FileType.*;
+import java.util.EnumSet;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
+
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.srm.RemoveFileCallbacks;
+
+import static org.dcache.namespace.FileType.LINK;
+import static org.dcache.namespace.FileType.REGULAR;
 
 public class RemoveFileCompanion
     extends AbstractMessageCallback<PnfsDeleteEntryMessage>

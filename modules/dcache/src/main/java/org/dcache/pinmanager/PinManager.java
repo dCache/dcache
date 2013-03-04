@@ -1,23 +1,23 @@
 package org.dcache.pinmanager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
+
 import javax.jdo.JDOException;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import static java.util.concurrent.TimeUnit.*;
-
-import org.dcache.cells.CellStub;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.util.FireAndForgetTask;
 
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.FireAndForgetTask;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class PinManager
     implements CellMessageReceiver

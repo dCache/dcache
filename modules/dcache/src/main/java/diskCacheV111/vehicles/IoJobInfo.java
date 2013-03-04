@@ -2,7 +2,8 @@
 //
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.* ;
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.classic.PoolIORequest;
 
 public class IoJobInfo extends JobInfo  {

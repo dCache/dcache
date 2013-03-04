@@ -1,7 +1,8 @@
 // $Id: PnfsSetFileMetaDataMessage.java,v 1.2 2004-11-05 12:07:19 tigran Exp $
 package diskCacheV111.vehicles ;
 
-import diskCacheV111.util.* ;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.PnfsId;
 public class PnfsSetFileMetaDataMessage extends PnfsMessage {
 
     private FileMetaData _metaData;

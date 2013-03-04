@@ -3,11 +3,12 @@
  */
 package org.dcache.pool.movers;
 
-import  java.nio.*;
-import  java.nio.channels.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 import diskCacheV111.util.Base64;
 import diskCacheV111.util.DCapProrocolChallenge;
+
 import org.dcache.net.ChallengeReader;
 
 class DCapChallengeReader implements ChallengeReader

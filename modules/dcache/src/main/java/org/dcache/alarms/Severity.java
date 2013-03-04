@@ -59,9 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
-import java.util.List;
-
 import com.google.common.collect.ImmutableList;
+
+import java.util.List;
 
 /**
  * For marking alarm level.

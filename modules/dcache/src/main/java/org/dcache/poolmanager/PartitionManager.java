@@ -1,31 +1,25 @@
 package org.dcache.poolmanager;
 
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Ordering;
+
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
-import java.util.ServiceLoader;
-import java.util.NoSuchElementException;
 import java.util.Formatter;
-
-import org.dcache.cells.CellSetupProvider;
-import org.dcache.cells.CellCommandListener;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 import dmg.util.Args;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Ordering;
-import com.google.common.base.Function;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellSetupProvider;
+
+import static com.google.common.base.Predicates.*;
 import static com.google.common.collect.Iterables.find;
-import static com.google.common.collect.Maps.filterKeys;
-import static com.google.common.collect.Maps.filterValues;
-import static com.google.common.collect.Maps.transformValues;
-import static com.google.common.collect.Maps.newHashMap;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.notNull;
-import static com.google.common.base.Predicates.equalTo;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.base.Predicates.compose;
+import static com.google.common.collect.Maps.*;
 
 /**
  * Manages one or more pool manager partitions.

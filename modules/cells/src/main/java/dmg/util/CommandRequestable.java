@@ -1,6 +1,6 @@
 package dmg.util ;
 
-import java.io.Serializable ;
+import java.io.Serializable;
 
 public interface CommandRequestable  extends Serializable {
 

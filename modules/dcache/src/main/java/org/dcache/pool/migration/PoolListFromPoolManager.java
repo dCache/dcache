@@ -1,13 +1,13 @@
 package org.dcache.pool.migration;
 
-import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import org.dcache.cells.AbstractMessageCallback;
-
 import com.google.common.collect.ImmutableList;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
+import org.dcache.cells.AbstractMessageCallback;
 
 public abstract class PoolListFromPoolManager
     extends AbstractMessageCallback<PoolManagerGetPoolsMessage>

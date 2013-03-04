@@ -1,8 +1,8 @@
 package org.dcache.pool.repository;
 
-import org.dcache.pool.repository.v3.RepositoryException;
-
 import diskCacheV111.util.PnfsId;
+
+import org.dcache.pool.repository.v3.RepositoryException;
 
 /**
  * Thrown when attempting to create a meta data entry that already

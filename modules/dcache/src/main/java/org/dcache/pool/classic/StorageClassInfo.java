@@ -2,15 +2,24 @@
 
 package org.dcache.pool.classic;
 
-import diskCacheV111.pools.StorageClassFlushInfo;
-import diskCacheV111.util.*;
-import org.dcache.pool.repository.CacheEntry;
-
-import java.util.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import diskCacheV111.pools.StorageClassFlushInfo;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.commons.util.NDC;
+import org.dcache.pool.repository.CacheEntry;
 
 public class StorageClassInfo implements CacheFileAvailable
 {

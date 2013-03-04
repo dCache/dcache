@@ -1,10 +1,11 @@
 package org.dcache.gplazma.plugins;
 
+import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
+import org.opensciencegrid.authz.xacml.common.LocalId;
+
 import java.util.Properties;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
-import org.opensciencegrid.authz.xacml.common.LocalId;
 
 /**
  * Simple wrapper around {@link MapCredentialsClient}. This is the default

@@ -1,36 +1,42 @@
 package dmg.util ;
-import java.awt.* ;
-import java.awt.event.* ;
+
+import java.awt.TextArea;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      jWorksheet 
-       extends    TextArea 
+public class      jWorksheet
+       extends    TextArea
        implements KeyListener , TextListener{
 
    private static final long serialVersionUID = -8961732278625042991L;
    ActionListener _actionListener;
    String         _actionCommand   = "" ;
    String         _selectionText;
-   int            _answerStart = -1 , 
+   int            _answerStart = -1 ,
                   _answerEnd   = -1 ,
                   _changedCounter;
    final Object         _lock = new Object() ;
-   
+
    public jWorksheet(){
         super( 24 , 80 ) ;
         addKeyListener( this ) ;
         addTextListener( this ) ;
-   } 
+   }
    public jWorksheet( int rows , int columns ){
         super( rows , columns ) ;
         addKeyListener( this ) ;
         addTextListener( this ) ;
-   } 
+   }
    public void setActionListener( ActionListener listener ){
       _actionListener = listener ;
    }
@@ -42,7 +48,7 @@ public class      jWorksheet
 //      say( " text event : "+_changedCounter+" : "+event ) ;
 //      say( " text event : "+event.paramString() ) ;
 //     say( " text event at caret : "+getCaretPosition() ) ;
-      synchronized( _lock ){ 
+      synchronized( _lock ){
           if( _changedCounter--  > 0 ) {
               return;
           }
@@ -54,11 +60,11 @@ public class      jWorksheet
 //     say( "event : "+event);
      if( ( event.getKeyCode() == KeyEvent.VK_ENTER ) &&
            event.isShiftDown()                           ){
-           
+
          String x;
          try{  x = getSelectedText() ;}
          catch( Exception i ){ x = null ; }
-         
+
 //         say( x ) ;
          if( ( x == null ) ||   x.equals("") ){
             x = _getCurrentLine2() ;
@@ -68,7 +74,7 @@ public class      jWorksheet
              _actionListener.actionPerformed(
                      new ActionEvent(this, 0, x));
          }
-       
+
      }else if( event.isControlDown() && ( event.getKeyCode() == 90 ) ){
        // cntr  z
         event.consume();
@@ -118,7 +124,7 @@ public class      jWorksheet
    public void keyTyped( KeyEvent event ){ }
    @Override
    public void keyReleased( KeyEvent event ){ }
-   
+
    private String _getCurrentLine(){
      int c = getCaretPosition() ;
      int cc = c - 100 ;
@@ -139,7 +145,7 @@ public class      jWorksheet
      int xMax = x0 + i  ;
      select(xMin,xMax) ;
      return  getSelectedText() ;
- 
+
    }
    private String _getCurrentLine2(){
         int    c = getCaretPosition() ;
@@ -159,10 +165,10 @@ public class      jWorksheet
         c = getCaretPosition() ;
         select(c,c) ;
         return x ;
- 
+
    }
-        
+
    private void say( String text ){  System.out.println( text ) ; }
-        
+
 }
-                               
+

@@ -1,5 +1,10 @@
 package dmg.cells.applets.login ;
-import java.awt.* ;
+
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.LayoutManager;
 import java.io.Serializable;
 
 public class KeyValueLayout implements LayoutManager, Serializable {
@@ -41,15 +46,15 @@ public class KeyValueLayout implements LayoutManager, Serializable {
       synchronized (target.getTreeLock()) {
          Dimension []    m = getMinimumDimensions(target) ;
          Insets    insets  = target.getInsets();
-         int     maxwidth  = m[0].width  + m[1].width + _hGap 
+         int     maxwidth  = m[0].width  + m[1].width + _hGap
                              - (insets.left + insets.right );
-         int     maxheight = m[0].height + m[1].height + _vGap 
+         int     maxheight = m[0].height + m[1].height + _vGap
                              - (insets.top  + insets.bottom );
-//         int     maxwidth  = m[0].width  + m[1].width  + _hGap + 
+//         int     maxwidth  = m[0].width  + m[1].width  + _hGap +
 //                             insets.left + insets.right  ;
-//         int     maxheight = m[0].height + m[1].height + _vGap + 
+//         int     maxheight = m[0].height + m[1].height + _vGap +
 //                             insets.top  + insets.bottom ;
-                             
+
 //         if( _fitsAllSizes ){
 //           Dimension d = target.getSize() ;
 //           maxwidth = d.width ;
@@ -70,12 +75,12 @@ public class KeyValueLayout implements LayoutManager, Serializable {
              Component c2  = target.getComponent(i+1) ;
              Dimension dd1 = c1.getMinimumSize() ;
              Dimension dd2 = c2.getMinimumSize() ;
-             
+
              d1.width  = Math.max( d1.width , dd1.width ) ;
              d1.height = Math.max( d1.height , dd1.height ) ;
              d2.width  = Math.max( d2.width , dd2.width ) ;
-             d2.height = Math.max( d2.height , dd2.height ) ;             
-          
+             d2.height = Math.max( d2.height , dd2.height ) ;
+
           }
           d1.height = Math.max( d1.height , d2.height ) ;
           d2.height = d1.height ;
@@ -101,33 +106,33 @@ public class KeyValueLayout implements LayoutManager, Serializable {
         Dimension [] dd = getMinimumDimensions(target );
         components = components / 2 * 2 ;
         int x , y , width , height ;
-        for( int i = 0 ; i < components/2 ; i ++ ){    
-           Component m  = target.getComponent(2*i) ;    
+        for( int i = 0 ; i < components/2 ; i ++ ){
+           Component m  = target.getComponent(2*i) ;
 	   if (m.isVisible()) {
-              m.validate() ;     
-              m.setSize( dd[0].width , dd[0].height ); 
-              m.setLocation( insets.left  , 
+              m.validate() ;
+              m.setSize( dd[0].width , dd[0].height );
+              m.setLocation( insets.left  ,
                              insets.top + i * ( dd[0].height + _vGap ) ) ;
            }
-           m  = target.getComponent(2*i+1) ;    
+           m  = target.getComponent(2*i+1) ;
 	   if (m.isVisible()) {
-              m.validate() ;  
+              m.validate() ;
               if( _fitsAllSizes ){
                  Dimension d = target.getSize() ;
-                 int w = d.width - ( insets.left + insets.right ) - 
+                 int w = d.width - ( insets.left + insets.right ) -
                         _hGap - dd[0].width  ;
-                 m.setSize( w , dd[1].height ); 
-              }else{   
-                 m.setSize( dd[1].width , dd[1].height ); 
+                 m.setSize( w , dd[1].height );
+              }else{
+                 m.setSize( dd[1].width , dd[1].height );
               }
-              m.setLocation( insets.left + dd[0].width + _hGap , 
+              m.setLocation( insets.left + dd[0].width + _hGap ,
                              insets.top + i * ( dd[0].height + _vGap ) ) ;
            }
         }
-        
+
       }
     }
-    
+
     public String toString() {
 	return getClass().getName() ;
     }

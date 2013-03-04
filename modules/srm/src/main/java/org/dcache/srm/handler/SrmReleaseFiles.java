@@ -6,43 +6,45 @@
 
 package org.dcache.srm.handler;
 
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
-import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
-import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.SchedulerFactory;
-import org.dcache.srm.scheduler.JobStorageFactory;
-import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.request.GetRequest;
-import org.dcache.srm.request.GetFileRequest;
-import org.dcache.srm.request.BringOnlineRequest;
-import org.dcache.srm.request.BringOnlineFileRequest;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
+import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.srm.SRM;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.HashMap;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-import org.apache.axis.types.URI.MalformedURIException;
-import org.dcache.srm.request.sql.DatabaseFileRequestStorage;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.BringOnlineFileRequest;
+import org.dcache.srm.request.BringOnlineRequest;
+import org.dcache.srm.request.ContainerRequest;
+import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.GetFileRequest;
+import org.dcache.srm.request.GetRequest;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.request.sql.DatabaseFileRequestStorage;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.JobStorage;
+import org.dcache.srm.scheduler.JobStorageFactory;
+import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.SchedulerFactory;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
+import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
+import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TSURLReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 
 /**

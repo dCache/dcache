@@ -1,9 +1,12 @@
 package org.dcache.services.info.gathers.poolmanager;
 
-import java.util.ArrayList;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
@@ -12,8 +15,6 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
-
-import dmg.cells.nucleus.UOID;
 
 /**
  * A class to handle reply messages from PoolManager's "psux ls -x -resolve" command.

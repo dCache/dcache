@@ -1,5 +1,28 @@
 package org.dcache.util;
 
+import org.eclipse.jetty.http.HttpSchemes;
+import org.eclipse.jetty.io.EndPoint;
+import org.eclipse.jetty.io.bio.SocketEndPoint;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.bio.SocketConnector;
+import org.globus.gsi.CredentialException;
+import org.globus.gsi.GSIConstants;
+import org.globus.gsi.TrustedCertificates;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.gsi.gssapi.net.GssInputStream;
+import org.globus.gsi.gssapi.net.GssOutputStream;
+import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.gridforum.jgss.ExtendedGSSManager;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,37 +31,9 @@ import java.net.SocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSContext;
-
-import org.gridforum.jgss.ExtendedGSSManager;
-import org.gridforum.jgss.ExtendedGSSContext;
-
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.TrustedCertificates;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.CredentialException;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.gssapi.net.GssInputStream;
-import org.globus.gsi.gssapi.net.GssOutputStream;
-import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-
-import org.eclipse.jetty.http.HttpSchemes;
-import org.eclipse.jetty.io.EndPoint;
-import org.eclipse.jetty.io.bio.SocketEndPoint;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.bio.SocketConnector;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static org.globus.axis.gsi.GSIConstants.*;
-
-import static org.dcache.util.Files.checkFile;
 import static org.dcache.util.Files.checkDirectory;
+import static org.dcache.util.Files.checkFile;
+import static org.globus.axis.gsi.GSIConstants.*;
 
 /**
  * GSI Socket Connector for Jetty.

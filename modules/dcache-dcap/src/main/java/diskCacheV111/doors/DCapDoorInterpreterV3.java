@@ -1,41 +1,94 @@
 package diskCacheV111.doors;
 
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
-
-
-import dmg.cells.nucleus.*;
-import dmg.util.*;
-import diskCacheV111.poolManager.RequestContainerV5;
-import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-import java.util.*;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.io.*;
-import java.net.*;
-import diskCacheV111.namespace.NameSpaceProvider;
-import org.dcache.auth.Subjects;
-import org.dcache.auth.UnionLoginStrategy;
-import org.dcache.services.login.RemoteLoginStrategy;
-import org.dcache.auth.CachingLoginStrategy;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.LoginReply;
-import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.ReadOnly;
-import org.dcache.auth.LoginNamePrincipal;
-import org.dcache.cells.CellStub;
-import org.dcache.acl.enums.AccessMask;
-import javax.security.auth.Subject;
-import org.dcache.auth.Origin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.Base64;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
+import diskCacheV111.util.DCapUrl;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.SpreadAndWait;
+import diskCacheV111.util.VspArgs;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsFlagMessage;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.PoolCheckFileCostMessage;
+import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
+import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
+import dmg.util.CommandException;
+import dmg.util.CommandExitException;
+import dmg.util.KeepAliveListener;
+
+import org.dcache.acl.enums.AccessMask;
+import org.dcache.auth.CachingLoginStrategy;
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.Origin;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.UnionLoginStrategy;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.pinmanager.PinManagerPinMessage;
 
 import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.namespace.FileType.*;
+import static org.dcache.namespace.FileType.DIR;
+import static org.dcache.namespace.FileType.REGULAR;
 
 public class DCapDoorInterpreterV3 implements KeepAliveListener,
         DcapProtocolInterpreter {

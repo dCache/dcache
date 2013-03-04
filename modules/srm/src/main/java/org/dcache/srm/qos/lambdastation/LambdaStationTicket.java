@@ -3,31 +3,32 @@
 package org.dcache.srm.qos.lambdastation;
 
 //import java.io.PrintWriter;
-import java.io.*;
+
+import java.io.StringWriter;
 import java.util.StringTokenizer;
 
+import org.dcache.srm.qos.QOSTicket;
 import org.dcache.srm.util.ShellCommandExecuter;
-import org.dcache.srm.qos.*;
 
 // Lambda Station Ticket
 
 public class LambdaStationTicket implements QOSTicket {
-    
-    // The foolowing is taken from openSvcTicket input 
+
+    // The foolowing is taken from openSvcTicket input
     // parameters list
-    
+
     public String SrcSite;    //src site ID: "Fermilab"
     public String SrcClient;  // src client ID "CMS-SRM"
     public String SrcIP;      // src IP list in CIDR format: "131.225.207.0/25,
                                    // 131.225.207.133, 131.225.207,134"
     public String SrcPort;    // list of ports: "tcp eq 25, tcp range 5000-6000, udp le 3200"
-    
+
     public String DstSite;    //src site ID: "Caltech"
     public String DstClient;  // src client ID "CMS-SRM"
     public String DstIP;      // src IP list in CIDR format: "131.225.207.0/25,
                                    // 131.225.207.133, 131.225.207,134"
     public String DstPort;    // list of ports: "tcp eq 25, tcp range 5000-6000, udp le 3200"
-    
+
     public String LocalPath;  // StarLight10G
     public String RemotePath; //
     public String OutBW;      // Requested outbound bandwidth: "5G", "500M"
@@ -38,30 +39,30 @@ public class LambdaStationTicket implements QOSTicket {
     public String StartTime;
     public String EndTime;
     public String TravelTime; // for how long is path reserved (sec)
-    
+
     public int DSCPin;
     public int DSCPout;
-    
-    // The following may be needed 
+
+    // The following may be needed
     private String LambdaStationId;
     private String credentialSubject;
-    
+
     private int localTicketID; // local ticket id returned by Lambda Station
     private int remoteTicketID; // remote ticket id returned by Lambda Station
     private long actualEndTime; // actual end time returned by Lambda Station
     public boolean srcEnabled = true;
     public boolean dstEnabled = true;
-    
+
     public Long bytes;// Jay
 
 
     public LambdaStationTicket(){
-    	
+
     }
     public LambdaStationTicket(String credentialSubject){
         this.credentialSubject = credentialSubject;
     }
-     
+
 
     public LambdaStationTicket(
             String credentialSubject,
@@ -82,11 +83,11 @@ public class LambdaStationTicket implements QOSTicket {
         DstPort = dstPorts;
         srcEnabled = map.enabled(srcURL);
         dstEnabled = map.enabled(dstURL);
-       
+
     }
 
     public LambdaStationTicket(
-            String credentialSubject, 
+            String credentialSubject,
             String srcURL,
             String srcClient,
             String dstURL,
@@ -102,7 +103,7 @@ public class LambdaStationTicket implements QOSTicket {
         dstEnabled = map.enabled(dstURL);
    }
     public LambdaStationTicket(
-            String credentialSubject, 
+            String credentialSubject,
             String srcURL,
             String srcClient,
             String dstURL,
@@ -153,7 +154,7 @@ public class LambdaStationTicket implements QOSTicket {
                 say("AM: NO LS COMMAND");
                 return;
             }
-            
+
         }
         if (!(srcEnabled&dstEnabled)) {
             return;
@@ -226,8 +227,8 @@ public class LambdaStationTicket implements QOSTicket {
 	    else if (tok.equals("ERROR")) {
 		say("Lambda Station returned Error: "+shell_out.getBuffer().toString());
 		break;
-	    }  
-		
+	    }
+
         }
     }
 
@@ -237,9 +238,9 @@ public class LambdaStationTicket implements QOSTicket {
     public void setLambdaStationId(String lambdaStationId){
         this.LambdaStationId = lambdaStationId;
      }
-    
-    public String toString(){ 
-        
+
+    public String toString(){
+
         return ("SrcSite="+SrcSite+" SrcClient="+SrcClient+" SrcIP="+SrcIP+
                 " SrcPort="+SrcPort+" DstSite="+DstSite+" DstClient="+DstClient+
                 " DstIP="+DstIP+" DstPort="+DstPort+" LocalPath="+LocalPath+
@@ -248,16 +249,16 @@ public class LambdaStationTicket implements QOSTicket {
                 " StartTime="+StartTime+" EndTime="+EndTime+" DSCPin="+DSCPin+" DSCPout="+DSCPout+
 		" credentialSubject="+credentialSubject+" localTicketID="+localTicketID+
 		" remoteTicketID="+remoteTicketID+" actualEndTime="+actualEndTime);
-       
+
     }
 
     public void say(String words) {
         System.out.println("LS_Ticket: "+words);
     }
-    
-    
+
+
     /**
-     * 
+     *
      * @return credentialSubject
      */
     public String getCredentialSubject() {
@@ -293,4 +294,4 @@ public class LambdaStationTicket implements QOSTicket {
     }
 
 }
-    
+

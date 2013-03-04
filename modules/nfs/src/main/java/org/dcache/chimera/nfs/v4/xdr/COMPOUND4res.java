@@ -6,10 +6,14 @@
 
 package org.dcache.chimera.nfs.v4.xdr;
 
-import org.dcache.xdr.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.dcache.xdr.OncRpcException;
+import org.dcache.xdr.XdrAble;
+import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.XdrEncodingStream;
 
 public class COMPOUND4res implements XdrAble {
 

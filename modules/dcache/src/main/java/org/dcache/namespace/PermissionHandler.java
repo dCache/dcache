@@ -1,7 +1,8 @@
 package org.dcache.namespace;
 
-import java.util.Set;
 import javax.security.auth.Subject;
+
+import java.util.Set;
 
 import org.dcache.acl.enums.AccessType;
 import org.dcache.vehicles.FileAttributes;

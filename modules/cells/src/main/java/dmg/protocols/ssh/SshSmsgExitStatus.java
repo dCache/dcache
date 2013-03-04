@@ -1,13 +1,14 @@
 package dmg.protocols.ssh ;
-import  dmg.security.cipher.* ;
+
+import dmg.security.cipher.StreamCipher;
 
 
 public class SshSmsgExitStatus extends SshPacket {
     byte [] _load ;
     int     _value ;
-    
+
     public SshSmsgExitStatus( StreamCipher cipher , byte [] data , int len  ){
-    
+
         super( cipher , data , len ) ;
         _value = intFromBytes( getPayload() , 0 ) ;
     }

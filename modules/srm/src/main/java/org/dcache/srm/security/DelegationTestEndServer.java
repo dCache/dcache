@@ -5,29 +5,31 @@
  */
 
 package org.dcache.srm.security;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.io.IOException;
-import org.globus.gsi.X509Credential;
+
 import org.globus.gsi.CredentialException;
+import org.globus.gsi.GSIConstants;
 import org.globus.gsi.TrustedCertificates;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.gsi.gssapi.auth.Authorization;
+import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.gssapi.auth.GSSAuthorization;
 import org.globus.gsi.gssapi.auth.HostAuthorization;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.globus.gsi.gssapi.auth.Authorization;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 /**
  *

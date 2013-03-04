@@ -1,7 +1,9 @@
 package org.dcache.gplazma.plugins;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.glite.voms.PKIVerifier;
+import org.glite.voms.VOMSValidator;
+import org.glite.voms.ac.ACValidator;
+import org.slf4j.MDC;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -14,10 +16,9 @@ import java.util.Set;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.gplazma.AuthenticationException;
-import org.glite.voms.PKIVerifier;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.ac.ACValidator;
-import org.slf4j.MDC;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * Validates and extracts FQANs from any X509Certificate certificate chain in

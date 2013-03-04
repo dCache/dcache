@@ -1,10 +1,12 @@
 package org.dcache.xrootd.door;
 
-import org.dcache.auth.LoginReply;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
-import static org.jboss.netty.channel.Channels.*;
+
+import org.dcache.auth.LoginReply;
+
+import static org.jboss.netty.channel.Channels.succeededFuture;
 
 public class LoginEvent implements ChannelEvent
 {

@@ -1,17 +1,19 @@
 package org.dcache.webadmin.view.pages.poolselectionsetup.panels.partitions;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.model.IModel;
-import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
-import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
+import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 
 /**
  *

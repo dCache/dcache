@@ -4,20 +4,22 @@
  */
 
 package org.dcache.commons.stats.rrd;
-import org.dcache.commons.stats.RequestExecutionTimeGauge;
-import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
-import java.io.FileWriter;
-import java.security.AccessControlException;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Map;
-import java.util.HashMap;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Random;
+
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.security.AccessControlException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.dcache.commons.stats.RequestExecutionTimeGauge;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 /**
  *  a utility class that creates and manages rrd databases (using RRDRequestExecutionTimeGauge)
@@ -227,7 +229,7 @@ public class RrdRequestExecutionTimeGauges<T> {
     }
     /**
      *  runs tests of the rrdRequestCouters
-     * @param args 
+     * @param args
      * @throws Exception
      */
     public static void main(String[] args) throws Exception{

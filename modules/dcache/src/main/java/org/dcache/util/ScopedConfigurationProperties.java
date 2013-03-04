@@ -1,7 +1,7 @@
 package org.dcache.util;
 
-import java.util.Properties;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 /**

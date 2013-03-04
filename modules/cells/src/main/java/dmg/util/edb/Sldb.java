@@ -1,7 +1,10 @@
 package dmg.util.edb ;
 
-import java.io.* ;
-import java.util.* ;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.Date;
+import java.util.Random;
 
 /**
  *  The Sldb class builds the in memory represetation of a
@@ -9,7 +12,7 @@ import java.util.* ;
  *  of entries. The record data is assumed to have a
  *  maximum size and the storage key is determined by the
  *  database.
- * 
+ *
  * @version 2.0, 11/24/99
  * @author  Patrick Fuhrmann  patrick.fuhrmann@desy.de
  * @since   JDK1.1
@@ -22,12 +25,12 @@ public class Sldb {
    //
    //  0 int   VERSION=1
    //  4 int   bytesPerRecord
-   //  8 int   recordsPerBlock 
-   // 12 int   blockInUse 
+   //  8 int   recordsPerBlock
+   // 12 int   blockInUse
    // 16 long  lastOpen   (write only)
-   // 24 long  lastClose  
+   // 24 long  lastClose
    // 32 long  dbId
-   // 40 UTF   dbName 
+   // 40 UTF   dbName
    //   .... ( total = 128 byte )
    //
    //
@@ -40,10 +43,10 @@ public class Sldb {
    private long    _lastClose;
    private long    _dbId;
    private String  _dbName    = "Unknown" ;
-   
+
    private DirectoryDesc [] _desc;
    private Random _random = new Random( new Date().getTime());
-   
+
    private class SldbEntryImpl implements SldbEntry {
        private long _cookie;
        private int  _blockPos , _bytePos , _bitPos, _recordPos ;
@@ -54,10 +57,10 @@ public class Sldb {
           _recordPos = (int) (_cookie % _rpb ) ;
           _bytePos   = _recordPos / 8 ;
           _bitPos    = _recordPos % 8;
-          _filePos   = __headerOffset + 
+          _filePos   = __headerOffset +
                  _blockPos * ( _rpb / 8 + _rpb * _bpdr ) +
                              ( _rpb / 8 + _recordPos * _bpdr ) ;
-         
+
        }
        @Override
        public long getCookie(){ return _cookie ; }
@@ -92,19 +95,19 @@ public class Sldb {
     *
     *  @param file is the file object which will contain the database.
     *  @param bytesPerDataRecord is the maximum size in byte
-    *         a datarecord is allow to have. 
+    *         a datarecord is allow to have.
     *  @param recordsPerBlock is the number of records a directory block
-    *         contains. 
+    *         contains.
     *  @exception IOException is forwarded from the underlaying
     *                         I/O operations.
     *  @exception IllegalArgumentException is thrown if one of the
     *             arguments doesn't make sense in conjuction with
     *             a Sldb VERSION I database.
     */
-   public Sldb( File file , 
+   public Sldb( File file ,
                 int bytesPerDataRecord ,
                 int recordsPerBlock      ) throws IOException {
-   
+
         if( file.exists() ) {
             throw new IllegalArgumentException("file exists");
         }
@@ -112,19 +115,19 @@ public class Sldb {
             throw new
                     IllegalArgumentException("bytesPerDataRecord < 1");
         }
-        
+
         _file = new RandomAccessFile( file , "rw") ;
         _rpb  = recordsPerBlock < 32 ? 32 : recordsPerBlock ;
         _bpdr = ( ( bytesPerDataRecord - 1 ) / 8 + 1 ) * 8 ;
         _biu  = 1 ;
         _lastOpen  = new Date().getTime() ;
         _lastClose = 0L ;
-        
+
         byte [] dir  = new byte[_rpb/8] ;
-        
+
         try{
            writeHeader() ;
-           
+
            _file.seek( __headerOffset ) ;
            _file.write( dir ) ;
            _file.close() ;
@@ -132,7 +135,7 @@ public class Sldb {
            try{ _file.close() ; }catch(Exception ee){}
            throw e ;
         }
-        
+
         _openExistingFile( file ) ;
    }
    private void _openExistingFile( File file )throws IOException{
@@ -143,7 +146,7 @@ public class Sldb {
       }
       _file = new RandomAccessFile( file , "rw" ) ;
       try{
-      
+
          readHeader() ;
 
       }catch( IllegalArgumentException | IOException iae ){
@@ -185,10 +188,10 @@ public class Sldb {
                    IllegalArgumentException(
                    "Not a Sldb File (bpfr=" + _bpdr + ";rpb=" + _rpb + ")");
        }
-        
+
         _lastOpen = _file.readLong() ;
         _lastClose = _file.readLong() ;
-        
+
         _dbId      = _file.readLong() ;
         _dbName    = _file.readUTF() ;
    }
@@ -197,7 +200,7 @@ public class Sldb {
     *  closes the database. All subsequent operations on this
     *  object will fail.
     *
-    *   @exception IOException  is thrown if the underlying 
+    *   @exception IOException  is thrown if the underlying
     *              file object throws an exception.
     */
    public synchronized void close() throws IOException {
@@ -207,7 +210,7 @@ public class Sldb {
      _file = null ;
    }
    /**
-    *   returns a representation of a Database record 
+    *   returns a representation of a Database record
     *   derived from a cookie.
     *   @param cookie an external representation of a database
     *          record.
@@ -241,27 +244,27 @@ public class Sldb {
     */
    public synchronized byte [] get( SldbEntry e )throws IOException {
        SldbEntryImpl sldb =(SldbEntryImpl) e ;
-       
+
        int block = sldb._blockPos ;
        if( block >= _biu ) {
            throw new
                    IllegalArgumentException("Not withing block " + _biu);
        }
-      
+
        if( ! _desc[block].isInUse( sldb ) ) {
            throw new
                    IllegalArgumentException("Record not in use");
        }
-       
+
        _file.seek( sldb._filePos ) ;
-       
+
        int size = _file.readInt() ;
        if( size >= ( _bpdr - 4 ) ) {
            throw new
                    IllegalArgumentException(
                    "Data record corrupted at " + sldb._filePos);
        }
-         
+
        byte [] res = new byte[size] ;
        _file.readFully( res ) ;
        return res ;
@@ -276,9 +279,9 @@ public class Sldb {
     */
    public synchronized SldbEntry put( byte [] data , int off , int size )
           throws IOException {
-    
+
        SldbEntryImpl ei = (SldbEntryImpl)getEntry() ;
-       return put( ei , data , off , size ) ;      
+       return put( ei , data , off , size ) ;
    }
    /**
     *  stores a datarecord at the position of the internal record represention.
@@ -291,21 +294,21 @@ public class Sldb {
     */
    public synchronized SldbEntry put( SldbEntry e , byte [] data , int off , int size )
           throws IOException {
-    
+
       if( size > (_bpdr-4) ) {
           throw new
                   IllegalArgumentException(
                   "can only accept " + _bpdr + " bytes");
       }
-            
+
        SldbEntryImpl ei =(SldbEntryImpl) e ;
-       
+
        _file.seek( ei._filePos ) ;
        _file.writeInt( size ) ;
        _file.write( data , off , size ) ;
-       
+
       _desc[ei._blockPos].setInUse( ei , true ) ;
-            
+
       return e ;
    }
    private class DirectoryDesc {
@@ -319,26 +322,26 @@ public class Sldb {
                       IllegalArgumentException(
                       "block number to large " + block + " >= " + _biu);
           }
-                
+
           _block    = block ;
-          _position = __headerOffset + 
+          _position = __headerOffset +
                       _block * ( _rpb / 8 + _rpb * _bpdr ) ;
-          
+
           _file.seek( _position ) ;
-          _dir = new byte[_rpb/8] ;          
+          _dir = new byte[_rpb/8] ;
           _file.readFully( _dir  ) ;
           _inUse = countInUse() ;
        }
        private DirectoryDesc() throws IOException {
           _block    = _biu ;
           _inUse    = 0 ;
-          _position = __headerOffset + 
+          _position = __headerOffset +
                       _block * ( _rpb / 8 + _rpb * _bpdr ) ;
-          
+
           _file.seek( _position ) ;
-          _dir = new byte[_rpb/8] ;   
+          _dir = new byte[_rpb/8] ;
           _file.write( _dir ) ;
-               
+
        }
        private int getHighWater(){
            return (int)(((float)_inUse)/((float)_rpb)*100.);
@@ -363,7 +366,7 @@ public class Sldb {
                  bytePos ++ ;
                  bitPos = 0 ;
               }
-             
+
           }
           return null ;
        }
@@ -373,8 +376,8 @@ public class Sldb {
           if( ( bitPos ) >= 8 ){
               bitPos = 0 ;
               bytePos ++ ;
-          }  
-         
+          }
+
           return nextUsedEntry( bytePos , bitPos )  ;
        }
        private SldbEntryImpl nextUsedEntry(){
@@ -402,7 +405,7 @@ public class Sldb {
                  bytePos = ( bytePos + 1 ) % maxBytes;
                  bitPos = 0 ;
               }
-             
+
           }
           throw new
           IllegalArgumentException("out of space(2) : "+_block) ;
@@ -420,7 +423,7 @@ public class Sldb {
                 }
                 mask <<= 1 ;
              }
-          
+
           }
           return counter ;
        }
@@ -429,7 +432,7 @@ public class Sldb {
           int m = 1 << e._bitPos ;
           boolean wasSet = ( v & m ) > 0 ;
           if( set && ! wasSet ){
-             v |= m ;  
+             v |= m ;
              _dir[ e._bytePos ] = (byte)v ;
              _inUse++ ;
              store() ;
@@ -439,21 +442,21 @@ public class Sldb {
              _inUse-- ;
              store() ;
           }
-          
-          
+
+
        }
        public boolean isInUse( long cookie ){
-          
-             
+
+
           int p = (int)( cookie % _rpb ) ;
           int v = _dir[ p / 8 ] ;
           int s = p % 8 ;
           return ( v & ( 1 << ( p % 8 ) ) ) > 0 ;
        }
        public boolean isInUse( SldbEntryImpl e ){
-                 
+
           return ( _dir[ e._bytePos ] & ( 1 << ( e._bitPos % 8 ) ) ) > 0 ;
-          
+
        }
        public String toString(){
           StringBuilder sb  = new StringBuilder() ;
@@ -462,7 +465,7 @@ public class Sldb {
           for( int i = 0 ; i < _rpb ; i++ ) {
               sb.append(isInUse(i) ? "1" : "0");
           }
-          
+
           return sb.toString() ;
        }
    }
@@ -569,9 +572,9 @@ public class Sldb {
         System.err.println( "Usage : ... <filename> create" ) ;
         System.err.println( "Usage : ... <filename> show" ) ;
         System.err.println( "Usage : ... <filename> getcookie" ) ;
-        System.err.println( 
+        System.err.println(
             "Usage : ... <filename> write <string> [<cookie>]" ) ;
-        System.err.println( 
+        System.err.println(
             "Usage : ... <filename> read <cookie>" ) ;
         System.exit(4) ;
      }

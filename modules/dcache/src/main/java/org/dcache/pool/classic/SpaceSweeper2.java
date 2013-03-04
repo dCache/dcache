@@ -2,36 +2,38 @@
 
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.PnfsId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
+
+import dmg.util.Args;
+import dmg.util.Formats;
+
 import org.dcache.cells.CellCommandListener;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Account;
-import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.StateChangeListener;
-import org.dcache.pool.repository.StateChangeEvent;
-import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.StickyChangeEvent;
-import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryChangeEvent;
+import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.MetaDataRecord;
-
-import dmg.util.*;
-
-import java.util.Date;
-import java.util.Set;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.text.SimpleDateFormat;
-
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.SpaceSweeperPolicy;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SpaceSweeper2
     implements Runnable, CellCommandListener, StateChangeListener,

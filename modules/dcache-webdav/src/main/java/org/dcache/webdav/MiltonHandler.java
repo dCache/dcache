@@ -1,27 +1,26 @@
 package org.dcache.webdav;
 
+import io.milton.http.HttpManager;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
-import io.milton.http.HttpManager;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.handler.ContextHandler;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+
 import org.dcache.cells.CellMessageSender;
 import org.dcache.util.Transfer;
-
-import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellEndpoint;
-import org.eclipse.jetty.server.handler.ContextHandler;
 
 /**
  * A Jetty handler that wraps a Milton HttpManager. Makes it possible

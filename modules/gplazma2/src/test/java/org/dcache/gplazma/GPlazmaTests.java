@@ -1,15 +1,10 @@
 package org.dcache.gplazma;
 
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.ACCOUNT;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.AUTHENTICATION;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.MAPPING;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.SESSION;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.security.auth.Subject;
 
 import java.security.Principal;
 import java.util.Arrays;
@@ -17,8 +12,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-
-import javax.security.auth.Subject;
 
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -33,9 +26,10 @@ import org.dcache.gplazma.configuration.StaticContentConfigurationLoadingStrateg
 import org.dcache.gplazma.loader.PluginXmlGenerator;
 import org.dcache.gplazma.loader.Utf8DataClassLoader;
 import org.dcache.gplazma.loader.XmlResourcePluginRepositoryFactory;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.*;
+import static org.junit.Assert.*;
 
 /**
  *

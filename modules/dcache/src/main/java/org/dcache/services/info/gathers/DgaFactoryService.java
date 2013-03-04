@@ -2,10 +2,10 @@ package org.dcache.services.info.gathers;
 
 import java.util.Set;
 
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
-
-import dmg.cells.nucleus.UOID;
 
 /**
  * A service that can create one or more Data-Gathering Activities will

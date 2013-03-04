@@ -1,9 +1,12 @@
 package org.dcache.vehicles;
 
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.PnfsId;
-import org.dcache.namespace.FileAttribute;
 import java.util.Set;
+
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsMessage;
+
+import org.dcache.namespace.FileAttribute;
 
 
 /**

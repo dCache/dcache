@@ -1,12 +1,13 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.PoolSummaryVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PoolsSummaryMaintainer extends AbstractStateWatcher {
 	private static Logger _log = LoggerFactory.getLogger( PoolsSummaryMaintainer.class);

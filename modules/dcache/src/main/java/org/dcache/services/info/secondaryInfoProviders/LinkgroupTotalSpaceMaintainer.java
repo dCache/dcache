@@ -1,5 +1,8 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -10,8 +13,6 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.SimpleIntegerMapVisitor;
 import org.dcache.services.info.stateInfo.SimpleStringMapVisitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The SrmSpaceManager records some capacity information about a linkgroup; specifically,

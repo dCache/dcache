@@ -1,17 +1,18 @@
 package org.dcache.pool.repository.v5;
 
 import com.google.common.collect.Sets;
+
+import java.util.Collection;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
-
-import java.util.Collection;
 
 public class CacheEntryImpl implements CacheEntry
 {

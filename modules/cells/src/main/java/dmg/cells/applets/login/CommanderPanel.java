@@ -1,14 +1,29 @@
 package dmg.cells.applets.login ;
 
-import java.awt.* ;
-import java.awt.event.* ;
-import java.io.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Checkbox;
+import java.awt.CheckboxGroup;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.Serializable;
 
 import dmg.cells.applets.spy.HistoryTextField;
-import dmg.util.* ;
+import dmg.util.Args;
 
 
-public class      CommanderPanel 
+public class      CommanderPanel
        extends    SshActionPanel
        implements ActionListener ,
                   DomainConnectionListener  {
@@ -30,7 +45,7 @@ public class      CommanderPanel
        Dimension d = getSize() ;
        int h = _b / 2 ;
        g.setColor( new Color(0,0,0) ) ;
-       int [] xs = new int[4] ; 
+       int [] xs = new int[4] ;
        int [] ys = new int[4] ;
        xs[0] = h           ; ys[0] = h ;
        xs[1] = d.width-h-1 ; ys[1] = h ;
@@ -47,48 +62,48 @@ public class      CommanderPanel
        bl.setHgap(15) ;
        bl.setVgap(15) ;
         setLayout( bl ) ;
-        
+
         setBackground( new Color(210,210,210) ) ;
        _dc = dc ;
        _display = new TextArea() ;
        _display.setFont( _mFont ) ;
        _input   = new HistoryTextField() ;
-       
+
        _optionPanel = new Panel( new FlowLayout( FlowLayout.CENTER ) ) ;
-       
+
        Panel topPanel  = new Panel( new GridLayout(0,1) ) ;
-       
+
        Label header = new Label( "Commander" , Label.CENTER ) ;
        header.setFont( _font ) ;
-       
+
        topPanel.add( header ) ;
-       
+
        Panel buttonPanel = new Panel( new GridLayout(1,0) ) ;
-      
+
        buttonPanel.add( _backButton = new  Button("Back" ) ) ;
        buttonPanel.add( _clearButton = new Button("Clear Screen" ) ) ;
-       
+
        _optionPanel.add( buttonPanel ) ;
        _optionPanel.add( new Label("Send Command as : " ) ) ;
-       
+
        _checkGroup  = new CheckboxGroup() ;
        _checkString = new Checkbox( "String" , _checkGroup , true ) ;
        _checkArgs   = new Checkbox( "Args" , _checkGroup , false ) ;
        _checkArray  = new Checkbox( "Array" , _checkGroup , false ) ;
-       
+
        Panel checkPanel = new Panel( new GridLayout(1,0) ) ;
        checkPanel.add( _checkString ) ;
        checkPanel.add( _checkArgs ) ;
        checkPanel.add( _checkArray ) ;
-       
+
        _optionPanel.add( checkPanel ) ;
        _backButton.addActionListener( this ) ;
        _clearButton.addActionListener( this ) ;
-       
+
        _input.addActionListener( this ) ;
-       
+
        topPanel.add( _optionPanel ) ;
-       
+
        add( topPanel , "North" ) ;
        add( _display , "Center" ) ;
        add( _input   , "South" ) ;
@@ -113,7 +128,7 @@ public class      CommanderPanel
        }
     }
     private void sendCommand( String in ){
-    
+
        Checkbox box = _checkGroup.getSelectedCheckbox() ;
        Serializable toBeSent;
        if( box == _checkString ){
@@ -166,8 +181,8 @@ public class      CommanderPanel
 //           _display.append( "("+obj.getClass().getName()+") "+obj.toString() + "\n" ) ;
            _display.append( obj.toString() + "\n" ) ;
        }
-    
+
     }
-    
-    
-} 
+
+
+}

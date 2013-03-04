@@ -1,7 +1,7 @@
 package org.dcache.srm.scheduler;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class has the ability to count per job creator. A counter can

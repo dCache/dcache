@@ -1,18 +1,18 @@
 package org.dcache.tests.poolmanager;
 
-import static org.junit.Assert.*;
-
-import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -20,8 +20,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
-import java.util.ArrayList;
-import java.util.List;
+
+import static org.junit.Assert.*;
 
 
 public class PoolSelectionUnitTest {

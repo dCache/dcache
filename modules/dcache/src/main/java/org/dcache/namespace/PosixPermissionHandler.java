@@ -1,17 +1,19 @@
 package org.dcache.namespace;
 
-import java.util.EnumSet;
-import java.util.Set;
-import java.util.Collections;
 import javax.security.auth.Subject;
 
-import org.dcache.auth.Subjects;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
 import org.dcache.acl.enums.AccessType;
+import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.acl.enums.AccessType.*;
-import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
+import static org.dcache.acl.enums.AccessType.ACCESS_DENIED;
 import static org.dcache.chimera.UnixPermission.*;
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * A PermissionHandler implementing the POSIX.1 permission model.

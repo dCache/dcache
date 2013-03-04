@@ -4,12 +4,17 @@
 
 package javatunnel;
 
-import java.io.*;
-import java.net.*;
+import javax.security.auth.Subject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.security.Principal;
 
 import dmg.util.UserValidatable;
-import java.security.Principal;
-import javax.security.auth.Subject;
+
 import org.dcache.auth.UserNamePrincipal;
 
 public class SSLTunnelSocket extends Socket implements UserBindible {

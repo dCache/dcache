@@ -1,16 +1,6 @@
 package org.dcache.xrootd.spring;
 
 import com.google.common.collect.Lists;
-import dmg.cells.nucleus.EnvironmentAware;
-import dmg.util.Formats;
-import dmg.util.Replaceable;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.xrootd.door.LoginAuthenticationHandlerFactory;
-import org.dcache.xrootd.plugins.AuthenticationFactory;
-import org.dcache.xrootd.plugins.AuthenticationProvider;
-import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.dcache.xrootd.plugins.ChannelHandlerProvider;
-import org.dcache.xrootd.plugins.authn.none.NoAuthenticationFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -18,6 +8,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
+
+import dmg.cells.nucleus.EnvironmentAware;
+import dmg.util.Formats;
+import dmg.util.Replaceable;
+
+import org.dcache.auth.LoginStrategy;
+import org.dcache.xrootd.door.LoginAuthenticationHandlerFactory;
+import org.dcache.xrootd.plugins.AuthenticationFactory;
+import org.dcache.xrootd.plugins.AuthenticationProvider;
+import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.plugins.ChannelHandlerProvider;
+import org.dcache.xrootd.plugins.authn.none.NoAuthenticationFactory;
 
 import static com.google.common.base.Predicates.containsPattern;
 import static com.google.common.collect.Iterables.*;

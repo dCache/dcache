@@ -1,20 +1,21 @@
 package org.dcache.services.info.gathers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Date;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.services.space.message.GetSpaceTokensMessage;
+import diskCacheV111.vehicles.Message;
+
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
-
-import diskCacheV111.services.space.Space;
-import diskCacheV111.services.space.message.GetSpaceTokensMessage;
-import diskCacheV111.vehicles.Message;
 
 public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 

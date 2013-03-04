@@ -1,11 +1,6 @@
 package org.dcache.chimera;
 
 import com.google.common.io.Resources;
-
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.Properties;
 import liquibase.Liquibase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
@@ -13,6 +8,11 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.After;
 import org.junit.Before;
+
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.Properties;
 
 public abstract class ChimeraTestCaseHelper {
 

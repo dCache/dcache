@@ -1,19 +1,21 @@
 package org.dcache.gplazma.validation;
 
-import java.security.Principal;
-import javax.security.auth.Subject;
-import java.util.Set;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.attributes.ReadOnly;
-
-import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.LoginReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
+import java.security.Principal;
+import java.util.Set;
+
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.LoginReply;
 
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 

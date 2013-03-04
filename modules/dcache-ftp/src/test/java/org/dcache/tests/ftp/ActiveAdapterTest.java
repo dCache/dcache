@@ -1,16 +1,18 @@
 package org.dcache.tests.ftp;
 
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+
 import diskCacheV111.util.ActiveAdapter;
+
 import org.dcache.util.PortRange;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ActiveAdapterTest {
 

@@ -1,5 +1,8 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -12,8 +15,6 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
 import org.dcache.services.info.stateInfo.SetMapVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**

@@ -16,11 +16,18 @@
  */
 
 package org.dcache.utils;
+
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+
 import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.management.*;
 
 /**
  * Class CacheMXBeanImpl

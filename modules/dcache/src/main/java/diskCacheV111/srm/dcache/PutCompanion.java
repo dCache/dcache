@@ -69,37 +69,42 @@ package diskCacheV111.srm.dcache;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.ThreadManagerMessageCallback;
-import diskCacheV111.util.FsPath;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.srm.PrepareToPutCallbacks;
-import org.dcache.srm.FileMetaData;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
-import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsMapPathMessage;
-import diskCacheV111.vehicles.PnfsMessage;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileType;
-
-import java.util.Collection;
-import java.util.concurrent.TimeUnit;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Date;
-import java.util.EnumSet;
-import javax.security.auth.Subject;
-import org.dcache.namespace.PermissionHandler;
-import static org.dcache.namespace.FileType.*;
-import org.dcache.acl.enums.AccessType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
+import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
+import diskCacheV111.vehicles.PnfsMessage;
+
+import org.dcache.acl.enums.AccessType;
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.ThreadManagerMessageCallback;
+import org.dcache.namespace.FileType;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.PrepareToPutCallbacks;
+import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.namespace.FileType.LINK;
+import static org.dcache.namespace.FileType.REGULAR;
 
 
 /**

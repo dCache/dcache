@@ -1,10 +1,11 @@
 package dmg.security.cipher.rsa ;
-import java.math.BigInteger ;
-import java.util.Random ;
-import java.util.Date ;
+
+import java.math.BigInteger;
+import java.util.Date;
+import java.util.Random;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -12,7 +13,7 @@ import java.util.Date ;
 public class Rsa {
 
   private static final int DEFAULT_BITS  = 1024 ;
-  
+
   public static void main( String [] args ){
       if( args.length < 2 ){
         System.out.println( " USAGE : <bits> <certainty>" ) ;
@@ -24,10 +25,10 @@ public class Rsa {
       int cert  = new Integer(args[1]);
       int bitsp = ( bits + 1 ) / 2;
       int bitsq = bits - bitsp ;
-      
+
       BigInteger e = BigInteger.valueOf( 67L ) ;
       BigInteger q , p , x , y , n ,  d , dmp1 , dmq1 , iqmp ;
-      
+
       while( true ){
           p = new BigInteger( bitsp , cert , random );
           Rsa.say( " p  : "+p.toString(16) ) ;
@@ -56,7 +57,7 @@ public class Rsa {
       if( p.compareTo( q ) < 0 ){
         x = p ;
         p = q ;
-        q = x ; 
+        q = x ;
       }
       n = p.multiply( q ) ;
       x = p.subtract( bigOne ) ;

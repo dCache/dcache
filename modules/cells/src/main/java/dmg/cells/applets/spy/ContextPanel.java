@@ -1,15 +1,29 @@
 package dmg.cells.applets.spy ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.ItemSelectable;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
-import dmg.cells.services.* ;
-import dmg.cells.network.* ;
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.services.MessageObjectFrame;
 
 
 
-class ContextPanel 
-      extends Panel 
+class ContextPanel
+      extends Panel
       implements ActionListener, FrameArrivable, ItemListener {
 
    private static final long serialVersionUID = -5025275864041931726L;
@@ -29,9 +43,9 @@ class ContextPanel
    private String [] _contextList = new String[0] ;
    private String    _contextName;
    private boolean   _useColor;
-   
+
    ContextPanel( DomainConnection connection ){
-      _connection = connection ; 
+      _connection = connection ;
       _useColor   = System.getProperty( "bw" ) == null ;
       if( _useColor ) {
           setBackground(Color.orange);
@@ -41,7 +55,7 @@ class ContextPanel
       _topLabel = new Label( "Context" , Label.CENTER )  ;
       _topLabel.setFont( _bigFont ) ;
       add( _topLabel , "North" ) ;
-      
+
       _updateButton = new Button( "Update List" ) ;
       _updateButton.addActionListener( this ) ;
       _writeButton = new Button( "Rewrite" ) ;
@@ -51,43 +65,43 @@ class ContextPanel
       Panel buttonPanel = new Panel( new FlowLayout(FlowLayout.CENTER) ) ;
 //      buttonPanel.add( _updateButton ) ;
 //      buttonPanel.add( _writeButton ) ;
-      
+
       add( buttonPanel , "South" ) ;
-      
+
       _contextText = new TextArea() ;
       _contextText.setFont( _textFont ) ;
 //      _contextText.setBackground( back ) ;
 //      _contextText.setBackground( Color.blue ) ;
       add( new BorderPanel( _contextText ) , "Center" ) ;
-      
+
       Panel leftPanel = new Panel( new BorderLayout() ) ;
       _list = new SpyList() ;
       _list.addItemListener( this ) ;
 //      _list.setBackground( back ) ;
       leftPanel.add( _list , "Center" ) ;
       Panel downPanel = new Panel( new GridLayout( 0 , 1 ) ) ;
-      
+
       downPanel.add( _updateButton ) ;
       downPanel.add( _writeButton ) ;
-      
+
       leftPanel.add( new BorderPanel( downPanel ) , "South" ) ;
-      
+
       add( new BorderPanel( leftPanel ) , "West" ) ;
-      
+
       _contextNameField = new TextField() ;
-      
+
       _newContextButton = new Button( "New Context" ) ;
       _newContextButton.addActionListener( this ) ;
       _newContextButton.setBackground( Color.red ) ;
       _removeContextButton = new Button( "Remove Context" ) ;
       _removeContextButton.addActionListener( this ) ;
       _removeContextButton.setBackground( Color.red ) ;
-      
+
       Panel bottomPanel = new Panel( new BorderLayout() ) ;
       bottomPanel.add( _removeContextButton , "East" ) ;
       bottomPanel.add( _newContextButton    , "West" ) ;
       bottomPanel.add( _contextNameField    , "Center" ) ;
-      
+
       add( bottomPanel , "South" ) ;
    }
    @Override
@@ -107,8 +121,8 @@ class ContextPanel
               return;
           }
           String req = "set -c context "+newContextName+" "+newContextName ;
-          _connection.send(  
-              _domainNode.getAddress() , req , 
+          _connection.send(
+              _domainNode.getAddress() , req ,
               new FrameArrivable(){
                   @Override
                   public void frameArrived( MessageObjectFrame frame ){
@@ -140,9 +154,9 @@ class ContextPanel
               return;
           }
           String req = "unset context "+_contextName ;
-          _connection.send( 
-              _domainNode.getAddress() , 
-              req , 
+          _connection.send(
+              _domainNode.getAddress() ,
+              req ,
               new FrameArrivable(){
                   @Override
                   public void frameArrived( MessageObjectFrame frame ){
@@ -152,17 +166,17 @@ class ContextPanel
               }
           ) ;
        }else if( o == _writeButton ){
-       
+
           if( ( _domainNode == null ) || ( _contextName == null ) ) {
               return;
           }
-          
-          SpyCommandRequest req = 
-            new SpyCommandRequest( "set context" , 
+
+          SpyCommandRequest req =
+            new SpyCommandRequest( "set context" ,
                                    _contextName ,
                                    _contextText.getText() ) ;
           _connection.send( _domainNode.getAddress() , req , this ) ;
-       
+
        }
    }
    @Override
@@ -178,7 +192,7 @@ class ContextPanel
            }
           _contextText.setText("");
        }else if( obj instanceof Object [] ){
-          // 
+          //
           // this is the return of an write context
           //
           _list.select( ((Object[])obj)[0].toString() ) ;
@@ -209,9 +223,9 @@ class ContextPanel
       if( _domainNode == null ) {
           return;
       }
-      _connection.send( _domainNode.getAddress() , 
+      _connection.send( _domainNode.getAddress() ,
                         "getcontext " + contextName  , this ) ;
-      _contextName = contextName ;  
+      _contextName = contextName ;
       _writeButton.setEnabled(true) ;
       _removeContextButton.setEnabled(true) ;
    }
@@ -241,9 +255,9 @@ class ContextPanel
       if( ( obj == null ) || ( obj.length == 0 ) ) {
           return;
       }
-    
+
       String contextName = obj[0].toString() ;
       updateDomain(contextName);
    }
 
-} 
+}

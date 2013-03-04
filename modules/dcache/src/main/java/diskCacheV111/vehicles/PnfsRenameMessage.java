@@ -4,7 +4,7 @@
 
 package diskCacheV111.vehicles;
 
-import  diskCacheV111.util.* ;
+import diskCacheV111.util.PnfsId;
 
 public class PnfsRenameMessage extends PnfsMessage
 {

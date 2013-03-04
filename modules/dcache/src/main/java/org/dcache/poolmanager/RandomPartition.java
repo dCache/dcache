@@ -1,7 +1,10 @@
 package org.dcache.poolmanager;
 
-import java.util.Map;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
+
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import diskCacheV111.poolManager.CostModule;
@@ -10,8 +13,6 @@ import diskCacheV111.util.CacheException;
 
 import org.dcache.vehicles.FileAttributes;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
 import static com.google.common.collect.Iterables.filter;
 
 /**

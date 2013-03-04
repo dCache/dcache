@@ -1,5 +1,6 @@
 package dmg.protocols.ssh ;
-import  dmg.security.cipher.* ;
+
+import dmg.security.cipher.StreamCipher;
 
 
 public class SshCmsgUser extends SshStringPacket {
@@ -9,10 +10,10 @@ public class SshCmsgUser extends SshStringPacket {
 //    }
     public SshCmsgUser( SshPacket packet ){  super( packet ) ; }
     public SshCmsgUser( StreamCipher cipher , String str ){
-        super( cipher , str ) ; 
+        super( cipher , str ) ;
     }
     public SshCmsgUser( String str ){
-        super( null ,str ) ; 
+        super( null ,str ) ;
     }
     public String getUser(){ return getString() ; }
 }

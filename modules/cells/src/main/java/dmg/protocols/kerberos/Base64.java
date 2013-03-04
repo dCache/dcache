@@ -1,6 +1,10 @@
 package dmg.protocols.kerberos ;
 
-import java.io.* ;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 
 public class Base64 {
 
@@ -12,7 +16,7 @@ public class Base64 {
           throw new
                   NullPointerException("data == null ");
       }
-      
+
       StringBuilder out = new StringBuilder() ;
       int c = 0 ;
       int i;
@@ -54,7 +58,7 @@ public class Base64 {
           throw new
                   IllegalArgumentException("Not a base64(not mod 4)");
       }
-         
+
       int rn = n ;
       if( str.charAt(rn-1) == '=' ) {
           rn--;
@@ -64,7 +68,7 @@ public class Base64 {
       }
       int diff = ( n - rn ) ;
       byte [] data = new byte[n/4*3-diff] ;
-          
+
       int d       = 0 ;
       int dataPos = 0 ;
       int x;
@@ -101,7 +105,7 @@ public class Base64 {
       return data ;
    }
    private static String __rest = "!@#$%^&*()_+=-][]{};'\\\":|<>?,./ `~" ;
-   private static void displayHexLine( byte [] data , int off , int size , 
+   private static void displayHexLine( byte [] data , int off , int size ,
                                        PrintWriter pw ){
       size = Math.min( size , 16 ) ;
       int pos = off ;
@@ -112,17 +116,17 @@ public class Base64 {
         if( col == 7 ) {
             pw.print(" ");
         }
-      } 
+      }
       for( ; col < 16 ; col ++ ){
         pw.print("-- " ) ;
         if( col == 7 ) {
             pw.print(" ");
         }
-      } 
+      }
       pw.print( " *" ) ;
       for( col = 0 ; col < size ; col++ ){
          char c = (char)data[pos+col] ;
-         if( Character.isLetterOrDigit(c) || 
+         if( Character.isLetterOrDigit(c) ||
              ( __rest.indexOf(c) > -1 )
             ){
             pw.print(c) ;
@@ -134,7 +138,7 @@ public class Base64 {
           pw.print(" ");
       }
       pw.println("*");
-   
+
    }
    public static void displayHex( byte [] data ){
       displayHex( data , new PrintWriter( new OutputStreamWriter( System.out ) ));
@@ -144,7 +148,7 @@ public class Base64 {
       int pos  = 0 ;
       int rest = data.length ;
       for( int row = 0 ; true ; row++ , pos += 16 ){
-          displayHexLine( data , pos , Math.min( rest , 16 ) , pw ) ;         
+          displayHexLine( data , pos , Math.min( rest , 16 ) , pw ) ;
           rest -= 16 ;
           if( rest <= 0 ) {
               break;
@@ -166,27 +170,27 @@ public class Base64 {
       File file = new File( args[0] ) ;
       long len = file.length() ;
       byte [] data = new byte[(int)len] ;
-      
+
       DataInputStream in = new DataInputStream( new FileInputStream( file ) ) ;
       in.readFully(data) ;
       in.close() ;
       Base64.displayHex( data ) ;
-      
-      
-      
+
+
+
       /*
       byte [] data = new byte[args.length] ;
       for( int i = 0 ; i < args.length ; i++ ){
          data[i] = (byte)Integer.parseInt(args[i]) ;
          System.out.print(byteToHex(data[i])) ;
       }
-      
+
       System.out.println("");
-      displayHex( data ) ;       
+      displayHex( data ) ;
       System.out.println("");
       String xx = Base64.encode( data ) ;
       System.out.println(xx) ;
-      
+
       byte [] dd = Base64.decode( xx ) ;
       for( int i = 0 ; i < dd.length ; i++ ){
          int d = dd[i] ;

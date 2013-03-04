@@ -59,8 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.panels.alarms;
 
-import java.util.Date;
-
 import org.apache.wicket.extensions.markup.html.form.DateTextField;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.extensions.yui.calendar.DatePicker;
@@ -70,6 +68,9 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
+
+import java.util.Date;
+
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;

@@ -1,16 +1,6 @@
 package org.dcache.gplazma.plugins;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.instanceOf;
-
-import java.security.Principal;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Properties;
-import java.util.Set;
-
-import org.dcache.gplazma.AuthenticationException;
+import com.google.common.collect.Collections2;
 import org.glite.authz.common.model.Request;
 import org.glite.authz.common.model.Response;
 import org.glite.authz.common.model.Result;
@@ -23,7 +13,17 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Collections2;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.Set;
+
+import org.dcache.gplazma.AuthenticationException;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Predicates.instanceOf;
 
 /**
  * Implementation of an Argus Authorisation plugin for gPlazma2

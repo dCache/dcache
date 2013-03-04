@@ -6,6 +6,8 @@ import hep.aida.IPlotterFactory;
 import hep.aida.IPlotterStyle;
 import hep.aida.ITree;
 import hep.aida.ref.plotter.PlotterUtilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,9 +19,6 @@ import java.util.Properties;
 import org.dcache.services.billing.plots.util.AbstractTimeFramePlot;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogram;
 import org.dcache.services.billing.plots.util.PlotGridPosition;
-
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * Wraps IPlotterFactory and IPlotter.

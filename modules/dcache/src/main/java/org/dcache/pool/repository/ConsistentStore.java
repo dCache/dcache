@@ -1,5 +1,8 @@
 package org.dcache.pool.repository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -7,19 +10,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.classic.ReplicaStatePolicy;
 import org.dcache.vehicles.FileAttributes;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.vehicles.StorageInfo;
 
 /**
  * Wrapper for a MetaDataStore which encapsulates the logic for

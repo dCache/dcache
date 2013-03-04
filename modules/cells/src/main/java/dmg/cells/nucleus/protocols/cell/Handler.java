@@ -6,10 +6,10 @@
 
 package dmg.cells.nucleus.protocols.cell;
 
+import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.lang.reflect.Constructor;
 
 /**
  *
@@ -27,8 +27,8 @@ public class Handler extends URLStreamHandler
                 Constructor<? extends URLConnection> constr=cls.getConstructor(new Class[]
                     {URL.class,String.class});
                 return constr.newInstance(u,"cell");
-                
-                
+
+
             }
         }
         catch(Exception e)
@@ -37,5 +37,5 @@ public class Handler extends URLStreamHandler
         }
         return null;
     }
-    
+
 }

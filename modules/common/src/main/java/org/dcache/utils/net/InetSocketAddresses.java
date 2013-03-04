@@ -16,11 +16,11 @@
  */
 package org.dcache.utils.net;
 
+import com.google.common.net.InetAddresses;
+
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-
-import com.google.common.net.InetAddresses;
-import java.net.Inet6Address;
 /**
  * Utility class for InetSocketAddress manipulations.
  * @author tigran

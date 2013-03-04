@@ -1,12 +1,19 @@
 package dmg.cells.network ;
 
-import  dmg.cells.nucleus.* ;
-
-import  java.io.* ;
-import  java.net.* ;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
+import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.ExceptionEvent;
+import dmg.cells.nucleus.KillEvent;
+import dmg.cells.nucleus.LastMessageEvent;
+import dmg.cells.nucleus.MessageEvent;
 
 /**
   *

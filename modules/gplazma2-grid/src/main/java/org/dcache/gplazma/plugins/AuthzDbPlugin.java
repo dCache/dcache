@@ -1,9 +1,9 @@
 package org.dcache.gplazma.plugins;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.collect.Iterables.find;
-import static com.google.common.collect.Iterables.get;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.primitives.Longs;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -26,11 +26,10 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.primitives.Longs;
-import com.google.common.base.Splitter;
-
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.Iterables.find;
+import static com.google.common.collect.Iterables.get;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**

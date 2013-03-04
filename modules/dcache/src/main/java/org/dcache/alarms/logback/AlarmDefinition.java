@@ -59,6 +59,19 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.IThrowableProxy;
+import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.filter.Filter;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -69,20 +82,6 @@ import java.util.regex.Pattern;
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.Severity;
 import org.dcache.util.RegexUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
-
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.IThrowableProxy;
-import ch.qos.logback.classic.spi.LoggingEvent;
-import ch.qos.logback.core.Appender;
-import ch.qos.logback.core.filter.Filter;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 
 /**
  * Provides the definition of an alarm to be used by the

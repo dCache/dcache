@@ -2,9 +2,11 @@
 
 package diskCacheV111.vehicles;
 
-import java.util.*;
 import java.io.Serializable;
-import diskCacheV111.pools.PoolCostInfo ;
+import java.util.Map;
+import java.util.Set;
+
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 
 public class PoolManagerPoolUpMessage extends PoolManagerMessage {

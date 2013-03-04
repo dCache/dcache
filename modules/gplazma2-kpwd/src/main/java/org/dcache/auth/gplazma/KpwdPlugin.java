@@ -1,10 +1,10 @@
 package org.dcache.auth.gplazma;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.getFirst;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.globus.gsi.jaas.GlobusPrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,8 +12,6 @@ import java.io.Serializable;
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.KAuthFile;
@@ -32,9 +30,12 @@ import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
-import org.globus.gsi.jaas.GlobusPrincipal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.getFirst;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * A principal that represent an entry in a kpwd file.

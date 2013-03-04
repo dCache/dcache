@@ -66,36 +66,36 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import java.util.EnumSet;
-import javax.security.auth.Subject;
-
-import org.dcache.poolmanager.PoolMonitor;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.FileLocality;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.poolManager.PoolMonitorV5;
-
-import org.dcache.pinmanager.PinManagerPinMessage;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.namespace.FileType;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.acl.enums.AccessMask;
-import org.dcache.srm.PinCallbacks;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.ThreadManagerMessageCallback;
-
+import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
+import javax.security.auth.Subject;
+
+import java.net.InetSocketAddress;
+import java.util.EnumSet;
+
+import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.ProtocolInfo;
+
+import org.dcache.acl.enums.AccessMask;
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.ThreadManagerMessageCallback;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.srm.PinCallbacks;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static diskCacheV111.util.CacheException.*;
-import java.net.InetSocketAddress;
 
 public class PinCompanion
 {

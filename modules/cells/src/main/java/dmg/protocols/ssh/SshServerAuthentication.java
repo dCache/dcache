@@ -1,6 +1,6 @@
 package dmg.protocols.ssh ;
 
-import java.net.InetAddress ;
+import java.net.InetAddress;
 
 public interface SshServerAuthentication {
 
@@ -11,7 +11,7 @@ public interface SshServerAuthentication {
    boolean   authPassword(  InetAddress addr, String user, String password ) ;
    boolean   authRhosts(    InetAddress addr, String user ) ;
    SshRsaKey authRsa(       InetAddress addr, String user , SshRsaKey userKey ) ;
-   SshRsaKey authRhostsRsa( InetAddress addr, String user , 
+   SshRsaKey authRhostsRsa( InetAddress addr, String user ,
                             String reqUser  , SshRsaKey hostKey ) ;
 
    //

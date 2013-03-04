@@ -66,6 +66,9 @@
 
 package diskCacheV111.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -80,9 +83,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.dcache.util.PortRange;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ActiveAdapter implements Runnable, ProxyAdapter
 {

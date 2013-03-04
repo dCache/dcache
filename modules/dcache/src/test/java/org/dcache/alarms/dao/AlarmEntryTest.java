@@ -59,17 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.Test;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.Severity;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * Some simple correctness tests.

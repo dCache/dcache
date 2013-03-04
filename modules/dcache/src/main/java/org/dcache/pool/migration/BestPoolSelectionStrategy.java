@@ -1,8 +1,8 @@
 package org.dcache.pool.migration;
 
-import java.util.List;
-import java.util.Comparator;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 

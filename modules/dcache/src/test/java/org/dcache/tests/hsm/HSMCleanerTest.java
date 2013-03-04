@@ -1,12 +1,26 @@
 package org.dcache.tests.hsm;
 
-import org.junit.*;
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import org.dcache.services.hsmcleaner.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+
+import org.dcache.services.hsmcleaner.FailureRepository;
+import org.dcache.services.hsmcleaner.OSMTrash;
+import org.dcache.services.hsmcleaner.Sink;
+
+import static org.junit.Assert.*;
 
 public class HSMCleanerTest
 {

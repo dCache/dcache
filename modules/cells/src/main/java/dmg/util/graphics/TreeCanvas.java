@@ -1,16 +1,25 @@
 package dmg.util.graphics ;
 
-import java.awt.* ;
-import java.awt.event.* ;
-import java.util.* ;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Vector;
 
 public class TreeCanvas extends  Canvas implements MouseListener {
 
      private static final long serialVersionUID = -6087844868086106774L;
      private TreeNodeable _tree, _currentTree;
      private Toolkit      _toolkit = Toolkit.getDefaultToolkit() ;
-     private Font   _bigFont = 
-             new Font( "SansSerif" , Font.BOLD , 10 )  ; 
+     private Font   _bigFont =
+             new Font( "SansSerif" , Font.BOLD , 10 )  ;
      private Font   _font;
      private FontMetrics _fontMetrics;
      private int  _height, _width, _move, _descent , _ascent ;
@@ -44,15 +53,15 @@ public class TreeCanvas extends  Canvas implements MouseListener {
                _deselect(sub);
            }
         }
-        
+
      }
      @Override
      public void mouseClicked( MouseEvent event ){
-         if( event.isControlDown() ){ 
+         if( event.isControlDown() ){
             //
             // reset everything
             //
-            _currentTree = _tree ; 
+            _currentTree = _tree ;
             _deselectAll() ;
             repaint() ;
             return  ;
@@ -88,19 +97,19 @@ public class TreeCanvas extends  Canvas implements MouseListener {
      }
      @Override
      public void mouseExited( MouseEvent event ){
-     
+
      }
      @Override
      public void mouseReleased( MouseEvent event ){
-     
+
      }
      @Override
      public void mousePressed( MouseEvent event ){
-     
+
      }
      @Override
      public void mouseEntered( MouseEvent event ){
-     
+
      }
 //     public Dimension getPreferredSize(){
 //        return new Dimension(300,300) ;
@@ -156,7 +165,7 @@ public class TreeCanvas extends  Canvas implements MouseListener {
         Dimension area = new Dimension( 0 , 0 ) ;
         Point     m;
         while( node != null ){
-        
+
            Point n = new Point( off ) ;
            n.translate( 0 , 2 * _height ) ;
            g.drawLine( off.x , off.y , n.x , n.y ) ;
@@ -174,19 +183,19 @@ public class TreeCanvas extends  Canvas implements MouseListener {
            }
            int nameLength = _fontMetrics.stringWidth(node.getName()) ;
            area.width = Math.max( area.width , nameLength+ 2 * _width ) ;
-           rec = 
+           rec =
                 new Rectangle(
                          m.x ,
-                         m.y + _move - _ascent , 
+                         m.y + _move - _ascent ,
                          nameLength,
                          _height
                     ) ;
            _recs.addElement(  new RecFrame( rec  , node ) ) ;
-           
+
            m.translate( _width , _height ) ;
            Point k = new Point(n) ;
            if( node.isContainerNode() ){
-              rec = 
+              rec =
                   new Rectangle( n.x - _height / 4 ,
                                  n.y - _height / 4 ,
                                  _height / 2, _height / 2  ) ;

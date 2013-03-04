@@ -73,21 +73,8 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.sql.SQLException;
-import java.util.Collection;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.axis.MessageContext;
-import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
-import org.dcache.auth.util.GSSUtils;
-import org.dcache.srm.SRMAuthorization;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.request.RequestCredentialStorage;
 import org.glite.voms.PKIVerifier;
-import static org.globus.axis.gsi.GSIConstants.GSI_CONTEXT;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSContext;
@@ -95,6 +82,23 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.sql.SQLException;
+import java.util.Collection;
+
+import org.dcache.auth.util.GSSUtils;
+import org.dcache.srm.SRMAuthorization;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.request.RequestCredentialStorage;
+
+import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
+import static org.globus.axis.gsi.GSIConstants.GSI_CONTEXT;
 
 /**
  * The SrmAUthorizer provides helper methods that mediates access to

@@ -88,26 +88,27 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import java.util.Set;
-import java.util.EnumSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.auth.AuthorizationRecord;
-import org.dcache.srm.SRMUser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
-import org.dcache.srm.v2_2.TRetentionPolicyInfo;
-import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TFileLocality;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.namespace.FileAttribute.*;
 

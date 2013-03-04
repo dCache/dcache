@@ -1,12 +1,12 @@
 package org.dcache.gplazma.plugins;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 
 /**
  * Encapsulates access to a line based text file.

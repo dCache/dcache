@@ -1,10 +1,11 @@
 // $Id: PnfsDeleteEntryMessage.java,v 1.3 2005-01-14 13:56:25 tigran Exp $
 
 package diskCacheV111.vehicles;
-import diskCacheV111.util.PnfsId;
 
-import java.util.Set;
 import java.util.EnumSet;
+import java.util.Set;
+
+import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileType;
 

@@ -1,8 +1,5 @@
 package org.dcache.webadmin.view.pages.poollist;
 
-import diskCacheV111.pools.PoolV2Mode;
-import java.util.List;
-import java.util.ArrayList;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
@@ -11,6 +8,14 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import diskCacheV111.pools.PoolV2Mode;
+
 import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
@@ -18,8 +23,6 @@ import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
 import org.dcache.webadmin.view.util.Role;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * The PoolUsage Webpage

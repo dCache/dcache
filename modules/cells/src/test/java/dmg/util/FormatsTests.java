@@ -1,9 +1,10 @@
 package dmg.util;
 
 
-import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 

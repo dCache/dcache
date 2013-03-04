@@ -1,20 +1,15 @@
 package org.dcache.services.info.gathers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.dcache.services.info.base.StateUpdate;
-import org.dcache.services.info.base.StateUpdateManager;
-import org.junit.Before;
-import org.junit.Test;
-
 import diskCacheV111.vehicles.Message;
+
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -23,6 +18,11 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
+
+import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
+
+import static org.junit.Assert.*;
 
 /**
  * Some tests that check the MessageHandlerChain's implementation of the

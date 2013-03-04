@@ -1,36 +1,35 @@
 package org.dcache.pinmanager;
 
-import java.util.Date;
-import java.util.UUID;
-import java.util.Collection;
-import diskCacheV111.poolManager.PoolSelectionUnit;
-
-import org.dcache.cells.CellStub;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.auth.Subjects;
-import org.dcache.pinmanager.model.Pin;
-import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
-import org.dcache.pool.repository.StickyRecord;
-
-import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.InvalidMessageCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
-import dmg.cells.nucleus.CellPath;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
-import static java.util.concurrent.TimeUnit.*;
-import static org.dcache.pinmanager.model.Pin.State.*;
-import static org.springframework.transaction.annotation.Isolation.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.InvalidMessageCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
+
+import dmg.cells.nucleus.CellPath;
+
+import org.dcache.auth.Subjects;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
+import org.dcache.pinmanager.model.Pin;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.dcache.pinmanager.model.Pin.State.*;
+import static org.springframework.transaction.annotation.Isolation.REPEATABLE_READ;
 
 /**
  * Processes requests to move pins.

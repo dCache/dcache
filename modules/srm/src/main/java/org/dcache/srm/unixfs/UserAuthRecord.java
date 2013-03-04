@@ -1,6 +1,6 @@
 package org.dcache.srm.unixfs;
 
-import java.util.*;
+import java.util.Collection;
 
 public class UserAuthRecord extends UserAuthBase
 {
@@ -57,7 +57,7 @@ public class UserAuthRecord extends UserAuthBase
         sb.append("           Home = ").append(Home).append('\n');
         sb.append("           Root = ").append(Root).append('\n');
         sb.append("         FsRoot = ").append(FsRoot).append('\n');
-        
+
         if(principals != null)
         {
             sb.append("         Secure Ids accepted by this user :\n");
@@ -87,12 +87,12 @@ public class UserAuthRecord extends UserAuthBase
     {
         return Username != null;
     }
-    
+
     public void addSecureIdentity(String id)
     {
         principals.add(id);
     }
-    
+
     public void addSecureIdentities(Collection<String> ids)
     {
         // this will check that all elements in ids are Strings
@@ -106,6 +106,6 @@ public class UserAuthRecord extends UserAuthBase
         ids.toArray(new String[ids.size()]);
         principals.removeAll(ids);
     }
-	
+
 }
 

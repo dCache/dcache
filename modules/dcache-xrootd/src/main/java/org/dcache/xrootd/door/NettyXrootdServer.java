@@ -1,29 +1,30 @@
 package org.dcache.xrootd.door;
 
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.handler.logging.LoggingHandler;
+import org.jboss.netty.logging.InternalLoggerFactory;
+import org.jboss.netty.logging.Slf4JLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.FsPath;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelFactory;
-import static org.jboss.netty.channel.Channels.*;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.logging.LoggingHandler;
-import org.jboss.netty.logging.InternalLoggerFactory;
-import org.jboss.netty.logging.Slf4JLoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
-import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdDecoder;
+import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure

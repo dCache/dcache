@@ -1,12 +1,18 @@
 package dmg.cells.services.login ;
 
-import dmg.util.cdb.* ;
-import java.io.* ;
-import java.util.* ;
+import java.io.File;
+import java.util.Hashtable;
+import java.util.Iterator;
+
+import dmg.util.cdb.CdbDirectoryContainer;
+import dmg.util.cdb.CdbException;
+import dmg.util.cdb.CdbFileRecord;
+import dmg.util.cdb.CdbGLock;
+import dmg.util.cdb.CdbLockable;
 
 public class UserDb extends CdbGLock  {
    public static void main( String [] args ) throws Exception {
-   
+
         UserDb _db ;
         try{
            _db =  new UserDb( new File(".") , true ) ;
@@ -115,7 +121,7 @@ public class UserDb extends CdbGLock  {
                 throw new
                         IllegalArgumentException("Command not known : " + args[0]);
             }
-           
+
 
       }catch(Exception eeee ){
          System.out.println( eeee.getMessage() ) ;
@@ -123,39 +129,39 @@ public class UserDb extends CdbGLock  {
 
    }
    private CdbDirectoryContainer _userContainer;
-   
+
    public UserDb( File file , boolean create ) throws CdbException {
-      
+
       if( ! file.isDirectory() ) {
           throw new CdbException("Database doesn't exits : " + file);
       }
-         
-      _userContainer = 
+
+      _userContainer =
                new CdbDirectoryContainer(
                           this ,
                           CdbFileRecord.class ,
                           UserHandle.class ,
                           new File( file , "users" ) ,
                           create ) ;
-                          
- 
+
+
    }
    public void destroyUser( String userName ) throws Exception {
-   
+
        UserHandle user  = getUserByName( userName ) ;
-       
+
        boolean isGroup ;
        String [] childs ;
        user.open( CdbLockable.READ ) ;
          isGroup = user.isGroup()  ;
          childs  = user.getChilds() ;
        user.close( CdbLockable.COMMIT ) ;
-       
+
        if( isGroup && ( childs.length > 0 ) ) {
            throw new
                    IllegalArgumentException("group not empty : " + userName);
        }
-           
+
        user.open( CdbLockable.WRITE ) ;
           String [] parents = user.getParents() ;
        for (String parent : parents) {
@@ -179,7 +185,7 @@ public class UserDb extends CdbGLock  {
            throw new
                    IllegalArgumentException("Not a group : " + groupName);
        }
-           
+
        group.open( CdbLockable.WRITE ) ;
          group.removeChild( userName ) ;
        group.close( CdbLockable.COMMIT ) ;
@@ -230,24 +236,24 @@ public class UserDb extends CdbGLock  {
          parents = user.getParents()  ;
          myPrivs = user.getUserPrivileges() ;
        user.close( CdbLockable.COMMIT ) ;
-       
+
        UserPrivileges upper = new UserPrivileges() ;
        for (String parent : parents) {
            upper.mergeHorizontal(getUserPrivileges(parent));
        }
        myPrivs.mergeVertical( upper ) ;
-       
+
        return myPrivs ;
-   
+
    }
    public void addUser( String groupName , String userName ) throws Exception {
-       
+
        UserHandle user  = getUserByName( userName ) ;
        UserHandle group = getUserByName( groupName ) ;
-       
+
        String [] parents = getAllParents( groupName ) ;
        int i;
-       for(  i = 0 ; 
+       for(  i = 0 ;
              ( i < parents.length ) &&
              ( ! parents[i].equals(userName) ) ; i++ ) {
        }
@@ -255,7 +261,7 @@ public class UserDb extends CdbGLock  {
            throw new
                    IllegalArgumentException("would create loop >" + groupName + "-" + userName + "<");
        }
-        
+
        boolean isGroup ;
        String [] childs ;
        group.open( CdbLockable.READ ) ;
@@ -266,7 +272,7 @@ public class UserDb extends CdbGLock  {
            throw new
                    IllegalArgumentException("Not a group : " + groupName);
        }
-           
+
        group.open( CdbLockable.WRITE ) ;
          try{
             group.addChild( userName ) ;
@@ -285,7 +291,7 @@ public class UserDb extends CdbGLock  {
           group.close( CdbLockable.COMMIT ) ;
           throw ee ;
        }
-       
+
    }
 
    public UserHandle createUser( String name )
@@ -321,11 +327,11 @@ public class UserDb extends CdbGLock  {
     public String [] getUserNames(){
        return _userContainer.getElementNames() ;
     }
-    public UserHandle 
+    public UserHandle
            getUserByName( String name )
         throws CdbException , InterruptedException {
        return (UserHandle)
              _userContainer.getElementByName( name ) ;
     }
-   
+
 }

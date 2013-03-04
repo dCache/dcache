@@ -1,20 +1,21 @@
 package dmg.cells.services ;
 
-import java.io.* ;
-import dmg.cells.nucleus.* ;
+import java.io.Serializable;
+
+import dmg.cells.nucleus.CellPath;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      MessageObjectFrame 
+public class      MessageObjectFrame
        implements Serializable       {
 
    private static final long serialVersionUID = -1127590849911644109L;
    private int      _id;
-   
+
    private CellPath _path;
    private Object   _obj;
    public MessageObjectFrame( int id , CellPath path , Serializable obj ){

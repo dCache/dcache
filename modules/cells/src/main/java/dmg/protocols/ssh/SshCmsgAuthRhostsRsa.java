@@ -1,29 +1,30 @@
 package dmg.protocols.ssh ;
-import  dmg.security.cipher.* ;
+
+import dmg.security.cipher.StreamCipher;
 
 
 public class SshCmsgAuthRhostsRsa extends SshPacket {
- 
+
    SshRsaKey _key ;
    String    _userName ;
-   
+
    public SshCmsgAuthRhostsRsa( String user , SshRsaKey key ){
        _key      = key ;
        _userName = user ;
    }
    public SshCmsgAuthRhostsRsa( SshPacket packet ){
-   
+
       byte [] payload = packet.getPayload() ;
-      
-      int pos = 0 ;      
-      
+
+      int pos = 0 ;
+
       int strBytes = ((((int)payload[pos++])&0xff) << 24 ) |
                      ((((int)payload[pos++])&0xff) << 16 ) |
                      ((((int)payload[pos++])&0xff) <<  8 ) |
                       (((int)payload[pos++])&0xff)          ;
 
       _userName = new String( payload , pos , strBytes ) ;
-      
+
       pos += strBytes ;
 
       int mpBits = ((((int)payload[pos++])&0xff) << 24 ) |
@@ -48,14 +49,14 @@ public class SshCmsgAuthRhostsRsa extends SshPacket {
       pos     += md.length ;
 
       _key  = new SshRsaKey( mpBits , ex , md  ) ;
-        
-   } 
+
+   }
    public SshRsaKey getKey(){ return _key ; }
    public String    getUserName(){ return _userName ; }
-   
+
    @Override
    public byte [] toByteArray( StreamCipher cipher ){
-   
+
       byte [] userBytes = _userName.getBytes() ;
       byte [] keyBytes  = _key.toByteArray() ;
 
@@ -67,11 +68,11 @@ public class SshCmsgAuthRhostsRsa extends SshPacket {
       pos += userBytes.length ;
       System.arraycopy( keyBytes , 0 ,out , pos ,  keyBytes.length ) ;
       pos += keyBytes.length ;
-      
+
       return makePacket( cipher , out )  ;
   }
-           
-     
- 
- 
+
+
+
+
 }

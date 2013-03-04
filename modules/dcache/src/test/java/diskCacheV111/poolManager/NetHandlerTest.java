@@ -5,8 +5,10 @@
 package diskCacheV111.poolManager;
 
 import org.junit.Before;
-import java.net.UnknownHostException;
 import org.junit.Test;
+
+import java.net.UnknownHostException;
+
 import static org.junit.Assert.*;
 
 public class NetHandlerTest {

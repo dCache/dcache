@@ -1,11 +1,12 @@
 package org.dcache.services.info.stateInfo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import org.dcache.services.info.base.StateExhibitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Scan through dCache state and build a map containing all pools and

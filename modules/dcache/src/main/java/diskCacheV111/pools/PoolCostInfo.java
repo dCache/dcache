@@ -1,12 +1,15 @@
 // $Id: PoolCostInfo.java,v 1.7 2007-07-26 13:43:32 tigran Exp $
 
 package diskCacheV111.pools ;
+
 import com.google.common.collect.Maps;
 
-import java.io.Serializable;
-import java.util.* ;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.dcache.pool.classic.IoQueueManager;
 
 public class PoolCostInfo implements Serializable {

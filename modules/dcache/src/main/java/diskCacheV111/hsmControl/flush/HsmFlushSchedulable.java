@@ -1,8 +1,9 @@
 //   $Id: HsmFlushSchedulable.java,v 1.2 2006-04-03 05:51:55 patrick Exp $
 package diskCacheV111.hsmControl.flush ;
 
-import dmg.util.Args ;
-import java.util.Map ;
+import java.util.Map;
+
+import dmg.util.Args;
 /**
  * An implemantation of the HsmFlushScheduler is called by the HsmFlushController
  * in the corresponding events.

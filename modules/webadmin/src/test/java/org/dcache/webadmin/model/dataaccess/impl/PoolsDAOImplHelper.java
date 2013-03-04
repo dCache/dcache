@@ -1,5 +1,10 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
@@ -7,10 +12,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import diskCacheV111.pools.PoolV2Mode;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+
 import org.dcache.poolmanager.Partition;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;

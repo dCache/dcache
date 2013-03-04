@@ -1,16 +1,19 @@
 package org.dcache.webadmin.controller.impl;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import dmg.cells.nucleus.CellAddressCore;
-import org.dcache.webadmin.controller.PoolGroupService;
-import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
-import org.dcache.webadmin.view.beans.PoolGroupBean;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import dmg.cells.nucleus.CellAddressCore;
+
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
+import org.dcache.webadmin.controller.PoolGroupService;
+import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -18,10 +21,9 @@ import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.beans.CellServicesBean;
+import org.dcache.webadmin.view.beans.PoolGroupBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

@@ -66,7 +66,8 @@ COPYRIGHT STATUS:
 
 
 package diskCacheV111.doors;
-import java.io.*;
+
+import java.io.InputStream;
 
 public class	EDataBlock {
     private byte[] header;

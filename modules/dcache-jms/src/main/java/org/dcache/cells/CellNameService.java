@@ -3,17 +3,17 @@ package org.dcache.cells;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.ConnectionFactory;
 import javax.jms.Connection;
-import javax.jms.Session;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Message;
-import javax.jms.TextMessage;
-import javax.jms.MessageListener;
+import javax.jms.ConnectionFactory;
 import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
 import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 
 /**
  * A central lookup service for well known cell names.

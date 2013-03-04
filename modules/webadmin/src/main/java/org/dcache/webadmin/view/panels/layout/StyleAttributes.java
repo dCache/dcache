@@ -4,12 +4,13 @@
  */
 package org.dcache.webadmin.view.panels.layout;
 
-import java.util.List;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.Model;
+
+import java.util.List;
 
 /**
  *

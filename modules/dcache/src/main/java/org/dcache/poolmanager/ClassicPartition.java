@@ -1,32 +1,33 @@
 package org.dcache.poolmanager;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Collections;
+import com.google.common.base.Function;
+import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.CostCalculatable;
 import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CostException;
-import diskCacheV111.util.SourceCostException;
 import diskCacheV111.util.DestinationCostException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.SourceCostException;
 
 import org.dcache.vehicles.FileAttributes;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Ordering;
-import static com.google.common.collect.Iterables.transform;
-import static com.google.common.collect.Iterables.filter;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.transform;
 
 /**
  * Partition that provides classic dCache pool selection semantics.

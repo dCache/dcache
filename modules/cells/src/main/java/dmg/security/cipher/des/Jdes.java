@@ -1,5 +1,6 @@
 package dmg.security.cipher.des ;
-import  dmg.security.cipher.BlockCipher ;
+
+import dmg.security.cipher.BlockCipher;
 
 public class Jdes implements BlockCipher {
 
@@ -39,9 +40,9 @@ public class Jdes implements BlockCipher {
 	22, 11,  4, 25,
   };
   private static byte S[][] ;
-  
+
   private static byte St[] = {
-  
+
 	14, 4,13, 1, 2,15,11, 8, 3,10, 6,12, 5, 9, 0, 7,
 	 0,15, 7, 4,14, 2,13, 1,10, 6,12,11, 9, 5, 3, 8,
 	 4, 1,14, 8,13, 6, 2,11,15,12, 9, 7, 3,10, 5, 0,
@@ -98,7 +99,7 @@ public class Jdes implements BlockCipher {
      for( int i = 0 ; i < 8 ; i++ ) {
          System.arraycopy(St, i * 64, S[i], 0, 64);
      }
-     
+
      wC_K4  = new int [8] [] ;
      wC_K3  = new int [8] [] ;
      wD_K4  = new int [8] [] ;
@@ -119,7 +120,7 @@ public class Jdes implements BlockCipher {
         hKS_C4[i]  = new int [16] ;
         lKS_D4[i]  = new int [16] ;
      }
-     
+
     int wC_K[]  = new int[64] ;
     int wD_K[]  = new int[64] ;
     int hKS_C[] = new int[28];
@@ -129,15 +130,15 @@ public class Jdes implements BlockCipher {
 
      int v = 1;
      for( int j = 28; --j >= 0; ) {
-     
-         wC_K[ bK_C[j] - 1 ] = wD_K[ bK_D[j] - 1 ] = v;		
+
+         wC_K[ bK_C[j] - 1 ] = wD_K[ bK_D[j] - 1 ] = v;
          v += v;      /* (i.e. v <<= 1) */
       }
 
       for( int i = 0; i < 64; i++ ){
          int t = 8 >> (i & 3);
          for( int j = 0 ; j < 16 ; j++) {
-         
+
             if( ( j & t) != 0 ) {
                  wC_K4[i >> 3][j] |= wC_K[i];
                  wD_K4[i >> 3][j] |= wD_K[i];
@@ -248,7 +249,7 @@ public class Jdes implements BlockCipher {
               }
          }
      }
-  
+
   }
   //
   //   ks[0-15][0-1]
@@ -261,7 +262,7 @@ public class Jdes implements BlockCipher {
     int D = 0;
     for( int i = 0; i < 8; i++) {
        int v  = key[i] >>> 1;	/* Discard "parity" bit */
-       v = v < 0 ? 256 + v : v ;  
+       v = v < 0 ? 256 + v : v ;
 //       System.out.println( " Key "+i+" -> "+key[i]+" "+v ) ;
        C |= wC_K4[i][(v>>3) & 15] | wC_K3[i][v & 7];
        D |= wD_K4[i][(v>>3) & 15] | wD_K3[i][v & 7];
@@ -276,18 +277,18 @@ public class Jdes implements BlockCipher {
          /* 28-bit left circular shift */
          C <<= preshift[i];
          C = ((C >> 28) & 3) | (C & ((1<<28) - 1));
-         ks[i][1] =                 
-             hKS_C4[6][(C&15)] | 
+         ks[i][1] =
+             hKS_C4[6][(C&15)] |
              hKS_C4[5][((C>>4)&15)]  | hKS_C4[4][((C>>8)&15)]  |
              hKS_C4[3][((C>>12)&15)] | hKS_C4[2][((C>>16)&15)] |
              hKS_C4[1][((C>>20)&15)] | hKS_C4[0][((C>>24)&15)]  ;
-                
+
 //         System.out.println( " ks[i][1] : "+ks[i][1] ) ;
          D <<= preshift[i];
          D = ((D >> 28) & 3) | (D & ((1<<28) - 1));
-         ks[i][0] =                 
-             lKS_D4[6][(D&15)] | 
-             lKS_D4[5][((D>>4)&15)]  | lKS_D4[4][((D>>8)&15)]  | 
+         ks[i][0] =
+             lKS_D4[6][(D&15)] |
+             lKS_D4[5][((D>>4)&15)]  | lKS_D4[4][((D>>8)&15)]  |
              lKS_D4[3][((D>>12)&15)] | lKS_D4[2][((D>>16)&15)] |
              lKS_D4[1][((D>>20)&15)] | lKS_D4[0][((D>>24)&15)]  ;
 //         System.out.println( " ks[i][0] : "+ks[i][0] ) ;
@@ -317,16 +318,16 @@ public class Jdes implements BlockCipher {
      L  = R = 0;
 
      for( int i = 7+blockOff ; i >= blockOff ; i-- ){
-     
-        int v = block[i]  ;  
-        v = v < 0 ? 256 + v : v ;  
+
+        int v = block[i]  ;
+        v = v < 0 ? 256 + v : v ;
         L = wL_I8[v & 0x55]        | (L << 1);
         R = wL_I8[(v >> 1) & 0x55] | (R << 1);
-        
+
      }
      R &= 0xffffffffL ;
      L &= 0xffffffffL ;
-     
+
 //     say( " initial R : "+Long.toHexString( R ) + " ; L : "+
 //          Long.toHexString( L ) ) ;
 
@@ -336,7 +337,7 @@ public class Jdes implements BlockCipher {
         long k, tR;
 
         ksp = decrypt ? ks[i] : ks[15-i] ;
-        
+
         tR = (R >> 15) | (R << 17);
 
         k = ksp[1];
@@ -354,31 +355,31 @@ public class Jdes implements BlockCipher {
         tR = L;
         L  = R  & 0xffffffffL ;
         R  = tR & 0xffffffffL ;
-        
+
 //        say( " round "+i+" R : "+Long.toHexString( R ) + " ; L : "+
 //          Long.toHexString( L ) ) ;
 
-     } 
+     }
       long  t;
 
       t =  (wO_L4[(int)(L >> (0)) & 15 ] << 1 | wO_L4[(int)(R >> (0)) & 15 ]) |
           ((wO_L4[(int)(L >> (8)) & 15 ] << 1 | wO_L4[(int)(R >> (8)) & 15 ]) |
           ((wO_L4[(int)(L >> (16)) & 15 ] << 1 | wO_L4[(int)(R >> (16)) & 15 ]) |
-          ((wO_L4[(int)(L >> (24)) & 15 ] << 1 | wO_L4[(int)(R >> (24)) & 15 ]) 
+          ((wO_L4[(int)(L >> (24)) & 15 ] << 1 | wO_L4[(int)(R >> (24)) & 15 ])
           << 2)) << 2) << 2;
-          
+
       R =  (wO_L4[(int)(L >> (4)) & 15 ] << 1 | wO_L4[(int)(R >> (4)) & 15 ]) |
           ((wO_L4[(int)(L >> (12)) & 15 ] << 1 | wO_L4[(int)(R >> (12)) & 15 ]) |
           ((wO_L4[(int)(L >> (20)) & 15 ] << 1 | wO_L4[(int)(R >> (20)) & 15 ]) |
-          ((wO_L4[(int)(L >> (28)) & 15 ] << 1 | wO_L4[(int)(R >> (28)) & 15 ]) 
+          ((wO_L4[(int)(L >> (28)) & 15 ] << 1 | wO_L4[(int)(R >> (28)) & 15 ])
           << 2)) << 2) << 2;
-          
+
       L = t & 0xffffffffL ;
       t = R & 0xffffffffL ;
-      
-      
+
+
       long lt ;
-      
+
       lt = t & 255 ;
       out[outOff+7] = (byte)( lt > 127 ? lt - 256 : lt ) ;
       lt = (t >>= 8) & 255;
@@ -403,12 +404,12 @@ public class Jdes implements BlockCipher {
   //
   private long [][] _keySchedule ;
   private byte []   _keyBytes ;
-  
+
   public Jdes( byte [] key ){
      if( key.length < 8 ) {
          throw new IllegalArgumentException("key too short");
      }
-       
+
      _keyBytes = new byte[8] ;
      System.arraycopy( key , 0 , _keyBytes , 0 , 8 ) ;
 
@@ -416,7 +417,7 @@ public class Jdes implements BlockCipher {
 
   }
   private long [][] getKeySchedule( byte [] key ){
-  
+
      long [] [] ks = new long [16] [] ;
      for( int i = 0 ; i < 16 ; i++ ) {
          ks[i] = new long[2];
@@ -424,17 +425,17 @@ public class Jdes implements BlockCipher {
 
      fsetkey( key , ks ) ;
      return ks ;
-     
-  } 
+
+  }
   //
-  // the BlockCipher interface definition 
+  // the BlockCipher interface definition
   //
   @Override
   public int getBlockLength(){  return 8*8 ; }
-  
+
   @Override
   public byte [] getKeyBytes(){ return _keyBytes ; }
-  
+
   @Override
   public void encrypt( byte [] inBlock , int inOff , byte [] outBlock , int outOff ){
      fencrypt( inBlock , inOff , outBlock , outOff , false, _keySchedule ) ;
@@ -452,14 +453,14 @@ public class Jdes implements BlockCipher {
   public void encrypt( byte [] block ){
      fencrypt( block , 0 , block , 0 , false, _keySchedule ) ;
   }
-  
+
   public void decrypt( byte [] block ){
      fencrypt( block , 0 ,  block ,  0 , true, _keySchedule ) ;
   }
-  
+
   private void printKeySchedule(){
      byte  [] out = new byte[8] ;
-     
+
      for( int i = 0 ; i < 16 ; i++ ){
         twoIntsToEightBytes( _keySchedule[i][1] ,
                              _keySchedule[i][0] , out ) ;
@@ -484,9 +485,9 @@ public class Jdes implements BlockCipher {
     1, 0xfedcba98 , 0x76543210 , 0xa68cdca9 , 0x0c9021f9 , 0x00000000 , 0x00000000 };
   static long [] _x8 = {
     0, 0xeca86420 , 0x13579bdf , 0x01234567 , 0x89abcdef , 0xa8418a54 , 0xff97a505 };
-                                 
+
   static long [] [] _x = { _x1 , _x2, _x3, _x4, _x5, _x6, _x7, _x8 } ;
-  
+
   public static void main( String [] args ){
 
      byte [] out = new byte[8] ;
@@ -533,12 +534,12 @@ public class Jdes implements BlockCipher {
        }
   }
   static public String byteToHexString( byte [] bytes ) {
-      
+
 	  StringBuilder sb = new StringBuilder(bytes.length +1);
 
       for (byte aByte : bytes) {
           sb.append(byteToHexString(aByte)).append(" ");
       }
-       return sb.toString() ;    
+       return sb.toString() ;
   }
 }

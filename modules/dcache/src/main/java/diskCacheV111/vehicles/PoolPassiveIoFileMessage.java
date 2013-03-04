@@ -4,7 +4,7 @@
 package diskCacheV111.vehicles;
 
 import java.io.Serializable;
-import java.net.*;
+import java.net.InetSocketAddress;
 
 public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessage {
 

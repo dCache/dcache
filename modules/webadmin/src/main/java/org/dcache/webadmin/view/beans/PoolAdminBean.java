@@ -3,6 +3,7 @@ package org.dcache.webadmin.view.beans;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.dcache.webadmin.view.util.SelectableWrapper;
 
 /**

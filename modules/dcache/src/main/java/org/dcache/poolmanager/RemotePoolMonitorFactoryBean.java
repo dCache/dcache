@@ -1,11 +1,12 @@
 package org.dcache.poolmanager;
 
-import org.dcache.cells.CellStub;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ScheduledExecutorService;
+
+import org.dcache.cells.CellStub;
 
 /**
  * FactoryBean for PoolMonitor Proxy instances that provide access to

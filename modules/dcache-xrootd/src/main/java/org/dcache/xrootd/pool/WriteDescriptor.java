@@ -6,8 +6,8 @@ import java.nio.ByteBuffer;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
-import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
+import org.dcache.xrootd.protocol.messages.WriteRequest;
 
 /**
  * Encapsulates an open file for writing in the xrootd data server.

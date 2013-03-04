@@ -72,21 +72,25 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.HashMap;
-import java.util.Map;
-import java.sql.SQLException;
-import org.dcache.srm.request.*;
-import org.dcache.srm.scheduler.policies.*;
-import org.dcache.srm.util.JDC;
-import org.dcache.srm.SRMInvalidRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.scheduler.policies.DefaultJobAppraiser;
+import org.dcache.srm.scheduler.policies.JobPriorityPolicyInterface;
+import org.dcache.srm.util.JDC;
 /**
  *
  * @author  timur

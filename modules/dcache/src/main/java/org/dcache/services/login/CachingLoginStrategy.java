@@ -1,15 +1,19 @@
 package org.dcache.services.login;
 
-import com.google.common.cache.LoadingCache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
-import diskCacheV111.util.CacheException;
+
+import javax.security.auth.Subject;
+
 import java.security.Principal;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import javax.security.auth.Subject;
+
+import diskCacheV111.util.CacheException;
+
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 

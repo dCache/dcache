@@ -1,17 +1,18 @@
 package org.dcache.services.info.gathers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.ServiceLoader;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.commons.util.NDC;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
-
-import dmg.cells.nucleus.UOID;
 
 /**
  * This thread is responsible for scheduling various data-gathering activity.

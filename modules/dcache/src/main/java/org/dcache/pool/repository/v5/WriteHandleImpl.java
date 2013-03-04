@@ -3,20 +3,20 @@ package org.dcache.pool.repository.v5;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.CacheException;
-
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.Allocator;
-import org.dcache.pool.repository.MetaDataRecord;
-
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import java.io.File;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 

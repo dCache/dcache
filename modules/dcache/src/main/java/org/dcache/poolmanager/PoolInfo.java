@@ -1,10 +1,12 @@
 package org.dcache.poolmanager;
 
-import diskCacheV111.pools.PoolCostInfo;
 import com.google.common.collect.ImmutableMap;
-import dmg.cells.nucleus.CellAddressCore;
 
 import java.io.Serializable;
+
+import diskCacheV111.pools.PoolCostInfo;
+
+import dmg.cells.nucleus.CellAddressCore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

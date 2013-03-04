@@ -4,35 +4,27 @@ package diskCacheV111.poolManager;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.primitives.Ints;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.notNull;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.transform;
-import static com.google.common.collect.Iterables.isEmpty;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.NoSuchElementException;
-import java.io.Serializable;
-
-import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.poolmanager.PoolSelector;
+import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.CostException;
+import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -41,15 +33,21 @@ import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.pools.PoolCostInfo;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileType;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.poolmanager.PartitionManager;
-import org.dcache.poolmanager.Partition;
-import org.dcache.poolmanager.PoolInfo;
-import static org.dcache.namespace.FileAttribute.*;
+
 import dmg.cells.nucleus.CellMessage;
+
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
+import org.dcache.poolmanager.Partition;
+import org.dcache.poolmanager.PartitionManager;
+import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.PoolSelector;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Predicates.*;
+import static com.google.common.collect.Iterables.*;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class PoolMonitorV5
     implements Serializable, PoolMonitor

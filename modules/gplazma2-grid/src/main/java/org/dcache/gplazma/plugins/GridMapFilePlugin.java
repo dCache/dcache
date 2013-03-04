@@ -1,13 +1,8 @@
 package org.dcache.gplazma.plugins;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.collect.Iterables.any;
-import static com.google.common.collect.Iterables.find;
-import static com.google.common.collect.Iterables.get;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.globus.gsi.jaas.GlobusPrincipal;
 
-import org.dcache.gplazma.util.GridMapFile;
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 import java.security.Principal;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -16,12 +11,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.security.auth.kerberos.KerberosPrincipal;
-
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.dcache.gplazma.util.GridMapFile;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.Iterables.*;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 
 /**

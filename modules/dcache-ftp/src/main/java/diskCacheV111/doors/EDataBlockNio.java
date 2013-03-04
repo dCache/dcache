@@ -67,7 +67,7 @@
 package diskCacheV111.doors;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.SocketChannel;
 
 public class EDataBlockNio {
     private ByteBuffer header;

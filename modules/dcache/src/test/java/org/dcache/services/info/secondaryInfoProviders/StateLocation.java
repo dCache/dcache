@@ -1,7 +1,5 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
-import static org.junit.Assert.assertTrue;
-
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.MalleableStateTransition;
 import org.dcache.services.info.base.StateComposite;
@@ -13,6 +11,8 @@ import org.dcache.services.info.base.TestStateExhibitor;
 import org.dcache.services.info.stateInfo.LinkInfo;
 import org.dcache.services.info.stateInfo.ReservationInfo;
 import org.dcache.services.info.stateInfo.SpaceInfo;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * The StateLocation class contains a collection of static methods and fields

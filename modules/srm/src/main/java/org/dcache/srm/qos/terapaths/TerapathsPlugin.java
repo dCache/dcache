@@ -1,19 +1,34 @@
 package org.dcache.srm.qos.terapaths;
 
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.qos.*;
-
-import java.net.InetAddress;
-import java.rmi.RemoteException;
-import java.util.*;
-import java.io.*;
-import org.dcache.srm.util.Configuration;
-import terapathsexamplejavaclient.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import terapathsexamplejavaclient.Bandwidth;
+import terapathsexamplejavaclient.Bandwidths;
+import terapathsexamplejavaclient.ReservationData;
+import terapathsexamplejavaclient.ScheduleSlots;
+import terapathsexamplejavaclient.TpsAPI;
+import terapathsexamplejavaclient.TpsAPISEI;
+import terapathsexamplejavaclient.TpsAPI_Impl;
+import terapathsexamplejavaclient.Who;
 
 import javax.xml.rpc.ServiceException;
 import javax.xml.rpc.Stub;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Properties;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.qos.QOSPlugin;
+import org.dcache.srm.qos.QOSTicket;
+import org.dcache.srm.util.Configuration;
 
 public class TerapathsPlugin implements QOSPlugin {
     private static final Logger logger =
@@ -35,18 +50,18 @@ public class TerapathsPlugin implements QOSPlugin {
 	@Override
         public void setSrmConfiguration(Configuration configuration) {
 		this.propFile = configuration.getQosConfigFile();
-		this.storage = configuration.getStorage();		
+		this.storage = configuration.getStorage();
 	}
 
 	@Override
         public QOSTicket createTicket(
-			String credential, 
+			String credential,
 			Long bytes,
-			String srcURL, 
-			int srcPortMin, 
+			String srcURL,
+			int srcPortMin,
 			int srcPortMax,
 			String srcProtocol,
-			String dstURL, 
+			String dstURL,
 			int destPortMin,
 			int dstPortMax,
 			String dstProtocol) {
@@ -77,7 +92,7 @@ public class TerapathsPlugin implements QOSPlugin {
 		long startTime = new Date().getTime();
 
 		logger.debug("Submitting qos request...");
-		
+
 		if (lastRetrieval==null || lastRetrieval.before(lastModification())) {
 			try {
 				properties.load(new FileInputStream(propFile));
@@ -110,17 +125,17 @@ public class TerapathsPlugin implements QOSPlugin {
                                     System.setProperty("javax.net.ssl.keyStore", properties
                                             .getProperty("keyStore", "/usr/java/jdk1.5.0_14/jre/lib/security/keystore"));
                                 }
-				System.setProperty("javax.net.ssl.keyStorePassword", properties.getProperty("keyStorePassword","secret"));            
+				System.setProperty("javax.net.ssl.keyStorePassword", properties.getProperty("keyStorePassword","secret"));
 				System.setProperty("javax.net.ssl.trustStoreType", "JKS");
 				if (properties.getProperty("trustStore")!=null) {
                                     System.setProperty("javax.net.ssl.trustStore", properties
                                             .getProperty("trustStore", "/usr/java/jdk1.5.0_14/jre/lib/security/cacerts2"));
                                 }
-				System.setProperty("javax.net.ssl.trustStorePassword", properties.getProperty("trustStorePassword","secret"));    
+				System.setProperty("javax.net.ssl.trustStorePassword", properties.getProperty("trustStorePassword","secret"));
 
 			} catch (Exception e) {
 				logger.error(e.toString());
-			} 	
+			}
 
 			username = properties.getProperty("username", "terapaths");
 			password = properties.getProperty("password", "terapaths");

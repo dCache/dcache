@@ -1,7 +1,8 @@
 //$Id: PnfsClearCacheLocationMessage.java,v 1.6 2005-02-21 14:20:50 patrick Exp $
 
 package diskCacheV111.vehicles;
-import  diskCacheV111.util.* ;
+
+import diskCacheV111.util.PnfsId;
 
 public class PnfsClearCacheLocationMessage extends PnfsModifyCacheLocationMessage {
 

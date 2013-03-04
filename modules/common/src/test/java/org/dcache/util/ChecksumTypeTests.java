@@ -1,9 +1,11 @@
 package org.dcache.util;
 
 import org.junit.Test;
-import static org.dcache.util.ChecksumType.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+
+import static org.dcache.util.ChecksumType.ADLER32;
+import static org.dcache.util.ChecksumType.MD5_TYPE;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 
 
 /**

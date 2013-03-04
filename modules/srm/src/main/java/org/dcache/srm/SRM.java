@@ -73,59 +73,59 @@ documents or software obtained from this server.
  */
 package org.dcache.srm;
 
-import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.request.sql.JdbcConnectionPool;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.Request;
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.PutRequest;
-import org.dcache.srm.request.PutFileRequest;
-import org.dcache.srm.request.GetRequest;
-import org.dcache.srm.request.GetFileRequest;
-import org.dcache.srm.request.LsRequest;
-import org.dcache.srm.request.LsFileRequest;
-import org.dcache.srm.request.ReserveSpaceRequest;
-import org.dcache.srm.request.CopyRequest;
-import org.dcache.srm.request.CopyFileRequest;
-import org.dcache.srm.request.BringOnlineRequest;
-import org.dcache.srm.request.BringOnlineFileRequest;
-import org.dcache.srm.request.sql.DatabaseRequestStorage;
-import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Set;
-import java.util.HashSet;
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URI;
-import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.SchedulerFactory;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.JobStorageFactory;
-import org.dcache.srm.request.sql.DatabaseJobStorageFactory;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.request.RequestCredentialStorage;
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestStatus;
 import diskCacheV111.srm.StorageElementInfo;
 
+import org.dcache.commons.stats.MonitoringProxy;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.stats.rrd.RrdRequestCounters;
 import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
-import org.dcache.commons.stats.MonitoringProxy;
-import java.lang.reflect.Method;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import org.dcache.srm.request.BringOnlineFileRequest;
+import org.dcache.srm.request.BringOnlineRequest;
+import org.dcache.srm.request.ContainerRequest;
+import org.dcache.srm.request.CopyFileRequest;
+import org.dcache.srm.request.CopyRequest;
+import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.GetFileRequest;
+import org.dcache.srm.request.GetRequest;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.LsFileRequest;
+import org.dcache.srm.request.LsRequest;
+import org.dcache.srm.request.PutFileRequest;
+import org.dcache.srm.request.PutRequest;
+import org.dcache.srm.request.Request;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.request.RequestCredentialStorage;
+import org.dcache.srm.request.ReserveSpaceRequest;
+import org.dcache.srm.request.sql.DatabaseJobStorageFactory;
+import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
+import org.dcache.srm.request.sql.DatabaseRequestStorage;
+import org.dcache.srm.request.sql.JdbcConnectionPool;
+import org.dcache.srm.request.sql.RequestsPropertyStorage;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.JobStorage;
+import org.dcache.srm.scheduler.JobStorageFactory;
+import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.SchedulerFactory;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.TFileStorageType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * SRM class creates an instance of SRM client class and publishes it on a

@@ -1,16 +1,20 @@
 package org.dcache.services.topology;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import diskCacheV111.util.SpreadAndWait;
+
 import dmg.cells.network.CellDomainNode;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
 import org.dcache.cells.CellMessageSender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

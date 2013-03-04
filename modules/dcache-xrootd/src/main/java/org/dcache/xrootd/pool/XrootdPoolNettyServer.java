@@ -1,19 +1,5 @@
 package org.dcache.xrootd.pool;
 
-import static org.jboss.netty.channel.Channels.pipeline;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.pool.movers.AbstractNettyServer;
-import org.dcache.util.PortRange;
-import org.dcache.xrootd.core.XrootdDecoder;
-import org.dcache.xrootd.core.XrootdEncoder;
-import org.dcache.xrootd.core.XrootdHandshakeHandler;
-import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.handler.execution.ExecutionHandler;
@@ -21,9 +7,23 @@ import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.dcache.pool.movers.AbstractNettyServer;
+import org.dcache.util.PortRange;
+import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.core.XrootdDecoder;
+import org.dcache.xrootd.core.XrootdEncoder;
+import org.dcache.xrootd.core.XrootdHandshakeHandler;
+import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.protocol.XrootdProtocol;
+
+import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
  * Pool-netty server tailored to the requirements of the xrootd protocol.

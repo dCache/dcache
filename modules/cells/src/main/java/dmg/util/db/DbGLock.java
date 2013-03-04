@@ -1,6 +1,7 @@
 package dmg.util.db ;
 
-import java.util.* ;
+import java.util.Hashtable;
+import java.util.Vector;
 
 public class DbGLock implements DbLockListener, DbLockable {
    private class LockEntry {
@@ -11,15 +12,15 @@ public class DbGLock implements DbLockListener, DbLockable {
                _isWriteLock = writeLock ;
                _counter     = 1 ;
           }
-          public String toString(){ 
+          public String toString(){
              return "WriteLock="+_isWriteLock+
                     ";Counter="+_counter ;
-          }                                
+          }
       }
       private Thread         _thread;
       private int          _position = -1 ;
       private LockEntryDesc [] _desc = new LockEntryDesc[2] ;
-      
+
       private LockEntry( Thread thread , boolean writeLock ){
          _thread   = thread ;
          _desc[0]  = new LockEntryDesc(writeLock) ;
@@ -40,7 +41,7 @@ public class DbGLock implements DbLockListener, DbLockable {
          //
          _desc[++_position] = new LockEntryDesc(true) ;
       }
-      
+
       public int degrade() throws DbLockException {
          if( _position < 0 ) {
              throw new DbLockException("PANIC close=(_position<0)");
@@ -48,7 +49,7 @@ public class DbGLock implements DbLockListener, DbLockable {
          if( _desc[_position]._counter <= 0 ) {
              throw new DbLockException("PANIC close=(_counter<=0)");
          }
-           
+
          _desc[_position]._counter-- ;
          if( _desc[_position]._counter <= 0 ){
             _position-- ;
@@ -56,7 +57,7 @@ public class DbGLock implements DbLockListener, DbLockable {
          }else {
              return NOTHING_CHANGED;
          }
-   
+
       }
       public String toString(){
          StringBuilder sb = new StringBuilder() ;
@@ -78,14 +79,14 @@ public class DbGLock implements DbLockListener, DbLockable {
       }
    }
    private static final int   NOTHING_CHANGED  = 0 ;
-   private static final int   WRITE_TO_READ    = 1 ; 
+   private static final int   WRITE_TO_READ    = 1 ;
    private static final int   NOTHING_LEFT     = 2 ;
-   
+
    public static final int  READ_LOCK  = 1 ;
    public static final int  WRITE_LOCK = 2 ;
    public static final int  DONT_BLOCK = 4 ;
-   
-   
+
+
    private Vector<LockEntry> _list = new Vector<>(8) ;
    private Hashtable<Thread, LockEntry> _hash = new Hashtable<>() ;
    private DbLockListener   _listener;
@@ -94,9 +95,9 @@ public class DbGLock implements DbLockListener, DbLockable {
      _listener = listener ;
    }
    public DbGLock(){ _listener = this ; }
-   public DbGLock( DbLockable creator ){   
+   public DbGLock( DbLockable creator ){
       _listener = this ;
-      _creator  = creator ; 
+      _creator  = creator ;
    }
    public  String toString(){
       StringBuilder sb = new StringBuilder() ;
@@ -134,7 +135,7 @@ public class DbGLock implements DbLockListener, DbLockable {
       if( _creator != null ) {
           _creator.close();
       }
-   } 
+   }
    @Override
    public synchronized void open( int flags )
          throws DbLockException,
@@ -175,13 +176,13 @@ public class DbGLock implements DbLockListener, DbLockable {
                    break;
                }
                wait() ;
-            } 
-            writeLockGranted() ; 
-            return ;   
+            }
+            writeLockGranted() ;
+            return ;
          }
          //
-         // increment the lock thread counter 
-         //  
+         // increment the lock thread counter
+         //
          entry.increment() ;
          return ;
       }
@@ -190,7 +191,7 @@ public class DbGLock implements DbLockListener, DbLockable {
       //
       entry = new LockEntry( ourThread ,
                             ( flags & WRITE_LOCK ) > 0 ) ;
-                         
+
       _list.addElement( entry );
       //
       // we need to destingueck between read and write locks
@@ -214,8 +215,8 @@ public class DbGLock implements DbLockListener, DbLockable {
             }
             wait() ;
          }
-             
-         writeLockGranted() ; 
+
+         writeLockGranted() ;
       }else{
          //////////////////////////////////////////////////////////
          //                                                      //
@@ -255,12 +256,12 @@ public class DbGLock implements DbLockListener, DbLockable {
             wait() ;
          }
          readLockGranted() ;
-          
+
       }
       _hash.put( ourThread , entry ) ;
-      
+
    }
-   
+
    @Override
    public void readLockGranted() {}
    @Override
@@ -282,7 +283,7 @@ public class DbGLock implements DbLockListener, DbLockable {
           System.out.println( "Open   : "+(opened-start) ) ;
           System.out.println( "Close  : "+(finished-opened) ) ;
        }
-   
+
    }
 
 }

@@ -4,8 +4,9 @@
 package org.dcache.chimera.namespace;
 
 import diskCacheV111.util.CacheException;
-import org.dcache.chimera.FsInode;
 import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.chimera.FsInode;
 
 
 public interface ChimeraStorageInfoExtractable {

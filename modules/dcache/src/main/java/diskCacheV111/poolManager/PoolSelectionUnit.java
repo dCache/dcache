@@ -1,5 +1,6 @@
 package diskCacheV111.poolManager ;
 
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -7,9 +8,8 @@ import java.util.Set;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellAddressCore;
 
-import java.net.UnknownHostException;
+import dmg.cells.nucleus.CellAddressCore;
 
 public interface PoolSelectionUnit  {
 

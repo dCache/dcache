@@ -6,35 +6,37 @@
 
 package org.dcache.srm.handler;
 
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.SrmAbortRequestRequest;
-import org.dcache.srm.v2_2.SrmAbortRequestResponse;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+
 import java.sql.SQLException;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.ContainerRequest;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.v2_2.SrmAbortRequestRequest;
+import org.dcache.srm.v2_2.SrmAbortRequestResponse;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  *
  * @author  timur
  */
 public class SrmAbortRequest {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             LoggerFactory.getLogger(SrmAbortRequest.class);
-    
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmAbortRequestRequest srmAbortRequestRequest;
@@ -59,7 +61,7 @@ public class SrmAbortRequest {
         this.storage = storage;
         this.configuration = srm.getConfiguration();
     }
-    
+
     boolean longFormat;
     String servicePathAndSFNPart = "";
     int port;
@@ -89,14 +91,14 @@ public class SrmAbortRequest {
             logger.error("Illegal State Transition : " +ist.getMessage());
             response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
         }
-        
+
         return response;
     }
-    
+
     public static final SrmAbortRequestResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmAbortRequestResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -133,7 +135,7 @@ public class SrmAbortRequest {
             // FIXME we do this to make the srm update the status of the request if it changed
             ((ContainerRequest)job).getTReturnStatus();
         }
-        
+
         State state = job.getState();
         if(!State.isFinalState(state)) {
             job.setState(State.CANCELED,"SrmAbortRequest called");
@@ -143,8 +145,8 @@ public class SrmAbortRequest {
         SrmAbortRequestResponse srmAbortRequestResponse = new SrmAbortRequestResponse();
         srmAbortRequestResponse.setReturnStatus(status);
         return srmAbortRequestResponse;
-        
+
     }
-    
-    
+
+
 }

@@ -1,10 +1,24 @@
 package dmg.cells.applets.spy ;
 
-import java.awt.* ;
-import java.awt.event.* ;
-import java.util.* ;
+import java.awt.BorderLayout;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Hashtable;
+import java.util.Map;
 
-import dmg.cells.network.* ;
+import dmg.cells.network.CellDomainNode;
 
 
 
@@ -22,7 +36,7 @@ class TopologyPanel extends Panel  {
         public TopoCanvas(){
             addMouseListener( this ) ;
         }
-        
+
         public void setCanonical( CanonTopo canonical ){
            _canonical = canonical ;
            repaint() ;
@@ -100,7 +114,7 @@ class TopologyPanel extends Panel  {
               Color col = Color.green ;
               g.setColor( col ) ;
 
-              _domainPositions.put( 
+              _domainPositions.put(
                     new Rectangle( x-2 , y-2 , l+4 , h+4 ) ,
                     domainNames[i] ) ;
 
@@ -113,12 +127,12 @@ class TopologyPanel extends Panel  {
               g.setColor( Color.red ) ;
               g.drawString( domainNames[i] , x , dY[i] ) ;
            }
-        
+
         }
-        private void calculatePositions( Dimension d , 
+        private void calculatePositions( Dimension d ,
                                          int [] dX , int [] dY ,
                                          CanonTopo topo           ){
-           int domains = dX.length ;                            
+           int domains = dX.length ;
            int r = d.height > d.width ? d.width : d.height ;
            r = (int)(  (float)r / 2.0 * 0.8) ;
            int x0 = d.width / 2 ;
@@ -151,7 +165,7 @@ class TopologyPanel extends Panel  {
                 _callback.actionPerformed(
                         new ActionEvent(TopologyPanel.this, 0, domain));
             }
-         }   
+         }
          @Override
          public void mouseExited( MouseEvent e ){}
          @Override
@@ -161,16 +175,16 @@ class TopologyPanel extends Panel  {
          @Override
          public void mouseReleased( MouseEvent e ){}
     }
-    
+
     private TopoCanvas     _topo;
     private ActionListener _callback ;
-    
+
     public TopologyPanel(){
         super( new BorderLayout() ) ;
         _topo = new TopoCanvas() ;
         add( _topo , "Center" ) ;
         setBackground( Color.blue ) ;
-    
+
     }
     public void addActionListener( ActionListener l ){
        _callback = l ;
@@ -184,5 +198,5 @@ class TopologyPanel extends Panel  {
     }
 
 }
-      
- 
+
+

@@ -1,15 +1,15 @@
 package dmg.util ;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultiset;
+
 import java.io.Serializable;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
-import com.google.common.collect.ImmutableMultiset;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
 
 /**
  * Argument parser.

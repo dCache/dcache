@@ -68,30 +68,6 @@
 
 package org.dcache.pool.movers;
 
-import org.dcache.pool.repository.Allocator;
-import diskCacheV111.util.CacheException;
-import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.vehicles.FileAttributes;
-import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.EnumSet;
-import java.util.Set;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
-import org.dcache.srm.util.GridftpClient;
 import org.globus.ftp.Buffer;
 import org.globus.ftp.exception.ClientException;
 import org.globus.ftp.exception.ServerException;
@@ -100,6 +76,34 @@ import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.EnumSet;
+import java.util.Set;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
+
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+
+import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.srm.util.GridftpClient;
+import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+import org.dcache.vehicles.FileAttributes;
 
 public class RemoteGsiftpTransferProtocol_1
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient

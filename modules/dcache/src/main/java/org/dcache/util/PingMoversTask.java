@@ -1,13 +1,13 @@
 package org.dcache.util;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.HashSet;
-
-import diskCacheV111.util.CacheException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
+import diskCacheV111.util.CacheException;
 
 /**
  * Task that queries the pools for a set of movers. Will eventually

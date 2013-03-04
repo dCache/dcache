@@ -59,11 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import dmg.util.Args;
 

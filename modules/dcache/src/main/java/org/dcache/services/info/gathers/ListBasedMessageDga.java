@@ -1,10 +1,10 @@
 package org.dcache.services.info.gathers;
 
-import org.dcache.services.info.base.StateExhibitor;
-import org.dcache.services.info.base.StatePath;
-
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
+
+import org.dcache.services.info.base.StateExhibitor;
+import org.dcache.services.info.base.StatePath;
 
 
 /**

@@ -1,5 +1,9 @@
 package org.dcache.util;
 
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelException;
+
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
@@ -7,11 +11,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelException;
+import java.util.regex.Pattern;
 
 /**
  * Immutable class representing a port range.

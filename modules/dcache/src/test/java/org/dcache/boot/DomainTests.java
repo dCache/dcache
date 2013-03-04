@@ -1,12 +1,13 @@
 package org.dcache.boot;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Properties;
 
 import org.dcache.util.ConfigurationProperties;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class DomainTests {
 

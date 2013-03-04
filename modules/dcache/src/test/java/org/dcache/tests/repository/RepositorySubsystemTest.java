@@ -1,46 +1,61 @@
 package org.dcache.tests.repository;
 
-import static org.junit.Assert.*;
-
-import java.util.*;
-import java.util.concurrent.*;
-import java.io.*;
-
-import org.junit.*;
-
 import com.sleepycat.je.DatabaseException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsHandler;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.vehicles.*;
-import org.dcache.vehicles.*;
-import dmg.cells.nucleus.*;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
+import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.classic.FairQueueAllocation;
+import org.dcache.pool.classic.SpaceSweeper2;
+import org.dcache.pool.repository.AbstractStateChangeListener;
+import org.dcache.pool.repository.Account;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.FlatFileStore;
+import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.Repository.OpenFlags;
+import org.dcache.pool.repository.SpaceRecord;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.meta.file.FileMetaDataRepository;
+import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.CellStubHelper;
 import org.dcache.tests.cells.Message;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 
-import org.dcache.pool.repository.Account;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
-import org.dcache.pool.repository.Repository.OpenFlags;
-import org.dcache.pool.repository.IllegalTransitionException;
-
-import org.dcache.pool.classic.FairQueueAllocation;
-import org.dcache.pool.classic.SpaceSweeper2;
-import org.dcache.pool.repository.SpaceRecord;
-import org.dcache.pool.repository.EntryState;
 import static org.dcache.pool.repository.EntryState.*;
-import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.AbstractStateChangeListener;
-import org.dcache.pool.repository.StateChangeEvent;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.MetaDataStore;
-import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.FlatFileStore;
-import org.dcache.pool.repository.meta.file.FileMetaDataRepository;
+import static org.junit.Assert.*;
 
 public class RepositorySubsystemTest
     extends AbstractStateChangeListener

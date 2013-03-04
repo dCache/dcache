@@ -2,11 +2,12 @@
 
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.PnfsId;
-import org.dcache.vehicles.FileAttributes;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
+
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * restore file from HSM

@@ -1,5 +1,10 @@
 package dmg.cells.applets.login ;
-import java.awt.* ;
+
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.LayoutManager;
 import java.io.Serializable;
 
 public class CenterLayout implements LayoutManager, Serializable {
@@ -64,16 +69,16 @@ public class CenterLayout implements LayoutManager, Serializable {
         if( nmembers < 1 ) {
             return;
         }
-        
+
 	Component m = target.getComponent(0);
 	Dimension d = m.getMinimumSize();
-        
+
         m.setSize(d.width , d.height);
 	m.setLocation( ( t_dim.width - d.width ) / 2 ,
                        ( t_dim.height - d.height ) / 2  ) ;
-        
+
       }
-    }  
+    }
     /*
     public void layoutContainer(Container target) {
       synchronized (target.getTreeLock()) {
@@ -84,9 +89,9 @@ public class CenterLayout implements LayoutManager, Serializable {
 	int nmembers = target.getComponentCount();
 
         if( nmembers < 1 )return ;
-        
+
 	Component m = target.getComponent(0);
-        
+
 	if (m.isVisible()) {
             m.validate() ;
 //            System.out.println( "m="+m);
@@ -100,7 +105,7 @@ public class CenterLayout implements LayoutManager, Serializable {
             d = m.getPreferredSize();
 //            System.out.println( "=preW="+d.width+";preH"+d.height);
             if( ( d.width == 0 ) || ( d.height == 0 ) ){
-               
+
                d = m.getMinimumSize();
                System.out.println( "Sorry, no preferred size using min : "+d ) ;
             }
@@ -120,14 +125,14 @@ public class CenterLayout implements LayoutManager, Serializable {
                y = ( maxheight - d.height ) / 2 ;
             }
 //            System.out.println("x="+x+";y="+y+";w="+width+";h="+height) ;
-            m.setSize( width , height ); 
+            m.setSize( width , height );
             m.setLocation( x , y ) ;
         }
-        
+
         if( nmembers < 2 )return ;
 
 	m = target.getComponent(1);
-        
+
 	if (m.isVisible()) {
             Dimension d = m.getPreferredSize();
             d.width = Math.min( d.width , t_dim.width ) ;
@@ -135,7 +140,7 @@ public class CenterLayout implements LayoutManager, Serializable {
             m.setSize(maxwidth, d.height);
 	    m.setLocation( 0 , maxheight - d.height  ) ;
         }
-        
+
       }
     }
     */

@@ -1,44 +1,50 @@
 package dmg.cells.applets.login ;
 
-import java.applet.*;
-import java.awt.* ;
-import java.awt.event.* ;
-import java.lang.reflect.* ;
-import java.util.* ;
+import java.applet.Applet;
+import java.applet.AppletContext;
+import java.awt.CardLayout;
+import java.awt.Component;
+import java.awt.Font;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.StringTokenizer;
 
-public class      SshLoginApplet 
-       extends    Applet 
+public class      SshLoginApplet
+       extends    Applet
        implements ActionListener  {
 
     private static final long serialVersionUID = 5453691123861016299L;
     //
-  // remember to change the following variable to your needs 
-  // 
+  // remember to change the following variable to your needs
+  //
   private SshLoginPanel     _loginPanel;
-   
+
   private String    _remoteHost;
   private String    _remotePort;
   private String    _remoteUser;
   private String    _remotePassword;
   private String    _userPanel;
   private String    _title;
-  
+
   private AppletContext    _context;
   private CardLayout       _cardsLayout;
   private CommanderPanel   _commanderPanel;
   private Panel            _switchPanel;
   private PanelSwitchBoard _switchBoard;
-  
+
   private Font      _font = new Font( "TimesRoman" , 0 , 16 ) ;
-  
-  
+
+
   private final static Class<?>[] __userPanelArgs = {
        DomainConnection.class
   } ;
   private final static Class<?>[] __userPanelListener = {
        ActionListener.class
   } ;
-  
+
   @Override
   public void init(){
       System.out.println( "init ..." ) ;
@@ -50,35 +56,35 @@ public class      SshLoginApplet
       _remotePort = getParameter( "port" ) ;
       _remoteUser = getParameter( "user" ) ;
       _title      = getParameter( "title" ) ;
-     
+
       //
       // we allow to set the "panel" :
       //    only this panel is displayed , or
-      // we allow to have panel1, panel2 ... 
+      // we allow to have panel1, panel2 ...
       //    in this  case the syntax has to be
       //       param name="panel1" value="<name>:<panelClass>"
       //
       _userPanel  = getParameter( "panel" ) ;
-      
+
       _remoteHost = _remoteHost==null?"":_remoteHost ;
       _remotePort = _remotePort==null?"":_remotePort ;
       _remoteUser = _remoteUser==null?"":_remoteUser ;
       _title      = _title==null?"Login":_title;
-      
+
       _loginPanel = new SshLoginPanel() ;
       _loginPanel.setHost( _remoteHost , true , true ) ;
       _loginPanel.setPort( _remotePort , true , true ) ;
       _loginPanel.setUser( _remoteUser , true , true ) ;
       _loginPanel.setTitle( _title ) ;
-      
+
       _loginPanel.addActionListener( this ) ;
-   
+
       setLayout( new CenterLayout() ) ;
       _loginPanel.ok() ;
 
       _switchPanel = new Panel( _cardsLayout = new CardLayout() ) ;
       _switchPanel.add( _loginPanel  , "login" ) ;
-      
+
       int panelCounter = 0 ;
       if( _userPanel == null  ){
          _switchBoard = new PanelSwitchBoard(true) ;
@@ -90,7 +96,7 @@ public class      SshLoginApplet
             StringTokenizer st = new StringTokenizer(tmp,":");
             String name = null ;
             try{
-                           name    = st.nextToken() ; 
+                           name    = st.nextToken() ;
                Class<? extends Component> pc = Class.forName(st.nextToken()).asSubclass(Component.class);
                Constructor<? extends Component> pcon = pc.getConstructor(__userPanelArgs);
                Object []   args    = new Object[1] ;
@@ -109,7 +115,7 @@ public class      SshLoginApplet
               _switchPanel.add( _switchBoard , "commander" ) ;
               _cardsLayout.show( _switchPanel , "commander" ) ;
          }
-      
+
       }
       if( _userPanel != null ){
 
@@ -122,7 +128,7 @@ public class      SshLoginApplet
             Method      m       = pc.getMethod( "addActionListener" ,
                                                 __userPanelListener ) ;
             args    = new Object[1] ;
-            args[0] = this ; 
+            args[0] = this ;
             m.invoke( p , args ) ;
             _switchPanel.add( p , "commander" ) ;
          }catch( Exception e ){
@@ -130,9 +136,9 @@ public class      SshLoginApplet
             System.exit(1) ;
          }
       }
-      
-      _cardsLayout.show( _switchPanel , "login" ) ;      
-      add( _switchPanel ) ;   
+
+      _cardsLayout.show( _switchPanel , "login" ) ;
+      add( _switchPanel ) ;
   }
   @Override
   public void start(){
@@ -152,7 +158,7 @@ public class      SshLoginApplet
       System.out.println("destroy ..." ) ;
 //      try{
 //      }catch( Exception e ){}
-  }      
+  }
   @Override
   public synchronized void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
@@ -170,5 +176,5 @@ public class      SshLoginApplet
           break;
       }
   }
-       
+
 }

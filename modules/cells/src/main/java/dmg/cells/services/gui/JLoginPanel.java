@@ -2,11 +2,35 @@
 //
 package dmg.cells.services.gui ;
 //
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import java.net.* ;
+
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.border.BevelBorder;
+
+import java.awt.AWTEventMulticaster;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.net.InetAddress;
+import java.net.URL;
 /**
  */
 public class JLoginPanel extends JPanel {
@@ -24,7 +48,7 @@ public class JLoginPanel extends JPanel {
    private MessagePanel      _messagePanel = new MessagePanel() ;
    private CardLayout        _cards        = new CardLayout() ;
    private JPanel            _cardPanel    = new JPanel() ;
-   
+
    private class MessagePanel extends JPanel {
 
       private static final long serialVersionUID = -7070762272738405538L;
@@ -39,9 +63,9 @@ public class JLoginPanel extends JPanel {
          add( _message , c ) ;
       }
       public void setText( String message ){ _message.setText(message) ; }
-      
+
    }
-   
+
    private class SetupPanel extends JPanel {
 
       private static final long serialVersionUID = 1843323319872216811L;
@@ -52,43 +76,43 @@ public class JLoginPanel extends JPanel {
       private JTextField _port    = new JTextField(20) ;
       private JTextField _schema  = new JTextField(10) ;
       private JCheckBox  _lm      = new JCheckBox("Use LM" , false ) ;
-      
+
       @Override
       public Insets getInsets(){ return new Insets(20,20,20,20) ; }
-    
+
       private SetupPanel(){
          setLayout( new GridBagLayout() ) ;
 //         setBorder( new BevelBorder(BevelBorder.RAISED));
          setBorder(
-            BorderFactory.createTitledBorder(" Cell Server Setup ") 
+            BorderFactory.createTitledBorder(" Cell Server Setup ")
          );
          GridBagConstraints c = new GridBagConstraints()  ;
          c.gridheight = 1 ;
          c.insets     = new Insets(4,4,4,4) ;
-      
+
          c.gridwidth  = 1 ; c.gridx = 0 ; c.gridy = 0 ;
-         add( _hostLabel , c ) ; 
+         add( _hostLabel , c ) ;
          c.gridwidth  = 2 ; c.gridx = 1 ; c.gridy = 0 ;
          add( _host , c ) ;
-         
+
          c.gridwidth  = 1 ; c.gridx = 0 ; c.gridy = 1 ;
-         add( _portLabel , c ) ; 
+         add( _portLabel , c ) ;
          c.gridwidth  = 2 ; c.gridx = 1 ; c.gridy = 1 ;
          add( _port , c ) ;
-         
+
          c.gridwidth  = 1 ; c.gridx = 0 ; c.gridy = 2 ;
-         add( _schemaLabel , c ) ; 
+         add( _schemaLabel , c ) ;
          c.gridwidth  = 1 ; c.gridx = 1 ; c.gridy = 2 ;
          add( _schema , c ) ;
-         
+
          c.gridwidth  = 1 ; c.gridx = 2 ; c.gridy = 2 ;
          add( _lm , c ) ;
 
          boolean selected = _lm.isSelected() ;
          _schema.setEnabled( selected ) ;
          _schemaLabel.setEnabled( selected ) ;
-         
-         _lm.addActionListener( 
+
+         _lm.addActionListener(
             new ActionListener(){
                 @Override
                 public void actionPerformed( ActionEvent event ){
@@ -108,10 +132,10 @@ public class JLoginPanel extends JPanel {
       private JTextField     _login  = new JTextField(25) ;
       private JPasswordField _passwd = new JPasswordField(25) ;
       private JLabel    _statusLabel = new JLabel("",JLabel.CENTER) ;
-      
+
       @Override
       public Insets getInsets(){ return new Insets(10,10,10,10);}
-      
+
       private UserPasswordPanel(){
          setLayout( new GridBagLayout() ) ;
          GridBagConstraints c = new GridBagConstraints()  ;
@@ -120,7 +144,7 @@ public class JLoginPanel extends JPanel {
          c.insets     = new Insets(2,2,2,2) ;
 
          c.gridx = 0 ; c.gridy = 0 ;
-         add( _loginLabel , c ) ; 
+         add( _loginLabel , c ) ;
          c.gridx = 1 ; c.gridy = 0 ;
          add( _login , c ) ;
          c.gridx = 0 ; c.gridy = 1 ;
@@ -132,14 +156,14 @@ public class JLoginPanel extends JPanel {
          c.fill = GridBagConstraints.HORIZONTAL ;
          _statusLabel.setForeground(Color.red) ;
          add( _statusLabel , c ) ;
-         
+
          _passwd.setEchoChar( '*' ) ;
       }
    }
    private class IconDisplayPanel extends JPanel {
        private static final long serialVersionUID = 8935812164648997352L;
        private Icon _icon;
-       public IconDisplayPanel( Icon icon ){ 
+       public IconDisplayPanel( Icon icon ){
           _icon = icon ;
        }
        @Override
@@ -172,9 +196,9 @@ public class JLoginPanel extends JPanel {
          int y = yi + 4 ;
          int width = _width - 8 ;
          int height = _height - 8 ;
-         
+
          Color col = new Color( 0 , 0 , 255 ) ;
-         
+
          while( width > 0 ){
             g.setColor( col ) ;
             width = width / 2 ; height = height / 2 ;
@@ -194,8 +218,8 @@ public class JLoginPanel extends JPanel {
    public Dimension getMaximumSize(){ return getPreferredSize() ; }
    @Override
    public Insets    getInsets(){ return new Insets(10,10,10,10);}
-   
-   public void setMessage( String message ){ 
+
+   public void setMessage( String message ){
       displayMessagePanel(message) ;
    }
    public void setErrorMessage( String message ){
@@ -205,8 +229,8 @@ public class JLoginPanel extends JPanel {
       _loginPanel._statusLabel.setText(message);
    }
    private JPanel _currentPanel = _loginPanel ;
-   
-   public void displayMessagePanel(String message){ 
+
+   public void displayMessagePanel(String message){
      _setupButton.setEnabled(false);
      _loginButton.setEnabled(false) ;
      if( ( message != null ) && ( ! message.equals("") ) ) {
@@ -214,13 +238,13 @@ public class JLoginPanel extends JPanel {
      }
         _cards.show( _cardPanel ,  "message" ) ;
    }
-   public void displayLoginPanel(){ 
+   public void displayLoginPanel(){
       _setupButton.setEnabled(true);
       _loginButton.setEnabled(true) ;
       _setupButton.setText("Setup");
       _cards.show(_cardPanel ,  "login");
    }
-   public void displaySetupPanel(){ 
+   public void displaySetupPanel(){
       _setupButton.setEnabled(true);
       _loginButton.setEnabled(false) ;
       _setupButton.setText("Back");
@@ -233,37 +257,37 @@ public class JLoginPanel extends JPanel {
       super.paintComponent( g ) ;
    }
    public JLoginPanel(){
-   
+
       BorderLayout bl = new BorderLayout() ;
       bl.setVgap(10) ;
       bl.setHgap(10);
       setLayout(bl) ;
       setBorder( new BevelBorder(BevelBorder.LOWERED));
       _logoString.setFont( _bigFont ) ;
-      
+
       add( _logoString , "North" ) ;
 
       _cardPanel.setLayout( _cards ) ;
       _cardPanel.add( _loginPanel , "login" ) ;
       _cardPanel.add( _setupPanel , "setup" ) ;
       _cardPanel.add( _messagePanel , "message" ) ;
-      
+
       add( _cardPanel , "Center" ) ;
-      
+
       URL imageUrl = getClass().getResource("/images/cells-logo.jpg") ;
       Icon icon = imageUrl == null ?
               new CellIcon( 80 , 80 ) :
               new ImageIcon(imageUrl);
-            
+
       JPanel c = new IconDisplayPanel( icon ) ;
 
       add(   c , "West") ;
       JPanel b = new JPanel(new BorderLayout()) ;
       b.add( _setupButton , "West" ) ;
       b.add( _loginButton , "East" ) ;
-      
+
       add( "South" , b ) ;
-      
+
       _setupButton.addActionListener(
          new ActionListener(){
             @Override
@@ -286,7 +310,7 @@ public class JLoginPanel extends JPanel {
                 processEvent(event);
              }
           }
-       
+
        ) ;
        setLogin( System.getProperty( "user.name" ) ) ;
        setSchema( "default" ) ;
@@ -310,14 +334,14 @@ public class JLoginPanel extends JPanel {
    public void setSchema( String schema ){ _setupPanel._schema.setText( schema ) ; }
    public void setLogin( String login ){ _loginPanel._login.setText( login ) ; }
    public void setPassword( String passwd ){ _loginPanel._passwd.setText( passwd ) ; }
-   
+
    public boolean isLocationManager(){ return _setupPanel._lm.isSelected() ; }
    public String getHostname(){ return _setupPanel._host.getText() ; }
    public String getPortnumber(){ return _setupPanel._port.getText() ; }
    public String getSchema(){ return _setupPanel._schema.getText() ; }
    public String getLogin(){ return _loginPanel._login.getText() ; }
    public String getPassword(){ return _password ; }
-   
+
    private ActionListener _actionListener;
 
    public synchronized void addActionListener(ActionListener l) {
@@ -330,7 +354,7 @@ public class JLoginPanel extends JPanel {
       if( _actionListener != null) {
           _actionListener.actionPerformed(e);
       }
-   }         
-   
-   
+   }
+
+
 }

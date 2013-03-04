@@ -1,13 +1,11 @@
 package org.dcache.tests.util;
 
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import org.junit.Test;
 
 import diskCacheV111.util.FileMetaData;
+
+import static org.junit.Assert.*;
 
 public class FileMetaDataTest {
 

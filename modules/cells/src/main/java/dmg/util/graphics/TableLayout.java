@@ -1,5 +1,10 @@
 package dmg.util.graphics ;
-import java.awt.* ;
+
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.LayoutManager;
 import java.io.Serializable;
 
 public class TableLayout implements LayoutManager, Serializable {
@@ -9,7 +14,7 @@ public class TableLayout implements LayoutManager, Serializable {
     private int _vGap;
     private int _hGap;
     public TableLayout( int columns ) {
-        
+
         _columns = columns ;
     }
     public void setHgap( int gap ){ _hGap = gap ; }
@@ -37,7 +42,7 @@ public class TableLayout implements LayoutManager, Serializable {
            int column  = i % _columns ;
            int row     = i / _columns ;
 //           System.out.println( "Sizeof["+i+"]="+dim ) ;
-           width[column] = Math.max( width[column] , dim.width ) ; 
+           width[column] = Math.max( width[column] , dim.width ) ;
            height[row]   = Math.max( height[row]   , dim.height ) ;
         }
         int preHeight = 0 ;
@@ -51,12 +56,12 @@ public class TableLayout implements LayoutManager, Serializable {
               preWidth += aWidth;
           }
         Insets insets = target.getInsets() ;
-        Dimension dd = 
-           new Dimension( preWidth + 
-                          insets.right + insets.left + 
+        Dimension dd =
+           new Dimension( preWidth +
+                          insets.right + insets.left +
                           _columns*_hGap,
-                          preHeight + 
-                          insets.top + insets.bottom + 
+                          preHeight +
+                          insets.top + insets.bottom +
                           rows*_vGap)   ;
 //        System.out.println( "Preferred Dim : "+dd ) ;
 	return dd   ;
@@ -76,7 +81,7 @@ public class TableLayout implements LayoutManager, Serializable {
       int [] width;
       int [] height;
       synchronized (target.getTreeLock()) {
-        
+
 	int nmembers = target.getComponentCount();
         if( nmembers < 1 ) {
             return;
@@ -90,29 +95,29 @@ public class TableLayout implements LayoutManager, Serializable {
            int column  = i % _columns ;
            int row     = i / _columns ;
 //           System.out.println( "Sizeof["+i+"]="+dim ) ;
-           width[column] = Math.max( width[column] , dim.width ) ; 
+           width[column] = Math.max( width[column] , dim.width ) ;
            height[row]   = Math.max( height[row]   , dim.height ) ;
         }
         widthSum  = new int[_columns] ;
         heightSum = new int[rows] ;
-        
+
         heightSum[0] = insets.top ;
         for( int i= 1 ;i < height.length ; i++ ) {
             heightSum[i] = heightSum[i - 1] + height[i - 1] + _vGap;
         }
-        
+
         widthSum[0] = insets.left ;
         for( int i = 1 ; i < width.length ; i++ ) {
             widthSum[i] = widthSum[i - 1] + width[i - 1] + _hGap;
         }
-        
+
         for( int i = 0 ; i < nmembers ; i++ ){
 	   Component m   = target.getComponent(i);
 	   if (m.isVisible()) {
                m.validate() ;
                int row    = i / _columns ;
                int column = i % _columns ;
-               m.setSize( width[column] , height[row] ); 
+               m.setSize( width[column] , height[row] );
 //               System.out.println( "size["+i+"]="+width[column]+":"+height[row] ) ;
                m.setLocation( widthSum[column] , heightSum[row] ) ;
            }
@@ -122,7 +127,7 @@ public class TableLayout implements LayoutManager, Serializable {
           widthSum[widthSum.length-1]+width[width.length-1]+insets.right,
           heightSum[heightSum.length-1]+height[height.length-1]+insets.bottom);
     }
-    
+
     public String toString() {
 	String str = "";
 	return getClass().getName() + "["+str + "]";

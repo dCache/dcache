@@ -1,13 +1,12 @@
 package dmg.util.logback;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.Formatter;
-
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
-
-import org.slf4j.LoggerFactory;
 
 import dmg.util.Args;
 

@@ -1,11 +1,9 @@
 package org.dcache.poolmanager;
 
-import java.util.Collection;
-import java.util.ArrayList;
+import com.google.common.base.Joiner;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellStub;
-import org.dcache.pool.migration.PoolMigrationJobCancelMessage;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -17,7 +15,9 @@ import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
-import com.google.common.base.Joiner;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellStub;
+import org.dcache.pool.migration.PoolMigrationJobCancelMessage;
 
 /**
  * Implements commands to generate migration jobs to rebalance pools.

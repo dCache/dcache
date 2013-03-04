@@ -59,6 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.model.util;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+
+import javax.jdo.FetchPlan;
+import javax.jdo.PersistenceManager;
+import javax.jdo.Query;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -66,15 +73,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.jdo.FetchPlan;
-import javax.jdo.PersistenceManager;
-import javax.jdo.Query;
-
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.AlarmEntry;
-
-import com.google.common.base.Strings;
-import com.google.common.base.Preconditions;
 
 /**
  * Convenience methods for generating JDO queries from {@link AlarmEntry}

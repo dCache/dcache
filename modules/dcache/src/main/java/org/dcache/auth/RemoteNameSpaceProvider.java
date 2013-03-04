@@ -1,6 +1,12 @@
 package org.dcache.auth;
 
 import com.google.common.collect.Range;
+
+import javax.security.auth.Subject;
+
+import java.util.List;
+import java.util.Set;
+
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
@@ -9,11 +15,8 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
-import static diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation.REMOVE;
 import diskCacheV111.vehicles.StorageInfo;
-import java.util.List;
-import java.util.Set;
-import javax.security.auth.Subject;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
@@ -22,6 +25,8 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
+
+import static diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation.REMOVE;
 
 /**
  * The RemoteNameSpaceProvider uses the PnfsManager client stub to provide

@@ -4,11 +4,12 @@ import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.handler.resource.ResourceStreamRequestHandler;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.resource.StringResourceStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.exceptions.InfoServiceException;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A simple page that enables the download of the xml delivered by the

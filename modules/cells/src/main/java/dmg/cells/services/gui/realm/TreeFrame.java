@@ -2,7 +2,12 @@
 
 package dmg.cells.services.gui.realm ;
 
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuBar;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.WindowAdapter;
@@ -27,7 +32,7 @@ public class TreeFrame {
 	JPanel           panel = new JPanel(true);
 
 	frame = new JFrame("TreeFrame");
-        
+
 	frame.getContentPane().add("Center", panel);
 	frame.setJMenuBar(menuBar);
 	frame.setBackground(Color.lightGray);

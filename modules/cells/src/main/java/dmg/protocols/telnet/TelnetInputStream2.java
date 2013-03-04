@@ -1,18 +1,19 @@
 package dmg.protocols.telnet ;
 
-import java.io.* ;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class TelnetInputStream2 extends InputStream {
 
    private TelnetStreamEngine _core;
-   
+
    public TelnetInputStream2( TelnetStreamEngine core ){
       _core = core ;
    }
    @Override
    public int read() throws IOException {
       int rc = _core.read() ;
-      return rc ; 
+      return rc ;
    }
    //
    // we have to overwrite the following two
@@ -22,7 +23,7 @@ public class TelnetInputStream2 extends InputStream {
    //
    @Override
    public int read( byte [] b )throws IOException {
-      return this.read( b , 0 , b.length ) ; 
+      return this.read( b , 0 , b.length ) ;
    }
    @Override
    public int read( byte [] b , int off , int i ) throws IOException {

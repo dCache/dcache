@@ -60,6 +60,9 @@ documents or software obtained from this server.
 package org.dcache.webadmin.view.pages.alarms;
 
 import org.apache.wicket.util.tester.WicketTester;
+import org.junit.Before;
+import org.junit.Test;
+
 import org.dcache.webadmin.controller.IAlarmDisplayService;
 import org.dcache.webadmin.controller.impl.StandardAlarmDisplayService;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -68,8 +71,6 @@ import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 import org.dcache.webadmin.view.pages.login.LogIn;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Basic rendering and login redirect.

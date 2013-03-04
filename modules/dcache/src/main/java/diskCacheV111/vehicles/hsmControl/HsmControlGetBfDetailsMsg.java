@@ -6,9 +6,9 @@
 
 package diskCacheV111.vehicles.hsmControl;
 
-import diskCacheV111.vehicles.Message ;
-import diskCacheV111.vehicles.StorageInfo ;
-import diskCacheV111.util.PnfsId ;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.StorageInfo;
 
 /**
  *

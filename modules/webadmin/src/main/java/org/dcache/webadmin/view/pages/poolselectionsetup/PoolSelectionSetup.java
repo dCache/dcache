@@ -1,8 +1,5 @@
 package org.dcache.webadmin.view.pages.poolselectionsetup;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
@@ -18,6 +15,12 @@ import org.apache.wicket.markup.repeater.data.IDataProvider;
 import org.apache.wicket.markup.repeater.data.ListDataProvider;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.dcache.webadmin.controller.PoolSelectionSetupService;
 import org.dcache.webadmin.controller.exceptions.PoolSelectionSetupServiceException;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
@@ -25,15 +28,13 @@ import org.dcache.webadmin.view.pages.poolselectionsetup.beans.DCacheEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.DCacheEntityContainerBean;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.EntityReference;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.LinkEntity;
-import org.dcache.webadmin.view.pages.poolselectionsetup.panels.partitions.PartitionsPanel;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PoolEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PoolGroupEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.UGroupEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.UnitEntity;
+import org.dcache.webadmin.view.pages.poolselectionsetup.panels.partitions.PartitionsPanel;
 import org.dcache.webadmin.view.pages.poolselectionsetup.panels.simulatediorequest.SimulatedIORequestPanel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

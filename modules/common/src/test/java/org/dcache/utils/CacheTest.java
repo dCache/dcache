@@ -17,9 +17,11 @@
 
 package org.dcache.utils;
 
-import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.*;
 
 public class CacheTest {

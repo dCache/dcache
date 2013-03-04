@@ -1,41 +1,41 @@
 package org.dcache.pinmanager;
 
-import java.io.IOException;
-import java.io.File;
+import org.springframework.beans.factory.annotation.Required;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
-import java.util.Set;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellStub;
-import org.dcache.pinmanager.model.Pin;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import java.net.InetSocketAddress;
-import org.dcache.vehicles.FileAttributes;
+
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
-
-import java.util.concurrent.ExecutionException;
-
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.pinmanager.model.Pin;
+import org.dcache.vehicles.FileAttributes;
 
 public class PinManagerCLI
     extends AbstractCellComponent

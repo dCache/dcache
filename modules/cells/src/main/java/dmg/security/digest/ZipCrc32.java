@@ -1,6 +1,6 @@
 package dmg.security.digest ;
 
-import java.util.zip.CRC32 ;
+import java.util.zip.CRC32;
 
 public class ZipCrc32 extends CRC32 implements MsgDigest {
 
@@ -19,7 +19,7 @@ public class ZipCrc32 extends CRC32 implements MsgDigest {
        r[1] = (byte)(( crc >>> 16 ) & 0xff ) ;
        r[2] = (byte)(( crc >>>  8 ) & 0xff ) ;
        r[3] = (byte)(( crc >>>  0 ) & 0xff ) ;
-       
+
        return r ;
    }
 

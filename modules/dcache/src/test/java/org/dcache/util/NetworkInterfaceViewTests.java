@@ -1,5 +1,9 @@
 package org.dcache.util;
 
+import com.google.common.collect.ImmutableList;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -8,16 +12,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import com.google.common.collect.ImmutableList;
+import static org.junit.Assert.*;
 
 /**
  * Set of tests for the NetworkInterfaceView class

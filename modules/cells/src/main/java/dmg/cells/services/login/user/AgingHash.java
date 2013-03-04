@@ -1,7 +1,7 @@
 // $Id: AgingHash.java,v 1.1 2001-05-02 06:14:15 cvs Exp $
 package dmg.cells.services.login.user  ;
 
-import java.util.* ;
+import java.util.Hashtable;
 
 public class AgingHash {
 
@@ -10,8 +10,8 @@ public class AgingHash {
    private Node _last;
    private Hashtable<Object, Node> _hash = new Hashtable<>() ;
    private class Node {
-      private Node( Object key , Object value ){ 
-         this.value = value ; 
+      private Node( Object key , Object value ){
+         this.value = value ;
          this.key   = key ;
       }
       private Object value;
@@ -36,7 +36,7 @@ public class AgingHash {
        if( node == null ) {
            return null;
        }
-       
+
        unlink( node ) ;
        link( node ) ;
        return node.value ;
@@ -49,21 +49,21 @@ public class AgingHash {
        //
        Node node = _hash.get( key );
        if( node == null ){
-       
+
            node = new Node( key , value ) ;
            _hash.put( key , node ) ;
-           
+
        }else{
-       
+
            node.value = value ;
            //
            // we have to relink to become top of stack.
            //
            unlink( node ) ;
-           
+
        }
        link( node ) ;
-       
+
        if( _hash.size() > _maxSize ){
           _hash.remove( _last.key ) ;
           unlink( _last ) ;
@@ -75,10 +75,10 @@ public class AgingHash {
       if( node == null ) {
           return null;
       }
-            
-      unlink( node ) ; 
-          
-      return node.value ;     
+
+      unlink( node ) ;
+
+      return node.value ;
    }
    private void link( Node node ){
        node.next     = _first ;
@@ -87,7 +87,7 @@ public class AgingHash {
            _first.previous = node;
        }
        _first = node ;
-       
+
        if( _last == null ) {
            _last = node;
        }
@@ -99,7 +99,7 @@ public class AgingHash {
       } else {
           _last = node.previous;
       }
-          
+
       if( node.previous != null ) {
           node.previous.next = node.next;
       } else {
@@ -135,7 +135,7 @@ public class AgingHash {
       System.out.println( hash.display() ) ;
       hash.remove("5");
       System.out.println( hash.display() ) ;
-      
-   }  
+
+   }
 
 }

@@ -1,15 +1,18 @@
 package org.dcache.chimera.cli;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Map;
+
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.util.ChecksumType;
+
 import static com.google.common.base.Preconditions.checkArgument;
-import com.google.common.base.Strings;
-import java.util.Map;
-import org.dcache.chimera.ChimeraFsException;
 
 public class Checksum
 {

@@ -1,12 +1,12 @@
 package org.dcache.util.expression;
 
-import org.junit.Test;
 import org.junit.Before;
-import static org.junit.Assert.*;
-
+import org.junit.Test;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.BasicParseRunner;
 import org.parboiled.support.ParsingResult;
+
+import static org.junit.Assert.assertEquals;
 
 public class ExpressionTest
 {

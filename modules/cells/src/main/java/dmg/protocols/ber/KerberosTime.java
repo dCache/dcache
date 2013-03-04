@@ -1,7 +1,8 @@
 package dmg.protocols.ber ;
 
-import java.util.* ;
-import java.text.* ;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class KerberosTime extends BerObject {
    private static final long serialVersionUID = -1093466768922244725L;
@@ -9,17 +10,17 @@ public class KerberosTime extends BerObject {
        new SimpleDateFormat("yyyyMMddhhmmss'Z'" ) ;
    private Date _date;
    public KerberosTime( ){
-                        
+
        super( BerObject.UNIVERSAL , true , 24 ) ;
        _date = new Date()  ;
    }
    public KerberosTime( Date date ){
-                        
+
        super( BerObject.UNIVERSAL , true , 24 ) ;
        _date = date ;
    }
    public KerberosTime( byte [] data , int off , int size ){
-                        
+
        super( BerObject.UNIVERSAL , true , 24 , data ,off,size) ;
        String str = new String( data , off , size ) ;
        ParsePosition pos = new ParsePosition(0);

@@ -1,7 +1,8 @@
 package org.dcache.cells;
 
-import dmg.cells.nucleus.CellPath;
 import diskCacheV111.util.CacheException;
+
+import dmg.cells.nucleus.CellPath;
 
 
 /**

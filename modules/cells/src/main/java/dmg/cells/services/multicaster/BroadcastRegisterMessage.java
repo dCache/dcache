@@ -6,14 +6,14 @@
 
 package dmg.cells.services.multicaster;
 
-import dmg.cells.nucleus.* ;
+import dmg.cells.nucleus.CellPath;
 
 /**
  *
  * @author  patrick
  */
 public class BroadcastRegisterMessage extends BroadcastEventCommandMessage {
-    private static final long serialVersionUID = 246989178965157834L;  
+    private static final long serialVersionUID = 246989178965157834L;
     private long    _expires         = -1L ;
     private boolean _cancelOnFailure;
     /** Creates a new instance of BroadcastUnregisterMessage */

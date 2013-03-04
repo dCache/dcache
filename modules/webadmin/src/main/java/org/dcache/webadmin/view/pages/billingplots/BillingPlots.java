@@ -1,12 +1,13 @@
 package org.dcache.webadmin.view.pages.billingplots;
 
-import java.io.File;
-import java.util.List;
-
 import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.request.resource.ResourceStreamResource;
 import org.apache.wicket.util.resource.FileResourceStream;
+
+import java.io.File;
+import java.util.List;
+
 import org.dcache.services.billing.plots.BillingInfoHistogramGenerator;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 

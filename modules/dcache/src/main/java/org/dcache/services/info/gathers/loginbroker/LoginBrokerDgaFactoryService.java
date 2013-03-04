@@ -1,7 +1,12 @@
 package org.dcache.services.info.gathers.loginbroker;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.UOID;
 
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
@@ -10,11 +15,6 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.services.info.gathers.MessageSender;
 import org.dcache.services.info.gathers.Schedulable;
 import org.dcache.services.info.gathers.SingleMessageDga;
-
-import com.google.common.collect.ImmutableSet;
-
-import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.UOID;
 
 /**
  * This class is a registered service that instantiates a

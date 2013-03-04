@@ -1,5 +1,8 @@
 package org.dcache.gplazma.plugins;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
@@ -9,9 +12,9 @@ import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.NoSuchPrincipalException;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class NsswitchTest {
 

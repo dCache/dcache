@@ -16,7 +16,6 @@
  */
 package org.dcache.chimera.cli;
 
-import static com.google.common.base.Strings.padStart;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -24,8 +23,15 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.dcache.chimera.*;
+
+import org.dcache.chimera.DirectoryStreamB;
+import org.dcache.chimera.FileSystemProvider;
+import org.dcache.chimera.FsInode;
+import org.dcache.chimera.HimeraDirectoryEntry;
+import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.posix.Stat;
+
+import static com.google.common.base.Strings.padStart;
 
 public class Ls
 {

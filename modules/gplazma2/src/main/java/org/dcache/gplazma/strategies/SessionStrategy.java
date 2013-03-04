@@ -1,7 +1,6 @@
 package org.dcache.gplazma.strategies;
 
 import java.security.Principal;
-
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;

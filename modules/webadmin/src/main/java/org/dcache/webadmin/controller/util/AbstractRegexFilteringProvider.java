@@ -59,6 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.util;
 
+import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -68,9 +72,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.dcache.util.IRegexFilterable;
 import org.dcache.util.RegexUtils;
 

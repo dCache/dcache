@@ -1,7 +1,8 @@
 package org.dcache.pool.movers;
-import diskCacheV111.vehicles.ProtocolInfo;
-import org.dcache.pool.repository.Allocator;
 
+import diskCacheV111.vehicles.ProtocolInfo;
+
+import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
 

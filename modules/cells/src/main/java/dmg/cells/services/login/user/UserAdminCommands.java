@@ -1,8 +1,16 @@
 // $Id: UserAdminCommands.java,v 1.3 2006-12-15 10:58:14 tigran Exp $
 package dmg.cells.services.login.user  ;
 
-import java.util.* ;
-import dmg.util.* ;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+import java.util.Vector;
+
+import dmg.util.Args;
+import dmg.util.Authorizable;
+import dmg.util.CommandSyntaxException;
+import dmg.util.Interpretable;
 
 public class UserAdminCommands implements  Interpretable {
 

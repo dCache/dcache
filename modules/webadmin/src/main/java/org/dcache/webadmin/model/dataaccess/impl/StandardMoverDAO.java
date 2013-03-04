@@ -1,9 +1,13 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
 import org.dcache.webadmin.model.businessobjects.RestoreInfo;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
@@ -16,8 +20,6 @@ import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PoolMoverKillMessageGenerator;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.exceptions.NoSuchContextException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

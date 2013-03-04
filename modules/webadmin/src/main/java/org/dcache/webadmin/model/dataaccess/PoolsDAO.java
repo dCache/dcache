@@ -1,5 +1,8 @@
 package org.dcache.webadmin.model.dataaccess;
 
+import java.util.Map;
+import java.util.Set;
+
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
@@ -7,8 +10,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import diskCacheV111.pools.PoolV2Mode;
-import java.util.Map;
-import java.util.Set;
+
 import org.dcache.poolmanager.Partition;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.exceptions.DAOException;

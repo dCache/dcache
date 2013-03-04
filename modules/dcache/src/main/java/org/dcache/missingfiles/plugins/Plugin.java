@@ -1,7 +1,8 @@
 package org.dcache.missingfiles.plugins;
 
-import java.util.concurrent.Future;
 import javax.security.auth.Subject;
+
+import java.util.concurrent.Future;
 
 /**
  *  A Plugin represents some independent code for processing a missing file

@@ -1,9 +1,16 @@
 package org.dcache.services.httpd.util;
 
+import org.eclipse.jetty.plus.jndi.EnvEntry;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.webapp.WebAppContext;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.Map;
+
+import dmg.util.Args;
+import dmg.util.HttpResponseEngine;
 
 import org.dcache.services.httpd.HttpServiceCell;
 import org.dcache.services.httpd.handlers.BadConfigHandler;
@@ -11,12 +18,6 @@ import org.dcache.services.httpd.handlers.ContextHandler;
 import org.dcache.services.httpd.handlers.PathHandler;
 import org.dcache.services.httpd.handlers.RedirectHandler;
 import org.dcache.services.httpd.handlers.ResponseEngineHandler;
-import org.eclipse.jetty.plus.jndi.EnvEntry;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.webapp.WebAppContext;
-
-import dmg.util.Args;
-import dmg.util.HttpResponseEngine;
 
 /**
  * Abstraction for httpd aliases.  Integrates Jetty webapp type.

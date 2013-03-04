@@ -1,11 +1,12 @@
 package org.dcache.webadmin.view.pages.cellservices;
 
-import org.dcache.webadmin.controller.impl.StandardCellsService;
+import org.apache.wicket.util.tester.WicketTester;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.dcache.webadmin.controller.impl.StandardCellsService;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
-import org.apache.wicket.util.tester.WicketTester;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 

@@ -59,13 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import org.dcache.alarms.AlarmFactory;
-import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.alarms.dao.AlarmStorageException;
-import org.dcache.alarms.dao.IAlarmLoggingDAO;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
 import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
@@ -75,8 +70,13 @@ import org.mockito.MockitoAnnotations;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
+import org.dcache.alarms.AlarmFactory;
+import org.dcache.alarms.dao.AlarmEntry;
+import org.dcache.alarms.dao.AlarmStorageException;
+import org.dcache.alarms.dao.IAlarmLoggingDAO;
+
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * Tests filtering and storing of logging events.<br><br>

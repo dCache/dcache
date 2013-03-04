@@ -1,12 +1,12 @@
 package org.dcache.services.info.base;
 
-import static org.junit.Assert.assertTrue;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * The VerifyingVisitor allows the verification that the visitor infrastructure is

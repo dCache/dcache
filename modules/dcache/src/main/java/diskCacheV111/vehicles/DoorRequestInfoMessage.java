@@ -1,9 +1,11 @@
 // $Id: DoorRequestInfoMessage.java,v 1.8 2006-04-11 09:47:53 tigran Exp $
 package diskCacheV111.vehicles;
 
-import javax.security.auth.Subject;
-import org.dcache.auth.Subjects;
 import org.stringtemplate.v4.ST;
+
+import javax.security.auth.Subject;
+
+import org.dcache.auth.Subjects;
 
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 {

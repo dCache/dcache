@@ -4,10 +4,15 @@
 
 package javatunnel;
 
-import          java.net.*;
-import          java.io.*;
-
 import javax.net.ServerSocketFactory;
+
+import java.io.DataInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 class SelfTest {
 

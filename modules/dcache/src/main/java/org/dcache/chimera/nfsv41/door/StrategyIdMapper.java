@@ -1,10 +1,16 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Strings;
-import diskCacheV111.util.CacheException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
 import java.security.Principal;
 import java.util.Set;
-import javax.security.auth.Subject;
+
+import diskCacheV111.util.CacheException;
+
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoginStrategy;
@@ -13,8 +19,6 @@ import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.chimera.nfs.v4.NfsIdMapping;
 import org.dcache.xdr.RpcLoginService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 

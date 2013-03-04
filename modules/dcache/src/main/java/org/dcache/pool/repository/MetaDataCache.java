@@ -1,14 +1,14 @@
 package org.dcache.pool.repository;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.google.common.base.Preconditions.*;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Cache of MetaDataRecords.

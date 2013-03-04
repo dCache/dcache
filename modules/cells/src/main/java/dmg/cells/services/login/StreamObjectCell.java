@@ -1,22 +1,26 @@
 package dmg.cells.services.login;
 
+import jline.ANSIBuffer;
+import jline.Completor;
+import jline.ConsoleReader;
+import jline.History;
+import jline.UnixTerminal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
-import jline.ConsoleReader;
-import jline.UnixTerminal;
-import jline.History;
-import jline.ANSIBuffer;
-import jline.Completor;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellAdapter;
@@ -25,11 +29,8 @@ import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.StreamEngine;
-import javax.security.auth.Subject;
-import org.dcache.auth.Subjects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.auth.Subjects;
 
 import static com.google.common.base.Objects.firstNonNull;
 

@@ -1,17 +1,17 @@
 package org.dcache.pool.repository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.PrintWriter;
-import java.net.URI;
-import java.util.Map;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.util.Map;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
-
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
 public class MetaDataStoreYamlTool
 {

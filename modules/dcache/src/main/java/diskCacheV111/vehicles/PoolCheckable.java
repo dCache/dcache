@@ -2,7 +2,7 @@
 
 package diskCacheV111.vehicles;
 
-import java.util.* ;
+import java.util.Map;
 
 public interface PoolCheckable  {
 

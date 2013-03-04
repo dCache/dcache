@@ -6,6 +6,13 @@
  */
 
 package org.dcache.srm.server;
+
+import org.glite.voms.PKIVerifier;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
 import java.util.Collection;
 
 import org.dcache.auth.util.GSSUtils;
@@ -18,11 +25,6 @@ import org.dcache.srm.client.ConvertUtil;
 import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
-import org.glite.voms.PKIVerifier;
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 
 public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{

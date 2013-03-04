@@ -1,5 +1,12 @@
 package org.dcache.tests.poolmanager;
 
+import org.junit.Before;
+import org.junit.Test;
+
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.List;
+
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -13,18 +20,14 @@ import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
@@ -35,7 +38,7 @@ public class PoolMonitorTest
     private PoolSelectionUnit _selectionUnit;
     private PartitionManager _partitionManager = new PartitionManager();
 
-    private final ProtocolInfo _protocolInfo = new DCapProtocolInfo("DCap", 3, 0, 
+    private final ProtocolInfo _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
             new InetSocketAddress("127.0.0.1", 17));
     private final StorageInfo _storageInfo = new OSMStorageInfo("h1", "rawd");
     @Before

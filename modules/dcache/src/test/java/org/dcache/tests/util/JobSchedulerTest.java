@@ -1,17 +1,17 @@
 package org.dcache.tests.util;
 
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.util.SimpleJobScheduler;
+
+import static org.junit.Assert.assertTrue;
 
 public class JobSchedulerTest {
 

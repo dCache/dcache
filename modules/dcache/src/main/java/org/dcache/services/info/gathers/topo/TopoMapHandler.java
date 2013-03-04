@@ -2,15 +2,16 @@ package org.dcache.services.info.gathers.topo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
-
-import dmg.cells.network.CellDomainNode;
-import dmg.cells.nucleus.UOID;
 
 /**
  * This class handles reply messages from the TopoCell when issuing a

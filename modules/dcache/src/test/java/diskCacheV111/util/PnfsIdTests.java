@@ -1,17 +1,14 @@
 package diskCacheV111.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static diskCacheV111.util.SerializableUtils.assertSerialisationExpected;
-import static diskCacheV111.util.SerializableUtils.assertDeserialisationExpected;
-
-import java.io.IOException;
-
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.IOException;
+
+import static diskCacheV111.util.SerializableUtils.assertDeserialisationExpected;
+import static diskCacheV111.util.SerializableUtils.assertSerialisationExpected;
+import static org.junit.Assert.*;
 
 /**
  * Test the PnfsId class.

@@ -1,18 +1,21 @@
 package dmg.security.cipher ;
-import  dmg.security.cipher.idea.* ;
-import  dmg.security.cipher.des.* ;
-import  dmg.security.cipher.blowfish.* ;
-import  java.util.*;
+
+import java.util.Date;
+import java.util.Random;
+
+import dmg.security.cipher.blowfish.Jblowfish;
+import dmg.security.cipher.des.Jdes;
+import dmg.security.cipher.idea.Jidea;
 
 public class StreamTest {
   private static byte [] __key =
     { 10 , 33 , -10 , -49 , 112 , -8 , 7 , -109 ,
       55 , -9 , -101 , -4 , -112 , -46 , 94 , -124    } ;
-  
-  private static String __usage = "USAGE : StreamTest idea|des|blowfish ecb|cfb|cbc [blocks]" ;    
+
+  private static String __usage = "USAGE : StreamTest idea|des|blowfish ecb|cfb|cbc [blocks]" ;
   public static void main( String [] args ){
      BlockCipher cipher = null  ;
-     
+
      if( args.length < 3 ){
         System.err.println( __usage ) ;
         System.exit(3) ;
@@ -40,18 +43,18 @@ public class StreamTest {
       }
      int     block  = cipher.getBlockLength() / 8 ;
      byte [] vector = new byte[block] ;
-     
-     StreamFromBlockCipher encrypt = 
+
+     StreamFromBlockCipher encrypt =
         new StreamFromBlockCipher( cipher , vector ) ;
-     StreamFromBlockCipher decrypt = 
+     StreamFromBlockCipher decrypt =
         new StreamFromBlockCipher( cipher , vector ) ;
-  
+
      byte [] in  = new byte[block*blocks] ;
      byte [] out = new byte[block*blocks] ;
      byte [] chk = new byte[block*blocks] ;
-     
+
      r.nextBytes( in ) ;
-     
+
      long start = 0 , en = 0 , de = 0 ;
 
       switch (cipherMode) {
@@ -97,7 +100,7 @@ public class StreamTest {
         say( " Encrypted Data    : "+byteToHexString( out ) ) ;
         say( " Decrypted Data    : "+byteToHexString( chk ) ) ;
      }
-     int i; 
+     int i;
      for( i = 0 ; i < in.length ; i++ ) {
          if (in[i] != chk[i]) {
              break;
@@ -107,7 +110,7 @@ public class StreamTest {
          System.exit(3);
      }
      System.exit(0);
-  
+
   }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
@@ -118,13 +121,13 @@ public class StreamTest {
        }
   }
   static public String byteToHexString( byte [] bytes ) {
-      
+
 	  StringBuilder sb = new StringBuilder(bytes.length +1);
 
       for (byte aByte : bytes) {
           sb.append(byteToHexString(aByte)).append(" ");
       }
-       return sb.toString() ;    
+       return sb.toString() ;
   }
   private static void say( String str ){ System.out.println( str ) ; }
 

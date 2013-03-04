@@ -1,10 +1,12 @@
 package org.dcache.util;
 
 import com.google.common.base.CharMatcher;
+
 import java.io.Serializable;
-import static org.dcache.util.ChecksumType.*;
-import static com.google.common.base.Strings.padStart;
+
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.padStart;
+import static org.dcache.util.ChecksumType.ADLER32;
 
 public class Checksum  implements Serializable
 {

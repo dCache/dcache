@@ -2,8 +2,9 @@
 
 package diskCacheV111.vehicles ;
 
+import java.util.List;
+
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-import  java.util.*;
 
 public class PoolMgrQueryPoolsMsg extends Message {
    private final DirectionType _accessType  ;

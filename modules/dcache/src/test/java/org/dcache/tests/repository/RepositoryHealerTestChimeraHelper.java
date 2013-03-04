@@ -1,25 +1,25 @@
 package org.dcache.tests.repository;
 
+import com.jolbox.bonecp.BoneCPDataSource;
+
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HFile;
-import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.JdbcFs;
-import org.dcache.pool.repository.FileStore;
-
-import diskCacheV111.util.PnfsId;
 import org.dcache.commons.util.SqlHelper;
-
-import com.jolbox.bonecp.BoneCPDataSource;
+import org.dcache.pool.repository.FileStore;
 
 public class RepositoryHealerTestChimeraHelper implements FileStore {
 

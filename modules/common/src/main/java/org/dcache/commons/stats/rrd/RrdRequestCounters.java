@@ -4,22 +4,24 @@
  */
 
 package org.dcache.commons.stats.rrd;
-import org.dcache.commons.stats.RequestCounterImpl;
-import org.dcache.commons.stats.RequestCounters;
 
-import java.io.FileWriter;
-import java.security.AccessControlException;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashMap;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Random;
+
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.security.AccessControlException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Random;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.dcache.commons.stats.RequestCounterImpl;
+import org.dcache.commons.stats.RequestCounters;
 
 /**
  *  a utility class that creates and manages rrd databases (using RRDRequestCounter)
@@ -275,7 +277,7 @@ public class RrdRequestCounters<T> {
     }
     /**
      *  runs tests of the rrdRequestCouters
-     * @param args 
+     * @param args
      * @throws Exception
      */
     public static void main(String[] args) throws Exception{

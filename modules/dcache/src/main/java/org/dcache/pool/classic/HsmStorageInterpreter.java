@@ -2,18 +2,23 @@
 
 package org.dcache.pool.classic;
 
-import java.util.* ;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Date;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.JobScheduler;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-import diskCacheV111.util.* ;
 import org.dcache.cells.CellCommandListener;
-
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HsmStorageInterpreter
     implements CellCommandListener

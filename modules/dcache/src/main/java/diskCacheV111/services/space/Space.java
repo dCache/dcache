@@ -9,11 +9,11 @@
 
 package diskCacheV111.services.space;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-
 import java.io.Serializable;
 import java.util.Date;
+
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 
 
 /**

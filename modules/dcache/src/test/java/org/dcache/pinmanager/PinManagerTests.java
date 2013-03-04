@@ -1,40 +1,72 @@
 package org.dcache.pinmanager;
 
-import java.io.Serializable;
-import java.util.*;
-import java.util.concurrent.*;
-
-import static org.junit.Assert.*;
-
-import com.google.common.primitives.Longs;
-import org.junit.*;
-
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
-import diskCacheV111.poolManager.*;
-import diskCacheV111.pools.*;
-
-import org.dcache.poolmanager.*;
-import org.dcache.pinmanager.model.*;
-import static org.dcache.pinmanager.model.Pin.State.*;
-import static org.mockito.Mockito.*;
-
-import org.dcache.cells.*;
-import org.dcache.vehicles.*;
-import dmg.cells.nucleus.*;
-import dmg.util.*;
-
-import com.google.common.base.Predicate;
 import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
-import org.mockito.Mockito;
+import com.google.common.primitives.Longs;
+import org.junit.Test;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import diskCacheV111.poolManager.Pool;
+import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.SerializationException;
+import dmg.util.Args;
+
+import org.dcache.cells.CellMessageDispatcher;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
+import org.dcache.pinmanager.model.Pin;
+import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.PoolSelector;
+import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.pinmanager.model.Pin.State.PINNED;
+import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class PinManagerTests
 {
     final static ProtocolInfo PROTOCOL_INFO =
-            new DCapProtocolInfo("DCap", 3, 0, 
+            new DCapProtocolInfo("DCap", 3, 0,
             new InetSocketAddress("127.0.0.1", 17));
     final static StorageInfo STORAGE_INFO =
         new GenericStorageInfo();

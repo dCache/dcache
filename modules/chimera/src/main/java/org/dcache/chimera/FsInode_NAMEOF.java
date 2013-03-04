@@ -16,8 +16,9 @@
  */
 package org.dcache.chimera;
 
-import org.dcache.chimera.posix.Stat;
 import java.io.File;
+
+import org.dcache.chimera.posix.Stat;
 
 public class FsInode_NAMEOF extends FsInode {
 

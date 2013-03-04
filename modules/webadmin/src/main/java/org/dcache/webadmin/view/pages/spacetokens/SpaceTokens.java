@@ -1,21 +1,23 @@
 package org.dcache.webadmin.view.pages.spacetokens;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.dcache.webadmin.controller.exceptions.LinkGroupsServiceException;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
 import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
 import org.dcache.webadmin.view.pages.spacetokens.spacereservationpanel.SpaceReservationPanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author jans

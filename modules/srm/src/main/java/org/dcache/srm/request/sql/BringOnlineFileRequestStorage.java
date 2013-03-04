@@ -13,11 +13,16 @@
  */
 
 package org.dcache.srm.request.sql;
-import java.sql.*;
-import org.dcache.srm.request.FileRequest;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.dcache.srm.request.BringOnlineFileRequest;
-import org.dcache.srm.util.Configuration;
+import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
+import org.dcache.srm.util.Configuration;
 
 /**
  *

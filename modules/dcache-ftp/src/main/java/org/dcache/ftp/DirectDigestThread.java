@@ -2,6 +2,7 @@ package org.dcache.ftp;
 
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+
 import org.dcache.pool.repository.RepositoryChannel;
 
 public class DirectDigestThread extends DigestThread

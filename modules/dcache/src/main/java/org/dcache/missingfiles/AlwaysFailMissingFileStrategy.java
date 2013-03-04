@@ -1,9 +1,11 @@
 package org.dcache.missingfiles;
 
-import diskCacheV111.util.FsPath;
-import javax.security.auth.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
+import diskCacheV111.util.FsPath;
 
 /**
  * This class provides a MissingFileStrategy that recommends a door always

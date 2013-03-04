@@ -8,8 +8,10 @@
  */
 
 package diskCacheV111.services.space;
+
 import java.io.Serializable;
 import java.util.Date;
+
 import diskCacheV111.util.VOInfo;
 
 /**

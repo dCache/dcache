@@ -1,15 +1,17 @@
 package org.dcache.webadmin.view.pages.cellservices;
 
-import java.util.List;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
 import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.exceptions.CellsServiceException;
 import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.cellservices.CellServicesPanel;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * The CellServices Webpage

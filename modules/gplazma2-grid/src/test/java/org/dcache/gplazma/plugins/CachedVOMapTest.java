@@ -1,18 +1,18 @@
 package org.dcache.gplazma.plugins;
 
-import org.dcache.gplazma.util.NameRolePair;
-
-import com.google.common.io.Resources;
 import com.google.common.collect.Lists;
+import com.google.common.io.Resources;
+import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Collection;
-import java.io.IOException;
 
-import static junit.framework.Assert.*;
+import org.dcache.gplazma.util.NameRolePair;
 
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 public class CachedVOMapTest
 {

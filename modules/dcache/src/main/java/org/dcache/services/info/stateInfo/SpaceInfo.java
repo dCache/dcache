@@ -1,10 +1,10 @@
 package org.dcache.services.info.stateInfo;
 
+import diskCacheV111.pools.PoolCostInfo;
+
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
-
-import diskCacheV111.pools.PoolCostInfo;
 
 /**
  * Information about some (generic) space.

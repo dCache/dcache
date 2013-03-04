@@ -1,9 +1,15 @@
 package dmg.util ;
 
 
-import java.util.* ;
-import java.text.* ;
-import java.io.* ;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Vector;
 
 public class Pinboard {
 
@@ -47,13 +53,13 @@ public class Pinboard {
    }
    public synchronized void dump( File file , int last ) throws IOException {
        int i =  _pin.size() - last + 1 ;
-      
+
        PrintWriter pw = new PrintWriter( new FileWriter( file ) ) ;
        for( i =i<0?0:i ; i < _pin.size() ; i++) {
            pw.println(_pin.get(i).toString());
        }
        pw.close() ;
-          
+
    }
 
 }

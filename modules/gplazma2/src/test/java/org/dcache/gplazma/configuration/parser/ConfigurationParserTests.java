@@ -1,26 +1,19 @@
 package org.dcache.gplazma.configuration.parser;
 
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.ACCOUNT;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.AUTHENTICATION;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.MAPPING;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.SESSION;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Properties;
 
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.*;
+import static org.junit.Assert.*;
 
 /**
  *

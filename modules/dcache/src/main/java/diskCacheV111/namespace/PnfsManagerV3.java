@@ -2,53 +2,94 @@
 
 package diskCacheV111.namespace;
 
-import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.vehicles.PnfsSetFileAttributes;
-import org.dcache.vehicles.PnfsListDirectoryMessage;
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
-import dmg.cells.nucleus.* ;
-import dmg.util.* ;
+import javax.security.auth.Subject;
 
-import org.dcache.util.MathUtils;
-import org.dcache.util.PrefixMap;
-import org.dcache.util.ChecksumType;
-import org.dcache.util.Checksum;
-
-import java.io.* ;
-import java.util.*;
+import java.io.File;
+import java.io.PrintWriter;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.auth.Subjects;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.ListHandler;
-import org.dcache.namespace.FileType;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.PermissionHandler;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.InvalidMessageCacheException;
+import diskCacheV111.util.MissingResourceCacheException;
+import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
+import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
+import diskCacheV111.vehicles.PnfsFlagMessage;
+import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.PnfsGetChecksumAllMessage;
+import diskCacheV111.vehicles.PnfsGetChecksumMessage;
+import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+import diskCacheV111.vehicles.PnfsGetParentMessage;
+import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
+import diskCacheV111.vehicles.PnfsMessage;
+import diskCacheV111.vehicles.PnfsRenameMessage;
+import diskCacheV111.vehicles.PnfsSetChecksumMessage;
+import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
+import diskCacheV111.vehicles.PnfsSetLengthMessage;
+import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
+import diskCacheV111.vehicles.PoolFileFlushedMessage;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
+import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.commons.stats.RequestCounters;
-
-import javax.security.auth.Subject;
-import java.security.NoSuchAlgorithmException;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.UOID;
+import dmg.util.Args;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
-
-import static org.dcache.auth.Subjects.ROOT;
-import static org.dcache.acl.enums.AccessType.*;
-
-import org.springframework.beans.factory.annotation.Required;
-
-import com.google.common.base.Strings;
+import org.dcache.auth.Subjects;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
+import org.dcache.namespace.ListHandler;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+import org.dcache.util.MathUtils;
+import org.dcache.util.PrefixMap;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
+import org.dcache.vehicles.PnfsSetFileAttributes;
+
+import static org.dcache.acl.enums.AccessType.*;
+import static org.dcache.auth.Subjects.ROOT;
 
 public class PnfsManagerV3
     extends AbstractCellComponent

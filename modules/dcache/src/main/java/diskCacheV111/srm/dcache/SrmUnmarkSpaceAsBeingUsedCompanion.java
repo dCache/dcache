@@ -66,14 +66,16 @@ documents or software obtained from this server.
 
 package diskCacheV111.srm.dcache;
 
-import org.dcache.cells.CellStub;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import diskCacheV111.services.space.message.CancelUse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import diskCacheV111.services.space.message.CancelUse;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
+
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.cells.CellStub;
+import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 
 /**
  *

@@ -1,40 +1,39 @@
 package org.dcache.pool.migration;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.NoSuchElementException;
-import java.util.UUID;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.io.PrintWriter;
-
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
-import org.dcache.util.ReflectionUtils;
-
-import dmg.cells.nucleus.CellPath;
-
-import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import statemap.TransitionUndefinedException;
+
+import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
+import dmg.cells.nucleus.CellPath;
+
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
+import org.dcache.util.ReflectionUtils;
+import org.dcache.vehicles.FileAttributes;
 
 public class Task
 {

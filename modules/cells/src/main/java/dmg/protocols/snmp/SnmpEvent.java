@@ -1,8 +1,9 @@
 package dmg.protocols.snmp ;
-import  java.net.InetAddress ;
+
+import java.net.InetAddress;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998

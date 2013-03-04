@@ -1,13 +1,14 @@
 package diskCacheV111.poolManager;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
 class LinkGroup implements SelectionLinkGroup, Serializable {
     private static final long serialVersionUID = 5425784079451748166L;

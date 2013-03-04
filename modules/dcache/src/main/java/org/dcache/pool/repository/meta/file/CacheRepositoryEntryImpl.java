@@ -10,21 +10,20 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
 import java.lang.ref.SoftReference;
 import java.util.List;
 
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.MetaDataRecord;
-import org.dcache.pool.repository.v3.RepositoryException;
-import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
-
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
-import java.io.OptionalDataException;
+
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.v3.RepositoryException;
+import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
 
 public class CacheRepositoryEntryImpl implements MetaDataRecord
 {

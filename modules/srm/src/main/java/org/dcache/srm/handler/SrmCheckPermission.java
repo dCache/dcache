@@ -15,26 +15,26 @@
 
 package org.dcache.srm.handler;
 
-import org.dcache.srm.FileMetaData;
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.ArrayOfAnyURI;
-import org.dcache.srm.v2_2.TPermissionMode;
-
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.v2_2.SrmCheckPermissionRequest;
-import org.dcache.srm.v2_2.SrmCheckPermissionResponse;
-import org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn;
-import org.dcache.srm.v2_2.TSURLPermissionReturn;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn;
+import org.dcache.srm.v2_2.SrmCheckPermissionRequest;
+import org.dcache.srm.v2_2.SrmCheckPermissionResponse;
+import org.dcache.srm.v2_2.TPermissionMode;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TSURLPermissionReturn;
+import org.dcache.srm.v2_2.TStatusCode;
 /**
  *
  * @author neha

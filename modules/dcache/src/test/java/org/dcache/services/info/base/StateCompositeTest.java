@@ -3,21 +3,15 @@
  */
 package org.dcache.services.info.base;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Date;
 import java.util.Set;
 
 import org.dcache.services.info.base.guides.SubtreeStateGuide;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * Test the StateComposite class

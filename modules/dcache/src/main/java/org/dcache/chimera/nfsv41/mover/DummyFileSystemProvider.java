@@ -1,22 +1,23 @@
 package org.dcache.chimera.nfsv41.mover;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
-import java.io.IOException;
-import java.util.List;
-import java.util.Collections;
-import org.dcache.acl.ACE;
 
+import org.dcache.acl.ACE;
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileSystemProvider;
-import org.dcache.chimera.FsStat;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInode_TAG;
+import org.dcache.chimera.FsStat;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
-import org.dcache.chimera.DirectoryStreamB;
 
 public class DummyFileSystemProvider implements FileSystemProvider {
 

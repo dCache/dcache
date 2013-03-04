@@ -1,8 +1,9 @@
 package dmg.security.cipher.pgp ;
-import java.math.BigInteger ;
- 
+
+import java.math.BigInteger;
+
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -12,17 +13,17 @@ import java.math.BigInteger ;
       private int _timestamp ;
       private int _validity ;
       private int _publicAlgorithm ;
- 
+
       BigInteger _n , _e ;
-      
+
       public PGPKeyCertificate( int ctb , int v , int t , int val , int al){
         super( ctb ) ;
         _version         = v ;
         _timestamp       = t ;
         _validity        = val ;
         _publicAlgorithm = al ;
-      
-      } 
+
+      }
       public void setPublic( BigInteger n , BigInteger e ){
          _n = n ;
          _e = e ;

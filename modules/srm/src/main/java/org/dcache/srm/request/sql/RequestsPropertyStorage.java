@@ -71,14 +71,20 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request.sql;
-import java.sql.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.dcache.srm.scheduler.JobIdGenerator ;
+import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 

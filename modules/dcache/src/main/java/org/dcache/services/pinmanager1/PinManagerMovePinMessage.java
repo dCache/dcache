@@ -1,9 +1,11 @@
 package org.dcache.services.pinmanager1;
 
+import java.util.Collection;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+
 import org.dcache.pool.repository.StickyRecord;
-import java.util.Collection;
 
 /**
  * Request to pin manager to move pins from one pool to another.

@@ -99,21 +99,42 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Iterator;
-import org.globus.util.GlobusURL;
-import org.dcache.srm.client.SRMClientV2;
-import java.io.IOException;
+
 import org.apache.axis.types.URI;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.util.RequestStatusTool;
-import org.dcache.srm.request.RetentionPolicy;
+import org.globus.util.GlobusURL;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.FileStorageType;
 import org.dcache.srm.request.OverwriteMode;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import org.dcache.srm.request.RetentionPolicy;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ArrayOfTCopyFileRequest;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmAbortFilesRequest;
+import org.dcache.srm.v2_2.SrmAbortFilesResponse;
+import org.dcache.srm.v2_2.SrmCopyRequest;
+import org.dcache.srm.v2_2.SrmCopyResponse;
+import org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TCopyFileRequest;
+import org.dcache.srm.v2_2.TCopyRequestFileStatus;
+import org.dcache.srm.v2_2.TDirOption;
+import org.dcache.srm.v2_2.TExtraInfo;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 
 public class SRMCopyClientV2 extends SRMClient implements Runnable {

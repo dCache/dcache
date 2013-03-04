@@ -4,8 +4,13 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
-import org.dcache.xdr.*;
+
 import java.io.IOException;
+
+import org.dcache.xdr.OncRpcException;
+import org.dcache.xdr.XdrAble;
+import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.XdrEncodingStream;
 
 public class ssv_mic_plain_tkn4 implements XdrAble {
     public uint32_t smpt_ssv_seq;

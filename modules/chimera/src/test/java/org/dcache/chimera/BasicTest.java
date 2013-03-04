@@ -1,24 +1,25 @@
 package org.dcache.chimera;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
+import com.google.common.collect.Lists;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 
-import org.dcache.chimera.posix.Stat;
-
-import com.google.common.collect.Lists;
-import java.util.ArrayList;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
+import org.dcache.chimera.posix.Stat;
+
+import static org.junit.Assert.*;
 
 public class BasicTest extends ChimeraTestCaseHelper {
 

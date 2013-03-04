@@ -5,16 +5,17 @@
  */
 
 package dmg.cells.services.multicaster;
-import  dmg.cells.nucleus.* ;
+
+import dmg.cells.nucleus.CellPath;
 /**
  *
  * @author  patrick
  */
 public class BroadcastUnregisterMessage extends BroadcastEventCommandMessage {
-    
-    private static final long serialVersionUID = 2465891234565157834L;  
-    
-    
+
+    private static final long serialVersionUID = 2465891234565157834L;
+
+
     /** Creates a new instance of BroadcastCommandMessage */
     public BroadcastUnregisterMessage( String eventClass ) {
         super( eventClass ) ;
@@ -26,4 +27,4 @@ public class BroadcastUnregisterMessage extends BroadcastEventCommandMessage {
        return "Unregister:"+super.toString();
     }
 }
-    
+

@@ -1,5 +1,8 @@
 package org.dcache.services.info.base;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -10,13 +13,11 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.commons.util.NDC;
-import org.dcache.util.FireAndForgetTask;
-
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
+
+import org.dcache.commons.util.NDC;
+import org.dcache.util.FireAndForgetTask;
 
 /**
  * The StateMaintainer class provides the machinery for processing

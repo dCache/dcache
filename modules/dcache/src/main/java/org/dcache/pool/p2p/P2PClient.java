@@ -2,34 +2,37 @@
 
 package org.dcache.pool.p2p;
 
-import java.io.PrintWriter;
-import java.io.IOException;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
-import java.util.Map;
-import java.util.Collections;
-import java.util.List;
-import java.util.HashMap;
-import java.util.concurrent.ScheduledExecutorService;
-
-import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.pool.classic.ChecksumModuleV1;
-import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellStub;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
+
 import dmg.util.Args;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
+import org.dcache.pool.classic.ChecksumModuleV1;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.vehicles.FileAttributes;
 
 public class P2PClient
     extends AbstractCellComponent

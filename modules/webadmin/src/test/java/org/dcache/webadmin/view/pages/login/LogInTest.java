@@ -1,8 +1,9 @@
 package org.dcache.webadmin.view.pages.login;
 
-import org.junit.Test;
-import org.junit.Before;
 import org.apache.wicket.util.tester.WicketTester;
+import org.junit.Before;
+import org.junit.Test;
+
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 

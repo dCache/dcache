@@ -6,12 +6,16 @@
 
 package org.dcache.srm.request.sql;
 
-import org.dcache.srm.request.ReserveSpaceRequest;
-import org.dcache.srm.request.Request;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.util.Configuration;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.Request;
+import org.dcache.srm.request.ReserveSpaceRequest;
+import org.dcache.srm.util.Configuration;
 
 /**
  *

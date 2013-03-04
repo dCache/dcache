@@ -1,10 +1,10 @@
 package org.dcache.tests.cells;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 
 import dmg.util.Args;
+
+import static org.junit.Assert.*;
 
 
 public class CellAdapterHelperTest {

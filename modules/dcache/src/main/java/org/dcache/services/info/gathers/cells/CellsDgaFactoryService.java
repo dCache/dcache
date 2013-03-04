@@ -1,6 +1,10 @@
 package org.dcache.services.info.gathers.cells;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.util.Set;
+
+import dmg.cells.nucleus.UOID;
 
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
@@ -8,10 +12,6 @@ import org.dcache.services.info.gathers.DgaFactoryService;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.services.info.gathers.MessageSender;
 import org.dcache.services.info.gathers.Schedulable;
-
-import com.google.common.collect.ImmutableSet;
-
-import dmg.cells.nucleus.UOID;
 
 /**
  * This class is a registered service that instantiates a

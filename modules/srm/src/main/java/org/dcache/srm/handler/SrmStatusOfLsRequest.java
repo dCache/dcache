@@ -1,29 +1,31 @@
 package org.dcache.srm.handler;
 
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.LsRequest;
-import org.dcache.srm.request.sql.LsFileRequestStorage;
-import org.dcache.srm.request.sql.LsRequestStorage;
-import org.dcache.srm.SRM;
+import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+
 import java.sql.SQLException;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.LsRequest;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.request.sql.LsFileRequestStorage;
+import org.dcache.srm.request.sql.LsRequestStorage;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 
 
 public class SrmStatusOfLsRequest {
-        private static Logger logger = 
+        private static Logger logger =
             LoggerFactory.getLogger(SrmStatusOfLsRequest.class);
         private final static String SFN_STRING="?SFN=";
         AbstractStorageElement storage;
@@ -76,7 +78,7 @@ public class SrmStatusOfLsRequest {
                 } catch(SRMException srme) {
                     logger.error(srme.toString());
                     response = getFailedResponse(srme.toString());
-                }        
+                }
                 return response;
         }
 

@@ -1,19 +1,21 @@
 package org.dcache.webadmin.view.panels.poolQueuesPanel;
 
-import java.util.List;
-import org.apache.wicket.model.IModel;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Fragment;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
 import org.dcache.webadmin.view.beans.PoolGroupBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolRequestQueue;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Reusable Panel for the Listview on Poolqueues

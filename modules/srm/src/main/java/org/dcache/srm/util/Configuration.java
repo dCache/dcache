@@ -75,23 +75,35 @@ COPYRIGHT STATUS:
 package org.dcache.srm.util;
 
 import com.google.common.base.Strings;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.sql.SQLException;
-import java.util.*;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import org.w3c.dom.Comment;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.client.Transport;
-import org.w3c.dom.*;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  *

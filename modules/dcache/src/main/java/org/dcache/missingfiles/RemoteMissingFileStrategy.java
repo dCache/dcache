@@ -1,11 +1,14 @@
 package org.dcache.missingfiles;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FsPath;
-import javax.security.auth.Subject;
-import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+
+import org.dcache.cells.CellStub;
 
 /**
  * This class provides a recommendation on how a door should handle a missing

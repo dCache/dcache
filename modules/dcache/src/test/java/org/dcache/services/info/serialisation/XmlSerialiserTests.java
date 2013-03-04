@@ -1,12 +1,12 @@
 package org.dcache.services.info.serialisation;
 
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.io.StringReader;
-
-import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.TestStateExhibitor;
+import com.thaiopensource.util.PropertyMapBuilder;
+import com.thaiopensource.validate.IncorrectSchemaException;
+import com.thaiopensource.validate.Schema;
+import com.thaiopensource.validate.SchemaReader;
+import com.thaiopensource.validate.ValidateProperty;
+import com.thaiopensource.validate.Validator;
+import com.thaiopensource.validate.rng.CompactSchemaReader;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.ErrorHandler;
@@ -16,13 +16,13 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
-import com.thaiopensource.util.PropertyMapBuilder;
-import com.thaiopensource.validate.IncorrectSchemaException;
-import com.thaiopensource.validate.Schema;
-import com.thaiopensource.validate.SchemaReader;
-import com.thaiopensource.validate.ValidateProperty;
-import com.thaiopensource.validate.Validator;
-import com.thaiopensource.validate.rng.CompactSchemaReader;
+import java.io.IOException;
+import java.io.StringReader;
+
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.TestStateExhibitor;
+
+import static org.junit.Assert.fail;
 
 public class XmlSerialiserTests {
 

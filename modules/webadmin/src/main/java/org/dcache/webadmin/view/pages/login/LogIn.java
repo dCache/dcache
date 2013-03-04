@@ -1,9 +1,5 @@
 package org.dcache.webadmin.view.pages.login;
 
-import java.security.cert.X509Certificate;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.wicket.Session;
 import org.apache.wicket.authentication.IAuthenticationStrategy;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -18,6 +14,13 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.protocol.https.RequireHttps;
 import org.apache.wicket.request.cycle.RequestCycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+
+import java.security.cert.X509Certificate;
+
 import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.exceptions.LogInServiceException;
 import org.dcache.webadmin.view.beans.LogInBean;
@@ -25,8 +28,6 @@ import org.dcache.webadmin.view.beans.UserBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @RequireHttps
 public class LogIn extends BasePage {

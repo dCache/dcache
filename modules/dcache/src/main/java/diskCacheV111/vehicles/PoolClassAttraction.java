@@ -1,8 +1,16 @@
 package diskCacheV111.vehicles ;
 
 import java.io.Serializable;
-import java.util.* ;
-import dmg.util.* ;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
+
+import dmg.util.Formats;
 
 public class PoolClassAttraction implements Serializable {
    private String  _organization ;

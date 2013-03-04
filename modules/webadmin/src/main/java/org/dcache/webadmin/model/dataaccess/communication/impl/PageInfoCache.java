@@ -1,6 +1,7 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,8 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.dcache.webadmin.model.dataaccess.communication.collectors.Collector;
 import org.dcache.webadmin.model.exceptions.NoSuchContextException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  *

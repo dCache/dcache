@@ -1,6 +1,7 @@
 package org.dcache.gplazma.configuration;
-import java.util.List;
+
 import java.util.Collections;
+import java.util.List;
 
 /**
  *

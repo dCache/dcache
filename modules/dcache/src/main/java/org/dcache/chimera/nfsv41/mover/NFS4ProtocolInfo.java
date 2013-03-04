@@ -3,13 +3,14 @@ package org.dcache.chimera.nfsv41.mover;
 /*
  * dCache specific part
  */
-import diskCacheV111.vehicles.IpProtocolInfo;
 
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import java.net.InetSocketAddress;
+
+import diskCacheV111.vehicles.IpProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
-import java.net.InetSocketAddress;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
 
 public class NFS4ProtocolInfo implements IpProtocolInfo {
 

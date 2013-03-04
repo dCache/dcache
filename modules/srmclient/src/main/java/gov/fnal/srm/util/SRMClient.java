@@ -67,20 +67,21 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.ISRM;
-import org.dcache.srm.Logger;
-import org.dcache.srm.client.SRMClientV1;
-import org.dcache.srm.client.Transport;
-import org.dcache.srm.client.TransportUtil;
+import org.globus.util.GlobusURL;
+import org.ietf.jgss.GSSCredential;
 
 import java.io.IOException;
 import java.util.Date;
 
+import diskCacheV111.srm.ISRM;
+import diskCacheV111.srm.RequestFileStatus;
+import diskCacheV111.srm.RequestStatus;
+
+import org.dcache.srm.Logger;
+import org.dcache.srm.client.SRMClientV1;
+import org.dcache.srm.client.Transport;
+import org.dcache.srm.client.TransportUtil;
 import org.dcache.srm.security.SslGsiSocketFactory;
-import org.globus.util.GlobusURL;
-import org.ietf.jgss.GSSCredential;
 
 /**
  *

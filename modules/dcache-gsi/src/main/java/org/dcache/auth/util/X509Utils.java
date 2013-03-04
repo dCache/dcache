@@ -1,6 +1,13 @@
 package org.dcache.auth.util;
 
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERString;
+import org.bouncycastle.asn1.x509.TBSCertificateStructure;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.globus.gsi.GSIConstants;
+import org.globus.gsi.bc.BouncyCastleUtil;
 
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
@@ -9,15 +16,9 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.StringTokenizer;
 
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERString;
-import org.bouncycastle.asn1.x509.TBSCertificateStructure;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.bc.BouncyCastleUtil;
+
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * Extraction and conversion methods useful when dealing with X509/Globus

@@ -1,9 +1,9 @@
 package org.dcache.pool.migration;
 
+import diskCacheV111.util.RetentionPolicy;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.CacheEntry;
-
-import diskCacheV111.util.RetentionPolicy;
 import org.dcache.vehicles.FileAttributes;
 
 /**

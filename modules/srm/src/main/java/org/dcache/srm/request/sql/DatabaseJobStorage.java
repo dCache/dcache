@@ -71,24 +71,33 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request.sql;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
-import java.sql.*;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import org.dcache.commons.util.SqlHelper;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
-import org.dcache.commons.util.SqlHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 

@@ -1,43 +1,47 @@
 /* -*- c-basic-offset: 8; indent-tabs-mode: nil -*- */
 package diskCacheV111.services;
 
-import diskCacheV111.util.Version;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
-import dmg.util.Args;
-import org.dcache.cells.AbstractCell;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.Pgpass;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
-import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
-import java.io.PrintWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
-import org.dcache.srm.scheduler.JobIdGeneratorFactory;
-import org.dcache.srm.scheduler.JobIdGenerator;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Transaction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Strings;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.Pgpass;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.Version;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
+import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
+
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellVersion;
+import dmg.util.Args;
+
+import org.dcache.cells.AbstractCell;
+import org.dcache.srm.request.sql.RequestsPropertyStorage;
+import org.dcache.srm.scheduler.JobIdGenerator;
+import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 
 /**
  * Base class for services that transfer files on behalf of SRM. Used

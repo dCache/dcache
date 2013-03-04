@@ -1,6 +1,7 @@
 package org.dcache.webadmin.view.pages.poolselectionsetup.beans;
 
 import com.google.common.collect.Lists;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;

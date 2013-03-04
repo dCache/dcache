@@ -1,12 +1,14 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.ProtocolInfo;
-import org.dcache.pool.movers.MoverProtocol;
+import javax.security.auth.Subject;
 
 import java.io.IOException;
-import javax.security.auth.Subject;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.ProtocolInfo;
+
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.vehicles.FileAttributes;
 

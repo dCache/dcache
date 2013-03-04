@@ -1,12 +1,12 @@
 package dmg.util;
 
-import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CDC;
-
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.Layout;
 import ch.qos.logback.core.layout.EchoLayout;
+
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellNucleus;
 
 /**
  * Logback appender which can send messages to a pinboard. The MDC

@@ -2,18 +2,22 @@
 //
 package dmg.cells.services.gui ;
 //
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
 
-import dmg.cells.applets.login.DomainConnection ;
-import dmg.cells.applets.login.DomainConnectionListener ;
-import dmg.cells.applets.login.DomainEventListener ;
+import javax.swing.JButton;
+import javax.swing.JPanel;
 
-import dmg.cells.network.* ;
+import java.awt.BorderLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import dmg.cells.applets.login.DomainConnection;
+import dmg.cells.applets.login.DomainConnectionListener;
+import dmg.cells.applets.login.DomainEventListener;
+import dmg.cells.network.CellDomainNode;
 
 public class      JSpyPanel
-       extends    JPanel 
+       extends    JPanel
        implements DomainConnectionListener,
                   DomainEventListener {
 
@@ -29,20 +33,20 @@ public class      JSpyPanel
       l.setHgap(10);
       setLayout(l) ;
       _connection.addDomainEventListener(this) ;
-      
+
       _updateButton.addActionListener(
          new ActionListener(){
             @Override
             public void actionPerformed( ActionEvent event ){
                request() ;
             }
-         } 
+         }
       ) ;
-      
+
       add( _updateButton , "North" ) ;
       add( _canvas , "Center" ) ;
 
-   }   
+   }
    private void request(){
       try{
          _connection.sendObject("topo","gettopomap",this,5);
@@ -52,7 +56,7 @@ public class      JSpyPanel
    }
    @Override
    public Insets getInsets(){ return new Insets(5,5,5,5) ; }
-   
+
    @Override
    public void connectionOpened( DomainConnection connection ){
       System.out.println("Connection opened");
@@ -76,7 +80,7 @@ public class      JSpyPanel
    @Override
    public void domainAnswerArrived( Object obj , int subid ){
       System.out.println( "Answer ("+subid+") : "+obj.toString() ) ;
-      
+
       CellDomainNode [] cdn = (CellDomainNode []) obj ;
       CanonicalTopology ct = new CanonicalTopology( cdn ) ;
       synchronized( this ){
@@ -94,6 +98,6 @@ public class      JSpyPanel
       }
 
    }
-   
-   
+
+
 }

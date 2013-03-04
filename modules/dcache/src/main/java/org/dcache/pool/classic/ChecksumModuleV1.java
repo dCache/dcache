@@ -1,26 +1,27 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.CacheException;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
-import org.dcache.namespace.FileAttribute;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import dmg.util.Args;
-
-import java.util.EnumSet;
-import java.util.concurrent.TimeUnit;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
+import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+
+import dmg.util.Args;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 
 public class ChecksumModuleV1
     extends AbstractCellComponent

@@ -1,25 +1,24 @@
 package org.dcache.pinmanager;
 
-import java.util.Collection;
-import java.util.Date;
+import com.google.common.base.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.jdo.FetchPlan;
+import javax.jdo.JDOObjectNotFoundException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
-import javax.jdo.FetchPlan;
-import javax.jdo.JDOObjectNotFoundException;
+
+import java.util.Collection;
+import java.util.Date;
 
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.pinmanager.model.Pin;
-
-import org.springframework.stereotype.Repository;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.google.common.base.Predicate;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Repository
 public class JdoDao implements PinDao

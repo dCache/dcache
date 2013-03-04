@@ -1,17 +1,25 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.IoJobInfo;
-import diskCacheV111.vehicles.JobInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.JobInfo;
+
+import dmg.cells.nucleus.CDC;
+
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.util.AdjustableSemaphore;
@@ -19,10 +27,6 @@ import org.dcache.util.FifoPriorityComparator;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
 import org.dcache.util.LifoPriorityComparator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import dmg.cells.nucleus.CDC;
-import java.nio.channels.CompletionHandler;
 
 /**
  *

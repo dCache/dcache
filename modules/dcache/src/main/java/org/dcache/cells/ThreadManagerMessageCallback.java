@@ -1,7 +1,8 @@
 package org.dcache.cells;
 
-import dmg.cells.nucleus.CellPath;
 import diskCacheV111.util.ThreadManager;
+
+import dmg.cells.nucleus.CellPath;
 
 /**
  * Wraps another MessageCallback. Each call is delegated to the

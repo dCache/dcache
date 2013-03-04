@@ -1,14 +1,21 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
+
+import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.cells.CellMessageSender;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
@@ -18,14 +25,11 @@ import org.dcache.pool.classic.PoolIORequest;
 import org.dcache.pool.classic.PoolIOTransfer;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.ManualMover;
-import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
-import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

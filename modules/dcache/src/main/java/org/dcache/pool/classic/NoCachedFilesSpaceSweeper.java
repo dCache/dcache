@@ -6,14 +6,14 @@ import org.slf4j.LoggerFactory;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.AbstractStateChangeListener;
-import org.dcache.pool.repository.StateChangeEvent;
-import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.SpaceSweeperPolicy;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.SpaceSweeperPolicy;
+import org.dcache.pool.repository.StateChangeEvent;
 
 /**
  *

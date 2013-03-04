@@ -1,20 +1,18 @@
 package org.dcache.util;
 
-import java.util.List;
-import java.sql.SQLException;
-import java.sql.Connection;
-
 import liquibase.Liquibase;
 import liquibase.changelog.ChangeSet;
 import liquibase.exception.LiquibaseException;
 import liquibase.exception.MigrationFailedException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
 
 public class SpringLiquibase
     extends liquibase.integration.spring.SpringLiquibase

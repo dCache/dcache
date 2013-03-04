@@ -1,15 +1,16 @@
 package org.dcache.poolmanager;
 
+import java.util.Collection;
+import java.util.NoSuchElementException;
+
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
-import org.dcache.vehicles.FileAttributes;
 
-import java.util.Collection;
-import java.util.NoSuchElementException;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * A PoolMonitor is the primary component for selecting pools.

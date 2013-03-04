@@ -1,103 +1,97 @@
 package org.dcache.webdav;
 
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.Date;
-import java.util.Collections;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.AsynchronousCloseException;
-import java.net.ServerSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.net.URL;
-import java.net.URI;
-import java.net.HttpURLConnection;
-import javax.security.auth.Subject;
-import java.security.AccessController;
-
 import com.google.common.base.Objects;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ranges;
 import com.google.common.io.ByteStreams;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
-import diskCacheV111.vehicles.HttpProtocolInfo;
-import diskCacheV111.vehicles.GFtpProtocolInfo;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.IoDoorInfo;
-import diskCacheV111.vehicles.IoDoorEntry;
-import diskCacheV111.vehicles.PnfsCreateEntryMessage;
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-
-import io.milton.http.Request;
 import io.milton.http.HttpManager;
-import io.milton.http.ResourceFactory;
 import io.milton.http.Range;
+import io.milton.http.Request;
+import io.milton.http.ResourceFactory;
 import io.milton.resource.Resource;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.auth.Subjects;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicy;
-import org.dcache.util.TransferRetryPolicies;
-import org.dcache.util.RedirectedTransfer;
-import org.dcache.util.PingMoversTask;
-import org.dcache.util.list.DirectoryListPrinter;
-import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.ListDirectoryHandler;
-
-import dmg.util.Args;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.services.login.LoginManagerChildrenInfo;
-
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Splitter;
-import com.google.common.collect.Sets;
-
-import org.dcache.auth.SubjectWrapper;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 
-import static java.util.Arrays.asList;
-import static org.dcache.namespace.FileType.*;
-import static org.dcache.namespace.FileAttribute.*;
+import javax.security.auth.Subject;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ServerSocketChannel;
+import java.security.AccessController;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.GFtpProtocolInfo;
+import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
+import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginManagerChildrenInfo;
+import dmg.util.Args;
+
+import org.dcache.auth.SubjectWrapper;
+import org.dcache.auth.Subjects;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.PingMoversTask;
+import org.dcache.util.RedirectedTransfer;
+import org.dcache.util.Transfer;
+import org.dcache.util.TransferRetryPolicies;
+import org.dcache.util.TransferRetryPolicy;
+import org.dcache.util.list.DirectoryEntry;
+import org.dcache.util.list.DirectoryListPrinter;
+import org.dcache.util.list.ListDirectoryHandler;
+import org.dcache.vehicles.FileAttributes;
 
-import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.RootDirectory;
+import static java.util.Arrays.asList;
+import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.*;
 
 
 /**

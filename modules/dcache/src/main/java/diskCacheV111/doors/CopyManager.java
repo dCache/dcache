@@ -1,40 +1,41 @@
 package diskCacheV111.doors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.CopyManagerMessage;
+import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
+import diskCacheV111.vehicles.DCapClientProtocolInfo;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.FsPath;
-
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.CopyManagerMessage;
-import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
-import diskCacheV111.vehicles.DCapClientProtocolInfo;
-import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.ProtocolInfo;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.Queue;
-import java.util.ArrayDeque;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import javax.security.auth.Subject;
-
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
-import org.dcache.util.Transfer;
 import org.dcache.util.RedirectedTransfer;
+import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CopyManager extends AbstractCell
 {

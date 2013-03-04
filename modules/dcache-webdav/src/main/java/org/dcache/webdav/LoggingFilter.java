@@ -1,24 +1,24 @@
 package org.dcache.webdav;
 
+import com.google.common.base.Joiner;
+import com.google.common.primitives.Longs;
 import io.milton.http.Auth;
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
 import io.milton.http.Request;
 import io.milton.http.Response;
 import io.milton.servlet.ServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Joiner;
-import com.google.common.primitives.Longs;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
-import java.security.cert.X509Certificate;
 
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.dcache.auth.Subjects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Simple request logging for WebDAV door. Interim solution until we

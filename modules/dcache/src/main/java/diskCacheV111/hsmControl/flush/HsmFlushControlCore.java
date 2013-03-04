@@ -1,9 +1,13 @@
 //   $Id: HsmFlushControlCore.java,v 1.3 2006-07-27 22:00:17 patrick Exp $
 package diskCacheV111.hsmControl.flush ;
 
-import dmg.util.Args ;
-import java.util.* ;
-import diskCacheV111.pools.* ;
+import java.util.List;
+import java.util.Set;
+
+import diskCacheV111.pools.PoolCellInfo;
+import diskCacheV111.pools.StorageClassFlushInfo;
+
+import dmg.util.Args;
 /**
  * Whenever a HsmFlushControlManager cell loads a driver it provides
  * an implementation of this class to enable a drive to query resp.

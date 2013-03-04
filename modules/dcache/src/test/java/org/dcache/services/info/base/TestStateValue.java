@@ -1,10 +1,10 @@
 package org.dcache.services.info.base;
 
 
-import static org.junit.Assert.fail;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import static org.junit.Assert.fail;
 
 /**
  * This is a minimal non-abstract implementation of StateComponent that extends StateValue.

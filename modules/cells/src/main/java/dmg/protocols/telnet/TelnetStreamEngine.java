@@ -1,11 +1,20 @@
 package dmg.protocols.telnet ;
 
-import java.net.* ;
-import java.io.* ;
-import java.lang.reflect.* ;
-
-import dmg.util.* ;
 import javax.security.auth.Subject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.Socket;
+
+import dmg.util.DummyStreamEngine;
+
 import org.dcache.auth.UserNamePrincipal;
 
 public class  TelnetStreamEngine extends DummyStreamEngine

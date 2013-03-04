@@ -1,12 +1,11 @@
 package org.dcache.vehicles;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.IpProtocolInfo;
+
 import dmg.cells.nucleus.CellPath;
 
 public class XrootdProtocolInfo implements IpProtocolInfo {

@@ -1,7 +1,8 @@
 package org.dcache.pool.migration;
 
-import org.dcache.pool.repository.CacheEntry;
 import com.google.common.collect.Range;
+
+import org.dcache.pool.repository.CacheEntry;
 
 /**
  * Repository entry filter which only accepts entries accessed within

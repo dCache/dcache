@@ -1,11 +1,13 @@
 package org.dcache.webadmin.view.beans;
 
-import org.dcache.webadmin.view.util.DiskSpaceUnit;
-import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
+import org.dcache.webadmin.view.util.DiskSpaceUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class PoolSpaceBeanTest {
 

@@ -1,8 +1,9 @@
 package org.dcache.srm.request;
 
-import org.dcache.srm.v2_2.TStatusCode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+
+import org.dcache.srm.v2_2.TStatusCode;
 
 public enum StatusCode {
     SUCCESS (TStatusCode.SRM_SUCCESS),

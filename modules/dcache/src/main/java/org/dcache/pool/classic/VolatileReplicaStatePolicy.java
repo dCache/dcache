@@ -1,12 +1,12 @@
 package org.dcache.pool.classic;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
+
+import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
-
-import diskCacheV111.vehicles.StorageInfo;
 
 /**
  * A ReplicaStatePolicy for volatile pools. Files are marked CACHED

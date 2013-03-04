@@ -1,9 +1,11 @@
 package org.dcache.pool.migration;
 
 import java.util.Comparator;
-import diskCacheV111.util.PnfsId;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
 

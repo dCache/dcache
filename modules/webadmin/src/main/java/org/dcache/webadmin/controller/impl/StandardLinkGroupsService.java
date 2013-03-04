@@ -1,11 +1,16 @@
 package org.dcache.webadmin.controller.impl;
 
-import diskCacheV111.services.space.LinkGroup;
-import diskCacheV111.services.space.Space;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import diskCacheV111.services.space.LinkGroup;
+import diskCacheV111.services.space.Space;
+
 import org.dcache.webadmin.controller.LinkGroupsService;
 import org.dcache.webadmin.controller.exceptions.LinkGroupsServiceException;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
@@ -14,8 +19,6 @@ import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
 import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Offers services for getting information on LinkGroups and Space Tokens

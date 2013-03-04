@@ -1,43 +1,45 @@
 package org.dcache.pool.migration;
 
-import java.util.Map;
-import java.util.List;
-import java.util.UUID;
-import java.util.EnumSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.CacheFileAvailable;
-import org.dcache.util.Checksum;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.pools.PoolV2Mode;
-
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.pool.classic.ChecksumModuleV1;
-import org.dcache.pool.p2p.P2PClient;
-import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.Repository.OpenFlags;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.IllegalTransitionException;
-import static org.dcache.pool.repository.EntryState.*;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.pool.classic.ChecksumModuleV1;
+import org.dcache.pool.p2p.P2PClient;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static org.dcache.pool.repository.EntryState.CACHED;
+import static org.dcache.pool.repository.EntryState.PRECIOUS;
 
 /**
  * Server component of migration module.

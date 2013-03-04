@@ -4,13 +4,17 @@ package diskCacheV111.vehicles;
 
 import java.util.Collection;
 import java.util.EnumSet;
-import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellAddressCore;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
 
-import static org.dcache.namespace.FileAttribute.*;
-import static com.google.common.base.Preconditions.*;
+import diskCacheV111.util.PnfsId;
+
+import dmg.cells.nucleus.CellAddressCore;
+
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 public class PoolMgrGetPoolMsg extends PoolManagerMessage
 {

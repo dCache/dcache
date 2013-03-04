@@ -1,20 +1,22 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import diskCacheV111.vehicles.ProtocolInfo;
+
+import dmg.cells.nucleus.CellEndpoint;
+
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.ManualMover;
 import org.dcache.pool.repository.Allocator;
-import diskCacheV111.vehicles.ProtocolInfo;
-import dmg.cells.nucleus.CellEndpoint;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.vehicles.FileAttributes;
 
 public class NFSv41ProtocolMover implements ManualMover {
 
     private final CellEndpoint _cell;
-    private long _bytesTransferred;    
+    private long _bytesTransferred;
     private final long _started = System.currentTimeMillis();
     private long _lastAccessTime = _started;
 

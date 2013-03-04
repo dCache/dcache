@@ -1,12 +1,16 @@
 package org.dcache.services.info.gathers.loginbroker;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import dmg.cells.nucleus.UOID;
+import dmg.cells.services.login.LoginBrokerInfo;
+
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
@@ -15,9 +19,6 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
-
-import dmg.cells.nucleus.UOID;
-import dmg.cells.services.login.LoginBrokerInfo;
 
 /**
  * Parse the reply messages from sending the LoginBroker CellMessages with "ls -binary".

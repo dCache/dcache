@@ -1,7 +1,9 @@
 package org.dcache.webadmin.controller;
 
-import diskCacheV111.pools.PoolV2Mode;
 import java.util.List;
+
+import diskCacheV111.pools.PoolV2Mode;
+
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 

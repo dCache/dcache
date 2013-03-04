@@ -1,9 +1,10 @@
 package org.dcache.admin.webadmin.datacollector.datatypes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class MoverInfo implements Comparable<MoverInfo> {
 

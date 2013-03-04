@@ -2,6 +2,9 @@ package org.dcache.services.info.gathers.poolmanager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
@@ -9,8 +12,6 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
-
-import dmg.cells.nucleus.UOID;
 
 public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 

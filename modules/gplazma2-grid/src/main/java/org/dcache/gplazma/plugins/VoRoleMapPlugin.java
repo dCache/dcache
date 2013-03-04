@@ -1,8 +1,9 @@
 package org.dcache.gplazma.plugins;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.filter;
-import org.dcache.gplazma.util.NameRolePair;
+import com.google.common.collect.Lists;
+import org.globus.gsi.jaas.GlobusPrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -15,13 +16,11 @@ import org.dcache.auth.FQAN;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.jaas.GlobusPrincipal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.gplazma.util.NameRolePair;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.filter;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
-
-import com.google.common.collect.Lists;
 
 /**
  * Plugin that uses a vorolemap file for mapping FQANPrincipal and

@@ -1,6 +1,13 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 
 public class Jdbm {
    public class InputStreamHelper extends InputStream {
@@ -30,7 +37,7 @@ public class Jdbm {
          System.exit(0);
       }
        RandomAccessFile f = new RandomAccessFile( new File(args[0])  , "rw" ) ;
-       
+
        JdbmObjectOutputStream out =
          new JdbmObjectOutputStream(
               new DataOutputStream(
@@ -39,7 +46,7 @@ public class Jdbm {
          new JdbmObjectInputStream(
               new DataInputStream(
                    new InputStreamHelper( f ) ) ) ;
-       
+
        if( args[1].equals("read" ) ){
           JdbmFileHeader header = (JdbmFileHeader)in.readObject()  ;
           System.out.println( header.toString() ) ;
@@ -48,7 +55,7 @@ public class Jdbm {
           long [] x = new long[dirSize] ;
           in.readLongArray( x ) ;
 
-          f.close() ;   
+          f.close() ;
        }else{
           JdbmFileHeader header = new JdbmFileHeader(1024) ;
           System.out.println( header.toString() ) ;
@@ -59,9 +66,9 @@ public class Jdbm {
           f.seek( 1024L ) ;
           out.writeObject( header.getDirectory() ) ;
 
-          f.close() ;   
+          f.close() ;
        }
-   
+
    }
    public static void main(String [] args )throws Exception {
         new Jdbm( args ) ;

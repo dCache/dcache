@@ -1,12 +1,13 @@
 package org.dcache.gplazma.loader;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collections;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class XmlResourcePluginRepositoryFactoryTests {
 

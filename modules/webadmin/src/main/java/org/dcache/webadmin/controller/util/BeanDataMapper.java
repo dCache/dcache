@@ -1,13 +1,15 @@
 package org.dcache.webadmin.controller.util;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
 import org.dcache.poolmanager.Partition;
@@ -17,9 +19,9 @@ import org.dcache.webadmin.model.util.AccessLatency;
 import org.dcache.webadmin.model.util.RetentionPolicy;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 import org.dcache.webadmin.view.beans.CellServicesBean;
-import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolRequestQueue;
+import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
 import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
 import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;

@@ -1,15 +1,7 @@
 package org.dcache.util;
 
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import org.dcache.util.SimpleGSIEngine.GSIEngineResult;
-import org.dcache.util.SimpleGSIEngine.HandshakeStatus;
-import org.dcache.util.SimpleGSIEngine.ResultStatus;
-import org.eclipse.jetty.io.Buffers;
 import org.eclipse.jetty.io.Buffer;
+import org.eclipse.jetty.io.Buffers;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.io.nio.NIOBuffer;
 import org.eclipse.jetty.io.nio.SelectChannelEndPoint;
@@ -18,6 +10,15 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+
+import org.dcache.util.SimpleGSIEngine.GSIEngineResult;
+import org.dcache.util.SimpleGSIEngine.HandshakeStatus;
+import org.dcache.util.SimpleGSIEngine.ResultStatus;
 
 /**
  * Server side endpoint for asynchronous Jetty GSI connector. When filling

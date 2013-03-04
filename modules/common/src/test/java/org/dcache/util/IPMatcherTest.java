@@ -1,11 +1,14 @@
 package org.dcache.util;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import org.junit.After;
+import org.junit.Test;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import org.junit.Test;
-import org.junit.After;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("deprecation")
 

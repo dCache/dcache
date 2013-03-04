@@ -1,14 +1,14 @@
 package org.dcache.services.billing.db;
 
+import junit.framework.TestCase;
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.Random;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.db.impl.BaseBillingInfoAccess;
 import org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo;

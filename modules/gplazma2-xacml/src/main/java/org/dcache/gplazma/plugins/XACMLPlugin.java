@@ -1,10 +1,26 @@
 package org.dcache.gplazma.plugins;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.collect.Iterables.any;
-import static com.google.common.collect.Iterables.find;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import com.google.common.base.Preconditions;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import org.glite.voms.PKIVerifier;
+import org.glite.voms.VOMSAttribute;
+import org.glite.voms.VOMSValidator;
+import org.glite.voms.ac.ACValidator;
+import org.glite.voms.ac.AttributeCertificate;
+import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.GlobusCredentialException;
+import org.ietf.jgss.GSSException;
+import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
+import org.opensciencegrid.authz.xacml.common.LocalId;
+import org.opensciencegrid.authz.xacml.common.XACMLConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+import javax.security.auth.x500.X500Principal;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -21,34 +37,18 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import javax.security.auth.x500.X500Principal;
-
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.auth.util.X509Utils;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.util.NetworkUtils;
-import org.glite.voms.PKIVerifier;
-import org.glite.voms.VOMSAttribute;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.ac.ACValidator;
-import org.glite.voms.ac.AttributeCertificate;
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
-import org.ietf.jgss.GSSException;
-import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
-import org.opensciencegrid.authz.xacml.common.LocalId;
-import org.opensciencegrid.authz.xacml.common.XACMLConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
-import com.google.common.base.Preconditions;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.Iterables.any;
+import static com.google.common.collect.Iterables.find;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * Responsible for taking an X509Certificate chain from the public credentials

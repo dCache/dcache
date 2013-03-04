@@ -5,13 +5,18 @@
  */
 
 package org.dcache.srm.request.sql;
-import java.sql.*;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TRetentionPolicy;
 
 /**
  *

@@ -1,10 +1,19 @@
 package dmg.util.cdb ;
 
-import java.util.* ;
-import java.io.* ;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
 
-public class      CdbFileRecord 
-       extends    CdbGLock 
+public class      CdbFileRecord
+       extends    CdbGLock
        implements CdbElementable            {
 
    private CdbLockable  _superLock;
@@ -12,11 +21,11 @@ public class      CdbFileRecord
    private Hashtable<String, Object> _table      = new Hashtable<>() ;
    private boolean      _exists     = true ;
    private boolean      _dataValid;
-   
+
    public CdbFileRecord( CdbLockable superLock , File source , boolean create )
           throws IOException     {
-       
-       super( superLock ) ;   
+
+       super( superLock ) ;
        _superLock  = superLock ;
        _dataSource = source ;
        if( create && _dataSource.exists() ) {
@@ -37,13 +46,13 @@ public class      CdbFileRecord
            throw new CdbLockException("Object removed");
        }
        super.open( mode ) ;
-       
+
    }
    public synchronized void addListItem( String attributeName , String itemName ){
       addListItem( attributeName , itemName , false ) ;
    }
-   public synchronized void addListItem( 
-                  String  attributeName , 
+   public synchronized void addListItem(
+                  String  attributeName ,
                   String  itemName ,
                   boolean unique       ){
        Object o = _table.get( attributeName ) ;
@@ -59,15 +68,15 @@ public class      CdbFileRecord
           String [] tmp = new String[list.length+1] ;
           if( unique ){
              int i ;
-             for( i = 0 ; 
-                  ( i < list.length ) && 
+             for( i = 0 ;
+                  ( i < list.length ) &&
                   ( ! list[i].equals(itemName) ) ; i++ ) {
                  tmp[i] = list[i];
              }
              if( i < list.length ) {
                  throw new IllegalArgumentException("duplicated entry");
              }
-             
+
           }else{
               System.arraycopy(list, 0, tmp, 0, list.length);
           }
@@ -75,7 +84,7 @@ public class      CdbFileRecord
           _table.put( attributeName , tmp ) ;
        }
    }
-   public synchronized void removeListItem( String attributeName , 
+   public synchronized void removeListItem( String attributeName ,
                                             String itemName ){
        Object o = _table.get( attributeName ) ;
        String [] list;
@@ -94,7 +103,7 @@ public class      CdbFileRecord
           if( i ==  list.length ) {
               return;
           }
-          
+
           String [] tmp = new String[list.length-1] ;
           int l = 0 ;
           for( int j = 0 ; j < i ; j ++ ) {
@@ -159,7 +168,7 @@ public class      CdbFileRecord
               if( j > 0 ) {
                   sb.append(",");
               }
-              sb.append(values[j]);              
+              sb.append(values[j]);
             }
          }
          sb.append( ";" ) ;
@@ -186,9 +195,9 @@ public class      CdbFileRecord
    }
    public synchronized Enumeration<String> getAttributes(){ return _table.keys() ; }
    public synchronized void read() throws IOException {
-      BufferedReader reader = new BufferedReader( 
+      BufferedReader reader = new BufferedReader(
                                  new FileReader( _dataSource ) ) ;
-      
+
       try{
           int state = 0 ;
           String line, name = null , value;
@@ -225,7 +234,7 @@ public class      CdbFileRecord
       }
    }
    public synchronized void write() throws IOException {
-      PrintWriter pw = new PrintWriter( 
+      PrintWriter pw = new PrintWriter(
                                 new FileWriter( _dataSource ) ) ;
        for (Object o1 : _table.keySet()) {
            String name = (String) o1;
@@ -283,7 +292,7 @@ public class      CdbFileRecord
 //      return super.toString() ;
 //   }
    public static void main( String [] args ) throws Exception {
-       
+
        if( args.length < 2 ){
           System.out.println( "... read/write <filename>" ) ;
           System.exit(4) ;
@@ -355,4 +364,4 @@ public class      CdbFileRecord
 
    }
 
-} 
+}

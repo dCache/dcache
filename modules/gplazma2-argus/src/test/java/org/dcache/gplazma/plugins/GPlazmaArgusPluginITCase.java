@@ -2,15 +2,15 @@ package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
+import org.globus.gsi.jaas.GlobusPrincipal;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.jaas.GlobusPrincipal;
-import org.junit.Test;
-import org.junit.Ignore;
 
 /**
  * These tests test the gPlazma plugin for Argus. They rely on the following

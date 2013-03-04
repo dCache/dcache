@@ -7,36 +7,38 @@
 package diskCacheV111.doors;
 
 //cells
-import diskCacheV111.util.Version;
-import dmg.util.StreamEngine;
-import dmg.util.Args;
-import dmg.cells.nucleus.CellVersion;
 
-//jgss
+import org.globus.gsi.CredentialException;
+import org.globus.gsi.GSIConstants;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.gridforum.jgss.ExtendedGSSManager;
 import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 
-// globus gsi
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.CredentialException;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.gridforum.jgss.ExtendedGSSManager;
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.gssapi.GSSConstants;
+import javax.security.auth.Subject;
 
-import org.dcache.cells.Option;
-import org.dcache.auth.Subjects;
-import org.dcache.auth.LoginNamePrincipal;
+import java.io.IOException;
+import java.security.cert.X509Certificate;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.Version;
 
-import java.security.cert.X509Certificate;
-import javax.security.auth.Subject;
-import java.io.IOException;
+import dmg.cells.nucleus.CellVersion;
+import dmg.util.Args;
+import dmg.util.StreamEngine;
+
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.Subjects;
+import org.dcache.cells.Option;
+
+//jgss
+// globus gsi
 /**
  *
  * @author  timur

@@ -1,41 +1,40 @@
 package org.dcache.pool.migration;
 
-import org.dcache.pool.repository.AbstractStateChangeListener;
-import org.dcache.pool.repository.StateChangeEvent;
-import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.StickyRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FileNotInCacheException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Future;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.Map;
-import java.util.List;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Iterator;
-import java.util.Comparator;
-import java.util.Collections;
-import java.io.PrintWriter;
-
+import org.dcache.pool.repository.AbstractStateChangeListener;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.expression.Expression;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates a job as defined by a user command.

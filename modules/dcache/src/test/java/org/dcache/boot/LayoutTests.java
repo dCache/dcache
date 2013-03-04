@@ -1,7 +1,7 @@
 package org.dcache.boot;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -10,8 +10,9 @@ import java.util.Properties;
 
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ScopedConfigurationProperties;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class LayoutTests {
 

@@ -1,17 +1,21 @@
 package dmg.cells.applets.login ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
-public class      SshLoginOKPanel 
+public class      SshLoginOKPanel
        extends    SshActionPanel              {
 
    private static final long serialVersionUID = -7475899806948022231L;
    //   private Font      _font = new Font( "TimesRoman" , Font.BOLD , 20 ) ;
    private Canvas    _canvas;
-   
-   SshLoginOKPanel(){  
-       add( _canvas = new MyCanvas( getPreferredSize() ) ) ; 
+
+   SshLoginOKPanel(){
+       add( _canvas = new MyCanvas( getPreferredSize() ) ) ;
        System.out.println( "Canvas added" ) ;
    }
    private void mouseSaysExit(){
@@ -78,6 +82,6 @@ public class      SshLoginOKPanel
       }
    }
 
-  
+
 }
- 
+

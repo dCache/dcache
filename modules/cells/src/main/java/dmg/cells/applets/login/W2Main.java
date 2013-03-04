@@ -1,21 +1,26 @@
 package dmg.cells.applets.login ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.Frame;
+import java.awt.Label;
+import java.awt.TextArea;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
-import dmg.util.* ;
+import dmg.util.Args;
 
-public class      W2Main 
-       extends    Frame 
-       implements WindowListener, 
+public class      W2Main
+       extends    Frame
+       implements WindowListener,
                   ActionListener {
   private static final long serialVersionUID = -6724257549082273714L;
 
   //
-  // remember to change the following variable to your needs 
-  // 
-  
-  
+  // remember to change the following variable to your needs
+  //
+
+
   public W2Main( Args args ){
       super( "WWW" ) ;
       RowColumnLayout rcl = new RowColumnLayout(3) ;
@@ -23,7 +28,7 @@ public class      W2Main
       setLayout( rcl ) ;
       addWindowListener( this ) ;
       setLocation( 60 , 60) ;
-      
+
       add( new Label("ddddddddddddddddddddd" ) ) ;
       add( new TextArea(4,4) ) ;
       add( new Label( "dslfk" ) ) ;
@@ -40,7 +45,7 @@ public class      W2Main
  @Override
  public synchronized void actionPerformed( ActionEvent event ){
   }
-  
+
   //
   // window interface
   //
@@ -68,15 +73,15 @@ public class      W2Main
 //         System.exit(4) ;
 //      }
      try{
-            
+
          new W2Main( new Args( args ) ) ;
-      
+
       }catch( Exception e ){
          e.printStackTrace() ;
          System.err.println( "Connection failed : "+e.toString() ) ;
          System.exit(4);
       }
-      
+
    }
-       
+
 }

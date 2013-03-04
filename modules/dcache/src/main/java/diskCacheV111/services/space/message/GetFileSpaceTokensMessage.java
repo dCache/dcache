@@ -9,8 +9,8 @@
 
 package diskCacheV111.services.space.message;
 
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
 
 /**
  *

@@ -1,8 +1,5 @@
 package org.dcache.pool.movers;
 
-import diskCacheV111.util.ChecksumFactory;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.util.Checksum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +9,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
+
+import diskCacheV111.util.ChecksumFactory;
+
+import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.Checksum;
 
 /**
  * A wrapper for RepositoryChannel that computes a digest

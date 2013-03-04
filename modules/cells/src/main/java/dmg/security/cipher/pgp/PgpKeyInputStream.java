@@ -1,10 +1,16 @@
 package dmg.security.cipher.pgp ;
-import  dmg.security.cipher.rsa.* ;
-import  dmg.security.cipher.* ;
-import  java.io.* ;
+
+import java.io.EOFException;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import dmg.security.cipher.EncryptionKey;
+import dmg.security.cipher.EncryptionKeyInputStream;
+import dmg.security.cipher.rsa.RsaEncryptionKey;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -12,20 +18,20 @@ import  java.io.* ;
 public class      PgpKeyInputStream
        extends    PGPInputStream
        implements EncryptionKeyInputStream {
-       
-       
+
+
     private final static int IDLE              = 0 ;
     private final static int CERTIFICATE_FOUND = 1 ;
     private final static int PUBLIC_LEFT       = 2 ;
-    
+
     private int       _state  = IDLE ;
     private PGPPacket _key;
     private String [] _domainList ;
-    
+
     public PgpKeyInputStream( InputStream in ){
        super( in ) ;
-    
-    } 
+
+    }
     @Override
     public EncryptionKey readEncryptionKey() throws IOException {
       PGPPacket pgp ;
@@ -33,7 +39,7 @@ public class      PgpKeyInputStream
       PGPSecretKeyCertificate privateKey ;
       while( true ){
        switch( _state ){
-       
+
           case IDLE :
              try{ if( ( pgp = readPGPPacket() ) == null ) {
                  return null;
@@ -59,23 +65,23 @@ public class      PgpKeyInputStream
                 _domainList[0] = ((PGPUserIdPacket)pgp).getId() ;
                 _state         = PUBLIC_LEFT ;
                 if( _key instanceof PGPSecretKeyCertificate ){
-                   privateKey  = (PGPSecretKeyCertificate)_key ;        
+                   privateKey  = (PGPSecretKeyCertificate)_key ;
                    return new RsaEncryptionKey( _domainList ,
                                                 "private",
-                                                privateKey.getD() , 
+                                                privateKey.getD() ,
                                                 privateKey.getN()    ) ;
                 }
              }
           break ;
           case PUBLIC_LEFT :
              _state     = IDLE ;
-             publicKey  = (PGPKeyCertificate)_key ;        
+             publicKey  = (PGPKeyCertificate)_key ;
              return new RsaEncryptionKey( _domainList ,
                                           "public",
-                                          publicKey.getE() , 
+                                          publicKey.getE() ,
                                           publicKey.getN()    ) ;
-       
-       
+
+
        }
       }
     }
@@ -85,7 +91,7 @@ public class      PgpKeyInputStream
        System.exit(4) ;
      }
      if( args[0].equals( "pgp2mixed" ) ){
-    
+
         String filename = args[1] ;
 	String [] domainList ;
         try{
@@ -104,7 +110,7 @@ public class      PgpKeyInputStream
 	       System.out.print( " "+key.getKeyType()+","+key.getKeyMode()+ " " ) ;
 	       System.out.print( key.getExponent().toString(16)+" "+
 	                         key.getModulus().toString(16)+"\n"       ) ;
-            }   
+            }
         }catch( IOException ioe ){
           System.err.println( " Exception : "+ioe );
           System.exit(1) ;
@@ -113,7 +119,7 @@ public class      PgpKeyInputStream
        System.err.println( " USAGE : ... pgp2mixed <secretKeyRing>" ) ;
        System.exit(4) ;
      }
-   
+
    }
-       
+
 }

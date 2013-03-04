@@ -96,19 +96,20 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import javax.security.auth.Subject;
-
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.ThreadManagerMessageCallback;
-import org.dcache.cells.CellStub;
-import diskCacheV111.util.PnfsId;
-import org.dcache.pinmanager.PinManagerUnpinMessage;
-import org.dcache.srm.UnpinCallbacks;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static diskCacheV111.util.CacheException.*;
+import javax.security.auth.Subject;
+
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.ThreadManagerMessageCallback;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
+import org.dcache.srm.UnpinCallbacks;
+
+import static diskCacheV111.util.CacheException.TIMEOUT;
 
 /**
  *

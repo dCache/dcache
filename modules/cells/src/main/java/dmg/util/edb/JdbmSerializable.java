@@ -1,6 +1,9 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.Serializable;
 
 public interface JdbmSerializable extends Serializable {
 

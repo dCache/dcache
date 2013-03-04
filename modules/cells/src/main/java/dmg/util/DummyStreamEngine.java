@@ -1,18 +1,25 @@
 package dmg.util;
 
-import java.net.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.channels.ByteChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.Channels;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 
 public class DummyStreamEngine implements StreamEngine
 {

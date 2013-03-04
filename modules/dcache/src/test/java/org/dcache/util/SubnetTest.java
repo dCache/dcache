@@ -1,14 +1,12 @@
 package org.dcache.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.springframework.util.SerializationUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.junit.Test;
-import org.springframework.util.SerializationUtils;
+import static org.junit.Assert.*;
 
 public class SubnetTest {
 

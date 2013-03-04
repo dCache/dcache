@@ -14,53 +14,54 @@ package org.dcache.srm.unixfs;
  */
 
 
-import org.dcache.srm.AbstractStorageElement;
+import org.ietf.jgss.GSSCredential;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.dcache.srm.FileMetaData;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInvalidPathException;
-import org.dcache.srm.SRMAuthorizationException;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import diskCacheV111.srm.StorageElementInfo;
+
+import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
+import org.dcache.srm.CopyCallbacks;
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.PrepareToPutInSpaceCallbacks;
-import org.dcache.srm.PinCallbacks;
+import org.dcache.srm.ReleaseSpaceCallbacks;
+import org.dcache.srm.RemoveFileCallbacks;
+import org.dcache.srm.ReserveSpaceCallbacks;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidPathException;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmReserveSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.UnpinCallbacks;
-import org.dcache.srm.CopyCallbacks;
-import org.dcache.srm.ReserveSpaceCallbacks;
-import org.dcache.srm.ReleaseSpaceCallbacks;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.util.Permissions;
+import org.dcache.srm.util.ShellCommandExecuter;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TMetaDataSpace;
-import org.ietf.jgss.GSSCredential;
+
 //import java.io.*;
-import java.io.File;
-import java.io.IOException;
-
-import java.net.InetAddress;
 //import java.net.URL;
-import java.net.URI;
 //import java.net.*;
-import java.net.UnknownHostException;
-
-import org.dcache.srm.util.ShellCommandExecuter;
-
-import java.io.StringWriter;
-import java.io.PrintStream;
-
-import org.dcache.srm.RemoveFileCallbacks;
-
-import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Storage
     implements AbstractStorageElement {

@@ -81,13 +81,19 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
+
 import org.globus.util.GlobusURL;
-import org.dcache.srm.client.SRMClientV2;
-import java.io.IOException;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.util.RequestStatusTool;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+
+import java.io.IOException;
+
+import org.dcache.srm.client.SRMClientV2;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmReleaseSpaceRequest;
+import org.dcache.srm.v2_2.SrmReleaseSpaceResponse;
+import org.dcache.srm.v2_2.TReturnStatus;
 
 public class SRMReleaseSpaceClientV2 extends SRMClient  {
     private GlobusURL srmURL;

@@ -1,6 +1,6 @@
 package diskCacheV111.vehicles;
 
-import  diskCacheV111.util.PnfsId;
+import diskCacheV111.util.PnfsId;
 
 @Deprecated
 public class PnfsGetChecksumAllMessage extends PnfsMessage {

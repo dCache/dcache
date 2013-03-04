@@ -1,21 +1,22 @@
 package org.dcache.services.billing.cells;
 
+import com.google.common.io.Files;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-import dmg.cells.nucleus.CellAddressCore;
-import org.dcache.cells.CellStub;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.io.Files;
-
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.util.CacheException;
+
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
+
+import org.dcache.cells.CellStub;
 
 /**
  * Thread run when command-line statistics call is activated. Generates a

@@ -2,22 +2,23 @@
 
 package org.dcache.commons.stats;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Formatter;
-import java.util.NoSuchElementException;
 import java.lang.reflect.Method;
+import java.util.Formatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
 import static org.dcache.commons.util.Strings.toStringSignature;
 
 /**
- * This class provides a convinient way to collect statistics about 
+ * This class provides a convinient way to collect statistics about
  * the execution of the requests in a collection of the RequestCounter objects
  * This named collection is organized as a map with with keys of generic type T
- * It provides utility methods for increments and discovery of the count of 
+ * It provides utility methods for increments and discovery of the count of
  * request invocations,
- * failures and folds (number of times when this request did not have to be 
- * executed because the results were calculated alredy for the same type of the 
+ * failures and folds (number of times when this request did not have to be
+ * executed because the results were calculated alredy for the same type of the
  * request ahead in the request queue)
  * This class is thread safe.
  * @param <T> the type of the keys in the map into the values of type
@@ -145,7 +146,7 @@ public class RequestCounters<T> {
     }
 
     /**
-     * 
+     *
      * @param counterKey a key corresponding to a counter
      * @return a RequestCounter associated with counterKey
      * @throws  NoSuchElementException if counter for counterKey is not defined
@@ -222,7 +223,7 @@ public class RequestCounters<T> {
     public void incrementRequests(T counterKey,int increment) {
        getCounter(counterKey).incrementRequests(increment);
     }
-    
+
     /**
      * increments count of the failed request invocations
      * @param counterKey a key corresponding to a counter

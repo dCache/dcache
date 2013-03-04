@@ -1,13 +1,16 @@
 package org.dcache.webadmin.controller.impl;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.List;
+
 import org.dcache.webadmin.controller.exceptions.PoolQueuesServiceException;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  *

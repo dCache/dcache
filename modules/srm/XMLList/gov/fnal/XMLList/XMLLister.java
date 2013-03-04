@@ -1,21 +1,24 @@
 package gov.fnal.XMLList;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.File;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.util.Iterator;
+import java.util.Map;
 
 public class XMLLister extends PrintWriter {
-   
+
    protected final String ianaEncoding;
-   
-   
+
+
    public XMLLister(OutputStreamWriter out) {
       super(out);
       ianaEncoding = toIANAName(out.getEncoding());
-      
+
    }
-   
-   
+
+
    private static final String toIANAName(String encoding) {
       if(encoding.equals("UTF8"))
          return "UTF-8";
@@ -24,8 +27,8 @@ public class XMLLister extends PrintWriter {
       else
          return encoding;
    }
-   
-   
+
+
    public void writeStartList() {
       printXmlPI();
       printDoctype("srmls:dirlisting", "http://www-isd.fnal.gov/srm/XML/dirlisting.dtd");
@@ -74,7 +77,7 @@ public class XMLLister extends PrintWriter {
          println("/>");
       }
    }
-   
+
    protected final void printXmlPI() {
       println("<?xml version=\"1.0\" encoding=\""+ianaEncoding+"\"?>");
    }

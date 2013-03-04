@@ -1,5 +1,7 @@
 package org.dcache.gplazma;
-import static com.google.common.base.Preconditions.checkArgument;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.Principal;
 import java.util.Properties;
@@ -7,9 +9,8 @@ import java.util.Set;
 
 import org.dcache.auth.UidPrincipal;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**

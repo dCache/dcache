@@ -1,5 +1,6 @@
 package dmg.protocols.ssh ;
-import  dmg.security.cipher.* ;
+
+import dmg.security.cipher.StreamCipher;
 
 
 public class SshSmsgStderrData extends SshStringPacket {
@@ -10,7 +11,7 @@ public class SshSmsgStderrData extends SshStringPacket {
     public SshSmsgStderrData( SshPacket packet  ){
         super( packet ) ;
     }
-    public SshSmsgStderrData( StreamCipher cipher , 
+    public SshSmsgStderrData( StreamCipher cipher ,
                               byte [] string ,  int off , int size ){
         super( cipher , string , off , size ) ;
     }

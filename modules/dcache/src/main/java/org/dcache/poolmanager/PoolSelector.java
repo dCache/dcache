@@ -1,8 +1,8 @@
 package org.dcache.poolmanager;
 
-import diskCacheV111.util.CacheException;
-
 import java.util.List;
+
+import diskCacheV111.util.CacheException;
 
 /**
  * A PoolSelector encapslutes pool selection logic for a particular file and

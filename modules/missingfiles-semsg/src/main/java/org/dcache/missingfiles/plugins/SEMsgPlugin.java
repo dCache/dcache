@@ -1,18 +1,20 @@
 package org.dcache.missingfiles.plugins;
 
-import java.util.concurrent.Executor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.dcache.util.ConfigurationProperties;
+import javax.security.auth.Subject;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import javax.security.auth.Subject;
+
 import org.dcache.auth.Subjects;
+import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.FireAndForgetTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.google.common.collect.Lists.newArrayList;
 

@@ -1,12 +1,13 @@
 package dmg.cells.nucleus;
 
 import com.google.common.base.Objects;
-import dmg.util.Args;
-import dmg.util.Formats;
 
 import java.io.Serializable;
 
-import static com.google.common.base.Preconditions.*;
+import dmg.util.Args;
+import dmg.util.Formats;
+
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;
 
 /**
@@ -273,4 +274,4 @@ public class CellRoute implements Cloneable, Serializable
                 Formats.field(__typeNames[_type], 10, Formats.LEFT);
     }
 }
- 
+

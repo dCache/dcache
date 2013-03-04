@@ -1,19 +1,20 @@
 package dmg.security.cipher.blowfish;
-import  dmg.security.cipher.BlockCipher ;
+
+import dmg.security.cipher.BlockCipher;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
   *  @version  0.1 (cell)
   */
 public class Jblowfish implements BlockCipher {
 
 //  private final static long pBox[16 + 2] =   {
   private final static long pBox[] =   {
-  
+
   0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344,
   0xa4093822, 0x299f31d0, 0x082efa98, 0xec4e6c89,
   0x452821e6, 0x38d01377, 0xbe5466cf, 0x34e90c6c,
@@ -24,7 +25,7 @@ public class Jblowfish implements BlockCipher {
 
 //  private final static long sBox[256 * 4] =  {
   private final static long sBox[] =  {
-  
+
   0xd1310ba6, 0x98dfb5ac, 0x2ffd72db, 0xd01adfb7,
   0xb8e1afed, 0x6a267e96, 0xba7c9045, 0xf12c7f99,
   0x24a19947, 0xb3916cf7, 0x0801f2e2, 0x858efc16,
@@ -282,10 +283,10 @@ public class Jblowfish implements BlockCipher {
   0x90d4f869, 0xa65cdea0, 0x3f09252d, 0xc208e69f,
   0xb74e6132, 0xce77e25b, 0x578fdfe3, 0x3ac372e6,
   };
-  
+
    private byte [] _key ;
    private long [] _S , _P ;
-   
+
    private void createKey(){
       _S = new long [sBox.length] ;
       _P = new long [pBox.length] ;
@@ -295,20 +296,20 @@ public class Jblowfish implements BlockCipher {
       int i , j ;
       int keybytes = _key.length ;
       long temp ;
-      
+
       for( j = 0, i = 0; i < 16 + 2; i++){
          temp = (  (  (((long)_key[j])&0xFF)              << 24) |
 	           (  (((long)_key[(j+1)%keybytes])&0xFF) << 16) |
 	           (  (((long)_key[(j+2)%keybytes])&0xFF) <<  8) |
 	           (  (((long)_key[(j+3)%keybytes])&0xFF)      )   );
-       
+
          _P[i] = _P[i] ^ temp;
          j = (j + 4) % keybytes;
       }
       long data_l = 0 ;
       long data_r = 0 ;
       long [] output = new long[2] ;
-      
+
       for( i = 0  ; i < 16 + 2; i += 2){
           blowfish_encrypt( data_l , data_r , output );
 
@@ -319,14 +320,14 @@ public class Jblowfish implements BlockCipher {
           _P[i + 1] = data_r;
       }
       int count ;
-      
+
       for( i = 0 ; i < 4 ; i++){
          for (j = 0, count = i * 256; j < 256; j += 2, count += 2){
 	   blowfish_encrypt( data_l , data_r , output );
 
 	   data_l = output[0];
 	   data_r = output[1];
-	  
+
 	   _S[count]     = data_l;
 	   _S[count + 1] = data_r;
 	 }
@@ -337,7 +338,7 @@ public class Jblowfish implements BlockCipher {
     public void encrypt( byte [] in  , int inOff ,
                           byte [] out , int outOff  ){
         long [] d = new long[2] ;
-        
+
         d[0] = ((((long)in[inOff+0])&0xff) << 24 ) |
                ((((long)in[inOff+1])&0xff) << 16 ) |
                ((((long)in[inOff+2])&0xff) <<  8 ) |
@@ -348,9 +349,9 @@ public class Jblowfish implements BlockCipher {
                ((((long)in[inOff+7])&0xff) <<  0 ) ;
 
         long [] dout = new long [2] ;
-        
+
         blowfish_encrypt( d[0] , d[1] , dout ) ;
-        
+
         out[outOff+0] = (byte) ( ( dout[0] >>> 24  ) & 0xff );
         out[outOff+1] = (byte) ( ( dout[0] >>> 16  ) & 0xff );
         out[outOff+2] = (byte) ( ( dout[0] >>>  8  ) & 0xff );
@@ -365,7 +366,7 @@ public class Jblowfish implements BlockCipher {
     public void decrypt( byte [] in  , int inOff ,
                           byte [] out , int outOff  ){
         long [] d = new long[2] ;
-        
+
         d[0] = ((((long)in[inOff+0])&0xff) << 24 ) |
                ((((long)in[inOff+1])&0xff) << 16 ) |
                ((((long)in[inOff+2])&0xff) <<  8 ) |
@@ -376,9 +377,9 @@ public class Jblowfish implements BlockCipher {
                ((((long)in[inOff+7])&0xff) <<  0 ) ;
 
         long [] dout = new long [2] ;
-        
+
         blowfish_decrypt( d[0] , d[1] , dout ) ;
-        
+
         out[outOff+0] = (byte) ( ( dout[0] >>> 24  ) & 0xff );
         out[outOff+1] = (byte) ( ( dout[0] >>> 16  ) & 0xff );
         out[outOff+2] = (byte) ( ( dout[0] >>>  8  ) & 0xff );
@@ -391,29 +392,29 @@ public class Jblowfish implements BlockCipher {
     }
 
 /*  The internal encipher, processes 64-bit blocks (as standard). */
-     
+
    private void blowfish_encrypt( long xl, long xr, long [] output ) {
      long yl   = xl ;
      long yr   = xr ;
      long [] S = _S;
      long [] P = _P;
 
-  
+
      yl ^= P[0];
-     
+
      for( int i = 0 ; i < 16 ; i +=2 ){
         yr ^= ((( S[(int)(0 * 256 + (((yl) >> (24)) & (0x00ff)))] +
-                  S[(int)(1 * 256 + (((yl) >> (16)) & (0x00ff)))]   ) ^ 
+                  S[(int)(1 * 256 + (((yl) >> (16)) & (0x00ff)))]   ) ^
                   S[(int)(2 * 256 + (((yl) >> (8)) & (0x00ff)))]     ) +
                   S[(int)(3 * 256 + (((yl) & 0x00ff)))]                ) ^ P[i+1] ;
         yl ^= ((( S[(int)(0 * 256 + (((yr) >> (24)) & (0x00ff)))] +
-                  S[(int)(1 * 256 + (((yr) >> (16)) & (0x00ff)))]   ) ^ 
+                  S[(int)(1 * 256 + (((yr) >> (16)) & (0x00ff)))]   ) ^
                   S[(int)(2 * 256 + (((yr) >> (8)) & (0x00ff)))]     ) +
                   S[(int)(3 * 256 + (((yr) & 0x00ff)))]                ) ^ P[i+2] ;
      }
-     
+
      yr ^= P[17];
-  
+
      output[0] = yr;
      output[1] = yl;
    }
@@ -423,22 +424,22 @@ public class Jblowfish implements BlockCipher {
      long [] S = _S;
      long [] P = _P;
 
-  
+
      yl ^= P[17];
-     
+
      for( int i = 16 ; i > 0 ; i -=2 ){
         yr ^= ((( S[(int)(0 * 256 + (((yl) >> (24)) & (0x00ff)))] +
-                  S[(int)(1 * 256 + (((yl) >> (16)) & (0x00ff)))]   ) ^ 
+                  S[(int)(1 * 256 + (((yl) >> (16)) & (0x00ff)))]   ) ^
                   S[(int)(2 * 256 + (((yl) >> (8)) & (0x00ff)))]     ) +
                   S[(int)(3 * 256 + (((yl) & 0x00ff)))]                ) ^ P[i] ;
         yl ^= ((( S[(int)(0 * 256 + (((yr) >> (24)) & (0x00ff)))] +
-                  S[(int)(1 * 256 + (((yr) >> (16)) & (0x00ff)))]   ) ^ 
+                  S[(int)(1 * 256 + (((yr) >> (16)) & (0x00ff)))]   ) ^
                   S[(int)(2 * 256 + (((yr) >> (8)) & (0x00ff)))]     ) +
                   S[(int)(3 * 256 + (((yr) & 0x00ff)))]                ) ^ P[i-1] ;
      }
-     
+
      yr ^= P[0];
-  
+
      output[0] = yr;
      output[1] = yl;
    }
@@ -448,15 +449,15 @@ public class Jblowfish implements BlockCipher {
      createKey();
    }
 
-                           
+
    @Override
    public int     getBlockLength(){ return 8*8 ; }
- 
+
    @Override
    public byte [] getKeyBytes(){
        byte [] out = new byte[_key.length] ;
        System.arraycopy( _key , 0 , out , 0 , _key.length ) ;
        return out ;
-   }                        
+   }
 
 }

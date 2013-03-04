@@ -1,5 +1,8 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -17,8 +20,6 @@ import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 import org.dcache.webadmin.model.exceptions.DAOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Factory class for the DAOs. The whole design with an factory is mainly

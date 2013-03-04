@@ -1,7 +1,11 @@
 // $ID$
 
 package diskCacheV111.movers ;
-import  java.io.* ;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 public class VspDataOutputStream extends DataOutputStream {
 

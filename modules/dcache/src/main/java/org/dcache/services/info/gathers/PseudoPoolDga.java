@@ -1,7 +1,7 @@
 package org.dcache.services.info.gathers;
 
-import java.util.Random;
 import java.util.Date;
+import java.util.Random;
 
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;

@@ -1,21 +1,24 @@
 package org.dcache.vehicles;
 
 import com.google.common.base.Objects;
-import org.dcache.namespace.FileType;
-import org.dcache.acl.ACL;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.EnumSet;
-import java.util.Collection;
+
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.acl.ACL;
 import org.dcache.namespace.FileAttribute;
-import static org.dcache.namespace.FileAttribute.*;
+import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
+
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * <code>FileAttributes</code> encapsulates attributes about a logical file.

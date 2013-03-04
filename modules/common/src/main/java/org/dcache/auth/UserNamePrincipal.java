@@ -1,7 +1,7 @@
 package org.dcache.auth;
 
-import java.security.Principal;
 import java.io.Serializable;
+import java.security.Principal;
 
 /**
  * This Principal represents the trusted username of a signed in

@@ -1,6 +1,9 @@
 package org.dcache.util;
 
-import static org.junit.Assert.*;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -8,10 +11,8 @@ import java.nio.ByteBuffer;
 import org.dcache.util.SimpleGSIEngine.GSIEngineResult;
 import org.dcache.util.SimpleGSIEngine.HandshakeStatus;
 import org.dcache.util.SimpleGSIEngine.ResultStatus;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class SimpleGSIEngineTest {
     private final static int SSLV3_PAYLOAD_MAX_SIZE = 32*1024;

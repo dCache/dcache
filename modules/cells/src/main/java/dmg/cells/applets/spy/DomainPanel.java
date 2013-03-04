@@ -1,17 +1,30 @@
 package dmg.cells.applets.spy ;
 
-import java.awt.* ;
-import java.awt.event.* ;
-import java.util.* ;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.ItemSelectable;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.Iterator;
+import java.util.TreeSet;
 
-import dmg.cells.services.* ;
-import dmg.cells.nucleus.* ;
-import dmg.cells.network.* ;
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.services.MessageObjectFrame;
 
 
 
-class DomainPanel 
-      extends Panel 
+class DomainPanel
+      extends Panel
       implements ActionListener, FrameArrivable, ItemListener {
 
    private static final long serialVersionUID = -2086357792768952598L;
@@ -23,13 +36,13 @@ class DomainPanel
    private LeftPanel      _leftPanel ;
    private CellPanel      _cellPanel ;
    private CommandPanel   _commandPanel ;
-   
+
    private CellInfo []  _infos = new CellInfo[0] ;
    private CardLayout   _cards = new CardLayout() ;
    private Panel        _cardPanel ;
    private String       _cellMode = "cell" ;
    private boolean      _useColor;
-   
+
    private class LeftPanel extends Panel {
        private static final long serialVersionUID = 8626662575716491546L;
 
@@ -47,7 +60,7 @@ class DomainPanel
           buttonPanel.add( _updateButton ) ;
           buttonPanel.add( _detailButton ) ;
           buttonPanel.add( _commandButton ) ;
-          
+
           add( buttonPanel , "South" ) ;
           if( _useColor ) {
               setBackground(Color.green);
@@ -57,7 +70,7 @@ class DomainPanel
        public Insets getInsets(){ return new Insets( 10 ,10 ,10 ,10  ) ; }
    }
    DomainPanel( DomainConnection connection ){
-      _connection = connection ; 
+      _connection = connection ;
       _useColor = System.getProperty( "bw" ) == null ;
       if( _useColor ) {
           setBackground(Color.red);
@@ -68,17 +81,17 @@ class DomainPanel
       _topLabel.setFont( new Font( "fixed" , Font.ITALIC , 18 ) ) ;
       add( _topLabel , "North" ) ;
       add( new BorderPanel( _leftPanel ) , "West" ) ;
-      
+
       _cellPanel    = new CellPanel( _connection ) ;
       _commandPanel = new CommandPanel( _connection ) ;
-      
+
       _cardPanel = new Panel( _cards ) ;
       _cardPanel.add( new BorderPanel(_cellPanel )    , "cell" ) ;
       _cardPanel.add( new BorderPanel(_commandPanel) , "command" ) ;
       _cards.show( _cardPanel , "cell" ) ;
 
       add( _cardPanel , "Center" ) ;
-      
+
       _updateButton.addActionListener( this ) ;
       _detailButton.addActionListener( this ) ;
       _commandButton.addActionListener( this ) ;
@@ -123,13 +136,13 @@ class DomainPanel
           if( systemIndex > -1 ){
              _cellPanel.showCell( _infos[systemIndex]   ,
                                   _domainNode.getAddress()) ;
-             _commandPanel.showCell(_infos[systemIndex] , 
+             _commandPanel.showCell(_infos[systemIndex] ,
                                     _domainNode.getAddress()+":System") ;
              _list.select("System") ;
           }
-       }    
+       }
    }
-   public void clear(){        
+   public void clear(){
       _list.removeAll() ;
       _cellPanel.clear() ;
       _commandPanel.clear() ;
@@ -147,7 +160,7 @@ class DomainPanel
           return;
       }
       _connection.send( _domainNode.getAddress() , "getcellinfos" , this ) ;
-   
+
    }
    @Override
    public void itemStateChanged( ItemEvent event ){
@@ -156,10 +169,10 @@ class DomainPanel
       if( ( obj == null ) || ( obj.length == 0 ) ) {
           return;
       }
-     
+
       String cellName = obj[0].toString() ;
       int i = 0 ;
-      for( ; ( i < _infos.length ) && 
+      for( ; ( i < _infos.length ) &&
              ( ! _infos[i].getCellName().equals( cellName ) ) ; i++ ) {
       }
       if( i ==  _infos.length ){
@@ -171,5 +184,5 @@ class DomainPanel
       _cards.show( _cardPanel , _cellMode  ) ;
    }
 
- 
+
 }

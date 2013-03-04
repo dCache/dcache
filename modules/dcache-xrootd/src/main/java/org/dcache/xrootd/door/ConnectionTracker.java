@@ -1,22 +1,23 @@
 package org.dcache.xrootd.door;
 
-import java.io.PrintWriter;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.SimpleChannelHandler;
 
+import java.io.PrintWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.jboss.netty.channel.Channels.*;
-import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.channel.Channel;
+import dmg.cells.nucleus.CellInfo;
+import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellInfoProvider;
-import dmg.util.Args;
-import dmg.cells.nucleus.CellInfo;
+
+import static org.jboss.netty.channel.Channels.close;
 
 /**
  * Channel handler that keeps track of connected channels. Provides

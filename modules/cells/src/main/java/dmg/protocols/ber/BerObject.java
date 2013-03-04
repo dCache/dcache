@@ -1,8 +1,10 @@
 package dmg.protocols.ber ;
 
-import java.io.* ;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Serializable;
 
-import dmg.protocols.kerberos.* ;
+import dmg.protocols.kerberos.Base64;
 
 
 public class BerObject implements Serializable {
@@ -11,7 +13,7 @@ public class BerObject implements Serializable {
    public static final int APPLICATION = 1 ;
    public static final int CONTEXT     = 2 ;
    public static final int PRIVATE     = 3 ;
-   
+
    private static String [] __classes = { "U" , "A" , "C" , "P" } ;
    private static final long serialVersionUID = -800497911168894751L;
 
@@ -21,13 +23,13 @@ public class BerObject implements Serializable {
    private int     _tag;
    private int     _type;
    private byte [] _data;
-   
+
    public BerObject( int berClass , boolean isPrimitive , int tag ,
                      byte [] data , int offset , int size  ){
       this( berClass , isPrimitive , tag ) ;
       _data = new byte[size] ;
       System.arraycopy( data , offset , _data , 0 , size ) ;
-                     
+
    }
    public BerObject( int berClass , boolean isPrimitive , int tag ){
       _klass     = berClass ;
@@ -79,7 +81,7 @@ public class BerObject implements Serializable {
    public int     getBerClass(){ return _klass ; }
    public int     getType(){ return _type ; }
    public byte [] getData(){ return _data ; }
-   
+
    public byte [] getEncodedData(){
       if( _data == null ) {
           throw new
@@ -91,13 +93,13 @@ public class BerObject implements Serializable {
       int type = data[off++] ;
       int meta = 0 ;
       type = type < 0 ? ( type + 256 ) : type ;
-      
+
       int     klass       = (   type >> 6   ) & 0x3 ;
       boolean isPrimitive = ( ( type >> 5   ) & 0x1 ) == 0 ;
       int     tag         = (   type & 0x1f ) ;
-      
+
       meta ++ ;
-      
+
       int highSize = data[off++] ;
       meta++ ;
       highSize = highSize < 0 ? ( highSize + 256 ) : highSize ;
@@ -114,9 +116,9 @@ public class BerObject implements Serializable {
       }else{
          size = highSize & 0x7f ;
       }
-      
+
       BerObject ber;
-      
+
       if( isPrimitive ){
          if( tag == 27 ){
             ber = new BerGeneralString( data , off , size ) ;
@@ -138,16 +140,16 @@ public class BerObject implements Serializable {
          }
       }else{
          ber = new BerContainer( klass , tag , data , off , size ) ;
-         
+
       }
       return new BerFrame( ber , meta , size ) ;
-   
+
    }
    public String getTypeCode(){
       String s = Integer.toHexString(_type) ;
       return s.length() == 1 ? "0"+s : s ;
    }
-   public String getTypeString(){ 
+   public String getTypeString(){
       return "T"+getTypeCode()+"-("+__classes[_klass]+(_primitive?"P":"C")+_tag+")" ;
    }
    public static void scanBER( byte [] data ){
@@ -178,13 +180,13 @@ public class BerObject implements Serializable {
       int type = data[off++] ;
       int meta = 0 ;
       type = type < 0 ? ( type + 256 ) : type ;
-      
+
       int     klass       = (   type >> 6   ) & 0x3 ;
       boolean isPrimitive = ( ( type >> 5   ) & 0x1 ) == 0 ;
       int     tag         = (   type & 0x1f ) ;
-      
+
       meta ++ ;
-      
+
       int highSize = data[off++] ;
       meta++ ;
       highSize = highSize < 0 ? ( highSize + 256 ) : highSize ;
@@ -201,22 +203,22 @@ public class BerObject implements Serializable {
       }else{
          size = highSize & 0x7f ;
       }
-      
-      
+
+
       String  mode = "Class("+Integer.toHexString(type)+")="+__classes[klass]+";"+
                     (isPrimitive?"P":"C")+";"+
                      "T="+tag ;
-                     
+
       for( int i = 0 ; i < (level*3) ; i++ ) {
           System.out.print(" ");
       }
       System.out.print( ""+off+":"+mode ) ;
 //      System.out.println(";meta="+meta+";size="+size);
       System.out.print(";size="+size);
-      
+
       if( isPrimitive ){
          System.out.print(" : ");
-         
+
          if( tag == 27 ){
             StringBuilder sb = new StringBuilder();
             for( int i = 0 ; i < size ; i++ ) {
@@ -245,13 +247,13 @@ public class BerObject implements Serializable {
             long l = 0 ;
             for( int i = 1 ; i < size ; i++ ){
                a = data[off+i] ;
-               a = ( a < 0 ? ( a + 256 ) : a ) ; 
+               a = ( a < 0 ? ( a + 256 ) : a ) ;
                l <<= 7 ;
                l += a & 0x7f ;
                if( ( a & 0x80 ) == 0 ){
-                  System.out.print(""+l+".");  
-                  l = 0 ;     
-               }   
+                  System.out.print(""+l+".");
+                  l = 0 ;
+               }
             }
          }else{
             for( int i = 0 ; i < size ; i++ ){
@@ -264,7 +266,7 @@ public class BerObject implements Serializable {
          for( int sum = 0 ; sum < size ; ){
             int c = scanBER( pw , level+1, data , off + sum ) ;
             sum += c ;
-         }      
+         }
       }
       return size + meta ;
    }

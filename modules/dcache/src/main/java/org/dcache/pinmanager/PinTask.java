@@ -1,18 +1,19 @@
 package org.dcache.pinmanager;
 
-import java.util.Date;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.security.auth.Subject;
+
+import java.util.Date;
+
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.ProtocolInfo;
 
 import org.dcache.cells.MessageReply;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.vehicles.FileAttributes;
-
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.util.PnfsId;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PinTask
 {

@@ -4,21 +4,13 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
-import org.dcache.chimera.nfs.v4.xdr.CB_NOTIFY_DEVICEID4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_WANTS_CANCELLED4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_SEQUENCE4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_RECALLABLE_OBJ_AVAIL4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_RECALL_ANY4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_GETATTR4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_RECALL4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_LAYOUTRECALL4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_NOTIFY_LOCK4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_ILLEGAL4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_PUSH_DELEG4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_NOTIFY4res;
-import org.dcache.chimera.nfs.v4.xdr.CB_RECALL_SLOT4res;
-import org.dcache.xdr.*;
+
 import java.io.IOException;
+
+import org.dcache.xdr.OncRpcException;
+import org.dcache.xdr.XdrAble;
+import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.XdrEncodingStream;
 
 public class nfs_cb_resop4 implements XdrAble {
     public int resop;

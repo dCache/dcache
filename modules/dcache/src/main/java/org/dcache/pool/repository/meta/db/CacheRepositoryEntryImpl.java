@@ -1,22 +1,21 @@
 package org.dcache.pool.repository.meta.db;
 
-import java.io.IOException;
-import java.io.File;
-import java.util.List;
-
+import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sleepycat.util.RuntimeExceptionWrapper;
-
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.MetaDataRecord;
-import org.dcache.pool.repository.EntryState;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.StickyRecord;
 
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.

@@ -1,8 +1,9 @@
 package org.dcache.srm.request;
 
-import org.dcache.srm.v2_2.TRetentionPolicy;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+
+import org.dcache.srm.v2_2.TRetentionPolicy;
 
 public enum RetentionPolicy {
     REPLICA             (TRetentionPolicy.REPLICA),

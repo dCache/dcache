@@ -71,20 +71,22 @@ documents or software obtained from this server.
  */
 package diskCacheV111.srm.dcache;
 
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.ThreadManagerMessageCallback;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
-import diskCacheV111.services.space.message.Reserve;
-import diskCacheV111.services.space.SpaceException;
-import diskCacheV111.services.space.NoFreeSpaceException;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.AccessLatency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import diskCacheV111.services.space.NoFreeSpaceException;
+import diskCacheV111.services.space.SpaceException;
+import diskCacheV111.services.space.message.Reserve;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
+
 import dmg.cells.nucleus.CellPath;
+
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.ThreadManagerMessageCallback;
+import org.dcache.srm.SrmReserveSpaceCallbacks;
 
 /**
  *

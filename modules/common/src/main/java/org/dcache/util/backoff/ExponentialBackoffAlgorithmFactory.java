@@ -59,10 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.util.backoff;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Factory implementation for creating an {@link ExponentialBackoffAlgorithm}.

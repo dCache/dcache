@@ -11,13 +11,14 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This class maintains filter thresholds. Two types of inheritance

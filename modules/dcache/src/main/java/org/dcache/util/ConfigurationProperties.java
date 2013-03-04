@@ -2,8 +2,8 @@ package org.dcache.util;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,6 +14,7 @@ import java.io.LineNumberReader;
 import java.io.Reader;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -25,13 +26,11 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 import dmg.util.Formats;
 import dmg.util.PropertiesBackedReplaceable;
-import java.util.EnumMap;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * The ConfigurationProperties class represents a set of dCache

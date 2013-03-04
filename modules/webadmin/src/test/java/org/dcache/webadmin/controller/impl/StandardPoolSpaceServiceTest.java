@@ -1,8 +1,13 @@
 package org.dcache.webadmin.controller.impl;
 
-import diskCacheV111.pools.PoolV2Mode;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.List;
 import java.util.Set;
+
+import diskCacheV111.pools.PoolV2Mode;
+
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -10,9 +15,9 @@ import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.model.dataaccess.impl.PoolsDAOImplHelper;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class StandardPoolSpaceServiceTest {
 

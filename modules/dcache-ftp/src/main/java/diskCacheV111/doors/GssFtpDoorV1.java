@@ -1,26 +1,28 @@
 package diskCacheV111.doors;
 
 //cells
-import diskCacheV111.util.Version;
-import dmg.cells.nucleus.CellVersion;
-import dmg.util.CommandExitException;
-import dmg.util.StreamEngine;
-import dmg.util.Args;
 
-//dcache
-import diskCacheV111.util.Base64;
+import org.ietf.jgss.ChannelBinding;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.MessageProp;
 
-//java
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
+import diskCacheV111.util.Base64;
+import diskCacheV111.util.Version;
+
+import dmg.cells.nucleus.CellVersion;
+import dmg.util.Args;
+import dmg.util.CommandExitException;
+import dmg.util.StreamEngine;
+
+//dcache
+//java
 //jgss
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.ChannelBinding;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.MessageProp;
 
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {

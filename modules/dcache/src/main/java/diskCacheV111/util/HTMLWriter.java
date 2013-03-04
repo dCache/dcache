@@ -1,10 +1,10 @@
 package diskCacheV111.util;
 
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.Date;
 import java.util.Map;
-import java.io.Writer;
-import java.io.PrintWriter;
-import java.io.OutputStream;
 
 /**
  * Specialised HTML page writer for the dCache monitoring pages.

@@ -2,6 +2,7 @@ package org.dcache.vehicles;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsMessage;
+
 import org.dcache.util.ChecksumType;
 
 /**

@@ -4,10 +4,11 @@
 
 package javatunnel;
 
+import javax.security.auth.Subject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import javax.security.auth.Subject;
 
 interface Convertable {
 

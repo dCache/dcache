@@ -76,10 +76,11 @@ documents or software obtained from this server.
 package org.dcache.srm;
 
 
+import java.net.URI;
+import java.util.List;
+
 import diskCacheV111.srm.StorageElementInfo;
 
-import java.util.List;
-import java.net.URI;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 
 

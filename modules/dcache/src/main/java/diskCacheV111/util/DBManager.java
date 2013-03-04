@@ -11,18 +11,19 @@
 
 package diskCacheV111.util;
 
-import java.util.Set;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Arrays;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.sql.DatabaseMetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.dcache.util.JdbcConnectionPool;
 
 public class DBManager {

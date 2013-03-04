@@ -1,15 +1,14 @@
 package org.dcache.services.info.stateInfo;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Set;
 
 import org.dcache.services.info.stateInfo.LinkInfo.OPERATION;
 import org.dcache.services.info.stateInfo.LinkInfo.UNIT_TYPE;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * A set of tests to check LinkInfo object
@@ -471,7 +470,7 @@ public class LinkInfoTests {
     /**
      * Check whether adding a single unit of the specified type works as
      * expected.
-     * 
+     *
      * @param type
      *            the LinkInfo.UNIT_TYPE we wish to test.
      */

@@ -1,9 +1,10 @@
 package org.dcache.pool.repository;
 
-import diskCacheV111.util.PnfsId;
-import org.dcache.vehicles.FileAttributes;
-
 import java.util.Collection;
+
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.vehicles.FileAttributes;
 
 public interface CacheEntry
 {

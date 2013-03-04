@@ -5,8 +5,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.gplazma.configuration.parser.ConfigurationParser;
 import org.dcache.gplazma.configuration.parser.ConfigurationParserFactory;
-import org.dcache.gplazma.configuration.parser.ParseException;
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
+import org.dcache.gplazma.configuration.parser.ParseException;
 
 /**
  * This loading strategy loads the configuration from file, if file has been

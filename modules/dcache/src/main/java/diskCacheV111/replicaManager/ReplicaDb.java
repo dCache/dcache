@@ -2,9 +2,9 @@
 
 package diskCacheV111.replicaManager ;
 
-import  diskCacheV111.util.* ;
+import java.util.Iterator;
 
-import  java.util.* ;
+import diskCacheV111.util.PnfsId;
 
 public interface ReplicaDb {
 

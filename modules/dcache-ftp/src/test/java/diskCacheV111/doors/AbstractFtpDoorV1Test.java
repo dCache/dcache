@@ -4,32 +4,34 @@
  */
 package diskCacheV111.doors;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.NotFileCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import org.dcache.namespace.FileType;
-
-import java.util.EnumSet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import java.util.EnumSet;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
+
+import org.dcache.namespace.FileType;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
 /**
  *
  * @author karsten

@@ -1,6 +1,8 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 public class JdbmDirectory implements JdbmSerializable {
     private static final long serialVersionUID = -5850714968851810542L;
@@ -10,9 +12,9 @@ public class JdbmDirectory implements JdbmSerializable {
     public JdbmDirectory(){}
     public JdbmDirectory( int maxBytes ){
        int offset = JdbmSerializable.HEADER_SIZE + 2 * 4  ;
-       
+
        int n = 8 ;
-       int bits = 3 ; 
+       int bits = 3 ;
        while( ( offset + n * 8 ) <= maxBytes ){
           bits++ ;
           n *= 2 ;
@@ -23,7 +25,7 @@ public class JdbmDirectory implements JdbmSerializable {
        }
        _bits = bits - 1 ;
        _size = n / 2 * 8 ;
-       
+
        _addr = new long[_size] ;
     }
     public void expand(){
@@ -33,7 +35,7 @@ public class JdbmDirectory implements JdbmSerializable {
        for( int i = 0 ; i < _size ; i+= 2 , n++ ) {
            newAddr[i] = newAddr[i + 1] = _addr[n];
        }
-       _bits ++ ; 
+       _bits ++ ;
        _addr = newAddr ;
     }
     @Override
@@ -43,7 +45,7 @@ public class JdbmDirectory implements JdbmSerializable {
            throw new
                    IllegalArgumentException("PANIC : _size > _addr");
        }
-         
+
        out.writeInt(_size) ;
        for( int i = 0 ; i < _size ; i++ ) {
            out.writeLong(_addr[i]);
@@ -52,7 +54,7 @@ public class JdbmDirectory implements JdbmSerializable {
     @Override
     public void readObject( ObjectInput in )
            throws IOException, ClassNotFoundException {
-           
+
        _size = in.readInt() ;
        _addr = new long[_size] ;
        for( int i = 0 ; i < _size ; i++) {

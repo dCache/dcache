@@ -1,17 +1,16 @@
 package org.dcache.pool.migration;
 
-import java.util.List;
+import com.google.common.collect.ImmutableList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import org.dcache.util.expression.Expression;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.ImmutableList;
 
 /**
  * RefreshablePoolList decorator that can filter the list of pools.

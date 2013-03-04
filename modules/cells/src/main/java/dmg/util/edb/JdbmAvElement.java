@@ -1,6 +1,8 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 public class JdbmAvElement implements JdbmSerializable {
     private static final long serialVersionUID = -7313548868280129848L;
@@ -20,8 +22,8 @@ public class JdbmAvElement implements JdbmSerializable {
     @Override
     public void readObject( ObjectInput in )
            throws IOException, ClassNotFoundException {
-           
-           
+
+
        _size = in.readInt() ;
        _addr = in.readLong() ;
 

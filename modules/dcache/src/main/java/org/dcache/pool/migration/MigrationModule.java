@@ -1,59 +1,57 @@
 package org.dcache.pool.migration;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.NoSuchElementException;
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.Comparator;
-import java.io.StringWriter;
-import java.io.PrintWriter;
-
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellStub;
-import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.util.Glob;
-
-import org.dcache.util.expression.Token;
-import org.dcache.util.expression.Type;
-import org.dcache.util.expression.Expression;
-import org.dcache.util.expression.ExpressionParser;
-import org.dcache.util.expression.UnknownIdentifierException;
-import org.dcache.util.expression.TypeMismatchException;
-
+import com.google.common.collect.Range;
+import com.google.common.collect.Ranges;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 
-import static java.util.Arrays.asList;
-import static org.parboiled.errors.ErrorUtils.printParseErrors;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import com.google.common.collect.Range;
-import com.google.common.collect.Ranges;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.Glob;
+import org.dcache.util.expression.Expression;
+import org.dcache.util.expression.ExpressionParser;
+import org.dcache.util.expression.Token;
+import org.dcache.util.expression.Type;
+import org.dcache.util.expression.TypeMismatchException;
+import org.dcache.util.expression.UnknownIdentifierException;
+
+import static java.util.Arrays.asList;
+import static org.parboiled.errors.ErrorUtils.printParseErrors;
 
 /**
  * Module for migrating files between pools.

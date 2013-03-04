@@ -1,12 +1,5 @@
 package org.dcache.gplazma.plugins;
 
-import java.security.Principal;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-
-import org.dcache.gplazma.AuthenticationException;
 import org.glite.authz.common.model.Request;
 import org.glite.authz.common.model.Response;
 import org.glite.authz.common.model.Result;
@@ -15,6 +8,14 @@ import org.glite.authz.pep.client.PEPClientException;
 import org.glite.authz.pep.client.config.PEPClientConfiguration;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Test;
+
+import java.security.Principal;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+
+import org.dcache.gplazma.AuthenticationException;
 
 /**
  * @author karsten

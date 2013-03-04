@@ -1,12 +1,5 @@
 package org.dcache.http;
 
-import static org.jboss.netty.channel.Channels.pipeline;
-
-import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.vehicles.HttpProtocolInfo;
-import org.dcache.pool.movers.AbstractNettyServer;
-import org.dcache.util.PortRange;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
@@ -17,9 +10,17 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.vehicles.HttpProtocolInfo;
+
+import org.dcache.pool.movers.AbstractNettyServer;
+import org.dcache.util.PortRange;
+
+import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
  * Class used for encapsulating the netty HTTP server that serves client

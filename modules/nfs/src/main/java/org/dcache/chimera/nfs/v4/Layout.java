@@ -16,10 +16,13 @@
  */
 package org.dcache.chimera.nfs.v4;
 
+import org.glassfish.grizzly.Buffer;
+
 import java.io.IOException;
+
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.deviceid4;
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.layout4;
 import org.dcache.chimera.nfs.v4.xdr.layout_content4;
 import org.dcache.chimera.nfs.v4.xdr.layouttype4;
@@ -27,14 +30,13 @@ import org.dcache.chimera.nfs.v4.xdr.length4;
 import org.dcache.chimera.nfs.v4.xdr.nfl_util4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
-import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout4;
 import org.dcache.chimera.nfs.v4.xdr.offset4;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.XdrBuffer;
-import org.glassfish.grizzly.Buffer;
 
 /**
  * A Layout defines how a file's data is organized on one or more storage devices.

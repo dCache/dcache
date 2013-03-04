@@ -16,8 +16,10 @@
  */
 package org.dcache.chimera;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
+import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -28,21 +30,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
+
 import org.dcache.acl.ACE;
-
-import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.InodeStorageInformation;
-import org.dcache.commons.util.SqlHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
+import org.dcache.chimera.posix.Stat;
+import org.dcache.chimera.store.InodeStorageInformation;
+import org.dcache.commons.util.SqlHelper;
 
 /**
  * SQL driver

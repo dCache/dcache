@@ -3,16 +3,17 @@
  */
 
 package dmg.cells.nucleus ;
-import  java.util.ArrayList ;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
- 
+
 /**
  * deprecated: replace with java.concurrent.LinkedBlockingQueue
  */
@@ -22,22 +23,22 @@ import java.util.List;
    public synchronized void push( Object o ){
       _v.add( o ) ;
       notifyAll() ;
-   } 
+   }
    public synchronized int size(){ return _v.size() ; }
    public synchronized Object pop() {
-      while( true ){ 
-         if( ! _v.isEmpty() ){            
+      while( true ){
+         if( ! _v.isEmpty() ){
             return _v.remove(0) ;
          }else{
-            try{ 
-               wait() ; 
+            try{
+               wait() ;
             }catch( InterruptedException e ){ return null ;}
          }
       }
-   } 
+   }
    public synchronized Object pop( long timeout ) {
       long start = System.currentTimeMillis() ;
-      while( true ){ 
+      while( true ){
          if( ! _v.isEmpty() ){
             return _v.remove(0) ;
          }else{
@@ -45,22 +46,22 @@ import java.util.List;
             if( rest <= 0L ) {
                 return null;
             }
-            try{ 
-                wait( rest ) ; 
+            try{
+                wait( rest ) ;
             }catch( InterruptedException e ){
                return null ;
             }
-            
-            
+
+
          }
       }
-   } 
+   }
    public Object spy(){
       return _v.get(0) ;
    }
 
-   public synchronized Object[] dump() {       
-       return _v.toArray();       
-   }   
-   
+   public synchronized Object[] dump() {
+       return _v.toArray();
+   }
+
  }

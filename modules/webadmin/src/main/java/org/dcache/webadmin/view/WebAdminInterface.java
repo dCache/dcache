@@ -1,10 +1,5 @@
 package org.dcache.webadmin.view;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.Session;
@@ -20,6 +15,16 @@ import org.apache.wicket.protocol.https.HttpsMapper;
 import org.apache.wicket.request.Request;
 import org.apache.wicket.request.Response;
 import org.apache.wicket.request.mapper.CryptoMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
 import org.dcache.services.httpd.HttpServiceCell;
@@ -62,10 +67,6 @@ import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
 import org.dcache.webadmin.view.pages.unavailable.UnavailablePage;
 import org.dcache.webadmin.view.panels.navigation.BasicNavigationPanel;
 import org.dcache.webadmin.view.util.Role;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dmg.cells.nucleus.CellPath;
 
 /**
  * This is the main application object for the whole Webadmin-Interface

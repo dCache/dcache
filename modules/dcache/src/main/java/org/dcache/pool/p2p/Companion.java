@@ -1,53 +1,54 @@
 package org.dcache.pool.p2p;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.io.SyncFailedException;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.net.InetSocketAddress;
-import java.net.InetAddress;
-import java.io.IOException;
-import java.io.SyncFailedException;
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.security.MessageDigest;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.classic.ChecksumModuleV1;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileInCacheException;
-import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
-import org.dcache.util.FireAndForgetTask;
 import diskCacheV111.util.Adler32;
-import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.PoolDeliverFileMessage;
 
 import dmg.cells.nucleus.CellPath;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.classic.ChecksumModuleV1;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

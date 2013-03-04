@@ -1,40 +1,39 @@
 package org.dcache.auth;
 
-import dmg.cells.nucleus.EnvironmentAware;
-import dmg.util.Formats;
-import dmg.util.Replaceable;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import org.springframework.beans.factory.annotation.Required;
 
-import org.dcache.gplazma.GPlazma;
-import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.configuration.FromFileConfigurationLoadingStrategy;
-import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
+import javax.security.auth.Subject;
 
+import java.io.File;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import org.dcache.auth.attributes.LoginAttribute;
-
-import javax.security.auth.Subject;
-import java.util.Set;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Collections;
-import java.io.File;
-import java.security.Principal;
-
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import diskCacheV111.namespace.NameSpaceProvider;
-
+import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
+import dmg.util.Formats;
+import dmg.util.Replaceable;
+
+import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.cells.CellCommandListener;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.GPlazma;
 import org.dcache.gplazma.NoSuchPrincipalException;
+import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
+import org.dcache.gplazma.configuration.FromFileConfigurationLoadingStrategy;
 import org.dcache.gplazma.loader.DcacheAwarePluginFactory;
 import org.dcache.gplazma.loader.PluginFactory;
 import org.dcache.gplazma.monitor.LoginResult;
 import org.dcache.gplazma.monitor.LoginResultPrinter;
 import org.dcache.gplazma.monitor.RecordingLoginMonitor;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * A LoginStrategy that wraps a org.dcache.gplazma.GPlazma

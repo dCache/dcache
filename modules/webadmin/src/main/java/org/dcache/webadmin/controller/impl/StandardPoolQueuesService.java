@@ -1,10 +1,14 @@
 package org.dcache.webadmin.controller.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.dcache.webadmin.controller.PoolQueuesService;
 import org.dcache.webadmin.controller.exceptions.PoolQueuesServiceException;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
@@ -14,8 +18,6 @@ import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

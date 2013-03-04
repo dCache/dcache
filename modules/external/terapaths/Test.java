@@ -1,6 +1,3 @@
-import java.lang.Thread;
-import terapathsexamplejavaclient.*;
-
 public class Test {
 	private static TpsAPISEI tpsAPISEIPort = null;
 	public static void main( String [] args ) {

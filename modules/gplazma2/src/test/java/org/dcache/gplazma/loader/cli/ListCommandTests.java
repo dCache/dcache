@@ -1,6 +1,8 @@
 package org.dcache.gplazma.loader.cli;
 
-import static org.junit.Assert.fail;
+import com.google.common.collect.ImmutableList;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -11,10 +13,8 @@ import java.util.List;
 import org.dcache.gplazma.loader.PluginRepositoryFactory;
 import org.dcache.gplazma.loader.StaticClassPluginRepositoryFactory;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-import org.junit.Before;
-import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
+import static org.junit.Assert.fail;
 
 public class ListCommandTests {
     private static final PluginRepositoryFactory FACTORY =

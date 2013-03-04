@@ -1,11 +1,19 @@
 package org.dcache.srm.scheduler;
 
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.*;
-import java.util.Map;
-import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.dcache.srm.request.BringOnlineFileRequest;
+import org.dcache.srm.request.CopyRequest;
+import org.dcache.srm.request.GetFileRequest;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.LsFileRequest;
+import org.dcache.srm.request.PutFileRequest;
+import org.dcache.srm.request.ReserveSpaceRequest;
+import org.dcache.srm.util.Configuration;
 
 /**
  *

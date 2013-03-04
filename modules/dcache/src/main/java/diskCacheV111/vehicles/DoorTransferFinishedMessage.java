@@ -1,7 +1,8 @@
 // $Id: DoorTransferFinishedMessage.java,v 1.7 2005-06-01 06:03:54 patrick Exp $
 
 package diskCacheV111.vehicles;
-import  diskCacheV111.util.* ;
+
+import diskCacheV111.util.PnfsId;
 
 public class DoorTransferFinishedMessage extends Message {
    private ProtocolInfo _protocol;

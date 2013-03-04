@@ -4,8 +4,13 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
-import org.dcache.xdr.*;
+
 import java.io.IOException;
+
+import org.dcache.xdr.OncRpcException;
+import org.dcache.xdr.XdrAble;
+import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.XdrEncodingStream;
 
 public class CB_RECALLABLE_OBJ_AVAIL4res implements XdrAble {
     public int croa_status;

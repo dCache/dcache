@@ -71,18 +71,19 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request;
-import org.ietf.jgss.GSSCredential;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.WeakHashMap;
-import java.util.Collections;
-import java.util.Map;
-import java.lang.ref.WeakReference;
-import org.dcache.srm.scheduler.JobIdGeneratorFactory;
+import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
+import java.lang.ref.WeakReference;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
+
+import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 /**
  *
  * @author  timur

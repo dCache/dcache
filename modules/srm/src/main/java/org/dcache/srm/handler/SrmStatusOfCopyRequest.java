@@ -8,24 +8,30 @@
 //______________________________________________________________________________
 
 package org.dcache.srm.handler;
+
 import org.apache.axis.types.URI;
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.request.CopyRequest;
-import org.dcache.srm.request.sql.CopyFileRequestStorage;
-import org.dcache.srm.request.sql.CopyRequestStorage;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.Scheduler;
+import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+
 import java.sql.SQLException;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.CopyRequest;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.request.sql.CopyFileRequestStorage;
+import org.dcache.srm.request.sql.CopyRequestStorage;
+import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 
 /**
@@ -34,7 +40,7 @@ import java.sql.SQLException;
  */
 
 public class SrmStatusOfCopyRequest {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmStatusOfCopyRequest.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement         storage;
@@ -49,8 +55,8 @@ public class SrmStatusOfCopyRequest {
     private int results_num;
     private int max_results_num;
     int numOfLevels;
-    
-    
+
+
     public SrmStatusOfCopyRequest(SRMUser user,
             RequestCredential credential,
             SrmStatusOfCopyRequestRequest request,
@@ -64,12 +70,12 @@ public class SrmStatusOfCopyRequest {
         this.scheduler = srm.getCopyRequestScheduler();
         this.configuration = srm.getConfiguration();
     }
-    
+
     boolean longFormat;
     String servicePathAndSFNPart = "";
     int port;
     String host;
-    
+
     public SrmStatusOfCopyRequestResponse getResponse() {
         if(response != null ) {
             return response;
@@ -91,15 +97,15 @@ public class SrmStatusOfCopyRequest {
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
-        }        
+        }
         return response;
     }
-    
-    
+
+
     public static final SrmStatusOfCopyRequestResponse getFailedResponse(String text) {
         return getFailedResponse(text,null);
     }
-    
+
     public static final SrmStatusOfCopyRequestResponse getFailedResponse(String text,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -111,7 +117,7 @@ public class SrmStatusOfCopyRequest {
         response.setReturnStatus(status);
         return response;
     }
-    
+
     public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest()
     throws SRMException,
             MalformedURIException,
@@ -135,13 +141,13 @@ public class SrmStatusOfCopyRequest {
                 request.getArrayOfTargetSURLs() == null) {
             return copyRequest.getSrmStatusOfCopyRequest();
         }
-        
+
         URI [] fromsurls = request.getArrayOfSourceSURLs().getUrlArray();
         URI [] tosurls = request.getArrayOfTargetSURLs().getUrlArray();
         if(fromsurls.length == 0 || tosurls.length != fromsurls.length) {
             return copyRequest.getSrmStatusOfCopyRequest();
         }
-        
+
         String[] fromsurlStrings = new String[fromsurls.length];
         for(int i = 0; i< fromsurls.length; ++i) {
             fromsurlStrings[i] = fromsurls[i].toString();
@@ -150,9 +156,9 @@ public class SrmStatusOfCopyRequest {
         for(int i = 0; i< tosurls.length; ++i) {
             tosurlStrings[i] = tosurls[i].toString();
         }
-        
+
         return copyRequest.getSrmStatusOfCopyRequest(fromsurlStrings,tosurlStrings);
     }
-    
-    
+
+
 }

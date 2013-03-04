@@ -7,11 +7,11 @@
 //______________________________________________________________________________
 package gov.fnal.srm.util;
 
+import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 

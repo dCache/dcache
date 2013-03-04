@@ -1,58 +1,58 @@
 package org.dcache.util;
 
-import java.util.Set;
-import java.util.EnumSet;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import javax.security.auth.Subject;
-
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
-import diskCacheV111.util.FileIsNewCacheException;
-import dmg.cells.nucleus.CellAddressCore;
-import org.dcache.acl.enums.AccessMask;
-import org.dcache.cells.CellStub;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
-import org.dcache.commons.util.NDC;
-
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.NotFileCacheException;
-import diskCacheV111.util.NotInTrashCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.poolManager.RequestContainerV5;
-import diskCacheV111.util.TimeoutCacheException;
-
-import diskCacheV111.vehicles.IoDoorEntry;
-import diskCacheV111.vehicles.IoJobInfo;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolDeliverFileMessage;
-import diskCacheV111.vehicles.PoolMoverKillMessage;
-import diskCacheV111.vehicles.PnfsCreateEntryMessage;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.CDC;
-import dmg.util.TimebasedCounter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import static com.google.common.base.Preconditions.*;
-import com.google.common.collect.Sets;
+import javax.security.auth.Subject;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.EnumSet;
+import java.util.Set;
+
+import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileIsNewCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.TimebasedCounter;
+
+import org.dcache.acl.enums.AccessMask;
+import org.dcache.cells.CellStub;
+import org.dcache.commons.util.NDC;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;

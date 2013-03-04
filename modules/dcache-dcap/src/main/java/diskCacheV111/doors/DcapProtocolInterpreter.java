@@ -1,8 +1,10 @@
 package diskCacheV111.doors;
 
-import diskCacheV111.util.VspArgs;
-import dmg.cells.nucleus.CellMessage;
 import java.io.PrintWriter;
+
+import diskCacheV111.util.VspArgs;
+
+import dmg.cells.nucleus.CellMessage;
 
 /**
  * DCAP protocol Interpreter. Used By doors to parse ascii commands sent over

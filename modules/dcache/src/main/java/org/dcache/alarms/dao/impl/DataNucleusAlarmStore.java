@@ -59,13 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao.impl;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jdo.FetchPlan;
 import javax.jdo.JDOHelper;
@@ -74,11 +69,17 @@ import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Collection;
+import java.util.Properties;
+
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.alarms.dao.AlarmStorageException;
 import org.dcache.alarms.dao.IAlarmLoggingDAO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * DataNucleus wrapper to underlying alarm store.<br>

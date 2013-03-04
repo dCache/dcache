@@ -74,22 +74,23 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
-import java.net.URLConnection;
-import java.util.HashSet;
-import java.net.URL;
 
-import org.dcache.srm.security.SslGsiSocketFactory;
 import org.globus.util.GlobusURL;
-import java.io.InputStream;
-import java.io.OutputStream;
+import org.ietf.jgss.GSSCredential;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import org.dcache.srm.util.GridftpClient;
-import org.ietf.jgss.GSSCredential;
-import org.dcache.srm.Logger;
-
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import org.dcache.srm.Logger;
+import org.dcache.srm.security.SslGsiSocketFactory;
+import org.dcache.srm.util.GridftpClient;
 
 
 /**

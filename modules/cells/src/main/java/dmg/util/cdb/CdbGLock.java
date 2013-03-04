@@ -1,6 +1,7 @@
 package dmg.util.cdb ;
 
-import java.util.* ;
+import java.util.Hashtable;
+import java.util.Vector;
 
 public class CdbGLock implements CdbLockListener, CdbLockable {
    private class LockEntry {
@@ -11,15 +12,15 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
                _isWriteLock = writeLock ;
                _counter     = 1 ;
           }
-          public String toString(){ 
+          public String toString(){
              return "WriteLock="+_isWriteLock+
                     ";Counter="+_counter ;
-          }                                
+          }
       }
       private Thread         _thread;
       private int          _position = -1 ;
       private LockEntryDesc [] _desc = new LockEntryDesc[2] ;
-      
+
       private LockEntry( Thread thread , boolean writeLock ){
          _thread   = thread ;
          _desc[0]  = new LockEntryDesc(writeLock) ;
@@ -40,7 +41,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
          //
          _desc[++_position] = new LockEntryDesc(true) ;
       }
-      
+
       public int degrade() throws CdbLockException {
          if( _position < 0 ) {
              throw new CdbLockException("PANIC close=(_position<0)");
@@ -48,7 +49,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
          if( _desc[_position]._counter <= 0 ) {
              throw new CdbLockException("PANIC close=(_counter<=0)");
          }
-           
+
          _desc[_position]._counter-- ;
          if( _desc[_position]._counter <= 0 ){
             _position-- ;
@@ -56,7 +57,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
          }else {
              return NOTHING_CHANGED;
          }
-   
+
       }
       public String toString(){
          StringBuilder sb = new StringBuilder() ;
@@ -78,10 +79,10 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       }
    }
    private static final int   NOTHING_CHANGED  = 0 ;
-   private static final int   WRITE_TO_READ    = 1 ; 
+   private static final int   WRITE_TO_READ    = 1 ;
    private static final int   NOTHING_LEFT     = 2 ;
-   
-   
+
+
    private Vector<LockEntry> _list = new Vector<>(8) ;
    private Hashtable<Thread, LockEntry> _hash = new Hashtable<>() ;
    private CdbLockListener   _listener;
@@ -90,9 +91,9 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
      _listener = listener ;
    }
    public CdbGLock(){ _listener = this ; }
-   public CdbGLock( CdbLockable creator ){   
+   public CdbGLock( CdbLockable creator ){
       _listener = this ;
-      _creator  = creator ; 
+      _creator  = creator ;
    }
    public  String toString(){
       StringBuilder sb = new StringBuilder() ;
@@ -130,7 +131,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
                } else {
                    writeLockAborted();
                }
-            }else{ 
+            }else{
                readLockReleased() ;
             }
          break ;
@@ -139,7 +140,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       if( _creator != null ) {
           _creator.close(CdbLockable.COMMIT);
       }
-   } 
+   }
    @Override
    public synchronized void open( int flags )
          throws CdbLockException,
@@ -181,13 +182,13 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
                    break;
                }
                wait() ;
-            } 
-            writeLockGranted() ; 
-            return ;   
+            }
+            writeLockGranted() ;
+            return ;
          }
          //
-         // increment the lock thread counter 
-         //  
+         // increment the lock thread counter
+         //
          entry.increment() ;
          return ;
       }
@@ -196,7 +197,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       //
       entry = new LockEntry( ourThread ,
                             ( flags & CdbLockable.WRITE ) > 0 ) ;
-                         
+
       _list.addElement( entry );
       //
       // we need to destingueck between read and write locks
@@ -220,8 +221,8 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
             }
             wait() ;
          }
-             
-         writeLockGranted() ; 
+
+         writeLockGranted() ;
       }else{
          //////////////////////////////////////////////////////////
          //                                                      //
@@ -261,12 +262,12 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
             wait() ;
          }
          readLockGranted() ;
-          
+
       }
       _hash.put( ourThread , entry ) ;
-      
+
    }
-   
+
    @Override
    public void readLockGranted() {}
    @Override
@@ -290,7 +291,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
           System.out.println( "Open   : "+(opened-start) ) ;
           System.out.println( "Close  : "+(finished-opened) ) ;
        }
-   
+
    }
 
 }

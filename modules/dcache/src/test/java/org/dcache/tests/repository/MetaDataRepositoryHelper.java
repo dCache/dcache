@@ -2,25 +2,25 @@ package org.dcache.tests.repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.ArrayList;
-
-import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.DuplicateEntryException;
-import org.dcache.pool.repository.MetaDataStore;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.MetaDataRecord;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.meta.db.CacheRepositoryEntryState;
-import org.dcache.pool.repository.v3.RepositoryException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.pool.repository.DuplicateEntryException;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.meta.db.CacheRepositoryEntryState;
+import org.dcache.pool.repository.v3.RepositoryException;
 
 public class MetaDataRepositoryHelper implements MetaDataStore {
 

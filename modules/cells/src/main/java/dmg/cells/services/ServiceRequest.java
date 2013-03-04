@@ -1,9 +1,11 @@
 package dmg.cells.services ;
-import  dmg.cells.nucleus.UOID ;
-import  java.io.Serializable ;
+
+import java.io.Serializable;
+
+import dmg.cells.nucleus.UOID;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -15,7 +17,7 @@ public class ServiceRequest implements Serializable  {
    private UOID     _uoid    = new UOID() ;
    private Object   _object;
    private String   _command;
-   
+
    public ServiceRequest( String command , Serializable o ){
       _command = command ;
       _object  = o ;
@@ -31,12 +33,12 @@ public class ServiceRequest implements Serializable  {
       }
    }
    public int hashCode(){ return  _uoid.hashCode() ; }
-   public boolean equals( Object o ){ 	   
+   public boolean equals( Object o ){
       return (o instanceof ServiceRequest ) && ((ServiceRequest)o)._uoid.equals( _uoid ) ;
    }
    public Serializable getObject(){ return (Serializable) _object ; }
    public String getCommmand(){ return _command ; }
-  
-  
-  
+
+
+
 }

@@ -1,29 +1,29 @@
 package org.dcache.webdav;
 
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.io.OutputStream;
-import java.io.IOException;
-import java.net.URLConnection;
-import java.net.FileNameMap;
-
-import io.milton.resource.GetableResource;
-import io.milton.resource.DeletableResource;
 import io.milton.http.Auth;
 import io.milton.http.Range;
 import io.milton.http.Request;
-import io.milton.http.exceptions.NotAuthorizedException;
-import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.BadRequestException;
+import io.milton.http.exceptions.ConflictException;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.resource.DeletableResource;
+import io.milton.resource.GetableResource;
 
-import diskCacheV111.util.FsPath;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.FileNameMap;
+import java.net.URISyntaxException;
+import java.net.URLConnection;
+import java.util.Map;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksums;
-
 import org.dcache.vehicles.FileAttributes;
 
 /**

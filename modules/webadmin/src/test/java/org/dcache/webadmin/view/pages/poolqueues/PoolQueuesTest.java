@@ -1,13 +1,14 @@
 package org.dcache.webadmin.view.pages.poolqueues;
 
 import org.apache.wicket.util.tester.WicketTester;
-import org.dcache.webadmin.view.WebAdminInterface;
-import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
+import org.junit.Before;
+import org.junit.Test;
+
 import org.dcache.webadmin.controller.impl.StandardPoolQueuesService;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
-import org.junit.Before;
-import org.junit.Test;
+import org.dcache.webadmin.view.WebAdminInterface;
+import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 
 /**
  * Unittest to test the whole page.

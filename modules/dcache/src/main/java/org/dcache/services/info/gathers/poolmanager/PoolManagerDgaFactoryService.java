@@ -4,6 +4,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdateManager;
@@ -14,9 +17,6 @@ import org.dcache.services.info.gathers.MessageSender;
 import org.dcache.services.info.gathers.Schedulable;
 import org.dcache.services.info.gathers.SingleMessageDga;
 import org.dcache.services.info.gathers.StringListMsgHandler;
-
-import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.UOID;
 
 /**
  * This DgaFactoryService creates DGAs for monitoring the PoolManager.

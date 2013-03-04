@@ -1,7 +1,9 @@
 package org.dcache.webadmin.model.dataaccess.communication;
 
-import dmg.cells.nucleus.CellPath;
 import java.io.Serializable;
+
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
 
 /**

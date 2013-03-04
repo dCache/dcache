@@ -1,19 +1,18 @@
 package org.dcache.webdav;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
-import io.milton.http.Request;
-import io.milton.http.Response;
 import io.milton.http.Handler;
 import io.milton.http.HttpManager;
-import io.milton.http.http11.Http11ResponseHandler;
+import io.milton.http.Request;
+import io.milton.http.Response;
+import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
-import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.NotFoundException;
+import io.milton.http.http11.Http11ResponseHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Custom StandardFilter for Milton.

@@ -3,12 +3,12 @@
  */
 package org.dcache.services.info.base;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The StateUpdate is a simple collection containing zero or more proposed concurrent

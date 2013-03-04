@@ -1,26 +1,28 @@
 package org.dcache.gplazma.plugins;
 
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.dcache.gplazma.plugins.PrincipalSetMaker.aSetOfPrincipals;
-
 import com.google.common.collect.Sets;
+import org.globus.gsi.jaas.GlobusPrincipal;
+import org.hamcrest.Matcher;
+import org.junit.Test;
 
 import java.security.Principal;
-import java.util.Set;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.gplazma.util.NameRolePair;
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.jaas.GlobusPrincipal;
-import org.junit.Test;
-import org.hamcrest.Matcher;
+import org.dcache.gplazma.util.NameRolePair;
+
+import static org.dcache.gplazma.plugins.PrincipalSetMaker.aSetOfPrincipals;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
 
 public class VoRoleMapPluginTest

@@ -14,15 +14,15 @@
 
 package org.dcache.srm.unixfs;
 
-import org.dcache.srm.SRMAuthorization;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMUser;
-
 import org.ietf.jgss.GSSContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+
+import org.dcache.srm.SRMAuthorization;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMUser;
 
 public final class UnixfsAuthorization implements SRMAuthorization {
 

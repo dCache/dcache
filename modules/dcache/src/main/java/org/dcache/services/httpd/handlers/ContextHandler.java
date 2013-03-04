@@ -1,22 +1,23 @@
 package org.dcache.services.httpd.handlers;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.Map;
-import java.util.SortedMap;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.dcache.services.httpd.exceptions.OnErrorException;
-import org.dcache.services.httpd.util.StandardHttpRequest;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import java.io.IOException;
+import java.util.Date;
+import java.util.Map;
+import java.util.SortedMap;
 
 import dmg.util.CollectionFactory;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
+
+import org.dcache.services.httpd.exceptions.OnErrorException;
+import org.dcache.services.httpd.util.StandardHttpRequest;
 
 /**
  * Provides lookup in the context map of preconfigured HTML pages.

@@ -1,7 +1,7 @@
 package org.dcache.pool.migration;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 import org.dcache.pool.repository.StickyRecord;
 

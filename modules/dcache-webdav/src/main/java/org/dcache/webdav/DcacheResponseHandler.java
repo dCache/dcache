@@ -1,15 +1,31 @@
 package org.dcache.webdav;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import io.milton.http.AbstractWrappingResponseHandler;
-import io.milton.resource.Resource;
-import io.milton.http.Response;
-import io.milton.http.Request;
 import io.milton.http.AuthenticationService;
+import io.milton.http.Range;
+import io.milton.http.Request;
+import io.milton.http.Response;
+import io.milton.http.exceptions.BadRequestException;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.http.exceptions.NotFoundException;
 import io.milton.http.values.ValueAndType;
 import io.milton.http.webdav.PropFindResponse;
 import io.milton.http.webdav.PropFindResponse.NameAndError;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
+import io.milton.resource.GetableResource;
+import io.milton.resource.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupFile;
+
+import javax.security.auth.Subject;
+import javax.xml.namespace.QName;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -17,25 +33,8 @@ import java.security.AccessController;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.security.auth.Subject;
-import javax.xml.namespace.QName;
-
-import com.google.common.collect.Lists;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.ImmutableMap;
-import io.milton.http.Range;
-import org.stringtemplate.v4.ST;
-import org.stringtemplate.v4.STGroup;
-import org.stringtemplate.v4.STGroupFile;
 
 import static io.milton.http.Response.Status.*;
-import io.milton.http.exceptions.BadRequestException;
-import io.milton.http.exceptions.NotAuthorizedException;
-import io.milton.http.exceptions.NotFoundException;
-import io.milton.resource.GetableResource;
 
 /**
  * This class controls how Milton responds under different circumstances by

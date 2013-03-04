@@ -1,23 +1,23 @@
 package org.dcache.services.topology;
 
-import dmg.cells.nucleus.CellTunnelInfo;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.network.CellDomainNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractCellComponent;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
 import diskCacheV111.util.CacheException;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Queue;
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.ArrayList;
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellTunnelInfo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellStub;
 
 /**
  * Base class for CellsTopology implementations. Provides support for

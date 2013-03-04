@@ -2,11 +2,19 @@
 
 package diskCacheV111.doors ;
 
-import diskCacheV111.util.Version;
-import diskCacheV111.util.VspArgs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.util.Version;
+import diskCacheV111.util.VspArgs;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -16,13 +24,8 @@ import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
-import org.dcache.auth.Subjects;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import javax.security.auth.Subject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.auth.Subjects;
 
 /**
   * @author Patrick Fuhrmann

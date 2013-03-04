@@ -1,9 +1,10 @@
 // $Id: PnfsGetCacheLocationsMessage.java,v 1.5 2007-05-24 13:51:05 tigran Exp $
 
 package diskCacheV111.vehicles;
-import  diskCacheV111.util.* ;
 
-import java.util.*;
+import java.util.List;
+
+import diskCacheV111.util.PnfsId;
 
 public class PnfsGetCacheLocationsMessage extends PnfsMessage {
 

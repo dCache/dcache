@@ -1,11 +1,15 @@
 package diskCacheV111.util;
 
-import dmg.util.HttpException;
-import java.util.List;
+import org.junit.Test;
+
 import javax.servlet.http.HttpServletResponse;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import java.util.List;
+
+import dmg.util.HttpException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class HttpByteRangeTests{
     private final long LOWER=0;

@@ -1,25 +1,23 @@
 package org.dcache.cells;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
-
-import java.io.PrintWriter;
-
+import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.Message;
-import javax.jms.StreamMessage;
-import javax.jms.MessageListener;
 import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.StreamMessage;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dmg.cells.nucleus.CellInfo;
-
-import com.google.common.base.Objects;
 
 /**
  * MessageListener which processes cell name registrations and

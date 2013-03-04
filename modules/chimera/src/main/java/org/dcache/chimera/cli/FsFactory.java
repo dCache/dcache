@@ -16,10 +16,10 @@
  */
 package org.dcache.chimera.cli;
 
+import com.jolbox.bonecp.BoneCPDataSource;
+
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.JdbcFs;
-
-import com.jolbox.bonecp.BoneCPDataSource;
 
 public class FsFactory {
 

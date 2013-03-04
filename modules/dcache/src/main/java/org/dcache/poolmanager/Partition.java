@@ -1,19 +1,19 @@
 package org.dcache.poolmanager;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.CacheException;
+
 import org.dcache.vehicles.FileAttributes;
 
-import com.google.common.collect.ImmutableMap;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.notNull;
-import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.*;
 import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.collect.Maps.filterValues;
 

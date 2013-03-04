@@ -1,7 +1,8 @@
 package org.dcache.gplazma.configuration.parser;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import org.dcache.gplazma.GPlazmaInternalException;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  *  This Exception indicates there was a problem reading the

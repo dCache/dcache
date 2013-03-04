@@ -1,11 +1,11 @@
 package org.dcache.pool.repository;
 
+import java.io.File;
+import java.util.List;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
-
-import java.io.File;
-import java.util.List;
 
 /**
  * Implementations provide access to meta data for replicas.

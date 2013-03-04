@@ -1,12 +1,14 @@
 package org.dcache.services.info.gathers.srm;
 
-import org.dcache.services.info.gathers.MessageSender;
-import org.dcache.services.info.gathers.SkelPeriodicActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.services.space.message.GetLinkGroupsMessage;
+
 import dmg.cells.nucleus.CellPath;
+
+import org.dcache.services.info.gathers.MessageSender;
+import org.dcache.services.info.gathers.SkelPeriodicActivity;
 
 /**
  * Class to send off requests for detailed information.

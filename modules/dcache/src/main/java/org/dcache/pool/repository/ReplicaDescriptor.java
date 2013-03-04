@@ -1,7 +1,9 @@
 package org.dcache.pool.repository;
 
-import diskCacheV111.util.CacheException;
 import java.io.File;
+
+import diskCacheV111.util.CacheException;
+
 import org.dcache.util.Checksum;
 
 

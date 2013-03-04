@@ -59,8 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.model.util;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -69,8 +69,9 @@ import java.util.List;
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * Some simple filter consistency tests.

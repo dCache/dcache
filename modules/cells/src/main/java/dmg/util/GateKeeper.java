@@ -1,6 +1,6 @@
 package dmg.util ;
 
-import java.util.* ;
+import java.util.Vector;
 
 public class GateKeeper {
     private Vector<ThreadWatch>      _stack        = new Vector<>() ;

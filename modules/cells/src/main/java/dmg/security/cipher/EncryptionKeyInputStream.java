@@ -1,10 +1,10 @@
 package dmg.security.cipher ;
 
-import java.io.* ;
+import java.io.IOException;
 
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998

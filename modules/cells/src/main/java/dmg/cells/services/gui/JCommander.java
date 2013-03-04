@@ -2,16 +2,30 @@
 //
 package dmg.cells.services.gui ;
 //
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
 
-import dmg.cells.applets.login.DomainConnection ;
-import dmg.cells.applets.login.DomainConnectionListener ;
-import dmg.cells.applets.login.DomainEventListener ;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
-public class      JCommander 
-       extends    JPanel 
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import dmg.cells.applets.login.DomainConnection;
+import dmg.cells.applets.login.DomainConnectionListener;
+import dmg.cells.applets.login.DomainEventListener;
+
+public class      JCommander
+       extends    JPanel
        implements DomainConnectionListener,
                   DomainEventListener {
    private static final long serialVersionUID = -8239106425185640530L;
@@ -26,23 +40,23 @@ public class      JCommander
        GridBagLayout lo = new GridBagLayout() ;
        GridBagConstraints c = new GridBagConstraints()  ;
        JPanel panel = new JPanel( lo ) ;
-       
+
        c.gridheight = 1 ;
        c.insets     = new Insets(4,4,4,4) ;
-       
+
        c.gridwidth  = 1 ; c.gridx = 0 ; c.gridy = 0 ;
-       panel.add( _clearButton , c ) ; 
+       panel.add( _clearButton , c ) ;
        c.gridwidth  = 1 ; c.gridx = 1 ; c.gridy = 0 ;
-       panel.add( new JLabel("Destination") , c ) ; 
-       
+       panel.add( new JLabel("Destination") , c ) ;
+
        c.weightx = 1.0 ;
        c.weighty = 0.0 ;
        c.gridwidth  = 1 ; c.gridx = 2 ; c.gridy = 0 ;
        c.fill = GridBagConstraints.HORIZONTAL ;
-       panel.add( _destination , c ) ; 
+       panel.add( _destination , c ) ;
        c.gridwidth  = 3 ; c.gridx = 0 ; c.gridy = 1 ;
-       panel.add( _commandField , c ) ; 
-       
+       panel.add( _commandField , c ) ;
+
        JPanel jp = new JPanel( new BorderLayout() ) ;
        jp.add( panel , "Center" ) ;
        return jp ;
@@ -56,14 +70,14 @@ public class      JCommander
       _connection.addDomainEventListener(this) ;
       JLabel label = new JLabel( "Commander" , JLabel.CENTER ) ;
       label.setFont( _bigFont ) ;
-      
+
       add( label , "North" ) ;
       _displayArea.setEditable(false);
       _scrollPane = new JScrollPane( _displayArea ) ;
       add( _scrollPane   , "Center" ) ;
-      
+
       add( createSouth() , "South" ) ;
-      
+
       _clearButton.addActionListener(
          new ActionListener(){
             @Override
@@ -73,7 +87,7 @@ public class      JCommander
          }
       ) ;
       _commandField.addActionListener(
-      
+
           new ActionListener(){
               @Override
               public void actionPerformed( ActionEvent event ){

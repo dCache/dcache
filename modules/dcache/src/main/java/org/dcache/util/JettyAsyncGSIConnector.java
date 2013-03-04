@@ -1,12 +1,7 @@
 package org.dcache.util;
 
-import java.io.IOException;
-
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import java.security.cert.X509Certificate;
-import java.util.concurrent.TimeUnit;
-
+import org.eclipse.jetty.http.HttpParser;
+import org.eclipse.jetty.http.HttpSchemes;
 import org.eclipse.jetty.io.Buffers;
 import org.eclipse.jetty.io.Buffers.Type;
 import org.eclipse.jetty.io.BuffersFactory;
@@ -18,12 +13,10 @@ import org.eclipse.jetty.io.nio.SelectorManager.SelectSet;
 import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.http.HttpParser;
-import org.eclipse.jetty.http.HttpSchemes;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.X509Credential;
 import org.globus.gsi.CredentialException;
+import org.globus.gsi.GSIConstants;
 import org.globus.gsi.TrustedCertificates;
+import org.globus.gsi.X509Credential;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -35,9 +28,15 @@ import org.ietf.jgss.GSSManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.globus.axis.gsi.GSIConstants.*;
-import static org.dcache.util.Files.checkFile;
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
+
 import static org.dcache.util.Files.checkDirectory;
+import static org.dcache.util.Files.checkFile;
+import static org.globus.axis.gsi.GSIConstants.*;
 
 
 /**

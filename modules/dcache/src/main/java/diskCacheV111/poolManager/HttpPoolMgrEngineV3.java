@@ -1,6 +1,9 @@
 // $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $
 package diskCacheV111.poolManager ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
@@ -20,8 +23,8 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
+
 import dmg.cells.nucleus.CellEndpoint;
-import org.dcache.poolmanager.Partition;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -31,8 +34,7 @@ import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.poolmanager.Partition;
 
 public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 {

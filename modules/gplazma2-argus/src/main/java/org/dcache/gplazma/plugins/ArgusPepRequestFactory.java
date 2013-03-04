@@ -1,11 +1,5 @@
 package org.dcache.gplazma.plugins;
 
-import static org.glite.authz.common.profile.AuthorizationProfileConstants.DATATYPE_STRING;
-import static org.glite.authz.common.profile.AuthorizationProfileConstants.ID_ATTRIBUTE_ACTION_ID;
-import static org.glite.authz.common.profile.AuthorizationProfileConstants.ID_ATTRIBUTE_PROFILE_ID;
-import static org.glite.authz.common.profile.AuthorizationProfileConstants.ID_ATTRIBUTE_RESOURCE_ID;
-import static org.glite.authz.common.profile.AuthorizationProfileConstants.ID_ATTRIBUTE_SUBJECT_ID;
-
 import org.glite.authz.common.model.Action;
 import org.glite.authz.common.model.Attribute;
 import org.glite.authz.common.model.Environment;
@@ -13,6 +7,8 @@ import org.glite.authz.common.model.Request;
 import org.glite.authz.common.model.Resource;
 import org.glite.authz.common.model.Subject;
 import org.glite.authz.pep.profile.AuthorizationProfile;
+
+import static org.glite.authz.common.profile.AuthorizationProfileConstants.*;
 
 public class ArgusPepRequestFactory {
 

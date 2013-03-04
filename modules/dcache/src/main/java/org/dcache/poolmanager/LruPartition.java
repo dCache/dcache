@@ -1,7 +1,11 @@
 package org.dcache.poolmanager;
 
-import java.util.Map;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -9,13 +13,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
+
 import org.dcache.vehicles.FileAttributes;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import static com.google.common.collect.Iterables.filter;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.filter;
 
 /**
  * Partition that selects the least recently used pool.

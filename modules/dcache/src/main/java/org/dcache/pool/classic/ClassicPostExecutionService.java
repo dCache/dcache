@@ -1,11 +1,14 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.CacheException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import diskCacheV111.util.CacheException;
+
+import dmg.cells.nucleus.CDC;
+
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
-import dmg.cells.nucleus.CDC;
 
 /**
  *

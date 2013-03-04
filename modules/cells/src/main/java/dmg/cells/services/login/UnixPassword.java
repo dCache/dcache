@@ -1,8 +1,13 @@
 package dmg.cells.services.login ;
 
-import java.io.* ;
-import java.util.* ;
-import dmg.security.digest.Crypt ;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Hashtable;
+import java.util.StringTokenizer;
+
+import dmg.security.digest.Crypt;
 
 public class UnixPassword {
 
@@ -10,14 +15,14 @@ public class UnixPassword {
    private Crypt     _crypt     = new Crypt() ;
    private long      _timeStamp;
    private File      _file;
-   
+
    public UnixPassword( String pswFile ) throws IOException {
-   
+
       _file = new File( pswFile ) ;
       if( ! _file.canRead() ) {
           throw new IOException("File Not Found : " + pswFile);
       }
-      
+
       _update() ;
    }
    public synchronized void update(){
@@ -32,7 +37,7 @@ public class UnixPassword {
 
        String          line;
       StringTokenizer st;
-      
+
       _hash = new Hashtable<>() ;
 
        try (BufferedReader br = new BufferedReader(
@@ -54,7 +59,7 @@ public class UnixPassword {
       if( cipher == null ) {
           return false;
       }
-      
+
       String result = _crypt.crypt( cipher , password ) ;
       return _crypt.crypt( cipher , password ).equals(cipher) ;
    }

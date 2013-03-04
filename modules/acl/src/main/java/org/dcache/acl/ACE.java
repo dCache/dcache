@@ -1,6 +1,7 @@
 package org.dcache.acl;
 
 import java.io.Serializable;
+
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;

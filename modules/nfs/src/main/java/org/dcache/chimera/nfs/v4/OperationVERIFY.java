@@ -17,18 +17,20 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.nfsstat;
-import org.dcache.chimera.nfs.v4.xdr.uint32_t;
-import org.dcache.chimera.nfs.v4.xdr.fattr4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
-import org.dcache.chimera.nfs.v4.xdr.bitmap4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.xdr.VERIFY4res;
-import org.dcache.chimera.nfs.ChimeraNFSException;
-import java.util.Arrays;
-import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+
+import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.nfsstat;
+import org.dcache.chimera.nfs.v4.xdr.VERIFY4res;
+import org.dcache.chimera.nfs.v4.xdr.bitmap4;
+import org.dcache.chimera.nfs.v4.xdr.fattr4;
+import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
+import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
+import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 
 public class OperationVERIFY extends AbstractNFSv4Operation {
 

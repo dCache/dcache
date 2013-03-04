@@ -1,8 +1,12 @@
 package org.dcache.webadmin.view.pages.poollist;
 
-import java.util.List;
 import org.apache.wicket.util.tester.FormTester;
 import org.apache.wicket.util.tester.WicketTester;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.controller.impl.StandardPoolSpaceService;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -10,8 +14,7 @@ import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
-import org.junit.Before;
-import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 /**

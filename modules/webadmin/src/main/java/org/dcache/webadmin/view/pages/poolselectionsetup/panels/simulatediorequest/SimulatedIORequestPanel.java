@@ -1,8 +1,5 @@
 package org.dcache.webadmin.view.pages.poolselectionsetup.panels.simulatediorequest;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -19,14 +16,19 @@ import org.apache.wicket.markup.repeater.data.ListDataProvider;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.dcache.webadmin.controller.exceptions.PoolSelectionSetupServiceException;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.IORequest;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.MatchBean;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

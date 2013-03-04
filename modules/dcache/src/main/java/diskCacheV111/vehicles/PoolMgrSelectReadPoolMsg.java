@@ -1,14 +1,17 @@
 // $Id: PoolMgrSelectReadPoolMsg.java,v 1.5 2004-11-05 12:07:19 tigran Exp $
 
 package diskCacheV111.vehicles ;
+
+import java.io.Serializable;
+import java.util.EnumSet;
+
 import diskCacheV111.poolManager.RequestContainerV5;
 
-import java.util.EnumSet;
-import java.io.Serializable;
-import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.namespace.FileAttribute.*;
-import static com.google.common.base.Preconditions.*;
 
 /**
  * Requests pool manager to provide a pool from which a given file can

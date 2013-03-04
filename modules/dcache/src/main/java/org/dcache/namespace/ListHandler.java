@@ -1,6 +1,7 @@
 package org.dcache.namespace;
 
 import diskCacheV111.util.CacheException;
+
 import org.dcache.vehicles.FileAttributes;
 
 /**

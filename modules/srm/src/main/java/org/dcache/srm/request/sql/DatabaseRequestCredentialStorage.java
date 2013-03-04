@@ -71,21 +71,29 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request.sql;
-import java.sql.*;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.request.RequestCredentialStorage;
-import org.ietf.jgss.GSSCredential;
+
 import org.globus.gsi.X509Credential;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.gridforum.jgss.ExtendedGSSCredential;
-import java.io.ByteArrayInputStream;
-import org.dcache.srm.util.Configuration;
-import java.io.FileWriter;
-import java.io.FileReader;
-import java.io.File;
-import java.io.IOException;
+import org.ietf.jgss.GSSCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.request.RequestCredentialStorage;
+import org.dcache.srm.util.Configuration;
 
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 

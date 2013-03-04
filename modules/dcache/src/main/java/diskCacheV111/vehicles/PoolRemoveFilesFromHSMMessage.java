@@ -1,8 +1,8 @@
 package diskCacheV111.vehicles;
 
-import java.util.Collection;
-import java.util.ArrayList;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class PoolRemoveFilesFromHSMMessage extends PoolMessage
 {

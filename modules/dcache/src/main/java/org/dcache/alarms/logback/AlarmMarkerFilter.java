@@ -59,12 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
-import org.dcache.alarms.IAlarms;
-import org.slf4j.Marker;
-
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import org.slf4j.Marker;
+
+import org.dcache.alarms.IAlarms;
 
 /**
  * This filter can be added to the appender responsible for receiving

@@ -5,11 +5,11 @@ package org.dcache.util;
  * Date: Feb 13, 2008
  * Time: 6:39:03 PM
  */
-import java.sql.SQLException;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 
 /*
 * Here we define the proxy class which will work as a ConnectionFactory

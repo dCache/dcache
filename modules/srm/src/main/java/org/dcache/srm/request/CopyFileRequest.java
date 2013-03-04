@@ -72,44 +72,50 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import org.apache.axis.types.UnsignedLong;
+import org.globus.util.GlobusURL;
+import org.gridforum.jgss.ExtendedGSSCredential;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
-import java.net.URI;
-import java.net.URL;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
+import java.net.URI;
+import java.net.URL;
 import java.net.URLConnection;
 import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
-import java.io.FileNotFoundException;
-import org.apache.axis.types.UnsignedLong;
+
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
-import org.dcache.srm.SrmUseSpaceCallbacks;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import org.globus.util.GlobusURL;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.SrmReleaseSpaceCallbacks;
+import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmUseSpaceCallbacks;
+import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.ietf.jgss.GSSCredential;
-import org.gridforum.jgss.ExtendedGSSCredential;
+import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.ShellCommandExecuter;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TCopyRequestFileStatus;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TSURLReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  *

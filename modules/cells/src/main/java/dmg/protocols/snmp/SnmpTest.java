@@ -1,5 +1,8 @@
 package dmg.protocols.snmp ;
-import java.net.* ;
+
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 
 public class SnmpTest {
@@ -28,22 +31,22 @@ public class SnmpTest {
      } else {
          oid = args[2];
      }
-     
+
      SnmpSequence   list = new SnmpSequence() ;
-     list.addObject( new SnmpVarBind( 
+     list.addObject( new SnmpVarBind(
                            new SnmpOID( oid ) ,
                            new SnmpNull() ) ) ;
-     SnmpGetNextRequest getRequest = 
+     SnmpGetNextRequest getRequest =
         new SnmpGetNextRequest(  new SnmpInteger( 100 ) ,
                              new SnmpInteger( 0 ) ,
                              new SnmpInteger( 0 ) ,
                              list  ) ;
-                             
+
      SnmpSequence request = new SnmpSequence() ;
      request.addObject( new SnmpInteger(0) ) ;
      request.addObject( new SnmpOctetString( "public" ) ) ;
      request.addObject( getRequest ) ;
-      
+
      byte [] b = request.getSnmpBytes() ;
      String output = SnmpObjectHeader._print( b , 0 , b.length ) ;
      System.out.println( "Sending to host "+hostName+" port "+port ) ;
@@ -64,14 +67,14 @@ public class SnmpTest {
        int len = recPacket.getLength() ;
        System.out.println( " Result ("+len+") : "+
                SnmpObjectHeader._print( b , 0 , len ) ) ;
-               
+
        SnmpObject res = SnmpObject.generate( b , 0 , len ) ;
        System.out.println( "Data : "+res ) ;
-       
+
      }catch( Exception eee){
        System.err.println( " Exception : "+eee ) ;
      }
-   }   
+   }
  }
 
 }

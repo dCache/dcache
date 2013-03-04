@@ -16,25 +16,28 @@
  */
 package org.dcache.chimera;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
+import com.jolbox.bonecp.BoneCPDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-
 import java.util.StringTokenizer;
-import javax.sql.DataSource;
-import org.dcache.acl.ACE;
 
-import com.jolbox.bonecp.BoneCPDataSource;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
+
+import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import static org.dcache.commons.util.SqlHelper.*;
+
+import static org.dcache.commons.util.SqlHelper.tryToClose;
 
 /**
  *

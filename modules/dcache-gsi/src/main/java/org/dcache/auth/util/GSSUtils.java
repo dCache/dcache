@@ -1,5 +1,16 @@
 package org.dcache.auth.util;
 
+import org.glite.voms.PKIStore;
+import org.glite.voms.PKIVerifier;
+import org.glite.voms.VOMSAttribute;
+import org.glite.voms.VOMSValidator;
+import org.glite.voms.ac.ACValidator;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.gssapi.auth.AuthorizationException;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.ietf.jgss.GSSException;
+import org.slf4j.MDC;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.cert.CRLException;
@@ -11,17 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.glite.voms.PKIStore;
-import org.glite.voms.PKIVerifier;
-import org.glite.voms.VOMSAttribute;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.ac.ACValidator;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.ietf.jgss.GSSException;
-import org.slf4j.MDC;
 
 /**
  * Extraction and conversion methods useful when dealing with GSS/VOMS

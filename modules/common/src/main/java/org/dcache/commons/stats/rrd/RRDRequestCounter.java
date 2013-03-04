@@ -4,26 +4,29 @@
  */
 
 package org.dcache.commons.stats.rrd;
-import org.dcache.commons.stats.RequestCounter;
+
+import org.rrd4j.ConsolFun;
+import org.rrd4j.DsType;
+import org.rrd4j.core.FetchData;
+import org.rrd4j.core.FetchRequest;
+import org.rrd4j.core.RrdDb;
+import org.rrd4j.core.RrdDef;
+import org.rrd4j.core.Sample;
+import org.rrd4j.core.Util;
+import org.rrd4j.graph.RrdGraph;
+import org.rrd4j.graph.RrdGraphDef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import org.rrd4j.core.RrdDef;
-import org.rrd4j.core.RrdDb;
-import org.rrd4j.core.FetchRequest;
-import org.rrd4j.core.FetchData;
-import org.rrd4j.ConsolFun;
-import org.rrd4j.DsType;
-import org.rrd4j.core.Sample;
-import org.rrd4j.core.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.rrd4j.graph.RrdGraphDef;
-import org.rrd4j.graph.RrdGraph;
-import java.awt.image.BufferedImage;
-import java.awt.Color;
 import java.security.AccessControlException;
 import java.util.concurrent.TimeUnit;
+
+import org.dcache.commons.stats.RequestCounter;
 
 
 /**
@@ -52,7 +55,7 @@ public class RRDRequestCounter {
     private String rrdMounthlyImage;
     private String rrdYearlyImage;
     private String rrdGraphicsHtmlFileName;
-    
+
     private int imageWidth = DEFAULT_IMAGE_WIDTH;
     private int imageHeight = DEFAULT_IMAGE_HEIGHT;
 
@@ -239,7 +242,7 @@ public class RRDRequestCounter {
         //hour
         //graphDef.setStartTime(-hour);
         //#graphDef.setStartTime(-hour);
-        
+
         graphDef.setTimeSpan(currentTime-fivemin, currentTime);
         graphDef.setFilename(rrdFiveminImage);
         RrdGraph graph = new RrdGraph(graphDef);

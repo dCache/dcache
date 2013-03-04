@@ -1,7 +1,12 @@
 package dmg.protocols.ssh ;
-import  java.io.* ;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
-import  java.util.*;
+import java.util.Hashtable;
 
 public class SshRsaKeyContainer extends Hashtable<BigInteger, SshRsaKey> {
 
@@ -10,10 +15,10 @@ public class SshRsaKeyContainer extends Hashtable<BigInteger, SshRsaKey> {
 
    public SshRsaKeyContainer( InputStream stream )
           throws IOException {
-      
-       BufferedReader reader = 
+
+       BufferedReader reader =
           new BufferedReader( new InputStreamReader( stream ) ) ;
-       
+
        String line ;
        while( ( line = reader.readLine() ) != null ){
           try{
@@ -33,16 +38,16 @@ public class SshRsaKeyContainer extends Hashtable<BigInteger, SshRsaKey> {
         System.exit(3);
       }
       try{
-        SshRsaKeyContainer 
+        SshRsaKeyContainer
           container = new SshRsaKeyContainer(
                       new FileInputStream( args[0] ) ) ;
-        
+
         System.out.println( " Container holds "+container.size()+" keys" ) ;
           for (SshRsaKey key : container.values()) {
               System.out.println("\n" + key);
 
           }
-      
+
       }catch( Exception e ){
         System.err.println( " problem : "+e );
         System.exit(3);
@@ -50,4 +55,4 @@ public class SshRsaKeyContainer extends Hashtable<BigInteger, SshRsaKey> {
    }
 
 }
- 
+

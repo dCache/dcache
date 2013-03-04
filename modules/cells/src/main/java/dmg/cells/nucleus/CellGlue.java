@@ -1,6 +1,7 @@
 package dmg.cells.nucleus ;
 
-import dmg.util.CollectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -9,8 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import dmg.util.CollectionFactory;
 
 /**
   *

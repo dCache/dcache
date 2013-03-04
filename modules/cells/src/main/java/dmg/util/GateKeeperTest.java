@@ -1,12 +1,12 @@
 package dmg.util ;
 
-import dmg.cells.nucleus.* ;
+import dmg.cells.nucleus.CellNucleus;
 
 public class GateKeeperTest {
    private CellNucleus _nucleus ;
    private GateKeeper  _gate ;
    public GateKeeperTest( CellNucleus nucleus ){
-       _nucleus = nucleus ;   
+       _nucleus = nucleus ;
        _gate    = (GateKeeper)_nucleus.getDomainContext().get( "gate" ) ;
        if( _gate == null ){
           _gate = new GateKeeper() ;
@@ -22,13 +22,13 @@ public class GateKeeperTest {
 
       _gate.open( prio , wm ) ;
 
-      return "GateKeeper opened for "+Thread.currentThread()  ;       
+      return "GateKeeper opened for "+Thread.currentThread()  ;
    }
    public String ac_close( Args args ){
       _gate.close() ;
       return "GateKeeper closed for "+Thread.currentThread() ;
    }
 
-   
-     
+
+
 }

@@ -1,5 +1,10 @@
 package dmg.protocols.ssh ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,17 +13,15 @@ import java.io.Writer;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.security.Principal;
 import java.util.Date;
 import java.util.Random;
 
 import dmg.security.digest.Md5;
 import dmg.util.StreamEngine;
-import java.security.Principal;
-import javax.security.auth.Subject;
-import org.dcache.auth.UserNamePrincipal;
+
 import org.dcache.auth.Subjects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.auth.UserNamePrincipal;
 
 public class      SshStreamEngine
        extends    SshCoreEngine

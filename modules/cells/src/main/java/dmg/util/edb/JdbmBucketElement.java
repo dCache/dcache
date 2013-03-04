@@ -1,6 +1,8 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 public class JdbmBucketElement implements JdbmSerializable {
     private final static int KEY_START_SIZE = 4 ;
@@ -31,7 +33,7 @@ public class JdbmBucketElement implements JdbmSerializable {
     }
     @Override
     public int getPersistentSize() {
-       return 3 * 4 + 8 + KEY_START_SIZE ; 
+       return 3 * 4 + 8 + KEY_START_SIZE ;
     }
 
 }

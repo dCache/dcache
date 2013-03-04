@@ -1,8 +1,12 @@
 package org.dcache.gplazma.loader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.Document;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -13,14 +17,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-import org.junit.Before;
-import org.junit.Test;
-import org.w3c.dom.Document;
+
+import static org.junit.Assert.*;
 
 public class XmlParserTests {
     private static final DocumentBuilderFactory BUILDER_FACTORY =

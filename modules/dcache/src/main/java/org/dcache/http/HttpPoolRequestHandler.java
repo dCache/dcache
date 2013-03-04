@@ -1,17 +1,29 @@
 package org.dcache.http;
 
-import static org.dcache.util.StringMarkup.percentEncode;
-import static org.dcache.util.StringMarkup.quotedString;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.BYTES;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
-import static java.util.Arrays.asList;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.*;
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Multiset;
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunk;
+import org.jboss.netty.handler.codec.http.HttpChunkTrailer;
+import org.jboss.netty.handler.codec.http.HttpMethod;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.QueryStringDecoder;
+import org.jboss.netty.handler.stream.ChunkedInput;
+import org.jboss.netty.handler.timeout.IdleState;
+import org.jboss.netty.handler.timeout.IdleStateEvent;
+import org.jboss.netty.util.CharsetUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,36 +32,31 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.jboss.netty.handler.codec.http.*;
-import org.jboss.netty.handler.stream.ChunkedInput;
-import org.jboss.netty.handler.timeout.IdleState;
-import org.jboss.netty.handler.timeout.IdleStateEvent;
-
-import org.jboss.netty.util.CharsetUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import diskCacheV111.util.HttpByteRange;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.HttpByteRange;
 import diskCacheV111.vehicles.HttpProtocolInfo;
-import org.dcache.pool.movers.MoverChannel;
+
 import dmg.util.HttpException;
-import java.util.Set;
+
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
+
+import static java.util.Arrays.asList;
+import static org.dcache.util.StringMarkup.percentEncode;
+import static org.dcache.util.StringMarkup.quotedString;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.BYTES;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.*;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
+import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication.

@@ -1,10 +1,11 @@
 package diskCacheV111.services;
 
-import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
-import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
-import diskCacheV111.vehicles.IpProtocolInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
+import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 
 public class RemoteTransferManager extends TransferManager
 {

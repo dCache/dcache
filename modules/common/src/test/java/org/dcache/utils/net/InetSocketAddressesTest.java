@@ -1,10 +1,11 @@
 package org.dcache.utils.net;
 
+import org.junit.Test;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class InetSocketAddressesTest {
 

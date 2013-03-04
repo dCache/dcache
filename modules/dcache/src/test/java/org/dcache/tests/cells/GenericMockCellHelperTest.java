@@ -1,18 +1,18 @@
 package org.dcache.tests.cells;
 
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import static org.junit.Assert.*;
 
 
 public class GenericMockCellHelperTest {

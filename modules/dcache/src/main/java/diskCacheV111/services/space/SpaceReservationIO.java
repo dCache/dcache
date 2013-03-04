@@ -12,16 +12,16 @@
 
 package diskCacheV111.services.space;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.sql.SQLException;
-import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashSet;
+import java.util.Set;
 
-import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.RetentionPolicy;
 
 

@@ -1,35 +1,35 @@
 package org.dcache.gplazma.monitor;
 
-import org.junit.rules.TestName;
-import org.junit.Rule;
-import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
-import org.dcache.auth.attributes.ReadOnly;
-import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
-import org.dcache.gplazma.monitor.LoginResult.AccountPluginResult;
-import org.dcache.gplazma.monitor.LoginResult.AccountPhaseResult;
-import org.dcache.auth.GroupNamePrincipal;
-import org.dcache.gplazma.monitor.LoginResult.MapPluginResult;
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.gplazma.monitor.LoginResult.MapPhaseResult;
-import org.dcache.auth.FQANPrincipal;
 import com.google.common.collect.Sets;
 import org.globus.gsi.jaas.GlobusPrincipal;
-import org.dcache.gplazma.monitor.LoginMonitor.Result;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
 import java.security.Principal;
-import java.util.Set;
 import java.util.Collections;
+import java.util.Set;
+
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
+import org.dcache.gplazma.monitor.LoginMonitor.Result;
+import org.dcache.gplazma.monitor.LoginResult.AccountPhaseResult;
+import org.dcache.gplazma.monitor.LoginResult.AccountPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.AuthPhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.AuthPluginResult;
-import org.junit.Before;
-import org.junit.Test;
+import org.dcache.gplazma.monitor.LoginResult.MapPhaseResult;
+import org.dcache.gplazma.monitor.LoginResult.MapPluginResult;
+import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
+import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
 
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
 

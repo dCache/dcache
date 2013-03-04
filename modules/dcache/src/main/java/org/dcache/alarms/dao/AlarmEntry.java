@@ -59,19 +59,19 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
+import com.google.common.base.Preconditions;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import javax.annotation.Nonnull;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import javax.annotation.Nonnull;
-
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.Severity;
 import org.dcache.util.IRegexFilterable;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import com.google.common.base.Preconditions;
 
 /**
  * Storage class for all Alarm types.<br>

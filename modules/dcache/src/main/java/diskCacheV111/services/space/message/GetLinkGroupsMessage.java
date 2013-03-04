@@ -10,10 +10,11 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space.message;
 
-import java.util.Set;
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.services.space.LinkGroup;
 import java.util.Collections;
+import java.util.Set;
+
+import diskCacheV111.services.space.LinkGroup;
+import diskCacheV111.vehicles.Message;
 
 public class GetLinkGroupsMessage extends Message {
 

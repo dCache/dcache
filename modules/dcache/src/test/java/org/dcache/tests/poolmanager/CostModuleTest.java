@@ -1,25 +1,23 @@
 package org.dcache.tests.poolmanager;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import diskCacheV111.pools.CostCalculationEngine;
-import diskCacheV111.pools.CostCalculationV5;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import diskCacheV111.poolManager.CostModuleV1;
+import diskCacheV111.pools.CostCalculationEngine;
+import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
+
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+
+import static org.junit.Assert.*;
 
 public class CostModuleTest {
 

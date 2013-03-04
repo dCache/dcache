@@ -3,12 +3,13 @@
  */
 package diskCacheV111.vehicles;
 
+import com.google.common.base.Objects;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.base.Objects;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
 public class PoolLinkGroupInfo implements Serializable {

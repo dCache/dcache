@@ -1,8 +1,12 @@
 package dmg.util ;
-import java.io.* ;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class BufferSchedulerTest implements Runnable {
-  
+
   private BufferScheduler _scheduler ;
   private Thread _consumerThread ;
   private Thread _producerThread ;
@@ -10,24 +14,24 @@ public class BufferSchedulerTest implements Runnable {
   private byte [] _outBuffer ;
   private InputStream _inFile ;
   private OutputStream _outFile ;
-  
+
   private int _sleepTime = 1000 ;
   private int _maxProducerCount;
   private int _bufferSize ;
   private int _nob ;
   private String _mode ;
-  
+
   public BufferSchedulerTest( String [] args  ) throws Exception {
-  
+
      _nob         = new Integer(args[0]);
      _bufferSize  = new Integer(args[1]);
      _mode        = args[2] ;
 
      _scheduler = new BufferScheduler( _nob , _bufferSize ) ;
-     
+
      _consumerThread = new Thread( this ) ;
      _producerThread = new Thread( this ) ;
-  
+
      _inBuffer  = new byte[_bufferSize] ;
      _outBuffer = new byte[_bufferSize] ;
 
@@ -42,16 +46,16 @@ public class BufferSchedulerTest implements Runnable {
         }
         _inFile  = new FileInputStream( args[3] ) ;
         _outFile = new FileOutputStream( args[4] ) ;
-     }  
-     
+     }
+
      _consumerThread.start() ;
      _producerThread.start() ;
-     
+
   }
   @Override
   public void run(){
      if( _mode.equals( "memory" ) ){
-        runMemory() ;  
+        runMemory() ;
      }else if( _mode.equals( "filecopy" ) ){
         runFilecopy();
      }
@@ -68,7 +72,7 @@ public class BufferSchedulerTest implements Runnable {
             break ;
          }else{
             byte [] base = b.getBase() ;
-            _outFile.write( base , 0 , b.getUsable() ) ; 
+            _outFile.write( base , 0 , b.getUsable() ) ;
             _scheduler.release( b ) ;
          }
       }
@@ -93,7 +97,7 @@ public class BufferSchedulerTest implements Runnable {
         _inFile.close() ;
     }
     }catch( Exception e ){
-      System.out.println( "Exception : "+e ) ; 
+      System.out.println( "Exception : "+e ) ;
     }
   }
   public void runMemory(){
@@ -108,7 +112,7 @@ public class BufferSchedulerTest implements Runnable {
             break ;
          }else{
             byte [] base = b.getBase() ;
-            System.arraycopy( base , 0 , _outBuffer , 0 ,size ) ; 
+            System.arraycopy( base , 0 , _outBuffer , 0 ,size ) ;
             _scheduler.release( b ) ;
          }
       }
@@ -132,15 +136,15 @@ public class BufferSchedulerTest implements Runnable {
     }
     }catch( Exception e ){
       System.out.println( "Exception : "+e ) ;
-      
+
     }
 //       try{ Thread.sleep(_sleepTime) ; }
 //       catch( InterruptedException ie ){} ;
-  
+
   }
-  private static final String USAGE = 
+  private static final String USAGE =
      "Usage : ... <numOfBuffers> <sizeOfBuffers>" ;
-     
+
   public static void main( String [] args ){
      if( args.length < 3){
        System.out.println( USAGE + "memory <producerCount>" ) ;

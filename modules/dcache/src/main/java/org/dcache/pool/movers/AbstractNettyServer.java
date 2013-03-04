@@ -1,6 +1,16 @@
 package org.dcache.pool.movers;
 
 import com.google.common.collect.Maps;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
+import org.jboss.netty.logging.InternalLoggerFactory;
+import org.jboss.netty.logging.Slf4JLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -11,23 +21,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import dmg.cells.nucleus.CDC;
-import org.dcache.util.CDCThreadFactory;
-import org.dcache.util.PortRange;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
-import org.jboss.netty.logging.InternalLoggerFactory;
-import org.jboss.netty.logging.Slf4JLoggerFactory;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
+
+import dmg.cells.nucleus.CDC;
+
+import org.dcache.util.CDCThreadFactory;
+import org.dcache.util.PortRange;
 
 /**
  * Abstract base class for all netty servers running on the pool

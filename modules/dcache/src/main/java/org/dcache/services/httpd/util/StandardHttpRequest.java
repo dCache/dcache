@@ -1,5 +1,13 @@
 package org.dcache.services.httpd.util;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -9,15 +17,6 @@ import java.net.URISyntaxException;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
 
 import dmg.protocols.kerberos.Base64;
 import dmg.util.CollectionFactory;

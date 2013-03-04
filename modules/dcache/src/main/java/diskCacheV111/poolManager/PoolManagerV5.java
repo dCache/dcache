@@ -1,43 +1,41 @@
 package diskCacheV111.poolManager ;
 
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableBiMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.PrintWriter;
-import java.util.Arrays;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.EnumSet;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
-
-import com.google.common.collect.ImmutableBiMap;
-import dmg.cells.nucleus.CellAddressCore;
-import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.poolmanager.PoolSelector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.poolmanager.Utils;
-import org.dcache.poolmanager.Partition;
-import org.dcache.poolmanager.PoolInfo;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Version;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolManagerPoolModeMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
 import diskCacheV111.vehicles.PoolMgrGetPoolLinkGroups;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
@@ -46,26 +44,29 @@ import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
-import java.net.InetSocketAddress;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
-import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
-import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.Partition;
+import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.Utils;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 
-import com.google.common.base.Function;
 import static com.google.common.collect.Iterables.transform;
 
 public class PoolManagerV5

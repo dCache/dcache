@@ -1,16 +1,18 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutput;
 
-public class      JdbmObjectOutputStream 
-       extends    DataOutputStream 
+public class      JdbmObjectOutputStream
+       extends    DataOutputStream
        implements ObjectOutput{
    public JdbmObjectOutputStream( DataOutputStream out ){
       super( out ) ;
    }
    @Override
    public void writeObject( Object obj ) throws IOException {
-   
+
       if( obj instanceof JdbmBasic ){
           writeShort( JdbmSerializable.BASIC ) ;
           ((JdbmSerializable)obj).writeObject( this ) ;

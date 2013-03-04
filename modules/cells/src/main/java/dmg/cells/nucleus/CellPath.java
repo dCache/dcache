@@ -1,6 +1,10 @@
 package dmg.cells.nucleus ;
-import  java.util.* ;
-import  java.io.* ;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.StringTokenizer;
 /**
   *
   *  The CellPath is an abstraction of the path a CellMessage is

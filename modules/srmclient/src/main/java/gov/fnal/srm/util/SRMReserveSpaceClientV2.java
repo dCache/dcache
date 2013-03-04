@@ -81,16 +81,34 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
+
 import org.apache.axis.types.UnsignedLong;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.client.SRMClientV2;
-import java.io.IOException;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.util.RequestStatusTool;
-import org.dcache.srm.request.RetentionPolicy;
-import org.dcache.srm.request.AccessLatency;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+
+import java.io.IOException;
+
+import org.dcache.srm.client.SRMClientV2;
+import org.dcache.srm.request.AccessLatency;
+import org.dcache.srm.request.RetentionPolicy;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.ArrayOfString;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmAbortRequestRequest;
+import org.dcache.srm.v2_2.SrmAbortRequestResponse;
+import org.dcache.srm.v2_2.SrmReserveSpaceRequest;
+import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
+import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TAccessPattern;
+import org.dcache.srm.v2_2.TConnectionType;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.v2_2.TTransferParameters;
 
 
 public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {

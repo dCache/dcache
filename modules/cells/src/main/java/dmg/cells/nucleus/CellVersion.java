@@ -1,6 +1,6 @@
 package dmg.cells.nucleus ;
 
-import java.io.Serializable ;
+import java.io.Serializable;
 
 /**
   *
@@ -17,8 +17,8 @@ public class CellVersion implements Serializable {
   private String _revision = "Unknown" ;
 
   public CellVersion(){}
-//  public CellVersion( String version ){ 
-//     _release = _revision = _version = version ; 
+//  public CellVersion( String version ){
+//     _release = _revision = _version = version ;
 //  }
   public CellVersion( String release , String revision ){
       _revision = cvsStripOff(revision) ;
@@ -41,7 +41,7 @@ public class CellVersion implements Serializable {
          return rel;
      }
      String post = ( d1 == (tmp.length()-1) ) ? "" : tmp.substring(d1+1) ;
-     
+
      return pre+tmp2+post ;
   }
   public String toString(){ return _version ; }

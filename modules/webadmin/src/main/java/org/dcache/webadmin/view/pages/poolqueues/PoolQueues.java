@@ -1,8 +1,12 @@
 package org.dcache.webadmin.view.pages.poolqueues;
 
+import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.wicket.model.PropertyModel;
+
 import org.dcache.webadmin.controller.PoolQueuesService;
 import org.dcache.webadmin.controller.exceptions.PoolQueuesServiceException;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
@@ -10,8 +14,6 @@ import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.poolQueuesPanel.PoolQueuesPanel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The Pool Request Queues Page

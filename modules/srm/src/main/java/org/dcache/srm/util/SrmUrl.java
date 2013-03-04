@@ -4,8 +4,9 @@
  */
 package org.dcache.srm.util;
 
-import java.net.MalformedURLException;
 import org.globus.util.GlobusURL;
+
+import java.net.MalformedURLException;
 
 public class SrmUrl  extends GlobusURL {
 

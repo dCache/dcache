@@ -3,7 +3,6 @@ package org.dcache.auth;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import java.security.Principal;
 
 /**

@@ -1,9 +1,9 @@
 package org.dcache.services.info.base;
 
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * A set of tests to verify that MalleableStateTransition behaves as

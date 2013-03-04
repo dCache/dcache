@@ -71,7 +71,6 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
-import org.dcache.srm.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -81,6 +80,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.StringTokenizer;
+
+import org.dcache.srm.Logger;
 
 /**
  *

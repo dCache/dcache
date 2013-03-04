@@ -73,18 +73,37 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.apache.axis.types.URI;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.util.SrmUrl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
+
+import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
-import java.beans.PropertyChangeListener;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.srm.util.SrmUrl;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ArrayOfString;
+import org.dcache.srm.v2_2.ArrayOfTGetFileRequest;
+import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
+import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
+import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
+import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
+import org.dcache.srm.v2_2.SrmStatusOfGetRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
+import org.dcache.srm.v2_2.TAccessPattern;
+import org.dcache.srm.v2_2.TConnectionType;
+import org.dcache.srm.v2_2.TGetFileRequest;
+import org.dcache.srm.v2_2.TGetRequestFileStatus;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.v2_2.TTransferParameters;
 /**
  *
  * @author  timur

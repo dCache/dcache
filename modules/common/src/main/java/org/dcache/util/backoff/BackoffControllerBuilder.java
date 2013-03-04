@@ -59,12 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.util.backoff;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Fluid builder for constructing {@link BackoffController}.

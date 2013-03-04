@@ -1,7 +1,7 @@
 package diskCacheV111.util;
 
-import java.util.Map;
 import java.io.StringWriter;
+import java.util.Map;
 
 /**
  * Simple wrapper arround HTMLWriter to expose the functionality in a

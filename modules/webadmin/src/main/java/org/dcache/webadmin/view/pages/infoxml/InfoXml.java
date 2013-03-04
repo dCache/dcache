@@ -9,12 +9,13 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.handler.resource.ResourceStreamRequestHandler;
 import org.apache.wicket.util.resource.StringResourceStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.exceptions.InfoServiceException;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Page to do statepath requests to the infoservice in the webinterface and

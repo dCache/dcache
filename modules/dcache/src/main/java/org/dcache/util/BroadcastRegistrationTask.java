@@ -1,14 +1,14 @@
 package org.dcache.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.multicaster.BroadcastRegisterMessage;
 import dmg.cells.services.multicaster.BroadcastUnregisterMessage;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * TimerTask to periodically register a broadcast subscription.

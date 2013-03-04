@@ -1,11 +1,11 @@
 package org.dcache.services.billing.plot;
 
+import junit.framework.TestCase;
+import org.apache.log4j.Logger;
+
 import java.util.Calendar;
 import java.util.Date;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
 import org.dcache.services.billing.plots.util.TimeFrame;
 import org.dcache.services.billing.plots.util.TimeFrame.BinType;
 import org.dcache.services.billing.plots.util.TimeFrame.Type;

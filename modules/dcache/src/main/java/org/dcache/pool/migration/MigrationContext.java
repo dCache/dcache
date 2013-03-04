@@ -1,13 +1,13 @@
 package org.dcache.pool.migration;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
+
+import diskCacheV111.util.PnfsId;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
-
-import diskCacheV111.util.PnfsId;
 
 /**
  * Describes the context of migration jobs.

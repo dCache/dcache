@@ -1,18 +1,7 @@
 package org.dcache.pool.movers;
 
-import dmg.cells.nucleus.CellEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import diskCacheV111.util.Base64;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-import org.dcache.pool.repository.Allocator;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.vehicles.FileAttributes;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +10,19 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
+
+import diskCacheV111.util.Base64;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.cells.nucleus.CellEndpoint;
+
+import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.vehicles.FileAttributes;
 
 public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
 {

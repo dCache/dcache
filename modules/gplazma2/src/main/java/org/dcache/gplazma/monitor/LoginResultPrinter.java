@@ -1,58 +1,56 @@
 package org.dcache.gplazma.monitor;
 
-import java.util.Collection;
-import org.slf4j.Logger;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Stack;
-import javax.security.auth.x500.X500Principal;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.glite.voms.ac.AttributeCertificate;
-import org.dcache.auth.FQAN;
-import org.dcache.gplazma.monitor.LoginResult.PhaseResult;
-import org.dcache.gplazma.monitor.LoginResult.AuthPluginResult;
-import org.dcache.gplazma.monitor.LoginResult.AuthPhaseResult;
-import org.dcache.gplazma.monitor.LoginResult.MapPluginResult;
-import org.dcache.gplazma.monitor.LoginResult.MapPhaseResult;
-import org.dcache.gplazma.monitor.LoginResult.AccountPluginResult;
-import org.dcache.gplazma.monitor.LoginResult.AccountPhaseResult;
-import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.x500.X500Principal;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.Principal;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
+import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
+import java.util.Stack;
+
+import org.dcache.auth.FQAN;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
+import org.dcache.gplazma.monitor.LoginMonitor.Result;
+import org.dcache.gplazma.monitor.LoginResult.AccountPhaseResult;
+import org.dcache.gplazma.monitor.LoginResult.AccountPluginResult;
+import org.dcache.gplazma.monitor.LoginResult.AuthPhaseResult;
+import org.dcache.gplazma.monitor.LoginResult.AuthPluginResult;
+import org.dcache.gplazma.monitor.LoginResult.MapPhaseResult;
+import org.dcache.gplazma.monitor.LoginResult.MapPluginResult;
+import org.dcache.gplazma.monitor.LoginResult.PAMPluginResult;
+import org.dcache.gplazma.monitor.LoginResult.PhaseResult;
+import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
+import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
+import org.dcache.gplazma.monitor.LoginResult.SetDiff;
+
+import static java.util.concurrent.TimeUnit.*;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
 import static org.dcache.utils.Bytes.toHexString;
-import org.dcache.gplazma.monitor.LoginMonitor.Result;
-import org.dcache.gplazma.monitor.LoginResult.PAMPluginResult;
-import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
-import org.dcache.gplazma.monitor.LoginResult.SetDiff;
-import org.slf4j.LoggerFactory;
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.HOURS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * This class takes a LoginResult and provides an ASCII-art description

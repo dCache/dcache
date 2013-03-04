@@ -1,6 +1,6 @@
 package dmg.cells.applets.login ;
 
-import java.applet.*;
+import java.applet.Applet;
 
 public class      XXApplet
        extends    Applet

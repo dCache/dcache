@@ -1,7 +1,13 @@
 package dmg.security.cipher ;
-import  dmg.security.cipher.rsa.* ;
-import  java.math.BigInteger ;
-import  java.io.* ;
+
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+
+import dmg.security.cipher.rsa.RsaEncryptionKey;
 /*
  *  ssh private key file (binary)
  *
@@ -13,56 +19,56 @@ import  java.io.* ;
  *   mp_int      e
  *   string      comment
  *   char [4]    a b a b
- *   mp_int      d    
- *   mp_int      u    
- *   mp_int      p    
+ *   mp_int      d
+ *   mp_int      u
+ *   mp_int      p
  *   mp_int      q
  *
- *       string :   
- *                    int              length 
- *                    byte [length]    data  
+ *       string :
+ *                    int              length
+ *                    byte [length]    data
  *       mp_int :
  *                    short            num of bits (nob)
- *                    byte [(nob+7)/8] data  
+ *                    byte [(nob+7)/8] data
   *
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
  */
-public class      SshPrivateKeyInputStream 
+public class      SshPrivateKeyInputStream
        extends    FilterInputStream
        implements EncryptionKeyInputStream {
 
    private DataInputStream _in ;
-   
+
    private final static int    SSH_CIPHER_NONE    = 0 ;
-   private final static String AUTHFILE_ID_STRING = 
+   private final static String AUTHFILE_ID_STRING =
      "SSH PRIVATE_KEY_FILE_FORMAT 1.1\n" ;
-   
+
    BigInteger _n;
    BigInteger _e;
    BigInteger _d;
    String     _comment;
    String  [] _domainList;
    int        _readCounter;
-   
+
    public SshPrivateKeyInputStream( InputStream in ) {
-      super( in ) ;   
+      super( in ) ;
       _in = new DataInputStream( in ) ;
-      
+
    }
    @Override
    public EncryptionKey readEncryptionKey()
           throws IOException {
-          
+
      _readCounter ++ ;
      if( _readCounter == 1 ){
          _readAll() ;
-         return new RsaEncryptionKey( _domainList , "private" , _d , _n ) ; 
+         return new RsaEncryptionKey( _domainList , "private" , _d , _n ) ;
      }else if( _readCounter == 2 ){
-         return new RsaEncryptionKey( _domainList , "public"  , _e , _n ) ; 
+         return new RsaEncryptionKey( _domainList , "public"  , _e , _n ) ;
      }
      return null ;
    }
@@ -79,29 +85,29 @@ public class      SshPrivateKeyInputStream
                    _e         = readBigInteger( _in ) ;
         String     _comment   = readString( _in ) ;
         _in.readFully( check ) ;
-        if( ( check[0] != check[2] ) || 
+        if( ( check[0] != check[2] ) ||
             ( check[1] != check[3] )    ) {
             throw new IOException("check failed");
         }
-        
+
                    _d = readBigInteger( _in ) ;
         BigInteger  u = readBigInteger( _in ) ;
         BigInteger  p = readBigInteger( _in ) ;
         BigInteger  q = readBigInteger( _in ) ;
-        
+
         _domainList     = new String[1] ;
         _domainList[0]  = _comment ;
-        
+
 //        System.out.println( " bits : "+bits ) ;
 //        System.out.println( " com  : "+_comment ) ;
 //        System.out.println( " n    : "+_n.toString(16) ) ;
 //        System.out.println( " e    : "+_e.toString(16) ) ;
 //        System.out.println( " d    : "+_d.toString(16) ) ;
-           
+
    }
    private String readString( DataInputStream in )
            throws IOException {
-      
+
       int len = in.readInt() ;
       if( len > 2048 ) {
           throw new IOException("Comment String too long " + len);
@@ -112,7 +118,7 @@ public class      SshPrivateKeyInputStream
    }
    private BigInteger readBigInteger( DataInputStream in )
            throws IOException {
-   
+
        int bits = in.readUnsignedShort() ;
        int len  = ( bits + 7 ) / 8 ;
        byte [] data = new byte[ len ] ;
@@ -126,20 +132,20 @@ public class      SshPrivateKeyInputStream
          System.exit(4) ;
       }
       try{
-         SshPrivateKeyInputStream in = new SshPrivateKeyInputStream( 
+         SshPrivateKeyInputStream in = new SshPrivateKeyInputStream(
                                   new FileInputStream( args[0] ) ) ;
          EncryptionKey key ;
          while( ( key = in.readEncryptionKey() ) != null ){
-         
+
             System.out.println( ""+key ) ;
          }
-      
+
       }catch(IOException e ){
         System.err.println( " Exception : " + e ) ;
         System.exit(4);
       }
-   
+
    }
-   
-   
+
+
 }

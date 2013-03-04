@@ -3,15 +3,16 @@ package dmg.util.command;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import dmg.util.Args;
-import dmg.util.CommandInterpreter;
-import dmg.util.CommandRequestable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import dmg.util.Args;
+import dmg.util.CommandInterpreter;
+import dmg.util.CommandRequestable;
 
 /**
  * Implements the legacy cell shell commands which use reflection

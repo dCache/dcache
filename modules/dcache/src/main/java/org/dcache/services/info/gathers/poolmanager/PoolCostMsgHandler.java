@@ -1,10 +1,19 @@
 package org.dcache.services.info.gathers.poolmanager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
+import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
+import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
+import diskCacheV111.vehicles.CostModulePoolInfoTable;
+
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
@@ -14,13 +23,6 @@ import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.services.info.stateInfo.SpaceInfo;
-
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
-import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
-import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
-import diskCacheV111.vehicles.CostModulePoolInfoTable;
-import dmg.cells.nucleus.UOID;
 
 /**
  * This class processing incoming CellMessages that contain CostModulePoolInfoTable

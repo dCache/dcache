@@ -72,13 +72,15 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 /**
  *
  * @author  timur

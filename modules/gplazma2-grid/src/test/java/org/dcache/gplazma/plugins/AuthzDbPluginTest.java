@@ -1,6 +1,11 @@
 package org.dcache.gplazma.plugins;
 
-import static org.junit.Assert.assertEquals;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URL;
@@ -16,17 +21,11 @@ import org.dcache.auth.LoginUidPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
-import com.google.common.io.Resources;
-
 import org.dcache.gplazma.plugins.AuthzDbPlugin.PrincipalType;
+import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
+
 import static org.dcache.gplazma.plugins.AuthzDbPlugin.PrincipalType.*;
+import static org.junit.Assert.assertEquals;
 
 public class AuthzDbPluginTest
 {

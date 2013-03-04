@@ -16,28 +16,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -50,10 +50,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -63,10 +63,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -76,16 +76,21 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.qos.lambdastation;
 
-import java.util.*;
 import org.w3c.dom.Document;
-//import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-//import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
-//import org.w3c.dom.Comment;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.StringTokenizer;
+
+//import org.w3c.dom.Element;
+//import org.w3c.dom.NodeList;
+//import org.w3c.dom.Comment;
 // for writing xml
 //import javax.xml.transform.Transformer;
 //import javax.xml.transform.TransformerFactory;
@@ -93,16 +98,14 @@ import javax.xml.parsers.DocumentBuilder;
 //import javax.xml.transform.TransformerConfigurationException;
 //import javax.xml.transform.dom.DOMSource;
 //import javax.xml.transform.stream.StreamResult;
-
 //import java.io.File;
-import java.io.IOException;
 //import java.io.FileWriter;
 
 
 public class LambdaStationMap {
     private List<Site> Sites = new LinkedList<>();
 
-    
+
     private class Site {
         public String domain;
         public String name;
@@ -113,12 +116,12 @@ public class LambdaStationMap {
             this.enabled = enabled;
         }
     }
-    
+
     /** Creates a new instance of Configuration */
     public LambdaStationMap() {
-        
+
     }
-    
+
     public LambdaStationMap(String map_file)
     {
         try
@@ -130,8 +133,8 @@ public class LambdaStationMap {
             e.printStackTrace();
         }
     }
-    
-    
+
+
     public void read(String file) throws Exception {
         String domain = "";
         String name = "";
@@ -147,16 +150,16 @@ public class LambdaStationMap {
             System.err.println(" error, root element \"l-station-map\" is not found");
             throw new IOException();
         }
-        
-        
+
+
         if(root != null && root.getNodeName().equals("l-station-map")) {
-            
+
 
            Node node = root.getFirstChild();
            for(;node != null; node = node.getNextSibling()) {
                 if(node.getNodeType()== Node.ELEMENT_NODE) {
 		    //System.out.println("ELEMENT "+node.getNodeName());
-		    
+
                     if (node.getNodeName().equals("site")){
                         boolean enabled = true;
                         Node child = node.getFirstChild();
@@ -186,15 +189,15 @@ public class LambdaStationMap {
                                    }
                                }
                             }
-                            
+
 			    else if (child.getNodeType() == Node.TEXT_NODE){
 				//skip garbage
 				Text t1  = (Text)child;
 				String tv = t1.getData().trim();
 				//System.out.println("TEXT "+tv);
 				continue;
-                                
-				
+
+
 			    }
                             if(child.getNodeType() == Node.TEXT_NODE){
                                 Text t  = (Text)child;
@@ -203,27 +206,27 @@ public class LambdaStationMap {
                             }
                         }
                         set(domain, name, enabled);
-                        
+
                      }
                 }
             }
         }
-        
+
     }
-    
-   
+
+
     private void set(String name, String value, boolean enabled) {
         name=name.trim();
         value=value==null?null:value.trim();
         Site site = new Site(name, value, enabled);
         this.Sites.add(site);
     }
-    
+
     public void say(String words) {
         System.out.println("LS_MAP: "+words);
     }
-    
-    
+
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Lambda station Map:");
@@ -239,11 +242,11 @@ public class LambdaStationMap {
         }
         return sb.toString();
     }
-    
+
     public String getName(String url) {
 	StringTokenizer urlTokenizer
 	    = new StringTokenizer(url, ":");
-        String tok = (String) urlTokenizer.nextElement(); 
+        String tok = (String) urlTokenizer.nextElement();
 	tok = (String) urlTokenizer.nextElement(); // first is srm, file, etc
         //say("MAP="+toString()+"token="+tok);
         for (Object Site : Sites) {
@@ -256,7 +259,7 @@ public class LambdaStationMap {
         }
         return null;
     }
-    
+
     public boolean enabled(String url) {
         for (Object Site : Sites) {
             Site s = (Site) Site;
@@ -280,8 +283,8 @@ public class LambdaStationMap {
         System.out.println("MAP:"+str);
     }// main
     */
-    
 
 
-    
+
+
 }

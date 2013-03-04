@@ -8,9 +8,10 @@
  */
 
 package org.dcache.auth;
+
 import java.io.Serializable;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *

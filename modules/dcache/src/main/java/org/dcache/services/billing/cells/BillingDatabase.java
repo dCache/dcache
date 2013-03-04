@@ -59,6 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.cells;
 
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.InfoMessage;
+import diskCacheV111.vehicles.MoverInfoMessage;
+import diskCacheV111.vehicles.PoolHitInfoMessage;
+import diskCacheV111.vehicles.StorageInfoMessage;
+
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.DoorRequestData;
@@ -67,12 +73,6 @@ import org.dcache.services.billing.db.data.PnfsBaseInfo;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
 import org.dcache.services.billing.plots.BillingInfoHistogramGenerator;
-
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.InfoMessage;
-import diskCacheV111.vehicles.MoverInfoMessage;
-import diskCacheV111.vehicles.PoolHitInfoMessage;
-import diskCacheV111.vehicles.StorageInfoMessage;
 
 /**
  * This class is responsible for the processing of messages from other domains

@@ -1,17 +1,19 @@
 package org.dcache.webadmin.view.pages.spacetokens.spacereservationpanel;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author jans

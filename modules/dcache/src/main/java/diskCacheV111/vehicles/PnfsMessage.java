@@ -1,12 +1,15 @@
 //$Id: PnfsMessage.java,v 1.5 2004-11-05 12:07:19 tigran Exp $
 
 package diskCacheV111.vehicles;
-import  diskCacheV111.util.PnfsId ;
-import org.dcache.acl.enums.AccessMask;
-import java.util.Set;
-import java.util.Collections;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Collections;
+import java.util.Set;
+
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.acl.enums.AccessMask;
 
 /**
  * Base class for messages to PnfsManager.

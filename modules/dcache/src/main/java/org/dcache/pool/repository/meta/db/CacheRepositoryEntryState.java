@@ -1,20 +1,20 @@
 package org.dcache.pool.repository.meta.db;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Set;
-import java.io.Serializable;
-import java.io.ObjectInputStream;
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.dcache.pool.repository.StickyRecord;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.StickyRecord;
 
 /**
  * The CacheRepositoryEntryState encapsulates state information about

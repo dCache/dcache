@@ -1,11 +1,14 @@
 package org.dcache.services.info.gathers.routingmanager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
@@ -13,8 +16,6 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.services.info.gathers.cells.CellInfoMsgHandler;
-
-import dmg.cells.nucleus.UOID;
 
 /**
  * This class handles incoming messages from the RoutingMgr cell of some specific domain.  The messages are the

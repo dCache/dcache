@@ -15,8 +15,8 @@
  */
 package org.globus.gsi.jaas;
 
-import java.security.Principal;
 import java.io.Serializable;
+import java.security.Principal;
 
 /**
  * Simple string-based principal.

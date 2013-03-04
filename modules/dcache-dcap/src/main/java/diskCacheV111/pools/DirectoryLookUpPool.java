@@ -2,13 +2,26 @@
 
 package diskCacheV111.pools;
 
+import com.google.common.collect.Ranges;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Set;
 import java.util.EnumSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -16,32 +29,18 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-
 import org.dcache.cells.AbstractCell;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.DCapConstants;
 import org.dcache.pool.movers.DCapDataOutputStream;
-import org.dcache.util.list.DirectoryListSource;
-import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
+import org.dcache.util.list.DirectoryListSource;
+import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
-import com.google.common.collect.Ranges;
-
 import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.namespace.FileType.*;
+import static org.dcache.namespace.FileType.REGULAR;
 
 /**
  * Provides directory listing services for DCAP.

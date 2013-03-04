@@ -1,17 +1,18 @@
 package org.dcache.auth;
 
+import org.springframework.beans.factory.annotation.Required;
+
+import javax.security.auth.Subject;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.security.auth.Subject;
+import diskCacheV111.util.CacheException;
 
 import org.dcache.auth.attributes.LoginAttribute;
-import org.springframework.beans.factory.annotation.Required;
-
-import diskCacheV111.util.CacheException;
 
 /**
  * Anonymous login strategy, used on the xrootd door when

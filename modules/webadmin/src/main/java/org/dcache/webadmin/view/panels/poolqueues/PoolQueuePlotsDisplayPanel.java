@@ -63,6 +63,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.markup.repeater.data.GridView;
+
 import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
 import org.dcache.webadmin.view.beans.ThumbnailPanelBean;
 

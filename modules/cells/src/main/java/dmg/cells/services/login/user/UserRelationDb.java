@@ -1,7 +1,16 @@
 // $Id: UserRelationDb.java,v 1.2 2006-12-15 10:58:14 tigran Exp $
 package dmg.cells.services.login.user  ;
-import java.util.* ;
-import java.io.* ;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 public class UserRelationDb {
 

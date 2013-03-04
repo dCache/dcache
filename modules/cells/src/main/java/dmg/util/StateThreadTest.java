@@ -1,5 +1,6 @@
 package dmg.util ;
-import java.net.* ;
+
+import java.net.Socket;
 
 public class StateThreadTest implements  StateEngine {
 
@@ -8,19 +9,19 @@ public class StateThreadTest implements  StateEngine {
   private Socket      _socket ;
   private Exception   _exception ;
   private StateThread _engine ;
-  
-  
+
+
   public StateThreadTest( String host , int port ){
       _hostname = host ;
       _port     = port ;
-      
+
       _engine   = new StateThread( this ) ;
-      _engine.start() ;  
+      _engine.start() ;
   }
 
   private static String [] _sn = {
-    "<init>" , 
-    "<go_connecting>" , 
+    "<init>" ,
+    "<go_connecting>" ,
     "<connecting>" ,
     "<connection_ready>" ,
     "<connection_failed>" ,
@@ -68,7 +69,7 @@ public class StateThreadTest implements  StateEngine {
           System.out.println( "Connection finished" ) ;
           _engine.setFinalState() ;
         break ;
-      }   
+      }
       return 0 ;
 
    }
@@ -77,10 +78,10 @@ public class StateThreadTest implements  StateEngine {
        System.err.println( " USAGE : <hostname> <port>" ) ;
        System.exit(3);
      }
-     
+
      int port = new Integer(args[1]);
-     
+
      new StateThreadTest( args[0] , port ) ;
-  
+
   }
 }

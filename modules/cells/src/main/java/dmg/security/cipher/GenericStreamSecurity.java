@@ -1,10 +1,15 @@
 package dmg.security.cipher ;
-import  dmg.security.cipher.idea.* ;
-import  dmg.security.cipher.rsa.* ;
-import  java.util.StringTokenizer ;
-import  java.io.* ;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+import dmg.security.cipher.idea.IdeaEncryptionKey;
+import dmg.security.cipher.idea.IdeaStreamEncryption;
+import dmg.security.cipher.rsa.RsaEncryptionKey;
+import dmg.security.cipher.rsa.RsaStreamEncryption;
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -12,13 +17,13 @@ import  java.io.* ;
 public class GenericStreamSecurity implements StreamSecurity {
 
    private EncryptionKeyContainer _keys = new EncryptionKeyContainer() ;
-   
+
    public GenericStreamSecurity( String keyFile )
           throws IOException {
-      
+
        _keys.readInputStream( new MixedKeyInputStream(
                               new FileInputStream( keyFile ) ) ) ;
-			       
+
    }
    @Override
    public StreamEncryption getEncryption( String domain )
@@ -32,7 +37,7 @@ public class GenericStreamSecurity implements StreamSecurity {
           throw
                   new EncryptionKeyNotFoundException("Invalid domain desc: " + domain);
       }
-	 
+
       String cipher = st.nextToken() ;
        switch (cipher) {
        case "idea":
@@ -74,5 +79,5 @@ public class GenericStreamSecurity implements StreamSecurity {
           throws IllegalEncryptionException {
       return new IdeaStreamEncryption( keyDescriptor ) ;
    }
-} 
- 
+}
+

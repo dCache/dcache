@@ -5,11 +5,14 @@
  */
 
 package org.dcache.srm.unixfs;
-import org.dcache.srm.FileMetaData;
-import java.util.StringTokenizer;
-import org.dcache.srm.SRMUser;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.StringTokenizer;
+
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.SRMUser;
 
 /**
  *
@@ -59,7 +62,7 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
     // name size blocks mode uid gid  ? inode hrd_links_num major_dev minor_dev access1 access2 access3
     /** Creates a new instance of DiskFileMetaData */
     public UnixfsFileMetaData(String path, String srm_host, int srm_port, String addler32, String stat_desh_t_output) {
-        
+
         StringTokenizer st = new StringTokenizer(stat_desh_t_output);
         if(st.countTokens() <6) {
             throw new IllegalArgumentException("bad \"stat -t\" output, can not parse:\n"+stat_desh_t_output);
@@ -71,7 +74,7 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
         int mode = Integer.parseInt(st.nextToken(),16);
         owner = st.nextToken();
         group = st.nextToken();
-        
+
         int file_type = mode & S_IFMT;
         filo = (mode & S_IFIFO) != 0;
         character_device = (mode & S_IFCHR) != 0;
@@ -88,7 +91,7 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
         }
 
     }
-    
+
     @Override
     public  boolean isOwner(SRMUser user) {
         try {
@@ -99,9 +102,9 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
         } catch (ClassCastException  cce) {
             logger.error("user is not a UnixfsUser: "+user,cce);
             throw cce;
-        } 
+        }
     }
-    
+
     @Override
     public boolean isGroupMember(SRMUser user) {
         try {
@@ -112,7 +115,7 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
         } catch (ClassCastException  cce) {
             logger.error("user is not a UnixfsUser: "+user,cce);
             throw cce;
-        } 
+        }
     }
-    
+
 }

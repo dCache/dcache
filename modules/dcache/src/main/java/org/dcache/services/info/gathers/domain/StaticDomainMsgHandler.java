@@ -1,15 +1,17 @@
 package org.dcache.services.info.gathers.domain;
 
-import org.dcache.services.info.base.StringStateValue;
-import org.dcache.services.info.base.StateValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
+import org.dcache.services.info.base.StateValue;
+import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

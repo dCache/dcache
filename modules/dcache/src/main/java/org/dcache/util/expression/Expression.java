@@ -1,13 +1,12 @@
 package org.dcache.util.expression;
 
-import java.util.Arrays;
-
+import com.google.common.base.Joiner;
 import org.parboiled.trees.ImmutableTreeNode;
 
-import com.google.common.base.Joiner;
+import java.util.Arrays;
 
-import static org.dcache.util.expression.Type.*;
-import static org.dcache.util.expression.Token.*;
+import static org.dcache.util.expression.Token.NUMBER_LITERAL;
+import static org.dcache.util.expression.Type.UNKNOWN;
 
 /**
  * Homogeneous AST node for the expression language.

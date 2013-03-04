@@ -1,35 +1,35 @@
 package org.dcache.webdav;
 
+import io.milton.http.Auth;
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
+import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.Response;
-import io.milton.http.HttpManager;
-import io.milton.http.Auth;
 import io.milton.servlet.ServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.security.auth.Subject;
-import java.security.cert.X509Certificate;
-import java.security.PrivilegedAction;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
+import javax.servlet.http.HttpServletRequest;
 
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.LoginReply;
-import org.dcache.auth.PasswordCredential;
-import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.ReadOnly;
-import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.Origin;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.PrivilegedAction;
+import java.security.cert.X509Certificate;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.Origin;
+import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
 
 /**
  * SecurityFilter for WebDAV door.

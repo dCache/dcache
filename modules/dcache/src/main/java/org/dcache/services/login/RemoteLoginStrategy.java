@@ -1,16 +1,17 @@
 package org.dcache.services.login;
 
-import java.util.Set;
-import java.security.Principal;
+import org.springframework.beans.factory.annotation.Required;
+
 import javax.security.auth.Subject;
 
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.LoginReply;
-import org.dcache.cells.CellStub;
+import java.security.Principal;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 
-import org.springframework.beans.factory.annotation.Required;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.cells.CellStub;
 
 public class RemoteLoginStrategy implements LoginStrategy
 {

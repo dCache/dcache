@@ -2,10 +2,7 @@ package org.dcache.poolmanager;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
-import static com.google.common.collect.Iterables.filter;
-import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.util.CacheException;
-import org.dcache.vehicles.FileAttributes;
+
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
@@ -14,6 +11,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import diskCacheV111.poolManager.CostModule;
+import diskCacheV111.util.CacheException;
+
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.collect.Iterables.filter;
 
 /**
  * Yet another weighted random partition. Selects randomly source pool and

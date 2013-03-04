@@ -1,11 +1,12 @@
 package diskCacheV111.vehicles ;
 
 import java.io.Serializable;
-import  java.util.Collection ;
-import  java.util.HashMap ;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Hashtable;
-import  java.util.Map ;
-import  diskCacheV111.pools.PoolCostInfo ;
+import java.util.Map;
+
+import diskCacheV111.pools.PoolCostInfo;
 
 /**
  * An Hashtable with the timestamping feature.<br/>

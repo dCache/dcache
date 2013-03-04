@@ -72,19 +72,43 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.util.GlobusURL;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.IOException;
-import java.io.File;
+
 import org.dcache.srm.client.SRMClientV2;
-import org.apache.axis.types.URI;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.util.RequestStatusTool;
-import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.FileStorageType;
+import org.dcache.srm.request.RetentionPolicy;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ArrayOfString;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
+import org.dcache.srm.v2_2.ArrayOfTPutFileRequest;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmAbortFilesRequest;
+import org.dcache.srm.v2_2.SrmAbortFilesResponse;
+import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
+import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
+import org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TAccessPattern;
+import org.dcache.srm.v2_2.TConnectionType;
+import org.dcache.srm.v2_2.TExtraInfo;
+import org.dcache.srm.v2_2.TOverwriteMode;
+import org.dcache.srm.v2_2.TPutFileRequest;
+import org.dcache.srm.v2_2.TPutRequestFileStatus;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.v2_2.TTransferParameters;
 
 /**
  *

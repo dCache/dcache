@@ -1,7 +1,11 @@
 package dmg.protocols.ssh ;
-import  dmg.security.digest.* ;
-import  dmg.security.cipher.* ;
-import  java.util.* ;
+
+import java.util.Date;
+import java.util.Random;
+
+import dmg.security.cipher.StreamCipher;
+import dmg.security.digest.Crc32;
+import dmg.security.digest.MsgDigest;
 
 public class SshPacket {
   StreamCipher _cipher ;

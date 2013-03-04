@@ -1,9 +1,9 @@
 package org.dcache.commons.util;
 
+import java.util.Date;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.Condition;
-import java.util.Date;
 
 /**
  * Atomic counter that supports waiting for the counter to change.

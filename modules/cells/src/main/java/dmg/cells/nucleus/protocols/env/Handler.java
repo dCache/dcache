@@ -6,17 +6,17 @@
 
 package dmg.cells.nucleus.protocols.env;
 
+import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.lang.reflect.Constructor;
 
 /**
  *
  * @author  timur
  */
 public class Handler extends URLStreamHandler{
-    
+
     @Override
     protected URLConnection openConnection(URL u) {
         try {
@@ -35,5 +35,5 @@ public class Handler extends URLStreamHandler{
         }
         return null;
     }
-    
+
 }

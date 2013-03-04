@@ -1,9 +1,9 @@
 package dmg.cells.nucleus ;
 
-import java.io.Serializable ;
+import java.io.Serializable;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998

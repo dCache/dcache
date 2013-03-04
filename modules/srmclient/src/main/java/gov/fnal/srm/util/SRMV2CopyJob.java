@@ -75,8 +75,17 @@ package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.v2_2.*;
+
 import org.dcache.srm.Logger;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmAbortFilesRequest;
+import org.dcache.srm.v2_2.SrmAbortFilesResponse;
+import org.dcache.srm.v2_2.SrmPutDoneRequest;
+import org.dcache.srm.v2_2.SrmPutDoneResponse;
+import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
+import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
+import org.dcache.srm.v2_2.TReturnStatus;
 /**
  *
  * @author  timur

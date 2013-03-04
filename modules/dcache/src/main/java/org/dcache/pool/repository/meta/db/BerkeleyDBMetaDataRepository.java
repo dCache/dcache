@@ -1,25 +1,25 @@
 package org.dcache.pool.repository.meta.db;
 
+import com.sleepycat.collections.StoredMap;
+import com.sleepycat.je.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
-import diskCacheV111.vehicles.StorageInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.collections.StoredMap;
-
-import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.MetaDataStore;
-import org.dcache.pool.repository.DuplicateEntryException;
-import org.dcache.pool.repository.MetaDataRecord;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.pool.repository.DuplicateEntryException;
+import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.MetaDataStore;
 
 /**
  * BerkeleyDB based MetaDataRepository implementation.

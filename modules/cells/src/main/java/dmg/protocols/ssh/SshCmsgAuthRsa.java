@@ -1,5 +1,6 @@
 package dmg.protocols.ssh ;
-import  dmg.security.cipher.* ;
+
+import dmg.security.cipher.StreamCipher;
 
 
 public class SshCmsgAuthRsa extends SshMpIntPacket {
@@ -20,7 +21,7 @@ public class SshCmsgAuthRsa extends SshMpIntPacket {
     public SshCmsgAuthRsa( SshPacket packet ){
       super( packet ) ;
     }
-    public SshRsaKey getKey(){ 
+    public SshRsaKey getKey(){
         return new SshRsaKey( getMpIntLength() , getMpInt() ) ;
     }
-} 
+}

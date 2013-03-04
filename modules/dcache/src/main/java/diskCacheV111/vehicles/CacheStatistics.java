@@ -3,7 +3,7 @@
 package diskCacheV111.vehicles;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.StringTokenizer;
 
 public class CacheStatistics implements Serializable, Comparable<CacheStatistics> {
     private int   _version       = 1;

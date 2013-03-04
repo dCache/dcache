@@ -1,18 +1,30 @@
 package dmg.cells.applets.login ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-public class AdminSwitchPanel 
-       extends SshActionPanel 
+public class AdminSwitchPanel
+       extends SshActionPanel
        implements ActionListener   {
 
    private static final long serialVersionUID = -4725884520345101419L;
    private Font   _bigFont =
-             new Font( "SansSerif" , Font.BOLD , 24 )  ; 
-   private Font   _bigFont2 = 
-             new Font( "SansSerif" , Font.BOLD , 16 )  ; 
-  
+             new Font( "SansSerif" , Font.BOLD , 24 )  ;
+   private Font   _bigFont2 =
+             new Font( "SansSerif" , Font.BOLD , 16 )  ;
+
   private Label      _topLabel   = new Label( "Cell Choise" , Label.CENTER ) ;
   private CardLayout _cards = new CardLayout() ;
   private Panel      _switchPanel = new Panel( _cards ) ;
@@ -33,10 +45,10 @@ public class AdminSwitchPanel
   private Button _userAdminButton = new Button("UserAdmin") ;
   private Button _gateAdminButton = new Button("Volume Admin" ) ;
   private Button _backButton      = new Button("Back" ) ;
-  
+
   public AdminSwitchPanel(DomainConnection dc ){
       setLayout( new BorderLayout() ) ;
-      
+
       Panel leftPanel   = new Panel( new BorderLayout() ) ;
       GridLayout gl = new GridLayout(0,1) ;
       gl.setHgap(10) ;
@@ -49,19 +61,19 @@ public class AdminSwitchPanel
       add( leftPanel , "West" ) ;
       add( _switchPanel , "Center" ) ;
       add( _errorLabel , "South" ) ;
-      
+
       _userAdminButton.addActionListener(this);
       _gateAdminButton.addActionListener(this);
       _backButton.addActionListener(this);
 
-     _switchPanel.add( new Dummy(5) , "dummy" ) ; 
-     _switchPanel.add( new UserAdminPanel(dc)  , "user" ) ; 
-     _switchPanel.add( new UserAdminPanel(dc)  , "tape" ) ; 
-     
+     _switchPanel.add( new Dummy(5) , "dummy" ) ;
+     _switchPanel.add( new UserAdminPanel(dc)  , "user" ) ;
+     _switchPanel.add( new UserAdminPanel(dc)  , "tape" ) ;
+
      _cards.show( _switchPanel , "dummy" ) ;
 
   }
-  
+
   @Override
   public void actionPerformed( ActionEvent event ){
       Object source = event.getSource() ;
@@ -86,14 +98,14 @@ public class AdminSwitchPanel
            g.setColor( Color.red ) ;
            int off = 0 ;
            for( int i = 0 ;i < _count ; i++ ){
-              g.drawRect( off  , off , 
-                          d.width - 1 - 2*off , 
+              g.drawRect( off  , off ,
+                          d.width - 1 - 2*off ,
                           d.height - 1 - 2 * off ) ;
               off += 5 ;
            }
        }
    }
-       
+
 }
-                  
- 
+
+

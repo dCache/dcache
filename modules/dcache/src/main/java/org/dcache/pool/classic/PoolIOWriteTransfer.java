@@ -1,34 +1,36 @@
 package org.dcache.pool.classic;
 
-import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.Repository;
-import org.dcache.util.Checksum;
-import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-import org.dcache.pool.movers.MoverProtocol;
-import org.dcache.pool.movers.ChecksumMover;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.SyncFailedException;
-import java.util.List;
 import java.util.Collections;
-import javax.security.auth.Subject;
-import org.dcache.pool.movers.IoMode;
+import java.util.List;
 
-import org.dcache.pool.repository.RepositoryChannel;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.pool.movers.ChecksumMover;
+import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates a write transfer, that is, receiving a file. It acts

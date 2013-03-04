@@ -1,7 +1,18 @@
 // $Id: FileUserRelation.java,v 1.1 2001-05-02 06:14:15 cvs Exp $
 package dmg.cells.services.login.user  ;
-import java.util.* ;
-import java.io.* ;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.NoSuchElementException;
 public class FileUserRelation implements TopDownUserRelationable {
 
     private class ListEnumeration implements Enumeration<String> {

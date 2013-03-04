@@ -2,17 +2,19 @@ package org.dcache.boot;
 
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 
-import java.util.Properties;
-import java.io.StringReader;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.Properties;
 
-import org.dcache.util.ConfigurationProperties;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
 import dmg.util.CommandException;
 import dmg.util.Formats;
+
+import org.dcache.util.ConfigurationProperties;
+
+import static org.junit.Assert.assertEquals;
 
 public class DomainConfigurationTest
 {

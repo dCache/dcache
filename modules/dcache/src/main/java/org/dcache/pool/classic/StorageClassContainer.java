@@ -2,18 +2,25 @@
 
 package org.dcache.pool.classic;
 
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.util.Args;
+import dmg.util.Formats;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.AbstractCellComponent;
-
-import dmg.util.*;
-
-import java.io.*;
-import java.util.*;
 
 public class StorageClassContainer
     extends AbstractCellComponent

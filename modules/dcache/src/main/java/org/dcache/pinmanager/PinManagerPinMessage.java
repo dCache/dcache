@@ -4,17 +4,18 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
 
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.util.PnfsId;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
-import static org.dcache.namespace.FileAttribute.*;
-import static com.google.common.base.Preconditions.*;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.dcache.namespace.FileAttribute.PNFSID;
 
 public class PinManagerPinMessage extends Message
 {

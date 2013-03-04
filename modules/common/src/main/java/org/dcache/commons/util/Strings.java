@@ -1,15 +1,18 @@
 package org.dcache.commons.util;
+
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import static com.google.common.collect.Iterators.forArray;
-import static com.google.common.collect.Iterators.transform;
-import java.lang.reflect.Method;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.List;
-import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.google.common.collect.Iterators.forArray;
+import static com.google.common.collect.Iterators.transform;
 
 /**
  *

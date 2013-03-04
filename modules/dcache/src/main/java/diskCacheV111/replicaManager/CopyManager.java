@@ -5,19 +5,29 @@
  */
 
 package diskCacheV111.replicaManager;
-import  diskCacheV111.vehicles.* ;
-import  diskCacheV111.util.* ;
-import  diskCacheV111.pools.* ;
 
-import  dmg.cells.nucleus.* ;
-import  dmg.util.* ;
-
-import  java.io.* ;
-import  java.util.*;
-
-import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.PrintWriter;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.StringTokenizer;
+
+import diskCacheV111.pools.PoolCellInfo;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Pool2PoolTransferMsg;
+import diskCacheV111.vehicles.PoolCheckFileMessage;
+import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.util.Args;
+
+import org.dcache.vehicles.FileAttributes;
 
 /**
  *

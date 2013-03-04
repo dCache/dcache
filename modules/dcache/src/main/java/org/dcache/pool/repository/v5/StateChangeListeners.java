@@ -1,18 +1,18 @@
 package org.dcache.pool.repository.v5;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.dcache.pool.repository.StateChangeListener;
-import org.dcache.pool.repository.StateChangeEvent;
-import org.dcache.pool.repository.StickyChangeEvent;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.dcache.pool.repository.EntryChangeEvent;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.StickyChangeEvent;
 
 class StateChangeListeners
 {

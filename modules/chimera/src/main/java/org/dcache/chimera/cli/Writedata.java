@@ -1,11 +1,11 @@
 package org.dcache.chimera.cli;
 
-import static com.google.common.io.ByteStreams.toByteArray;
-
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
+
+import static com.google.common.io.ByteStreams.toByteArray;
 
 /**
  * Overwrite contents of a file with user-supplied data.

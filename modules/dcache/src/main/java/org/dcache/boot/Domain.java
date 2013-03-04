@@ -1,33 +1,32 @@
 package org.dcache.boot;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.util.StatusPrinter;
+import com.google.common.base.Joiner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.dcache.util.ConfigurationProperties;
-import org.dcache.util.ScopedConfigurationProperties;
-import org.dcache.util.NetworkUtils;
-
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
-import dmg.cells.nucleus.CDC;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.core.joran.spi.JoranException;
-import ch.qos.logback.core.util.StatusPrinter;
-
-import com.google.common.base.Joiner;
+import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.NetworkUtils;
+import org.dcache.util.ScopedConfigurationProperties;
 
 import static org.dcache.boot.Properties.*;
 

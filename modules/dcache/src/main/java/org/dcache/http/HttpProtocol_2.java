@@ -1,5 +1,8 @@
 package org.dcache.http;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -10,30 +13,29 @@ import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
+import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
+
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
+
 import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.movers.ChecksumMover;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
-import diskCacheV111.vehicles.HttpProtocolInfo;
-import diskCacheV111.vehicles.ProtocolInfo;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
-import org.dcache.pool.repository.RepositoryChannel;
 
 /**
  * Netty-based HTTP-mover. The mover generates an UUID that identifies it upon

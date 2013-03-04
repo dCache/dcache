@@ -1,8 +1,8 @@
 package org.dcache.util;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
 import diskCacheV111.util.FsPath;

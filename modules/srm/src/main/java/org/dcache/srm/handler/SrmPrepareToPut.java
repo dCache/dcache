@@ -6,30 +6,31 @@
 
 package org.dcache.srm.handler;
 
+import org.apache.axis.types.URI.MalformedURIException;
 import org.apache.axis.types.UnsignedLong;
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
-import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
-import org.dcache.srm.v2_2.TPutFileRequest;
-import org.dcache.srm.v2_2.TAccessLatency;
-import org.dcache.srm.v2_2.TRetentionPolicy;
-import org.dcache.srm.v2_2.TExtraInfo;
-import org.dcache.srm.v2_2.TOverwriteMode;
-import org.dcache.srm.v2_2.TPutRequestFileStatus;
-import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
-import org.dcache.srm.v2_2.TFileStorageType;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.request.PutRequest;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.util.Tools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.PutRequest;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.Tools;
+import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
+import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
+import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TExtraInfo;
+import org.dcache.srm.v2_2.TFileStorageType;
+import org.dcache.srm.v2_2.TOverwriteMode;
+import org.dcache.srm.v2_2.TPutFileRequest;
+import org.dcache.srm.v2_2.TPutRequestFileStatus;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  *

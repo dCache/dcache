@@ -1,10 +1,7 @@
 package org.dcache.util;
 
-import static com.google.common.base.Predicates.instanceOf;
 import com.google.common.base.Splitter;
-import static com.google.common.collect.Collections2.filter;
 import com.google.common.collect.ImmutableList;
-import static com.google.common.collect.ImmutableList.copyOf;
 import com.google.common.net.InetAddresses;
 
 import java.net.DatagramSocket;
@@ -21,6 +18,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
+
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.Collections2.filter;
+import static com.google.common.collect.ImmutableList.copyOf;
 
 /**
  * Various network related utility functions.

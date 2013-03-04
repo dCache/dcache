@@ -1,12 +1,14 @@
 package diskCacheV111.util;
 
+import javax.security.auth.Subject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -15,10 +17,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import javax.security.auth.Subject;
-import org.dcache.auth.Subjects;
-
 import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.auth.Subjects;
 
 public class CheckStagePermission {
     private File _stageConfigFile;

@@ -1,12 +1,13 @@
 package org.dcache.services.login;
 
-import java.util.Set;
-import java.util.Collections;
 import javax.security.auth.Subject;
 
-import org.dcache.auth.attributes.LoginAttribute;
+import java.util.Collections;
+import java.util.Set;
 
 import diskCacheV111.vehicles.Message;
+
+import org.dcache.auth.attributes.LoginAttribute;
 
 /**
  * Requests a login by a login cell.

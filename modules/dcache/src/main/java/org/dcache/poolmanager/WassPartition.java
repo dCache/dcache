@@ -1,33 +1,32 @@
 package org.dcache.poolmanager;
 
-import java.util.Map;
-import java.util.List;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.security.SecureRandom;
 import java.util.Collections;
-import java.io.ObjectInputStream;
-import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CostException;
-import diskCacheV111.util.SourceCostException;
 import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.SourceCostException;
+
 import org.dcache.vehicles.FileAttributes;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Predicates.*;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.transform;
-import static com.google.common.base.Predicates.and;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.base.Predicates.equalTo;
-import static com.google.common.base.Predicates.compose;
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * Partition that implements the probabilistic weighted available

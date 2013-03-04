@@ -7,19 +7,19 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.HsmLocationExtractorFactory;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.store.InodeStorageInformation;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.HsmLocationExtractorFactory;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.vehicles.StorageInfo;
 
 public abstract class ChimeraHsmStorageInfoExtractor implements
        ChimeraStorageInfoExtractable {

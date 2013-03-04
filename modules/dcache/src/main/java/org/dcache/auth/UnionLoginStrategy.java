@@ -1,20 +1,21 @@
 package org.dcache.auth;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
-import java.security.Principal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.security.auth.Subject;
+
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.attributes.ReadOnly;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * LoginStrategy which forms the union of allowed logins of several

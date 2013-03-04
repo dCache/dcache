@@ -1,14 +1,15 @@
 package org.dcache.services.hsmcleaner;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 import dmg.util.Args;
+
 import org.dcache.cells.CellMessageReceiver;
 
 /**

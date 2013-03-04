@@ -1,14 +1,17 @@
 package org.dcache.gplazma.strategies;
 
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
+import java.util.List;
+
 import org.dcache.commons.util.NDC;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
 
 /**
  * This class provides a common mechanism to iterate through a list of

@@ -1,16 +1,24 @@
 package org.dcache.gplazma.plugins;
 
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.TextOutputCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
-import javax.security.auth.callback.*;
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
+
 import org.dcache.auth.PasswordCredential;
 import org.dcache.gplazma.AuthenticationException;
+
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**

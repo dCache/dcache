@@ -1,26 +1,26 @@
 package org.dcache.services.httpd.handlers;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.dcache.services.httpd.exceptions.OnErrorException;
-import org.dcache.services.httpd.util.AliasEntry;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import dmg.util.HttpBasicAuthenticationException;
 import dmg.util.HttpException;
+
+import org.dcache.services.httpd.exceptions.OnErrorException;
+import org.dcache.services.httpd.util.AliasEntry;
 
 /**
  * Responsible for parsing the request to find the correct alias type and

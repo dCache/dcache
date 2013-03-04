@@ -1,6 +1,8 @@
 package org.dcache.gplazma.strategies;
-import org.dcache.gplazma.plugins.GPlazmaPlugin;
+
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
+import org.dcache.gplazma.plugins.GPlazmaPlugin;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**

@@ -2,8 +2,9 @@
 
 package diskCacheV111.vehicles;
 
-import org.dcache.namespace.FileAttribute;
 import java.util.Set;
+
+import org.dcache.namespace.FileAttribute;
 
 
 public class PnfsCreateDirectoryMessage extends PnfsCreateEntryMessage {

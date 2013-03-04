@@ -1,9 +1,11 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import diskCacheV111.services.space.LinkGroup;
-import diskCacheV111.services.space.Space;
 import java.util.HashSet;
 import java.util.Set;
+
+import diskCacheV111.services.space.LinkGroup;
+import diskCacheV111.services.space.Space;
+
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 

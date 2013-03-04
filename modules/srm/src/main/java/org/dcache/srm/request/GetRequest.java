@@ -73,28 +73,27 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import org.dcache.srm.scheduler.FatalJobFailure;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.dcache.srm.v2_2.TRequestType;
-import org.dcache.srm.SRMUser;
-
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
-import java.net.URI;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.State;
-
-import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
-import org.dcache.srm.v2_2.TGetRequestFileStatus;
-import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
-import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
+import java.net.URI;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.List;
+
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
+import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
+import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
+import org.dcache.srm.v2_2.TGetRequestFileStatus;
+import org.dcache.srm.v2_2.TRequestType;
+import org.dcache.srm.v2_2.TSURLReturnStatus;
 
 /*
  * @author  timur

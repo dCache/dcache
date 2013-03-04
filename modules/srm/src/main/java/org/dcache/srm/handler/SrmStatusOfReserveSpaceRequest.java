@@ -15,17 +15,21 @@
 
 package org.dcache.srm.handler;
 
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.request.ReserveSpaceRequest;
-import org.dcache.srm.util.Configuration;
+import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.request.ReserveSpaceRequest;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  *

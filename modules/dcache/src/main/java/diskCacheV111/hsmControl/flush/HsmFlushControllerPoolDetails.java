@@ -1,8 +1,9 @@
 package diskCacheV111.hsmControl.flush ;
-import diskCacheV111.pools.* ;
 
 import java.io.Serializable;
-import java.util.* ;
+import java.util.List;
+
+import diskCacheV111.pools.PoolCellInfo;
 
 /**
  * Whenever a HsmFlushControlManager cell loads a driver it provides

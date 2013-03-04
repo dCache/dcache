@@ -59,7 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.util;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -67,11 +68,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
-import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.dcache.webadmin.model.dataaccess.util.RrdSettings;
 import org.dcache.webadmin.view.beans.ThumbnailPanelBean;
 import org.dcache.webadmin.view.panels.poolqueues.PoolQueuePlotsDisplayPanel;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Provider for the view displaying thumbnail links (see

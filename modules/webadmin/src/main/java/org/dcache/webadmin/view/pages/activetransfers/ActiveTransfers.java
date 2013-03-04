@@ -1,11 +1,15 @@
 package org.dcache.webadmin.view.pages.activetransfers;
 
-import java.util.List;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
@@ -13,8 +17,6 @@ import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.activetransfers.ActiveTransfersPanel;
 import org.dcache.webadmin.view.util.Role;
 import org.dcache.webadmin.view.util.SelectableWrapper;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
 public class ActiveTransfers extends BasePage {
 

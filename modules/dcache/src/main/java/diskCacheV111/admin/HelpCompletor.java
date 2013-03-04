@@ -1,10 +1,10 @@
 package diskCacheV111.admin ;
 
-import java.util.List;
+import jline.Completor;
+
 import java.util.ArrayList;
 import java.util.Collections;
-
-import jline.Completor;
+import java.util.List;
 
 /**
  * Simple completor for JLine that uses the dCache help output to

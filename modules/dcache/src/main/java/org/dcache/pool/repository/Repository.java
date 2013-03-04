@@ -1,16 +1,16 @@
 package org.dcache.pool.repository;
 
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.CacheException;
-
-import org.dcache.pool.FaultListener;
-import org.dcache.vehicles.FileAttributes;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.pool.FaultListener;
+import org.dcache.vehicles.FileAttributes;
 
 public interface Repository
     extends Iterable<PnfsId>

@@ -1,11 +1,12 @@
 package org.dcache.services.info.base.guides;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import org.dcache.services.info.base.StatePath;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.dcache.services.info.base.StatePath;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class SubtreeStateGuideTests {
 

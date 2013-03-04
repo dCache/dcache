@@ -2,8 +2,8 @@ package org.dcache.pool.repository;
 
 import java.util.Collection;
 
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 
 /**
  * The MetaDataStore interface provides an abstraction of how

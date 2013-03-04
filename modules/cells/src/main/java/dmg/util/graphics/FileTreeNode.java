@@ -1,6 +1,6 @@
 package dmg.util.graphics ;
 
-import java.io.* ;
+import java.io.File;
 
 public class FileTreeNode implements TreeNodeable {
    private boolean _folded   = true ;
@@ -26,14 +26,14 @@ public class FileTreeNode implements TreeNodeable {
       if( ( list == null ) || ( list.length == 0 ) ) {
           return null;
       }
-      
+
       FileTreeNode [] nodes = new FileTreeNode[list.length] ;
       nodes[0] = new FileTreeNode( new File( _base , list[0] ) ) ;
       for( int i = 1 ; i < nodes.length ; i++ ){
          nodes[i] = new FileTreeNode( new File( _base , list[i] ) ) ;
          nodes[i-1].setNextNode( nodes[i] ) ;
       }
-      
+
       return _sub = nodes[0] ;
    }
    public void setNextNode( FileTreeNode node ){ _next = node ; }
@@ -50,7 +50,7 @@ public class FileTreeNode implements TreeNodeable {
         _sub    = null ;
       }else{
         _folded = true ;
-      }  
+      }
    }
    @Override
    public boolean      isSelected(){ return _selected ; }

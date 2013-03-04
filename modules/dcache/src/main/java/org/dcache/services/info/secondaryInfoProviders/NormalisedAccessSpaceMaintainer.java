@@ -1,5 +1,8 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -16,8 +19,6 @@ import org.dcache.services.info.stateInfo.LinkInfo;
 import org.dcache.services.info.stateInfo.LinkInfoVisitor;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The NormalisaedAccessSpace (NAS) maintainer updates the <code>nas</code>

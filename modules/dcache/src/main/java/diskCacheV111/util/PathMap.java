@@ -1,6 +1,11 @@
 // $Id: PathMap.java,v 1.5 2007-05-24 13:51:06 tigran Exp $
 package diskCacheV111.util ;
-import java.util.* ;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
 
 public class PathMap {
     private final Map<String, Object> _root = new HashMap<>() ;

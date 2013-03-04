@@ -2,9 +2,11 @@
 
 package diskCacheV111.vehicles;
 
-import org.dcache.namespace.FileAttribute;
-import diskCacheV111.namespace.NameSpaceProvider;
 import java.util.Set;
+
+import diskCacheV111.namespace.NameSpaceProvider;
+
+import org.dcache.namespace.FileAttribute;
 
 public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
 

@@ -1,23 +1,25 @@
 package org.dcache.gplazma.strategies;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.security.Principal;
+import java.util.List;
 import java.util.Set;
+
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
-import static org.junit.Assert.assertNotNull;
-import org.junit.Before;
-import org.junit.Test;
-import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
-import java.util.List;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.collect.ImmutableList;
 import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor;
+import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
+import static org.junit.Assert.assertNotNull;
 
 /**
  *

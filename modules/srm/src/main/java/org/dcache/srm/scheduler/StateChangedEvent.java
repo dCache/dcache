@@ -71,9 +71,10 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.scheduler;
-import org.dcache.srm.request.Job;
 
 import java.beans.PropertyChangeEvent;
+
+import org.dcache.srm.request.Job;
 
 /**
  *

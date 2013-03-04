@@ -1,6 +1,7 @@
 package diskCacheV111.cells;
 
-import  diskCacheV111.vehicles.*;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
 
 /**

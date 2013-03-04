@@ -72,13 +72,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
-import org.dcache.srm.request.Job;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
+
+import org.dcache.srm.request.Job;
 
 /**
  *

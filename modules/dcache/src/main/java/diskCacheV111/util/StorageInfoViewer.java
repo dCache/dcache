@@ -1,8 +1,13 @@
 //   $Id: StorageInfoViewer.java,v 1.1 2003-08-05 16:14:06 cvs Exp $
 
 package diskCacheV111.util ;
-import  diskCacheV111.vehicles.* ;
-import  java.io.* ;
+
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+
+import diskCacheV111.vehicles.StorageInfo;
 
 public class StorageInfoViewer {
 

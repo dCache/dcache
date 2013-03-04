@@ -1,11 +1,12 @@
 package org.dcache.tests.repository;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.util.Random;
 
 import org.dcache.pool.repository.Account;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class DiskSpaceAllocatorTest {
 

@@ -81,12 +81,24 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-import org.dcache.srm.client.SRMClientV2;
 import org.apache.axis.types.URI;
-import org.dcache.srm.v2_2.*;
+import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+
+import org.dcache.srm.client.SRMClientV2;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
+import org.dcache.srm.v2_2.ArrayOfTPermissionReturn;
+import org.dcache.srm.v2_2.ArrayOfTUserPermission;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmGetPermissionRequest;
+import org.dcache.srm.v2_2.SrmGetPermissionResponse;
+import org.dcache.srm.v2_2.TGroupPermission;
+import org.dcache.srm.v2_2.TPermissionReturn;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.v2_2.TUserPermission;
 
 public class SRMGetPermissionClientV2 extends SRMClient {
     private GSSCredential cred;

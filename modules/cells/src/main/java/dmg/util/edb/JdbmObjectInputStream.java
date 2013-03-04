@@ -1,11 +1,13 @@
 package dmg.util.edb ;
 
-import java.io.* ;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
 
-public class      JdbmObjectInputStream 
-       extends    DataInputStream 
+public class      JdbmObjectInputStream
+       extends    DataInputStream
        implements ObjectInput      {
-   
+
    public JdbmObjectInputStream( DataInputStream in ){
       super( in ) ;
    }
@@ -13,7 +15,7 @@ public class      JdbmObjectInputStream
        for( int i = 0 ; i < array.length ; i++ ) {
            array[i] = readLong();
        }
-   
+
    }
    @Override
    public Object readObject() throws IOException, ClassNotFoundException {

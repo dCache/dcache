@@ -1,8 +1,9 @@
 package org.dcache.services.info.stateInfo;
 
-import org.dcache.services.info.base.StateExhibitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.dcache.services.info.base.StateExhibitor;
 
 /**
  * Scan through the current list of pools and calculate aggregated statistics.

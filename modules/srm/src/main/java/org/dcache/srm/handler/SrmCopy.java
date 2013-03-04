@@ -15,19 +15,28 @@
 
 package org.dcache.srm.handler;
 
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.request.CopyRequest;
-import org.dcache.srm.util.Configuration;
 import org.apache.axis.types.URI;
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.SRMProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMProtocol;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.ContainerRequest;
+import org.dcache.srm.request.CopyRequest;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.v2_2.SrmCopyRequest;
+import org.dcache.srm.v2_2.SrmCopyResponse;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TCopyFileRequest;
+import org.dcache.srm.v2_2.TExtraInfo;
+import org.dcache.srm.v2_2.TOverwriteMode;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  *
@@ -35,7 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 
 public class SrmCopy {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmCopy.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -45,14 +54,14 @@ public class SrmCopy {
     RequestCredential      credential;
     Configuration          configuration;
     private String client_host;
-    
+
     public SrmCopy(SRMUser user,
             RequestCredential credential,
             SrmCopyRequest request,
             AbstractStorageElement storage,
             SRM srm,
             String client_host) {
-        
+
         if (request == null) {
             throw new NullPointerException("request is null");
         }
@@ -69,7 +78,7 @@ public class SrmCopy {
         }
         this.client_host = client_host;
     }
-    
+
     public SrmCopyResponse getResponse() {
         if(response != null ) {
             return response;
@@ -82,11 +91,11 @@ public class SrmCopy {
         }
         return response;
     }
-    
+
     public static final SrmCopyResponse getFailedResponse(String text) {
         return getFailedResponse(text,null);
     }
-    
+
     public static final SrmCopyResponse getFailedResponse(String text, TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode = TStatusCode.SRM_FAILURE;
@@ -101,7 +110,7 @@ public class SrmCopy {
     /**
      * implementation of srm copy
      */
-    
+
     public SrmCopyResponse srmCopy() throws SRMException,URI.MalformedURIException {
         if(request==null) {
             return getFailedResponse("SrmCopy: null request passed to SrmCopy",
@@ -130,7 +139,7 @@ public class SrmCopy {
                 lifetimeInSeconds = reqLifetime;
             }
         }
-        
+
         long lifetime =
                 lifetimeInSeconds>0
                 ?lifetimeInSeconds*1000>configuration.getCopyLifetime()
@@ -157,7 +166,7 @@ public class SrmCopy {
                     "Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported",
                     TStatusCode.SRM_NOT_SUPPORTED);
         }
-        
+
         try {
             ContainerRequest r = new CopyRequest(
                     user,

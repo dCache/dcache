@@ -1,6 +1,7 @@
 package org.dcache.ftp;
 
 import java.security.MessageDigest;
+
 import org.dcache.pool.repository.RepositoryChannel;
 
 public abstract class DigestThread extends Thread

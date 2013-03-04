@@ -1,8 +1,8 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -17,8 +17,9 @@ import org.dcache.services.info.base.StateWatcher;
 import org.dcache.services.info.base.TestStateExhibitor;
 import org.dcache.services.info.stateInfo.LinkInfo;
 import org.dcache.services.info.stateInfo.SpaceInfo;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 // FIXME the tests do not check that pools are partitioned correctly.
 public class NormalisedAccessSpaceMaintainerTests {

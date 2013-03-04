@@ -1,10 +1,10 @@
 package org.dcache.tests.poolmanager;
 
 import diskCacheV111.poolManager.CostModuleV1;
-
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
+
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;

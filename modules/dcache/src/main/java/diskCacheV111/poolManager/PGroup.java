@@ -1,8 +1,9 @@
 package diskCacheV111.poolManager;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import java.util.HashMap;
 import java.util.Map;
+
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 
 class PGroup extends PoolCore implements SelectionPoolGroup {
     private static final long serialVersionUID = 3883973457610397314L;

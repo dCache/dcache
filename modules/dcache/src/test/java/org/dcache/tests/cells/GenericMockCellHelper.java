@@ -1,10 +1,11 @@
 package org.dcache.tests.cells;
 
-import dmg.cells.nucleus.SerializationException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -12,8 +13,7 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-
-import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.SerializationException;
 
 public class GenericMockCellHelper extends CellAdapterHelper {
 

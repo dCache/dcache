@@ -1,14 +1,13 @@
 package org.dcache.services.info.base;
 
 
-import static org.junit.Assert.*;
-
-
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static org.junit.Assert.*;
 
 public class StatePathTest extends InfoBaseTestHelper {
 
@@ -81,7 +80,7 @@ public class StatePathTest extends InfoBaseTestHelper {
     /**
      *  Check that parsing results in a StatePath that gives the same result
      *  as building the StatePath manually.
-     * 
+     *
      *  This assumes hashCode() and newChild() work.
      */
     @Test

@@ -1,10 +1,21 @@
 package dmg.cells.applets.login ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
 
-public class      SshLoginLGPanel 
-       extends    SshActionPanel 
+public class      SshLoginLGPanel
+       extends    SshActionPanel
        implements ActionListener, TextListener {
 
     private static final long serialVersionUID = -4040525374352943317L;
@@ -21,33 +32,33 @@ public class      SshLoginLGPanel
    private String  _hostName,
                    _portName,
                    _userName;
-   private boolean _hostVis    = true , 
-                   _portVis    = true , 
+   private boolean _hostVis    = true ,
+                   _portVis    = true ,
                    _userVis    = true ;
-   private boolean _hostChange = true , 
-                   _portChange = true , 
+   private boolean _hostChange = true ,
+                   _portChange = true ,
                    _userChange = true ;
    private String _remoteHost,
                   _remotePort,
                   _remoteUser,
                   _remotePassword;
-   
-   
+
+
    @Override
    public Insets getInsets(){ return new Insets(10,10,10,10) ; }
    public void ok(){
-   
+
        setBackground( Color.green ) ;
        BorderLayout bl = new BorderLayout() ;
        bl.setHgap(10) ;
        bl.setVgap(10) ;
        Panel q = new Panel( bl ) ;
-       
-       Label top = new Label( _title == null ? 
-                              "Login" : 
+
+       Label top = new Label( _title == null ?
+                              "Login" :
                               _title , Label.CENTER ) ;
        top.setFont( _font ) ;
-       
+
 //       GridLayout gl = new GridLayout( 0 , 2 ) ;
 //       gl.setHgap(10) ;
 //       gl.setVgap(10) ;
@@ -68,22 +79,22 @@ public class      SshLoginLGPanel
        p.add( _passText = new TextField( "" ) ) ;
        p.add( _goButton = new Button( "Connect" ) ) ;
        p.add( _exitButton = new Button( "Exit" ) ) ;
-       
+
        _passText.setEchoChar( '*' ) ;
        _goButton.addActionListener( this ) ;
        _exitButton.addActionListener( this ) ;
-       
+
 
 
        _message = new Label("",Label.CENTER) ;
 //       _message.setBackground( Color.red ) ;
-       
+
        q.add( "North" , top ) ;
        q.add( "Center" , p ) ;
        q.add( "South" ,  _message ) ;
-       
+
        add( q ) ;
-       
+
    }
    public void setHost( String host , boolean visible , boolean changable ){
       _hostName = host ; _hostVis = visible ; _hostChange = changable ;
@@ -111,8 +122,8 @@ public class      SshLoginLGPanel
    }
    @Override
    public void textValueChanged( TextEvent event ){
-   
-   
+
+
    }
    @Override
    public void actionPerformed( ActionEvent event ){
@@ -128,7 +139,7 @@ public class      SshLoginLGPanel
              _hostText.getText().equals("") ||
              _portText.getText().equals("")  ){
              setText( "Information missing" ) ;
-             return ;  
+             return ;
           }
           _remoteHost = _hostText.getText() ;
           _remotePort = _portText.getText() ;
@@ -164,4 +175,4 @@ public class      SshLoginLGPanel
    }
 
 
-} 
+}

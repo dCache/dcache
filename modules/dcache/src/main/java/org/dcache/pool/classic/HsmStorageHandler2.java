@@ -2,68 +2,68 @@
 
 package org.dcache.pool.classic;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
-import java.io.StringReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.EnumSet;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.util.Batchable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RunSystem;
 import diskCacheV111.util.SimpleJobScheduler;
-import diskCacheV111.util.ChecksumFactory;
-import org.dcache.util.Checksum;
-import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
-import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.Repository.OpenFlags;
-import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.EntryState;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.vehicles.FileAttributes;
 
 public class HsmStorageHandler2
     extends AbstractCellComponent

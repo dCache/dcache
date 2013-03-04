@@ -59,12 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.pages.poolqueues;
 
-import java.util.concurrent.TimeUnit;
-
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.util.time.Duration;
+
+import java.util.concurrent.TimeUnit;
+
 import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.poolqueues.PoolQueuePlotsControlPanel;

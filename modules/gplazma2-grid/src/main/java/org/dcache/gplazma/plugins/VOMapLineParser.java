@@ -1,17 +1,16 @@
 package org.dcache.gplazma.plugins;
 
-import org.dcache.gplazma.util.NameRolePair;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.dcache.auth.FQAN;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.dcache.gplazma.util.NameRolePair;
 import org.dcache.util.Glob;
-import com.google.common.base.Strings;
 
 /**
  * Parser for vorolemap files ("<DN>" "<FQAN>" "<USERNAME>") mapping

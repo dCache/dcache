@@ -1,12 +1,13 @@
 package org.dcache.gplazma.util;
 
-import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.attributes.ReadOnly;
-
 import java.util.Set;
 
-import static com.google.common.collect.Iterables.*;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
+
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.getFirst;
 
 public final class SessionAttributes
 {

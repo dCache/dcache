@@ -1,9 +1,11 @@
 package org.dcache.boot;
 
 import java.io.PrintStream;
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
+
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ScopedConfigurationProperties;
+
+import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
 
 /**
  * Creates a Python declaration for a class that is an oracle for

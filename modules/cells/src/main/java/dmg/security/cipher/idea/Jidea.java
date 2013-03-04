@@ -1,6 +1,9 @@
 package dmg.security.cipher.idea;
-import  dmg.security.cipher.BlockCipher ;
-import  java.util.* ;
+
+import java.util.Date;
+import java.util.Random;
+
+import dmg.security.cipher.BlockCipher;
 
 /**
   *  <strong>This module is an java implementation of the
@@ -11,7 +14,7 @@ import  java.util.* ;
   *  by domestic restrictions of using strong encryption code
   *  (France etc.).
   *  </strong><hr>
-  *  The Jdea Class is an implementation of the Idea cipher 
+  *  The Jdea Class is an implementation of the Idea cipher
   *  algorithm. An instance of the class is always bound to
   *  the key, this instance was created with. The cbf64 vector
   *  can be set or obtained at any time. Currently only the
@@ -19,11 +22,11 @@ import  java.util.* ;
   *  implemented.
   *
   *
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
   *  @version  0.1 (cell)
   */
 public class Jidea implements BlockCipher {
@@ -33,7 +36,7 @@ public class Jidea implements BlockCipher {
     private byte [] _vec = new byte[8] ;
     private int     _num;
     private byte [] _key = new byte [16]  ;
-    
+
     public Jidea(){
        byte [] key  = new byte [_key.length ] ;
        Random  r    = new Random( new Date().getTime() ) ;
@@ -46,10 +49,10 @@ public class Jidea implements BlockCipher {
      *  to the 128 bit Idea key. 'key' must be at least of
      *  16 bytes length. All residual bytes are ignored. The initial
      *  cfb vector is calculated as a function of 'key'. The
-     *  vector can be obtained by 'getStartValue'. 
+     *  vector can be obtained by 'getStartValue'.
      *  Another startvector may be set by 'setStartValue'.
      *  Setting the startvector or obtaining its value must be
-     *  done before any encryption has been performed. 
+     *  done before any encryption has been performed.
      *  get and set of the start vector doesn't fully restore
      *  the encryption state in the cfb mode. The start vector
      *  has no meaning in ECB mode.
@@ -101,7 +104,7 @@ public class Jidea implements BlockCipher {
       *  'encryptECB' encrypts 8 bytes of data in ECB mode starting at
       *  in[inOff]. The encrypted 8 bytes are written to 'out' starting
       *  at out[outOff]. The input bytes remain unchanged. The transformation
-      *  is stateless. The same input 
+      *  is stateless. The same input
       *
       *  @param in Input byte array containing the data to be encrypted. The
       *            arraylength must be at least 'inOff+8' bytes.
@@ -109,7 +112,7 @@ public class Jidea implements BlockCipher {
       *  @param out Output array. The arraylength must be at least 'outOff+8' bytes.
       *  @param outOff Start position of the 'out' array.
       */
-    public void encryptECB( byte [] in , int inOff , byte [] out , int outOff ){   
+    public void encryptECB( byte [] in , int inOff , byte [] out , int outOff ){
       xcrypt( in , inOff , out , outOff , _k ) ;
     }
     @Override
@@ -127,7 +130,7 @@ public class Jidea implements BlockCipher {
       *  @param out Output array. The arraylength must be at least 'outOff+8' bytes.
       *  @param outOff Start position of the 'out' array.
       */
-    public void decryptECB( byte [] in , int inOff , byte [] out , int outOff ){   
+    public void decryptECB( byte [] in , int inOff , byte [] out , int outOff ){
       xcrypt( in , inOff , out , outOff , _dk ) ;
     }
     @Override
@@ -136,16 +139,16 @@ public class Jidea implements BlockCipher {
     }
     private void createEnKey( byte [] key ){
       int r0 , r1 , r2 ;
-      
+
       int [] k = new int[16] ;
       for( int i = 0 ; i < 16 ; i++ ) {
           k[i] = (key[i] < 0) ? (256 + (int) key[i]) : (int) key[i];
       }
-                      
+
       for( int i = 0 ; i < 8 ; i++ ) {
           _k[i] = (k[2 * i] << 8) | (k[2 * i + 1]);
       }
-         
+
       int kt = 0 ;
       int kf = 0 ;
       kt += 8 ;
@@ -171,16 +174,16 @@ public class Jidea implements BlockCipher {
          _k[kt++] = ( ( r1 << 9 ) | ( r2 >>> 7 ) ) & 0xffff ;
          kf += 8 ;
       }
-            
+
     }
     private void createDeKey(){
        int tp , fp  ;
-       
+
        tp = 0 ;
        fp = 6 * 8 ;
-       
+
        for( int r = 0 ; r < 9 ; r++ ){
-       
+
           _dk[tp++] = inverse( _k[fp+0] ) ;
           _dk[tp++] = ( (int)(0x10000L -_k[fp+2] ) & 0xffff ) ;
           _dk[tp++] = ( (int)(0x10000L -_k[fp+1] ) & 0xffff ) ;
@@ -194,11 +197,11 @@ public class Jidea implements BlockCipher {
        }
 
        int t ;
-       
+
        t      = _dk[1] ;
        _dk[1] = _dk[2] ;
        _dk[2] = t ;
-       
+
        t       = _dk[49] ;
        _dk[49] = _dk[50] ;
        _dk[50] = t ;
@@ -216,12 +219,12 @@ public class Jidea implements BlockCipher {
            while(true){
               r=(n1%n2);
               q=(n1-r)/n2;
-              if (r == 0){               
+              if (r == 0){
                   if( b2 < 0 ) {
                       b2 = 0x10001 + b2;
                   }
               }else{
-              
+
                   n1=n2;
                   n2=r;
                   t=b2;
@@ -238,22 +241,22 @@ public class Jidea implements BlockCipher {
     private int mul( int a, int b ){
           long ul = (long) a * (long) b;
           long r ;
-          if( ul != 0 ){ 
+          if( ul != 0 ){
             r  =( ul & 0xffff ) - ( ul >> 16 ) ;
-	    r -=( (r) >> 16 ); 
-//	    if (r&0xffff0000L) r=(r+0x10001); */  
+	    r -=( (r) >> 16 );
+//	    if (r&0xffff0000L) r=(r+0x10001); */
           }else{
-	    r=(-(long)a-b+1); /* assuming a or b is 0 and in range */ 
+	    r=(-(long)a-b+1); /* assuming a or b is 0 and in range */
 	  }
 	  return (int)( r & 0xffff )  ;
     }
     private final int DECRYPT = 0 ;
     private final int ENCRYPT = 1 ;
-    
-    private void xcrypt( byte [] in  , int inOff , 
+
+    private void xcrypt( byte [] in  , int inOff ,
                          byte [] out , int outOff , int [] key ){
         int [] d = new int[2] ;
-        
+
         d[0] = ((((int)in[inOff+0])&0xff) << 24 ) |
                ((((int)in[inOff+1])&0xff) << 16 ) |
                ((((int)in[inOff+2])&0xff) <<  8 ) |
@@ -264,7 +267,7 @@ public class Jidea implements BlockCipher {
                ((((int)in[inOff+7])&0xff) <<  0 ) ;
 
         xcrypt( d , key ) ;
-        
+
         out[outOff+0] = (byte) ( ( d[0] >>> 24  ) & 0xff );
         out[outOff+1] = (byte) ( ( d[0] >>> 16  ) & 0xff );
         out[outOff+2] = (byte) ( ( d[0] >>>  8  ) & 0xff );
@@ -278,13 +281,13 @@ public class Jidea implements BlockCipher {
     private void xcrypt( int [] d, int [] key ){
 	int  i , p;
 	int x1,x2,x3,x4,t0,t1,ul ;
-	
+
 
 	x2 = d[0] ;
 	x1 = ( x2 >>> 16 );
 	x4 = d[1] ;
 	x3 = ( x4 >>> 16 );
-        
+
         x2 &= 0xffff ;
         x1 &= 0xffff ;
         x3 &= 0xffff ;
@@ -295,21 +298,21 @@ public class Jidea implements BlockCipher {
 //        System.out.println( " inx4 : "+Integer.toHexString( x4 ) ) ;
 	p = 0 ;
 	for ( i = 0 ; i < 8; i++ ){
-	
+
             x1 &= 0xffff;
-            x1 =  mul( x1 , key[p++] ) ; 
- 
+            x1 =  mul( x1 , key[p++] ) ;
+
             x2 += key[p++] ;
             x3 += key[p++] ;
 
             x4 &= 0xffff;
-            x4 = mul( x4 , key[p++] ); 
+            x4 = mul( x4 , key[p++] );
 
             t0 = ( x1 ^ x3 ) & 0xffff ;
             t0 = mul( t0 , key[p++] );
 
             t1 = ( t0 + ( x2^x4 ) ) & 0xffff;
-            t1 = mul( t1 , key[p++] ); 
+            t1 = mul( t1 , key[p++] );
 
             t0 += t1;
 

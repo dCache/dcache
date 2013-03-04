@@ -1,19 +1,18 @@
 package dmg.cells.nucleus;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Formatter;
-import java.util.Map;
-import java.util.HashMap;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.core.Appender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-
+import ch.qos.logback.core.Appender;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Formatter;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import dmg.util.Args;
 

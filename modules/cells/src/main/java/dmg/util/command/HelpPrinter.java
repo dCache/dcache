@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.TreeMultimap;
-import org.dcache.commons.util.Strings;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -15,6 +14,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import org.dcache.commons.util.Strings;
 
 /**
  * Utility class to produce help texts for annotated commands.

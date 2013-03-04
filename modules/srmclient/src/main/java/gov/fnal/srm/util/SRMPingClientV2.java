@@ -73,9 +73,15 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
+
 import java.io.IOException;
+
 import org.dcache.srm.client.SRMClientV2;
-import org.dcache.srm.v2_2.*;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmPingRequest;
+import org.dcache.srm.v2_2.SrmPingResponse;
+import org.dcache.srm.v2_2.TExtraInfo;
 /**
  *
  * @author  timur

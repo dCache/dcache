@@ -1,37 +1,42 @@
 package org.dcache.services.billing.cells;
 
-import diskCacheV111.cells.DateRenderer;
-import diskCacheV111.vehicles.*;
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
-import java.util.Arrays;
 
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
-import org.dcache.cells.CellStub;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.cells.DateRenderer;
+import diskCacheV111.vehicles.InfoMessage;
+import diskCacheV111.vehicles.MoverInfoMessage;
+import diskCacheV111.vehicles.PnfsFileInfoMessage;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
 
-import com.google.common.io.Files;
-import com.google.common.base.Function;
-import com.google.common.collect.Maps;
-import static com.google.common.collect.Iterables.*;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellInfoProvider;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
 
-import org.stringtemplate.v4.ST;
-
-import org.springframework.beans.factory.annotation.Required;
-import org.stringtemplate.v4.STGroup;
+import static com.google.common.collect.Iterables.toArray;
+import static com.google.common.collect.Iterables.transform;
 
 /**
  * This class is responsible for the processing of messages from other

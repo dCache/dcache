@@ -1,8 +1,9 @@
 package org.dcache.webdav;
 
-import static org.dcache.util.StringMarkup.percentEncode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.dcache.util.StringMarkup.percentEncode;
 
 /**
  * This class provides a handy wrapper around a path.  It provides access to

@@ -6,10 +6,12 @@ import java.util.Set;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-import org.dcache.vehicles.FileAttributes;
+
 import org.dcache.namespace.FileAttribute;
-import static org.dcache.namespace.FileAttribute.*;
-import static com.google.common.base.Preconditions.*;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.dcache.namespace.FileAttribute.PNFSID;
 
 public class PinManagerExtendPinMessage extends Message
 {

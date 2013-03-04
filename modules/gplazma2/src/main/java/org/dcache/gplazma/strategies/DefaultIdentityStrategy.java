@@ -1,13 +1,14 @@
 package org.dcache.gplazma.strategies;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 
 import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The DefaultIdentityStrategy tries each of the supplied plugins in turn when

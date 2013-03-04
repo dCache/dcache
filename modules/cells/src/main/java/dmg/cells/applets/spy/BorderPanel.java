@@ -1,7 +1,13 @@
 package dmg.cells.applets.spy ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
 
 public class BorderPanel extends Panel {
     private static final long serialVersionUID = -4311790038120869338L;
@@ -33,8 +39,8 @@ public class BorderPanel extends Panel {
           base = base.darker() ;
        }
     }
-   
+
 }
 
 
- 
+

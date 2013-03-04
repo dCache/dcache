@@ -1,13 +1,14 @@
 package  dmg.cells.services ;
 
-import   dmg.cells.nucleus.* ;
-import   dmg.cells.network.* ;
+import dmg.cells.network.GNLCell;
+import dmg.cells.network.RetryTunnel;
+import dmg.cells.nucleus.SystemCell;
 
 //           new GNLCell( "telnet" , "dmg.cells.services.TelnetShell "+args[1] ) ;
 //           new ClientBootstrap( "init" , args[1] + " "+args[2] ) ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -15,7 +16,7 @@ import   dmg.cells.network.* ;
 public class SmallestDomain {
 
   public static void main( String [] args ){
-  
+
      if( args.length < 2 ){
         System.out.println( "USAGE : <domainName> <telnetListenPort> [<tunnelListenPort>]" ) ;
         System.out.println( "USAGE : <domainName> <regyHost> <regyPort>" ) ;
@@ -38,8 +39,8 @@ public class SmallestDomain {
           e.printStackTrace() ;
           System.exit(4);
       }
-       
+
   }
 
 }
- 
+

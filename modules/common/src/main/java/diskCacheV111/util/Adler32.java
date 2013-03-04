@@ -10,7 +10,7 @@
 package diskCacheV111.util;
 
 
-import java.io.* ;
+import java.io.FileInputStream;
 import java.security.MessageDigest;
 
 import org.dcache.util.Checksum;

@@ -1,7 +1,10 @@
 
 package diskCacheV111.services.space;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.StringTokenizer;
 
 public final class TextParser {
 	private static final String WHITESPACE_AND_QUOTES = " \t\r\n\"";

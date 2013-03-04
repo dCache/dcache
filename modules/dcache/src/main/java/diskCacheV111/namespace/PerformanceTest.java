@@ -1,28 +1,30 @@
 package diskCacheV111.namespace;
 
-import java.lang.reflect.Method;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.dcache.auth.Subjects;
 
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
-import org.dcache.vehicles.FileAttributes;
+
+import dmg.util.Args;
+
+import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import dmg.util.Args;
+import org.dcache.vehicles.FileAttributes;
 
 
 enum Operation {

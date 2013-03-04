@@ -1,14 +1,18 @@
 package org.dcache.webadmin.controller.impl;
 
-import java.util.List;
-import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
+
+import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.model.dataaccess.impl.PoolsDAOImplHelper;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  *

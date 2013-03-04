@@ -1,7 +1,8 @@
 // $Id: PoolFlushDoFlushMessage.java,v 1.2 2006-01-31 10:59:46 patrick Exp $
 
 package diskCacheV111.vehicles;
-import java.util.StringTokenizer ;
+
+import java.util.StringTokenizer;
 //
 //  Flush Control
 //

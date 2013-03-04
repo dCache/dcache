@@ -1,7 +1,9 @@
 package dmg.util.logback;
 
 import ch.qos.logback.classic.Level;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 public class FilterThresholdsTest

@@ -1,6 +1,6 @@
 package diskCacheV111.util;
 
-import dmg.util.*;
+import dmg.util.Args;
 
 /**
  * Dcap control line (ACSII channel) protocol arguments.

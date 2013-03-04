@@ -1,5 +1,6 @@
 package dmg.protocols.ssh ;
-import  dmg.security.cipher.* ;
+
+import dmg.security.cipher.StreamCipher;
 
 
 public class SshCmsgExecShell extends SshPacket {

@@ -1,7 +1,10 @@
 // $Id: InMemoryUserRelation.java,v 1.1 2001-05-02 06:14:15 cvs Exp $
 package dmg.cells.services.login.user  ;
 
-import java.util.* ;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.NoSuchElementException;
+import java.util.Vector;
 
 public class InMemoryUserRelation implements UserRelationable {
 
@@ -11,7 +14,7 @@ public class InMemoryUserRelation implements UserRelationable {
        @Override
        public String nextElement(){ return null ;}
    }
-   
+
    private class ElementItem {
       private Hashtable<String,String> _parents;
       private Hashtable<String,String> _childs;
@@ -55,7 +58,7 @@ public class InMemoryUserRelation implements UserRelationable {
          _parents.remove(parent);
       }
    }
-   
+
    private TopDownUserRelationable _db;
    private Hashtable<String, ElementItem> _elements;
    public InMemoryUserRelation( TopDownUserRelationable db )
@@ -67,10 +70,10 @@ public class InMemoryUserRelation implements UserRelationable {
    public synchronized Enumeration<String> getContainers() {
       //
       // anonymous class with 'instance initialization'
-      // We copy the data first to reduct the probability 
+      // We copy the data first to reduct the probability
       // of currupted information.
       // Warning : This interface doesn't distiguish between
-      //           groups and users. As a result the only 
+      //           groups and users. As a result the only
       //           way to identify a user is to make sure
       //           that is has no children which could be
       //           an empty group as well. ( So what ??? )
@@ -104,29 +107,29 @@ public class InMemoryUserRelation implements UserRelationable {
    @Override
    public synchronized Enumeration<String> getParentsOf( String element )
           throws NoSuchElementException {
-       
+
       ElementItem item = _elements.get(element);
       if( item == null ) {
           throw new
                   NoSuchElementException(element);
       }
-         
-      
+
+
       return item.parents()  ;
    }
    @Override
    public boolean isParentOf( String element , String container )
           throws NoSuchElementException {
-          
+
       ElementItem item = _elements.get(element);
       if( item == null ) {
           throw new
                   NoSuchElementException(element);
       }
-         
-      
+
+
       return item.isParent(container)  ;
-   }      
+   }
    @Override
    public void createContainer( String container )
        throws DatabaseException {
@@ -141,8 +144,8 @@ public class InMemoryUserRelation implements UserRelationable {
           throw new
                   NoSuchElementException(container);
       }
-         
-      
+
+
       return item.children()  ;
    }
    @Override
@@ -153,49 +156,49 @@ public class InMemoryUserRelation implements UserRelationable {
           throw new
                   NoSuchElementException(container);
       }
-         
-      
+
+
       return item.isChild(element)  ;
    }
    @Override
    public void addElement( String container , String element )
        throws NoSuchElementException {
-       
+
       _db.addElement( container , element ) ;
-      
+
       ElementItem item = _elements.get(container);
       if( item == null ) {
           throw new
                   NoSuchElementException(container);
       }
-         
+
       item.addChild( element ) ;
-      
+
       item = _elements.get(element);
       if( item == null ) {
           _elements.put(element, item = new ElementItem());
       }
-      
+
       item.addParent(container);
    }
    @Override
    public void removeElement( String container , String element )
        throws NoSuchElementException {
-       
+
       _db.removeElement( container , element ) ;
       ElementItem item = _elements.get(container);
       if( item == null ) {
           throw new
                   NoSuchElementException(container);
       }
-         
+
       item.removeChild(element) ;
-      
+
       item = _elements.get(element);
       if( item == null ) {
           return;
       }
-      
+
       item.removeParent(container);
 
    }
@@ -203,16 +206,16 @@ public class InMemoryUserRelation implements UserRelationable {
    public void removeContainer( String container )
        throws NoSuchElementException ,
               DatabaseException {
-      
+
       _db.removeContainer( container ) ;
       _elements.remove( container ) ;
    }
    private void _loadElements()
    {
-         
+
         Hashtable<String, ElementItem> hash = new Hashtable<>() ;
         Enumeration<String> e = _db.getContainers() ;
-        
+
         while( e.hasMoreElements() ){
            String container = e.nextElement();
            ElementItem item, x;

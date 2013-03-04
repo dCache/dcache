@@ -12,51 +12,55 @@
 
 package diskCacheV111.services;
 
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.NoRouteToCellException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsMessage;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.PnfsCreateEntryMessage;
-import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
-import diskCacheV111.vehicles.PoolMoverKillMessage;
-import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolDeliverFileMessage;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
-import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
-import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
-import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
-import diskCacheV111.vehicles.IpProtocolInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
 import java.net.InetAddress;
+import java.net.URI;
 import java.util.EnumSet;
-import javax.security.auth.Subject;
+
 import diskCacheV111.doors.FTPTransactionLog;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.namespace.PermissionHandler;
-import org.dcache.namespace.ChainedPermissionHandler;
-import org.dcache.namespace.PosixPermissionHandler;
-import org.dcache.namespace.ACLPermissionHandler;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.vehicles.FileAttributes;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
+import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsMessage;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
+import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
+import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
+import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
+
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
+import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.namespace.ChainedPermissionHandler;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.vehicles.FileAttributes;
 
 public class TransferManagerHandler implements CellMessageAnswerable
 {

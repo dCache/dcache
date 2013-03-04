@@ -1,8 +1,8 @@
 package dmg.util.command;
 
-import dmg.util.CommandException;
-
 import java.io.Serializable;
+
+import dmg.util.CommandException;
 
 /**
  * Implementations of this interface provides means to execute shell commands

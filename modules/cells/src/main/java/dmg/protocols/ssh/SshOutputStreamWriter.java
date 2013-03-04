@@ -1,6 +1,10 @@
 package dmg.protocols.ssh ;
 
-import  java.io.* ;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 public class SshOutputStreamWriter extends FilterWriter {
 
@@ -48,9 +52,9 @@ public class SshOutputStreamWriter extends FilterWriter {
            write(str.charAt(i));
        }
    }
-   void printout( String str ){ 
-//     System.out.println( str ) ; 
+   void printout( String str ){
+//     System.out.println( str ) ;
    }
-  
+
 
 }

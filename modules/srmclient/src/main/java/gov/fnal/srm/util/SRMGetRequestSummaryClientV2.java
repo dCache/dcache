@@ -9,13 +9,23 @@
 
 
 package gov.fnal.srm.util;
+
 import org.globus.util.GlobusURL;
-import org.dcache.srm.client.SRMClientV2;
-import java.io.IOException;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.util.RequestStatusTool;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+
+import java.io.IOException;
+
+import org.dcache.srm.client.SRMClientV2;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.ArrayOfString;
+import org.dcache.srm.v2_2.ArrayOfTRequestSummary;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmGetRequestSummaryRequest;
+import org.dcache.srm.v2_2.SrmGetRequestSummaryResponse;
+import org.dcache.srm.v2_2.TRequestSummary;
+import org.dcache.srm.v2_2.TRequestType;
+import org.dcache.srm.v2_2.TReturnStatus;
 
 public class SRMGetRequestSummaryClientV2 extends SRMClient  {
 

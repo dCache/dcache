@@ -1,7 +1,9 @@
 package org.dcache.gplazma.loader;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import java.util.Properties;
+
+import diskCacheV111.namespace.NameSpaceProvider;
+
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.dcache.gplazma.plugins.NamespaceAware;
 

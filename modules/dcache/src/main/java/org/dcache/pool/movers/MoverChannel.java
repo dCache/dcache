@@ -1,6 +1,7 @@
 package org.dcache.pool.movers;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -12,14 +13,13 @@ import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import diskCacheV111.vehicles.ProtocolInfo;
+
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
-
-import diskCacheV111.vehicles.ProtocolInfo;
 import org.dcache.vehicles.FileAttributes;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * A wrapper for RepositoryChannel adding features used by movers.

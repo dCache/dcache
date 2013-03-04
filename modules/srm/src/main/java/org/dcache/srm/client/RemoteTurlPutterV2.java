@@ -73,22 +73,48 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.RequestStatus;
 import org.apache.axis.types.URI;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.util.SrmUrl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.rpc.ServiceException;
+
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
+
+import diskCacheV111.srm.RequestFileStatus;
+import diskCacheV111.srm.RequestStatus;
+
+import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
-import java.beans.PropertyChangeListener;
-import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import javax.xml.rpc.ServiceException;
+import org.dcache.srm.util.SrmUrl;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ArrayOfString;
+import org.dcache.srm.v2_2.ArrayOfTPutFileRequest;
+import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
+import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
+import org.dcache.srm.v2_2.SrmPutDoneRequest;
+import org.dcache.srm.v2_2.SrmPutDoneResponse;
+import org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TAccessPattern;
+import org.dcache.srm.v2_2.TConnectionType;
+import org.dcache.srm.v2_2.TFileStorageType;
+import org.dcache.srm.v2_2.TOverwriteMode;
+import org.dcache.srm.v2_2.TPutFileRequest;
+import org.dcache.srm.v2_2.TPutRequestFileStatus;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.v2_2.TTransferParameters;
 
 /**
  *

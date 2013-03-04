@@ -1,14 +1,11 @@
 package org.dcache.services.info.base;
 
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
 
 /**
  * A collection of methods that are useful to multiple tests.

@@ -1,7 +1,8 @@
 package diskCacheV111.util;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -9,9 +10,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class CheckStagePermissionTests {
 

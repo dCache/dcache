@@ -59,19 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.model.dataaccess.util;
 
-import static org.rrd4j.ConsolFun.LAST;
-import static org.rrd4j.DsType.GAUGE;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.webadmin.model.businessobjects.PoolQueuePlotData;
-import org.dcache.webadmin.model.businessobjects.PoolQueuePlotData.RrdHistogram;
 import org.rrd4j.core.RrdDb;
 import org.rrd4j.core.RrdDef;
 import org.rrd4j.core.Sample;
@@ -81,10 +68,24 @@ import org.rrd4j.graph.RrdGraphDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
+
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.webadmin.model.businessobjects.PoolQueuePlotData;
+import org.dcache.webadmin.model.businessobjects.PoolQueuePlotData.RrdHistogram;
+
+import static org.rrd4j.ConsolFun.LAST;
+import static org.rrd4j.DsType.GAUGE;
 
 /**
  * Responsible for processing periodically collected pool queue statistics and

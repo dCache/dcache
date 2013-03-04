@@ -1,8 +1,9 @@
 package org.dcache.webadmin.model.businessobjects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This is a simple Data-Container Object for the relevant information

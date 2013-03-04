@@ -1,18 +1,19 @@
 package org.dcache.namespace;
 
-import java.util.Set;
-import java.util.List;
-import java.util.EnumSet;
-import java.util.Collections;
-import java.util.Arrays;
 import javax.security.auth.Subject;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+
+import dmg.util.CollectionFactory;
 
 import org.dcache.acl.enums.AccessType;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.acl.enums.AccessType.*;
-
-import dmg.util.CollectionFactory;
 
 /**
  * PermissionHandler which delegates calls to a chain of permission

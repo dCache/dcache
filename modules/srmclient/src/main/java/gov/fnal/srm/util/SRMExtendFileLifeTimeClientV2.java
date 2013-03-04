@@ -76,12 +76,19 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-import org.dcache.srm.client.SRMClientV2;
 import org.apache.axis.types.URI;
-import org.dcache.srm.v2_2.*;
+import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+
+import org.dcache.srm.client.SRMClientV2;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmExtendFileLifeTimeRequest;
+import org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TSURLLifetimeReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 public class SRMExtendFileLifeTimeClientV2 extends SRMClient {
     private GSSCredential cred;

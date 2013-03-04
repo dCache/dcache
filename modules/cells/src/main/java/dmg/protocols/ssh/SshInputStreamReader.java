@@ -1,7 +1,11 @@
 package dmg.protocols.ssh ;
 
-import java.io.* ;
- 
+import java.io.FilterReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+
 public class SshInputStreamReader extends FilterReader {
 
   private boolean               _eof;
@@ -9,7 +13,7 @@ public class SshInputStreamReader extends FilterReader {
   private char                  _echoChar = (char)0 ;
   private boolean               _tempEchoOff;
   private SshOutputStreamWriter _output ;
-  
+
   public SshInputStreamReader( InputStream input ){
      super( new InputStreamReader( input ) ) ;
      _output  = null ;
@@ -18,12 +22,12 @@ public class SshInputStreamReader extends FilterReader {
      super( new InputStreamReader( input ) ) ;
      _output = new SshOutputStreamWriter( output ) ;
   }
-  
+
   public void setEcho( boolean e ){ _echo = e ; }
   public void setEchoChar( char c ){ _echoChar = c ; }
   public int readx( char [] cbuf , int off , int len )
          throws IOException {
-     
+
     System.out.println( "Requesting "+len );
     if( _eof ) {
         return -1;
@@ -38,9 +42,9 @@ public class SshInputStreamReader extends FilterReader {
         return rc;
     }
     for( int i = off ; i < (off+rc) ; i++ ){
-       int ccc = cbuf[i] ;   
+       int ccc = cbuf[i] ;
        System.out.println( "xx = "+ccc ) ;
-       if( cbuf[i] == 13 ){ 
+       if( cbuf[i] == 13 ){
           cbuf[i] = '\n' ;
           _tempEchoOff = false ;
        }else if( cbuf[i] == 4 ){
@@ -50,7 +54,7 @@ public class SshInputStreamReader extends FilterReader {
        }else if( cbuf[i] == 9 ){
           _tempEchoOff = true ;
        }
-    
+
        if( _output != null ){
           if( (cbuf[i] == '\n') || ( _echo && ! _tempEchoOff ) ) {
               _output.write(cbuf[i]);
@@ -66,7 +70,7 @@ public class SshInputStreamReader extends FilterReader {
   @Override
   public int read( char [] cbuf , int off , int len )
          throws IOException {
-     
+
     if( _eof ) {
         return -1;
     }
@@ -76,7 +80,7 @@ public class SshInputStreamReader extends FilterReader {
        int n = super.read( cbuf , i , 1 ) ;
        if( n < 0 ){ _eof = true ; return -1 ; }
 //       System.out.println( "got "+((int)cbuf[i])) ;
-       if( cbuf[i] == 13 ){ 
+       if( cbuf[i] == 13 ){
           cbuf[i] = '\n' ;
           push( cbuf[i] ) ;
           _tempEchoOff = false ;
@@ -87,10 +91,10 @@ public class SshInputStreamReader extends FilterReader {
           break ;
        }else if( ( cbuf[i] == CONTROL_H ) ||
                  ( cbuf[i] == 127       )    ){
-          cbuf[i] = CONTROL_H ; 
+          cbuf[i] = CONTROL_H ;
           push( CONTROL_H ) ;
           push(' ') ;
-          push( CONTROL_H ) ; 
+          push( CONTROL_H ) ;
           i++ ;
        }else if( cbuf[i] == 9 ){
           _tempEchoOff = ! _tempEchoOff ;
@@ -98,14 +102,14 @@ public class SshInputStreamReader extends FilterReader {
           push( cbuf[i] ) ;
           i++ ;
        }
-    
+
     }
 //    System.out.println("returned "+(i-off) ) ;
     return i-off ;
   }
   public void push( char c ) throws IOException {
        if( _output != null ){
-          if( ( c == '\n') || 
+          if( ( c == '\n') ||
               ( _echo && ! _tempEchoOff ) ) {
               _output.write(c);
           } else if( _echoChar != (char)0 ) {

@@ -1,7 +1,8 @@
 package diskCacheV111.cells;
 
-import java.io.*;
-import java.util.* ;
+import java.io.PrintWriter;
+import java.util.List;
+import java.util.Map;
 
 /**
 	For each request type (read/write), there is an initial

@@ -1,10 +1,14 @@
 package org.dcache.webadmin.controller.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
+
 import org.dcache.webadmin.controller.PoolAdminService;
 import org.dcache.webadmin.controller.exceptions.PoolAdminServiceException;
 import org.dcache.webadmin.controller.util.NamedCellUtil;
@@ -17,8 +21,6 @@ import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.beans.PoolAdminBean;
 import org.dcache.webadmin.view.beans.PoolCommandBean;
 import org.dcache.webadmin.view.util.SelectableWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

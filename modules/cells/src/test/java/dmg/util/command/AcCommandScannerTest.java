@@ -1,19 +1,18 @@
 package dmg.util.command;
 
-import dmg.util.Args;
-import dmg.util.CommandInterpreter;
-import dmg.util.CommandRequestable;
-import dmg.util.CommandSyntaxException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
 
+import dmg.util.Args;
+import dmg.util.CommandInterpreter;
+import dmg.util.CommandRequestable;
+import dmg.util.CommandSyntaxException;
+
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.hasItemInArray;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 

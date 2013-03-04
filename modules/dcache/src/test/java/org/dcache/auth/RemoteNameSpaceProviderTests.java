@@ -1,22 +1,31 @@
 package org.dcache.auth;
 
-import static com.google.common.base.Preconditions.checkState;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import diskCacheV111.util.AccessLatency;
-import static diskCacheV111.util.AccessLatency.ONLINE;
 import diskCacheV111.util.CacheException;
-import static diskCacheV111.util.CacheException.FILE_EXISTS;
-import static diskCacheV111.util.CacheException.FILE_NOT_FOUND;
-import static diskCacheV111.util.CacheException.NOT_FILE;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-import static diskCacheV111.util.RetentionPolicy.REPLICA;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
@@ -32,26 +41,16 @@ import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
+
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import static org.dcache.auth.Subjects.ROOT;
+
 import org.dcache.cells.CellStub;
-import static org.dcache.namespace.FileAttribute.SIZE;
-import static org.dcache.namespace.FileAttribute.TYPE;
 import org.dcache.namespace.FileType;
-import static org.dcache.namespace.FileType.REGULAR;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.list.DirectoryEntry;
@@ -61,21 +60,21 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+
+import static com.google.common.base.Preconditions.checkState;
+import static diskCacheV111.util.AccessLatency.ONLINE;
+import static diskCacheV111.util.CacheException.*;
+import static diskCacheV111.util.RetentionPolicy.REPLICA;
+import static org.dcache.auth.Subjects.ROOT;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.TYPE;
+import static org.dcache.namespace.FileType.REGULAR;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 /**
  * Check that the RemoteNameSpaceProvider implementation sends messages of

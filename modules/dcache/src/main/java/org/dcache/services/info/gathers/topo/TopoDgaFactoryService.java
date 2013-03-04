@@ -3,6 +3,8 @@ package org.dcache.services.info.gathers.topo;
 import java.util.HashSet;
 import java.util.Set;
 
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.DgaFactoryService;
@@ -10,8 +12,6 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.services.info.gathers.MessageSender;
 import org.dcache.services.info.gathers.Schedulable;
 import org.dcache.services.info.gathers.SingleMessageDga;
-
-import dmg.cells.nucleus.UOID;
 
 /**
  * This class provides monitoring activity against the topo cell.
@@ -31,7 +31,7 @@ public class TopoDgaFactoryService implements DgaFactoryService
 
         activity.add(new SingleMessageDga(sender, "topo", "gettopomap",
         		     new TopoMapHandler(sum, msgMetaRepo), 120));
-        
+
         return activity;
     }
 }

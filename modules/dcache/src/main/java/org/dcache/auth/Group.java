@@ -8,17 +8,20 @@
  */
 
 package org.dcache.auth;
-import java.io.Serializable;
-import javax.persistence.Entity;
+
 import javax.persistence.Basic;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.GeneratedValue;
-import static javax.persistence.GenerationType.AUTO;
-import static javax.persistence.FetchType.EAGER;
-import javax.persistence.Table;
 import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import java.io.Serializable;
+
+import static javax.persistence.FetchType.EAGER;
+import static javax.persistence.GenerationType.AUTO;
 
 /**
  *

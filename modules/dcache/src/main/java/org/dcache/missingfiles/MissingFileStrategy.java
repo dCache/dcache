@@ -1,7 +1,8 @@
 package org.dcache.missingfiles;
 
-import diskCacheV111.util.FsPath;
 import javax.security.auth.Subject;
+
+import diskCacheV111.util.FsPath;
 
 /**
  * A MissingFileStrategy can decide how a door should react when a user has

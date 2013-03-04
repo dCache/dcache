@@ -5,11 +5,12 @@
  */
 
 package org.dcache.srm.request;
-import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.State;
 
 import java.sql.SQLException;
 import java.util.Set;
+
+import org.dcache.srm.scheduler.JobStorage;
+import org.dcache.srm.scheduler.State;
 
 /**
  *

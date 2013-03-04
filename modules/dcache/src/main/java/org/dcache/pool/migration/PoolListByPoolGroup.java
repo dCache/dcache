@@ -1,8 +1,9 @@
 package org.dcache.pool.migration;
 
-import org.dcache.cells.CellStub;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
+
+import org.dcache.cells.CellStub;
 
 class PoolListByPoolGroup
     extends PoolListFromPoolManager

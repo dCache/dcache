@@ -74,7 +74,9 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
+
 import diskCacheV111.srm.ISRM;
+
 import org.dcache.srm.Logger;
 /**
  *

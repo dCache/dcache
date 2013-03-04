@@ -1,13 +1,13 @@
 package org.dcache.util;
 
-import java.sql.SQLException;
-
-import javax.jdo.Transaction;
-import javax.jdo.JDOException;
-
 import org.springframework.orm.jdo.DefaultJdoDialect;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
+
+import javax.jdo.JDOException;
+import javax.jdo.Transaction;
+
+import java.sql.SQLException;
 
 /**
  * Spring's JDO support is somewhat outdated: Features added in JDO

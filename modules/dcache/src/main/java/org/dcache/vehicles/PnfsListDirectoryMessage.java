@@ -1,21 +1,22 @@
 package org.dcache.vehicles;
 
-import java.util.Collection;
-import java.util.UUID;
-import java.util.Set;
-
-import diskCacheV111.namespace.NameSpaceProvider;
-import dmg.util.CollectionFactory;
-
-import diskCacheV111.vehicles.PnfsMessage;
-import diskCacheV111.vehicles.Message;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.Glob;
-
+import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
-import com.google.common.collect.BoundType;
+
+import java.util.Collection;
+import java.util.Set;
+import java.util.UUID;
+
+import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsMessage;
+
+import dmg.util.CollectionFactory;
+
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Glob;
+import org.dcache.util.list.DirectoryEntry;
 
 /**
  * Requests a directory listing. Since the result set may be very

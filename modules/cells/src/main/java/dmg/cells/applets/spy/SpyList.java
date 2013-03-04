@@ -1,6 +1,6 @@
 package dmg.cells.applets.spy ;
 
-import java.awt.* ;
+import java.awt.List;
 
 
 public class SpyList extends List {
@@ -16,7 +16,7 @@ public class SpyList extends List {
                break;
            }
        }
-       
+
     }
     public void deselectAll(){
         int [] sel = getSelectedIndexes() ;

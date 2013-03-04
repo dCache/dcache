@@ -1,8 +1,9 @@
 package org.dcache.ftp;
 
+import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.io.IOException;
+
 import org.dcache.pool.repository.RepositoryChannel;
 
 /** Implementation of MODE S. */

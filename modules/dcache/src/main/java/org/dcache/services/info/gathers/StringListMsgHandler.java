@@ -1,11 +1,11 @@
 package org.dcache.services.info.gathers;
 
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
-
-import dmg.cells.nucleus.UOID;
 
 /**
  * A generic routine for processing an incoming CellMessage.  The message is expected to

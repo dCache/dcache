@@ -1,27 +1,29 @@
 package dmg.util.cdb ;
 
+import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Hashtable;
+
 import dmg.cells.services.login.UserHandle;
 
-import java.lang.reflect.* ;
-import java.util.* ;
-import java.io.* ;
-
 public class      CdbDirectoryContainer
-       extends    CdbGLock 
+       extends    CdbGLock
        implements CdbContainable, CdbElementable {
-   
+
    private Class<CdbFileRecord> _elementClass;
    private Class<UserHandle> _handlerClass;
    private File   _containerDirectory;
-   
+
    private Constructor<UserHandle> _handlerConstructor;
    private Constructor<CdbFileRecord> _elementConstructor;
    private Method      _elementRemoveMethod;
-   
+
    private boolean     _sticky;
    private boolean     _exists = true ;
 
-   
+
    private static final Class<?> []
             __elementConstructorArguments = {
        CdbLockable.class ,
@@ -56,7 +58,7 @@ public class      CdbDirectoryContainer
                                  File        directory   ,
                                  boolean     create           )
           throws CdbException                                   {
-          
+
        _elementClass       = elementClass ;
        _handlerClass       = handlerClass ;
        _containerDirectory = directory ;
@@ -88,11 +90,11 @@ public class      CdbDirectoryContainer
        // container constructors and remove method.
        //
        try{
-           _elementConstructor = 
+           _elementConstructor =
                elementClass.getConstructor(
                      __elementConstructorArguments ) ;
        }catch( NoSuchMethodException nsme ){
-          throw new 
+          throw new
           CdbException( "No matching container constructor found for : "+
                         elementClass.getName() ) ;
        }
@@ -100,8 +102,8 @@ public class      CdbDirectoryContainer
        //
        //
        try{
-          _elementRemoveMethod = 
-              _elementClass.getMethod( "remove" , new Class[0] ) ;           
+          _elementRemoveMethod =
+              _elementClass.getMethod( "remove" , new Class[0] ) ;
        }catch( NoSuchMethodException nsmei ){
            throw new CdbException( "No matching remove method found" ) ;
        }
@@ -109,21 +111,21 @@ public class      CdbDirectoryContainer
        // check for the existence of the handler constructor
        //
        try{
-           _handlerConstructor = 
+           _handlerConstructor =
                _handlerClass.getConstructor(
                      __handlerConstructorArguments ) ;
        }catch( NoSuchMethodException nsme ){
-           throw new 
+           throw new
            CdbException( "No matching handler constructor found" ) ;
        }
    }
    public void setSticky( boolean sticky ){ _sticky = sticky ; }
-   
-   public CdbElementHandle createElement( String name ) 
+
+   public CdbElementHandle createElement( String name )
           throws CdbException, InterruptedException {
        //
        // make sure we are holding the mutex.
-       //   
+       //
        CdbElementHandle handle;
        //
        //
@@ -140,7 +142,7 @@ public class      CdbDirectoryContainer
        }
        //
        //
-       try{ 
+       try{
           handle = createMirrorEntry( name , true ) ;
        }catch( CdbException edbe ){
           close(CdbLockable.ABORT) ;
@@ -149,16 +151,16 @@ public class      CdbDirectoryContainer
        close(CdbLockable.COMMIT) ;
        return handle ;
    }
-   public CdbElementHandle getElementByName( String name ) 
+   public CdbElementHandle getElementByName( String name )
           throws CdbException, InterruptedException {
        //
        // check for an entry in the cache
-       //            
+       //
        ElementEntry    entry;
        CdbElementHandle handle;
        //
        // get the read mutex
-       //      
+       //
        open( CdbLockable.READ ) ;
        //
        // try to find the entry in the cache
@@ -170,7 +172,7 @@ public class      CdbDirectoryContainer
           //
           entry.incrementRefCounter() ;
           close(CdbLockable.COMMIT) ;
-          return newHandlerInstance( name , this , entry.getLockable() ) ;   
+          return newHandlerInstance( name , this , entry.getLockable() ) ;
        }
        //
        // not in cache , look for it in the database itself ( filesystem )
@@ -186,7 +188,7 @@ public class      CdbDirectoryContainer
        }
        //
        //
-       try{ 
+       try{
           handle = createMirrorEntry( name , false ) ;
        }catch( CdbException edbe ){
           close(CdbLockable.ABORT) ;
@@ -198,7 +200,7 @@ public class      CdbDirectoryContainer
    private CdbElementHandle createMirrorEntry( String name , boolean create  )
            throws CdbException
    {
-           
+
        CdbElementHandle handle;
        CdbLockable      element = null ;
        //
@@ -206,7 +208,7 @@ public class      CdbDirectoryContainer
        //
        try{
            if( _elementConstructor != null ){
-              Object [] args = { this , 
+              Object [] args = { this ,
                                  new File(_containerDirectory , name ) ,
                       create
                                } ;
@@ -222,7 +224,7 @@ public class      CdbDirectoryContainer
        //
        // create the first handle
        //
-       handle = newHandlerInstance( name , this , element ) ;   
+       handle = newHandlerInstance( name , this , element ) ;
        //
        // and add it  to our list. ( no need to increment ref counter,
        // this is done automatically on creation of entry )
@@ -235,16 +237,16 @@ public class      CdbDirectoryContainer
        //
        return handle ;
    }
-   private CdbElementHandle newHandlerInstance( String name , 
+   private CdbElementHandle newHandlerInstance( String name ,
                                                  CdbContainable container ,
-                                                 CdbLockable    element    )                                                 
+                                                 CdbLockable    element    )
            throws CdbException {
-           
+
        CdbElementHandle handle;
        try{
            Object [] args = { name , container , element } ;
            handle  = _handlerConstructor.newInstance( args );
-   
+
        }catch( InvocationTargetException ite ){
           throw new
           CdbException( "Invocation Failed : "+ite.getTargetException() ) ;
@@ -253,10 +255,10 @@ public class      CdbDirectoryContainer
           CdbException( "Problem : "+e ) ;
        }
        return handle ;
-   }                                                 
-   public void removeElement( String name ) 
+   }
+   public void removeElement( String name )
           throws CdbException, InterruptedException  {
-          
+
        open( CdbLockable.WRITE ) ;
        CdbElementHandle handle = getElementByName( name ) ;
        try{
@@ -271,11 +273,11 @@ public class      CdbDirectoryContainer
               if( t instanceof CdbException ) {
                   throw (CdbException) t;
               }
-              throw new 
+              throw new
               CdbException( "Problem in remove method : "+t );
            }catch( Exception ee ){
               handle.close(CdbLockable.ABORT) ;
-              throw new 
+              throw new
               CdbException( "Problem in remove method : "+ee);
            }
            handle.close(CdbLockable.COMMIT ) ;
@@ -296,7 +298,7 @@ public class      CdbDirectoryContainer
 //          System.out.println( name + " removed from hashtable" ) ;
           _table.remove( name ) ;
       }
-   }  
+   }
    public String [] getElementNames(){
        return _containerDirectory.list() ;
    }
@@ -310,7 +312,7 @@ public class      CdbDirectoryContainer
            throw new CdbLockException("Object removed");
        }
        super.open( mode ) ;
-       
+
    }
    @Override
    public void remove() throws CdbException {

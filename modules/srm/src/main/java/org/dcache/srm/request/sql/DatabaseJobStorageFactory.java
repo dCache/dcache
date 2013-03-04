@@ -1,19 +1,33 @@
 package org.dcache.srm.request.sql;
-import org.dcache.srm.request.*;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.JobStorageFactory;
-import org.dcache.srm.scheduler.SchedulerFactory;
-import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.NoopJobStorage;
-import org.dcache.srm.scheduler.FinalStateOnlyJobStorageDecorator;
-import org.dcache.srm.util.Configuration;
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.lang.reflect.InvocationTargetException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.dcache.srm.request.BringOnlineFileRequest;
+import org.dcache.srm.request.BringOnlineRequest;
+import org.dcache.srm.request.CopyFileRequest;
+import org.dcache.srm.request.CopyRequest;
+import org.dcache.srm.request.GetFileRequest;
+import org.dcache.srm.request.GetRequest;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.LsFileRequest;
+import org.dcache.srm.request.LsRequest;
+import org.dcache.srm.request.PutFileRequest;
+import org.dcache.srm.request.PutRequest;
+import org.dcache.srm.request.ReserveSpaceRequest;
+import org.dcache.srm.scheduler.FinalStateOnlyJobStorageDecorator;
+import org.dcache.srm.scheduler.JobStorage;
+import org.dcache.srm.scheduler.JobStorageFactory;
+import org.dcache.srm.scheduler.NoopJobStorage;
+import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.SchedulerFactory;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Configuration;
 
 /**
  *

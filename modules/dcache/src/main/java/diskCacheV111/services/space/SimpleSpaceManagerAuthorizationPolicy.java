@@ -1,11 +1,13 @@
 package diskCacheV111.services.space;
 
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.GroupList;
-import diskCacheV111.util.VOInfo;
-import org.dcache.auth.FQAN;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import diskCacheV111.util.VOInfo;
+
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.FQAN;
+import org.dcache.auth.GroupList;
 
 /**
  *

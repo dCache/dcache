@@ -1,21 +1,21 @@
 package dmg.cells.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+
 import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellShell;
 import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.Exceptions;
-
-import java.io.Reader;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.io.IOException;
-import java.io.InputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BatchCell extends CellAdapter implements Runnable
 {

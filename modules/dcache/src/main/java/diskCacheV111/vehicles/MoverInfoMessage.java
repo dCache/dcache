@@ -1,7 +1,9 @@
 // $Id: MoverInfoMessage.java,v 1.5 2006-04-11 09:47:53 tigran Exp $
 package diskCacheV111.vehicles ;
-import  diskCacheV111.util.PnfsId ;
+
 import org.stringtemplate.v4.ST;
+
+import diskCacheV111.util.PnfsId;
 
 public class MoverInfoMessage extends PnfsFileInfoMessage {
 

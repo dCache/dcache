@@ -1,49 +1,49 @@
 package org.dcache.xrootd.pool;
 
-import java.lang.reflect.Field;
-import java.net.InetSocketAddress;
-import java.net.InetAddress;
-import java.net.Inet4Address;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import java.util.Map;
-import java.util.Properties;
-import java.util.ServiceLoader;
-
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.NoRouteToCellException;
-
-import dmg.cells.nucleus.CellPath;
-import dmg.util.Formats;
-import dmg.util.Replaceable;
-import org.dcache.pool.movers.MoverChannel;
-import org.dcache.pool.movers.MoverProtocol;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.pool.repository.Allocator;
-import org.dcache.util.NetworkUtils;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.pool.movers.IoMode;
-import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.movers.NetIFContainer;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.dcache.xrootd.plugins.ChannelHandlerProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ServiceLoader;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.movers.NetIFContainer;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.ProtocolInfo;
+
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Formats;
+import dmg.util.Replaceable;
+
+import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.NetworkUtils;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
+import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.plugins.ChannelHandlerProvider;
 
 /**
  * xrootd mover.

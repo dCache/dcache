@@ -1,9 +1,11 @@
 package org.dcache.util;
 
-import java.util.Comparator;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import java.util.Comparator;
+
+import static org.junit.Assert.assertTrue;
 
 public class LifoPriorityComparatorTest {
 

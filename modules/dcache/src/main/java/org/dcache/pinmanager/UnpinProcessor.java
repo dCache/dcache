@@ -1,26 +1,25 @@
 package org.dcache.pinmanager;
 
+import com.google.common.base.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Transactional;
+
 import javax.jdo.JDOException;
+
 import java.util.concurrent.Semaphore;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.pinmanager.model.Pin;
-import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
 
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.pinmanager.model.Pin;
 import org.dcache.poolmanager.PoolMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DataAccessException;
-
-import com.google.common.base.Predicate;
 
 /**
  * Performs the work of unpinning files.

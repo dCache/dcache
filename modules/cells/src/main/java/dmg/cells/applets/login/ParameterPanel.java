@@ -1,6 +1,10 @@
 package dmg.cells.applets.login ;
-import java.awt.* ;
-import java.util.* ;
+
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextField;
+import java.util.Hashtable;
+import java.util.NoSuchElementException;
 
 public class ParameterPanel extends Panel {
     private static final long serialVersionUID = -2307385251070284472L;
@@ -12,7 +16,7 @@ public class ParameterPanel extends Panel {
       kvl.setHgap( 10 ) ;
       kvl.setVgap( 10 ) ;
       setLayout( kvl ) ;
-      
+
       _valueFields = new TextField[parameterNames.length] ;
       String key;
       for( int i = 0 ; i < parameterNames.length ; i++ ){

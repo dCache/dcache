@@ -1,7 +1,7 @@
 package org.dcache.services.hsmcleaner;
 
-import java.io.FilenameFilter;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.regex.Pattern;
 
 /**

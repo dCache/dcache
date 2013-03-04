@@ -1,5 +1,10 @@
 package org.dcache.pool.classic;
 
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,34 +18,27 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.Iterables;
-import com.google.common.io.Files;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.util.Args;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.NotInTrashCacheException;
-import diskCacheV111.util.TimeoutCacheException;
-
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellLifeCycleAware;
-import org.dcache.util.Checksum;
 import org.dcache.namespace.FileAttribute;
-
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
-import org.dcache.pool.repository.ReplicaDescriptor;
-
+import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ChecksumScanner
     implements CellCommandListener, CellLifeCycleAware

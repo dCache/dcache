@@ -1,9 +1,9 @@
 package org.dcache.services.info.base;
 
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class MetricStatePathExceptionTests {
 

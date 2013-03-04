@@ -76,9 +76,10 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 import java.sql.SQLException;
-import java.util.List;
-import java.util.LinkedList;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 

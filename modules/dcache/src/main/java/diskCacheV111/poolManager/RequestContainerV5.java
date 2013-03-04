@@ -2,45 +2,39 @@
 
 package diskCacheV111.poolManager ;
 
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.io.PrintWriter;
+import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.EnumSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.dcache.poolmanager.PoolSelector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.poolmanager.PartitionManager;
-import org.dcache.poolmanager.Partition;
-import org.dcache.poolmanager.PoolInfo;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
+import diskCacheV111.util.CostException;
+import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.ExtendedRunnable;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.ThreadPool;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.CostException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SourceCostException;
-import diskCacheV111.util.DestinationCostException;
+import diskCacheV111.util.ThreadPool;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
@@ -54,6 +48,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
+
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -61,9 +56,14 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
 import dmg.util.Args;
 
-import com.google.common.collect.ImmutableMap;
-
-import java.net.InetSocketAddress;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.poolmanager.Partition;
+import org.dcache.poolmanager.PartitionManager;
+import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.PoolSelector;
+import org.dcache.vehicles.FileAttributes;
 
 public class RequestContainerV5
     extends AbstractCellComponent

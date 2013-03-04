@@ -1,7 +1,7 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,8 +18,9 @@ import org.dcache.services.info.base.StateWatcher;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.base.TestStateExhibitor;
 import org.dcache.services.info.stateInfo.ReservationInfo;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ReservationByDescMaintainerTests {
 

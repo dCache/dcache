@@ -2,13 +2,16 @@
 
 package diskCacheV111.vehicles;
 
-import dmg.cells.nucleus.HasDiagnosticContext;
-import org.dcache.util.ReflectionUtils;
-import diskCacheV111.util.PnfsId;
 import javax.security.auth.Subject;
-import org.dcache.auth.Subjects;
 
 import java.io.Serializable;
+
+import diskCacheV111.util.PnfsId;
+
+import dmg.cells.nucleus.HasDiagnosticContext;
+
+import org.dcache.auth.Subjects;
+import org.dcache.util.ReflectionUtils;
 
 // Base class for all Messages
 

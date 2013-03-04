@@ -1,17 +1,20 @@
 package org.dcache.tests.util;
 
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
-import org.dcache.cells.CellMessageReceiver;
-import org.junit.*;
-
+import java.io.Serializable;
 
 import diskCacheV111.util.CacheException;
-import org.dcache.cells.CellMessageDispatcher;
+
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
-import java.io.Serializable;
+import org.dcache.cells.CellMessageDispatcher;
+import org.dcache.cells.CellMessageReceiver;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class CellMessageDispatcherTest
 {

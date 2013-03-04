@@ -1,15 +1,15 @@
 package org.dcache.gplazma.loader;
 
-import static org.junit.Assert.assertNotNull;
+import junit.framework.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Properties;
 
-import junit.framework.Assert;
-
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
 
 public class XmlResourcePluginLoaderTests
 {

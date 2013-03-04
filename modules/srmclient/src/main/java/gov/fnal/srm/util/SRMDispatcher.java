@@ -66,13 +66,14 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.dcache.srm.util.SrmUrl;
-import java.io.IOException;
+import org.globus.util.GlobusURL;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 
 import org.dcache.srm.Logger;
-import org.globus.util.GlobusURL;
+import org.dcache.srm.util.SrmUrl;
 
 /**
  *

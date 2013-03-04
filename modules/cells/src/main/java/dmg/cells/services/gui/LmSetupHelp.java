@@ -1,11 +1,18 @@
 // $Id: LmSetupHelp.java,v 1.2 2001-04-17 07:10:21 cvs Exp $
 //
 package dmg.cells.services.gui ;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.text.*;
-import java.io.* ;
+
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.text.Document;
+
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.io.StringReader;
 
 
 
@@ -98,7 +105,7 @@ public class LmSetupHelp extends JFrame {
        try{
           htmlDoc.read( sr , doc ) ;
        }catch(Exception ee ){
-       
+
        }
        getContentPane().add( new JScrollPane(htmlDoc));
     }

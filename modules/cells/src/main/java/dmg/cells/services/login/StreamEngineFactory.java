@@ -1,5 +1,10 @@
 package dmg.cells.services.login;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.Socket;
+
 import dmg.cells.nucleus.CellNucleus;
 import dmg.protocols.ssh.SshServerAuthentication;
 import dmg.protocols.ssh.SshStreamEngine;
@@ -8,9 +13,6 @@ import dmg.protocols.telnet.TelnetStreamEngine;
 import dmg.util.Args;
 import dmg.util.DummyStreamEngine;
 import dmg.util.StreamEngine;
-import java.net.Socket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * StreamEngineFactory instantiates the appropriate Streamengine for the given

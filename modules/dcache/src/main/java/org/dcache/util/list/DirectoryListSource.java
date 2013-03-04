@@ -1,14 +1,16 @@
 package org.dcache.util.list;
 
-import java.util.Set;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FsPath;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.util.Glob;
-
 import com.google.common.collect.Range;
 
 import javax.security.auth.Subject;
+
+import java.util.Set;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Glob;
 
 /**
  * Interface for components that can providing a directory listing.

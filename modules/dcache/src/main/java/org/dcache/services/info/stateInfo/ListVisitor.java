@@ -1,12 +1,13 @@
 package org.dcache.services.info.stateInfo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashSet;
 import java.util.Set;
 
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**

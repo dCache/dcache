@@ -1,18 +1,20 @@
 package org.dcache.webadmin.view.pages.tapetransferqueue;
 
-import java.util.List;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
 import org.dcache.webadmin.controller.TapeTransfersService;
 import org.dcache.webadmin.controller.exceptions.TapeTransfersServiceException;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

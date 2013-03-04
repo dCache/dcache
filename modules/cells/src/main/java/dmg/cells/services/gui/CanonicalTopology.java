@@ -1,8 +1,12 @@
 package dmg.cells.services.gui ;
 
-import java.util.* ;
-import dmg.cells.network.* ;
-import dmg.cells.nucleus.* ;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Iterator;
+
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.CellDomainInfo;
+import dmg.cells.nucleus.CellTunnelInfo;
 
 
 public class CanonicalTopology {

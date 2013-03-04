@@ -1,9 +1,10 @@
 package org.dcache.auth;
 
-import java.util.Set;
-import java.util.Collections;
-import java.security.Principal;
 import javax.security.auth.Subject;
+
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 

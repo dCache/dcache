@@ -1,15 +1,16 @@
 package org.dcache.gplazma.plugins;
 
-import static com.google.common.collect.Iterables.filter;
 import com.google.common.collect.Sets;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.ptr.IntByReference;
+
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
+
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -19,6 +20,8 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
+
+import static com.google.common.collect.Iterables.filter;
 
 /**
  * {@code GPlazmaMappingPlugin} and {@code GPlazmaIdentityPlugin} implementation for

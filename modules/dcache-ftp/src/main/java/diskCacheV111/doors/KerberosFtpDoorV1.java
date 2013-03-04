@@ -7,32 +7,35 @@
 package diskCacheV111.doors;
 
 //java util
-import java.util.StringTokenizer;
-import java.util.Properties;
 
-//java net
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
-//cells
-import dmg.util.StreamEngine;
-import dmg.util.Args;
-
-//jgss
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.Oid;
 import org.ietf.jgss.ChannelBinding;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
-import org.dcache.auth.Subjects;
-import org.dcache.auth.LoginNamePrincipal;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.CacheException;
+import org.ietf.jgss.Oid;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Properties;
+import java.util.StringTokenizer;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+
+import dmg.util.Args;
+import dmg.util.StreamEngine;
+
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.Subjects;
+
+//java net
+//cells
+//jgss
 
 /**
  *

@@ -9,14 +9,22 @@
 
 
 package gov.fnal.srm.util;
-import java.util.Calendar;
+
 import org.globus.util.GlobusURL;
-import org.dcache.srm.client.SRMClientV2;
-import java.io.IOException;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.util.RequestStatusTool;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+
+import java.io.IOException;
+import java.util.Calendar;
+
+import org.dcache.srm.client.SRMClientV2;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.ArrayOfTRequestTokenReturn;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.srm.v2_2.SrmGetRequestTokensRequest;
+import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
+import org.dcache.srm.v2_2.TRequestTokenReturn;
+import org.dcache.srm.v2_2.TReturnStatus;
 
 public class SRMGetRequestTokensClientV2 extends SRMClient  {
     private GlobusURL srmURL;

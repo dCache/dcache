@@ -6,26 +6,32 @@ package org.dcache.pool.movers;
  * @version 0.0, 28 Jun 2002
  */
 
-import diskCacheV111.vehicles.DCapClientProtocolInfo;
-import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.CacheException;
-import org.dcache.pool.repository.Allocator;
-
-import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.cells.nucleus.*;
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.InetAddress;
 import java.nio.ByteBuffer;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
+import diskCacheV111.vehicles.DCapClientProtocolInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+
+import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
+import org.dcache.vehicles.FileAttributes;
 
 public class DCapClientProtocol_1 implements MoverProtocol
 {

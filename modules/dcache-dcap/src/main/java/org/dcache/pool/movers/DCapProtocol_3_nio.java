@@ -1,4 +1,8 @@
 package org.dcache.pool.movers;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -7,12 +11,18 @@ import java.net.Socket;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.Map;
 import java.security.MessageDigest;
+import java.util.Map;
+import java.util.UUID;
 
-import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.DCapProrocolChallenge;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -22,20 +32,11 @@ import dmg.util.Args;
 import org.dcache.net.ProtocolConnectionPool;
 import org.dcache.net.ProtocolConnectionPoolFactory;
 import org.dcache.pool.repository.Allocator;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DCapProrocolChallenge;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import diskCacheV111.util.ChecksumFactory;
-import java.util.UUID;
-import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
+import org.dcache.vehicles.FileAttributes;
 
 
 public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {

@@ -1,9 +1,10 @@
 package dmg.protocols.ssh ;
 
-import java.io.* ;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class SshInputStream extends InputStream {
 

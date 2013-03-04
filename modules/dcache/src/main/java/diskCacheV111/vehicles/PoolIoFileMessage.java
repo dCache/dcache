@@ -1,15 +1,17 @@
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.PnfsId;
-import org.dcache.vehicles.FileAttributes;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.EnumSet;
 
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.vehicles.FileAttributes;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 public class PoolIoFileMessage extends PoolMessage {
 

@@ -1,6 +1,7 @@
 package dmg.protocols.telnet ;
 
-import java.io.* ;
+import java.io.IOException;
+import java.io.OutputStream;
 
 public class TelnetOutputStream2 extends OutputStream {
 

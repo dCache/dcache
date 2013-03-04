@@ -1,7 +1,5 @@
 package org.dcache.webadmin.view.pages.poolgroupview;
 
-import java.util.List;
-
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -14,11 +12,16 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.PropertyModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
 import org.dcache.webadmin.controller.PoolGroupService;
 import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
 import org.dcache.webadmin.view.beans.CellServicesBean;
-import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
+import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.cellservices.CellServicesPanel;
 import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
@@ -26,8 +29,6 @@ import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
 import org.dcache.webadmin.view.panels.poolQueuesPanel.PoolQueuesPanel;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

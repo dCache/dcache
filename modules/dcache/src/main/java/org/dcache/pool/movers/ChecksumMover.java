@@ -1,8 +1,9 @@
 package org.dcache.pool.movers;
 
 import diskCacheV111.util.ChecksumFactory;
-import org.dcache.util.Checksum;
 import diskCacheV111.vehicles.ProtocolInfo;
+
+import org.dcache.util.Checksum;
 
 
 /**

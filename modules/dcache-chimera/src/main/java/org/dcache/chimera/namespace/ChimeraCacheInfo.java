@@ -16,12 +16,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import diskCacheV111.vehicles.CacheStatistics;
+
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.posix.Stat;
-
-import diskCacheV111.vehicles.CacheStatistics;
 
 public class ChimeraCacheInfo implements Serializable {
 

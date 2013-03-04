@@ -1,8 +1,8 @@
 package org.dcache.webdav;
 
-import io.milton.resource.Resource;
-import io.milton.http.Request;
 import io.milton.http.Auth;
+import io.milton.http.Request;
+import io.milton.resource.Resource;
 
 import java.io.File;
 import java.util.Date;

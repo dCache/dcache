@@ -1,25 +1,24 @@
 package org.dcache.services.hsmcleaner;
 
-import java.net.URI;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-
-import java.util.concurrent.Semaphore;
+import java.net.URI;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
-import org.dcache.cells.CellStub;
+
+import dmg.cells.nucleus.CellPath;
+import dmg.util.Args;
+
 import org.dcache.cells.AbstractCell;
+import org.dcache.cells.CellStub;
 import org.dcache.cells.Option;
 import org.dcache.util.BroadcastRegistrationTask;
-
-import dmg.util.Args;
-import dmg.cells.nucleus.CellPath;
 
 /**
  * This cell watches the PNFS trash directories for HSM and cleanes

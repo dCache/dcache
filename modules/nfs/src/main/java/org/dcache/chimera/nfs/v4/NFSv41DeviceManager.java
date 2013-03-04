@@ -17,13 +17,13 @@
 
 package org.dcache.chimera.nfs.v4;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.nfs.v4.xdr.device_addr4;
 import org.dcache.chimera.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
-
-import java.io.IOException;
-import java.util.List;
 
 public interface NFSv41DeviceManager {
 

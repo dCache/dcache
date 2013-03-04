@@ -2,17 +2,19 @@ package org.dcache.services.login;
 
 import javax.security.auth.Subject;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.auth.LoginStrategy;
+import java.lang.reflect.Constructor;
+import java.security.Principal;
+
 import diskCacheV111.util.CacheException;
 
 import dmg.util.Args;
-import java.lang.reflect.Constructor;
-import java.security.Principal;
+
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
+import org.dcache.cells.CellCommandListener;
 
 public class LoginCLI
     implements CellCommandListener

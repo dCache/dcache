@@ -1,35 +1,47 @@
 package org.dcache.srm.request;
 
 
-import diskCacheV111.srm.RequestFileStatus;
 import org.apache.axis.types.UnsignedLong;
-import org.dcache.srm.FileMetaData;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.dcache.srm.scheduler.FatalJobFailure;
-
-import org.dcache.srm.util.Permissions;
-
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInternalErrorException;
-import org.dcache.srm.SRMTooManyResultsException;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.SRMInvalidPathException;
-
-import java.sql.SQLException;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.net.URI;
-import java.net.URISyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.GregorianCalendar;
+import java.util.LinkedList;
+import java.util.List;
+
+import diskCacheV111.srm.RequestFileStatus;
+
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidPathException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMTooManyResultsException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Permissions;
+import org.dcache.srm.v2_2.ArrayOfString;
+import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TFileStorageType;
+import org.dcache.srm.v2_2.TFileType;
+import org.dcache.srm.v2_2.TGroupPermission;
+import org.dcache.srm.v2_2.TMetaDataPathDetail;
+import org.dcache.srm.v2_2.TPermissionMode;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.v2_2.TUserPermission;
 
 public final class LsFileRequest extends FileRequest {
         private static final Logger logger =

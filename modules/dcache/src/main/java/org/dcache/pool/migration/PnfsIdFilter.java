@@ -1,9 +1,11 @@
 package org.dcache.pool.migration;
 
-import org.dcache.pool.repository.CacheEntry;
-import diskCacheV111.util.PnfsId;
 import java.util.Collection;
 import java.util.HashSet;
+
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.pool.repository.CacheEntry;
 
 /**
  * Repository entry filter which only accepts entries with specific

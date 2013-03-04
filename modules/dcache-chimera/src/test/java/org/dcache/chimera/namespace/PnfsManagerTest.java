@@ -1,32 +1,24 @@
 package org.dcache.chimera.namespace;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.List;
-import java.util.EnumSet;
-
+import com.jolbox.bonecp.BoneCPDataSource;
 import junit.framework.JUnit4TestAdapter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
-import org.dcache.chimera.FsInode;
-import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.posix.Stat;
-import org.dcache.namespace.PosixPermissionHandler;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.EnumSet;
+import java.util.List;
 
-import diskCacheV111.namespace.PnfsManagerV3;
 import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.namespace.PnfsManagerV3;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -41,15 +33,22 @@ import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import java.net.URI;
+
+import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FsInode;
+import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.UnixPermission;
+import org.dcache.chimera.posix.Stat;
 import org.dcache.commons.util.SqlHelper;
-import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
-import com.jolbox.bonecp.BoneCPDataSource;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.*;
 
 public class PnfsManagerTest
 {

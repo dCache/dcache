@@ -1,16 +1,14 @@
 package org.dcache.gplazma.plugins;
 
-import java.util.Collection;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.io.IOException;
-
-import junit.framework.AssertionFailedError;
-
 import com.google.common.io.Resources;
-
+import junit.framework.AssertionFailedError;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.Collection;
 
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
 

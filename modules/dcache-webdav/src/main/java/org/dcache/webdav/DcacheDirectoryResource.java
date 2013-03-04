@@ -1,38 +1,38 @@
 package org.dcache.webdav;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Collections;
-import java.io.OutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-
-import io.milton.resource.Resource;
-import io.milton.resource.CollectionResource;
-import io.milton.resource.PutableResource;
-import io.milton.resource.GetableResource;
-import io.milton.resource.DeletableResource;
-import io.milton.resource.MakeCollectionableResource;
-import io.milton.resource.LockingCollectionResource;
-import io.milton.http.HttpManager;
 import io.milton.http.Auth;
-import io.milton.http.Range;
-import io.milton.http.Request;
+import io.milton.http.HttpManager;
 import io.milton.http.LockInfo;
 import io.milton.http.LockTimeout;
 import io.milton.http.LockToken;
-import io.milton.http.exceptions.NotAuthorizedException;
-import io.milton.http.exceptions.ConflictException;
+import io.milton.http.Range;
+import io.milton.http.Request;
 import io.milton.http.exceptions.BadRequestException;
+import io.milton.http.exceptions.ConflictException;
+import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.resource.CollectionResource;
+import io.milton.resource.DeletableResource;
+import io.milton.resource.GetableResource;
+import io.milton.resource.LockingCollectionResource;
+import io.milton.resource.MakeCollectionableResource;
+import io.milton.resource.PutableResource;
+import io.milton.resource.Resource;
 
-import diskCacheV111.util.FsPath;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.vehicles.FileAttributes;
 

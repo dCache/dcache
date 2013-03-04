@@ -18,9 +18,9 @@
 package org.dcache.chimera.nfs.v4;
 
 import org.dcache.chimera.nfs.nfsstat;
+import org.dcache.chimera.nfs.v4.xdr.COMMIT4res;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.xdr.COMMIT4res;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 
 public class OperationCOMMIT extends AbstractNFSv4Operation {

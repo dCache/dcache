@@ -17,17 +17,18 @@
 
 package org.dcache.util;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.net.InetAddresses.getEmbeddedIPv4ClientAddress;
-import static com.google.common.net.InetAddresses.forString;
-import static com.google.common.primitives.Ints.fromByteArray;
-import static com.google.common.primitives.Longs.fromBytes;
-import static com.google.common.base.Preconditions.checkArgument;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.net.InetAddresses.forString;
+import static com.google.common.net.InetAddresses.getEmbeddedIPv4ClientAddress;
+import static com.google.common.primitives.Ints.fromByteArray;
+import static com.google.common.primitives.Longs.fromBytes;
 
 public class IPMatcher {
     private static final Pattern IPV4_PATTERN = Pattern.compile("((?:\\d{1,3}\\.){3}\\d{1,3})(?:/((?:(?:\\d{1,3}\\.){3}\\d{1,3})|\\d{1,2}))?");

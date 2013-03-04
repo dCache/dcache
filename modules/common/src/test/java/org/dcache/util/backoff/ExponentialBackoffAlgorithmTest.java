@@ -59,12 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.util.backoff;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * Simple consistency tests for the {@link ExponentialBackoffAlgorithm} class.

@@ -1,24 +1,25 @@
 package org.dcache.missingfiles.plugins;
 
-import org.dcache.util.ConfigurationProperties;
-import org.springframework.beans.factory.annotation.Required;
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
-import dmg.cells.nucleus.EnvironmentAware;
-
-import java.util.ServiceLoader;
-import java.util.NoSuchElementException;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
+
+import dmg.cells.nucleus.EnvironmentAware;
 
 import org.dcache.commons.util.NDC;
+import org.dcache.util.ConfigurationProperties;
 
 import static com.google.common.base.Predicates.compose;
-import static com.google.common.collect.Iterables.find;
 import static com.google.common.base.Predicates.equalTo;
+import static com.google.common.collect.Iterables.find;
 
 /**
  *  This class represents one or more plugins that are used in concert to

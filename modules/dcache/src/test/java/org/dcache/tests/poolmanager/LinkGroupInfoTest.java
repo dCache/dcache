@@ -1,19 +1,23 @@
 package org.dcache.tests.poolmanager;
 
-import java.util.Map;
-
-import org.dcache.poolmanager.Utils;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import java.util.Map;
 
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
+
 import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
+
+import org.dcache.poolmanager.Utils;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class LinkGroupInfoTest {
 

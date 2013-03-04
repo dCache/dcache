@@ -1,12 +1,15 @@
 package dmg.util ;
 
-import java.io.* ;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class ClassLoaderFactory {
 
     private File              _dir;
     private ClassDataProvider _provider;
-    
+
     public ClassLoaderFactory(){}
     public ClassLoaderFactory( ClassDataProvider dataProvider ){
        _provider = dataProvider ;
@@ -18,9 +21,9 @@ public class ClassLoaderFactory {
        }
     }
     public Class<?> loadClass( String className ){
-       
+
        ClassLoaderA loader;
-       
+
        if( _dir != null ) {
            loader = new ClassLoaderA(_dir);
        } else if( _provider != null ) {
@@ -29,48 +32,48 @@ public class ClassLoaderFactory {
            throw new
                    IllegalArgumentException("Class Load Provider not set");
        }
-          
-       return loader.loadClass( className ) ; 
+
+       return loader.loadClass( className ) ;
     }
     public Class<?> loadClass( String className , File dir ){
        ClassLoaderA loader = new ClassLoaderA( dir ) ;
-       return loader.loadClass( className ) ; 
+       return loader.loadClass( className ) ;
     }
     public Class<?> loadClass( String className , ClassDataProvider dataProvider ){
        ClassLoaderA loader = new ClassLoaderA( dataProvider ) ;
-       return loader.loadClass( className ) ; 
+       return loader.loadClass( className ) ;
     }
-    public String toString(){ 
-        return _dir!=null ? _dir.toString() : "Call By Call" ; 
+    public String toString(){
+        return _dir!=null ? _dir.toString() : "Call By Call" ;
     }
-    
-} 
+
+}
 class ClassLoaderA extends ClassLoader {
 
     private File _dir;
     private ClassDataProvider _provider;
-    
+
     ClassLoaderA( String dir ){
        _dir = new File( dir ) ;
        if( ! _dir.isDirectory() ) {
            throw new IllegalArgumentException("Not a directory : " + _dir);
        }
-          
-       
+
+
     }
     ClassLoaderA( File dir ){
        _dir = dir ;
        if( ! _dir.isDirectory() ) {
            throw new IllegalArgumentException("Not a directory : " + _dir);
        }
-          
-       
+
+
     }
     ClassLoaderA( ClassDataProvider dataProvider ){
        _provider = dataProvider ;
     }
     public static byte [] loadClassData( File dir , String name) {
-    
+
        System.out.println( "loadClassData : File="+name ) ;
        File file = new File( dir , name ) ;
        try{
@@ -80,17 +83,17 @@ class ClassLoaderA extends ClassLoader {
                return null;
            }
            byte [] data = new byte[(int)length] ;
-           DataInputStream in = 
+           DataInputStream in =
                new DataInputStream( new FileInputStream( file ) ) ;
            in.read( data ) ;
            in.close() ;
 
            return data ;
-           
+
        }catch( Exception eee ){
            System.out.println( "loadClassData : Exception : "+eee ) ;
            return null ;
-       } 
+       }
     }
     @Override
     public synchronized Class<?> loadClass(String name ) {
@@ -99,7 +102,7 @@ class ClassLoaderA extends ClassLoader {
     @Override
     public synchronized Class<?> loadClass(String name, boolean resolve) {
         System.out.println( "Loading class "+name ) ;
-        if( name.startsWith( "java" ) || 
+        if( name.startsWith( "java" ) ||
             name.startsWith( "dmg" )     ){
             try{
                return Class.forName( name ) ;
@@ -126,7 +129,7 @@ class ClassLoaderA extends ClassLoader {
         }else {
             data = null;
         }
-           
+
         if( data == null ) {
             return null;
         }

@@ -1,27 +1,25 @@
 package org.dcache.tests.poolmanager;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicInteger;
-import dmg.cells.nucleus.CellAddressCore;
-import diskCacheV111.pools.CostCalculationEngine;
-import org.dcache.tests.cells.GenericMockCellHelper;
-import org.dcache.tests.cells.GenericMockCellHelper.MessageAction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.dcache.poolmanager.PartitionManager;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.pools.CostCalculationEngine;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsHandler;
@@ -33,16 +31,22 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
-import java.net.InetSocketAddress;
+
+import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.PartitionManager;
+import org.dcache.tests.cells.GenericMockCellHelper;
+import org.dcache.tests.cells.GenericMockCellHelper.MessageAction;
 import org.dcache.tests.util.CurrentThreadExceutorHelper;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.namespace.FileAttribute;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class HsmRestoreTest {
 
@@ -70,7 +74,7 @@ public class HsmRestoreTest {
         _counter = _counter + 1;
         _cell= new GenericMockCellHelper("HsmRestoreTest" + _counter, "-threadPool=org.dcache.tests.util.CurrentThreadExceutorHelper");
 
-    
+
          _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
             new InetSocketAddress("127.0.0.1", 17));
         _storageInfo = new OSMStorageInfo("h1", "rawd");

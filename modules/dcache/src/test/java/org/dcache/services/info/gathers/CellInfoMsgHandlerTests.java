@@ -1,7 +1,7 @@
 package org.dcache.services.info.gathers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -9,19 +9,20 @@ import java.util.Date;
 import java.util.Queue;
 import java.util.TimeZone;
 
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.InitialisableCellInfo;
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.QueuingStateUpdateManager;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.cells.CellInfoMsgHandler;
-import org.junit.Before;
-import org.junit.Test;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.InitialisableCellInfo;
-import dmg.cells.nucleus.UOID;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class CellInfoMsgHandlerTests {
 
@@ -131,7 +132,7 @@ public class CellInfoMsgHandlerTests {
     /**
      * Assert that the supplied StateUpdate object contains fresh values for
      * the expected metrics for the given CellInfo object.
-     * 
+     *
      * @param update
      * @param info
      */

@@ -1,12 +1,14 @@
 // $Id: Pool2PoolTransferMsg.java,v 1.8 2006-04-18 07:13:47 patrick Exp $
 
 package diskCacheV111.vehicles;
-import  diskCacheV111.util.PnfsId ;
-import org.dcache.vehicles.FileAttributes;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.EnumSet;
+
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;

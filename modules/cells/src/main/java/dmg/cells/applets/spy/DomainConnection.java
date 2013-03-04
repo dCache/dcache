@@ -1,11 +1,14 @@
 package dmg.cells.applets.spy ;
 
-import java.util.* ;
-import java.io.* ;
-import java.net.* ;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.net.Socket;
+import java.util.Hashtable;
 
-import dmg.cells.services.* ;
-import dmg.cells.nucleus.* ;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.MessageObjectFrame;
 
 public class DomainConnection implements Runnable {
    private Socket    _socket;

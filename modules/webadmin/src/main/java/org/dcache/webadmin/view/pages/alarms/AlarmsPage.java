@@ -59,14 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.pages.alarms;
 
-import java.util.concurrent.TimeUnit;
-
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.protocol.https.RequireHttps;
 import org.apache.wicket.util.time.Duration;
+
+import java.util.concurrent.TimeUnit;
+
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.alarms.DisplayPanel;

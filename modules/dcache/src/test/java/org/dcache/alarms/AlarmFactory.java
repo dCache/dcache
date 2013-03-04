@@ -59,18 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
-import java.util.Map;
-import java.util.UUID;
-
-import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.alarms.logback.AlarmDefinition;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.LoggingEvent;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.spi.LoggingEvent;
+import java.util.Map;
+import java.util.UUID;
+
+import org.dcache.alarms.dao.AlarmEntry;
+import org.dcache.alarms.logback.AlarmDefinition;
 
 /**
  * Utility methods for generating test alarm data.

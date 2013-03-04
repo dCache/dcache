@@ -1,6 +1,8 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.vehicles.JobInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,9 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import diskCacheV111.vehicles.JobInfo;
+
 import org.dcache.util.IoPriority;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class IoQueueManager {
 

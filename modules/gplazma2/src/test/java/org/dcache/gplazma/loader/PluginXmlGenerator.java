@@ -1,8 +1,7 @@
 package org.dcache.gplazma.loader;
 
-import java.io.StringWriter;
-import java.util.Collections;
-import java.util.Set;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -16,8 +15,9 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
+import java.io.StringWriter;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * This class provides a handy way of generating XML that describes zero or

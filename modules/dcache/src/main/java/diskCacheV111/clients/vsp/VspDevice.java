@@ -2,12 +2,22 @@
 //
 package diskCacheV111.clients.vsp ;
 
-import java.io.* ;
-import java.net.* ;
-import java.util.* ;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Hashtable;
 
-import diskCacheV111.util.* ;
-import diskCacheV111.movers.* ;
+import diskCacheV111.movers.VspDataOutputStream;
+import diskCacheV111.util.VspArgs;
 
 
 public class      VspDevice

@@ -1,7 +1,15 @@
 package diskCacheV111.util ;
-import java.util.* ;
-import java.io.PrintWriter ;
-import dmg.util.*;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import dmg.util.Args;
+import dmg.util.CollectionFactory;
+import dmg.util.Formats;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;

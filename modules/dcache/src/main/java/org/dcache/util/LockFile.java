@@ -1,8 +1,8 @@
 package org.dcache.util;
 
 import java.io.File;
-import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
  * Encapsulates a lock based on a well-known file. When acquired, an

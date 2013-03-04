@@ -1,9 +1,11 @@
 package org.dcache.boot;
 
 import com.google.common.base.Strings;
+
 import java.io.PrintStream;
 import java.util.Enumeration;
 import java.util.Map;
+
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ScopedConfigurationProperties;
 

@@ -1,12 +1,29 @@
 package org.dcache.xrootd.door;
 
-import java.net.InetSocketAddress;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelEvent;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.UUID;
+import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FileMetaData.Permissions;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellPath;
 
@@ -14,37 +31,34 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.cells.MessageCallback;
 import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.MessageCallback;
 import org.dcache.util.list.DirectoryEntries;
+import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.xrootd.core.XrootdException;
+import org.dcache.xrootd.core.XrootdRequestHandler;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
+import org.dcache.xrootd.protocol.messages.DirListRequest;
+import org.dcache.xrootd.protocol.messages.DirListResponse;
+import org.dcache.xrootd.protocol.messages.MkDirRequest;
+import org.dcache.xrootd.protocol.messages.MvRequest;
+import org.dcache.xrootd.protocol.messages.OpenRequest;
+import org.dcache.xrootd.protocol.messages.PrepareRequest;
+import org.dcache.xrootd.protocol.messages.ProtocolRequest;
+import org.dcache.xrootd.protocol.messages.ProtocolResponse;
+import org.dcache.xrootd.protocol.messages.RedirectResponse;
+import org.dcache.xrootd.protocol.messages.RmDirRequest;
+import org.dcache.xrootd.protocol.messages.RmRequest;
+import org.dcache.xrootd.protocol.messages.StatRequest;
+import org.dcache.xrootd.protocol.messages.StatResponse;
+import org.dcache.xrootd.protocol.messages.StatxRequest;
+import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
-import org.dcache.xrootd.core.XrootdRequestHandler;
-import org.dcache.xrootd.core.XrootdException;
-import org.dcache.vehicles.PnfsListDirectoryMessage;
-import org.dcache.xrootd.protocol.messages.*;
-import static org.dcache.xrootd.protocol.XrootdProtocol.*;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.FileMetaData.Permissions;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelEvent;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.google.common.collect.Iterables.transform;
+import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 /**
  * Channel handler which redirects all open requests to a

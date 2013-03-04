@@ -1,10 +1,12 @@
 package org.dcache.pinmanager;
 
+import com.google.common.base.Predicate;
+
 import java.util.Collection;
 
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.pinmanager.model.Pin;
-import com.google.common.base.Predicate;
 
 public interface PinDao
 {

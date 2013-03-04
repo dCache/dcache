@@ -1,14 +1,15 @@
 package org.dcache.webadmin.view.pages.activetransfers;
 
 import org.apache.wicket.util.tester.WicketTester;
+import org.junit.Before;
+import org.junit.Test;
+
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.impl.StandardActiveTransfersService;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Unittest to test the whole page.

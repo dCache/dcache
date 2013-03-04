@@ -1,7 +1,8 @@
 package diskCacheV111.poolManager;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import java.util.Comparator;
+
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
 class LinkComparator implements Comparator<Link> {
     private final DirectionType _type;

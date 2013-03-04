@@ -1,12 +1,16 @@
 package dmg.cells.applets.spy ;
 
-import java.applet.*;
-import java.awt.* ;
-import java.awt.event.* ;
+import java.applet.Applet;
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 
-public class      DomainSpyApplet 
-       extends    Applet 
+public class      DomainSpyApplet
+       extends    Applet
        implements ActionListener,
                   Runnable           {
 
@@ -16,15 +20,15 @@ public class      DomainSpyApplet
   private String _host;
   private int    _port;
   private Thread _listen;
-  
+
   public DomainSpyApplet( String host , int port ){
       _host = host ;
       _port = port ;
-  
+
   }
   @Override
   public void init(){
-  
+
      if( _host == null ){
          String dest = getParameter( "Galactica" ) ;
          if( dest == null ){
@@ -46,24 +50,24 @@ public class      DomainSpyApplet
          }
       }
       try{
-      
+
          _connection = new DomainConnection( _host , _port ) ;
          System.out.println( "Connected ... " ) ;
-      
+
       }catch( Exception e ){
          System.err.println( "Connection failed : "+e.toString() ) ;
          System.exit(4);
       }
-      
+
       setLayout( new BorderLayout( ) ) ;
       Label label = new Label( "Domain Spy" , Label.CENTER ) ;
       label.setFont( new Font( "fixed" , Font.ITALIC | Font.BOLD , 24 ) ) ;
-      
+
       add( label , "North" ) ;
       Panel panel = new DomainListPanel( _connection ) ;
-      
+
       add( panel , "Center" ) ;
-      
+
 
   }
   @Override
@@ -85,7 +89,7 @@ public class      DomainSpyApplet
   @Override
   public void destroy(){
 //     System.out.println( "Applet destroying"  ) ;
-  }      
+  }
 
 
 }

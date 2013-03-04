@@ -1,9 +1,14 @@
 package org.dcache.srm.request.sql;
-import java.sql.*;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.request.Job;
 
 public class LsFileRequestStorage extends DatabaseFileRequestStorage {
     public static final String TABLE_NAME = "lsfilerequests";

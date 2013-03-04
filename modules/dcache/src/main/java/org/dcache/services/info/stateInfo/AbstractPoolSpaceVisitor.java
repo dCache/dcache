@@ -2,6 +2,7 @@ package org.dcache.services.info.stateInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 

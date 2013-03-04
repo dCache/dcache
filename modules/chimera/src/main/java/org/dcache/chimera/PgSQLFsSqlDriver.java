@@ -16,21 +16,20 @@
  */
 package org.dcache.chimera;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import java.io.File;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
-
-import org.dcache.commons.util.SqlHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
 
 import org.dcache.chimera.posix.Stat;
+import org.dcache.commons.util.SqlHelper;
 
 /**
  * PostgreSQL specific

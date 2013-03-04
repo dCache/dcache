@@ -1,16 +1,15 @@
 package org.dcache.gplazma.loader;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
+import com.google.common.collect.ImmutableList;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Properties;
 
-import com.google.common.collect.ImmutableList;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-import org.junit.Before;
-import org.junit.Test;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.junit.Assert.*;
 
 public class StaticClassPluginLoaderTests
 {

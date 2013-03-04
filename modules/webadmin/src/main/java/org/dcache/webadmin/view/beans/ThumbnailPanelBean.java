@@ -59,9 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.beans;
 
-import java.io.File;
-import java.io.Serializable;
-
 import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.link.PopupSettings;
@@ -70,6 +67,10 @@ import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.request.resource.ResourceStreamResource;
 import org.apache.wicket.util.resource.FileResourceStream;
 import org.apache.wicket.util.resource.UrlResourceStream;
+
+import java.io.File;
+import java.io.Serializable;
+
 import org.dcache.util.IRegexFilterable;
 import org.dcache.webadmin.model.dataaccess.util.RrdSettings;
 

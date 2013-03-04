@@ -15,17 +15,27 @@
 
 package org.dcache.srm.handler;
 
-import org.dcache.srm.FileMetaData;
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.net.URISyntaxException;
+
 import java.net.URI;
+import java.net.URISyntaxException;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
+import org.dcache.srm.v2_2.ArrayOfTUserPermission;
+import org.dcache.srm.v2_2.SrmSetPermissionRequest;
+import org.dcache.srm.v2_2.SrmSetPermissionResponse;
+import org.dcache.srm.v2_2.TGroupPermission;
+import org.dcache.srm.v2_2.TPermissionMode;
+import org.dcache.srm.v2_2.TPermissionType;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 
 

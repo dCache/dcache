@@ -1,6 +1,6 @@
 package dmg.util.db ;
 
-import java.util.* ;
+import java.util.Enumeration;
 
 public class DbResourceHandle implements DbLockable, DbRecordable {
    private int               _refCounter;
@@ -14,16 +14,16 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
        _name     = name ;
        _creator  = creator ;
        _resource = resource ;
-       
-   
+
+
    }
    public String  getName(){ return _name ; }
    public void    isValid( boolean isValid ){ _isValid  = isValid ; }
    public boolean isValid(){ return _isValid ; }
-   
+
    @Override
    public void open( int flags )
-          throws DbLockException, 
+          throws DbLockException,
                  InterruptedException {
        if( ! _isValid ) {
            throw new DbLockException("Object no longer exists");
@@ -38,22 +38,22 @@ public class DbResourceHandle implements DbLockable, DbRecordable {
    public void setAttribute( String name , String attribute ) {
        _resource.setAttribute( name , attribute ) ;
    }
- 
+
    @Override
    public void setAttribute( String name , String[] attribute ){
        _resource.setAttribute( name , attribute ) ;
    }
- 
+
    @Override
    public Object getAttribute( String name ) {
      return _resource.getAttribute( name ) ;
    }
-  
+
    @Override
    public Enumeration<String> getAttributes(){
      return _resource.getAttributes() ;
-   } 
-   
+   }
+
    @Override
    public void remove(){
      _resource.remove() ;

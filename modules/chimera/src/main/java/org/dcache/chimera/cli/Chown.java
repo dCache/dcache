@@ -16,9 +16,10 @@
  */
 package org.dcache.chimera.cli;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class Chown
 {

@@ -2,13 +2,16 @@
 
 package diskCacheV111.poolManager ;
 
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.vehicles.PoolCostCheckable;
-import org.dcache.poolmanager.PoolInfo;
-import dmg.cells.nucleus.CellMessage;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.vehicles.PoolCostCheckable;
+
+import dmg.cells.nucleus.CellMessage;
+
+import org.dcache.poolmanager.PoolInfo;
 
 
 /**

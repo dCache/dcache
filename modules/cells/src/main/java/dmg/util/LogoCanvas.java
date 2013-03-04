@@ -1,16 +1,27 @@
 package dmg.util ;
-import java.awt.* ;
-import java.awt.event.*;
-import java.util.Random ;
+
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Random;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      LogoCanvas 
-       extends    Canvas 
+public class      LogoCanvas
+       extends    Canvas
        implements MouseListener , Runnable {
 
    private static final long serialVersionUID = -4709372485548974258L;
@@ -37,7 +48,7 @@ public class      LogoCanvas
    // snow
    //
    private Image []  _snowImages ;
-   private int       _snowImagesCount = 8 , 
+   private int       _snowImagesCount = 8 ,
                      _snowImagesWidth ,
                      _snowImagesHeight ;
    //
@@ -47,24 +58,24 @@ public class      LogoCanvas
    public static final int GROWING    = 2 ;
    public static final int SHRINKING  = 3 ;
    public static final int SNOW       = 4 ;
-   
+
    public LogoCanvas( String title ){
       super() ;
       _string = title == null ? "" : title ;
-//      setSize( width , height  );      
+//      setSize( width , height  );
 
       _toolkit = getToolkit() ;
-      
+
       setBackground( Color.blue ) ;
       addMouseListener( this ) ;
       _font      = new Font( "TimesRoman" , Font.BOLD , 20 ) ;
       _smallFont = new Font( "TimesRoman" , Font.ITALIC , 20 ) ;
-      
+
       _makeChoiseMode = false ;
       _animationMode  = 0 ;
-      
+
    }
-   public void setActionListener( ActionListener l ){ 
+   public void setActionListener( ActionListener l ){
         _actionListener  = l ;
    }
    public void setString( String str ){
@@ -99,7 +110,7 @@ public class      LogoCanvas
       _string         = title ;
       _choises        = choises ;
       _offsets        = new int[choises.length] ;
-      
+
       synchronized( _choiseLock ){
          System.out.println( " choise : repaint " ) ;
          repaint() ;
@@ -109,7 +120,7 @@ public class      LogoCanvas
       }
       _makeChoiseMode = false ;
       _string = "" ;
-      
+
       return _result ;
    }
    @Override
@@ -123,7 +134,7 @@ public class      LogoCanvas
 
          y  += fm.getHeight() ;
          g.drawString(  _string , x , y ) ;
-         
+
          x += 10 ;
          g.setFont( _smallFont ) ;
          fm = g.getFontMetrics() ;
@@ -141,7 +152,7 @@ public class      LogoCanvas
             _drawSnowImages(g);
          }else{
 //            if( _offImage == null )
-            _offImage = createImage( d.width , d.height ) ;         
+            _offImage = createImage( d.width , d.height ) ;
             _makeFun( g ) ;
          }
       }else {
@@ -165,7 +176,7 @@ public class      LogoCanvas
          if( _animationMode == SNOW ){
             _createSnowImages(d) ;
             _drawSnowImages(g);
-         
+
          }else{
             if( _offImage == null ) {
                 _offImage = createImage(d.width, d.height);
@@ -177,21 +188,21 @@ public class      LogoCanvas
          g.fillRect( 0 , 0 , d.width , d.height ) ;
          paint( g ) ;
       }
-   } 
+   }
    private void _drawSnowImages( Graphics g ){
      int s = _animationState % _snowImagesCount ;
      g.drawImage( _snowImages[s] , 0 , 0 , null ) ;
-   } 
+   }
    private void _createSnowImages( Dimension d ){
      Random r = new Random();
      if( ( _snowImages == null ) ||
          ( d.height != _snowImagesHeight ) ||
          ( d.width  != _snowImagesWidth  )    ){
-        
+
         _snowImages = new Image[_snowImagesCount] ;
         _snowImagesHeight = d.height ;
         _snowImagesWidth  = d.width ;
-        
+
         for( int i = 0 ; i < _snowImagesCount ; i++ ){
             _snowImages[i] = createImage( d.width , d.height ) ;
             Graphics g = _snowImages[i].getGraphics() ;
@@ -205,28 +216,28 @@ public class      LogoCanvas
                      g.drawLine(w, h, w, h);
                  }
               }
-            } 
+            }
             System.out.println( " Ready");
-        
-        }   
+
+        }
      }
-   } 
+   }
    private void _stopAnimation(){
      _animationMode = 0 ;
      System.out.println( "Trying to enter animationLock " ) ;
      synchronized( _animationLock ){
-     
+
         System.out.println( "AnimationLock entered " ) ;
         if( _worker != null ){
              System.out.println( "Worker not yet zero " ) ;
-//            _worker.stop() ; 
+//            _worker.stop() ;
             _worker = null ;
         }else{
              System.out.println( "Worker is zero ( doing nothing) " ) ;
         }
      }
      System.out.println( "AnimationLock left " ) ;
-       
+
    }
    @Override
    public void run(){
@@ -274,9 +285,9 @@ public class      LogoCanvas
      }
    }
    private void _runSnow(){
-       for(  _animationState = 0 ; true ; 
+       for(  _animationState = 0 ; true ;
              _animationState ++ ){
-             
+
            repaint() ;
            _toolkit.sync() ;
            try{ Thread.sleep(100) ; }
@@ -285,9 +296,9 @@ public class      LogoCanvas
    }
    private void _runDown(){
        for(  _animationState = 1000 ;
-             _animationState >= 0 ; 
+             _animationState >= 0 ;
              _animationState -= 10 ){
-             
+
            repaint() ;
            _toolkit.sync() ;
            try{ Thread.sleep(100) ; }
@@ -296,18 +307,18 @@ public class      LogoCanvas
    }
    private void _runUp(){
        for( _animationState = 0 ;
-            _animationState < 1001 ; 
+            _animationState < 1001 ;
             _animationState += 10 ){
-             
+
             repaint() ;
             _toolkit.sync() ;
             try{ Thread.sleep(100) ; }
             catch( InterruptedException ie ){}
        }
-   
+
    }
    private void _makeFun( Graphics g ){
-      
+
       double fraction  = (double) (_animationState) / 1000. ;
       Dimension     d  = getSize() ;
       if( _offImage == null ) {
@@ -316,16 +327,16 @@ public class      LogoCanvas
       Graphics offGraphics = _offImage.getGraphics() ;
       offGraphics.setColor( Color.blue ) ;
       offGraphics.fillRect( 0 , 0 , d.width , d.height ) ;
-//      offGraphics.setColor( new Color( 
+//      offGraphics.setColor( new Color(
 //                      Color.HSBtoRGB( (float)0.5 ,
 //                                      (float)0.5 ,
 //                                      (float)0.9  ) ) );
       offGraphics.setColor( Color.red ) ;
-      _drawPolygon( offGraphics , fraction ) ; 
+      _drawPolygon( offGraphics , fraction ) ;
       offGraphics.setColor( Color.blue ) ;
-      _drawPolygon( offGraphics , fraction*0.5 ) ; 
+      _drawPolygon( offGraphics , fraction*0.5 ) ;
       offGraphics.setColor( Color.yellow ) ;
-      _drawPolygon( offGraphics , fraction*0.25 ) ; 
+      _drawPolygon( offGraphics , fraction*0.25 ) ;
       g.drawImage( _offImage , 0 , 0 , null ) ;
    }
    public void _drawPolygon( Graphics g , double fraction ){
@@ -338,12 +349,12 @@ public class      LogoCanvas
       double diff =  2. *  Math.PI / (double) n;
       int [] x  = new int [n] ;
       int [] y  = new int [n] ;
-      
+
       for( int i = 0 ; i < n ; i ++ , a+= diff  ){
          x[i]  = (int)( x0 + r * Math.sin( a ) );
          y[i]  = (int)( y0 - r * Math.cos( a ) );
       }
-      g.fillPolygon( x , y , n ) ; 
+      g.fillPolygon( x , y , n ) ;
    }
    @Override
    public void mouseClicked( MouseEvent e ){
@@ -389,7 +400,7 @@ public class      LogoCanvas
    }
    @Override
    public void mouseReleased( MouseEvent e ){
-   
+
    }
 
 }

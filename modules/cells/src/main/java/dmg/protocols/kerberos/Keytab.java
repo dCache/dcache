@@ -1,7 +1,13 @@
 package dmg.protocols.kerberos ;
 
-import java.io.* ;
-import java.util.* ;
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
+import java.util.Vector;
 
 public class Keytab {
    private Vector<KeytabEntry> _list;
@@ -18,13 +24,13 @@ public class Keytab {
                           int  vno ,
                           int  keytype ,
                           byte [] key    ){
-                          
+
           _realm      = realm ;
           _principals = principals ;
           _timestamp  = timestamp ;
           _vno        = vno ;
           _keytype    = keytype ;
-          _key        = key ;                   
+          _key        = key ;
       }
       public String getPrincipalName(){
          StringBuilder sb = new StringBuilder() ;
@@ -73,17 +79,17 @@ public class Keytab {
    }
    public Keytab( String keytabFilename )
              throws IOException , Krb5Exception {
-       loadKeytabFile( new File( keytabFilename ) ) ;         
+       loadKeytabFile( new File( keytabFilename ) ) ;
    }
    public void loadKeytabFile( File file )
         throws IOException , Krb5Exception {
-        
-       DataInputStream in = 
+
+       DataInputStream in =
           new DataInputStream( new FileInputStream( file ) ) ;
-       
+
        Vector<KeytabEntry> list = new Vector<>() ;
        try{
-       
+
           int version = in.readByte() ;
           if( version != 5 ) {
               throw new
@@ -94,7 +100,7 @@ public class Keytab {
               throw new
                       Krb5Exception(2, "Can only read keytab(2) not : " + version);
           }
-          
+
           int block;
           while( true ){
              try{
@@ -113,24 +119,24 @@ public class Keytab {
                 principals[i] = in.readUTF() ;
              }
              int principalNameType = in.readInt() ;
-             
+
              long timestamp = in.readInt() * 1000 ;
-             
+
              int vno = in.readByte() ;
-             
+
              int keyType = in.readShort() ;
-             
+
              int keyLength = in.readShort() ;
-             
+
              byte [] key = new byte[keyLength] ;
              in.readFully( key ) ;
-             
-             list.addElement( 
-                  new KeytabEntry( 
+
+             list.addElement(
+                  new KeytabEntry(
                             realm , principals , principalNameType ,
                             timestamp , vno , keyType , key )
                              ) ;
-             
+
           }
        }catch(EOFException eof ){
            throw new Krb5Exception(3 , "Illegal Krb5 Keytab format" ) ;

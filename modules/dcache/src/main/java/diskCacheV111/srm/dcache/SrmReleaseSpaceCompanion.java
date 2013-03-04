@@ -71,14 +71,16 @@ documents or software obtained from this server.
  */
 package diskCacheV111.srm.dcache;
 
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.ThreadManagerMessageCallback;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
-import diskCacheV111.services.space.message.Release;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import diskCacheV111.services.space.message.Release;
+
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.ThreadManagerMessageCallback;
+import org.dcache.srm.SrmReleaseSpaceCallbacks;
 
 /**
  *

@@ -3,20 +3,21 @@ package org.dcache.util;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
+import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
-import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.OutOfDateCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
+
 import static diskCacheV111.util.CacheException.*;
-import diskCacheV111.util.FileInCacheException;
 
 /**
  *CacheException factory.

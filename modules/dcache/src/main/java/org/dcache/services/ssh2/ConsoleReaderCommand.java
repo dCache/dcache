@@ -1,6 +1,16 @@
 package org.dcache.services.ssh2;
 
 import com.google.common.base.Charsets;
+import jline.ANSIBuffer;
+import jline.ConsoleReader;
+import jline.History;
+import jline.UnixTerminal;
+import org.apache.sshd.server.Command;
+import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.ExitCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -10,13 +20,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import diskCacheV111.admin.UserAdminShell;
+
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
@@ -26,8 +31,6 @@ import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.RequestTimeOutException;
-
-import jline.*;
 
 /**
  * This class implements the Command Interface, which is part of the sshd-core

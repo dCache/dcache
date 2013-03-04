@@ -1,10 +1,19 @@
 package dmg.util.db ;
 
-import java.util.* ;
-import java.io.* ;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
-public class      DbFileRecord 
-       extends    DbGLock 
+public class      DbFileRecord
+       extends    DbGLock
        implements DbRecordable{
 
    private DbLockable  _superLock;
@@ -12,15 +21,15 @@ public class      DbFileRecord
    private Hashtable<String, Object> _table      = new Hashtable<>() ;
    private boolean     _exists     = true ;
    private boolean     _dataValid;
-   
+
    public DbFileRecord( File source , boolean create )
           throws IOException     {
-      this( null , source , create ) ;      
+      this( null , source , create ) ;
    }
    public DbFileRecord( DbLockable superLock , File source , boolean create )
           throws IOException     {
-       
-       super( superLock ) ;   
+
+       super( superLock ) ;
        _superLock  = superLock ;
        _dataSource = source ;
        if( create && _dataSource.exists() ) {
@@ -41,7 +50,7 @@ public class      DbFileRecord
            throw new DbLockException("Object removed");
        }
        super.open( mode ) ;
-       
+
    }
    @Override
    public synchronized void setAttribute( String name , String attribute ){
@@ -63,9 +72,9 @@ public class      DbFileRecord
    @Override
    public synchronized Enumeration<String> getAttributes(){ return _table.keys() ; }
    public synchronized void read() throws IOException {
-      BufferedReader reader = new BufferedReader( 
+      BufferedReader reader = new BufferedReader(
                                  new FileReader( _dataSource ) ) ;
-      
+
       try{
           int state = 0 ;
           String line, name = null , value;
@@ -103,7 +112,7 @@ public class      DbFileRecord
       }
    }
    public synchronized void write() throws IOException {
-      PrintWriter pw = new PrintWriter( 
+      PrintWriter pw = new PrintWriter(
                                 new FileWriter( _dataSource ) ) ;
        for (Object o1 : _table.keySet()) {
            String name = (String) o1;
@@ -148,7 +157,7 @@ public class      DbFileRecord
    }
 
    public static void main( String [] args ) throws Exception {
-       
+
        if( args.length < 2 ){
           System.out.println( "... read/write <filename>" ) ;
           System.exit(4) ;
@@ -214,4 +223,4 @@ public class      DbFileRecord
 
    }
 
-} 
+}

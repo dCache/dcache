@@ -1,11 +1,16 @@
 package org.dcache.srm.request.sql;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.Job;
 import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.util.Configuration;
-import java.sql.*;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.SRMUser;
 
 public class LsRequestStorage extends DatabaseContainerRequestStorage{
     public static final String TABLE_NAME ="lsrequests";

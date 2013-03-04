@@ -1,7 +1,6 @@
 package org.dcache.util.expression;
 
 import static org.dcache.util.expression.Type.*;
-import static org.dcache.util.expression.Token.*;
 
 /**
  * Type checker and annotator for expressions.

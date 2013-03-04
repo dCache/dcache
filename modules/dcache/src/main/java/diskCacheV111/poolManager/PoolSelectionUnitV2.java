@@ -1,7 +1,15 @@
 package diskCacheV111.poolManager;
 
-import java.net.UnknownHostException;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringWriter;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -16,21 +24,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Serializable;
 
-import com.google.common.collect.Maps;
-import com.google.common.base.Predicates;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.GenericStorageInfo;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;
 import org.dcache.util.Glob;

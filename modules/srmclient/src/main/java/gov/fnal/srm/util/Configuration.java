@@ -71,27 +71,29 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import java.io.IOException;
-import java.io.FileWriter;
-import java.io.File;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
-import org.w3c.dom.Comment;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import org.dcache.srm.Logger;
-import org.dcache.srm.client.Transport;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.dcache.srm.Logger;
+import org.dcache.srm.client.Transport;
 /**
  *
  * @author  timur

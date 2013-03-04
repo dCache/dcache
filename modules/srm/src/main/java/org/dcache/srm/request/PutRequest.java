@@ -72,36 +72,35 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import org.dcache.srm.scheduler.FatalJobFailure;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.dcache.srm.v2_2.TRequestType;
-import org.dcache.srm.SRMUser;
-
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Date;
-import java.util.List;
-import java.net.URI;
-import java.util.Set;
-
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
-import org.dcache.srm.v2_2.TPutRequestFileStatus;
-import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
-import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
-import org.dcache.srm.v2_2.TAccessLatency;
-import org.dcache.srm.v2_2.TRetentionPolicy;
-import org.dcache.srm.v2_2.TOverwriteMode;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.SRMReleasedException;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
+import java.net.URI;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMReleasedException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
+import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
+import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TOverwriteMode;
+import org.dcache.srm.v2_2.TPutRequestFileStatus;
+import org.dcache.srm.v2_2.TRequestType;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TSURLReturnStatus;
 /**
  *
  * @author  timur

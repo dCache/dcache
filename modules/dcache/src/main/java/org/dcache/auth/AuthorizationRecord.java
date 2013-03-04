@@ -9,35 +9,39 @@
 
 package org.dcache.auth;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Set;
-import java.io.Serializable;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import com.google.common.base.Objects;
+import org.globus.gsi.jaas.GlobusPrincipal;
+
 import javax.persistence.Basic;
 import javax.persistence.Column;
-import javax.persistence.Transient;
+import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
-//import static javax.persistence.FetchType.LAZY;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.security.auth.Subject;
+
+import java.io.Serializable;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.srm.SRMUser;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.persistence.CascadeType.ALL;
 import static javax.persistence.FetchType.EAGER;
-import org.dcache.srm.SRMUser;
-import javax.security.auth.Subject;
-import java.security.Principal;
 
-import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
-import org.globus.gsi.jaas.GlobusPrincipal;
-import com.google.common.base.Objects;
-import static com.google.common.base.Preconditions.checkNotNull;
+//import static javax.persistence.FetchType.LAZY;
 
 
 /**

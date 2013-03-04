@@ -3,9 +3,9 @@
 
 package diskCacheV111.repository ;
 
-import  diskCacheV111.util.IteratorCookie ;
-
 import java.io.Serializable;
+
+import diskCacheV111.util.IteratorCookie;
 
 public class RepositoryCookie
        extends    IteratorCookie

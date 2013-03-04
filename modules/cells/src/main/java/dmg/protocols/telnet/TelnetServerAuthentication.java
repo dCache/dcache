@@ -1,6 +1,6 @@
 package dmg.protocols.telnet ;
 
-import  java.net.InetAddress ;
+import java.net.InetAddress;
 
 public interface TelnetServerAuthentication {
 

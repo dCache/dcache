@@ -1,15 +1,18 @@
 // $Id: PnfsGetFileMetaDataMessage.java,v 1.4 2004-11-05 12:07:19 tigran Exp $
 package diskCacheV111.vehicles ;
 
+import java.util.Set;
+
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
-import java.util.Set;
-import org.dcache.util.Checksum;
-import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
 
-import static org.dcache.namespace.FileAttribute.*;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Checksum;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
+
+import static org.dcache.namespace.FileAttribute.CHECKSUM;
+import static org.dcache.namespace.FileAttribute.PNFSID;
 
 public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
 {

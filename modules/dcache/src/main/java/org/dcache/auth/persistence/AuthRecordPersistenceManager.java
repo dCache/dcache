@@ -8,29 +8,30 @@
  */
 
 package org.dcache.auth.persistence;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.EntityTransaction;
 
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.GroupList;
-import org.dcache.auth.Group;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.Properties;
-import java.io.FileInputStream;
-import java.io.IOException;
-import org.dcache.srm.SRMUserPersistenceManager;
-import org.dcache.srm.SRMUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.Group;
+import org.dcache.auth.GroupList;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMUserPersistenceManager;
 
 /**
  *

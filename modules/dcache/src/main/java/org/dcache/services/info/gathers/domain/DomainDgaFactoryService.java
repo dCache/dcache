@@ -1,8 +1,11 @@
 package org.dcache.services.info.gathers.domain;
 
 import com.google.common.collect.ImmutableSet;
-import dmg.cells.nucleus.UOID;
+
 import java.util.Set;
+
+import dmg.cells.nucleus.UOID;
+
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.DgaFactoryService;

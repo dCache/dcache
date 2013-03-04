@@ -72,13 +72,16 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
-import diskCacheV111.srm.RequestStatus;
-import org.dcache.srm.AbstractStorageElement;
-import java.io.IOException;
-import java.beans.PropertyChangeListener;
-import org.dcache.srm.request.RequestCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.beans.PropertyChangeListener;
+import java.io.IOException;
+
+import diskCacheV111.srm.RequestStatus;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.request.RequestCredential;
 /**
  *
  * @author  timur

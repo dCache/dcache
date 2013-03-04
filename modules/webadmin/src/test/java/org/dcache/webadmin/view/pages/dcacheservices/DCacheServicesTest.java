@@ -1,9 +1,10 @@
 package org.dcache.webadmin.view.pages.dcacheservices;
 
 import org.apache.wicket.util.tester.WicketTester;
-import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 
 public class DCacheServicesTest {
 

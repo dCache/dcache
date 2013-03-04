@@ -8,9 +8,11 @@
  */
 
 package diskCacheV111.services.space.message;
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.util.RetentionPolicy;
+
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.Message;
+
 import org.dcache.auth.AuthorizationRecord;
 
 

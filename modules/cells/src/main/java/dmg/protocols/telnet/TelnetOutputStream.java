@@ -1,19 +1,22 @@
  package dmg.protocols.telnet ;
- import java.io.* ;
+
+ import java.io.FilterOutputStream;
+ import java.io.IOException;
+ import java.io.OutputStream;
 
  /**
-   *   TelnetOutputStream add additional control functionality 
+   *   TelnetOutputStream add additional control functionality
    *   to the output stream.
   *
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
    */
  public class TelnetOutputStream extends FilterOutputStream {
      //
-     //   the telnet constants 
+     //   the telnet constants
      //
      private static final byte telnetSE   =   (-16);
      private static final byte telnetNOP  =   (-15);
@@ -36,9 +39,9 @@
      private static final byte telnetNUL  =   (0);
 
      private static final byte telnetOptionEcho  = (1);
-                               
+
      private static final byte [] telnetBN = { telnetCR , telnetLF } ;
-     
+
      private static final int cctData = 1 ;
      private static final int cctCR   = 2 ;
      private static final int cctCR2  = 3 ;
@@ -52,9 +55,9 @@
      private final byte wontEcho[] = { telnetIAC , telnetWONT , 3 ,
                                telnetIAC , telnetWONT , telnetOptionEcho } ;
     //
-    // class variables 
+    // class variables
     //
-    
+
    public TelnetOutputStream( OutputStream out ){
       super( out ) ;
    }
@@ -66,7 +69,7 @@
          } else {
              super.write(c);
          }
-      }      
+      }
    }
    public void setEcho( boolean echo ){
       try{ super.write( echo ? wontEcho : willEcho ) ;

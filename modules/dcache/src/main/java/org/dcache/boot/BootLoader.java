@@ -1,34 +1,33 @@
 package org.dcache.boot;
 
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.LogManager;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
 
-import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.File;
-import java.io.LineNumberReader;
-import java.io.OutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
-
-import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import static com.google.common.collect.Iterables.transform;
 import static org.dcache.boot.Properties.*;

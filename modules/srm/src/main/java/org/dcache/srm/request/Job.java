@@ -71,44 +71,46 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.ref.WeakReference;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.HashMap;
-import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.Map;
-import java.lang.ref.WeakReference;
-import java.sql.Connection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.sql.SQLException;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+
 import org.dcache.srm.SRMAbortedException;
-import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.util.JDC;
+import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
-import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.SharedMemoryCache;
 import org.dcache.srm.scheduler.State;
-
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.srm.util.JDC;
 
 
 /**

@@ -1,7 +1,7 @@
 package dmg.util.logback;
 
-import ch.qos.logback.core.Appender;
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.core.Appender;
 
 /**
  * Simple record like class for pairing a LoggerName and a Level.

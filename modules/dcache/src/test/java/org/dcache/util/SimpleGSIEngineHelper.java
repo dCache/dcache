@@ -1,8 +1,5 @@
 package org.dcache.util;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import org.globus.gsi.gssapi.SSLUtil;
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSContext;
@@ -11,6 +8,9 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 import org.ietf.jgss.Oid;
+
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Helper class for the SimpleGSIEngineTest. Contains static methods for

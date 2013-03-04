@@ -1,8 +1,9 @@
 // $Id: IoDoorInfo.java,v 1.2 2004-11-05 12:07:19 tigran Exp $
 
 package diskCacheV111.vehicles ;
-import java.util.Arrays ;
-import java.util.List ;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class IoDoorInfo extends DoorInfo {
 

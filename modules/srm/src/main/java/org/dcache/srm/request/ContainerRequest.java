@@ -71,26 +71,32 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.util.RequestStatusTool;
-import diskCacheV111.srm.RequestStatus;
-import org.dcache.srm.SRMUser;
-import diskCacheV111.srm.RequestFileStatus;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.SRMException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.commons.util.AtomicCounter;
 
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.net.URI;
+
+import diskCacheV111.srm.RequestFileStatus;
+import diskCacheV111.srm.RequestStatus;
+
+import org.dcache.commons.util.AtomicCounter;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.TRequestSummary;
+import org.dcache.srm.v2_2.TRequestType;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TSURLReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  * This abstract class represents an "SRM request"

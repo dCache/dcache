@@ -2,6 +2,11 @@ package org.dcache.acl.mapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
+import java.util.List;
+
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.ACLException;
@@ -10,12 +15,8 @@ import org.dcache.acl.Permission;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.util.net.InetAddressMatcher;
-
-import javax.security.auth.Subject;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
-
-import java.util.List;
 
 /**
  * The AclMapper has the task to evaluate an ACL taking information on the subject, object and

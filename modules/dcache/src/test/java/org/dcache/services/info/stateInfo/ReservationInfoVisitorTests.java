@@ -1,8 +1,7 @@
 package org.dcache.services.info.stateInfo;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Map;
 
@@ -10,8 +9,8 @@ import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.base.TestStateExhibitor;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for the ReservationInfoVisitor

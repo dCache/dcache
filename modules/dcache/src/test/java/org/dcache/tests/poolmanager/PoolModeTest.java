@@ -1,11 +1,12 @@
 package org.dcache.tests.poolmanager;
 
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 
 import diskCacheV111.pools.PoolV2Mode;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class PoolModeTest {
 

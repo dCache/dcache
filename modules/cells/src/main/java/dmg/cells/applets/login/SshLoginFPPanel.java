@@ -1,12 +1,18 @@
 package dmg.cells.applets.login ;
 
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import dmg.cells.applets.spy.BorderPanel;
 
-import java.awt.* ;
-import java.awt.event.* ;
-
-public class      SshLoginFPPanel 
-       extends    SshActionPanel 
+public class      SshLoginFPPanel
+       extends    SshActionPanel
        implements ActionListener {
 
    private static final long serialVersionUID = -6433181861280030266L;
@@ -20,7 +26,7 @@ public class      SshLoginFPPanel
    SshLoginFPPanel(){
 //       setLayout( new CenterLayout(  ) ) ;
        Panel p = new Panel( new GridLayout(0,1) ) ;
-        setFont( _font ) ; 
+        setFont( _font ) ;
        p.setBackground( Color.yellow ) ;
        p.add( new Label( "Dear User, the Host" , Label.CENTER  ) ) ;
        p.add( _hostLabel = new Label("",Label.CENTER ) ) ;
@@ -30,7 +36,7 @@ public class      SshLoginFPPanel
        p.add( _fingerprintLabel = new Label( _dummy , Label.CENTER ) ) ;
        p.add( new Label( "do you want to", Label.CENTER  ) ) ;
        Panel yesNo = new Panel( new GridLayout(1,2) ) ;
-       
+
        yesNo.add( _acceptButton = new Button( "Accept it" ) ) ;
        _acceptButton.setBackground( Color.green ) ;
        yesNo.add( _rejectButton = new Button( "Reject it" ) ) ;
@@ -40,7 +46,7 @@ public class      SshLoginFPPanel
        p.add( yesNo ) ;
        p.doLayout();
        doLayout();
-   
+
        add( new BorderPanel( p ) ) ;
        _acceptButton.addActionListener( this ) ;
        _rejectButton.addActionListener( this ) ;
@@ -64,7 +70,7 @@ public class      SshLoginFPPanel
       }else if( obj == _rejectButton ){
          informActionListeners( "reject" ) ;
       }
-   }     
+   }
 
 
-} 
+}

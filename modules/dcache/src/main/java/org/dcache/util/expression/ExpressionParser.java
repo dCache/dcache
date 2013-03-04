@@ -1,10 +1,13 @@
 package org.dcache.util.expression;
 
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import org.parboiled.BaseParser;
 import org.parboiled.Rule;
+import org.parboiled.annotations.BuildParseTree;
+import org.parboiled.annotations.Cached;
+import org.parboiled.annotations.DontLabel;
+import org.parboiled.annotations.SuppressNode;
 import org.parboiled.support.Var;
-import org.parboiled.annotations.*;
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 @BuildParseTree
 public abstract class ExpressionParser extends BaseParser<Expression>

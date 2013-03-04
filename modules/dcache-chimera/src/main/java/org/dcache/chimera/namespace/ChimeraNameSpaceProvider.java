@@ -3,47 +3,56 @@
  */
 package org.dcache.chimera.namespace;
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.regex.Pattern;
-import javax.security.auth.Subject;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.RetentionPolicy;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
-import org.dcache.chimera.FileExistsChimeraFsException;
-import org.dcache.chimera.FsInode;
+import javax.security.auth.Subject;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.acl.ACE;
+import org.dcache.acl.ACL;
+import org.dcache.acl.enums.RsType;
+import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.NotDirChimeraException;
+import org.dcache.chimera.DirectoryStreamB;
+import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FsInode;
+import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.posix.Stat;
-
-import diskCacheV111.namespace.NameSpaceProvider;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.vehicles.StorageInfo;
-
-import java.io.IOException;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
@@ -52,19 +61,8 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.chimera.DirectoryStreamB;
-import org.dcache.auth.Subjects;
-import static org.dcache.acl.enums.AccessType.*;
 
-import org.springframework.beans.factory.annotation.Required;
-
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Range;
-import java.util.concurrent.TimeUnit;
-import org.dcache.acl.ACE;
-import org.dcache.acl.ACL;
-import org.dcache.acl.enums.RsType;
+import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider

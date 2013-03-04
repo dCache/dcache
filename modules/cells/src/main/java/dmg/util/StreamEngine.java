@@ -1,12 +1,13 @@
 package dmg.util ;
-import  java.net.InetAddress ;
-import  java.net.Socket ;
-import  java.io.InputStream ;
-import  java.io.OutputStream ;
-import  java.io.Reader ;
-import  java.io.Writer ;
 
 import javax.security.auth.Subject;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
+import java.net.InetAddress;
+import java.net.Socket;
 
 public interface StreamEngine {
 

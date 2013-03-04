@@ -4,17 +4,30 @@
 
 package javatunnel;
 
-import java.net.*;
-import java.io.*;
+import org.ietf.jgss.ChannelBinding;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.MessageProp;
+import org.ietf.jgss.Oid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.ietf.jgss.*;
 
 
 class GssTunnel extends TunnelConverter {

@@ -139,31 +139,39 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import org.dcache.auth.*;
-import org.dcache.auth.Origin.AuthType;
-import org.dcache.auth.persistence.AuthRecordPersistenceManager;
-import org.dcache.srm.SRMAuthorization;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMUser;
-import diskCacheV111.util.CacheException;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
-import javax.security.auth.Subject;
-
-import java.util.Map;
 import java.util.HashMap;
-import java.util.Random;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import diskCacheV111.util.CacheException;
+
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.Group;
+import org.dcache.auth.GroupList;
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.Origin;
+import org.dcache.auth.Origin.AuthType;
+import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.persistence.AuthRecordPersistenceManager;
+import org.dcache.srm.SRMAuthorization;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMUser;
 
 /**
  *

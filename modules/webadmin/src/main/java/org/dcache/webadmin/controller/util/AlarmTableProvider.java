@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.util;
 
+import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -67,7 +69,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.webadmin.model.dataaccess.IAlarmDAO;

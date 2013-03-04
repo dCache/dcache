@@ -1,9 +1,5 @@
 package org.dcache.poolmanager;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -12,6 +8,12 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;

@@ -5,10 +5,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
+import org.dcache.webadmin.model.businessobjects.CellResponse;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
-import org.dcache.webadmin.model.businessobjects.CellResponse;
 
 /**
  *

@@ -2,17 +2,28 @@
 //
 package dmg.cells.services.gui ;
 
-import  dmg.util.*;
-//
-import java.awt.*;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.Timer;
-import java.util.*;
-import java.io.* ;
-import java.lang.reflect.*;
-import dmg.cells.applets.login.DomainConnection ;
-import dmg.cells.applets.login.DomainEventListener ;
-import dmg.cells.services.gui.realm.* ;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.GridBagLayout;
+import java.awt.Toolkit;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.lang.reflect.Constructor;
+import java.util.StringTokenizer;
+
+import dmg.cells.applets.login.DomainConnection;
+import dmg.cells.applets.login.DomainEventListener;
+import dmg.cells.services.gui.realm.JRealm;
+import dmg.util.Args;
+
+//
 
 
 
@@ -25,23 +36,23 @@ public class JLogin extends JFrame {
     private JSshLoginPanel   _login  = new JSshLoginPanel() ;
     private DomainConnection _domain = _login.getDomainConnection() ;
     private JTabbedPane      _tab    = new JTabbedPane() ;
-    
+
     public JLogin( String title , String [] argvector ) {
-    
+
         super( title ) ;
         setBackground(Color.blue);
         final Container c = getContentPane() ;
-        
+
         Args   args = new Args( argvector ) ;
         String tmp  = args.getOpt("host") ;
-        
+
         _login.setHostname(tmp==null?"localhost":tmp) ;
         tmp = args.getOpt("port") ;
         _login.setPortnumber(tmp==null?"24223":tmp);
 
         Class  [] classArgs  = { DomainConnection.class } ;
         Object [] objectArgs = { _domain } ;
-        
+
         if( args.argc() > 0 ){
            for( int i = 0 , j = args.argc() ; i < j ; i++ ){
               try{
@@ -50,12 +61,12 @@ public class JLogin extends JFrame {
                   String className = st.nextToken() ;
                   Class<? extends JPanel> cn = Class.forName(className).asSubclass(JPanel.class);
                   Constructor<? extends JPanel> cc = cn.getConstructor(classArgs);
-                  
+
                   JPanel cp = cc.newInstance(objectArgs);
-                  
+
                   _tab.addTab( "   "+name+"   " , cp ) ;
-                  
-                  
+
+
               }catch(Exception e){
                   System.err.println("Can't init "+args.argv(i)+" : "+e);
               }
@@ -67,11 +78,11 @@ public class JLogin extends JFrame {
         }
         _tab.setSelectedIndex(0);
         c.setLayout( new GridBagLayout() ) ;
-        
+
         c.add( _login ) ;
-        
+
         _domain.addDomainEventListener(
-        
+
            new DomainEventListener(){
               @Override
               public void connectionOpened( DomainConnection connection ){
@@ -99,7 +110,7 @@ public class JLogin extends JFrame {
               }
            }
         );
-        
+
     }
     public static void main(String argv[]) throws Exception  {
 
@@ -108,7 +119,7 @@ public class JLogin extends JFrame {
        System.setOut( devnull ) ;
 
        JLogin f = new JLogin("Cell Login" , argv );
-       
+
        f.pack();
        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
        int w = 200;

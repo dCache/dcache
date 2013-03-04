@@ -1,15 +1,17 @@
 package org.dcache.tests.util;
 
-import static org.junit.Assert.*;
 import org.junit.Test;
 
-import java.net.Socket;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
-import java.io.IOException;
 
 import org.dcache.util.PortRange;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PortRangeTest
 {

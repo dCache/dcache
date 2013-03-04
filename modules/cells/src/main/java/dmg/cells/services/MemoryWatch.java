@@ -1,15 +1,17 @@
 package dmg.cells.services ;
 
-import  dmg.cells.nucleus.* ;
-import  dmg.util.* ;
-
-import  java.util.* ;
-import  java.io.* ;
-
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.Date;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.util.Args;
 
 public class MemoryWatch extends CellAdapter implements Runnable {
 

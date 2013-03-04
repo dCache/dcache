@@ -1,9 +1,11 @@
 package org.dcache.util.list;
 
 import java.util.Set;
+
+import diskCacheV111.util.FsPath;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
-import diskCacheV111.util.FsPath;
 
 /** Encapsulates the printing of a DirectoryEntry. */
 public interface DirectoryListPrinter

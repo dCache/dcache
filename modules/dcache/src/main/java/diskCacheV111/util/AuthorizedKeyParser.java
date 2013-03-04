@@ -1,5 +1,7 @@
 package diskCacheV111.util;
 
+import org.apache.commons.codec.binary.Base64;
+
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -8,14 +10,12 @@ import java.security.spec.DSAPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 
-import org.apache.commons.codec.binary.Base64;
-
 /**
  * {@link AuthorizedKeyParser} creates a {@link PublicKey} representation of a
  * string representation that could originate from e.g. a authorized_keys file.
- * 
+ *
  * @author bernardt
- * 
+ *
  */
 
 public class AuthorizedKeyParser {
@@ -23,7 +23,7 @@ public class AuthorizedKeyParser {
     private int pos;
 
     /**
-     * 
+     *
      * @param Takes
      *            a line of a key file - keyLine
      * @return It then returns a {@link PublicKey} representation of either the

@@ -1,14 +1,14 @@
 package org.dcache.pool.classic;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
+
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
-
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
 
 /**
  * A ReplicaStatePolicy which uses the AccessLatency and

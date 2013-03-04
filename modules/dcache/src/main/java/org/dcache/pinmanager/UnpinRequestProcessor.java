@@ -1,17 +1,16 @@
 package org.dcache.pinmanager;
 
-import org.dcache.pinmanager.model.Pin;
-import org.dcache.cells.CellMessageReceiver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.pinmanager.model.Pin;
 
 /**
  * Processes unpin requests.

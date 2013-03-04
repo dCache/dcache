@@ -1,11 +1,24 @@
 package dmg.cells.applets.login ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
 
 
-public class      UserAdminPanel 
-       extends    Panel 
+public class      UserAdminPanel
+       extends    Panel
        implements ActionListener,DomainConnectionListener   {
 
 
@@ -24,7 +37,7 @@ public class      UserAdminPanel
       }
       @Override
       public Insets getInsets(){ return new Insets(_b,_b,_b,_b) ; }
-      
+
       private ActionListener _actionListener;
       public void addActionListener( ActionListener al ){
          _actionListener = al ;
@@ -43,9 +56,9 @@ public class      UserAdminPanel
           Panel top = new Panel( gl ) ;
           top.add( new Label( "New Password" ) ) ;
           top.add( _pwd ) ;
-          
+
           top.add( new Label( "Verify Password" ) ) ;
-          top.add( _vpwd ) ; 
+          top.add( _vpwd ) ;
           add( top , "North" ) ;
           add( _okButton , "South" ) ;
           _pwd.addTextListener(this);
@@ -69,8 +82,8 @@ public class      UserAdminPanel
              _actionListener.actionPerformed(
                      new ActionEvent(this, 0, _pwdPanel.getText()));
          }
-              
-         _pwd.setText("") ; 
+
+         _pwd.setText("") ;
          _vpwd.setText("") ;
       }
    }
@@ -108,9 +121,9 @@ public class      UserAdminPanel
       }
    }
    private TextField _email = new TextField() ;
-   private Button    _emailButton 
+   private Button    _emailButton
                          = new Button("Change E-mail address") ;
-   private class      EmailPanel 
+   private class      EmailPanel
            extends    Panel
            implements TextListener {
 
@@ -148,8 +161,8 @@ public class      UserAdminPanel
           ) ;
       }
    }
-   private Font   _bigFont = 
-             new Font( "SansSerif" , Font.BOLD , 18 )  ; 
+   private Font   _bigFont =
+             new Font( "SansSerif" , Font.BOLD , 18 )  ;
 
    private Label     _errorLabel = new Label() ;
    private TextField _user       = new TextField();
@@ -163,7 +176,7 @@ public class      UserAdminPanel
        bl.setHgap(5) ;
        bl.setVgap(5) ;
        setLayout( bl ) ;
-       
+
        _user.addActionListener( this ) ;
        _addUser.addActionListener(this);
        _rmUser.addActionListener(this);
@@ -171,29 +184,29 @@ public class      UserAdminPanel
        _emailButton.addActionListener(this);
        Panel up = new UserPanel() ;
        Panel ep = new EmailPanel() ;
-       
+
        Label topLabel = new Label("User Administration",Label.CENTER ) ;
        topLabel.setFont( _bigFont ) ;
-       
+
        add( topLabel , "North" ) ;
-       
+
        Panel l1Panel = new Panel(new BorderLayout()) ;
        add( l1Panel , "Center" ) ;
        add( _errorLabel , "South" ) ;
        _errorLabel.setBackground( Color.yellow ) ;
-       
+
        l1Panel.add( up , "North" ) ;
-       
+
        Panel l2Panel = new Panel(new BorderLayout()) ;
        l1Panel.add( l2Panel , "South" ) ;
-       
+
        l2Panel.add( _pwdPanel , "North" ) ;
-       
+
        Panel l3Panel = new Panel(new BorderLayout()) ;
        l2Panel.add( l3Panel , "South" ) ;
-       
+
        l3Panel.add( ep , "North" ) ;
-       
+
    }
      @Override
      public void actionPerformed( ActionEvent event ){
@@ -231,7 +244,7 @@ public class      UserAdminPanel
            a[0] = p ;
            p[0] = "e-mail" ;
            p[1] = _email.getText() ;
-           
+
            r = new Object[5] ;
            r[0] = "request" ;
            r[1] = "*" ;
@@ -276,6 +289,6 @@ public class      UserAdminPanel
           _errorLabel.setText( obj.toString() ) ;
        }
     }
-    
+
 }
- 
+

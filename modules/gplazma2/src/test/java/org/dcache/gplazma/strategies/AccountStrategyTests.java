@@ -1,24 +1,25 @@
 package org.dcache.gplazma.strategies;
 
 
+import com.google.common.collect.Sets;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.security.auth.kerberos.KerberosPrincipal;
+
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
-import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.fail;
-
-import com.google.common.collect.Sets;
-import java.util.Arrays;
-import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor;
+import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import static org.junit.Assert.fail;
 
 /**
  *  Test the default accounting strategy

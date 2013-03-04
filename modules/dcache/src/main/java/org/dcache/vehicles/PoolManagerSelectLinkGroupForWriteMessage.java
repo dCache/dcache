@@ -4,8 +4,8 @@ import java.util.List;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
 /**
  * Message to project a set of link groups to the link groups capable

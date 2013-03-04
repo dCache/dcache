@@ -2,7 +2,8 @@
 //
 package org.pcells.services.connection ;
 //
-import java.net.* ;
+
+import java.net.Socket;
 
 /**
  */
@@ -18,21 +19,21 @@ public class RawDomainConnection extends DomainConnectionAdapter {
    }
    @Override
    public void go() throws Exception {
-   
+
       _socket = new Socket( _hostname , _portnumber ) ;
       setIoStreams( _socket.getInputStream() , _socket.getOutputStream() ) ;
-      
+
       try{
          super.go() ;
       }finally{
          try{ _socket.close() ; }catch(Exception ee ){}
       }
-      
+
    }
-   private class RunConnection 
+   private class RunConnection
            implements Runnable, DomainConnectionListener, DomainEventListener {
-      
-        
+
+
       public RunConnection(  )
       {
          System.out.println("class runConnection init");
@@ -58,7 +59,7 @@ public class RawDomainConnection extends DomainConnectionAdapter {
                 System.out.println("Exception in sendObject"+ee);
              }
           }
-      } 
+      }
       @Override
       public void connectionOpened( DomainConnection connection ){
          System.out.println("DomainConnection : connectionOpened");
@@ -86,7 +87,7 @@ public class RawDomainConnection extends DomainConnectionAdapter {
    public static void main( String [] args )
    {
       if( args.length < 2 ){
-      
+
           System.err.println("Usage : <hostname> <portNumber>");
           System.exit(4);
       }

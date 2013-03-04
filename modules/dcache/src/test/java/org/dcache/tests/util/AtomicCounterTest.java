@@ -1,12 +1,16 @@
 package org.dcache.tests.util;
 
-import java.util.Date;
-import java.util.concurrent.*;
+import org.junit.Before;
+import org.junit.Test;
 
-import org.junit.*;
-import static org.junit.Assert.*;
+import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.commons.util.AtomicCounter;
+
+import static org.junit.Assert.*;
 
 public class AtomicCounterTest
 {

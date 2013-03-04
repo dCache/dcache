@@ -1,15 +1,19 @@
 package org.dcache.pool.classic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.AbstractCellComponent;
+
 import dmg.util.Args;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
 
 class SchedulerEntry
 {

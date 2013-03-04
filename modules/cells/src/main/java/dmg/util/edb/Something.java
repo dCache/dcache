@@ -1,5 +1,9 @@
 package dmg.util.edb ;
-import java.io.* ;
+
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.Serializable;
 public class Something implements Serializable {
     private static final long serialVersionUID = -3227270738294918773L;
     private int _int = 44  ;

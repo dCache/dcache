@@ -1,9 +1,8 @@
 package org.dcache.gplazma.plugins;
 
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
@@ -11,20 +10,24 @@ import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchResult;
+
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.NoSuchPrincipalException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.collect.Iterables.find;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.NoSuchPrincipalException;
+
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.Iterables.find;
 
 /**
  * gPlazma plug-in which uses NIS (YP) server to provide requested information.

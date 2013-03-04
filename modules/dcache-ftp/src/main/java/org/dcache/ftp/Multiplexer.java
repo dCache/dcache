@@ -1,9 +1,9 @@
 package org.dcache.ftp;
 
 import java.io.IOException;
-import java.nio.channels.Selector;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 /**
  * Multiplexer implements an event loop around a normal Java NIO

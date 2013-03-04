@@ -1,16 +1,17 @@
 package dmg.util.db ;
 
-import java.util.* ;
-import java.io.* ;
+import java.io.File;
+import java.io.IOException;
+import java.util.Hashtable;
 
 public class DbResourceHandler extends DbGLock {
     private final Hashtable<String, ResourceEntry> _table      = new Hashtable<>() ;
     private File      _dataSource;
     private class  ResourceEntry {
-    
+
         private DbRecordable _recordable;
         private int          _refCounter;
-        
+
         private ResourceEntry( DbRecordable recordable ){
            _recordable = recordable ;
            _refCounter = 1 ;
@@ -19,7 +20,7 @@ public class DbResourceHandler extends DbGLock {
         private synchronized void incrementRefCounter(){ _refCounter ++ ; }
         private synchronized void decrementRefCounter(){ _refCounter -- ; }
         private int  getRefCounter(){ return _refCounter ; }
-    
+
     }
     public DbResourceHandler( File source  , boolean create ){
        _dataSource = source ;
@@ -48,10 +49,10 @@ public class DbResourceHandler extends DbGLock {
     }
     public DbResourceHandle createResource( String name )
            throws DbException, InterruptedException  {
-       
+
        //
        // make sure we are holding the mutex.
-       //   
+       //
        open( DbGLock.WRITE_LOCK ) ;
        //
        // check for the existence of the resource ...
@@ -90,16 +91,16 @@ public class DbResourceHandler extends DbGLock {
     }
     public int getCacheSize(){ return _table.size() ; }
     public DbResourceHandle getResourceByName( String name )
-           throws DbException, InterruptedException   {   
-           
+           throws DbException, InterruptedException   {
+
        //
        // check for an entry in the cache
-       //            
+       //
        ResourceEntry   entry;
        DbRecordable    rec;
        //
        // get the read mutex
-       //      
+       //
        open( DbGLock.READ_LOCK  ) ;
        //
        // try to find the entry in the cache
@@ -142,7 +143,7 @@ public class DbResourceHandler extends DbGLock {
     }
     public void removeResource( DbResourceHandle handle )
            throws DbLockException , InterruptedException {
-       
+
         open( DbGLock.WRITE_LOCK ) ;
         handle.open( DbGLock.WRITE_LOCK ) ;
         handle.remove() ;
@@ -158,7 +159,7 @@ public class DbResourceHandler extends DbGLock {
     void unlinkResource( DbResourceHandle handle )
            throws DbLockException
     {
-           
+
        //
        // because this method will be called by the
        // finalizer, we can't use the .open().
@@ -171,8 +172,8 @@ public class DbResourceHandler extends DbGLock {
                       "PANIC : entry to be removed not found : " + handle
                               .getName());
           }
-            
-          entry.decrementRefCounter() ;  
+
+          entry.decrementRefCounter() ;
           if( entry.getRefCounter() <= 0 ){
               //
               //

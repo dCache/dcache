@@ -1,20 +1,21 @@
 package diskCacheV111.namespace;
 
-import java.util.Set;
-import java.util.List;
+import com.google.common.collect.Range;
 
-import diskCacheV111.util.PnfsId;
+import javax.security.auth.Subject;
+
+import java.util.List;
+import java.util.Set;
+
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
-
-import javax.security.auth.Subject;
 import org.dcache.vehicles.FileAttributes;
-
-import com.google.common.collect.Range;
 
 public class AbstractNameSpaceProvider
     implements NameSpaceProvider

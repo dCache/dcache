@@ -1,7 +1,8 @@
 package org.dcache.pool.migration;
 
-import org.dcache.pool.repository.CacheEntry;
 import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.pool.repository.CacheEntry;
 
 /**
  * Repository entry filter accepting entries with a particular storage

@@ -1,9 +1,9 @@
 package org.dcache.services.info.base;
 
-import static org.junit.Assert.fail;
-
 import java.util.LinkedList;
 import java.util.Queue;
+
+import static org.junit.Assert.fail;
 
 /**
  * This Class provides a implementation of the StateUpdateManager interface where

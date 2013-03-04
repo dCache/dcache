@@ -16,6 +16,9 @@
  */
 package org.dcache.chimera;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,8 +29,6 @@ import java.util.NoSuchElementException;
 
 import org.dcache.chimera.posix.Stat;
 import org.dcache.commons.util.SqlHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntry>,
         Iterator<HimeraDirectoryEntry> {

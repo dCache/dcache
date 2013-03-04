@@ -1,5 +1,6 @@
 package dmg.util ;
-import  java.util.* ;
+
+import java.util.Date;
 
 public class       StateThread
        implements  Runnable     {

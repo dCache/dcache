@@ -2,11 +2,12 @@ package org.dcache.pool.migration;
 
 import java.util.List;
 import java.util.Random;
-import static java.util.concurrent.TimeUnit.*;
 
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
+import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * Implements proportionate selection over available space in pools.

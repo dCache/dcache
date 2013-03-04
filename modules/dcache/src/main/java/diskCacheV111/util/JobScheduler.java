@@ -1,9 +1,11 @@
 package diskCacheV111.util ;
 
-import diskCacheV111.vehicles.* ;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+import java.util.NoSuchElementException;
 
-import java.util.* ;
-import java.lang.reflect.InvocationTargetException ;
+import diskCacheV111.vehicles.JobInfo;
+
 import org.dcache.util.IoPriority;
 
 public interface JobScheduler {

@@ -1,38 +1,41 @@
 package org.dcache.services.ssh2;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+import org.apache.sshd.SshServer;
+import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
+import org.apache.sshd.server.PasswordAuthenticator;
+import org.apache.sshd.server.PublickeyAuthenticator;
+import org.apache.sshd.server.session.ServerSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.List;
-
-import javax.security.auth.Subject;
-
-import org.apache.sshd.SshServer;
-import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
-import org.apache.sshd.server.PasswordAuthenticator;
-import org.apache.sshd.server.PublickeyAuthenticator;
-import org.apache.sshd.server.session.ServerSession;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellLifeCycleAware;
-import org.dcache.cells.CellMessageSender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
+import java.util.concurrent.ScheduledExecutorService;
 
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+
 import dmg.cells.nucleus.CellEndpoint;
 
-import java.util.Arrays;
-import java.util.concurrent.ScheduledExecutorService;
-
-import org.dcache.auth.*;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.UnionLoginStrategy;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellLifeCycleAware;
+import org.dcache.cells.CellMessageSender;
 
 import static org.dcache.util.Files.checkFile;
 

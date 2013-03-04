@@ -1,10 +1,10 @@
 package diskCacheV111.vehicles;
 
-import dmg.cells.nucleus.CellPath;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
+
+import dmg.cells.nucleus.CellPath;
 
 public class DCapProtocolInfo implements IpProtocolInfo {
 

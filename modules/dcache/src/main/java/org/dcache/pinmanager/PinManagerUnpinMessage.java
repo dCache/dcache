@@ -2,7 +2,8 @@ package org.dcache.pinmanager;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-import static com.google.common.base.Preconditions.*;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PinManagerUnpinMessage extends Message
 {

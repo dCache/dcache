@@ -1,13 +1,24 @@
 package  dmg.cells.services.login ;
 
-import java.io.* ;
-import java.util.*;
-import dmg.cells.nucleus.*;
-import dmg.util.*;
-import dmg.protocols.ssh.* ;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
+import java.util.Map;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.ExceptionEvent;
+import dmg.protocols.ssh.SshRsaKey;
+import dmg.protocols.ssh.SshRsaKeyContainer;
+import dmg.util.Args;
+import dmg.util.CollectionFactory;
+import dmg.util.UserPasswords;
 
 /**
  *  The SshKeyManager reads and manages all relevant keys

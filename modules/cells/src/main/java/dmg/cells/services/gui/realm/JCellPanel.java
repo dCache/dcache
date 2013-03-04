@@ -1,40 +1,51 @@
 // $Id: JCellPanel.java,v 1.1 2002-04-03 15:00:51 cvs Exp $
 package dmg.cells.services.gui.realm ;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.*;
-import java.awt.event.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.border.TitledBorder;
 
-import dmg.cells.applets.login.DomainConnection ;
-import dmg.cells.applets.login.DomainConnectionListener ;
-import dmg.cells.nucleus.* ;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-public class JCellPanel 
-       extends JPanel 
+import dmg.cells.applets.login.DomainConnection;
+import dmg.cells.applets.login.DomainConnectionListener;
+import dmg.cells.nucleus.CellInfo;
+
+public class JCellPanel
+       extends JPanel
        implements ActionListener , DomainConnectionListener {
     private static final long serialVersionUID = -3612893682757173093L;
     private DomainConnection _connection;
-    
+
     private String _address;
     private String _name;
     private CellInfo _cellInfo;
-    
+
     private JLabel     _label    = new JLabel( "Command" ) ;
     private JButton    _button   = new JButton("Info") ;
     private JTextField _text     = new JHistoryTextField() ;
     private JTextArea  _display  = new JTextArea() ;
     private JLabel     _cellName   = new JLabel("<unknown>",SwingConstants.LEFT);
     private JLabel     _domainName = new JLabel("<unknown>",SwingConstants.LEFT);
-    
+
     public JCellPanel( DomainConnection connection ){
        _connection = connection ;
-       
+
        BorderLayout l = new BorderLayout() ;
        l.setVgap(10) ;
        l.setHgap(10);
        setLayout(l) ;
-       
+
        l = new BorderLayout() ;
        l.setVgap(10) ;
        l.setHgap(10);
@@ -44,16 +55,16 @@ public class JCellPanel
        l = new BorderLayout() ;
        l.setVgap(10) ;
        l.setHgap(10);
-              
+
        JPanel tmp = new JPanel( l ) ;
-       
+
        tmp.add( _button , "West" ) ;
        tmp.add( _label  , "Center" ) ;
        controller.add( tmp , "West" ) ;
        controller.add( _text , "Center" ) ;
 
        _text.addActionListener( this ) ;
-              
+
        JPanel titlePanel = new JPanel( new GridBagLayout() ) ;
        titlePanel.setOpaque(true);
        titlePanel.setBackground(Color.green);
@@ -63,53 +74,53 @@ public class JCellPanel
        gbc.gridwidth  = 1 ;
        gbc.gridheight = 1 ;
        gbc.fill = GridBagConstraints.NONE ;
-          
+
        JLabel jl = new JLabel("Cell Name : ",SwingConstants.RIGHT) ;
        jl.setOpaque(true);
        jl.setBackground(Color.yellow);
        titlePanel.add( jl , gbc ) ;
-       
+
        gbc.gridx = 1 ;
        gbc.gridy = 0 ;
-       gbc.fill = GridBagConstraints.HORIZONTAL ; 
+       gbc.fill = GridBagConstraints.HORIZONTAL ;
        _cellName.setOpaque(true);
-       _cellName.setBackground(Color.blue);     
+       _cellName.setBackground(Color.blue);
        titlePanel.add( _cellName , gbc ) ;
-       
+
        gbc.gridx = 0 ;
        gbc.gridy = 1 ;
-       gbc.fill = GridBagConstraints.NONE ;      
+       gbc.fill = GridBagConstraints.NONE ;
        jl = new JLabel("Domain Name : ",SwingConstants.RIGHT) ;
        jl.setOpaque(true);
        jl.setBackground(Color.yellow);
        titlePanel.add( jl , gbc ) ;
-       
+
        gbc.gridx = 1 ;
        gbc.gridy = 1 ;
-       gbc.fill = GridBagConstraints.HORIZONTAL ;      
+       gbc.fill = GridBagConstraints.HORIZONTAL ;
        _domainName.setOpaque(true);
-       _domainName.setBackground(Color.blue);     
+       _domainName.setBackground(Color.blue);
        titlePanel.add( _domainName , gbc ) ;
-       
-       
-       
+
+
+
        add( "North" , titlePanel ) ;
        add( "Center" , _display ) ;
        add( "South" , controller ) ;
-       
+
        _button.addActionListener( this ) ;
-       
-       setBorder( 
-         BorderFactory.createCompoundBorder( 
+
+       setBorder(
+         BorderFactory.createCompoundBorder(
            BorderFactory.createEmptyBorder(10,10,10,10) ,
-           BorderFactory.createCompoundBorder( 
+           BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder(
                    null , "Cell Controller" , TitledBorder.LEFT , TitledBorder.TOP ) ,
                   BorderFactory.createEmptyBorder(10,10,10,10)   )
-                                            ) 
+                                            )
 
        ) ;
-       
+
     }
     public void setCell( String address , CellInfo info ){
        _address  = address ;
@@ -118,7 +129,7 @@ public class JCellPanel
        _cellName.setText(_name);
        _display.setText( info.getPrivatInfo() ) ;
        String tmp = _address.substring(_address.lastIndexOf(':')+1) ;
-       _domainName.setText( tmp.substring( 0, tmp.indexOf('@') ) ) ;      
+       _domainName.setText( tmp.substring( 0, tmp.indexOf('@') ) ) ;
     }
     @Override
     public void actionPerformed( ActionEvent event ){

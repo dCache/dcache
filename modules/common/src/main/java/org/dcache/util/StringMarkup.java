@@ -1,6 +1,7 @@
 package org.dcache.util;
 
 import com.google.common.base.CharMatcher;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 

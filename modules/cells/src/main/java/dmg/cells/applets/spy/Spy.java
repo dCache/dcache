@@ -1,12 +1,23 @@
 package dmg.cells.applets.spy ;
 
-import java.awt.* ;
-import java.awt.event.* ;
-import java.util.* ;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.util.Properties;
 
-public class      Spy 
-       extends    Frame 
-       implements WindowListener, 
+public class      Spy
+       extends    Frame
+       implements WindowListener,
                   ActionListener ,
                   DomainConnectionListener {
 
@@ -16,7 +27,7 @@ public class      Spy
    private Button _closeButton;
    private Label  _messageText;
    private Panel  _domainListPanel;
-   
+
    private class BorderPanel extends Panel {
        private static final long serialVersionUID = 3231733834533174912L;
 
@@ -24,48 +35,48 @@ public class      Spy
          super( new BorderLayout() ) ;
          add( c , "Center" ) ;
       }
-     
+
       @Override
       public Insets getInsets(){ return new Insets( 10 , 10 ,10 , 10 ) ; }
-   
+
    }
-   
+
   public Spy( String host , int port  ){
       super( "DomainSpy" ) ;
-      
+
       _connection = new DomainConnection( host , port ) ;
-      
-      
+
+
       addWindowListener( this ) ;
       _connection.addConnectionListener( this ) ;
-      
+
       _domainListPanel  = new DomainListPanel( _connection ) ;
       Panel masterPanel = new Panel( new BorderLayout() ) ;
       Panel buttonPanel = new Panel( new FlowLayout( FlowLayout.CENTER ) ) ;
       Panel actionPanel = new BorderPanel( _domainListPanel ) ;
-      
+
       _connectButton = new Button( "Connect" ) ;
       _closeButton   = new Button( "Close Connection" ) ;
       _messageText   = new Label("Not Connected") ;
-      
+
       _connectButton.addActionListener( this ) ;
       _closeButton.addActionListener( this ) ;
-      
+
       buttonPanel.add( _connectButton ) ;
       buttonPanel.add( _closeButton ) ;
-      
+
       masterPanel.add( buttonPanel , "North" ) ;
       masterPanel.add( actionPanel , "Center" ) ;
       masterPanel.add( _messageText , "South" ) ;
-      
+
       add( masterPanel ) ;
-      
+
       connectionActive( false ) ;
       setSize( 750 , 500 ) ;
       pack() ;
       setSize( 750 , 500 ) ;
       setVisible( true ) ;
-  
+
   }
   //
   // action interface
@@ -79,11 +90,11 @@ public class      Spy
        }catch( Exception e ){
           _messageText.setText( "Not Connected : "+e.getMessage() ) ;
        }
-    
+
     }else if( source == _closeButton ){
        _connection.close() ;
     }
-  
+
   }
   //
   // domain connection interfase
@@ -138,19 +149,19 @@ public class      Spy
       }
       if( args.length > 2 ){
          Properties props = System.getProperties() ;
-         props.put( "bw" , args[2] ) ;     
+         props.put( "bw" , args[2] ) ;
       }
       int port = Integer.parseInt( args[1] ) ;
       try{
-            
+
          new Spy( args[0] , port ) ;
-      
+
       }catch( Exception e ){
          e.printStackTrace() ;
          System.err.println( "Connection failed : "+e.toString() ) ;
          System.exit(4);
       }
-      
+
    }
 
 }

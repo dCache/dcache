@@ -1,6 +1,7 @@
 // $Id: PoolCheckFileCostMessage.java,v 1.4 2004-11-05 12:07:19 tigran Exp $
 package diskCacheV111.vehicles;
-import  diskCacheV111.util.* ;
+
+import diskCacheV111.util.PnfsId;
 
 
 /**

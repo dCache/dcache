@@ -1,9 +1,9 @@
 package org.dcache.services.ssh2;
 
-import java.io.File;
-
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.server.Command;
+
+import java.io.File;
 
 import dmg.cells.nucleus.CellEndpoint;
 

@@ -1,12 +1,15 @@
 package org.dcache.gplazma.plugins;
 
+import javax.security.auth.kerberos.KerberosPrincipal;
+
 import java.security.Principal;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-import javax.security.auth.kerberos.KerberosPrincipal;
+
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import java.util.HashSet;
+
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**

@@ -72,37 +72,38 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.URISyntaxException;
+import org.apache.axis.types.UnsignedLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
-import org.apache.axis.types.UnsignedLong;
-import org.dcache.srm.FileMetaData;
-import org.dcache.srm.ReleaseSpaceCallbacks;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.scheduler.FatalJobFailure;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.PrepareToPutCallbacks;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
-import org.dcache.srm.SrmUseSpaceCallbacks;
-import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import org.dcache.srm.SRMInvalidRequestException;
 
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TPutRequestFileStatus;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.PrepareToPutCallbacks;
+import org.dcache.srm.ReleaseSpaceCallbacks;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
+import org.dcache.srm.SrmReleaseSpaceCallbacks;
+import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmUseSpaceCallbacks;
+import org.dcache.srm.scheduler.FatalJobFailure;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.NonFatalJobFailure;
+import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.TRetentionPolicy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TSURLReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 
 /**

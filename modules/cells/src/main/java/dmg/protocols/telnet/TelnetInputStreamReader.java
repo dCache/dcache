@@ -1,7 +1,9 @@
  package dmg.protocols.telnet ;
 
-import java.io.* ;
- 
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.io.InputStreamReader;
+
 public class TelnetInputStreamReader extends InputStreamReader {
 
   TelnetOutputStreamWriter _output ;
@@ -18,7 +20,7 @@ public class TelnetInputStreamReader extends InputStreamReader {
   @Override
   public int read( char [] cbuf , int off , int len )
          throws IOException {
-     
+
     return super.read( cbuf , off , 1 ) ;
 
   }

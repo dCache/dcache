@@ -1,10 +1,12 @@
 package org.dcache.gplazma.monitor;
 
-import java.security.Principal;
-import java.util.Set;
-import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.security.Principal;
+import java.util.Set;
+
+import org.dcache.gplazma.configuration.ConfigurationItemControl;
 
 /**
  * This is a LoginMonitor that stores logging information in the logger at

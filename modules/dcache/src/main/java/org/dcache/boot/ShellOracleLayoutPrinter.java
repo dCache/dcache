@@ -1,11 +1,11 @@
 package org.dcache.boot;
 
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
-
 import java.io.PrintStream;
 
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ScopedConfigurationProperties;
+
+import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
 
 /**
  * Generates a shell function {@code getProperty} which serves as

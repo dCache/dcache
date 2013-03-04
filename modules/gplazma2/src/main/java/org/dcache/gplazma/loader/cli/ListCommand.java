@@ -4,9 +4,9 @@ import java.io.PrintStream;
 
 import org.dcache.gplazma.loader.PluginMetadata;
 import org.dcache.gplazma.loader.PluginRepository;
+import org.dcache.gplazma.loader.PluginRepository.PluginMetadataProcessor;
 import org.dcache.gplazma.loader.PluginRepositoryFactory;
 import org.dcache.gplazma.loader.XmlResourcePluginRepositoryFactory;
-import org.dcache.gplazma.loader.PluginRepository.PluginMetadataProcessor;
 
 /**
  * A command the provides information about plugins discovered by some

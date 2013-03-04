@@ -1,16 +1,18 @@
 package org.dcache.webadmin.controller.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
 import org.dcache.webadmin.controller.TapeTransfersService;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
 import org.dcache.webadmin.model.businessobjects.RestoreInfo;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

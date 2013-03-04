@@ -1,25 +1,25 @@
 package org.dcache.services.httpd.handlers;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.FileNameMap;
 import java.net.URLConnection;
 import java.util.Arrays;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.dcache.services.httpd.util.StandardHttpRequest;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-import com.google.common.io.Files;
-
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
+
+import org.dcache.services.httpd.util.StandardHttpRequest;
 
 /**
  * Provides HTML or .css content from static file.

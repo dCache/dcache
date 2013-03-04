@@ -12,19 +12,19 @@
 
 package diskCacheV111.services.space;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.sql.SQLException;
-import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashSet;
+import java.util.Set;
+
 import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.PnfsId;
 
-
 /*
-		Table "public.srmspacefile"
+                Table "public.srmspacefile"
        Column       |           Type           | Modifiers
 --------------------+--------------------------+-----------
  id                 | bigint                   | not null
@@ -40,7 +40,8 @@ import diskCacheV111.util.PnfsId;
  deleted            | integer                  |
 Indexes:
     "srmspacefile_pkey" PRIMARY KEY, btree (id)
-*/;
+*/
+;
 
 
 

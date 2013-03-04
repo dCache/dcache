@@ -1,14 +1,15 @@
 package org.dcache.pinmanager.model;
 
-import javax.security.auth.Subject;
-import java.util.Date;
-
-import org.dcache.auth.Subjects;
-import diskCacheV111.util.PnfsId;
-
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
+import javax.security.auth.Subject;
+
+import java.util.Date;
+
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.auth.Subjects;
 
 @PersistenceCapable
 public class Pin

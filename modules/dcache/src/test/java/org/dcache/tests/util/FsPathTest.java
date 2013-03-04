@@ -1,10 +1,10 @@
 package org.dcache.tests.util;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 
 import diskCacheV111.util.FsPath;
+
+import static org.junit.Assert.assertEquals;
 
 public class FsPathTest
 {

@@ -1,17 +1,22 @@
 package org.dcache.boot;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.Properties;
+import org.junit.Before;
+import org.junit.Test;
+
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Properties;
+
 import org.dcache.util.ConfigurationProperties;
-import static org.hamcrest.Matchers.*;
+
+import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  *  Tests for the Python Oracle

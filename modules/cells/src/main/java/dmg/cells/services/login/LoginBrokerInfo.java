@@ -2,7 +2,7 @@
 
 package dmg.cells.services.login ;
 
-import java.io.Serializable ;
+import java.io.Serializable;
 
 public class LoginBrokerInfo implements Serializable {
 

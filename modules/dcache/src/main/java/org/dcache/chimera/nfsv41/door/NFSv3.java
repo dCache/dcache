@@ -1,6 +1,10 @@
 package org.dcache.chimera.nfsv41.door;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
+
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v3.MountServer;
@@ -9,8 +13,6 @@ import org.dcache.chimera.nfs.v3.xdr.mount_prot;
 import org.dcache.chimera.nfs.v3.xdr.nfs3_prot;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Spring bean for staring NFSv3 server as a dCache service.

@@ -1,16 +1,16 @@
 package diskCacheV111.vehicles.transferManager;
 
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
 

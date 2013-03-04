@@ -17,9 +17,10 @@
 package org.dcache.chimera.nfs;
 
 import javax.security.auth.Subject;
+
+import org.dcache.auth.Subjects;
 import org.dcache.chimera.posix.UnixUser;
 import org.dcache.xdr.RpcCall;
-import org.dcache.auth.Subjects;
 
 /**
  * Utility class extract user record from NFS request

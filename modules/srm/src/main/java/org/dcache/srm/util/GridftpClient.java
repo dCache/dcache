@@ -2,42 +2,43 @@
 
 package org.dcache.srm.util;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.MessageDigest;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.zip.Adler32;
+import org.globus.ftp.Buffer;
+import org.globus.ftp.DataChannelAuthentication;
+import org.globus.ftp.DataSink;
+import org.globus.ftp.DataSource;
 import org.globus.ftp.FeatureList;
 import org.globus.ftp.GridFTPClient;
-import org.globus.ftp.DataChannelAuthentication;
 import org.globus.ftp.GridFTPSession;
-import org.globus.ftp.RetrieveOptions;
-import org.globus.ftp.DataSource;
-import org.globus.ftp.DataSink;
-import org.globus.ftp.Buffer;
 import org.globus.ftp.HostPort;
-import org.globus.ftp.exception.ServerException;
-import org.globus.ftp.exception.FTPReplyParseException;
+import org.globus.ftp.RetrieveOptions;
 import org.globus.ftp.exception.ClientException;
+import org.globus.ftp.exception.FTPReplyParseException;
+import org.globus.ftp.exception.ServerException;
 import org.globus.ftp.exception.UnexpectedReplyCodeException;
 import org.globus.ftp.vanilla.Reply;
-import org.globus.util.GlobusURL;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.X509Credential;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
-import java.io.RandomAccessFile;
-import java.io.IOException;
-import java.io.FileNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.zip.Adler32;
 /**
  * THE CLASS IS NOT THREAD SAVE
  * DO ONLY ONE OPERATION (READ / WRITE) AT A TIME

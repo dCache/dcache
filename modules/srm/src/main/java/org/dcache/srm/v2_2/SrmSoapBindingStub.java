@@ -7,8 +7,6 @@
 
 package org.dcache.srm.v2_2;
 
-import java.util.Iterator;
-
 public class SrmSoapBindingStub extends org.apache.axis.client.Stub implements org.dcache.srm.v2_2.ISRM {
     private java.util.Vector cachedSerClasses = new java.util.Vector();
     private java.util.Vector cachedSerQNames = new java.util.Vector();

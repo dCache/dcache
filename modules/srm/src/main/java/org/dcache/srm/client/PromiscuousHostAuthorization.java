@@ -9,14 +9,14 @@
 
 package org.dcache.srm.client;
 
-import org.globus.gsi.gssapi.auth.GSSAuthorization;
 import org.globus.gsi.gssapi.GlobusGSSName;
-import org.ietf.jgss.Oid;
-import org.ietf.jgss.GSSCredential;
+import org.globus.gsi.gssapi.auth.AuthorizationException;
+import org.globus.gsi.gssapi.auth.GSSAuthorization;
 import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
+import org.ietf.jgss.Oid;
 
 /**
  *

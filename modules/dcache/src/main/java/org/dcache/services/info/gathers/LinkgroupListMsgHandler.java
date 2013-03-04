@@ -2,13 +2,14 @@ package org.dcache.services.info.gathers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.services.info.base.StateComposite;
-import org.dcache.services.info.base.StateUpdate;
-import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateUpdateManager;
 
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.services.space.message.GetLinkGroupNamesMessage;
+import diskCacheV111.vehicles.Message;
+
+import org.dcache.services.info.base.StateComposite;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StateUpdateManager;
 
 /**
  * Instances of this class will interpret an incoming reply CellMessages

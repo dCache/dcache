@@ -1,12 +1,13 @@
 
 package org.dcache.commons.stats;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Formatter;
-import java.util.NoSuchElementException;
 import java.lang.reflect.Method;
+import java.util.Formatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
 import static org.dcache.commons.util.Strings.toStringSignature;
 
 /**
@@ -21,7 +22,7 @@ public class RequestExecutionTimeGauges<T> {
             new HashMap<>();
 
     /**
-     * 
+     *
      * @param name
      */
     public RequestExecutionTimeGauges(String name) {

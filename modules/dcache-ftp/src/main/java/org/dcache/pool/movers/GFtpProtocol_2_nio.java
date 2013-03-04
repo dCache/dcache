@@ -1,38 +1,50 @@
 package org.dcache.pool.movers;
 
-import java.text.MessageFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.InetAddress;
-import java.security.MessageDigest;
-import java.util.Random;
-import java.nio.channels.ServerSocketChannel;
+import java.net.InetSocketAddress;
 import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.UnresolvedAddressException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.MessageFormat;
+import java.util.Random;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.vehicles.GFtpProtocolInfo;
+import diskCacheV111.vehicles.GFtpTransferStartedMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.GFtpProtocolInfo;
-import diskCacheV111.vehicles.GFtpTransferStartedMessage;
+import org.dcache.ftp.BlockLog;
+import org.dcache.ftp.ConnectionMonitor;
+import org.dcache.ftp.DigestThread;
+import org.dcache.ftp.DirectDigestThread;
+import org.dcache.ftp.ErrorListener;
+import org.dcache.ftp.FTPException;
+import org.dcache.ftp.Mode;
+import org.dcache.ftp.ModeE;
+import org.dcache.ftp.ModeS;
+import org.dcache.ftp.ModeX;
+import org.dcache.ftp.Multiplexer;
+import org.dcache.ftp.Role;
+import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import java.security.NoSuchAlgorithmException;
-import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.CacheException;
-import org.dcache.pool.repository.Allocator;
-import org.dcache.util.PortRange;
 import org.dcache.util.NetworkUtils;
-
+import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.dcache.ftp.*;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.pool.repository.FileRepositoryChannel;
 
 /**
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.

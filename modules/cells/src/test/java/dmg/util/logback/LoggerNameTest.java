@@ -1,10 +1,9 @@
 package dmg.util.logback;
 
-import static org.junit.Assert.*;
-
-import org.junit.*;
-
+import org.junit.Test;
 import org.slf4j.Logger;
+
+import static org.junit.Assert.*;
 
 public class LoggerNameTest
 {

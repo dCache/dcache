@@ -1,13 +1,15 @@
 package org.dcache.webadmin.view.panels.cellservices;
 
-import java.util.List;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.IModel;
-import org.dcache.webadmin.view.util.EvenOddListView;
+
+import java.util.List;
+
 import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
+import org.dcache.webadmin.view.util.EvenOddListView;
 
 /**
  * Reusable Panel for the Listview on CellServices

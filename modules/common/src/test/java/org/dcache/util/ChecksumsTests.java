@@ -1,20 +1,23 @@
 package org.dcache.util;
 
 import com.google.common.base.Joiner;
-import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
+import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.util.ChecksumType.*;
-import org.hamcrest.Description;
-import static org.hamcrest.Matchers.*;
-import org.hamcrest.TypeSafeMatcher;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
-import org.junit.Test;
 
 public class ChecksumsTests
 {

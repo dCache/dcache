@@ -1,16 +1,18 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
-import diskCacheV111.vehicles.PoolMoverKillMessage;
-import dmg.cells.nucleus.CellPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
-import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

@@ -1,23 +1,24 @@
 package org.dcache.auth;
 
-import java.util.Set;
-import java.util.Collections;
-import java.util.HashSet;
-import java.io.File;
-import java.io.IOException;
-import java.security.Principal;
+import org.globus.gsi.jaas.GlobusPrincipal;
+
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
-import org.globus.gsi.jaas.GlobusPrincipal;
+import java.io.File;
+import java.io.IOException;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
 
 /**
  * A LoginStrategy that wraps KAuthFile.

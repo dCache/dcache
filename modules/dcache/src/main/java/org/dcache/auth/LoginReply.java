@@ -1,9 +1,10 @@
 package org.dcache.auth;
 
 import javax.security.auth.Subject;
+
 import java.util.Arrays;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 import org.dcache.auth.attributes.LoginAttribute;
 

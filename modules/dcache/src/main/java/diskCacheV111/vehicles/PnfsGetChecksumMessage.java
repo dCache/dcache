@@ -1,7 +1,8 @@
 //$Id: PnfsGetChecksumMessage.java,v 1.2 2007-08-30 21:11:07 abaranov Exp $
 
 package diskCacheV111.vehicles;
-import  diskCacheV111.util.PnfsId ;
+
+import diskCacheV111.util.PnfsId;
 
 @Deprecated
 public class PnfsGetChecksumMessage extends PnfsMessage {

@@ -3,9 +3,9 @@ package org.dcache.services.hsmcleaner;
 import java.util.Collection;
 import java.util.Map;
 
-import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
-import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 /**
  * Encapsulates information about an HSM attached pool.

@@ -1,10 +1,13 @@
 package org.dcache.tests.util;
 
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Test;
+import org.slf4j.MDC;
 
 import org.dcache.commons.util.NDC;
-import org.slf4j.MDC;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class NDCTest
 {

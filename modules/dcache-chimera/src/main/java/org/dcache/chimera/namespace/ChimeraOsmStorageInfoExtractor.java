@@ -7,18 +7,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.OSMStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.vehicles.OSMStorageInfo;
-import diskCacheV111.vehicles.StorageInfo;
 
 
 public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtractor {

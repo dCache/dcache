@@ -59,6 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.plots;
 
+import com.google.common.collect.ImmutableList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -81,11 +86,6 @@ import org.dcache.services.billing.plots.util.TimeFrame;
 import org.dcache.services.billing.plots.util.TimeFrame.BinType;
 import org.dcache.services.billing.plots.util.TimeFrame.Type;
 import org.dcache.services.billing.plots.util.TimeFramePlotFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.google.common.collect.ImmutableList;
 
 /**
  * The daemon which handles periodic refreshing of the billing plots from the

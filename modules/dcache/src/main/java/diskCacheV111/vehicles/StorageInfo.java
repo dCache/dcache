@@ -3,9 +3,10 @@ package diskCacheV111.vehicles;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
-import java.util.Map ;
-import diskCacheV111.util.RetentionPolicy;
+import java.util.Map;
+
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 
 /**
   *  Implementations of this thing travel from the particular

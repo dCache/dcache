@@ -1,6 +1,21 @@
 package org.dcache.pinmanager;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.security.auth.Subject;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.regex.PatternSyntaxException;
+
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
@@ -9,8 +24,10 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.StorageInfo;
+
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
@@ -21,19 +38,6 @@ import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.security.auth.Subject;
-import java.io.IOException;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.regex.PatternSyntaxException;
 
 import static java.util.concurrent.TimeUnit.*;
 import static org.dcache.pinmanager.model.Pin.State.*;

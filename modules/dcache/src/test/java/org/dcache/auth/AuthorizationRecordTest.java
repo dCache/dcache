@@ -1,14 +1,12 @@
 package org.dcache.auth;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-
-import javax.security.auth.Subject;
-
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.security.auth.Subject;
+
+import static org.junit.Assert.*;
 
 public class AuthorizationRecordTest
 {

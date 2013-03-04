@@ -15,13 +15,18 @@
 
 package org.dcache.srm.handler;
 
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.*;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.AbstractStorageElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
+import org.dcache.srm.v2_2.SrmPingRequest;
+import org.dcache.srm.v2_2.SrmPingResponse;
+import org.dcache.srm.v2_2.TExtraInfo;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  *

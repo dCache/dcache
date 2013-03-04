@@ -1,8 +1,9 @@
 package dmg.protocols.snmp ;
-import  java.util.StringTokenizer ;
+
+import java.util.StringTokenizer;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -11,13 +12,13 @@ public class SnmpOID extends SnmpObject {
 
   private int   [] _array;
   private int      _arrayLength;
-  
+
   SnmpOID( SnmpObjectHeader head , byte [] b , int offIn , int maxLen ){
     int off = offIn + head.getCodedLength()  ;
     int len = head.getLength() ;
-    
+
     _array = new int[len+1] ;
-    
+
     int x      = b[off++] ;
     int resPos = 0 ;
     x = ( x < 0 ) ? ( x + 256 ) : x ;
@@ -40,7 +41,7 @@ public class SnmpOID extends SnmpObject {
     setCodedLength( head.getCodedLength() + len ) ;
   }
   public SnmpOID( int [] vector ){
-     _arrayLength = vector.length ; 
+     _arrayLength = vector.length ;
      _array = new int[_arrayLength] ;
      System.arraycopy( vector , 0 , _array , 0 , _arrayLength ) ;
   }
@@ -70,7 +71,7 @@ public class SnmpOID extends SnmpObject {
      int  y;
      boolean begin;
      for( int i = 2 ; i < _arrayLength ; i++ ){
-        
+
          x     = _array[i] ;
          begin = false ;
          for( int j = 3 ; j >= 0 ; j-- ){
@@ -89,15 +90,15 @@ public class SnmpOID extends SnmpObject {
          }
      }
 //     System.out.println( SnmpObjectHeader._print(b,0,off));
-     SnmpObjectHeader head = new SnmpObjectHeader( 
+     SnmpObjectHeader head = new SnmpObjectHeader(
                                SnmpObjectHeader.OBJECT_IDENTIFIER ,
                                off ) ;
      int headLen = head.getCodedLength() ;
      byte [] out = new byte[headLen+off] ;
      System.arraycopy( head.getSnmpBytes() , 0 , out , 0 , headLen ) ;
      System.arraycopy( b , 0 , out , headLen , off ) ;
-     return out ;                      
-     
+     return out ;
+
   }
   public String toString(){
     if( ( _array == null ) || ( _arrayLength == 0 ) ) {
@@ -111,8 +112,8 @@ public class SnmpOID extends SnmpObject {
       }
     }
     return sb.toString() ;
-  
-  }  
+
+  }
 
 
 }

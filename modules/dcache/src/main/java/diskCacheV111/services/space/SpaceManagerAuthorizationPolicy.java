@@ -4,8 +4,10 @@
  */
 
 package diskCacheV111.services.space;
-import org.dcache.auth.AuthorizationRecord;
+
 import diskCacheV111.util.VOInfo;
+
+import org.dcache.auth.AuthorizationRecord;
 
 /**
  *

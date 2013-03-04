@@ -1,6 +1,7 @@
 package org.dcache.services.info.serialisation;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -11,8 +12,8 @@ import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.base.TestStateExhibitor;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * This class provides a set of unit-tests for the pretty-print serialiser.  It uses

@@ -4,57 +4,13 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
-import org.dcache.chimera.nfs.v4.xdr.SETCLIENTID4args;
-import org.dcache.chimera.nfs.v4.xdr.RECLAIM_COMPLETE4args;
-import org.dcache.chimera.nfs.v4.xdr.TEST_STATEID4args;
-import org.dcache.chimera.nfs.v4.xdr.RELEASE_LOCKOWNER4args;
-import org.dcache.chimera.nfs.v4.xdr.WRITE4args;
-import org.dcache.chimera.nfs.v4.xdr.SECINFO4args;
-import org.dcache.chimera.nfs.v4.xdr.REMOVE4args;
-import org.dcache.chimera.nfs.v4.xdr.READDIR4args;
-import org.dcache.chimera.nfs.v4.xdr.PUTFH4args;
-import org.dcache.chimera.nfs.v4.xdr.SETATTR4args;
-import org.dcache.chimera.nfs.v4.xdr.RENAME4args;
-import org.dcache.chimera.nfs.v4.xdr.SET_SSV4args;
-import org.dcache.chimera.nfs.v4.xdr.RENEW4args;
-import org.dcache.chimera.nfs.v4.xdr.WANT_DELEGATION4args;
-import org.dcache.chimera.nfs.v4.xdr.READ4args;
-import org.dcache.chimera.nfs.v4.xdr.SECINFO_NO_NAME4args;
-import org.dcache.chimera.nfs.v4.xdr.VERIFY4args;
-import org.dcache.chimera.nfs.v4.xdr.SETCLIENTID_CONFIRM4args;
-import org.dcache.chimera.nfs.v4.xdr.SEQUENCE4args;
-import org.dcache.chimera.nfs.v4.xdr.OPEN_DOWNGRADE4args;
-import org.dcache.chimera.nfs.v4.xdr.OPENATTR4args;
-import org.dcache.chimera.nfs.v4.xdr.OPEN_CONFIRM4args;
-import org.dcache.chimera.nfs.v4.xdr.OPEN4args;
-import org.dcache.chimera.nfs.v4.xdr.NVERIFY4args;
-import org.dcache.chimera.nfs.v4.xdr.LOOKUP4args;
-import org.dcache.chimera.nfs.v4.xdr.LOCKU4args;
-import org.dcache.chimera.nfs.v4.xdr.LOCKT4args;
-import org.dcache.chimera.nfs.v4.xdr.LAYOUTCOMMIT4args;
-import org.dcache.chimera.nfs.v4.xdr.LINK4args;
-import org.dcache.chimera.nfs.v4.xdr.LAYOUTGET4args;
-import org.dcache.chimera.nfs.v4.xdr.LOCK4args;
-import org.dcache.chimera.nfs.v4.xdr.LAYOUTRETURN4args;
-import org.dcache.chimera.nfs.v4.xdr.FREE_STATEID4args;
-import org.dcache.chimera.nfs.v4.xdr.GETATTR4args;
-import org.dcache.chimera.nfs.v4.xdr.GET_DIR_DELEGATION4args;
-import org.dcache.chimera.nfs.v4.xdr.GETDEVICEINFO4args;
-import org.dcache.chimera.nfs.v4.xdr.GETDEVICELIST4args;
-import org.dcache.chimera.nfs.v4.xdr.EXCHANGE_ID4args;
-import org.dcache.chimera.nfs.v4.xdr.DELEGRETURN4args;
-import org.dcache.chimera.nfs.v4.xdr.DESTROY_SESSION4args;
-import org.dcache.chimera.nfs.v4.xdr.DESTROY_CLIENTID4args;
-import org.dcache.chimera.nfs.v4.xdr.DELEGPURGE4args;
-import org.dcache.chimera.nfs.v4.xdr.COMMIT4args;
-import org.dcache.chimera.nfs.v4.xdr.CLOSE4args;
-import org.dcache.chimera.nfs.v4.xdr.CREATE4args;
-import org.dcache.chimera.nfs.v4.xdr.CREATE_SESSION4args;
-import org.dcache.chimera.nfs.v4.xdr.BIND_CONN_TO_SESSION4args;
-import org.dcache.chimera.nfs.v4.xdr.BACKCHANNEL_CTL4args;
-import org.dcache.chimera.nfs.v4.xdr.ACCESS4args;
-import org.dcache.xdr.*;
+
 import java.io.IOException;
+
+import org.dcache.xdr.OncRpcException;
+import org.dcache.xdr.XdrAble;
+import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.XdrEncodingStream;
 
 public class nfs_argop4 implements XdrAble {
     public int argop;

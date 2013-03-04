@@ -6,13 +6,20 @@
 
 package org.dcache.srm.unixfs;
 
-import org.dcache.srm.SRMAuthorization;
-import org.dcache.srm.SRM;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.SQLException;
 
-import dmg.util.*;
+import dmg.util.Args;
+import dmg.util.CommandInterpreter;
+
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorization;
 
 /**
  *

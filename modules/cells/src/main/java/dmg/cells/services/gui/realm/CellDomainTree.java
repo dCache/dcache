@@ -2,16 +2,21 @@
 
 package dmg.cells.services.gui.realm ;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import javax.swing.tree.*;
-import dmg.cells.applets.login.DomainConnection ;
-import dmg.cells.applets.login.DomainConnectionListener ;
-import dmg.cells.network.* ;
-import dmg.cells.nucleus.* ;
+import javax.swing.BorderFactory;
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 
-public class CellDomainTree 
+import dmg.cells.applets.login.DomainConnection;
+import dmg.cells.applets.login.DomainConnectionListener;
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.CellInfo;
+
+public class CellDomainTree
        extends JTree  {
 
    private static final long serialVersionUID = 8632929106052533043L;
@@ -20,26 +25,26 @@ public class CellDomainTree
    private DomainConnection _connection;
    private String _topoAddress = "topo@httpdDomain" ;
 //   private String _topoAddress = "topo" ;
-   
+
    public CellDomainTree( DomainConnection connection ){
       _connection = connection ;
       setModel( _treeModel ) ;
       collapseRow(0);
       addTreeExpansionListener( new DomainTreeExpansion() ) ;
-      setBorder( 
-        BorderFactory.createCompoundBorder( 
+      setBorder(
+        BorderFactory.createCompoundBorder(
           BorderFactory.createEmptyBorder(10,10,10,10) ,
-          BorderFactory.createCompoundBorder( 
+          BorderFactory.createCompoundBorder(
                BorderFactory.createTitledBorder(
                   null , "Cell Tree" , TitledBorder.LEFT , TitledBorder.TOP ) ,
                  BorderFactory.createEmptyBorder(10,10,10,10)   )
-                                           ) 
-                 
+                                           )
+
       ) ;
    }
 //   public Insets getInsets(){ return new Insets(30,30,30,30) ; }
-   
-   private class CellTreeNode 
+
+   private class CellTreeNode
            extends DefaultMutableTreeNode
            implements  DomainConnectionListener {
 
@@ -47,7 +52,7 @@ public class CellDomainTree
       private boolean _isLeaf;
       private boolean _valuesSet;
       private String  _name;
-      
+
       public CellTreeNode( String name , boolean isLeaf ){
          _name   = name ;
          _isLeaf = isLeaf ;
@@ -106,11 +111,11 @@ public class CellDomainTree
       public void expanded(){
          if( ! isValueSet() ){
             super.expanded();
-            _treeModel.insertNodeInto( 
+            _treeModel.insertNodeInto(
                new CellContainerNode("CELLS",_node ) , this , 0 ) ;
-            _treeModel.insertNodeInto( 
+            _treeModel.insertNodeInto(
                new ContextContainerNode("CONTEXT",_node) , this , 0 ) ;
-            _treeModel.insertNodeInto( 
+            _treeModel.insertNodeInto(
                new RouterNode("ROUTES" , _node ) , this , 0 ) ;
             done() ;
             setValueSet(true);
@@ -121,7 +126,7 @@ public class CellDomainTree
       private static final long serialVersionUID = 8523105175296824521L;
       private CellInfo _cellInfo;
       private String   _address;
-      private CellNode( String address , CellInfo info  ){ 
+      private CellNode( String address , CellInfo info  ){
          super( info.getCellName() , true ) ;
          _cellInfo = info ;
          _address = address ;
@@ -134,23 +139,23 @@ public class CellDomainTree
 
       public RouterNode(String name , CellDomainNode node ){
          super( name , true ) ;
-      }      
+      }
    }
    private class ContextNode extends CellTreeNode {
       private static final long serialVersionUID = 4917133149526146830L;
 
       public ContextNode(String name  ){
          super( name , true ) ;
-      }      
+      }
    }
    private class ContextContainerNode extends CellTreeNode {
       private static final long serialVersionUID = 4649794381123797011L;
       private String      [] _context;
       private CellDomainNode _node;
-      public ContextContainerNode(String name , CellDomainNode node){ 
+      public ContextContainerNode(String name , CellDomainNode node){
          super( name , false ) ;
          _node = node ;
-      }      
+      }
       @Override
       public void expanded(){
          if( ! isValueSet() ){
@@ -182,7 +187,7 @@ public class CellDomainTree
                   }
                   setValueSet(true);
                   done() ;
-               
+
                }
             }
          ) ;
@@ -192,10 +197,10 @@ public class CellDomainTree
       private static final long serialVersionUID = 3794317629384966493L;
       private CellDomainNode _node;
       private CellInfo   []  _cellInfo;
-      public CellContainerNode(String name , CellDomainNode node ){ 
+      public CellContainerNode(String name , CellDomainNode node ){
          super( name , false ) ;
          _node = node ;
-      }      
+      }
       @Override
       public void expanded(){
          if( ! isValueSet() ){
@@ -235,20 +240,20 @@ public class CellDomainTree
                        new CellNode( _node.getAddress(),_cellInfo[systemIndex] ) ,
                        self ,
                        0 ) ;
-                  
+
                   setValueSet(true);
                   done() ;
-               
+
                }
             }
          ) ;
       }
    }
-   
+
    private class DomainRootNode extends CellTreeNode {
       private static final long serialVersionUID = -2017147296172009929L;
       private CellDomainNode [] _nodes;
-      public DomainRootNode(){ 
+      public DomainRootNode(){
          super("Realm",false);
       }
       @Override
@@ -282,14 +287,14 @@ public class CellDomainTree
                   }
                   setValueSet(true);
                   done() ;
-               
+
                }
             }
          ) ;
       }
    }
    private class DomainTreeExpansion implements TreeExpansionListener {
-   
+
       @Override
       public void treeExpanded( TreeExpansionEvent event ){
 

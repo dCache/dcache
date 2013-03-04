@@ -73,25 +73,25 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 
-import diskCacheV111.srm.RequestFileStatus;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.util.JDC;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.SRM;
-import org.dcache.srm.SRMInvalidRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-import org.dcache.srm.qos.QOSTicket;
-
 import java.sql.SQLException;
+
+import diskCacheV111.srm.RequestFileStatus;
+
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.qos.QOSTicket;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /**
  * File request is an abstract "SRM file request"

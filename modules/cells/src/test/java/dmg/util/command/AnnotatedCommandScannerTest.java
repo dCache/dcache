@@ -1,9 +1,5 @@
 package dmg.util.command;
 
-import dmg.cells.nucleus.DelayedReply;
-import dmg.util.Args;
-import dmg.util.CommandInterpreter;
-import dmg.util.CommandSyntaxException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,11 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import dmg.cells.nucleus.DelayedReply;
+import dmg.util.Args;
+import dmg.util.CommandInterpreter;
+import dmg.util.CommandSyntaxException;
+
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AnnotatedCommandScannerTest
 {

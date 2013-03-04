@@ -1,22 +1,28 @@
 /*   $Id: SshCAuth_Key.java,v 1.1 2006-11-19 09:12:48 patrick Exp $    */
 package  dmg.cells.services.login ;
 
-import java.net.* ;
-import java.io.* ;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.InetAddress;
 
-import dmg.cells.nucleus.*;
-import dmg.util.*;
-import dmg.protocols.ssh.* ;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.protocols.ssh.SshAuthMethod;
+import dmg.protocols.ssh.SshAuthRsa;
+import dmg.protocols.ssh.SshClientAuthentication;
+import dmg.protocols.ssh.SshRsaKey;
+import dmg.protocols.ssh.SshSharedKey;
+import dmg.util.Args;
 
 /**
  **
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Nov 2006
-  * 
+  *
  */
-public class       SshCAuth_Key 
+public class       SshCAuth_Key
        implements  SshClientAuthentication  {
 
    private SshAuthMethod  _rsaAuth;
@@ -34,19 +40,19 @@ public class       SshCAuth_Key
            throw new
                    IllegalArgumentException("KeyFile 'clientKey' not defined");
        }
-          
+
        File key = new File( keyFile ) ;
        if( ! key.exists() ) {
            throw new
                    IllegalArgumentException("KeyFile not found : " + keyFile);
        }
-           
+
        _userName = args.getOpt("clientUserName") ;
        _userName = ( _userName != null ) && ( _userName.length() > 0 ) ? _userName : "admin" ;
-       
+
        setIdentityFile( key ) ;
    }
-   
+
    @Override
    public SshAuthMethod   getAuthMethod(){
 

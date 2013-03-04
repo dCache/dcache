@@ -3,8 +3,10 @@
 package diskCacheV111.pools ;
 
 import java.io.Serializable;
-import java.util.* ;
-import dmg.cells.nucleus.CellInfo ;
+import java.util.HashMap;
+import java.util.Map;
+
+import dmg.cells.nucleus.CellInfo;
 
 public class PoolCellInfo
        extends CellInfo

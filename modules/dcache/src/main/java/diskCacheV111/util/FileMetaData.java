@@ -4,14 +4,13 @@ package diskCacheV111.util;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Set;
 import java.util.EnumSet;
+import java.util.Set;
 
-import org.dcache.namespace.FileType;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
 
 public class FileMetaData implements Serializable {

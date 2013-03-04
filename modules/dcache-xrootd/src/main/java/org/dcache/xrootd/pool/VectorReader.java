@@ -1,17 +1,17 @@
 package org.dcache.xrootd.pool;
 
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
+
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import java.io.IOException;
-
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage;
-import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
+import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 

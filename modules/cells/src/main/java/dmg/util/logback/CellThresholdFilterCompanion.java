@@ -1,14 +1,14 @@
 package dmg.util.logback;
 
-import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CDC;
-
-import ch.qos.logback.core.filter.Filter;
-import ch.qos.logback.core.spi.FilterReply;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.filter.Filter;
+import ch.qos.logback.core.spi.FilterReply;
 
 import java.util.Map;
+
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellNucleus;
 
 /**
  * Logback Filter that filters according to the FilterThresholds of

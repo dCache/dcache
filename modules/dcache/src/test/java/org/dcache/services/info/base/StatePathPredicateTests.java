@@ -1,14 +1,11 @@
 package org.dcache.services.info.base;
 
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 import java.util.BitSet;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class StatePathPredicateTests {
 

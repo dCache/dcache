@@ -1,7 +1,7 @@
 package org.dcache.services.login;
 
-import java.util.Set;
 import java.security.Principal;
+import java.util.Set;
 
 import diskCacheV111.vehicles.Message;
 

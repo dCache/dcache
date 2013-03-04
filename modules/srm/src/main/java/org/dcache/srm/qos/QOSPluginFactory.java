@@ -1,8 +1,9 @@
 package org.dcache.srm.qos;
 
-import org.dcache.srm.util.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.dcache.srm.util.Configuration;
 
 public class QOSPluginFactory {
     private static final Logger logger =
@@ -20,7 +21,7 @@ public class QOSPluginFactory {
 		catch(Exception e) {
 			logger.error("Could not create class "+configuration.getQosPluginClass(),e);
 		}
-		
+
 		return qosPlugin;
 	}
 

@@ -1,8 +1,9 @@
 package dmg.protocols.snmp ;
-import  java.net.SocketException ;
+
+import java.net.SocketException;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -34,20 +35,20 @@ public class SnmpServerTest implements SnmpEventListener {
        say( "response\n"+response);
        for( int i = 0 ; i < count ; i++ ){
           SnmpOID     oid      = request.varBindOIDAt(i) ;
-          
+
           if( type == SnmpObjectHeader.GetNextRequest ){
              int [] vector = oid.getVector() ;
              vector[vector.length-1] ++ ;
              oid = new SnmpOID( vector ) ;
           }
-          
+
           response.addVarBind( oid ,
                                new SnmpOctetString( "Cell OS 4.3 "+oid ) ) ;
-          
+
        }
        return response ;
-    
-    
+
+
     }
     private void say( String str ){
       System.out.println( str ) ;
@@ -63,7 +64,7 @@ public class SnmpServerTest implements SnmpEventListener {
          System.err.println( "Exception ; "+e ) ;
          System.exit(4);
       }
-    
+
     }
-    
+
 }

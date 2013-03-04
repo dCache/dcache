@@ -1,17 +1,19 @@
 package org.dcache.auth;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Set;
-import java.util.Collections;
-import java.security.Principal;
-import javax.security.auth.Subject;
-
-import org.dcache.auth.attributes.HomeDirectory;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.security.auth.Subject;
+
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Set;
+
 import diskCacheV111.util.CacheException;
+
+import org.dcache.auth.attributes.HomeDirectory;
+
+import static org.junit.Assert.assertEquals;
 
 public class CachingLoginStrategyTests {
 

@@ -7,11 +7,13 @@
  */
 
 package diskCacheV111.repository;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
-import org.dcache.pool.repository.CacheEntry;
 
 import java.io.Serializable;
+
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.pool.repository.CacheEntry;
 
 /**
  *

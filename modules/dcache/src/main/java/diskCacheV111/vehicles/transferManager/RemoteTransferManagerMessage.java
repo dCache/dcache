@@ -1,9 +1,9 @@
 package diskCacheV111.vehicles.transferManager;
 
-import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.util.FsPath;
-
 import java.net.URI;
+
+import diskCacheV111.util.FsPath;
+import diskCacheV111.vehicles.IpProtocolInfo;
 
 public class RemoteTransferManagerMessage extends TransferManagerMessage
 {

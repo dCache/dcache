@@ -1,15 +1,23 @@
 package dmg.cells.applets.spy ;
 
-import java.awt.* ;
-import java.awt.event.* ;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import dmg.cells.services.* ;
-import dmg.cells.network.* ;
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.services.MessageObjectFrame;
 
 
 
-class RoutingPanel 
-      extends Panel 
+class RoutingPanel
+      extends Panel
       implements ActionListener, FrameArrivable {
 
    private static final long serialVersionUID = -1209721335332347698L;
@@ -22,9 +30,9 @@ class RoutingPanel
    private Font   _textFont  = new Font( "Monospaced" , Font.ITALIC   , 14 )  ;
    private CellDomainNode _domainNode;
    private boolean        _useColor;
-      
+
    RoutingPanel( DomainConnection connection ){
-      _connection = connection ; 
+      _connection = connection ;
       _useColor   = System.getProperty( "bw" ) == null ;
       if( _useColor ) {
           setBackground(Color.orange);
@@ -56,7 +64,7 @@ class RoutingPanel
           return;
       }
       _connection.send( _domainNode.getAddress() , "getroutes" , this ) ;
-   
+
    }
    @Override
    public void actionPerformed( ActionEvent event ){
@@ -84,4 +92,4 @@ class RoutingPanel
        }
    }
 
-} 
+}

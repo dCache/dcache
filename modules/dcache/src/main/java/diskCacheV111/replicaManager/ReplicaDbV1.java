@@ -2,20 +2,29 @@
 
 package diskCacheV111.replicaManager;
 
-import diskCacheV111.util.*;
-import diskCacheV111.repository.CacheRepositoryEntryInfo;
-import dmg.cells.nucleus.*;
-import org.dcache.util.JdbcConnectionPool;
-
-import java.util.*;
-import java.sql.*;
-import java.text.MessageFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import static org.dcache.commons.util.SqlHelper.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.MessageFormat;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
+import diskCacheV111.util.PnfsId;
+
+import dmg.cells.nucleus.CellAdapter;
+
+import org.dcache.util.JdbcConnectionPool;
+
+import static org.dcache.commons.util.SqlHelper.tryToClose;
 
 //import uk.org.primrose.GeneralException;
 //import uk.org.primrose.vendor.standalone.*;

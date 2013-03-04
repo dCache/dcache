@@ -1,30 +1,30 @@
 package org.dcache.tests.pool.migration;
 
-import org.junit.Test;
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
-import static org.junit.Assert.*;
-
-import org.dcache.pool.migration.PoolListFilter;
-import org.dcache.pool.migration.RefreshablePoolList;
-import org.dcache.util.Glob;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.regex.Pattern;
-
+import org.junit.Test;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.BasicParseRunner;
 import org.parboiled.support.ParsingResult;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
+import org.dcache.pool.migration.PoolListFilter;
+import org.dcache.pool.migration.RefreshablePoolList;
+import org.dcache.pool.migration.SymbolTable;
+import org.dcache.util.Glob;
 import org.dcache.util.expression.Expression;
 import org.dcache.util.expression.ExpressionParser;
 import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
-import org.dcache.pool.migration.SymbolTable;
 
-import com.google.common.collect.ImmutableList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class PoolListFilterTest
 {

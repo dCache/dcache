@@ -2,7 +2,7 @@ package dmg.cells.applets.login ;
 
 import com.google.common.base.Objects;
 
-import java.io.* ;
+import java.io.Serializable;
 
 public class DomainObjectFrame implements Serializable {
 
@@ -13,7 +13,7 @@ public class DomainObjectFrame implements Serializable {
    private int _id , _subId ;
    public DomainObjectFrame( Serializable payload ,
                              int id ,
-                             int subId            ){	
+                             int subId            ){
         _payload = payload ;
         _id      = id ;
         _subId   = subId ;
@@ -21,7 +21,7 @@ public class DomainObjectFrame implements Serializable {
    public DomainObjectFrame( String destination ,
                              Serializable payload ,
                              int id ,
-                             int subId            ){	
+                             int subId            ){
       this( payload , id , subId ) ;
       _destination = destination ;
    }

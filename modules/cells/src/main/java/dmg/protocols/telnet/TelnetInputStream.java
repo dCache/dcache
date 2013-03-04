@@ -1,5 +1,7 @@
  package dmg.protocols.telnet ;
- import java.io.* ;
+
+ import java.io.IOException;
+ import java.io.InputStream;
 
  /**
    * The Telnet input stream builds the layer between
@@ -10,15 +12,15 @@
    * represents the control characters and an CharacterObject
    * otherwise.
   *
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
    */
  public class TelnetInputStream extends InputStream {
      //
-     //   the telnet constants 
+     //   the telnet constants
      //
      private static final byte telnetSE   =   (-16);
      private static final byte telnetNOP  =   (-15);
@@ -41,7 +43,7 @@
      private static final byte telnetNUL  =   (0);
 
      private static final byte telnetOptionEcho  = (1);
-                               
+
      private static final int telnetStateControl     =  0 ;
      private static final int telnetStateIntro       =  1 ;
      private static final int telnetStateAuthUser    =  2 ;
@@ -58,13 +60,13 @@
      private static final int cctSUB  = 6 ;
      private static final int cctESC  = 7 ;
     //
-    // class variables 
+    // class variables
     //
     int         _engineState ;
-    int         _controlDataPos ; 
+    int         _controlDataPos ;
     byte []     _controlData ;
     InputStream _inputStream ;
-    
+
    public TelnetInputStream( InputStream in ){
 //       super( in )  ;
        _inputStream    = in ;
@@ -76,7 +78,7 @@
       //
       if( _controlDataPos >= _controlData.length ){
       //
-      //  somethin' wrong with telnet engine 
+      //  somethin' wrong with telnet engine
       //
            _controlDataPos = 0 ;
       }
@@ -92,11 +94,11 @@
       if( _controlDataPos == 0 ) {
           return null;
       }
-      
+
       byte [] rc = new byte[ _controlDataPos ] ;
-      
+
       System.arraycopy( _controlData , 0 , rc , 0 , _controlDataPos ) ;
-      
+
       _engineControlClear() ;
       return rc ;
    }
@@ -104,7 +106,7 @@
       int    rc ;
       Object obj ;
       while( true ){
-      
+
          if( ( rc = _inputStream.read() ) < 0 ) {
              return null;
          }
@@ -112,7 +114,7 @@
              return obj;
          }
       }
-   
+
    }
    @Override
    public int read() throws IOException {
@@ -193,8 +195,8 @@
              _engineState = cctData ;
              return _charOfByte( c ) ;
           }
-       break ; 
-     }  
+       break ;
+     }
      return null ;
    }
 //   private Byte _charOfByte( byte c ){ return new Byte( c ) ; }
@@ -203,6 +205,6 @@
       rc[0] = c ;
       return new String(rc).charAt(0);
    }
- 
- 
+
+
  }

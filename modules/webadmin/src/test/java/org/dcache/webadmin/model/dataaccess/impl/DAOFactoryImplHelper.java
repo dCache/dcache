@@ -1,7 +1,5 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import static org.mockito.Mockito.mock;
-
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
@@ -11,6 +9,8 @@ import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.exceptions.DAOException;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Helperclass to instantiate Helper-DAOs for Unittesting

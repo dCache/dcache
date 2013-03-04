@@ -1,8 +1,10 @@
 package diskCacheV111.util;
 
-import java.net.URI;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import java.net.URI;
+
+import static org.junit.Assert.fail;
 
 public class HsmLocationExtractorFactoryTest {
 

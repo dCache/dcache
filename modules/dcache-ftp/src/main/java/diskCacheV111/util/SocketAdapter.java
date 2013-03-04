@@ -66,18 +66,18 @@
 
 package diskCacheV111.util;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Random;
 import java.io.IOException;
-
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.Selector;
-import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import diskCacheV111.doors.EDataBlockNio;
+
 import org.dcache.cells.AbstractCell;
 
 /**

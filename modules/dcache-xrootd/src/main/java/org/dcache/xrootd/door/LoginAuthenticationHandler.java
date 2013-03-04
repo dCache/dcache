@@ -1,22 +1,22 @@
 package org.dcache.xrootd.door;
 
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.security.auth.Subject;
 
-import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
-
 import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
-import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 
 /**
  * An XrootdAuthenticationHandler which after successful

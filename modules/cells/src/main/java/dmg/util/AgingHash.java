@@ -1,6 +1,8 @@
 package dmg.util  ;
 
-import java.util.* ;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
 
 public class AgingHash {
 
@@ -8,21 +10,21 @@ public class AgingHash {
    private Node      _first;
    private Node      _last;
    private Hashtable<Object, Node> _hash    = new Hashtable<>() ;
-   
+
    public synchronized void clear(){
       _first = null ;
       _last  = null ;
       _hash.clear() ;
    }
    private class Node {
-   
+
       private Object _value;
       private Object _key;
       private Node   _next;
       private Node   _previous;
-      
-      private Node( Object key , Object value ){ 
-         _value = value ; 
+
+      private Node( Object key , Object value ){
+         _value = value ;
          _key   = key ;
       }
       public String toString(){
@@ -64,15 +66,15 @@ public class AgingHash {
            throw new
                    NullPointerException("Key == null");
        }
-           
+
        Node node = _hash.get( key );
        if( node == null ) {
            return null;
        }
-       
+
        node.unlink() ;
        node.link() ;
-       
+
        return node._value ;
    }
    public synchronized void put( Object key , Object value ){
@@ -80,24 +82,24 @@ public class AgingHash {
            throw new
                    NullPointerException("Key/Value == null");
        }
-       
+
        Node node = _hash.get( key );
        if( node == null ){
-       
+
            node = new Node( key , value ) ;
            _hash.put( key , node ) ;
-           
+
        }else{
-       
+
            node._value = value ;
            //
            // we have to relink to become top of stack.
            //
            node.unlink() ;
-           
+
        }
        node.link() ;
-       
+
        if( _hash.size() > _maxSize ){
           _hash.remove( _last._key ) ;
           _last.unlink() ;
@@ -110,10 +112,10 @@ public class AgingHash {
       if( node == null ) {
           return null;
       }
-            
-      node.unlink() ; 
-          
-      return node._value ;     
+
+      node.unlink() ;
+
+      return node._value ;
    }
    public synchronized Iterator<Node> valuesIterator(){
        return new ArrayList<>(_hash.values()).iterator() ;
@@ -149,7 +151,7 @@ public class AgingHash {
       System.out.println( hash.toString() ) ;
       hash.remove("5");
       System.out.println( hash.toString() ) ;
-      
-   }  
+
+   }
 
 }

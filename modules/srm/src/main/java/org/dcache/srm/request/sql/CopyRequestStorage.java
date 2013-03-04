@@ -5,16 +5,21 @@
  */
 
 package org.dcache.srm.request.sql;
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.request.CopyRequest;
-import org.dcache.srm.util.Configuration;
-import java.sql.*;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.v2_2.TAccessLatency;
-import org.dcache.srm.v2_2.TRetentionPolicy;
-import org.dcache.srm.v2_2.TFileStorageType;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.ContainerRequest;
+import org.dcache.srm.request.CopyRequest;
+import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TFileStorageType;
+import org.dcache.srm.v2_2.TRetentionPolicy;
 /**
  *
  * @author  timur

@@ -1,7 +1,7 @@
 package org.dcache.pool.migration;
 
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 public class SymbolTable extends org.dcache.util.expression.SymbolTable
 {

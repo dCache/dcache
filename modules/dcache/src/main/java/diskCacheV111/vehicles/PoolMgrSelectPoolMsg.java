@@ -1,8 +1,11 @@
 // $Id: PoolMgrSelectPoolMsg.java,v 1.7 2006-10-10 13:50:49 tigran Exp $
 
 package diskCacheV111.vehicles ;
-import diskCacheV111.poolManager.RequestContainerV5;
+
 import java.util.EnumSet;
+
+import diskCacheV111.poolManager.RequestContainerV5;
+
 import org.dcache.vehicles.FileAttributes;
 
 public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {

@@ -59,6 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.AppenderBase;
+import com.google.common.base.Preconditions;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -70,13 +76,6 @@ import org.dcache.alarms.dao.AlarmEntry;
 import org.dcache.alarms.dao.AlarmStorageException;
 import org.dcache.alarms.dao.IAlarmLoggingDAO;
 import org.dcache.alarms.dao.impl.DataNucleusAlarmStore;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.AppenderBase;
-
-import com.google.common.base.Preconditions;
 
 /**
  * For server-side interception of Alarm messages. Will store them to the

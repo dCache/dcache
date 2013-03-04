@@ -1,7 +1,11 @@
 // $Id: DCapDataOutputStream.java,v 1.2 2003-05-27 14:47:34 cvs Exp $
 
 package org.dcache.pool.movers;
-import  java.io.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 public class DCapDataOutputStream extends DataOutputStream
 {

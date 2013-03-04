@@ -1,8 +1,10 @@
 package dmg.cells.network ;
-import  dmg.cells.nucleus.* ;
-import  java.io.Serializable ;
+
+import java.io.Serializable;
+
+import dmg.cells.nucleus.CellTunnelInfo;
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -13,9 +15,9 @@ public class CellDomainNode implements Serializable {
    private String _name ;
    private String _address ;
    private CellTunnelInfo [] _infos;
-   
+
    public CellDomainNode( String name , String address ){
-       _name = name ; 
+       _name = name ;
        _address = address ;
    }
    public String getName(){ return _name ; }
@@ -33,9 +35,9 @@ public class CellDomainNode implements Serializable {
                       getCellDomainName();
               sb.append("        -> ").append(domain).append("\n");
           }
-      
+
       }
       return sb.toString() ;
-   
+
    }
 }

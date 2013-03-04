@@ -2,7 +2,8 @@
 
 package diskCacheV111.vehicles ;
 
-import  java.util.* ;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PoolManagerGetPoolListMessage extends PoolManagerMessage {
 

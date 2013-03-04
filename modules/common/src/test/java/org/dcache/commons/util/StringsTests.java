@@ -1,5 +1,7 @@
 package org.dcache.commons.util;
+
 import org.junit.Test;
+
 import static org.junit.Assert.assertArrayEquals;
 
 /**

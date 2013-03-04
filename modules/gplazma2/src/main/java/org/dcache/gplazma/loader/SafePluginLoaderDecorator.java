@@ -1,10 +1,10 @@
 package org.dcache.gplazma.loader;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import java.util.Properties;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * The PluginLoader interface describes how a PluginLoader should be

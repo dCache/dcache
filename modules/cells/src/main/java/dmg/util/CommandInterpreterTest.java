@@ -1,16 +1,17 @@
 package dmg.util ;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 public class CommandInterpreterTest extends CommandInterpreter {
 
    public static void main( String [] args ){
-   
+
        CommandInterpreter c = new CommandInterpreterTest() ;
-       
+
        InputStreamReader reader = new InputStreamReader( System.in ) ;
        BufferedReader in = new BufferedReader( reader ) ;
-       
+
        try{
           while( true ){
              System.out.print( " > " ) ;
@@ -32,7 +33,7 @@ public class CommandInterpreterTest extends CommandInterpreter {
    // set global env <key> <value>
    //
    public static final String hh_exit = "[ <exitCode> [ <exitMessage> ] ]" ;
-   
+
    public String ac_exit_$_0_2( Args args ) throws CommandExitException {
       if( args.argc() == 0 ) {
           throw new CommandExitException();
@@ -61,10 +62,10 @@ public class CommandInterpreterTest extends CommandInterpreter {
    public static final String hh_set_global_variable = "<key> <value>" ;
    public String ac_set_global_variable_$_2( Args args ){ return "" ;  }
    public static final String hh_set_sync = "on|off" ;
-   public static final String fh_set_sync = 
+   public static final String fh_set_sync =
    " Syntax : set sync on | off\n"+
    " Action : sets the synchronization mode to the\n"+
-   "          specified value\n" ; 
+   "          specified value\n" ;
    public String ac_set_sync_$_1( Args args ){
       StringBuilder sb = new StringBuilder() ;
       for( int i= 0 ; i < args.optc() ; i++ ) {
@@ -73,7 +74,7 @@ public class CommandInterpreterTest extends CommandInterpreter {
       return sb.toString() ;
    }
    public static final String hh_set_otto = "<value> [<value>]" ;
-   
+
    public String ac_set_otto_$_1_2( Args args ) throws Exception {
       if( args.argc() == 2 ) {
           throw new CommandSyntaxException("Not yet installed");

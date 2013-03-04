@@ -1,11 +1,14 @@
 package org.dcache.srm.util;
 
+import org.apache.axis.MessageContext;
+
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
-import org.apache.axis.MessageContext;
-import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLET;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
+
+import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLET;
 
 
 /**

@@ -59,9 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.model.dataaccess.util;
 
-import java.util.concurrent.TimeUnit;
-
 import org.rrd4j.graph.RrdGraphConstants;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Placeholder class which controls properties for the round-robin database and

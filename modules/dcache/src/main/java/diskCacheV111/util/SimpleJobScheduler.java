@@ -1,23 +1,29 @@
 package diskCacheV111.util;
 
-import diskCacheV111.vehicles.JobInfo;
-
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.Future;
-import java.lang.reflect.InvocationTargetException;
-
-import org.dcache.util.CDCThreadFactory;
-import org.dcache.util.FireAndForgetTask;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.commons.util.NDC;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+
+import diskCacheV111.vehicles.JobInfo;
 
 import dmg.cells.nucleus.CDC;
+
+import org.dcache.commons.util.NDC;
+import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.FifoPriorityComparator;
+import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
 import org.dcache.util.LifoPriorityComparator;

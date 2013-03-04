@@ -1,15 +1,19 @@
 package org.dcache.auth.gplazma;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
+import org.globus.gsi.jaas.GlobusPrincipal;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Set;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.KAuthFile;
@@ -21,13 +25,9 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
-import org.globus.gsi.jaas.GlobusPrincipal;
-import org.junit.Before;
-import org.junit.Test;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.common.io.Resources;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class KpwdPluginTest
 {

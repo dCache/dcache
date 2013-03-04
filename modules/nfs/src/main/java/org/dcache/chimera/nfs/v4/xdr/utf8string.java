@@ -4,10 +4,15 @@
  * See http://remotetea.sourceforge.net for details
  */
 package org.dcache.chimera.nfs.v4.xdr;
-import org.dcache.xdr.*;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+
+import org.dcache.xdr.OncRpcException;
+import org.dcache.xdr.XdrAble;
+import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.XdrEncodingStream;
 
 public class utf8string implements XdrAble {
 

@@ -3,29 +3,30 @@ package org.dcache.pool.repository;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.BDDMockito.*;
-import org.mockito.Mockito;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.dcache.chimera.ChimeraFsException;
-import org.dcache.pool.classic.ALRPReplicaStatePolicy;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.tests.repository.RepositoryHealerTestChimeraHelper;
-import org.dcache.tests.repository.MetaDataRepositoryHelper;
-import static org.dcache.pool.repository.EntryState.*;
-
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.vehicles.OSMStorageInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.chimera.ChimeraFsException;
+import org.dcache.pool.classic.ALRPReplicaStatePolicy;
+import org.dcache.tests.repository.MetaDataRepositoryHelper;
+import org.dcache.tests.repository.RepositoryHealerTestChimeraHelper;
+import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.pool.repository.EntryState.*;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static org.mockito.BDDMockito.*;
 
 public class ConsistentStoreTest
 {

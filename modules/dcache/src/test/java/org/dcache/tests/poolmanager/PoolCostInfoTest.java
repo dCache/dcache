@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import diskCacheV111.pools.PoolCostInfo;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 
 public class PoolCostInfoTest {

@@ -1,7 +1,9 @@
 // $Id: StorageInfoMessage.java,v 1.4 2004-11-05 12:07:20 tigran Exp $
 package diskCacheV111.vehicles ;
-import  diskCacheV111.util.PnfsId ;
+
 import org.stringtemplate.v4.ST;
+
+import diskCacheV111.util.PnfsId;
 
 public class StorageInfoMessage extends PnfsFileInfoMessage {
    private long    _transferTime;

@@ -1,9 +1,11 @@
 package org.dcache.pool.migration;
 
 import java.util.Collection;
-import org.dcache.cells.CellStub;
+
 import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
+
+import org.dcache.cells.CellStub;
 
 public class PoolListByNames
     extends PoolListFromPoolManager

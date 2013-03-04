@@ -1,7 +1,7 @@
 package org.dcache.gplazma.configuration.parser;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.io.Files.newReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,8 +19,9 @@ import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.io.Files.newReader;
 /**
  *
  * @author timur

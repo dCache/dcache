@@ -1,16 +1,17 @@
 package org.dcache.ftp;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.InetSocketAddress;
-import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.UnresolvedAddressException;
-import java.nio.ByteBuffer;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+
 import org.dcache.pool.repository.RepositoryChannel;
 
 /**

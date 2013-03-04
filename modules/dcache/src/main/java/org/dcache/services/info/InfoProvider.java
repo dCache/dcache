@@ -1,5 +1,8 @@
 package org.dcache.services.info;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,8 +11,12 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
+
 import org.dcache.cells.AbstractCell;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
@@ -33,11 +40,6 @@ import org.dcache.services.info.serialisation.SimpleTextSerialiser;
 import org.dcache.services.info.serialisation.StateSerialiser;
 import org.dcache.services.info.serialisation.XmlSerialiser;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
-
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
 
 public class InfoProvider extends AbstractCell {
 

@@ -7,10 +7,11 @@
 
 package diskCacheV111.util;
 
-import dmg.cells.nucleus.CDC;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+
+import dmg.cells.nucleus.CDC;
 
 /**
    * Extends FutureTask to allow tasks to be cancelled due to timeout.

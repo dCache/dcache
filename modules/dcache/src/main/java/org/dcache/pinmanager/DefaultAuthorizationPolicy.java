@@ -1,8 +1,9 @@
 package org.dcache.pinmanager;
 
 import javax.security.auth.Subject;
-import org.dcache.pinmanager.model.Pin;
+
 import org.dcache.auth.Subjects;
+import org.dcache.pinmanager.model.Pin;
 
 public class DefaultAuthorizationPolicy implements AuthorizationPolicy
 {

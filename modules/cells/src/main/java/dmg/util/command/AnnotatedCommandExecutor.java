@@ -7,11 +7,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import dmg.util.Args;
-import dmg.util.CommandException;
-import dmg.util.CommandRequestable;
-import dmg.util.CommandSyntaxException;
-import dmg.util.CommandThrowableException;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -22,6 +17,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.concurrent.Callable;
+
+import dmg.util.Args;
+import dmg.util.CommandException;
+import dmg.util.CommandRequestable;
+import dmg.util.CommandSyntaxException;
+import dmg.util.CommandThrowableException;
 
 import static com.google.common.collect.Iterables.*;
 import static java.util.Arrays.asList;

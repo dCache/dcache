@@ -5,8 +5,7 @@
  */
 
 package org.dcache.commons.stats;
-import java.lang.management.ManagementFactory;
-import java.util.Formatter;
+
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
@@ -15,10 +14,13 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
+import java.lang.management.ManagementFactory;
+import java.util.Formatter;
+
 /**
  * This class encapsulates two integer counters and  provides utility methods
  * for increments and discovery of the count of  request invocations and
- * failures 
+ * failures
  * This class is thread safe.
  * @author timur
  */
@@ -27,7 +29,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
     private int   requests;
     private int    failed;
     private ObjectName mxBeanName;
-    
+
     /** Creates a new instance of Counter
      * @param name
      */
@@ -65,7 +67,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
         StringBuilder sb = new StringBuilder();
 
         Formatter formatter = new Formatter(sb);
-         
+
 
         formatter.format("%-34s %9d %9d", aName, requests,  failed);
         formatter.flush();
@@ -154,5 +156,5 @@ public class RequestCounterImpl implements RequestCounterMXBean {
     public synchronized int getSuccessful() {
         return requests - failed;
     }
-        
+
 }

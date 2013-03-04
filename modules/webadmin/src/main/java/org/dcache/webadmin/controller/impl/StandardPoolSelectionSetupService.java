@@ -1,5 +1,15 @@
 package org.dcache.webadmin.controller.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionEntity;
@@ -8,12 +18,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
 import org.dcache.poolmanager.Partition;
 import org.dcache.webadmin.controller.PoolSelectionSetupService;
 import org.dcache.webadmin.controller.exceptions.PoolSelectionSetupServiceException;
@@ -22,20 +27,18 @@ import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
-import org.dcache.webadmin.view.pages.poolselectionsetup.beans.IORequest;
-import org.dcache.webadmin.view.pages.poolselectionsetup.beans.MatchBean;
-import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.DCacheEntityContainerBean;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.EntityReference;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.EntityType;
-import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PoolEntity;
+import org.dcache.webadmin.view.pages.poolselectionsetup.beans.IORequest;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.LinkEntity;
+import org.dcache.webadmin.view.pages.poolselectionsetup.beans.MatchBean;
+import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
+import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PoolEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PoolGroupEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.UGroupEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.UnitEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.panels.simulatediorequest.IoDirections;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *

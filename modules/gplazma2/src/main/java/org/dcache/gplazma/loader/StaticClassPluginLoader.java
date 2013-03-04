@@ -1,10 +1,10 @@
 package org.dcache.gplazma.loader;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.Collection;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-
-import com.google.common.collect.ImmutableList;
 
 /**
  * This class provides a mechanism for loading GPlazma plugins from a static

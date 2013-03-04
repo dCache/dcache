@@ -1,23 +1,23 @@
 package org.dcache.webdav;
 
+import io.milton.http.Auth;
+import io.milton.http.LockInfo;
+import io.milton.http.LockResult;
+import io.milton.http.LockTimeout;
+import io.milton.http.LockToken;
+import io.milton.http.Request;
+import io.milton.http.exceptions.ConflictException;
+import io.milton.resource.CollectionResource;
+import io.milton.resource.LockableResource;
+import io.milton.resource.MoveableResource;
+import io.milton.resource.PropFindableResource;
+import io.milton.resource.Resource;
+
 import java.util.Date;
 import java.util.UUID;
 
-import io.milton.resource.Resource;
-import io.milton.resource.PropFindableResource;
-import io.milton.resource.MoveableResource;
-import io.milton.resource.CollectionResource;
-import io.milton.resource.LockableResource;
-import io.milton.http.Request;
-import io.milton.http.Auth;
-import io.milton.http.LockInfo;
-import io.milton.http.LockTimeout;
-import io.milton.http.LockToken;
-import io.milton.http.LockResult;
-import io.milton.http.exceptions.ConflictException;
-
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 
 import org.dcache.vehicles.FileAttributes;
 

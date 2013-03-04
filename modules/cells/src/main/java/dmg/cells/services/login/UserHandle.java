@@ -1,6 +1,9 @@
 package dmg.cells.services.login ;
 
-import  dmg.util.cdb.* ;
+import dmg.util.cdb.CdbContainable;
+import dmg.util.cdb.CdbElementable;
+import dmg.util.cdb.CdbFileRecordHandle;
+import dmg.util.cdb.CdbLockable;
 
 /**
   *   <table border=1>
@@ -10,15 +13,15 @@ import  dmg.util.cdb.* ;
   *   <tr><td>allowed</td><td>list of allowed attributes</td></tr>
   *   <tr><td>denied</td><td>list of denied attributes</td></tr>
   *   </table>
-  */ 
+  */
 public class  UserHandle extends CdbFileRecordHandle {
    private CdbContainable _container ;
    private String         _name ;
    public UserHandle( String  name ,
                         CdbContainable container  ,
                         CdbElementable element ){
-    
-        super( name , container , element ) ; 
+
+        super( name , container , element ) ;
         _container = container ;
         _name      = name ;
    }
@@ -53,10 +56,10 @@ public class  UserHandle extends CdbFileRecordHandle {
       removeListItem( "childs" , child ) ;
    }
    public UserPrivileges getUserPrivileges(){
-      return 
+      return
       new UserPrivileges( _name ,
                           (String[])getAttribute("allowed") ,
-                          (String[])getAttribute("denied" ) ) ; 
+                          (String[])getAttribute("denied" ) ) ;
    }
    public void addAllowed( String allowed ){
       addListItem( "allowed" , allowed , true ) ;
@@ -121,4 +124,4 @@ public class  UserHandle extends CdbFileRecordHandle {
       }
       return sb.toString() ;
    }
-} 
+}

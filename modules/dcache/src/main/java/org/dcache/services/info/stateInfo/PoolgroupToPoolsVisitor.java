@@ -1,5 +1,8 @@
 package org.dcache.services.info.stateInfo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -14,8 +17,6 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.base.guides.SubtreeStateGuide;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Scan through a dCache state tree, building a list of poolgroup-to-pools associations.
