@@ -164,18 +164,7 @@ public class   CellAdapter
             setCommandExceptionEnabled(false);
         }
 
-        /* Instantiate management component for log filtering.
-         */
-        CellNucleus parentNucleus =
-            CellNucleus.getLogTargetForCell(MDC.get(CDC.MDC_CELL));
-        FilterThresholds parentThresholds =
-            (parentNucleus.isSystemNucleus() || parentNucleus == _nucleus)
-            ? RootFilterThresholds.getInstance()
-            : parentNucleus.getLoggingThresholds();
-
-        FilterThresholds thresholds = new FilterThresholds(parentThresholds);
-        _nucleus.setLoggingThresholds(thresholds);
-        addCommandListener(new FilterShell(thresholds));
+        addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
 
         if (startNow) {
             start();

@@ -2,6 +2,7 @@ package dmg.cells.nucleus;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.io.FileNotFoundException;
 import java.io.Reader;
@@ -28,6 +29,7 @@ import dmg.util.Pinboard;
 import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
 import dmg.util.logback.FilterThresholds;
+import dmg.util.logback.RootFilterThresholds;
 
 /**
  *
@@ -130,6 +132,16 @@ public class CellNucleus implements ThreadFactory
         _cell = cell;
         _cellClass = _cell.getClass().getName();
 
+        /* Instantiate management component for log filtering.
+         */
+        CellNucleus parentNucleus =
+                CellNucleus.getLogTargetForCell(MDC.get(CDC.MDC_CELL));
+        FilterThresholds parentThresholds =
+                (parentNucleus.isSystemNucleus() || parentNucleus == this)
+                        ? RootFilterThresholds.getInstance()
+                        : parentNucleus.getLoggingThresholds();
+        setLoggingThresholds(new FilterThresholds(parentThresholds));
+
         //
         // for the use in restricted sandboxes
         //
@@ -153,7 +165,7 @@ public class CellNucleus implements ThreadFactory
         _printoutLevel = __cellGlue.getDefaultPrintoutLevel();
         __cellGlue.addCell(_cellName, this);
 
-        _logNucleus.info("Created : "+name);
+        _logNucleus.info("Created : " + name);
     }
 
     /**
@@ -649,7 +661,8 @@ public class CellNucleus implements ThreadFactory
     {
         for (Thread thread: threads) {
             if (thread.isAlive()) {
-                _logNucleus.info("killerThread : interrupting " + thread.getName());
+                _logNucleus.info("killerThread : interrupting " + thread
+                        .getName());
                 thread.interrupt();
             }
         }
@@ -745,7 +758,7 @@ public class CellNucleus implements ThreadFactory
             //
             final CellMessage msg = ce.getMessage();
             if (msg != null) {
-                _logNucleus.info("addToEventQueue : message arrived : "+msg);
+                _logNucleus.info("addToEventQueue : message arrived : " + msg);
                 CellLock lock;
 
                 synchronized (_waitHash) {
@@ -756,16 +769,16 @@ public class CellNucleus implements ThreadFactory
                     //
                     // we were waiting for you (sync or async)
                     //
-                    _logNucleus.info("addToEventQueue : lock found for : "+msg);
+                    _logNucleus.info("addToEventQueue : lock found for : " + msg);
                     if (lock.isSync()) {
-                        _logNucleus.info("addToEventQueue : is synchronous : "+msg);
+                        _logNucleus.info("addToEventQueue : is synchronous : " + msg);
                         synchronized (lock) {
                             lock.setObject(msg);
                             lock.notifyAll();
                         }
-                        _logNucleus.info("addToEventQueue : dest. was triggered : "+msg);
+                        _logNucleus.info("addToEventQueue : dest. was triggered : " + msg);
                     } else {
-                        _logNucleus.info("addToEventQueue : is asynchronous : "+msg);
+                        _logNucleus.info("addToEventQueue : is asynchronous : " + msg);
                         try {
                             _callbackExecutor.execute(new CallbackTask(lock, msg));
                         } catch (RejectedExecutionException e) {
@@ -794,7 +807,7 @@ public class CellNucleus implements ThreadFactory
         Thread thread = new Thread(__cellGlue.getKillerThreadGroup(), wrapLoggingContext(new KillerTask(ce)), "killer-" + _cellName);
         thread.start();
         _logNucleus.info("sendKillEvent : {} started on group {}",
-                         thread.getName(), thread.getThreadGroup().getName());
+                thread.getName(), thread.getThreadGroup().getName());
     }
 
     //
@@ -962,7 +975,7 @@ public class CellNucleus implements ThreadFactory
             shutdownPrivateExecutors();
 
             _logNucleus.info("killerThread : waiting for all threads in {} to finish",
-                             _threads);
+                    _threads);
 
             try {
                 Collection<Thread> threads = getNonDaemonThreads(_threads);
@@ -1089,15 +1102,18 @@ public class CellNucleus implements ThreadFactory
                     //
                     if (_logMessages.isDebugEnabled()) {
                         String messageObject = msg.getMessageObject() == null? "NULL" : msg.getMessageObject().getClass().getName();
-                        _logMessages.debug("nucleusMessageArrived src=" + msg.getSourcePath() +
-                                           " dest=" + msg.getDestinationPath() + " [" + messageObject + "] UOID=" + msg.getUOID().toString());
+                        _logMessages.debug("nucleusMessageArrived src=" + msg
+                                .getSourcePath() +
+                                " dest=" + msg
+                                .getDestinationPath() + " [" + messageObject + "] UOID=" + msg
+                                .getUOID().toString());
                     }
                     //
                     // and deliver it
                     //
-                    _logNucleus.info("messageThread : delivering message : "+msg);
+                    _logNucleus.info("messageThread : delivering message : " + msg);
                     _cell.messageArrived(new MessageEvent(msg));
-                    _logNucleus.info("messageThread : delivering message done : "+msg);
+                    _logNucleus.info("messageThread : delivering message done : " + msg);
                 } catch (RuntimeException e) {
                     if (!msg.isReply()) {
                         try {
