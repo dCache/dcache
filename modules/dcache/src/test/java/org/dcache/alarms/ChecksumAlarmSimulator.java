@@ -67,6 +67,8 @@ import java.util.concurrent.TimeUnit;
 
 import dmg.util.Args;
 
+import org.dcache.pool.classic.ChecksumScanner;
+
 /**
  * This class may be used for testing a live logging server configured with the
  * AlarmEntryAppender to store alarms.<br>
@@ -127,7 +129,7 @@ public class ChecksumAlarmSimulator {
     public final static String FREQUENCY = "errorFrequency";
 
     private final static Logger logger
-        = LoggerFactory.getLogger(ChecksumAlarmSimulator.class);
+        = LoggerFactory.getLogger(ChecksumScanner.class);
     private final static Random RAND = new Random(System.currentTimeMillis());
 
     private final static int TIMEOUT_DEFAULT = 30;

@@ -57,26 +57,52 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms.dao;
+package org.dcache.alarms.logback;
 
-import org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.filter.Filter;
+import ch.qos.logback.core.spi.FilterReply;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Map;
+
+import org.dcache.alarms.IAlarms;
 
 /**
- * Interface for the logger to store alarm entries.
+ * This filter can be added to the appender responsible for sending logging
+ * messages. It will accept all events but adds "host", "domain" and "service"
+ * to the MDC.  The latter need to be kept distinct from cell.cell and
+ * cell.domain because the latter can get clobbered on the receiving end
+ * if the messages are processed by a remote server running inside dCache
+ * as a cell.<br>
+ * <br>
+ * Note that there is no level requirement here.
  *
  * @author arossi
  */
-public interface IAlarmLoggingDAO {
-    /**
-     * As it is unlikely that the alarm service will be bombarded by alarm
-     * messages, a collection/batch method (such as used by
-     * {@link DataNucleusBillingInfo}) is not really necessary; single-insert
-     * should not create a bottleneck.<br>
-     * <br>
-     *
-     * It is the responsibility of the implementation to handle duplicates; in
-     * most cases this will involve a check for key equivalence and a subsequent
-     * call to {@link AlarmEntry#increment()} (update instead of insert).
-     */
-    void put(AlarmEntry alarm) throws AlarmStorageException;
+public class RemoteMDCFilter extends Filter<ILoggingEvent> {
+
+    private static String host;
+
+    static {
+        try {
+            host = InetAddress.getLocalHost().getCanonicalHostName();
+        } catch (UnknownHostException e) {
+            host = IAlarms.UNKNOWN_HOST;
+        }
+    }
+
+    public static String getHost() {
+        return host;
+    }
+
+    @Override
+    public FilterReply decide(ILoggingEvent event) {
+        Map<String,String> mdc = event.getMDCPropertyMap();
+        mdc.put(IAlarms.HOST_TAG, host);
+        mdc.put(IAlarms.SERVICE_TAG, mdc.get(IAlarms.CELL));
+        mdc.put(IAlarms.DOMAIN_TAG, mdc.get(IAlarms.DOMAIN));
+        return FilterReply.ACCEPT;
+    }
 }

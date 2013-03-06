@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <configuration>
-    <appender name="ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>${alarms.dir}/logback-server.log</File>
+    <appender name="LOGBACK" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${alarms.dir}/server.log</File>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <FileNamePattern>logback-server.%i.log</FileNamePattern>
+            <FileNamePattern>server.%i.log</FileNamePattern>
             <MinIndex>1</MinIndex>
             <MaxIndex>3</MaxIndex>
         </rollingPolicy>
@@ -19,13 +19,11 @@
         </layout>
     </appender>
 
-    <appender name="ALARM_HISTORY" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
-
-        <File>${alarms.dir}/alarms.log</File>
+    <appender name="HISTORY" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${alarms.dir}/history.log</File>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <FileNamePattern>alarms.%i.log</FileNamePattern>
+            <FileNamePattern>history.%i.log</FileNamePattern>
             <MinIndex>1</MinIndex>
             <MaxIndex>3</MaxIndex>
         </rollingPolicy>
@@ -39,20 +37,122 @@
         </encoder>
     </appender>
 
-    <!--
-        this appender will intercept all logging messages sent with the
-        ALARM marker and store them in the alarms (XML) database
-    -->
-    <appender name="ALARM" class="org.dcache.alarms.logback.AlarmEntryAppender">
-        <!-- this filter ensures that only events sent marked as ALARM
-             are received by this appender -->
-        <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
+    <!-- stores all received events; adds alarm metadata on the basis of either
+         a marker or a match with one of the alarmType definitions provided;
+         delegates all received events to other appenders, possibly with using a
+         cloned event with an added alarm marker if it is an alarm and was not
+         originally sent with one.
+         for further information, see the dCache Book -->
+    <appender name="STORE" class="org.dcache.alarms.logback.LogEntryAppender">
         <storePath>${alarms.store.path}</storePath>
         <url>${alarms.store.db.url}</url>
         <user>${alarms.store.db.user}</user>
         <pass>${alarms.store.db.pass}</pass>
         <driver>${alarms.store.db.driver}</driver>
         <propertiesPath>${alarms.store.db.properties}</propertiesPath>
+        <!-- definitions determine which events are to be interpreted as alarms -->
+        <alarmType>
+           <type>SERVICE_CREATION_FAILURE</type>
+           <regex>(.+) from ac_create</regex>
+           <level>ERROR</level>
+           <severity>CRITICAL</severity>
+           <includeInKey>group1 type host domain service</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>DB_OUT_OF_CONNECTIONS</type>
+           <regex>Failed to acquire connection.+Attempts left: 0</regex>
+           <level>ERROR</level>
+           <severity>CRITICAL</severity>
+           <includeInKey>type host</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>DB_UNAVAILABLE</type>
+           <regex>Unable to open a test connection to the given database|Connections could not be acquired from the underlying database</regex>
+           <matchException>true</matchException>
+           <depth>1</depth>
+           <level>ERROR</level>
+           <severity>CRITICAL</severity>
+           <includeInKey>type host</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>JVM_OUT_OF_MEMORY</type>
+           <regex>OutOfMemory</regex>
+           <level>ERROR</level>
+           <severity>CRITICAL</severity>
+           <includeInKey>type host domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>OUT_OF_FILE_DESCRIPTORS</type>
+           <regex>[Tt]oo many open files</regex>
+           <matchException>true</matchException>
+           <level>ERROR</level>
+           <severity>CRITICAL</severity>
+           <includeInKey>type host domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>IO_ERROR</type>
+           <regex>I/O.*failed(.+)|I/O error occur.*ed(.+)</regex>
+           <matchException>true</matchException>
+           <level>WARN</level>
+           <severity>HIGH</severity>
+           <includeInKey>group1 type host service domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>HSM_READ_FAILURE</type>
+           <regex>Fetch failed: HSM script failed</regex>
+           <level>WARN</level>
+           <severity>HIGH</severity>
+           <includeInKey>type host service domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>HSM_WRITE_FAILURE</type>
+           <regex>Store failed: HSM script failed</regex>
+           <level>WARN</level>
+           <severity>HIGH</severity>
+           <includeInKey>type host service domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>LOCATION_MANAGER_UNAVAILABLE</type>
+           <regex>Timeout querying location manager</regex>
+           <level>WARN</level>
+           <severity>HIGH</severity>
+           <includeInKey>type host service domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>POOL_MANAGER_UNAVAILABLE</type>
+           <regex>PoolManager.+not found</regex>
+           <level>WARN</level>
+           <severity>HIGH</severity>
+           <includeInKey>type host service domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>POOL_DISABLED</type>
+           <regex>Pool mode changed to disabled</regex>
+           <level>WARN</level>
+           <severity>MODERATE</severity>
+           <includeInKey>type host service domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <type>POOL_SIZE_REDUCTION</type>
+           <regex>reducing the pool size</regex>
+           <level>WARN</level>
+           <severity>MODERATE</severity>
+           <includeInKey>type host service domain</includeInKey>
+        </alarmType>
+        <alarmType>
+           <logger>org.dcache.pool.classic.ChecksumScanner</logger>
+           <type>CHECKSUM</type>
+           <regex>Checksum mismatch detected for (.+) - marking as BROKEN</regex>
+           <level>ERROR</level>
+           <severity>MODERATE</severity>
+           <includeInKey>group1 type host service domain</includeInKey>
+        </alarmType>
+        <!-- it would be normal to comment this out if you are using an RDBMS
+             and not running periodic deletes -->
+        <appender-ref ref="HISTORY"/>
+        <!-- uncomment this in order to receive alarm mails;
+             see below for how to set mail appender -->
+        <!-- <appender-ref ref="ALARM_MAIL"/> -->
     </appender>
 
     <!--
@@ -78,13 +178,11 @@
         </cyclicBufferTracker>
     </appender>
 
-    <root>
-        <level value="warn"/>
-        <appender-ref ref="ALL"/>
-        <appender-ref ref="ALARM"/>
-        <appender-ref ref="ALARM_HISTORY"/>
-    <!-- uncomment this in order to receive alarm mails;
-         see above how to set mail appender -->
-    <!-- <appender-ref ref="ALARM_MAIL"/> -->
+     <logger name="ch.qos.logback" additivity="false">
+         <appender-ref ref="LOGBACK"/>
+    </logger>
+
+    <root level="warn">
+        <appender-ref ref="STORE"/>
     </root>
 </configuration>

@@ -14,7 +14,7 @@
         <property name="location" value="arguments:"/>
     </bean>
 
-    <bean id="server" class="org.dcache.alarms.server.AlarmServerWrapper"
+    <bean id="server" class="org.dcache.alarms.server.LogEntryServerWrapper"
         init-method="startUp" destroy-method="shutDown">
         <property name="port" value="${alarms.server.port}"/>
         <property name="baseDir" value="${alarms.dir}"/>

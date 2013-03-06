@@ -12,7 +12,7 @@ import java.util.Properties;
 
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
-import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
+import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
@@ -32,7 +32,7 @@ public class DAOFactoryImpl implements DAOFactory {
     private Logger _log = LoggerFactory.getLogger(DAOFactory.class);
     private CommandSenderFactory _defaultCommandSenderFactory;
     private PageInfoCache _pageCache;
-    private IAlarmDAO _alarmDAO;
+    private ILogEntryDAO _logEntryDAO;
     private String _alarmsXMLPath;
     private String _alarmsDbDriver;
     private String _alarmsDbUrl;
@@ -44,15 +44,15 @@ public class DAOFactoryImpl implements DAOFactory {
     private int _alarmCleanerDeleteThreshold;
 
     @Override
-    public synchronized IAlarmDAO getAlarmDAO() throws DAOException {
-        if (_alarmDAO == null) {
-            _alarmDAO = new DataNucleusAlarmStore(_alarmsXMLPath,
+    public synchronized ILogEntryDAO getLogEntryDAO() throws DAOException {
+        if (_logEntryDAO == null) {
+            _logEntryDAO = new DataNucleusAlarmStore(_alarmsXMLPath,
                                                   getAlarmsProperties(),
                                                   _alarmCleanerEnabled,
                                                   _alarmCleanerSleepInterval,
                                                   _alarmCleanerDeleteThreshold);
         }
-        return _alarmDAO;
+        return _logEntryDAO;
     }
 
     @Override
@@ -100,10 +100,6 @@ public class DAOFactoryImpl implements DAOFactory {
         _alarmCleanerSleepInterval = alarmCleanerSleepInterval;
     }
 
-    public void setAlarmDAO(IAlarmDAO alarmDAO) {
-        _alarmDAO = alarmDAO;
-    }
-
     public void setAlarmsDbDriver(String alarmsDbDriver) {
         _alarmsDbDriver = alarmsDbDriver;
     }
@@ -134,6 +130,10 @@ public class DAOFactoryImpl implements DAOFactory {
         _log.debug("DefaultCommandSenderFactory set {}",
                         commandSenderFactory.toString());
         _defaultCommandSenderFactory = commandSenderFactory;
+    }
+
+    public void setLogEntryDAO(ILogEntryDAO alarmDAO) {
+        _logEntryDAO = alarmDAO;
     }
 
     public void setPageCache(PageInfoCache pageCache) {

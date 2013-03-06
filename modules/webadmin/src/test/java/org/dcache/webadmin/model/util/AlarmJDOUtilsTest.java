@@ -67,7 +67,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
+import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 
 import static org.hamcrest.Matchers.is;
@@ -81,7 +81,7 @@ import static org.junit.Assert.assertThat;
 public class AlarmJDOUtilsTest {
 
     private AlarmDAOFilter filter;
-    private List<AlarmEntry> alarms;
+    private List<LogEntry> alarms;
 
     @Before
     public void setup() throws Exception {
@@ -155,12 +155,12 @@ public class AlarmJDOUtilsTest {
 
     private void givenFilterParametersAre(Date after, Date before,
                     Severity severity, String type) {
-        filter = AlarmJDOUtils.getFilter(after, before, severity, type);
+        filter = AlarmJDOUtils.getFilter(after, before, severity, type, null);
     }
 
-    private void givenSizeOfAlarmEntryListIs(int size) {
+    private void givenSizeOfLogEntryListIs(int size) {
         for (int i = 0; i < size; i++) {
-            AlarmEntry alarm = new AlarmEntry();
+            LogEntry alarm = new LogEntry();
             alarm.setFirstArrived(System.currentTimeMillis());
             alarm.setKey("" + i);
             alarms.add(alarm);
@@ -183,7 +183,7 @@ public class AlarmJDOUtilsTest {
     }
 
     private void shouldContainNKeysForListOfSizeN(int N) {
-        givenSizeOfAlarmEntryListIs(N);
+        givenSizeOfLogEntryListIs(N);
         if (N > 0) {
             assertThat(occurrencesOf("||", filter.getFilter()), is(N - 1));
             assertThat(occurrencesOf(",", filter.getParameters()), is(N - 1));

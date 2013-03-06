@@ -70,8 +70,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
+import org.dcache.alarms.dao.LogEntry;
+import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
@@ -82,12 +82,13 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  * @author arossi
  */
 public class AlarmTableProvider extends
-                AbstractRegexFilteringProvider<AlarmEntry> {
+                AbstractRegexFilteringProvider<LogEntry> {
     private static final long serialVersionUID = 402824287543303781L;
 
-    private final Set<AlarmEntry> updated = new HashSet<>();
-    private final Set<AlarmEntry> deleted = new HashSet<>();
+    private final Set<LogEntry> updated = new HashSet<>();
+    private final Set<LogEntry> deleted = new HashSet<>();
 
+    private Boolean alarm = true;
     private Date after;
     private Date before;
     /*
@@ -98,19 +99,19 @@ public class AlarmTableProvider extends
     private String type;
     private boolean showClosed;
 
-    public void addToDeleted(AlarmEntry toDelete) {
+    public void addToDeleted(LogEntry toDelete) {
         synchronized (deleted) {
             deleted.add(toDelete);
         }
     }
 
-    public void addToUpdated(AlarmEntry toUpdate) {
+    public void addToUpdated(LogEntry toUpdate) {
         synchronized (updated) {
             updated.add(toUpdate);
         }
     }
 
-    public void delete(IAlarmDAO access) throws DAOException {
+    public void delete(ILogEntryDAO access) throws DAOException {
         synchronized (deleted) {
             if (!deleted.isEmpty()) {
                 access.remove(deleted);
@@ -137,18 +138,35 @@ public class AlarmTableProvider extends
         return severity;
     }
 
+    public String getTableTitle() {
+        if (alarm == null) {
+            return "ALARMS / WARNINGS";
+        } else if (alarm) {
+            return "ALARMS";
+        }
+        return "WARNINGS";
+    }
+
     public String getType() {
         return type;
+    }
+
+    public Boolean isAlarm() {
+        return alarm;
     }
 
     public boolean isShowClosed() {
         return showClosed;
     }
 
-    public void removeFromDeleted(AlarmEntry toDelete) {
+    public void removeFromDeleted(LogEntry toDelete) {
         synchronized (deleted) {
             deleted.remove(toDelete);
         }
+    }
+
+    public void setAlarm(Boolean alarm) {
+        this.alarm = alarm;
     }
 
     public void setAfter(Date after) {
@@ -179,13 +197,13 @@ public class AlarmTableProvider extends
         this.type = type;
     }
 
-    public boolean shouldDelete(AlarmEntry entry) {
+    public boolean shouldDelete(LogEntry entry) {
         synchronized (deleted) {
             return deleted.contains(entry);
         }
     }
 
-    public void update(IAlarmDAO access) throws DAOException {
+    public void update(ILogEntryDAO access) throws DAOException {
         synchronized (updated) {
             if (!updated.isEmpty()) {
                 access.update(updated);
@@ -195,15 +213,15 @@ public class AlarmTableProvider extends
     }
 
     @Override
-    protected Comparator<AlarmEntry> getComparator() {
-        return new Comparator<AlarmEntry>() {
+    protected Comparator<LogEntry> getComparator() {
+        return new Comparator<LogEntry>() {
 
             private <T extends Comparable<T>> int compare(int dir, T a, T b) {
                 return (a == null) ? dir : dir * a.compareTo(b);
             }
 
             @Override
-            public int compare(AlarmEntry alarm0, AlarmEntry alarm1) {
+            public int compare(LogEntry alarm0, LogEntry alarm1) {
                 SortParam sort = getSort();
                 int dir;
                 String property;
@@ -250,8 +268,8 @@ public class AlarmTableProvider extends
      *         <code>expression</code> and <code>closed</code>.
      */
     @Override
-    protected List<AlarmEntry> getFiltered() {
-        List<AlarmEntry> filtered;
+    protected List<LogEntry> getFiltered() {
+        List<LogEntry> filtered;
         synchronized (entries) {
             filtered = new ArrayList<>(entries);
         }
@@ -264,10 +282,10 @@ public class AlarmTableProvider extends
      * @param alarms
      *            assumed to be a thread-local copy, hence not synchronized.
      */
-    private void filterOnClosed(List<AlarmEntry> alarms) {
+    private void filterOnClosed(List<LogEntry> alarms) {
         if (!showClosed) {
-            for (Iterator<AlarmEntry> it = alarms.iterator(); it.hasNext();) {
-                AlarmEntry entry = it.next();
+            for (Iterator<LogEntry> it = alarms.iterator(); it.hasNext();) {
+                LogEntry entry = it.next();
                 if (entry.isClosed()) {
                     it.remove();
                 }

@@ -59,23 +59,24 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
+import org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo;
+
 /**
- * Wrapper exception for exception thrown from storage implementation.
+ * Interface for the logger to store entries.
  *
  * @author arossi
  */
-public class AlarmStorageException extends Exception {
-    private static final long serialVersionUID = -2120028255263450793L;
-
-    public AlarmStorageException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
-
-    public AlarmStorageException(Throwable cause) {
-        super(cause);
-    }
-
-    public AlarmStorageException(String msg) {
-        super(msg);
-    }
+public interface ILogEntryDAO {
+    /**
+     * As it is unlikely that the log service will be bombarded by error
+     * messages, a collection/batch method (such as used by
+     * {@link DataNucleusBillingInfo}) is not really necessary; single-insert
+     * should not create a bottleneck.<br>
+     * <br>
+     *
+     * It is the responsibility of the implementation to handle duplicates; in
+     * most cases this will involve a check for key equivalence and a subsequent
+     * update instead of insert.
+     */
+    void put(LogEntry alarm) throws LogEntryStorageException;
 }

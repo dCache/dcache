@@ -4,7 +4,7 @@
      xsi:schemaLocation="http://java.sun.com/xml/ns/jdo/jdo
         http://java.sun.com/xml/ns/jdo/jdo_2_0.xsd">
     <package name="org.dcache.alarms.dao">
-        <class name="AlarmEntry" detachable="true" >
+        <class name="LogEntry" detachable="true" >
             <field name="key" primary-key="true"/>
         </class>
     </package>

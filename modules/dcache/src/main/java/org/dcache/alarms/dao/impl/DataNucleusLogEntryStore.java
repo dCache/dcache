@@ -77,9 +77,9 @@ import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Properties;
 
-import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.alarms.dao.AlarmStorageException;
-import org.dcache.alarms.dao.IAlarmLoggingDAO;
+import org.dcache.alarms.dao.ILogEntryDAO;
+import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.dao.LogEntryStorageException;
 
 /**
  * DataNucleus wrapper to underlying alarm store.<br>
@@ -88,25 +88,24 @@ import org.dcache.alarms.dao.IAlarmLoggingDAO;
  *
  * @author arossi
  */
-public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
+public class DataNucleusLogEntryStore implements ILogEntryDAO {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final String xmlPath;
     private final Properties properties = new Properties();
-
     private PersistenceManagerFactory pmf;
 
-    public DataNucleusAlarmStore(String xmlPath, Properties properties)
-                    throws AlarmStorageException {
+    public DataNucleusLogEntryStore(String xmlPath, Properties properties)
+                    throws LogEntryStorageException {
         this.xmlPath = xmlPath;
         this.properties.putAll(properties);
         initialize();
     }
 
     @Override
-    public void put(AlarmEntry alarm) throws AlarmStorageException {
+    public void put(LogEntry entry) throws LogEntryStorageException {
         PersistenceManager insertManager = pmf.getPersistenceManager();
         Transaction tx = insertManager.currentTransaction();
-        Query query = insertManager.newQuery(AlarmEntry.class);
+        Query query = insertManager.newQuery(LogEntry.class);
         query.setFilter("key==k");
         query.declareParameters("java.lang.String k");
         query.addExtension("datanucleus.query.resultCacheType", "none");
@@ -119,17 +118,18 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
 
         try {
             tx.begin();
-            Collection<AlarmEntry> dup
-                = (Collection<AlarmEntry>) query.executeWithArray(alarm.getKey());
+            Collection<LogEntry> dup
+                = (Collection<LogEntry>) query.executeWithArray(entry.getKey());
             logger.trace("duplicate? {}", dup);
             if (dup != null && !dup.isEmpty()) {
                 if (dup.size() > 1) {
-                    throw new AlarmStorageException("data store inconsistency!"
-                                    + " more than one alarm with the same id: "
-                                    + alarm.getKey());
+                    throw new LogEntryStorageException
+                        ("data store inconsistency!"
+                          + " more than one alarm with the same id: "
+                                                    + entry.getKey());
                 }
-                AlarmEntry original = dup.iterator().next();
-                original.setLastUpdate(alarm.getLastUpdate());
+                LogEntry original = dup.iterator().next();
+                original.setLastUpdate(entry.getLastUpdate());
                 original.setReceived(original.getReceived() + 1);
                 /*
                  * original is not detached so it will be updated on commit
@@ -138,18 +138,18 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
                 /*
                  * first instance of this alarm
                  */
-                logger.trace("makePersistent alarm, key={}", alarm.getKey());
-                insertManager.makePersistent(alarm);
+                logger.trace("makePersistent alarm, key={}", entry.getKey());
+                insertManager.makePersistent(entry);
                 logger.trace("committing");
             }
             tx.commit();
-            logger.error("finished putting alarm, key={}", alarm.getKey());
+            logger.debug("finished putting alarm, key={}", entry.getKey());
         } catch (Throwable t) {
             if (tx.isActive()) {
                 tx.rollback();
             }
-            String message = "committing alarm, key=" + alarm.getKey();
-            throw new AlarmStorageException(message, t);
+            String message = "committing alarm, key=" + entry.getKey();
+            throw new LogEntryStorageException(message, t);
         } finally {
             /*
              * closing is necessary in order to avoid memory leaks
@@ -158,7 +158,7 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
         }
     }
 
-    private void initialize() throws AlarmStorageException {
+    private void initialize() throws LogEntryStorageException {
         try {
             if (properties.getProperty("datanucleus.ConnectionURL")
                             .startsWith("xml:")) {
@@ -168,7 +168,7 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
                             "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
             pmf = JDOHelper.getPersistenceManagerFactory(properties);
         } catch (IOException t) {
-            throw new AlarmStorageException(t);
+            throw new LogEntryStorageException(t);
         }
     }
 
@@ -186,7 +186,7 @@ public class DataNucleusAlarmStore implements IAlarmLoggingDAO {
             }
             try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
                 pw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-                pw.println("<alarms></alarms>");
+                pw.println("<entries></entries>");
                 pw.flush();
             }
         }

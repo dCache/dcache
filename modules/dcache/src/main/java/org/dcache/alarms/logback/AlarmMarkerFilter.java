@@ -68,7 +68,7 @@ import org.dcache.alarms.IAlarms;
 
 /**
  * This filter can be added to the appender responsible for receiving
- * alarm messages. It will accept all events with any Marker containing
+ * log messages. It will accept all events with any Marker containing
  * the parent "ALARM".  <br>
  * <br>
  * Note that there is no level requirement here.

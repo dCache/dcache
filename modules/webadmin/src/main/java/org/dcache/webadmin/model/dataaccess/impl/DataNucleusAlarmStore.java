@@ -78,8 +78,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
+import org.dcache.alarms.dao.LogEntry;
+import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.util.AlarmJDOUtils;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
@@ -98,7 +98,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  *
  * @author arossi
  */
-public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
+public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     private static final long WAIT_FOR_FILE = TimeUnit.SECONDS.toMillis(30);
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -131,20 +131,20 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
     }
 
     @Override
-    public Collection<AlarmEntry> get(Date after, Date before,
-                    Severity severity, String type)
+    public Collection<LogEntry> get(Date after, Date before,
+                    Severity severity, String type, Boolean isAlarm)
                                     throws DAOException {
         PersistenceManager readManager = pmf.getPersistenceManager();
         Transaction tx = readManager.currentTransaction();
         AlarmDAOFilter filter = AlarmJDOUtils.getFilter(after, before,
-                        severity, type);
+                        severity, type, isAlarm);
         try {
             tx.begin();
-            Collection<AlarmEntry> result = AlarmJDOUtils.execute(
+            Collection<LogEntry> result = AlarmJDOUtils.execute(
                             readManager, filter);
 
             logger.debug("got collection {}", result);
-            Collection<AlarmEntry> detached = readManager.detachCopyAll(result);
+            Collection<LogEntry> detached = readManager.detachCopyAll(result);
             logger.debug("got detatched collection {}", detached);
             tx.commit();
             logger.debug("successfully executed get for filter {}", filter);
@@ -183,7 +183,7 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
     }
 
     @Override
-    public long remove(Collection<AlarmEntry> selected)
+    public long remove(Collection<LogEntry> selected)
                     throws DAOException {
         if (selected.isEmpty()) {
             return 0;
@@ -211,7 +211,7 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
     }
 
     @Override
-    public long update(Collection<AlarmEntry> selected)
+    public long update(Collection<LogEntry> selected)
                     throws DAOException {
         if (selected.isEmpty()) {
             return 0;
@@ -221,17 +221,17 @@ public class DataNucleusAlarmStore implements IAlarmDAO, Runnable {
         AlarmDAOFilter filter = AlarmJDOUtils.getIdFilter(selected);
         try {
             tx.begin();
-            Collection<AlarmEntry> result = AlarmJDOUtils.execute(
+            Collection<LogEntry> result = AlarmJDOUtils.execute(
                             updateManager, filter);
             logger.debug("got matching entries {}", result);
             long updated = result.size();
 
-            Map<String, AlarmEntry> map = new HashMap<>();
-            for (AlarmEntry e : selected) {
+            Map<String, LogEntry> map = new HashMap<>();
+            for (LogEntry e : selected) {
                 map.put(e.getKey(), e);
             }
 
-            for (AlarmEntry e : result) {
+            for (LogEntry e : result) {
                 e.update(map.get(e.getKey()));
             }
 

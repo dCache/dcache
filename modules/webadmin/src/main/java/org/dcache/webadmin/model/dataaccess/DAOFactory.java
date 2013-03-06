@@ -20,7 +20,7 @@ public interface DAOFactory {
 
     public MoverDAO getMoverDAO();
 
-    public IAlarmDAO getAlarmDAO() throws DAOException;
+    public ILogEntryDAO getLogEntryDAO() throws DAOException;
 
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }

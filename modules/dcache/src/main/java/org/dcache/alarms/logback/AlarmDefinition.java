@@ -62,18 +62,11 @@ package org.dcache.alarms.logback;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
-import ch.qos.logback.classic.spi.LoggingEvent;
-import ch.qos.logback.core.Appender;
-import ch.qos.logback.core.filter.Filter;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -85,11 +78,7 @@ import org.dcache.util.RegexUtils;
 
 /**
  * Provides the definition of an alarm to be used by the
- * {@link AlarmDefinitionFilter}.
- *
- * The filter must be expressed as a JSON string (but without beginning or
- * ending braces), and should define the following properties:<br>
- * <br>
+ * {@link LogEntryAppender}.
  *
  * <table>
  * <tr>
@@ -115,14 +104,14 @@ import org.dcache.util.RegexUtils;
  * "[=].+[\w]*"</td>
  * </tr>
  * <tr>
- * <td>regex-flags</td>
+ * <td>regexFlags</td>
  * <td>NO</td>
  * <td>options for regex (these are string representations of the
  * {@link Pattern} options, joined by the 'or' pipe symbol: e.g.,
  * "CASE_INSENSITIVE | DOTALL")</td>
  * </tr>
  * <tr>
- * <td>match-exception</td>
+ * <td>matchException</td>
  * <td>NO</td>
  * <td>true = recur over embedded exception messages when applying regex match
  * (default is false)</td>
@@ -149,7 +138,7 @@ import org.dcache.util.RegexUtils;
  * <td>thread name limits alarm only to this thread</td>
  * </tr>
  * <tr>
- * <td>include-in-key</td>
+ * <td>includeInKey</td>
  * <td>YES</td>
  * <td>whitespace-delimited concatenation of key field names (see below)</td>
  * </tr>
@@ -160,12 +149,13 @@ import org.dcache.util.RegexUtils;
  * </p>
  *
  * <pre>
- *    &lt;alarmType&gt;
- *               level:ERROR,
- *               logger:AdHocAlarmTest,
- *               type:TEST,
- *               include-in-key:timestamp message type
- *    &lt;/alarmType&gt;
+ *       &lt;alarmType&gt;
+ *          &lt;type&gt;SERVICE_CREATION_FAILURE&lt;/type&gt;
+ *          &lt;regex&gt;(.+) from ac_create&lt;/regex&gt;
+ *          &lt;level&gt;ERROR&lt;/level&gt;
+ *          &lt;severity&gt;CRITICAL&lt;/severity&gt;
+ *          &lt;includeInKey&gt;group1 type host domain service&lt;/includeInKey&gt;
+ *       &lt;/alarmType&gt;
  * </pre>
  *
  * <p>
@@ -205,37 +195,12 @@ import org.dcache.util.RegexUtils;
  * error, warn), thread names and/or regex matches on the message string.
  * </p>
  *
- * <p>
- * {@link #embedAlarm(ILoggingEvent)} embeds the alarm type and JSON
- * serialization into the current event's MDC property map for immediate
- * downstream use by an {@link AlarmDefinitionAppender} (this assumes the same
- * thread context is maintained on this logging object from
- * {@link Filter#decide(Object)} to {@link Appender} protected append method).
- * </p>
  */
 public class AlarmDefinition {
-
     public static final String LOGGER_TAG = "logger";
     public static final String LEVEL_TAG = "level";
     public static final String THREAD_TAG = "thread";
-    public static final String REGEX_TAG = "regex";
-    public static final String REGEX_FLAGS_TAG = "regex-flags";
-    public static final String MATCH_EXCEPTION = "match-exception";
-    public static final String DEPTH = "depth";
-    public static final String INCLUDE_IN_KEY_TAG = "include-in-key";
-    public static final String EMBEDDED_ALARM_INFO_TAG = "embedded.alarm.info";
-    public static final String EMBEDDED_TYPE_TAG = "embedded.type";
     public static final String INCLUDE_IN_KEY_DELIMITER = "[\\s]";
-
-    private static String host;
-
-    static {
-        try {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            host = IAlarms.UNKNOWN_HOST;
-        }
-    }
 
     public static Marker getMarker(String subMarker) {
         Marker alarmMarker = MarkerFactory.getIMarkerFactory().getMarker(
@@ -248,173 +213,25 @@ public class AlarmDefinition {
 
         return alarmMarker;
     }
-    /*
-     * required
-     */
-    private final Level level;
-    private final String type;
 
-    private final Set<String> includeInKey = Sets.newHashSet();
-    /*
-     * optional
-     */
+    private final Set<String> hashedKeyElements = Sets.newHashSet();
+
+    private Level level = Level.WARN;
     private Severity severity = Severity.MODERATE;
+    private Boolean matchException = false;
+    private String type;
     private String logger;
     private String thread;
-    private Pattern regex;
-    private Boolean matchException = false;
-
+    private String regexStr;
+    private String regexFlags;
     private Integer depth;
+    private Pattern regex;
 
-    /**
-     * @param formattedJSONString
-     *            Note that the definition expects a full, correctly formed JSON
-     *            string (with beginning and end braces included).
-     */
-    public AlarmDefinition(String formattedJSONString) throws JSONException {
-        Preconditions.checkNotNull(formattedJSONString);
-
-        JSONObject jsonObject = new JSONObject(formattedJSONString);
-
-        /*
-         * these fields are required and will throw a JSONException if not
-         * defined
-         */
-        type = jsonObject.getString(IAlarms.TYPE_TAG);
-        level = Level.valueOf(jsonObject.getString(LEVEL_TAG));
-
-        String includeString = jsonObject.getString(INCLUDE_IN_KEY_TAG);
-        String[] keyNames = includeString.split(INCLUDE_IN_KEY_DELIMITER);
-        Collections.addAll(includeInKey, keyNames);
-
-        try {
-            logger = jsonObject.getString(LOGGER_TAG);
-        } catch (JSONException notFound) {
-            // ignore, as field is optional
-        }
-
-        try {
-            thread = jsonObject.getString(THREAD_TAG);
-        } catch (JSONException notFound) {
-            // ignore, as field is optional
-        }
-
-        try {
-            severity = Severity.valueOf(jsonObject.getString(IAlarms.SEVERITY_TAG));
-        } catch (JSONException notFound) {
-            // ignore, as field is optional
-        }
-
-        String regex = null;
-        String flags = null;
-        try {
-            regex = jsonObject.getString(REGEX_TAG);
-            flags = jsonObject.getString(REGEX_FLAGS_TAG);
-        } catch (JSONException notFound) {
-            // ignore, as fields are optional
-        }
-
-        if (regex != null) {
-            this.regex = Pattern.compile(regex, RegexUtils.parseFlags(flags));
-        }
-
-        try {
-            matchException = jsonObject.getBoolean(MATCH_EXCEPTION);
-        } catch (JSONException notFound) {
-            // ignore, as field is optional
-        }
-
-        try {
-            depth = jsonObject.getInt(DEPTH);
-        } catch (JSONException notFound) {
-            // ignore, as field is optional
-        }
-    }
-
-    public void embedAlarm(ILoggingEvent event) throws JSONException {
-        if (!(event instanceof LoggingEvent)) {
-            return;
-        }
-
-        LoggingEvent alarm = (LoggingEvent) event;
-        alarm.getMDCPropertyMap().put(EMBEDDED_TYPE_TAG, type);
-        alarm.getMDCPropertyMap().put(EMBEDDED_ALARM_INFO_TAG, getInfo(event));
-    }
-
-    public boolean matches(ILoggingEvent event) {
-        if (!(event instanceof LoggingEvent)) {
-            return false;
-        }
-
-        if (!event.getLevel().isGreaterOrEqual(level)) {
-            return false;
-        }
-
-        if (logger != null && !event.getLoggerName().equals(logger)) {
-            return false;
-        }
-
-        if (thread != null && !event.getThreadName().equals(thread)) {
-            return false;
-        }
-
-        if (regex != null && !doMatch(event)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private boolean doMatch(ILoggingEvent event) {
-        if (regex.matcher(event.getFormattedMessage()).find()) {
-            return true;
-        }
-
-        int d = depth == null ? Integer.MAX_VALUE : depth - 1;
-
-        if (matchException) {
-            IThrowableProxy p = event.getThrowableProxy();
-            while (p != null && d >= 0) {
-                if (regex.matcher(p.getMessage()).find()) {
-                    return true;
-                }
-                p = p.getCause();
-                d--;
-            }
-        }
-
-        return false;
-    }
-
-    private String getInfo(ILoggingEvent event) throws JSONException {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put(IAlarms.TIMESTAMP_TAG, event.getTimeStamp());
-
-        String domain = event.getMDCPropertyMap().get(IAlarms.DOMAIN);
-        if (domain == null) {
-            domain = IAlarms.UNKNOWN_DOMAIN;
-        }
-
-        String service = event.getMDCPropertyMap().get(IAlarms.CELL);
-        if (service == null) {
-            service = IAlarms.UNKNOWN_SERVICE;
-        }
-
-        jsonObject.put(IAlarms.DOMAIN_TAG, domain);
-        jsonObject.put(IAlarms.SERVICE_TAG, service);
-        jsonObject.put(IAlarms.HOST_TAG, host);
-        jsonObject.put(IAlarms.TYPE_TAG, type);
-        jsonObject.put(IAlarms.SEVERITY_TAG, severity);
-        jsonObject.put(IAlarms.KEY_TAG, getKey(event, domain, service));
-        jsonObject.put(IAlarms.MESSAGE_TAG, event.getFormattedMessage());
-
-        return jsonObject.toString();
-    }
-
-    private String getKey(ILoggingEvent event, String domain, String service) {
+    public String getKey(ILoggingEvent event, String host, String domain,
+                    String service) {
         StringBuilder key = new StringBuilder();
 
-        for (String s : includeInKey) {
+        for (String s : hashedKeyElements) {
             if (s.startsWith(IAlarms.GROUP_TAG)) {
                 if (regex != null) {
                     Matcher m = regex.matcher(event.getFormattedMessage());
@@ -454,5 +271,102 @@ public class AlarmDefinition {
             }
         }
         return key.toString();
+    }
+
+    public Severity getSeverityEnum() {
+        return severity;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public boolean matches(ILoggingEvent event) {
+        if (!event.getLevel().isGreaterOrEqual(level)) {
+            return false;
+        }
+
+        if (logger != null && !event.getLoggerName().equals(logger)) {
+            return false;
+        }
+
+        if (thread != null && !event.getThreadName().equals(thread)) {
+            return false;
+        }
+
+        if (regex == null && regexStr != null) {
+            regex = Pattern.compile(regexStr, RegexUtils.parseFlags(regexFlags));
+        }
+
+        if (regex != null && !doMatch(event)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void setDepth(Integer depth) {
+        this.depth = depth;
+    }
+
+    public void setIncludeInKey(String includeInKey) {
+        Preconditions.checkNotNull(includeInKey);
+        String[] keyNames = includeInKey.split(INCLUDE_IN_KEY_DELIMITER);
+        Collections.addAll(hashedKeyElements, keyNames);
+    }
+
+    public void setLevel(String level) {
+        Preconditions.checkNotNull(level);
+        this.level = Level.valueOf(level);
+    }
+
+    public void setLogger(String logger) {
+        this.logger = logger;
+    }
+
+    public void setMatchException(Boolean matchException) {
+        this.matchException = matchException;
+    }
+
+    public void setRegex(String regexStr) {
+        this.regexStr = regexStr;
+    }
+
+    public void setRegexFlags(String regexFlags) {
+        this.regexFlags = regexFlags;
+    }
+
+    public void setSeverity(String severity) {
+        Preconditions.checkNotNull(severity);
+        this.severity = Severity.valueOf(severity);
+    }
+
+    public void setThread(String thread) {
+        this.thread = thread;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    private boolean doMatch(ILoggingEvent event) {
+        if (regex.matcher(event.getFormattedMessage()).find()) {
+            return true;
+        }
+
+        int d = depth == null ? Integer.MAX_VALUE : depth-1;
+
+        if (matchException) {
+            IThrowableProxy p = event.getThrowableProxy();
+            while (p != null && d >= 0) {
+                if (regex.matcher(p.getMessage()).find()) {
+                    return true;
+                }
+                p = p.getCause();
+                d--;
+            }
+        }
+
+        return false;
     }
 }

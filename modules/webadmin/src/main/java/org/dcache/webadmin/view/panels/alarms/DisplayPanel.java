@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.panels.alarms;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.AjaxEditableLabel;
 import org.apache.wicket.extensions.markup.html.repeater.data.grid.ICellPopulator;
@@ -68,15 +69,17 @@ import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.NavigationToolbar;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.model.AbstractCheckBoxModel;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.model.PropertyModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.dcache.alarms.dao.AlarmEntry;
+import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.view.pages.alarms.AlarmsPage;
 import org.dcache.webadmin.view.panels.alarms.CheckPanel.CheckBoxColumn;
@@ -92,51 +95,65 @@ public class DisplayPanel extends Panel {
 
     public DisplayPanel(String id, final AlarmsPage parent) {
         super(id);
-        List<IColumn<AlarmEntry>> columns
+        List<IColumn<LogEntry>> columns
             = new ArrayList<>();
-        AlarmTableProvider provider
+        final AlarmTableProvider provider
             = parent.getWebadminApplication().getAlarmDisplayService()
                     .getDataProvider();
         addDeleteColumn(columns, provider);
         addCloseColumn(columns, provider);
         addAttributeColumns(columns);
         addNotesColumn(columns, provider);
-        DataTable<AlarmEntry> table
-            = new DataTable<>("alarms", columns, provider, 100);
+
+        add(new Label("tableTitle",
+                        new PropertyModel<String>(provider, "tableTitle")));
+        DataTable<LogEntry> table
+            = new DataTable<LogEntry>("alarms", columns, provider, 100) {
+                private static final long serialVersionUID = -6574880701979145714L;
+                protected Item<LogEntry> newRowItem(final String id,
+                                final int index, final IModel<LogEntry> model) {
+                    Item<LogEntry> item = super.newRowItem(id, index, model);
+                    if (provider.isAlarm() == null && model.getObject().isAlarm()) {
+                        item.add(AttributeModifier.replace("style", "color: #880000;"));
+                    }
+                    return item;
+                }
+            };
         table.addBottomToolbar(new NavigationToolbar(table));
         table.addTopToolbar(new HeadersToolbar(table, provider));
+
         add(table);
     }
 
-    private void addAttributeColumns(List<IColumn<AlarmEntry>> columns) {
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("First"), "first",
+    private void addAttributeColumns(List<IColumn<LogEntry>> columns) {
+        columns.add(new PropertyColumn<LogEntry>(Model.of("First"), "first",
                         "formattedDateOfFirstArrival"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Last"), "last",
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Last"), "last",
                         "formattedDateOfLastUpdate"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Severity"),
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Severity"),
                         "severity", "severityEnum"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Type"), "type",
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Type"), "type",
                         "type"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Count"), "received",
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Count"), "received",
                         "received"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Host"), "host",
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Host"), "host",
                         "host"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Domain"),
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Domain"),
                         "domain", "domain"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Service"),
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Service"),
                         "service", "service"));
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Info"), "info",
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Info"), "info",
                         "info"));
     }
 
-    private void addCloseColumn(List<IColumn<AlarmEntry>> columns,
+    private void addCloseColumn(List<IColumn<LogEntry>> columns,
                     final AlarmTableProvider provider) {
-        columns.add(new CheckBoxColumn<AlarmEntry>("Close", Model.of("Close")) {
+        columns.add(new CheckBoxColumn<LogEntry>("Close", Model.of("Close")) {
             private static final long serialVersionUID = -7237325512597811741L;
 
             @Override
             protected IModel<Boolean> newCheckBoxModel(
-                            final IModel<AlarmEntry> rowModel) {
+                            final IModel<LogEntry> rowModel) {
                 return new AbstractCheckBoxModel() {
                     private static final long serialVersionUID = 3616011392436379060L;
 
@@ -152,14 +169,14 @@ public class DisplayPanel extends Panel {
 
                     @Override
                     public void select() {
-                        AlarmEntry entry = rowModel.getObject();
+                        LogEntry entry = rowModel.getObject();
                         entry.setClosed(true);
                         provider.addToUpdated(entry);
                     }
 
                     @Override
                     public void unselect() {
-                        AlarmEntry entry = rowModel.getObject();
+                        LogEntry entry = rowModel.getObject();
                         entry.setClosed(false);
                         provider.addToUpdated(entry);
                     }
@@ -168,14 +185,14 @@ public class DisplayPanel extends Panel {
         });
     }
 
-    private void addDeleteColumn(List<IColumn<AlarmEntry>> columns,
+    private void addDeleteColumn(List<IColumn<LogEntry>> columns,
                     final AlarmTableProvider provider) {
-        columns.add(new CheckBoxColumn<AlarmEntry>("Delete", Model.of("Delete")) {
+        columns.add(new CheckBoxColumn<LogEntry>("Delete", Model.of("Delete")) {
             private static final long serialVersionUID = -7237325512597811741L;
 
             @Override
             protected IModel<Boolean> newCheckBoxModel(
-                            final IModel<AlarmEntry> rowModel) {
+                            final IModel<LogEntry> rowModel) {
                 return new AbstractCheckBoxModel() {
                     private static final long serialVersionUID = 3616011392436379060L;
 
@@ -203,17 +220,17 @@ public class DisplayPanel extends Panel {
         });
     }
 
-    private void addNotesColumn(List<IColumn<AlarmEntry>> columns,
+    private void addNotesColumn(List<IColumn<LogEntry>> columns,
                     final AlarmTableProvider provider) {
-        columns.add(new PropertyColumn<AlarmEntry>(Model.of("Notes"), "notes") {
+        columns.add(new PropertyColumn<LogEntry>(Model.of("Notes"), "notes") {
 
             private static final long serialVersionUID = 7225406229492621282L;
 
             @Override
             public void populateItem(
-                            final Item<ICellPopulator<AlarmEntry>> item,
+                            final Item<ICellPopulator<LogEntry>> item,
                             final String componentId,
-                            final IModel<AlarmEntry> rowModel) {
+                            final IModel<LogEntry> rowModel) {
                 item.add(new AjaxEditableLabel(componentId,
                                 createLabelModel(rowModel)) {
                     private static final long serialVersionUID = -6235564987318418284L;

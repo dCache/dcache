@@ -72,9 +72,9 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
+import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
-import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
+import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.model.exceptions.DAOException;
 
@@ -90,7 +90,7 @@ import static org.mockito.Mockito.inOrder;
  */
 public class StandardAlarmDisplayServiceTest {
 
-    private IAlarmDAO mocked;
+    private ILogEntryDAO mocked;
     private StandardAlarmDisplayService service;
     private AlarmTableProvider provider;
     private DAOFactoryImplHelper helper;
@@ -98,7 +98,7 @@ public class StandardAlarmDisplayServiceTest {
     @Before
     public void setup() throws Exception {
         helper = new DAOFactoryImplHelper();
-        mocked = helper.getAlarmDAO();
+        mocked = helper.getLogEntryDAO();
         service = new StandardAlarmDisplayService(helper);
         provider = service.getDataProvider();
     }
@@ -107,8 +107,8 @@ public class StandardAlarmDisplayServiceTest {
     public void shouldCallUpdateDeleteAndGetInOrderOnRefresh()
                     throws JSONException, DAOException {
         InOrder inOrder = inOrder(mocked);
-        Set<AlarmEntry> update = givenSetOfAlarmEntriesOfLength(2);
-        Set<AlarmEntry> delete = givenSetOfAlarmEntriesOfLength(3);
+        Set<LogEntry> update = givenSetOfAlarmEntriesOfLength(2);
+        Set<LogEntry> delete = givenSetOfAlarmEntriesOfLength(3);
         givenEntriesAreSelectedForUpdateInProvider(update);
         givenEntriesAreSelectedForDeleteInProvider(delete);
         givenRefreshIsCalled();
@@ -120,19 +120,19 @@ public class StandardAlarmDisplayServiceTest {
         delete.clear();
         inOrder.verify(mocked).update(update);
         inOrder.verify(mocked).remove(delete);
-        inOrder.verify(mocked).get(null, null, Severity.MODERATE, null);
+        inOrder.verify(mocked).get(null, null, Severity.MODERATE, null, true);
     }
 
     @Test
     public void shouldFilterOnExpression() throws JSONException {
         int numberOfEntries = 4;
-        Set<AlarmEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
+        Set<LogEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
         givenThatProviderAlarmsAre(entries);
         givenThatFilterExpressionIs("ALARM_2");
-        Iterator<? extends AlarmEntry> it = provider.iterator(0,
+        Iterator<? extends LogEntry> it = provider.iterator(0,
                         numberOfEntries);
         int count = 0;
-        AlarmEntry found = new AlarmEntry();
+        LogEntry found = new LogEntry();
         while (it.hasNext()) {
             found = it.next();
             count++;
@@ -153,11 +153,11 @@ public class StandardAlarmDisplayServiceTest {
     @Test
     public void shouldFilterOnNotShowClosed() throws JSONException {
         int numberOfEntries = 4;
-        Set<AlarmEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
-        AlarmEntry closed = givenThatEntryIsClosed(entries, 2);
+        Set<LogEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
+        LogEntry closed = givenThatEntryIsClosed(entries, 2);
         givenThatProviderAlarmsAre(entries);
         givenThatShowClosedIs(false);
-        Iterator<? extends AlarmEntry> it = provider.iterator(0,
+        Iterator<? extends LogEntry> it = provider.iterator(0,
                         numberOfEntries);
         int count = 0;
         while (it.hasNext()) {
@@ -170,13 +170,13 @@ public class StandardAlarmDisplayServiceTest {
     @Test
     public void shouldFilterOnRegex() throws JSONException {
         int numberOfEntries = 4;
-        Set<AlarmEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
+        Set<LogEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
         givenThatProviderAlarmsAre(entries);
         givenThatRegularExpressionIs(".*LARM_0.*");
-        Iterator<? extends AlarmEntry> it = provider.iterator(0,
+        Iterator<? extends LogEntry> it = provider.iterator(0,
                         numberOfEntries);
         int count = 0;
-        AlarmEntry found = new AlarmEntry();
+        LogEntry found = new LogEntry();
         while (it.hasNext()) {
             found = it.next();
             count++;
@@ -197,11 +197,11 @@ public class StandardAlarmDisplayServiceTest {
     @Test
     public void shouldNotFilterOnShowClosed() throws JSONException {
         int numberOfEntries = 4;
-        Set<AlarmEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
+        Set<LogEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
         givenThatEntryIsClosed(entries, 2);
         givenThatProviderAlarmsAre(entries);
         givenThatShowClosedIs(true);
-        Iterator<? extends AlarmEntry> it = provider.iterator(0,
+        Iterator<? extends LogEntry> it = provider.iterator(0,
                         numberOfEntries);
         int count = 0;
         while (it.hasNext()) {
@@ -214,10 +214,10 @@ public class StandardAlarmDisplayServiceTest {
     @Test
     public void shouldSortOnCount() throws JSONException {
         int numberOfEntries = 20;
-        Set<AlarmEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
+        Set<LogEntry> entries = givenSetOfAlarmEntriesOfLength(numberOfEntries);
         givenThatProviderAlarmsAre(entries);
         givenThatProviderShouldSortOnCount();
-        Iterator<? extends AlarmEntry> it = provider.iterator(0,
+        Iterator<? extends LogEntry> it = provider.iterator(0,
                         numberOfEntries);
         int lastCount = 0;
         while (it.hasNext()) {
@@ -227,14 +227,14 @@ public class StandardAlarmDisplayServiceTest {
         }
     }
 
-    private void givenEntriesAreSelectedForDeleteInProvider(Set<AlarmEntry> list) {
-        for (AlarmEntry entry : list) {
+    private void givenEntriesAreSelectedForDeleteInProvider(Set<LogEntry> list) {
+        for (LogEntry entry : list) {
             provider.addToDeleted(entry);
         }
     }
 
-    private void givenEntriesAreSelectedForUpdateInProvider(Set<AlarmEntry> list) {
-        for (AlarmEntry entry : list) {
+    private void givenEntriesAreSelectedForUpdateInProvider(Set<LogEntry> list) {
+        for (LogEntry entry : list) {
             provider.addToUpdated(entry);
         }
     }
@@ -243,11 +243,11 @@ public class StandardAlarmDisplayServiceTest {
         service.refresh();
     }
 
-    private Set<AlarmEntry> givenSetOfAlarmEntriesOfLength(int n)
+    private Set<LogEntry> givenSetOfAlarmEntriesOfLength(int n)
                     throws JSONException {
-        Set<AlarmEntry> set = new TreeSet<>();
+        Set<LogEntry> set = new TreeSet<>();
         for (int i = 0; i < n; i++) {
-            AlarmEntry entry = new AlarmEntry();
+            LogEntry entry = new LogEntry();
             entry.setKey(UUID.randomUUID().toString());
             entry.setFirstArrived(System.currentTimeMillis()
                             + TimeUnit.MINUTES.toMillis(i));
@@ -260,9 +260,9 @@ public class StandardAlarmDisplayServiceTest {
         return set;
     }
 
-    private AlarmEntry givenThatEntryIsClosed(Set<AlarmEntry> entries, int k) {
+    private LogEntry givenThatEntryIsClosed(Set<LogEntry> entries, int k) {
         int i = 0;
-        for (AlarmEntry entry : entries) {
+        for (LogEntry entry : entries) {
             if (i == k) {
                 entry.setClosed(true);
                 return entry;
@@ -277,7 +277,7 @@ public class StandardAlarmDisplayServiceTest {
         provider.setRegex(false);
     }
 
-    private void givenThatProviderAlarmsAre(Set<AlarmEntry> entries) {
+    private void givenThatProviderAlarmsAre(Set<LogEntry> entries) {
         provider.setEntries(entries);
     }
 

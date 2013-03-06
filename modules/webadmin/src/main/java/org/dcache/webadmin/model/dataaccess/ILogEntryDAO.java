@@ -57,83 +57,57 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms.logback;
+package org.dcache.webadmin.model.dataaccess;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
-import org.json.JSONException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
+import java.util.Collection;
+import java.util.Date;
 
-import org.dcache.alarms.AlarmFactory;
-import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.alarms.dao.AlarmStorageException;
-import org.dcache.alarms.dao.IAlarmLoggingDAO;
-
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import org.dcache.alarms.Severity;
+import org.dcache.alarms.dao.LogEntry;
+import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
- * Tests filtering and storing of logging events.<br><br>
- *
- * Requires <code>ch.qos.logback.classic.Logger</code>.
+ * API for the persistent storage to be used in connection with
+ * {@link LogEntry} -based HTML pages. The {{@link #update(Collection)} and
+ * {@link #remove(Collection)} methods assume in-memory selection of alarm
+ * entries to be deleted or modified.
  *
  * @author arossi
  */
-public class AlarmEntryAppenderTest {
+public interface ILogEntryDAO {
+    /**
+     * It is assumed that any further filtering will be done in memory.<br>
+     * <br>
+     *
+     * @param after
+     *            closed lower bound (>=) of date range; may be
+     *            <code>null</code>.
+     * @param before
+     *            closed upper bound (<=) of date range; may be
+     *            <code>null</code>.
+     * @param severity
+     *            <code>null</code> will be treated as equivalent to
+     *            <code>Severity.MODERATE</code>.
+     * @param type
+     *            may be <code>null</code>.
+     * @param isAlarm
+     *            may be <code>null</code>.
+     */
+    Collection<LogEntry> get(Date after, Date before, Severity severity,
+                    String type, Boolean isAlarm) throws DAOException;
 
-    private static Logger logger;
+    /**
+     * @return number of entries removed
+     */
+    long remove(Collection<LogEntry> selected) throws DAOException;
 
-    @Mock
-    private IAlarmLoggingDAO mockStore;
-
-    @Before
-    public void setup() throws AlarmStorageException, JSONException {
-        AlarmEntryAppender appender = new AlarmEntryAppender();
-        appender.setContext(new LoggerContext());
-        MockitoAnnotations.initMocks(this);
-        appender.setStore(mockStore);
-        appender.addFilter(new AlarmMarkerFilter());
-        appender.start();
-        logger = new LoggerContext().getLogger(AlarmEntryAppenderTest.class);
-        logger.addAppender(appender);
-    }
-
-    @After
-    public void teardown() throws Exception {
-        logger.detachAndStopAllAppenders();
-    }
-
-    @Test
-    public void shouldCallPutWhenAlarmArrives() throws JSONException,
-                    AlarmStorageException {
-        String alarm = AlarmFactory.givenChecksumMessageForThisHost
-                        (AlarmEntryAppenderTest.class.getName());
-        AlarmEntry entry = AlarmFactory.givenAlarmEntryFromChecksumMessage(alarm);
-        Marker marker = AlarmFactory.givenChecksumMarker();
-        logger.error(marker, alarm);
-        verify(mockStore).put(entry);
-    }
-
-    @Test
-    public void shouldNotCallPutWhenThereIsNoMarker() throws JSONException,
-                    AlarmStorageException {
-        AlarmEntry entry = AlarmFactory.givenNewAlarmEntry();
-        logger.error("this is an arbitrary error message");
-        verify(mockStore, never()).put(entry);
-    }
-
-    @Test
-    public void shouldNotCallPutWhenThereIsNoAlarmMarker()
-                    throws JSONException, AlarmStorageException {
-        AlarmEntry entry = AlarmFactory.givenNewAlarmEntry();
-        Marker marker = MarkerFactory.getIMarkerFactory().getMarker("OTHER_MARKER");
-        logger.error(marker, "this is an arbitrary error message");
-        verify(mockStore, never()).put(entry);
-    }
+    /**
+     * The only properties which can be updated through this method are
+     * {@link LogEntry#setClosed()} and {@link LogEntry#setNotes(String)}.
+     * {@link LogEntry#setCount()} should only be called by an initializer
+     * (e.g., upon object dehydration).
+     *
+     * @return number of entries updated
+     */
+    long update(Collection<LogEntry> selected) throws DAOException;
 }

@@ -66,11 +66,11 @@ import java.util.Collection;
 import java.util.Date;
 
 import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
+import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.controller.IAlarmDisplayService;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
-import org.dcache.webadmin.model.dataaccess.IAlarmDAO;
+import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
@@ -87,10 +87,10 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         = LoggerFactory.getLogger(StandardAlarmDisplayService.class);
 
     private final AlarmTableProvider alarmTableProvider = new AlarmTableProvider();
-    private final IAlarmDAO access;
+    private final ILogEntryDAO access;
 
     public StandardAlarmDisplayService(DAOFactory factory) throws DAOException {
-        access = factory.getAlarmDAO();
+        access = factory.getLogEntryDAO();
     }
 
     @Override
@@ -109,11 +109,12 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         Date before = alarmTableProvider.getBefore();
         String severity = alarmTableProvider.getSeverity();
         String type = alarmTableProvider.getType();
+        Boolean alarm = alarmTableProvider.isAlarm();
         try {
-            Collection<AlarmEntry> refreshed
+            Collection<LogEntry> refreshed
                 = access.get(after, before,
                              severity == null ? null : Severity.valueOf(severity),
-                             type);
+                             type, alarm);
             alarmTableProvider.setEntries(refreshed);
         } catch (DAOException e) {
             logger.error(e.getMessage(), e);

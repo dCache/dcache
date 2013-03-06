@@ -103,121 +103,19 @@
     </encoder>
   </appender-->
 
-  <!-- currently used only for sending alarms to a remote logback server;
-       note that remoteHost and port may require modification depending on
-       the installation -->
+  <!-- sends error/warn to a remote logback server -->
   <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
+      <!-- adds a few properties to MDC -->
+      <filter class="org.dcache.alarms.logback.RemoteMDCFilter"/>
       <remoteHost>${alarms.server.host}</remoteHost>
       <port>${alarms.server.port}</port>
       <reconnectionDelay>10000</reconnectionDelay>
   </appender>
 
-  <!-- processes events from all loggers into alarms on the basis of the
-       alarmType definitions provided; for further information,
-       see the javadoc for org.dcache.alarms.logback.AlarmDefinition and
-       the dCache Book -->
-  <appender name="alarms" class="org.dcache.alarms.logback.AlarmDefinitionAppender">
-      <!-- this filter determines which events are to be interpreted as alarms;
-          the appender converts these into alarm events and passes them
-          to its embedded child appender(s)
-      -->
-      <filter class="org.dcache.alarms.logback.AlarmDefinitionFilter">
-            <alarmType>
-                regex:"(.+) from ac_create",
-                type:SERVICE_CREATION_FAILURE,
-                level:ERROR,
-                severity:CRITICAL,
-                include-in-key:group1 type host domain service
-            </alarmType>
-            <alarmType>
-                regex:"Failed to acquire connection.+Attempts left: 0",
-                type:DB_OUT_OF_CONNECTIONS,
-                level:ERROR,
-                severity:CRITICAL,
-                include-in-key:type host
-            </alarmType>
-            <alarmType>
-                regex:"Unable to open a test connection to the given database|Connections could not be acquired from the underlying database",
-                match-exception:true,
-                depth:1,
-                type:DB_UNAVAILABLE,
-                level:ERROR,
-                severity:CRITICAL,
-                include-in-key:type host
-            </alarmType>
-            <alarmType>
-                regex:"OutOfMemory",
-                type:JVM_OUT_OF_MEMORY,
-                level:ERROR,
-                severity:CRITICAL,
-                include-in-key:type host domain
-            </alarmType>
-            <alarmType>
-                regex:"[Tt]oo many open files",
-                type:OUT_OF_FILE_DESCRIPTORS,
-                match-exception:true,
-                level:ERROR,
-                severity:CRITICAL,
-                include-in-key:type host domain
-            </alarmType>
-            <alarmType>
-                regex:"I/O.*failed(.+)|I/O error occur.*ed(.+)",
-                type:IO_ERROR,
-                level:WARN,
-                severity:HIGH,
-                include-in-key:group1 type host service domain
-            </alarmType>
-            <alarmType>
-                regex:"Fetch failed: HSM script failed",
-                type:HSM_READ_FAILURE,
-                level:WARN,
-                severity:HIGH,
-                include-in-key:type host service domain
-            </alarmType>
-            <alarmType>
-                regex:"Store failed: HSM script failed",
-                type:HSM_WRITE_FAILURE,
-                level:WARN,
-                severity:HIGH,
-                include-in-key:type host service domain
-            </alarmType>
-            <alarmType>
-                regex:"Timeout querying location manager",
-                type:LOCATION_MANAGER_UNAVAILABLE,
-                level:WARN,
-                severity:HIGH,
-                include-in-key:type host service domain
-            </alarmType>
-            <alarmType>
-                regex:"PoolManager.+not found",
-                type:POOL_MANAGER_UNAVAILABLE,
-                level:WARN,
-                severity:HIGH,
-                include-in-key:type host service domain
-            </alarmType>
-            <alarmType>
-                regex:"Pool mode changed to disabled",
-                type:POOL_DISABLED,
-                level:WARN,
-                severity:MODERATE,
-                include-in-key:type host service domain
-            </alarmType>
-            <alarmType>
-                logger:org.dcache.pool.classic.ChecksumScanner,
-                regex:"Checksum mismatch detected for (.+) - marking as BROKEN",
-                type:CHECKSUM,
-                level:ERROR,
-                severity:MODERATE,
-                include-in-key:group1 type host service domain
-            </alarmType>
-      </filter>
-      <appender-ref ref="remote"/>
-  </appender>
-
   <root>
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
-    <appender-ref ref="alarms"/>
+    <appender-ref ref="remote"/>
   </root>
 
   <logger name="events" additivity="false">
@@ -240,7 +138,7 @@
     <appender-ref ref="pinboard"/>
     <appender-ref ref="traceFile"/>
     <appender-ref ref="events"/>
-    <appender-ref ref="alarms"/>
+    <appender-ref ref="remote"/>
   </logger>
 
   <turboFilter class="dmg.util.logback.CellThresholdFilter">
@@ -293,7 +191,7 @@
     </threshold>
 
     <threshold>
-      <appender>alarms</appender>
+      <appender>remote</appender>
       <logger>root</logger>
       <level>warn</level>
     </threshold>

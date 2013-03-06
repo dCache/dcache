@@ -74,10 +74,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
+import org.dcache.alarms.dao.LogEntry;
 
 /**
- * Convenience methods for generating JDO queries from {@link AlarmEntry}
+ * Convenience methods for generating JDO queries from {@link LogEntry}
  * fields.
  *
  * @author arossi
@@ -128,11 +128,11 @@ public class AlarmJDOUtils {
 
         if (parameters == null) {
             if (expression == null) {
-                return pm.newQuery(AlarmEntry.class);
+                return pm.newQuery(LogEntry.class);
             }
-            return pm.newQuery(AlarmEntry.class, expression);
+            return pm.newQuery(LogEntry.class, expression);
         }
-        Query query = pm.newQuery(AlarmEntry.class);
+        Query query = pm.newQuery(LogEntry.class);
         query.setFilter(expression);
         query.declareParameters(parameters);
         query.addExtension("datanucleus.query.resultCacheType", "none");
@@ -148,7 +148,7 @@ public class AlarmJDOUtils {
                         : query.deletePersistentAll(filter.values);
     }
 
-    public static Collection<AlarmEntry> execute(PersistenceManager pm,
+    public static Collection<LogEntry> execute(PersistenceManager pm,
                     AlarmDAOFilter filter) {
         Query query = AlarmJDOUtils.createQuery(pm, filter);
         /*
@@ -156,7 +156,7 @@ public class AlarmJDOUtils {
          * updates from other JVMs
          */
         query.setIgnoreCache(true);
-        return (Collection<AlarmEntry>) (filter.values == null ? query.execute()
+        return (Collection<LogEntry>) (filter.values == null ? query.execute()
                         : query.executeWithArray(filter.values));
     }
 
@@ -176,7 +176,7 @@ public class AlarmJDOUtils {
      * Construct filter based on values for the parameter fields (AND'd).
      */
     public static AlarmDAOFilter getFilter(Date after, Date before,
-                    Severity severity, String type) {
+                    Severity severity, String type, Boolean isAlarm) {
         StringBuilder f = new StringBuilder();
         StringBuilder p = new StringBuilder();
         List<Object> values = new ArrayList<>();
@@ -217,6 +217,16 @@ public class AlarmJDOUtils {
             values.add(type);
         }
 
+        if (isAlarm != null) {
+            if (f.length() > 0) {
+                f.append(" && ");
+                p.append(", ");
+            }
+            f.append("alarm==l");
+            p.append("java.lang.Boolean l");
+            values.add(isAlarm);
+        }
+
         AlarmDAOFilter filter = new AlarmDAOFilter();
         filter.filter = trimToNull(f);
         filter.parameters = trimToNull(p);
@@ -227,11 +237,11 @@ public class AlarmJDOUtils {
     /**
      * Construct filter from multiple alarm entry keys (OR'd).
      */
-    public static AlarmDAOFilter getIdFilter(Collection<AlarmEntry> selected) {
+    public static AlarmDAOFilter getIdFilter(Collection<LogEntry> selected) {
         StringBuilder f = new StringBuilder();
         StringBuilder p = new StringBuilder();
         List<Object> values = new ArrayList<>();
-        Iterator<AlarmEntry> i = selected.iterator();
+        Iterator<LogEntry> i = selected.iterator();
         int k = 0;
 
         if (i.hasNext()) {

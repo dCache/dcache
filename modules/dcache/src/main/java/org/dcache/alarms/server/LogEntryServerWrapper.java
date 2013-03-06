@@ -65,18 +65,18 @@ COPYRIGHT STATUS:
  */
 package org.dcache.alarms.server;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.classic.net.SimpleSocketServer;
-import ch.qos.logback.core.joran.spi.JoranException;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.File;
 
 import org.dcache.cells.UniversalSpringCell;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.classic.net.SimpleSocketServer;
+import ch.qos.logback.core.joran.spi.JoranException;
 
 /**
  * Simple POJO wrapper around {@link SimpleSocketServer} to be run inside a
@@ -84,7 +84,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author arossi
  */
-public class AlarmServerWrapper {
+public class LogEntryServerWrapper {
 
     private String baseDir;
     private String configFile;

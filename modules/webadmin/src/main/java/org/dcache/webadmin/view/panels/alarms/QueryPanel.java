@@ -64,15 +64,18 @@ import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvid
 import org.apache.wicket.extensions.yui.calendar.DatePicker;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.DropDownChoice;
+import org.apache.wicket.markup.html.form.Radio;
+import org.apache.wicket.markup.html.form.RadioGroup;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 
 import java.util.Date;
 
 import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
+import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.view.pages.alarms.AlarmsPage;
 
@@ -92,6 +95,7 @@ public class QueryPanel extends Panel {
         AlarmTableProvider provider
             = parent.getWebadminApplication().getAlarmDisplayService()
                     .getDataProvider();
+        addAlarmsGroup(provider);
         addDateFields(provider);
         addSeverityChoice(provider);
         addTypeField(provider);
@@ -100,7 +104,16 @@ public class QueryPanel extends Panel {
         add(parent.getRefreshButton());
     }
 
-    private void addDateFields(SortableDataProvider<AlarmEntry> provider) {
+    private void addAlarmsGroup(SortableDataProvider<LogEntry> provider) {
+        IModel<Boolean> selectAlarmValue = new PropertyModel<>(provider, "alarm");
+        RadioGroup rgrp = new RadioGroup("selectgroup", selectAlarmValue);
+        rgrp.add(new Radio("all", Model.of((Boolean)null)));
+        rgrp.add(new Radio("alarmsonly", Model.of((Boolean)true)));
+        rgrp.add(new Radio("noalarms", Model.of((Boolean)false)));
+        add(rgrp);
+    }
+
+    private void addDateFields(SortableDataProvider<LogEntry> provider) {
         DateTextField beginning = new DateTextField("beginDate",
                         new PropertyModel<Date>(provider, "after"), DATE);
         DatePicker dp = new DatePicker();
@@ -115,7 +128,7 @@ public class QueryPanel extends Panel {
         add(ending);
     }
 
-    private void addExpressionFields(SortableDataProvider<AlarmEntry> provider) {
+    private void addExpressionFields(SortableDataProvider<LogEntry> provider) {
         IModel<String> filterValue
             = new PropertyModel<>(provider, "expression");
         add(new TextField<>("filterField", filterValue));
@@ -131,20 +144,13 @@ public class QueryPanel extends Panel {
         });
     }
 
-    private void addSeverityChoice(SortableDataProvider<AlarmEntry> provider) {
+    private void addSeverityChoice(SortableDataProvider<LogEntry> provider) {
         IModel<String> choiceValue
             = new PropertyModel<>(provider, "severity");
-        add(new DropDownChoice("levels", choiceValue, Severity.asList()) {
-            private static final long serialVersionUID = 8537060404987998863L;
-
-            @Override
-            protected boolean wantOnSelectionChangedNotifications() {
-                return true;
-            }
-        });
+        add(new DropDownChoice("levels", choiceValue, Severity.asList()));
     }
 
-    private void addShowClosed(SortableDataProvider<AlarmEntry> provider) {
+    private void addShowClosed(SortableDataProvider<LogEntry> provider) {
         IModel<Boolean> showClosedValue
             = new PropertyModel<>(provider, "showClosed");
         add(new CheckBox("showClosed", showClosedValue) {
@@ -157,7 +163,7 @@ public class QueryPanel extends Panel {
         });
     }
 
-    private void addTypeField(SortableDataProvider<AlarmEntry> provider) {
+    private void addTypeField(SortableDataProvider<LogEntry> provider) {
         IModel<String> filterValue
             = new PropertyModel<>(provider, "type");
         add(new TextField<>("typeField", filterValue));

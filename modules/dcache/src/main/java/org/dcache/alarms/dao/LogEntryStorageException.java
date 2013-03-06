@@ -57,55 +57,25 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.dataaccess;
-
-import java.util.Collection;
-import java.util.Date;
-
-import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.AlarmEntry;
-import org.dcache.webadmin.model.exceptions.DAOException;
+package org.dcache.alarms.dao;
 
 /**
- * API for the persistent storage to be used in connection with
- * {@link AlarmEntry} -based HTML pages. The {{@link #update(Collection)} and
- * {@link #remove(Collection)} methods assume in-memory selection of alarm
- * entries to be deleted or modified.
+ * Wrapper exception for exception thrown from storage implementation.
  *
  * @author arossi
  */
-public interface IAlarmDAO {
-    /**
-     * It is assumed that any further filtering will be done in memory.<br>
-     * <br>
-     *
-     * @param after
-     *            closed lower bound (>=) of date range; may be
-     *            <code>null</code>.
-     * @param before
-     *            closed upper bound (<=) of date range; may be
-     *            <code>null</code>.
-     * @param severity
-     *            <code>null</code> will be treated as equivalent to
-     *            <code>Severity.MODERATE</code>.
-     * @param type
-     *            may be <code>null</code>.
-     */
-    Collection<AlarmEntry> get(Date after, Date before, Severity severity,
-                    String type) throws DAOException;
+public class LogEntryStorageException extends Exception {
+    private static final long serialVersionUID = -2120028255263450793L;
 
-    /**
-     * @return number of entries removed
-     */
-    long remove(Collection<AlarmEntry> selected) throws DAOException;
+    public LogEntryStorageException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 
-    /**
-     * The only properties which can be updated through this method are
-     * {@link AlarmEntry#setClosed()} and {@link AlarmEntry#setNotes(String)}.
-     * {@link AlarmEntry#setCount()} should only be called by an initializer
-     * (e.g., upon object dehydration).
-     *
-     * @return number of entries updated
-     */
-    long update(Collection<AlarmEntry> selected) throws DAOException;
+    public LogEntryStorageException(Throwable cause) {
+        super(cause);
+    }
+
+    public LogEntryStorageException(String msg) {
+        super(msg);
+    }
 }

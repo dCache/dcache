@@ -12,28 +12,15 @@
     </appender>
 
     <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
+        <!-- adds a few properties to MDC -->
+        <filter class="org.dcache.alarms.logback.RemoteMDCFilter"/>
         <remoteHost>localhost</remoteHost>
         <port>60001</port>
         <reconnectionDelay>10000</reconnectionDelay>
     </appender>
 
-    <appender name="alarms" class="org.dcache.alarms.logback.AlarmDefinitionAppender">
-        <filter class="org.dcache.alarms.logback.AlarmDefinitionFilter">
-            <alarmType>
-                logger:org.dcache.alarms.ChecksumAlarmSimulator,
-                regex:"Checksum mismatch detected for (.+) - marking as BROKEN",
-                type:CHECKSUM,
-                level:ERROR,
-                severity:MODERATE,
-                include-in-key:group1 type host service domain
-            </alarmType>
-        </filter>
-        <appender-ref ref="alarmsout"/>
-        <appender-ref ref="remote"/>
-    </appender>
-
     <root>
         <appender-ref ref="stdout"/>
-        <appender-ref ref="alarms"/>
+        <appender-ref ref="remote"/>
     </root>
 </configuration>

@@ -59,33 +59,35 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.common.base.Preconditions;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.annotation.Nonnull;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.Severity;
+import org.dcache.alarms.logback.AlarmDefinition;
 import org.dcache.util.IRegexFilterable;
 
 /**
- * Storage class for all Alarm types.<br>
+ * Storage class for all log events.<br>
  * <br>
  *
- * Like {@link AbstractAlarm}, it uses the unique key for hashCode and equals.
+ * Uses the unique key for hashCode and equals.
  * Also implements comparable on the basis of the unique key.
  *
  * @author arossi
  */
-public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
+public class LogEntry implements IAlarms, Comparable<LogEntry>,
                 IRegexFilterable {
 
-    private static final long serialVersionUID = -8477649701971508910L;
+    private static final long serialVersionUID = -8477649423971508910L;
     private static final String FORMAT = "E MMM dd HH:mm:ss zzz yyyy";
 
     @Nonnull
@@ -100,42 +102,21 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
     private String info;
     private String notes;
     private Boolean closed = false;
+    private Boolean alarm = false;
     private Integer received = 1;
 
-    /**
-     * Needs to be here for database dehydration.
-     */
-    public AlarmEntry() {
-    }
-
-    /**
-     * Extracts the basic properties from the JSON map. Note that all fields
-     * must be defined or the constructor will fail with a JSONException.
-     */
-    public AlarmEntry(JSONObject json) throws JSONException {
-        key = String.valueOf(json.get(KEY_TAG));
-        type = String.valueOf(json.get(TYPE_TAG));
-        host = String.valueOf(json.get(HOST_TAG));
-        domain = String.valueOf(json.get(DOMAIN_TAG));
-        service = String.valueOf(json.get(SERVICE_TAG));
-        lastUpdate = (Long) json.get(TIMESTAMP_TAG);
-        severity = Severity.valueOf((String) json.get(SEVERITY_TAG)).ordinal();
-        info = String.valueOf(json.get(MESSAGE_TAG));
-        firstArrived = lastUpdate;
-    }
-
     @Override
-    public int compareTo(AlarmEntry o) {
+    public int compareTo(LogEntry o) {
         Preconditions.checkNotNull(o, "alarm entry parameter was null");
         return key.compareTo(o.key);
     }
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof AlarmEntry)) {
+        if (!(other instanceof LogEntry)) {
             return false;
         }
-        return key.equals(((AlarmEntry) other).key);
+        return key.equals(((LogEntry) other).key);
     }
 
     public Date getDateOfFirstArrival() {
@@ -207,8 +188,34 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         return key.hashCode();
     }
 
+    public Boolean isAlarm() {
+        return alarm;
+    }
+
     public Boolean isClosed() {
         return closed;
+    }
+
+    public void setAlarm(Boolean alarm) {
+        this.alarm = alarm;
+    }
+
+    public void setAlarmMetadata(ILoggingEvent event, AlarmDefinition definition) {
+        Level level = event.getLevel();
+        if (definition == null) {
+            setSeverity(level == Level.ERROR ? Severity.HIGH.ordinal()
+                            : Severity.MODERATE.ordinal());
+            if (alarm) {
+                setType(event.getMarker().toString());
+            } else {
+                setType(level.toString());
+            }
+            setKey(UUID.randomUUID().toString());
+        } else {
+            setSeverity(definition.getSeverityEnum().ordinal());
+            setType(definition.getType());
+            setKey(definition.getKey(event, host, domain, service));
+        }
     }
 
     public void setClosed(Boolean closed) {
@@ -228,7 +235,7 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
     }
 
     public void setFirstArrived(Long timestamp) {
-        this.firstArrived = timestamp;
+        firstArrived = timestamp;
     }
 
     public void setHost(String host) {
@@ -268,6 +275,7 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
         this.type = type;
     }
 
+    @Override
     public String toFilterableString() {
         return getFormattedDateOfFirstArrival() + " "
                         + getFormattedDateOfLastUpdate() + " " + type + " "
@@ -283,15 +291,15 @@ public class AlarmEntry implements IAlarms, Comparable<AlarmEntry>,
     /**
      * Sets <code>closed</code> and <code>notes</code> fields.
      *
-     * @param alarmEntry
+     * @param entry
      *            from which to get updatable values.
      */
-    public void update(AlarmEntry alarmEntry) {
-        if (alarmEntry == null) {
+    public void update(LogEntry entry) {
+        if (entry == null) {
             return;
         }
-        closed = alarmEntry.isClosed();
-        notes = alarmEntry.getNotes();
+        closed = entry.isClosed();
+        notes = entry.getNotes();
     }
 
     private String getFormattedDate(Date date) {
