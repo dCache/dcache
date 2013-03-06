@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+  <changeSet id="6.0.0" author="litvinse" context="billing">
+    <preConditions onFail="MARK_RAN">
+      <and>
+	<tableExists tableName="billinginfo"/>
+	<not>
+	  <indexExists indexName="billinginfo_client_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="billinginfo_initiator_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="billinginfo_pnfsid_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="billinginfo_storageclass_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="billinginfo_transaction_idx"/>
+	</not>
+      </and>
+    </preConditions>
+    <createIndex indexName="billinginfo_client_idx" tableName="billinginfo">
+      <column name="client"/>
+    </createIndex>
+    <createIndex indexName="billinginfo_initiator_idx" tableName="billinginfo">
+      <column name="initiator"/>
+    </createIndex>
+    <createIndex indexName="billinginfo_pnfsid_idx" tableName="billinginfo">
+      <column name="pnfsid"/>
+    </createIndex>
+    <createIndex indexName="billinginfo_storageclass_idx" tableName="billinginfo">
+      <column name="storageclass"/>
+    </createIndex>
+    <createIndex indexName="billinginfo_transaction_idx" tableName="billinginfo">
+      <column name="transaction"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="6.0.1" author="litvinse" context="billing">
+    <preConditions onFail="MARK_RAN">
+      <and>
+	<tableExists tableName="doorinfo"/>
+	<not>
+	  <indexExists indexName="doorinfo_owner_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="doorinfo_pnfsid_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="doorinfo_transaction_idx"/>
+	</not>
+      </and>
+    </preConditions>
+    <createIndex indexName="doorinfo_owner_idx" tableName="doorinfo">
+      <column name="owner"/>
+    </createIndex>
+    <createIndex indexName="doorinfo_pnfsid_idx" tableName="doorinfo">
+      <column name="pnfsid"/>
+    </createIndex>
+    <createIndex indexName="doorinfo_transaction_idx" tableName="doorinfo">
+      <column name="transaction"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="6.0.2" author="litvinse" context="billing">
+    <preConditions onFail="MARK_RAN">
+      <and>
+	<tableExists tableName="storageinfo"/>
+	<not>
+	  <indexExists indexName="storageinfo_pnfsid_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="storageinfo_transaction_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="storageinfo_storageclass_idx"/>
+	</not>
+      </and>
+    </preConditions>
+    <createIndex indexName="storageinfo_pnfsid_idx" tableName="storageinfo">
+      <column name="pnfsid"/>
+    </createIndex>
+    <createIndex indexName="storageinfo_transaction_idx" tableName="storageinfo">
+      <column name="transaction"/>
+    </createIndex>
+    <createIndex indexName="storageinfo_storageclass_idx" tableName="storageinfo">
+      <column name="storageclass"/>
+    </createIndex>
+  </changeSet>
+
+
+  <changeSet id="6.0.3" author="litvinse" context="billing">
+    <preConditions onFail="MARK_RAN">
+      <and>
+	<tableExists tableName="hitinfo"/>
+	<not>
+	  <indexExists indexName="hitinfo_pnfsid_idx"/>
+	</not>
+	<not>
+	  <indexExists indexName="hitinfo_transaction_idx"/>
+	</not>
+      </and>
+    </preConditions>
+    <createIndex indexName="hitinfo_pnfsid_idx" tableName="hitinfo">
+      <column name="pnfsid"/>
+    </createIndex>
+    <createIndex indexName="hitinfo_transaction_idx" tableName="hitinfo">
+      <column name="transaction"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>
