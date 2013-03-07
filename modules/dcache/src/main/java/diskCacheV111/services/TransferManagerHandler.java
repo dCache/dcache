@@ -175,7 +175,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 
 /**      */
 	public void handle() {
-		log.debug("handling:  "+toString(true));
+		log.trace("handling:  "+toString(true));
 		int last_slash_pos = pnfsPath.lastIndexOf('/');
 		if(last_slash_pos == -1) {
 			transferRequest.setFailed(2,
@@ -219,7 +219,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 /**      */
 	@Override
         public void answerArrived(CellMessage req, CellMessage answer) {
-		log.debug("answerArrived("+req+","+answer+"), state ="+state);
+		log.trace("answerArrived("+req+","+answer+"), state ="+state);
 		Object o = answer.getMessageObject();
 		if(o instanceof Message) {
 			Message message = (Message)answer.getMessageObject() ;
@@ -304,7 +304,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 						deletePnfsEntry();
 					}
 					else {
-						log.debug("Received PnfsDeleteEntryMessage, Deleted  : "+deleteReply.getPath());
+						log.trace("Received PnfsDeleteEntryMessage, Deleted  : "+deleteReply.getPath());
 						sendErrorReply();
 					}
 				}
@@ -366,7 +366,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 					return;
 				}
                                 for (PnfsId pnfsid: manager.justRequestedIDs) {
-                                    log.debug("found pnfsid: {}", pnfsid);
+                                    log.trace("found pnfsid: {}", pnfsid);
 				}
 				manager.justRequestedIDs.add(pnfsId);
 			}
@@ -377,7 +377,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
                             storage_info_msg.getFileAttributes();
                 }
 
-		log.debug("storageInfoArrived(uid={} gid={} pnfsid={} fileAttributes={}", info.getUid(), info.getGid(),
+		log.trace("storageInfoArrived(uid={} gid={} pnfsid={} fileAttributes={}", info.getUid(), info.getGid(),
                   pnfsId, fileAttributes);
                 selectPool();
         }
@@ -399,7 +399,7 @@ sizeToSend)
                                                              _readPoolSelectionContext);
                 request.setPnfsPath(pnfsPath);
                 request.setSubject(transferRequest.getSubject());
-		log.debug("PoolMgrSelectPoolMsg: " + request );
+		log.trace("PoolMgrSelectPoolMsg: " + request );
 		setState(WAITING_FOR_POOL_INFO_STATE);
 		manager.persist(this);
 		try {
@@ -418,7 +418,7 @@ sizeToSend)
 	}
 /**      */
 	public void poolInfoArrived(PoolMgrSelectPoolMsg pool_info)  {
-		log.debug("poolManagerReply = "+pool_info);
+		log.trace("poolManagerReply = "+pool_info);
 
                 if (pool_info instanceof PoolMgrSelectReadPoolMsg) {
                         _readPoolSelectionContext =
@@ -439,7 +439,7 @@ sizeToSend)
 		setPool(pool_info.getPoolName());
                 setPoolAddress(pool_info.getPoolAddress());
 		manager.persist(this);
-		log.debug("Positive reply from pool {}", pool);
+		log.trace("Positive reply from pool {}", pool);
 		startMoverOnThePool();
 	}
 /**      */
@@ -487,7 +487,7 @@ sizeToSend)
     }
 
 	public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)  {
-		log.debug("poolReply = "+poolMessage);
+		log.trace("poolReply = "+poolMessage);
 		info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
 		if( poolMessage.getReturnCode() != 0 ) {
 			sendErrorReply(5, new
@@ -495,8 +495,8 @@ sizeToSend)
 						       poolMessage.getErrorObject() ) );
 			return;
 		}
-		log.debug("Pool "+pool+" will deliver file "+pnfsId +" mover id is "+poolMessage.getMoverId());
-		log.debug("Starting moverTimeout timer");
+		log.trace("Pool "+pool+" will deliver file "+pnfsId +" mover id is "+poolMessage.getMoverId());
+		log.trace("Starting moverTimeout timer");
 		manager.startTimer(id);
 		setMoverId(poolMessage.getMoverId());
 		manager.persist(this);
@@ -554,7 +554,7 @@ sizeToSend)
 	}
 
 	public void poolDoorMessageArrived(DoorTransferFinishedMessage doorMessage) {
-		log.debug("poolDoorMessageArrived, doorMessage.getReturnCode()="+doorMessage.getReturnCode());
+		log.trace("poolDoorMessageArrived, doorMessage.getReturnCode()="+doorMessage.getReturnCode());
 		if(doorMessage.getReturnCode() != 0 ) {
 			sendErrorReply(8,"tranfer failed :"+doorMessage.getErrorObject());
 			return;
@@ -691,7 +691,7 @@ sizeToSend)
 	}
 /**      */
 	public void sendSuccessReply() {
-		log.debug("sendSuccessReply for: "+toString(true));
+		log.trace("sendSuccessReply for: "+toString(true));
 		if (info.getTimeQueued() < 0) {
                     info.setTimeQueued(info.getTimeQueued() + System
                             .currentTimeMillis());
@@ -733,7 +733,7 @@ sizeToSend)
 	{
 	    try {
 		info.setResult(code, msg);
-                log.debug("Sending info: " + info);
+                log.trace("Sending info: " + info);
 		manager.sendMessage(new CellMessage(new CellPath("billing") , info));
 	    } catch (NoRouteToCellException e) {
 		log.error("Couldn't send billing info", e);

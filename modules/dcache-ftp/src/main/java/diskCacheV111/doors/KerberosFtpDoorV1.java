@@ -63,7 +63,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
             String problem = "KerberosFTPDoorV1: -svc-principal not specified";
             throw new IllegalArgumentException(problem);
         }
-        info("KerberosFTPDoorV1: initializing kerberos ftp door service. " +
+        debug("KerberosFTPDoorV1: initializing kerberos ftp door service. " +
              "Principal is '" + _myPrincipalStr + "'");
         _gssFlavor = "k5";
         String kdclist;
@@ -73,7 +73,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
             _kdcList = new String[n];
             for( int i = 0; i < n; i++ ) {
                 _kdcList[i] = tokens.nextToken();
-                info("KerberosFTPDoorV1: kdc[" + i + "] = " + _kdcList[i]);
+                debug("KerberosFTPDoorV1: kdc[" + i + "] = " + _kdcList[i]);
             }
         }
         ftpDoorName="Kerberos FTP";
@@ -105,10 +105,10 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         GSSCredential MyCredential = null;
 
         GSSManager _GManager = GSSManager.getInstance();
-        debug("KerberosFTPDoorV1::getServiceContext: calling " +
+        trace("KerberosFTPDoorV1::getServiceContext: calling " +
              "_GManager.createName(\"" + _myPrincipalStr + "\", null)");
         GSSName MyPrincipal = _GManager.createName(_myPrincipalStr, null);
-        info("KerberosFTPDoorV1::getServiceContext: principal=\"" +
+        debug("KerberosFTPDoorV1::getServiceContext: principal=\"" +
              MyPrincipal + "\"");
 
         while( MyCredential == null && nretry-- > 0 ) {
@@ -124,7 +124,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
                 GSSCredential.ACCEPT_ONLY);
             }
             catch( GSSException e ) {
-                debug("KerberosFTPDoorV1::getServiceContext: got exception " +
+                trace("KerberosFTPDoorV1::getServiceContext: got exception " +
                       " while looking up credential: " + e.getMessage());
                 error = e;
             }
@@ -132,7 +132,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         if( MyCredential == null ) {
             throw error;
         }
-        info("KerberosFTPDoorV1::getServiceContext: credential=\"" +
+        debug("KerberosFTPDoorV1::getServiceContext: credential=\"" +
              MyCredential + "\"");
         GSSContext context = _GManager.createContext(MyCredential);
 

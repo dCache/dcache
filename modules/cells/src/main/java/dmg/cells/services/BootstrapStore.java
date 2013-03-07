@@ -75,7 +75,7 @@ public class BootstrapStore implements Cell {
         CellMessage msg  = me.getMessage() ;
         if( msg.isFinalDestination() ){
            Object      obj  = msg.getMessageObject() ;
-           _log.info( "Got Object : "+obj.toString() ) ;
+           _log.debug( "Got Object : "+obj.toString() ) ;
            _requests ++ ;
            if( obj instanceof String ){
               String command = (String)obj ;
@@ -93,7 +93,7 @@ public class BootstrapStore implements Cell {
                  _nucleus.sendMessage( msg ) ;
                  _answeredRequests ++ ;
               }catch(Exception mse ){
-                 _log.info( "messageArrived : Problem with "+
+                 _log.debug( "messageArrived : Problem with "+
                                args.argv(1)+" -> "+mse ) ;
               }
 
@@ -129,7 +129,7 @@ public class BootstrapStore implements Cell {
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){
-     _log.info( " exceptionArrived "+ce ) ;
+     _log.debug( " exceptionArrived "+ce ) ;
    }
 
    @Override

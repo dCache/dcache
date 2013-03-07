@@ -372,8 +372,8 @@ public final class LsRequest extends ContainerRequest {
                         status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
                         status.setExplanation("Could not find (deserialize) files in the request," +
                                               " NumOfFileRequest is 0");
-                        logger.debug("assigned status.statusCode : "+status.getStatusCode());
-                        logger.debug("assigned status.explanation : "+status.getExplanation());
+                        logger.trace("assigned status.statusCode : "+status.getStatusCode());
+                        logger.trace("assigned status.explanation : "+status.getExplanation());
                         return status;
                 }
                 int failed_req           = 0;

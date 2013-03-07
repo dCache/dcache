@@ -53,7 +53,7 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity {
 		super.trigger();
 
 		if( _log.isInfoEnabled()) {
-                    _log.info("Sending linkgroup details request message");
+                    _log.debug("Sending linkgroup details request message");
                 }
 
 		_sender.sendMessage(_metricLifetime, _cp, new GetLinkGroupsMessage());

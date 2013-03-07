@@ -117,11 +117,11 @@ public class HsmFlushController
             String storageClass = _flush.getStorageClassName() ;
             String composed     = storageClass+"@"+hsm ;
 
-            _log.debug("Starting flush for "+composed) ;
+            _log.trace("Starting flush for "+composed) ;
             try{
                long flushId = flushStorageClass( hsm , storageClass , _flush.getMaxFlushCount() , this ) ;
                _flush.setFlushId( flushId ) ;
-               _log.debug("Finished flush for "+composed) ;
+               _log.trace("Finished flush for "+composed) ;
             }catch(Exception ee ){
                _log.error("Private flush failed for "+composed+" : "+ee);
                _flush.setFailed(576,ee);
@@ -136,7 +136,7 @@ public class HsmFlushController
         }
         @Override
         public void storageClassInfoFlushed( String hsm , String storageClass , long flushId , int requests , int failed ){
-            _log.info("Flushed : "+hsm+"  "+storageClass+" , id="+flushId+";R="+requests+";f="+failed);
+            _log.debug("Flushed : "+hsm+"  "+storageClass+" , id="+flushId+";R="+requests+";f="+failed);
 
             if( _flush.getReplyRequired() ){
                  setFlushInfos( _flush ) ;
@@ -154,9 +154,9 @@ public class HsmFlushController
     }
     long flushStorageClass( String hsm , String storageClass , int maxCount , StorageClassInfoFlushable callback ){
         StorageClassInfo info  = _storageQueue.getStorageClassInfoByName( hsm , storageClass );
-        _log.debug( "Flushing storageClass : "+info ) ;
+        _log.trace( "Flushing storageClass : "+info ) ;
         long id = info.submit( _storageHandler , maxCount , callback ) ;
-        _log.debug( "Flushing storageClass : "+storageClass+" Done" ) ;
+        _log.trace( "Flushing storageClass : "+storageClass+" Done" ) ;
         return id ;
     }
 
@@ -245,7 +245,7 @@ public class HsmFlushController
     // TODO: Fix possible contention point on object monitor
     @Override
     public synchronized void run() {
-        _log.debug("Flush thread started");
+        _log.trace("Flush thread started");
 
         while (!Thread.interrupted()) {
             try {
@@ -264,7 +264,7 @@ public class HsmFlushController
                         }else if( info.isTriggered() &&
                                   ( ( now - info.getLastSubmitted() ) > (_retryDelayOnError*1000) ) ){
 
-                            _log.info( "Flushing : "+info ) ;
+                            _log.debug( "Flushing : "+info ) ;
                             flushStorageClass( info.getHsm()  , info.getStorageClass() , 0 ) ;
                             active ++ ;
                         }
@@ -282,7 +282,7 @@ public class HsmFlushController
                 Thread.currentThread().interrupt();
             }
         }
-        _log.debug("Flush thread finished");
+        _log.trace("Flush thread finished");
     }
     public synchronized void trigger(){
         notifyAll() ;

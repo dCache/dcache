@@ -171,11 +171,11 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
             InodeCacheEntry<verifier4> cacheKey = new InodeCacheEntry<>(dir, verifier);
             dirList = _dlCache.getIfPresent(cacheKey);
             if (dirList == null) {
-                _log.debug("No cached list found for {}", dir);
+                _log.trace("No cached list found for {}", dir);
                 dirList = DirectoryStreamHelper.listOf(context.getFs(), dir);
                 _dlCache.put(cacheKey, dirList);
             }else {
-                _log.debug("Cached list found for {}", dir);
+                _log.trace("Cached list found for {}", dir);
             }
 
             // the cookie==1,2 is reserved
@@ -243,7 +243,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
 
                     res.resok4.reply.eof = false;
 
-                   _log.debug("Sending {} entries ({} bytes from {}, dircount = {} from {} ) cookie = {} total {}",
+                   _log.trace("Sending {} entries ({} bytes from {}, dircount = {} from {} ) cookie = {} total {}",
                               i - startValue, currcount, _args.opreaddir.maxcount.value.value, dircount,
                               _args.opreaddir.dircount.value.value, startValue, dirList.size());
 
@@ -268,12 +268,12 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
             }
 
             res.status = nfsstat.NFS_OK;
-            _log.debug("Sending {} entries ({} bytes from {}, dircount = {} from {} ) cookie = {} total {} EOF={}",
+            _log.trace("Sending {} entries ({} bytes from {}, dircount = {} from {} ) cookie = {} total {} EOF={}",
                        fcount, currcount, _args.opreaddir.maxcount.value.value, startValue, _args.opreaddir.dircount.value.value,
                        dirList.size(), res.resok4.reply.eof);
 
         }catch(ChimeraNFSException he) {
-            _log.debug("READDIR: {}", he.getMessage() );
+            _log.trace("READDIR: {}", he.getMessage() );
             res.status = he.getStatus();
         }catch(Exception e) {
         	res.status = nfsstat.NFSERR_SERVERFAULT;

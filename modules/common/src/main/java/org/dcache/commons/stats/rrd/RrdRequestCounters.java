@@ -70,7 +70,7 @@ public class RrdRequestCounters<T> {
     public RrdRequestCounters(RequestCounters<T> requestCounters,
             String rrdDir,long updatePeriodSecs,
             long graphPeriodSecs) throws IOException {
-        logger.debug("RrdRequestCounters("+requestCounters+", "+rrdDir);
+        logger.trace("RrdRequestCounters("+requestCounters+", "+rrdDir);
         this.requestCounters = requestCounters;
         this.rrdDir = rrdDir;
         File dir = new File(rrdDir);
@@ -102,10 +102,10 @@ public class RrdRequestCounters<T> {
         updateRrd = new TimerTask() {
             @Override
             public void run() {
-                logger.debug("RrdRequestCounters updateRrd running updateRrds()");
+                logger.trace("RrdRequestCounters updateRrd running updateRrds()");
                 try {
                     updateRrds() ;
-                    logger.debug("RrdRequestCounters updateRrd updateRrds() is done");
+                    logger.trace("RrdRequestCounters updateRrd updateRrds() is done");
                 } catch (Throwable t) {
                     logger.error("updateRrds",t);
                 }
@@ -116,13 +116,13 @@ public class RrdRequestCounters<T> {
 
     private void updateRrds() throws IOException {
         boolean countersAdded = false;
-        logger.debug("updateRrds() for "+requestCounters);
+        logger.trace("updateRrds() for "+requestCounters);
         synchronized (requestCounters) {
             for(T key:requestCounters.keySet()) {
-                logger.debug("updatePrds(): key is "+key);
+                logger.trace("updatePrds(): key is "+key);
                 if(!rrdcounters.containsKey(key)) {
                     RequestCounterImpl requestCounter = requestCounters.getCounter(key);
-                    logger.debug("updatePrds(): creating RRDRequestCounter for "+requestCounter);
+                    logger.trace("updatePrds(): creating RRDRequestCounter for "+requestCounter);
                     RRDRequestCounter rrdRequestCounter =
                             new RRDRequestCounter(rrdDir,requestCounter,updatePeriodSecs);
                     rrdcounters.put(key, rrdRequestCounter);
@@ -132,10 +132,10 @@ public class RrdRequestCounters<T> {
         }
 
         for(RRDRequestCounter rrdRequestCounter:rrdcounters.values() ) {
-            logger.debug("updateRrds(): calling rrdRequestCounter.update()");
+            logger.trace("updateRrds(): calling rrdRequestCounter.update()");
             rrdRequestCounter.update();
         }
-        logger.debug("updateRrds(): calling totalRequestCounter.update()");
+        logger.trace("updateRrds(): calling totalRequestCounter.update()");
         totalRequestCounter.update();
         if(countersAdded)  {
             updateIndex();
@@ -174,13 +174,13 @@ public class RrdRequestCounters<T> {
     public void plotGraphs() throws IOException {
         for(T key:rrdcounters.keySet()) {
             RRDRequestCounter rrdRequestCounter = rrdcounters.get(key);
-            logger.debug("plotGraphs(): calling rrdRequestCounter.graph()");
+            logger.trace("plotGraphs(): calling rrdRequestCounter.graph()");
             rrdRequestCounter.graph();
-            logger.debug("plotGraphs(): rrdRequestCounter.graph() returned");
+            logger.trace("plotGraphs(): rrdRequestCounter.graph() returned");
         }
-        logger.debug("plotGraphs(): calling totalRequestCounter.graph()");
+        logger.trace("plotGraphs(): calling totalRequestCounter.graph()");
         totalRequestCounter.graph();
-        logger.debug("plotGraphs(): totalRequestCounter.graph() returned");
+        logger.trace("plotGraphs(): totalRequestCounter.graph() returned");
 
     }
 
@@ -195,7 +195,7 @@ public class RrdRequestCounters<T> {
             @Override
             public void run() {
                 try {
-                    logger.debug("RrdRequestCounters updateRrd running plotGraphs()");
+                    logger.trace("RrdRequestCounters updateRrd running plotGraphs()");
                     plotGraphs() ;
                 } catch(Throwable t) {
                     logger.error("plotGraphs", t);

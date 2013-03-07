@@ -170,7 +170,7 @@ public class SRMClientV2 implements ISRM {
         this.retries = numberofretries;
         this.user_cred = user_cred;
         try {
-            logger.debug("user credentials are: {}",user_cred.getName());
+            logger.trace("user credentials are: {}",user_cred.getName());
             if(user_cred.getRemainingLifetime() < 60) {
                 throw new IOException("credential remaining lifetime is less then a minute ");
             }
@@ -215,7 +215,7 @@ public class SRMClientV2 implements ISRM {
         provider.deployTransport("http", c);
         SRMServiceLocator sl = new SRMServiceLocator(provider);
         URL url = new URL(service_url);
-        logger.debug("connecting to srm at {}",service_url);
+        logger.trace("connecting to srm at {}",service_url);
         axis_isrm = sl.getsrm(url);
         if(axis_isrm instanceof Stub) {
             Stub axis_isrm_as_stub = (Stub)axis_isrm;
@@ -239,7 +239,7 @@ public class SRMClientV2 implements ISRM {
 
     public Object handleClientCall(String name, Object argument, boolean retry)
     throws RemoteException {
-        logger.debug(" {} , contacting service {}",name,service_url);
+        logger.trace(" {} , contacting service {}",name,service_url);
         int i = 0;
         while(true) {
             try {
@@ -304,7 +304,7 @@ public class SRMClientV2 implements ISRM {
             }
             if(retry){
                 try {
-                    logger.debug("sleeping {} milliseconds before retrying", retrytimeout*i);
+                    logger.trace("sleeping {} milliseconds before retrying", retrytimeout*i);
                     Thread.sleep(retrytimeout*i);
                 }
                 catch(InterruptedException ie) {

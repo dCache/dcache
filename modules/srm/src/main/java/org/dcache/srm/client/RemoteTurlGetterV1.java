@@ -102,7 +102,7 @@ public final class RemoteTurlGetterV1 extends TurlGetterPutterV1 {
     @Override
     protected RequestStatus getInitialRequestStatus()
     throws IOException,InterruptedException{
-        logger.debug("SURLs[0] is "+SURLs[0]);
+        logger.trace("SURLs[0] is "+SURLs[0]);
         return remoteSRM.get(SURLs,protocols);
     }
 }

@@ -100,12 +100,12 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
 
     static bitmap4 setAttributes(fattr4 attributes, FsInode inode, CompoundContext context) throws Exception {
 
-        _log.debug("set Attribute length: {}", attributes.attrmask.value.length);
+        _log.trace("set Attribute length: {}", attributes.attrmask.value.length);
 
         int[] mask = new int[attributes.attrmask.value.length];
         for( int i = 0; i < mask.length; i++) {
             mask[i] = attributes.attrmask.value[i].value;
-            _log.debug("setAttributes[{}]: {}",
+            _log.trace("setAttributes[{}]: {}",
                     i, Integer.toBinaryString(mask[i]));
         }
 
@@ -120,12 +120,12 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
                 int newmask = (mask[i/32] >> (i-(32*(i/32))) );
                 if( (newmask & 1L) != 0 ) {
                     if( xdr2fattr(i, inode, context, xdr) ) {
-                        _log.debug("   setAttributes : {} ({}) OK",
+                        _log.trace("   setAttributes : {} ({}) OK",
                             i, OperationGETATTR.attrMask2String(i));
                         int attrmask = 1 << (i-(32*(i/32)));
                         retMask[i/32] |= attrmask;
                     }else{
-                        _log.debug("   setAttributes : {} ({}) NOT SUPPORTED",
+                        _log.trace("   setAttributes : {} ({}) NOT SUPPORTED",
                             i, OperationGETATTR.attrMask2String(i));
                         throw new ChimeraNFSException( nfsstat.NFSERR_ATTRNOTSUPP, "attribute "+ OperationGETATTR.attrMask2String(i) +" not supported");
                     }
@@ -149,7 +149,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
 
         boolean isApplied = false;
 
-        _log.debug("    FileAttribute: {}", fattr);
+        _log.trace("    FileAttribute: {}", fattr);
 
         switch(fattr) {
 
@@ -258,7 +258,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
         }
 
         if(!isApplied ) {
-            _log.info("Attribute not applied: {}", OperationGETATTR.attrMask2String(fattr) );
+            _log.debug("Attribute not applied: {}", OperationGETATTR.attrMask2String(fattr) );
         }
         return isApplied;
     }

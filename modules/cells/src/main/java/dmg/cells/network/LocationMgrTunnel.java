@@ -210,7 +210,7 @@ public class LocationMgrTunnel
             Object object = msg.getMessageObject();
             String messageObject =
                 object == null ? "NULL" : object.getClass().getName();
-            _logMessages.debug("tunnelMessageSent src="
+            _logMessages.trace("tunnelMessageSent src="
                                + msg.getSourcePath()
                                + " dest=" + msg.getDestinationPath()
                                + " [" + messageObject + "] UOID="
@@ -225,7 +225,7 @@ public class LocationMgrTunnel
             String messageObject =
                 object == null ? "NULL" : object.getClass().getName();
 
-            _logMessages.debug("tunnelMessageReceived src="
+            _logMessages.trace("tunnelMessageReceived src="
                                + msg.getSourcePath()
                                + " dest=" + msg.getDestinationPath()
                                + " [" + messageObject + "] UOID="
@@ -295,7 +295,7 @@ public class LocationMgrTunnel
 
         try {
             _remoteDomainInfo = negotiateDomainInfo(_output, _input);
-            _log.info("Established tunnel to " + getRemoteDomainName());
+            _log.debug("Established tunnel to " + getRemoteDomainName());
 
             start();
 
@@ -368,7 +368,7 @@ public class LocationMgrTunnel
     @Override
     public void cleanUp()
     {
-        _log.info("Closing tunnel to " + getRemoteDomainName());
+        _log.debug("Closing tunnel to " + getRemoteDomainName());
         setDown(true);
         try {
             _socket.shutdownInput();

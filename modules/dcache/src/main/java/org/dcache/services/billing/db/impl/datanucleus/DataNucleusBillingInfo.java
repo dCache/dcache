@@ -128,7 +128,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             Transaction tx = null;
             try {
                 if (insertManager == null) {
-                    logger.debug("put, new write manager ...");
+                    logger.trace("put, new write manager ...");
                     insertManager = pmf.getPersistenceManager();
                 }
                 tx = insertManager.currentTransaction();
@@ -156,12 +156,12 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     @Override
     protected void doCommitIfNeeded(boolean force) {
         synchronized (this) {
-            logger.debug("doCommitIfNeeded, count={}", insertCount);
+            logger.trace("doCommitIfNeeded, count={}", insertCount);
             if (force || insertCount >= maxInsertsBeforeCommit) {
                 Transaction tx = null;
                 try {
                     if (insertManager != null) {
-                        logger.debug("committing {} cached objects",
+                        logger.trace("committing {} cached objects",
                                         insertCount);
                         tx = insertManager.currentTransaction();
                         tx.commit();
@@ -203,15 +203,15 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         try {
             tx.begin();
             Query query = createQuery(readManager, type, filter, parameters);
-            logger.debug("created query {}", query);
+            logger.trace("created query {}", query);
             Collection<T> c = (values == null ? ((Collection<T>) query
                             .execute()) : ((Collection<T>) query
                                             .executeWithArray(values)));
-            logger.debug("got collection {}", c);
+            logger.trace("got collection {}", c);
             Collection<T> detached = readManager.detachCopyAll(c);
-            logger.debug("got detatched collection {}", detached);
+            logger.trace("got detatched collection {}", detached);
             tx.commit();
-            logger.debug("successfully executed {}",
+            logger.trace("successfully executed {}",
                             "get: {}, {}. {}. {}",
                             new Object[] { type, filter, parameters,
                             values == null ? null: Arrays.asList(values) });
@@ -285,7 +285,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
-        logger.debug("remove all instances of {}", type);
+        logger.trace("remove all instances of {}", type);
         long removed;
         try {
             tx.begin();
@@ -293,7 +293,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                             + type.getName());
             removed = (Long) query.execute();
             tx.commit();
-            logger.debug("successfully removed " + removed
+            logger.trace("successfully removed " + removed
                             + " entries of type " + type);
             return removed;
         } catch (Throwable t) {
@@ -348,7 +348,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                 removed = query.deletePersistentAll(values);
             }
             tx.commit();
-            logger.debug("successfully removed {} entries of type {}", removed,
+            logger.trace("successfully removed {} entries of type {}", removed,
                             type);
             return removed;
         } catch (Throwable t) {

@@ -127,7 +127,7 @@ public class      DCapDoor
             //
             // check for lock
             //
-            _log.info( "Checking DCap lock" ) ;
+            _log.debug( "Checking DCap lock" ) ;
             try{
                while( true ){
                    String lock = (String)_nucleus.getDomainContext().get("dcapLock") ;
@@ -138,12 +138,12 @@ public class      DCapDoor
                }
 
             }catch(InterruptedException iee){
-               _log.info("Interrupted the 'dcap' lock" ) ;
-               _log.info( "ComThread : Client communication Thread finished" );
+               _log.debug("Interrupted the 'dcap' lock" ) ;
+               _log.debug( "ComThread : Client communication Thread finished" );
                _stateChanged( __connectionLostEvent ) ;
                return ;
             }
-            _log.info("DCapLock released");
+            _log.debug("DCapLock released");
             _dcapLock = false ;
 
             try {
@@ -157,19 +157,19 @@ public class      DCapDoor
                     }
 
                     _commandCounter++;
-                    _log.info("Executing command: " + _lastCommand);
+                    _log.debug("Executing command: " + _lastCommand);
                     VspArgs args;
                     try {
                         args = new VspArgs(_lastCommand);
                     }catch(IllegalArgumentException e) {
                         println("protocol violation: " + e.getMessage());
-                        _log.debug("protocol violation [{}] from {}", e.getMessage(), _engine.getInetAddress());
+                        _log.trace("protocol violation [{}] from {}", e.getMessage(), _engine.getInetAddress());
                         break;
                     }
 
                     if (execute(args) > 0) {
                         println("0 0 server byebye");
-                        _log.info("ComThread : protocol ended");
+                        _log.debug("ComThread : protocol ended");
                         break;
                     }
                 }
@@ -181,17 +181,17 @@ public class      DCapDoor
                 _out.close();
             }
 
-	    _log.info( "ComThread : Client communication Thread finished" );
+	    _log.debug( "ComThread : Client communication Thread finished" );
             _stateChanged( __connectionLostEvent ) ;
 	}else if( Thread.currentThread() == _anyThread  ){
             try{
-                 _log.info( "AnyThread : started" ) ;
+                 _log.debug( "AnyThread : started" ) ;
                  Thread.sleep( 60 * 60 * 1000 )  ;
-                 _log.info( "AnyThread : woke up" ) ;
+                 _log.debug( "AnyThread : woke up" ) ;
             }catch(InterruptedException ie ){
-                _log.info( "AnyThread : was interrupted" ) ;
+                _log.debug( "AnyThread : was interrupted" ) ;
             }
-            _log.info( "AnyThread : finished" ) ;
+            _log.debug( "AnyThread : finished" ) ;
         }
     }
     private static final int __connectionLostEvent = 1 ;
@@ -207,17 +207,17 @@ public class      DCapDoor
     private int _state = __NormalOperation  ;
     private void abortCacheProtocol(){
 
-       _log.info( "abortCacheProtocol : starting" ) ;
+       _log.debug( "abortCacheProtocol : starting" ) ;
        try{
             TimeUnit.SECONDS.sleep(10) ;
        }catch(InterruptedException ie ){
-          _log.info( "abortCacheProtocol : interrupted " ) ;
+          _log.debug( "abortCacheProtocol : interrupted " ) ;
        }
-       _log.info( "abortCacheProtocol : finished" ) ;
+       _log.debug( "abortCacheProtocol : finished" ) ;
 
     }
     private synchronized void _stateChanged( int event ){
-       _log.info( "_stateChanged : state = "+_state+" ; event = "+event ) ;
+       _log.debug( "_stateChanged : state = "+_state+" ; event = "+event ) ;
        switch( _state ){
 
           case __NormalOperation :
@@ -234,10 +234,10 @@ public class      DCapDoor
                          //
                          @Override
                          public void run(){
-                            _log.info( "Starting abortCacheProtocol" ) ;
+                            _log.debug( "Starting abortCacheProtocol" ) ;
                             abortCacheProtocol() ;
                             _stateChanged( __abortCacheFinishedEvent ) ;
-                            _log.info( "Finished abortCacheProtocol" ) ;
+                            _log.debug( "Finished abortCacheProtocol" ) ;
                          }
                       } , "finishCacheProtocol" ).start() ;
                 break ;
@@ -252,9 +252,9 @@ public class      DCapDoor
                          //
                          @Override
                          public void run(){
-                            _log.info( "Starting abortCacheProtocol" ) ;
+                            _log.debug( "Starting abortCacheProtocol" ) ;
                             abortCacheProtocol() ;
-                            _log.info( "Finished abortCacheProtocol" ) ;
+                            _log.debug( "Finished abortCacheProtocol" ) ;
                             _stateChanged( __abortCacheFinishedEvent ) ;
                          }
                       } , "finishCacheProtocol" ).start() ;
@@ -294,12 +294,12 @@ public class      DCapDoor
           case __WeAreFinished :
              switch( event ){
                 case __weWereKilledEvent :
-                   _log.info( "Done" ) ;
+                   _log.debug( "Done" ) ;
                 break ;
              }
           break ;
        }
-       _log.info( "_stateChanged :  new state = "+_state ) ;
+       _log.debug( "_stateChanged :  new state = "+_state ) ;
        notifyAll() ;
     }
     private synchronized void waitForFinish( long timeout )
@@ -307,7 +307,7 @@ public class      DCapDoor
        long end = System.currentTimeMillis() + timeout ;
        while( _state != __WeAreFinished ){
            long rest = end - System.currentTimeMillis() ;
-           _log.info( "waitForFinish : waiting for "+rest+" seconds" ) ;
+           _log.debug( "waitForFinish : waiting for "+rest+" seconds" ) ;
            if( rest <=0  ) {
                break;
            }
@@ -317,24 +317,24 @@ public class      DCapDoor
     @Override
     public void   cleanUp(){
 
-	_log.info( "CleanUp : starting" );
+	_log.debug( "CleanUp : starting" );
         _stateChanged( __weWereKilledEvent ) ;
         try{
-           _log.info("CleanUp : waiting for final gate" ) ;
+           _log.debug("CleanUp : waiting for final gate" ) ;
            waitForFinish( 2000 ) ;
         }catch(InterruptedException ie ){
-           _log.info("CleanUp : PANIC : interrupted (system left in an undefined state)" ) ;
+           _log.debug("CleanUp : PANIC : interrupted (system left in an undefined state)" ) ;
         }
         if( _state != __WeAreFinished ) {
-            _log.info("CleanUp : PANIC : timeout (system left in an undefined state)");
+            _log.debug("CleanUp : PANIC : timeout (system left in an undefined state)");
         }
-	_log.info( "CleanUp : finished" );
+	_log.debug( "CleanUp : finished" );
 
         _interpreter.close();
         _out.close();
 	try {
 	    if (!_engine.getSocket().isClosed()) {
-		_log.info("Close socket");
+		_log.debug("Close socket");
 		_engine.getSocket().close();
 	    }
         } catch (IOException e) {
@@ -344,7 +344,7 @@ public class      DCapDoor
     }
 
     private synchronized void println( String str ){
-        _log.info( "toclient(println) : "+str ) ;
+        _log.debug( "toclient(println) : "+str ) ;
 	_out.println(str);
     }
 
@@ -354,7 +354,7 @@ public class      DCapDoor
 
            String answer = _interpreter.execute(args);
            if( answer != null ){
-              _log.info( "Our answer : "+answer ) ;
+              _log.debug( "Our answer : "+answer ) ;
               println( answer ) ;
            }
 

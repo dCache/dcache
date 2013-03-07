@@ -469,9 +469,9 @@ public abstract class ContainerRequest extends Request {
 
            if(getStatusCode() != null) {
                 status.setStatusCode(getStatusCode());
-                logger.debug("getTReturnStatus() assigned status.statusCode : "+status.getStatusCode());
+                logger.trace("getTReturnStatus() assigned status.statusCode : "+status.getStatusCode());
                 status.setExplanation(getErrorMessage());
-                logger.debug("getTReturnStatus() assigned status.explanation : "+status.getExplanation());
+                logger.trace("getTReturnStatus() assigned status.explanation : "+status.getExplanation());
                 return status;
            }
         } finally {
@@ -494,8 +494,8 @@ public abstract class ContainerRequest extends Request {
             status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
             status.setExplanation("Could not find (deserialize) files in the request," +
                 " NumOfFileRequest is 0");
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
 
         }
@@ -515,7 +515,7 @@ public abstract class ContainerRequest extends Request {
             FileRequest fr = fileRequests.get(i);
             TReturnStatus fileReqRS = fr.getReturnStatus();
             TStatusCode fileReqSC   = fileReqRS.getStatusCode();
-            logger.debug("getTReturnStatus() file["+i+"] statusCode : "+fileReqSC);
+            logger.trace("getTReturnStatus() file["+i+"] statusCode : "+fileReqSC);
             try{
                 if( fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
                     pending_req++;
@@ -562,56 +562,56 @@ public abstract class ContainerRequest extends Request {
 
         if (canceled_req == len ) {
             status.setStatusCode(TStatusCode.SRM_ABORTED);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
         }
 
         if (failed_req==len || got_exception==len) {
             status.setStatusCode(TStatusCode.SRM_FAILURE);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         if (ready_req==len || done_req==len || ready_req+done_req==len ) {
             if (failure) {
             status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
             }
             else {
             status.setStatusCode(TStatusCode.SRM_SUCCESS);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
             }
         }
         if (pending_req==len) {
             status.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         // SRM space is not enough to hold all requested SURLs for free. (so me thinks one fails - all fail)
         if (failed_no_free_space>0) {
             status.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         // space associated with the targetSpaceToken is expired. (so me thinks one fails - all fail)
         if (failed_space_expired>0) {
             status.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         // we still have work to do:
         if (running_req > 0 || pending_req > 0) {
             status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
+            logger.trace("assigned status.statusCode : "+status.getStatusCode());
+            logger.trace("assigned status.explanation : "+status.getExplanation());
             return status;
         }
         else {
@@ -620,23 +620,23 @@ public abstract class ContainerRequest extends Request {
             if (ready_req > 0 || done_req > 0 ) {
                 //some succeeded some not
                 status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-                logger.debug("assigned status.statusCode : "+status.getStatusCode());
-                logger.debug("assigned status.explanation : "+status.getExplanation());
+                logger.trace("assigned status.statusCode : "+status.getStatusCode());
+                logger.trace("assigned status.explanation : "+status.getExplanation());
                 return status;
             }
             else {
                 //none succeeded
                 status.setStatusCode(TStatusCode.SRM_FAILURE);
-                logger.debug("assigned status.statusCode : "+status.getStatusCode());
-                logger.debug("assigned status.explanation : "+status.getExplanation());
+                logger.trace("assigned status.statusCode : "+status.getStatusCode());
+                logger.trace("assigned status.explanation : "+status.getExplanation());
                 return status;
             }
             }
             else {
                 //no single failure - we should not get to this piece if code
                 status.setStatusCode(TStatusCode.SRM_SUCCESS);
-                logger.debug("assigned status.statusCode : "+status.getStatusCode());
-                logger.debug("assigned status.explanation : "+status.getExplanation());
+                logger.trace("assigned status.statusCode : "+status.getStatusCode());
+                logger.trace("assigned status.explanation : "+status.getExplanation());
                 return status;
             }
         }

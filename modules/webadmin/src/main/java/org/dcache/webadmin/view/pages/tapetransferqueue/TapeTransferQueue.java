@@ -63,11 +63,11 @@ public class TapeTransferQueue extends BasePage {
 
     private void getRestoresAction() {
         try {
-            _log.debug("getRestoresAction called");
+            _log.trace("getRestoresAction called");
             _restoreBeans = getTapeTransferService().getRestores();
         } catch (TapeTransfersServiceException ex) {
             this.error(getStringResource("error.getRestoresFailed") + ex.getMessage());
-            _log.debug("getRestoresAction failed {}", ex.getMessage());
+            _log.trace("getRestoresAction failed {}", ex.getMessage());
             _restoreBeans = null;
         }
     }

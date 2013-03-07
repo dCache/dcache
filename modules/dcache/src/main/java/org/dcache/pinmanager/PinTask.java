@@ -130,6 +130,6 @@ public class PinTask
     {
         _request.setPin(_pin);
         _reply.reply(_request);
-        _log.info("Pinned {} on {} ({})", _pin.getPnfsId(), _pin.getPool(), _pin.getPinId());
+        _log.debug("Pinned {} on {} ({})", _pin.getPnfsId(), _pin.getPool(), _pin.getPinId());
     }
 }

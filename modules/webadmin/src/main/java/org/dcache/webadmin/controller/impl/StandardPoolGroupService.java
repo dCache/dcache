@@ -42,7 +42,7 @@ public class StandardPoolGroupService implements PoolGroupService {
     public List<PoolGroupBean> getPoolGroups() throws PoolGroupServiceException {
         try {
             Set<String> poolGroupNames = getPoolsDAO().getPoolGroupNames();
-            _log.debug("returned poolGroups: {}", poolGroupNames);
+            _log.trace("returned poolGroups: {}", poolGroupNames);
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
             Set<CellStatus> cellStates = getDomainsDAO().getCellStatuses();
@@ -53,7 +53,7 @@ public class StandardPoolGroupService implements PoolGroupService {
                         currentPoolGroupName, domainMap, cellStates);
                 poolGroups.add(newPoolGroup);
             }
-            _log.debug("returned PoolGroupBeans: " + poolGroups.size());
+            _log.trace("returned PoolGroupBeans: " + poolGroups.size());
             Collections.sort(poolGroups);
             return poolGroups;
         } catch (DAOException e) {

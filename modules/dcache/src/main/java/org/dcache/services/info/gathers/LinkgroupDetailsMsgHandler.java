@@ -42,7 +42,7 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
                 }
 
 		if( _log.isInfoEnabled()) {
-                    _log.info("received linkgroup details msg.");
+                    _log.debug("received linkgroup details msg.");
                 }
 
 		GetLinkGroupsMessage msg = (GetLinkGroupsMessage) messagePayload;
@@ -50,7 +50,7 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 		Set<LinkGroup> linkGroups = msg.getLinkGroupSet();
 
 		if( linkGroups.size() == 0) {
-			_log.info( "received GetLinkGroupNamesMessage with no linkgroups listed");
+			_log.debug( "received GetLinkGroupNamesMessage with no linkgroups listed");
 			return true;
 		}
 

@@ -50,11 +50,11 @@ public class      SystemCell
    private class TheKiller extends Thread {
       @Override
       public void run(){
-         _log.info("Running shutdown sequence");
+         _log.debug("Running shutdown sequence");
          kill() ;
-         _log.info("Kill done, waiting for shutdown lock");
+         _log.debug("Kill done, waiting for shutdown lock");
          _shutdownLock.check() ;
-         _log.info("Killer done");
+         _log.debug("Killer done");
       }
    }
    public SystemCell( String cellDomainName  ){
@@ -127,11 +127,11 @@ public class      SystemCell
                  break;
              }
           }catch( InterruptedException ie ){
-             _log.info( "Interrupt loop was interrupted" ) ;
+             _log.debug( "Interrupt loop was interrupted" ) ;
              break ;
           }
        }
-       _log.info( "Interrupt loop stopped (shutting down system now)" ) ;
+       _log.debug( "Interrupt loop stopped (shutting down system now)" ) ;
        kill() ;
    }
     private void shutdownSystem()
@@ -155,10 +155,10 @@ public class      SystemCell
             }
         }
 
-        _log.info("Will try to shutdown non-system cells {}", nonSystem);
+        _log.debug("Will try to shutdown non-system cells {}", nonSystem);
         shutdownCells(nonSystem, 3000);
 
-        _log.info("Will try to shutdown remaining cells {}", system);
+        _log.debug("Will try to shutdown remaining cells {}", system);
         shutdownCells(system, 5000);
     }
 
@@ -175,7 +175,7 @@ public class      SystemCell
            try {
                _nucleus.kill(cellName);
            } catch (IllegalArgumentException e) {
-               _log.info("Problem killing : {} -> {}",
+               _log.debug("Problem killing : {} -> {}",
                          cellName, e.getMessage());
            }
        }
@@ -183,7 +183,7 @@ public class      SystemCell
        for (String cellName: cells) {
            try {
                if (_nucleus.join(cellName, timeout)) {
-                   _log.info("Killed {}", cellName);
+                   _log.debug("Killed {}", cellName);
                } else {
                    _log.warn("Timeout waiting for {}", cellName);
                    _nucleus.listThreadGroupOf(cellName);
@@ -201,7 +201,7 @@ public class      SystemCell
     public void cleanUp()
     {
         shutdownSystem();
-        _log.info("Opening shutdown lock");
+        _log.debug("Opening shutdown lock");
        _shutdownLock.open();
        System.exit(0);
     }
@@ -249,7 +249,7 @@ public class      SystemCell
 
    @Override
    public void messageArrived( CellMessage msg ){
-        _log.info( "Message arrived : "+msg ) ;
+        _log.debug( "Message arrived : "+msg ) ;
         _packetsReceived ++ ;
         if( msg.isReply() ){
             _log.warn("Seems to a bounce : "+msg);
@@ -264,7 +264,7 @@ public class      SystemCell
            if(command.length() < 1) {
                return;
            }
-           _log.info( "Command : "+command ) ;
+           _log.debug( "Command : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
            processed = true;
         }else if( obj instanceof AuthorizedString ){
@@ -273,13 +273,13 @@ public class      SystemCell
            if( command.length() < 1 ) {
                return;
            }
-           _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
+           _log.debug( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
            processed = true;
         }else if( obj instanceof CommandRequestable ){
            CommandRequestable request = (CommandRequestable)obj ;
            try{
-               _log.info( "Command : "+request.getRequestCommand() ) ;
+               _log.debug( "Command : "+request.getRequestCommand() ) ;
               reply = _cellShell.command( request ) ;
            }catch( CommandException cee ){
               reply = cee ;
@@ -288,7 +288,7 @@ public class      SystemCell
         }
 
         if(processed) {
-            _log.debug("Reply : {}", reply);
+            _log.trace("Reply : {}", reply);
             _packetsAnswered++;
         }
 
@@ -302,7 +302,7 @@ public class      SystemCell
                     msg.setMessageObject(reply);
                 }
                 sendMessage(msg);
-                _log.debug("Sending : {}", msg);
+                _log.trace("Sending : {}", msg);
             }
             _packetsReplied++;
         }catch( Exception e ){

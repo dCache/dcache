@@ -147,7 +147,7 @@ public class RrdPoolInfoAgent implements Runnable {
         for (SelectionPool pool : pools) {
             try {
                 new RrdGraph(getGraphDef(pool.getName()));
-                logger.debug("created plot for {}", pool.getName());
+                logger.trace("created plot for {}", pool.getName());
             } catch (Exception t) {
                 logger.error("could not create plot for {}", pool.getName(), t);
                 return;
@@ -156,7 +156,7 @@ public class RrdPoolInfoAgent implements Runnable {
 
         try {
             new RrdGraph(getGraphDef(ALL_POOLS));
-            logger.debug("created plot for {}", ALL_POOLS);
+            logger.trace("created plot for {}", ALL_POOLS);
         } catch (Exception t) {
             logger.error("could not create plot for {}", ALL_POOLS, t);
         }
@@ -265,7 +265,7 @@ public class RrdPoolInfoAgent implements Runnable {
         gDef.setPoolUsed(false);
         gDef.setImageFormat("png");
 
-        logger.debug("got graph definition for {}", pool);
+        logger.trace("got graph definition for {}", pool);
         rrdDb.close();
 
         return gDef;
@@ -289,13 +289,13 @@ public class RrdPoolInfoAgent implements Runnable {
                 costInfo.setSpaceUsage(0, 0, 0, 0, 0);
             }
             storeToRRD(new PoolQueuePlotData(costInfo), now);
-            logger.debug("successfully wrote pool queue data for {}",
+            logger.trace("successfully wrote pool queue data for {}",
                             selectionPool.getName());
             all.addValues(costInfo);
         }
 
         storeToRRD(all, now);
-        logger.debug("successfully wrote pool queue data for {}", ALL_POOLS);
+        logger.trace("successfully wrote pool queue data for {}", ALL_POOLS);
     }
 
     /**
@@ -322,11 +322,11 @@ public class RrdPoolInfoAgent implements Runnable {
                                 values.get(h.toString()));
             }
 
-            logger.debug("{}\t{}", new Date(TimeUnit.SECONDS.toMillis(now)),
+            logger.trace("{}\t{}", new Date(TimeUnit.SECONDS.toMillis(now)),
                             sample.dump());
 
             sample.update();
-            logger.debug(rrdDb.dump());
+            logger.trace(rrdDb.dump());
         } catch (IOException t) {
             logger.error("problem writing data to RrdDb", t);
         } finally {

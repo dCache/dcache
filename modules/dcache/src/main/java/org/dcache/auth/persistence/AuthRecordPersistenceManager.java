@@ -55,7 +55,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
     String jdbcDriver,
     String user,
     String pass) {
-        _logJpa.debug("<init>("+jdbcUrl+","+
+        _logJpa.trace("<init>("+jdbcUrl+","+
             jdbcDriver+","+
             user+","+
             pass+")");
@@ -91,11 +91,11 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             // if rec is contained in the given entity manager,
             // no merge is needed
             if(!em.contains(rec)) {
-                _logJpa.debug("em.contains() returned false");
+                _logJpa.trace("em.contains() returned false");
                 AuthorizationRecord rec1 =
                         em.find(AuthorizationRecord.class, rec.getId());
                 if(rec1 == null) {
-                    _logJpa.debug("em.find() returned null, persisting");
+                    _logJpa.trace("em.find() returned null, persisting");
                     em.persist(rec);
                 } else {
                     rec = rec1;
@@ -128,9 +128,9 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         EntityTransaction t = em.getTransaction();
         try{
             t.begin();
-            _logJpa.debug(" searching for AuthorizationRecord with id="+id);
+            _logJpa.trace(" searching for AuthorizationRecord with id="+id);
             ar = em.find(AuthorizationRecord.class, id);
-            _logJpa.debug("found AuthorizationRecord="+ar);
+            _logJpa.trace("found AuthorizationRecord="+ar);
 
             t.commit();
         }finally

@@ -32,7 +32,7 @@ public class PoolModifyModeMessageGenerator implements CellMessageGenerator<Pool
     private static final Logger _log = LoggerFactory.getLogger(PoolModifyModeMessageGenerator.class);
 
     public PoolModifyModeMessageGenerator(Set<String> pools, PoolV2Mode poolMode, String username) {
-        _log.debug("Generating messages for {}", pools);
+        _log.trace("Generating messages for {}", pools);
         _userName = username;
         _numberOfMessages = pools.size();
         createMessages(pools, poolMode);
@@ -72,7 +72,7 @@ public class PoolModifyModeMessageGenerator implements CellMessageGenerator<Pool
 
         @Override
         public PoolModifyModeMessage getPayload() {
-            _log.debug("getPayload for {}", _destination);
+            _log.trace("getPayload for {}", _destination);
             return _payload;
         }
 

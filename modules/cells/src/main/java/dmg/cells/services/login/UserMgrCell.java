@@ -110,7 +110,7 @@ public class       UserMgrCell
       Serializable answer;
 
       try{
-         _log.info( "Message : "+obj.getClass() ) ;
+         _log.debug( "Message : "+obj.getClass() ) ;
          if( ( ! ( obj instanceof Object [] ) ) ||
              (  ((Object[])obj).length < 3 )    ||
              ( !((Object[])obj)[0].equals("request") ) ){
@@ -124,7 +124,7 @@ public class       UserMgrCell
                                 "unknown" : (String)request[1] ;
          String command       = (String)request[2] ;
          UserPrivileges priv  = _userDb.getUserPrivileges( user ) ;
-         _log.info( ">"+command+"< request from "+user ) ;
+         _log.debug( ">"+command+"< request from "+user ) ;
          try{
             command  = createMethodName( command ) ;
             Method m = this.getClass().getDeclaredMethod( command , __argListDef ) ;
@@ -466,14 +466,14 @@ public class       UserMgrCell
       if( isGroup ){
          p = "add-allowed:user:"+userName ;
          if( ! priv.isAllowed( p ) ){
-            _log.info( ">"+p+"< denied for "+priv.getUserName() ) ;
+            _log.debug( ">"+p+"< denied for "+priv.getUserName() ) ;
             throw new
             Exception( "Operation not allowed for "+priv.getUserName() ) ;
          }
       }else{
          p = "add-allowed:user:*";
          if( ! priv.isAllowed( p ) ){
-            _log.info( ">"+p+"< denied for "+priv.getUserName() ) ;
+            _log.debug( ">"+p+"< denied for "+priv.getUserName() ) ;
             throw new
             Exception( "Operation not allowed for "+priv.getUserName() ) ;
          }

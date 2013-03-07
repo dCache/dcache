@@ -30,7 +30,7 @@ public class PoolQueuesPanel extends BasePanel {
     public PoolQueuesPanel(String id, IModel<PoolGroupBean> model) {
         super(id);
         _poolModel = model;
-//        _log.debug(_poolModel.getObject().getAllPoolQueueNames().toString());
+//        _log.trace(_poolModel.getObject().getAllPoolQueueNames().toString());
         add(new ListView("tableHeaderView", getAllPoolQueueNames()) {
 
             private static final long serialVersionUID = -7007606196066597432L;

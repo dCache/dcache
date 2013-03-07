@@ -97,7 +97,7 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
         try {
             return Integer.parseInt(owner) == ((UnixfsUser) user).getUid();
         } catch (NumberFormatException nfe) {
-            logger.debug("owner is not a number: "+owner,nfe);
+            logger.trace("owner is not a number: "+owner,nfe);
             throw nfe;
         } catch (ClassCastException  cce) {
             logger.error("user is not a UnixfsUser: "+user,cce);
@@ -110,7 +110,7 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
         try {
             return Integer.parseInt(group) == ((UnixfsUser) user).getUid();
         } catch (NumberFormatException nfe) {
-            logger.debug("group is not a number: "+group,nfe);
+            logger.trace("group is not a number: "+group,nfe);
             throw nfe;
         } catch (ClassCastException  cce) {
             logger.error("user is not a UnixfsUser: "+user,cce);

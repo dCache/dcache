@@ -41,12 +41,12 @@ public class AbstractCellsTopology
     {
         List<CellTunnelInfo> tunnels = new ArrayList<>();
 
-        _log.debug("Sending topology info request to " + address);
+        _log.trace("Sending topology info request to " + address);
         CellTunnelInfo[] infos =
             _stub.sendAndWait(new CellPath(address),
                               "getcelltunnelinfos",
                               CellTunnelInfo[].class);
-        _log.debug("Got reply from " + address);
+        _log.trace("Got reply from " + address);
 
         for (CellTunnelInfo info: infos) {
             if (info.getRemoteCellDomainInfo() != null) {

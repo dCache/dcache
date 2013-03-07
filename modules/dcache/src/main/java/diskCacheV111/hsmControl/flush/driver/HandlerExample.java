@@ -47,53 +47,53 @@ public class HandlerExample implements HsmFlushSchedulable {
      }
 
      public HandlerExample( CellAdapter cell , HsmFlushControlCore core ){
-         _log.info("HandlerExample started");
+         _log.debug("HandlerExample started");
          _core = core ;
          _interpreter = new CommandInterpreter( this ) ;
      }
      @Override
      public void init(){
-         _log.info("init called");
+         _log.debug("init called");
          Args args = _core.getDriverArgs() ;
          for( int i = 0 ; i < args.argc() ; i++ ){
-             _log.info("    args "+i+" : "+args.argv(i)) ;
+             _log.debug("    args "+i+" : "+args.argv(i)) ;
          }
          for( int i = 0 ; i < args.optc() ; i++ ){
-             _log.info("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
+             _log.debug("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
          }
          _doNothing = args.hasOption("do-nothing") ;
          _properties.put( "mode" , _doNothing ? "manual" : "auto" ) ;
 
          for (Object o : _core.getConfiguredPoolNames()) {
              String poolName = o.toString();
-             _log.info("    configured pool : " + poolName + _core
+             _log.debug("    configured pool : " + poolName + _core
                      .getPoolByName(poolName).toString());
              _poolHash.put(poolName, new Pool(poolName));
          }
      }
      @Override
      public void prepareUnload(){
-         _log.info("preparing unload");
+         _log.debug("preparing unload");
      }
      @Override
      public void configuredPoolAdded( String poolName ){
-         _log.info("configured pool added : "+poolName);
+         _log.debug("configured pool added : "+poolName);
 
      }
      @Override
      public void configuredPoolRemoved( String poolName ){
-         _log.info("configured pool removed : "+poolName);
+         _log.debug("configured pool removed : "+poolName);
          _poolHash.remove( poolName ) ;
      }
      @Override
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
-         _log.info("flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
+         _log.debug("flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
 
      }
      @Override
      public void command( Args args  ){
-         _log.info("command : "+args);
+         _log.debug("command : "+args);
          try{
 
              Object reply = _interpreter.command( args ) ;
@@ -102,7 +102,7 @@ public class HandlerExample implements HsmFlushSchedulable {
                          Exception("Null pointer from command call");
              }
 
-             _log.info("Command returns : "+reply.toString() );
+             _log.debug("Command returns : "+reply.toString() );
 
          }catch(Exception ee ){
              _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
@@ -128,19 +128,19 @@ public class HandlerExample implements HsmFlushSchedulable {
      }
      @Override
      public void poolSetupUpdated(){
-         _log.info("pool Setup updated");
+         _log.debug("pool Setup updated");
      }
      @Override
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
-         _log.info("pool io mode updated : "+pool);
+         _log.debug("pool io mode updated : "+pool);
      }
      @Override
      public void reset(){
-         _log.info("EVENT : reset");
+         _log.debug("EVENT : reset");
      }
      @Override
      public void timer(){
-         _log.info( "Timer at : "+System.currentTimeMillis());
+         _log.debug( "Timer at : "+System.currentTimeMillis());
      }
      @Override
      public void propertiesUpdated( Map<String,Object> properties )
@@ -198,7 +198,7 @@ public class HandlerExample implements HsmFlushSchedulable {
          }
 
          if( ! pool.isActive() ){
-             _log.info( "poolFlushInfoUpdated : Pool : "+poolName+" inactive");
+             _log.debug( "poolFlushInfoUpdated : Pool : "+poolName+" inactive");
              return ;
          }
          PoolCellInfo cellInfo = pool.getCellInfo() ;
@@ -209,7 +209,7 @@ public class HandlerExample implements HsmFlushSchedulable {
          long total    = spaceInfo.getTotalSpace() ;
          long precious = spaceInfo.getPreciousSpace() ;
 
-         _log.info( "poolFlushInfoUpdated : Pool : "+poolName+";total="+total+";precious="+precious);
+         _log.debug( "poolFlushInfoUpdated : Pool : "+poolName+";total="+total+";precious="+precious);
          //
          // loop over all storage classes of this pool and flush
          // those with have some files pending and which are not yet
@@ -225,14 +225,14 @@ public class HandlerExample implements HsmFlushSchedulable {
 
              long size = flush.getTotalPendingFileSize();
 
-             _log.info("poolFlushInfoUpdated :       class = " + storageClass + " size = " + size + " flushing = " + info
+             _log.debug("poolFlushInfoUpdated :       class = " + storageClass + " size = " + size + " flushing = " + info
                      .isFlushing());
              //
              // is precious size > 0 and are we not yet flushing ?
              //
              try {
                  if ((size > 0L) && !info.isFlushing()) {
-                     _log.info("poolFlushInfoUpdated :       flushing " + poolName + " " + storageClass);
+                     _log.debug("poolFlushInfoUpdated :       flushing " + poolName + " " + storageClass);
                      info.flush(0);
                  }
              } catch (Exception ee) {

@@ -270,7 +270,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
                 return new CacheRepositoryEntryImpl(repository, pnfsId, state);
             }
 
-            _log.debug("No entry found for " + id);
+            _log.trace("No entry found for " + id);
         } catch (ClassCastException e) {
             _log.warn(e.toString());
         } catch (RuntimeExceptionWrapper e) {

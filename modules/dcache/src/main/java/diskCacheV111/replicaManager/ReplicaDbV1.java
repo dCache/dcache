@@ -69,7 +69,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sState = ex.getSQLState();
         String exMsg = ex.getMessage().substring(5);
 
-        _log.info("Ignore SQL exception in method " + m + ": '" + exMsg + "', errCode=" + iErr + " SQLState=" + sState
+        _log.debug("Ignore SQL exception in method " + m + ": '" + exMsg + "', errCode=" + iErr + " SQLState=" + sState
                 + " SQLStatement=[" + sql + "]");
     }
 
@@ -100,7 +100,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             String exState = ex.getSQLState();
             if (exState.equals(ERRCODE_UNIQUE_VIOLATION) ) { // "ERROR: duplicate key value violates unique constraint" - or similar
                 String s = ex.getMessage().substring(5);
-                _log.info("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
+                _log.debug("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
                         + poolName);
 //1             ignoredSQLException("addPool()", (SQLException) ex, sql);
                 ignoredSQLException("addPool()", ex, sql1);
@@ -158,7 +158,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     String exState = ex.getSQLState();
                     if (exState.equals(ERRCODE_UNIQUE_VIOLATION) ) { // "ERROR: duplicate key value violates unique constraint" - or similar
                         String s = ex.getMessage().substring(5);
-                        _log.info("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
+                        _log.debug("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
                         ignoredSQLException("addPool()", ex, sql);
 
                     } else {
@@ -782,7 +782,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.setString(2, poolStatus);
             stmt.executeUpdate();
         } catch (SQLException ex) {
-            _log.debug(ex.toString(), ex);
+            _log.trace(ex.toString(), ex);
             try {
                 stmt = conn.prepareStatement(sql_u);
                 stmt.setString(1, poolStatus);
@@ -1155,7 +1155,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.setString(2, desc);
             stmt.executeUpdate();
         } catch (Exception ex) {
-            _log.debug(ex.toString());
+            _log.trace(ex.toString());
             try {
                 stmt = conn.prepareStatement(sql_u);
                 stmt.setString(1, desc);

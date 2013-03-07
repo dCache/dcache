@@ -278,7 +278,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                     for (State state : states) {
                         String insertState = "INSERT INTO " +
                                 srmStateTableName + " VALUES (?, ?)";
-                        logger.debug("inserting into SRMJOBSTATE values: {} {}",
+                        logger.trace("inserting into SRMJOBSTATE values: {} {}",
                                 state.getStateId(), state);
                         PreparedStatement sqlStatement1 = null;
                         try {
@@ -366,7 +366,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         if(jobId == null) {
             throw new NullPointerException ("jobId is null");
         }
-        logger.debug("executing statement: SELECT * FROM {} WHERE ID=?({})",
+        logger.trace("executing statement: SELECT * FROM {} WHERE ID=?({})",
                      getTableName(), jobId);
         PreparedStatement statement =null;
         ResultSet set = null;
@@ -582,7 +582,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             PreparedStatement sqlStatement = _con.prepareStatement(sql);
             sqlStatement.setString(1, getTableName());
             sqlStatement.setString(2, schedulerId);
-            logger.debug("Selecting everything of Scheduler {} from table {}",
+            logger.trace("Selecting everything of Scheduler {} from table {}",
                     schedulerId,getTableName());
             ResultSet set = sqlStatement.executeQuery();
             while(set.next()) {
@@ -614,8 +614,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         set,
                         13 );
 
-                logger.debug("==========> deserialization from database of job id {}", job.getId());
-                logger.debug("==========> jobs submitter id is {}", job.getSubmitterId());
+                logger.trace("==========> deserialization from database of job id {}", job.getId());
+                logger.trace("==========> jobs submitter id is {}", job.getSubmitterId());
                 jobs.add(job);
             }
 
@@ -644,11 +644,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         List<Job.JobHistory> l = new ArrayList<>();
         String select = "SELECT * FROM " +getHistoryTableName()+
                 " WHERE JOBID="+jobId;
-        logger.debug("executing statement: {}", select);
+        logger.trace("executing statement: {}", select);
         Statement statement = _con.createStatement();
         ResultSet set = statement.executeQuery(select);
         if(!set.next()) {
-            logger.debug("no history elements in table {} found, returning NULL",
+            logger.trace("no history elements in table {} found, returning NULL",
                          getHistoryTableName());
             statement.close();
             return null;
@@ -665,7 +665,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                     TRANSITIONTIME);
             jh.setSaved();
             l.add(jh);
-            logger.debug("found JobHistory: {}", jh.toString());
+            logger.trace("found JobHistory: {}", jh.toString());
 
         } while (set.next());
         statement.close();
@@ -684,7 +684,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
                     " WHERE SCHEDULERID is NULL and State="+State.PENDING.getStateId();
-            logger.debug("executing statement: {}", sqlStatementString);
+            logger.trace("executing statement: {}", sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             //save in the memory the ids to prevent the exhaust of the connections
             // so we return connections before trying to schedule the pending
@@ -735,7 +735,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
                     " WHERE SCHEDULERID is NULL and State="+State.PENDING.getStateId();
-            logger.debug("executing statement: {}", sqlStatementString);
+            logger.trace("executing statement: {}", sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             //save in the memory the ids to prevent the exhaust of the connections
             // so we return connections before trying to restore the pending
@@ -782,7 +782,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
                     " WHERE "+sqlCondition+" ";
-            logger.debug("executing statement: {}", sqlStatementString);
+            logger.trace("executing statement: {}", sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
                 Long ID = set.getLong(1);
@@ -832,7 +832,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 sqlStatement.setString(1,schedulerId);
                 sqlStatement.setInt(2, state.getStateId());
             }
-            logger.debug("executing statement {} ,values: {} ,{} ,{}", sql, getTableName(), schedulerId,
+            logger.trace("executing statement {} ,values: {} ,{} ,{}", sql, getTableName(), schedulerId,
                          state.getStateId());
             set = sqlStatement.executeQuery();
             while(set.next()) {
@@ -863,9 +863,9 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         LASTSTATETRANSITIONTIME,
                         set,
                         13 );
-                logger.debug("==========> deserialization from database of {}",
+                logger.trace("==========> deserialization from database of {}",
                              job);
-                logger.debug("==========> jobs creator is {}",
+                logger.trace("==========> jobs creator is {}",
                              job.getSubmitterId());
                 jobs.add(job);
             }
@@ -922,11 +922,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
              */
             if(!tableRs.next()) {
-                logger.debug("DatabaseMetaData.getTables returned empty result set");
+                logger.trace("DatabaseMetaData.getTables returned empty result set");
                 try {
-                    logger.debug("{} does not exits", tableName);
+                    logger.trace("{} does not exits", tableName);
                     Statement s = _con.createStatement();
-                    logger.debug("executing statement: {}", createStatement);
+                    logger.trace("executing statement: {}", createStatement);
                     int result = s.executeUpdate(createStatement);
                     s.close();
                 }
@@ -958,7 +958,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
                     Statement s = _con.createStatement();
                     logger.warn("Creating table {}", tableName);
-                    logger.debug("executing statement: {}", createStatement);
+                    logger.trace("executing statement: {}", createStatement);
                     int result = s.executeUpdate(createStatement);
                     s.close();
                 }
@@ -968,7 +968,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         " SET STATE="+State.DONE.getStateId()+
                         " WHERE STATE="+State.READY.getStateId();
                 Statement s = _con.createStatement();
-                logger.debug("executing statement: {}", sqlStatementString);
+                logger.trace("executing statement: {}", sqlStatementString);
                 int result = s.executeUpdate(sqlStatementString);
                 s.close();
                 sqlStatementString = "UPDATE " + getTableName() +
@@ -977,7 +977,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         " STATE !="+State.CANCELED.getStateId()+" AND "+
                         " STATE !="+State.DONE.getStateId();
                 s = _con.createStatement();
-                logger.debug("executing statement: {}", sqlStatementString);
+                logger.trace("executing statement: {}", sqlStatementString);
                 result = s.executeUpdate(sqlStatementString);
                 s.close();
             }
@@ -1062,7 +1062,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         String dropStatement = "DROP TABLE IF EXISTS "+oldName+ " CASCADE";
         Statement s = _con.createStatement();
         logger.warn("Moving SRM table {} away as its schema is out-of-date", oldName);
-        logger.debug("executing statement: {}", dropStatement);
+        logger.trace("executing statement: {}", dropStatement);
         int result =  s.executeUpdate(dropStatement);
         s.close();
         return result;
@@ -1101,7 +1101,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 }
             }
             if (listOfColumnsToBeIndexed.size()==0) {
-                logger.debug("all indexes were already made for table {}", tableName);
+                logger.trace("all indexes were already made for table {}", tableName);
                 _con.setAutoCommit(false);
                 pool.returnConnection(_con);
                 _con =null;
@@ -1160,7 +1160,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             while (index_rset.next()) {
                 String s = index_rset.getString("index_name").toLowerCase();
                 if (indexname.equals(s)){
-                    logger.debug("index {} already exists", indexname);
+                    logger.trace("index {} already exists", indexname);
                     _con.setAutoCommit(false);
                     pool.returnConnection(_con);
                     _con =null;
@@ -1202,7 +1202,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             final String column_or_expression) throws SQLException {
         String createIndexStatementText = "CREATE INDEX "+indexName+
                 " ON "+tableName+" ("+column_or_expression+")";
-        logger.debug("Executing {}", createIndexStatementText);
+        logger.trace("Executing {}", createIndexStatementText);
         try (Statement createIndexStatement = _con.createStatement()) {
             createIndexStatement.executeUpdate(createIndexStatementText);
         } catch (SQLException e) {
@@ -1390,7 +1390,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 Thread.sleep(update_period);
             }
             catch(InterruptedException ie) {
-                logger.info("database update thread interrupted");
+                logger.debug("database update thread interrupted");
                 return;
             }
             long currenttime = System.currentTimeMillis();
@@ -1405,11 +1405,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         " WHERE CREATIONTIME+LIFETIME < "+
                         cutout_expiration_time;
                 Statement s = _con.createStatement();
-                //logger.debug("executing statement: "+sqlStatementString);
+                //logger.trace("executing statement: "+sqlStatementString);
                 int result = s.executeUpdate(sqlStatementString);
                 s.close();
                 _con.commit();
-                //logger.debug("deleted "+result+" records ");
+                //logger.trace("deleted "+result+" records ");
             }
             catch (SQLException sqe) {
                 if(_con != null) {

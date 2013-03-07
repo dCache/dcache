@@ -37,7 +37,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
 
     public PoolSpaceBean() {
         calculatePercentages();
-        _log.debug("poolBean created");
+        _log.trace("poolBean created");
     }
 
     private void calculatePercentages() {

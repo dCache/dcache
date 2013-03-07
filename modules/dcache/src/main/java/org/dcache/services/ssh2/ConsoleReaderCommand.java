@@ -134,7 +134,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
         if (_history != null) {
             _console.setHistory(_history);
             _console.setUseHistory(true);
-            _logger.debug("History enabled.");
+            _logger.trace("History enabled.");
         }
 
         String hello = "";

@@ -175,7 +175,7 @@ public class RemoteGsiftpTransferProtocol_1
     {
         _pnfsId = fileAttributes.getPnfsId();
         StorageInfo storage = fileAttributes.getStorageInfo();
-        _log.debug("runIO()\n\tprotocol="
+        _log.trace("runIO()\n\tprotocol="
             + protocol + ",\n\tStorageInfo=" + storage + ",\n\tPnfsId="
             + _pnfsId + ",\n\taccess ="
             + access );
@@ -198,7 +198,7 @@ public class RemoteGsiftpTransferProtocol_1
             gridFTPWrite(remoteGsiftpProtocolInfo,
                          storage);
         }
-        _log.debug(" runIO() done");
+        _log.trace(" runIO() done");
     }
 
     @Override
@@ -244,11 +244,11 @@ public class RemoteGsiftpTransferProtocol_1
             GlobusURL src_url = new GlobusURL(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
             long size = _client.getSize(src_url.getPath());
-            _log.debug(" received a file size info: " + size +
+            _log.trace(" received a file size info: " + size +
                 " allocating space on the pool");
-            _log.debug("ALLOC: " + _pnfsId + " : " + size );
+            _log.trace("ALLOC: " + _pnfsId + " : " + size );
             allocator.allocate(size);
-            _log.debug(" allocated space " + size);
+            _log.trace(" allocated space " + size);
             DiskDataSourceSink sink =
                 new DiskDataSourceSink(protocolInfo.getBufferSize(),
                                        false);
@@ -267,7 +267,7 @@ public class RemoteGsiftpTransferProtocol_1
                              StorageInfo storage)
         throws CacheException
     {
-        _log.debug("gridFTPWrite started");
+        _log.trace("gridFTPWrite started");
 
         try {
             PnfsHandler pnfs = new PnfsHandler(_cell, PNFS_MANAGER);
@@ -277,10 +277,10 @@ public class RemoteGsiftpTransferProtocol_1
 
             if (!checksums.isEmpty()){
                 Checksum checksum = checksums.iterator().next();
-                _log.debug("Will use " + checksum + " for transfer verification of "+_pnfsId);
+                _log.trace("Will use " + checksum + " for transfer verification of "+_pnfsId);
                 _client.setChecksum(checksum.getType().getName(), null);
             } else {
-                _log.debug("PnfsId "+_pnfsId+" does not have checksums");
+                _log.trace("PnfsId "+_pnfsId+" does not have checksums");
             }
 
             GlobusURL dst_url =  new GlobusURL(protocolInfo.getGsiftpUrl());
@@ -452,7 +452,7 @@ public class RemoteGsiftpTransferProtocol_1
         @Override
         public synchronized void close()
         {
-            _log.debug("DiskDataSink.close() called");
+            _log.trace("DiskDataSink.close() called");
             _last_transfer_time    = System.currentTimeMillis();
         }
 
@@ -517,7 +517,7 @@ public class RemoteGsiftpTransferProtocol_1
                     ChecksumFactory.getFactory(ChecksumType.getChecksumType(type)).find(attributes.getChecksums());
                 if ( pnfsChecksum != null ){
                     String hexValue = pnfsChecksum.getValue();
-                    _log.debug(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
+                    _log.trace(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
                     return hexValue;
                 }
             }

@@ -206,11 +206,11 @@ public class PoolMonitorV5
             throws CacheException
         {
             Collection<String> locations = _fileAttributes.getLocations();
-            _log.debug("[read] Expected from pnfs: {}", locations);
+            _log.trace("[read] Expected from pnfs: {}", locations);
 
             Map<String,PoolInfo> onlinePools =
                 _costModule.getPoolInfoAsMap(locations);
-            _log.debug("[read] Online pools: {}", onlinePools);
+            _log.trace("[read] Online pools: {}", onlinePools);
 
             /* Is the file in any of the online pools?
              */
@@ -234,7 +234,7 @@ public class PoolMonitorV5
             CostException fallback = null;
             for (int prio = 0; prio < level.length; prio++) {
                 List<String> poolNames = level[prio].getPoolList();
-                _log.debug("[read] Allowed pools at level {}: {}",
+                _log.trace("[read] Allowed pools at level {}: {}",
                            prio, poolNames);
 
                 /* Reduce the set to the pools that are supposed to
@@ -247,7 +247,7 @@ public class PoolMonitorV5
                         pools.add(info);
                     }
                 }
-                _log.debug("[read] Available pools at level {}: {}",
+                _log.trace("[read] Available pools at level {}: {}",
                            prio, pools);
 
                 /* The caller may want to know which partition we used
@@ -295,10 +295,10 @@ public class PoolMonitorV5
             throws CacheException
         {
             Collection<String> locations = _fileAttributes.getLocations();
-            _log.debug("[p2p] Expected source from pnfs: {}", locations);
+            _log.trace("[p2p] Expected source from pnfs: {}", locations);
             Map<String,PoolInfo> sources =
                 _costModule.getPoolInfoAsMap(locations);
-            _log.debug("[p2p] Online source pools: {}", sources.values());
+            _log.trace("[p2p] Online source pools: {}", sources.values());
 
             if (sources.size() == 0) {
                 throw new CacheException("P2P denied: No source pools available");
@@ -310,7 +310,7 @@ public class PoolMonitorV5
                     _costModule.getPoolInfo(filter(level.getPoolList(),
                                                    not(in(sources.keySet()))));
                 if (!pools.isEmpty()) {
-                    _log.debug("[p2p] Online destination candidates: {}", pools);
+                    _log.trace("[p2p] Online destination candidates: {}", pools);
                     Partition partition =
                         _partitionManager.getPartition(level.getTag());
                     return partition.selectPool2Pool(_costModule,
@@ -330,7 +330,7 @@ public class PoolMonitorV5
             throws CacheException
         {
             Collection<String> locations = _fileAttributes.getLocations();
-            _log.debug("[stage] Existing locations of the file: {}", locations);
+            _log.trace("[stage] Existing locations of the file: {}", locations);
 
             CostException fallback = null;
             for (PoolPreferenceLevel level: match(DirectionType.CACHE)) {
@@ -339,7 +339,7 @@ public class PoolMonitorV5
                         _costModule.getPoolInfo(filter(level.getPoolList(),
                                                        not(in(locations))));
                     if (!pools.isEmpty()) {
-                        _log.debug("[stage] Online stage candidates: {}", pools);
+                        _log.trace("[stage] Online stage candidates: {}", pools);
                         Partition partition =
                             _partitionManager.getPartition(level.getTag());
                         return partition.selectStagePool(_costModule, pools,
@@ -389,11 +389,11 @@ public class PoolMonitorV5
                 };
 
             Collection<String> locations = _fileAttributes.getLocations();
-            _log.debug("[pin] Expected from pnfs: {}", locations);
+            _log.trace("[pin] Expected from pnfs: {}", locations);
 
             Map<String,PoolInfo> onlinePools =
                 _costModule.getPoolInfoAsMap(locations);
-            _log.debug("[pin] Online pools: {}", onlinePools.values());
+            _log.trace("[pin] Online pools: {}", onlinePools.values());
 
             boolean isRequestSatisfiable = false;
             for (PoolPreferenceLevel level: match(DirectionType.READ)) {
@@ -446,7 +446,7 @@ public class PoolMonitorV5
             PoolCostCheckable costCheck = _costModule.getPoolCost( poolName , filesize ) ;
             if( costCheck != null ){
                list.add( costCheck ) ;
-               _log.info( "queryPoolsForCost : costModule : "+poolName+" ("+filesize+") "+costCheck);
+               _log.debug( "queryPoolsForCost : costModule : "+poolName+" ("+filesize+") "+costCheck);
             }
         }
 

@@ -71,7 +71,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	 */
 	public InfoHttpEngine(CellEndpoint endpoint, String[] args) {
             if( _log.isInfoEnabled()) {
-                _log.info("in InfoHttpEngine constructor");
+                _log.debug("in InfoHttpEngine constructor");
             }
             _endpoint = endpoint;
 	}
@@ -98,7 +98,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
                         }
          		sb.append( urlItem);
         	}
-        	_log.info( "Received request for: " + sb.toString());
+        	_log.debug( "Received request for: " + sb.toString());
         }
 
         if( urlItems.length > 1) {
@@ -174,7 +174,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
 		String serialisedData;
 
 		if( _log.isDebugEnabled()) {
-                    _log.debug("Attempting to fetch XML +" + (pathElements == null ? "complete" : "partial") + " tree");
+                    _log.trace("Attempting to fetch XML +" + (pathElements == null ? "complete" : "partial") + " tree");
                 }
 
 		InfoGetSerialisedDataMessage sendMsg = (pathElements == null) ? new InfoGetSerialisedDataMessage() : new InfoGetSerialisedDataMessage( pathElements);

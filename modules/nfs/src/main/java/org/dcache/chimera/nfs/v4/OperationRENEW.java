@@ -53,7 +53,7 @@ public class OperationRENEW extends AbstractNFSv4Operation {
             res.status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException he) {
-            _log.debug("RENEW: {}", he.getMessage() );
+            _log.trace("RENEW: {}", he.getMessage() );
             res.status = he.getStatus();
         }
 

@@ -89,7 +89,7 @@ import dmg.util.Args;
                          error);
              }
 
-             _log.info("Output : "+output);
+             _log.debug("Output : "+output);
 
              String volNbf;
              String volStat;
@@ -151,7 +151,7 @@ import dmg.util.Args;
                          error);
              }
 
-             _log.info("Output : "+output);
+             _log.debug("Output : "+output);
 
              String tape;
              String status;

@@ -316,7 +316,7 @@ public class CopyManager extends CellAdapter {
        return "" ;
    }
    private  void setStatus( String newStatus ){
-       _log.info("STATUS : "+newStatus);
+       _log.debug("STATUS : "+newStatus);
        synchronized( _processLock ){
            _status = newStatus ;
        }
@@ -368,7 +368,7 @@ public class CopyManager extends CellAdapter {
                //
                entry._destination = _destination[poolIndex] ;
 
-               _log.info("Next entry to process : "+entry);
+               _log.debug("Next entry to process : "+entry);
 
                synchronized( _processLock ){
 
@@ -393,18 +393,18 @@ public class CopyManager extends CellAdapter {
 //                        throw new
 //                        InterruptedException("Interrupted in 'startTransfer' loop" ) ;
 
-                   _log.info("Starting query for : "+entry) ;
+                   _log.debug("Starting query for : "+entry) ;
                    sendQuery( entry )  ;
-                   _log.info("Starting transfer Done for : "+entry) ;
+                   _log.debug("Starting transfer Done for : "+entry) ;
 
                }
            }
 
-           _log.info( _parameter._stopped?"processing stopped":"All files submitted" ) ;
+           _log.debug( _parameter._stopped?"processing stopped":"All files submitted" ) ;
 
            synchronized( _processLock ){
 
-               _log.info("Waiting for residual transfers to be finished : "+_parameter._currentlyActive );
+               _log.debug("Waiting for residual transfers to be finished : "+_parameter._currentlyActive );
 
                while( ( ! us.isInterrupted() ) &&
                       ( _parameter._currentlyActive > 0 ) )
@@ -420,7 +420,7 @@ public class CopyManager extends CellAdapter {
 
 
            }
-           _log.info("Finished");
+           _log.debug("Finished");
         }
 
    }
@@ -484,7 +484,7 @@ public class CopyManager extends CellAdapter {
 
            _parameter._currentlyActive ++ ;
            try{
-               _log.info("sendQuery : sending query for " + entry ) ;
+               _log.debug("sendQuery : sending query for " + entry ) ;
                sendMessage( msg ) ;
            }catch(Exception ee ){
                setEntryFinished( entry , 1 , ee ) ;
@@ -507,7 +507,7 @@ public class CopyManager extends CellAdapter {
            CellMessage out = new CellMessage( new CellPath(entry._destination) , pool ) ;
 
            try{
-               _log.info("sendQuery : sending query for " + entry ) ;
+               _log.debug("sendQuery : sending query for " + entry ) ;
                sendMessage( out ) ;
                entry.state = PoolFileEntry.STATE ;
            }catch(Exception ee ){
@@ -530,7 +530,7 @@ public class CopyManager extends CellAdapter {
            CellMessage msg = new CellMessage( new CellPath(entry._destination) , pool2pool ) ;
 
            try{
-               _log.info("startTransfer : sending 'start transfer' for "+entry ) ;
+               _log.debug("startTransfer : sending 'start transfer' for "+entry ) ;
                sendMessage( msg ) ;
            }catch(Exception ee ){
                setEntryFinished( entry , 1 , ee ) ;
@@ -553,14 +553,14 @@ public class CopyManager extends CellAdapter {
                _log.warn("p2pAnswerArrived : entry not found in rep : "+pnfsId);
                return ;
            }
-           _log.info("pool2poolAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
+           _log.debug("pool2poolAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
            if( msg.getReturnCode() == 0 ){
 
                entry.transferOk = true ;
 
                if( entry.isPrecious() ){
 
-                   _log.info("pool2poolAnswerArrived for "+pnfsId+" Sending precious to "+poolName);
+                   _log.debug("pool2poolAnswerArrived for "+pnfsId+" Sending precious to "+poolName);
                    PoolModifyPersistencyMessage pool =
                         new PoolModifyPersistencyMessage( poolName , pnfsId , true ) ;
 
@@ -586,7 +586,7 @@ public class CopyManager extends CellAdapter {
        PnfsId pnfsId = msg.getPnfsId() ;
        synchronized( _processLock ){
            PoolFileEntry entry = _poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
-           _log.info("poolModifyPersistencyAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
+           _log.debug("poolModifyPersistencyAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
            if( msg.getReturnCode() == 0 ){
                entry.stateOk = true ;
                setEntryFinished( entry ) ;
@@ -600,15 +600,15 @@ public class CopyManager extends CellAdapter {
        PnfsId pnfsId = msg.getPnfsId() ;
        synchronized( _processLock ){
            PoolFileEntry entry = _poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
-           _log.info("poolCheckFileAnswerArrived: "+entry+" -> "+msg ) ;
+           _log.debug("poolCheckFileAnswerArrived: "+entry+" -> "+msg ) ;
            if( msg.getReturnCode() == 0 ){
 
                if( entry.state == PoolFileEntry.QUERY_1 ){
                    if( msg.getHave() ){
-                       _log.info("poolCheckFile answer for initial query ok for "+entry ) ;
+                       _log.debug("poolCheckFile answer for initial query ok for "+entry ) ;
                        startTransfer( entry ) ;
                    }else{
-                       _log.info("poolCheckFile answer for initial query 'file not found' for "+entry);
+                       _log.debug("poolCheckFile answer for initial query 'file not found' for "+entry);
                        setEntryFinished(entry);
                    }
                }else if( entry.state == PoolFileEntry.QUERY_2 ){
@@ -616,10 +616,10 @@ public class CopyManager extends CellAdapter {
                    // not used yet.
                    //
                    if( msg.getHave() ){
-                       _log.info("poolCheckFile answer for final query ok for "+entry ) ;
+                       _log.debug("poolCheckFile answer for final query ok for "+entry ) ;
                        sendState( entry ) ;
                    }else{
-                       _log.info("poolCheckFile answer for final query 'file not found' for "+entry);
+                       _log.debug("poolCheckFile answer for final query 'file not found' for "+entry);
                        setEntryFinished(entry);
                    }
                }else{

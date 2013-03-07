@@ -82,7 +82,7 @@ public class SrmBringOnline {
         try {
             response = srmBringOnline();
         } catch(URISyntaxException e) {
-            logger.debug(" malformed uri : "+e.getMessage());
+            logger.trace(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {

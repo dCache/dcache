@@ -64,7 +64,7 @@ public class OperationCLOSE extends AbstractNFSv4Operation {
             res.status = nfsstat.NFS_OK;
 
         } catch (ChimeraNFSException he) {
-            _log.debug("CLOSE: {}", he.getMessage());
+            _log.trace("CLOSE: {}", he.getMessage());
             res.status = he.getStatus();
         }
         _result.opclose = res;

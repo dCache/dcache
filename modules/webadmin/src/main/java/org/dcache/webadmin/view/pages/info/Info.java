@@ -27,7 +27,7 @@ public class Info extends BasePage {
     public Info(PageParameters parameters) {
         try {
             setCorrectedStatepath(parameters.get("statepath").toString());
-            _log.debug("calls Info with: {}", _statepath);
+            _log.trace("calls Info with: {}", _statepath);
             CharSequence export = getInfoService().getXmlForStatepath(_statepath);
 //            to get the legacy behaviour the filename is not set - this
 //            way the firefox browser opens this directly with no download popup
@@ -40,7 +40,7 @@ public class Info extends BasePage {
     }
 
     private void setCorrectedStatepath(String statepath) {
-        _log.debug("called with statepath: {}", statepath);
+        _log.trace("called with statepath: {}", statepath);
         if (statepath == null || statepath.equals("")) {
             _statepath = "/";
         } else if (statepath.length() > 1 && statepath.startsWith("/")) {

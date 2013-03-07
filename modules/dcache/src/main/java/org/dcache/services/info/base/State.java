@@ -99,11 +99,11 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
         if( _log.isDebugEnabled()) {
             if(earliestExpiryDate == null) {
-                _log.debug("reporting that earliest expiry time is never");
+                _log.trace("reporting that earliest expiry time is never");
             } else {
                 long duration = (earliestExpiryDate.getTime() -
                         System.currentTimeMillis())/1000;
-                _log.debug("reporting that earliest expiry time is " + duration
+                _log.trace("reporting that earliest expiry time is " + duration
                         + "s in the future");
             }
         }
@@ -129,7 +129,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     @Override
     public void processUpdate( StateUpdate update) {
         if( _log.isDebugEnabled()) {
-            _log.debug("beginning to process update: \n" + update.debugInfo());
+            _log.trace("beginning to process update: \n" + update.debugInfo());
         }
 
         // It's just possible that we might be called with null; ignore these
@@ -158,7 +158,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
                 _log.error( "Error updating state:", e);
             }
 
-            _log.debug( "checking StateWatchers");
+            _log.trace( "checking StateWatchers");
 
             StateUpdate resultingUpdate = checkWatchers( transition);
 
@@ -185,7 +185,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      */
     private void applyTransition( StateTransition transition) {
         if( _log.isDebugEnabled()) {
-            _log.debug("now applying following transition to state:\n\n" + transition
+            _log.trace("now applying following transition to state:\n\n" + transition
                     .dumpContents());
         }
 
@@ -229,13 +229,13 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
             if( !thisWatcherInfo.isEnabled()) {
                 if( _log.isDebugEnabled()) {
-                    _log.debug("skipping disabled watcher " + thisWatcher);
+                    _log.trace("skipping disabled watcher " + thisWatcher);
                 }
                 continue;
             }
 
             if( _log.isDebugEnabled()) {
-                _log.debug("checking watcher " + thisWatcher);
+                _log.trace("checking watcher " + thisWatcher);
             }
 
             boolean hasBeenTriggered = false;
@@ -243,7 +243,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             for( StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
 
                 if( _log.isDebugEnabled()) {
-                    _log.debug("checking watcher " + thisWatcher + " predicate " + thisPredicate);
+                    _log.trace("checking watcher " + thisWatcher + " predicate " + thisPredicate);
                 }
 
                 hasBeenTriggered = _state.predicateHasBeenTriggered( null,
@@ -258,7 +258,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
             if( hasBeenTriggered) {
                 if( _log.isInfoEnabled()) {
-                    _log.info("triggering watcher " + thisWatcher);
+                    _log.debug("triggering watcher " + thisWatcher);
                 }
                 thisWatcherInfo.incrementCounter();
                 if( futureState == null) {
@@ -385,7 +385,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             return;
         }
 
-        _log.info( "Building StateTransition for expired StateComponents");
+        _log.debug( "Building StateTransition for expired StateComponents");
         StateTransition transition = new StateTransition();
 
         try {
@@ -424,7 +424,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     @Override
     public void visitState( StateVisitor visitor) {
         if( _log.isDebugEnabled()) {
-            _log.debug("visitor " + visitor.getClass()
+            _log.trace("visitor " + visitor.getClass()
                     .getSimpleName() + " wishing to visit current state");
         }
 
@@ -432,7 +432,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             long beforeLock = System.currentTimeMillis();
 
             if( _log.isDebugEnabled()) {
-                _log.debug("visitor " + visitor.getClass()
+                _log.trace("visitor " + visitor.getClass()
                         .getSimpleName() + " acquiring read lock");
             }
 
@@ -441,7 +441,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             long afterLock = System.currentTimeMillis();
 
             if( _log.isDebugEnabled()) {
-                _log.debug("visitor " + visitor.getClass()
+                _log.trace("visitor " + visitor.getClass()
                         .getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
             }
 
@@ -452,7 +452,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             long afterVisit = System.currentTimeMillis();
 
             if( _log.isDebugEnabled()) {
-                _log.debug("visitor " + visitor.getClass()
+                _log.trace("visitor " + visitor.getClass()
                         .getSimpleName() + " completed visit (took " + (afterVisit - afterLock) / 1000.0 + " ms), releasing read lock.");
             }
 
@@ -461,7 +461,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         }
 
         if( _log.isDebugEnabled()) {
-            _log.debug("visitor " + visitor.getClass()
+            _log.trace("visitor " + visitor.getClass()
                     .getSimpleName() + " finished.");
         }
     }

@@ -82,7 +82,7 @@ public class SrmReserveSpace {
         try {
             response = reserveSpace();
         } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
+            logger.trace(" malformed uri : "+mue.getMessage());
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {

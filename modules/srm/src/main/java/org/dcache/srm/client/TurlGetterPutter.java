@@ -90,7 +90,7 @@ public abstract class TurlGetterPutter implements Runnable {
     private PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
 
     public void notifyOfTURL(String SURL,String TURL,String requestId, String fileId,Long size) {
-        logger.debug("notifyOfTURL( surl="+SURL+" , turl="+TURL+")");
+        logger.trace("notifyOfTURL( surl="+SURL+" , turl="+TURL+")");
         changeSupport.firePropertyChange(new TURLsArrivedEvent(this,SURL,TURL,requestId,fileId,size));
     }
 

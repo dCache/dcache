@@ -39,7 +39,7 @@ public class GridMapFile
             if (!readable) {
                 _log.error("WARNING: Could not read grid-mapfile. Will use cached copy.");
             } else if (_loaded < _file.lastModified()) {
-                _log.debug("GridMapFileHandler reading {}", _file);
+                _log.trace("GridMapFileHandler reading {}", _file);
                 try (BufferedReader reader = new BufferedReader(new FileReader(_file))) {
                     _map = read(reader);
                     _loaded = now;

@@ -198,7 +198,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                 _output.socket().getRemoteSocketAddress().toString();
             boolean reading = true;
 	    try {
-		info("Starting mode S proxy from "
+		debug("Starting mode S proxy from "
                      + inputAddress + " to " + outputAddress);
 		ByteBuffer buffer = ByteBuffer.allocate(128 * 1024);
 		while (_input.read(buffer) != -1) {
@@ -254,7 +254,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
             long count, position;
 
 	    try {
-		info("Starting mode E proxy from "
+		debug("Starting mode E proxy from "
                      + inputAddress + " to " + outputAddress);
 
 		loop: while (!eod && block.readHeader(_input) > -1) {
@@ -338,7 +338,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                             + e.getMessage());
                 }
 	    } finally {
-		info("Redirector done, EOD = " + eod + ", used = " + used);
+		debug("Redirector done, EOD = " + eod + ", used = " + used);
 		subtractDataChannel();
 	    }
 	}
@@ -362,14 +362,14 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         _thread	      = new Thread(this, "SocketAdapter-" + _localAddress);
     }
 
-    protected void info(String s)
-    {
-        _door.info("Socket adapter " + _localAddress + ": " + s);
-    }
-
     protected void debug(String s)
     {
         _door.debug("Socket adapter " + _localAddress + ": " + s);
+    }
+
+    protected void trace(String s)
+    {
+        _door.trace("Socket adapter " + _localAddress + ": " + s);
     }
 
     protected void warn(String s)
@@ -380,11 +380,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     protected void error(String s)
     {
         _door.error("Socket adapter " + _localAddress + ": " + s);
-    }
-
-    protected void fatal(String s)
-    {
-        _door.fatal("Socket adapter " + _localAddress + ": " + s);
     }
 
     protected void fatal(Throwable t)
@@ -419,7 +414,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     protected synchronized void setEODExpected(long count)
     {
-	debug("Setting data channel count to " + count);
+	trace("Setting data channel count to " + count);
 	_selector.wakeup();
         _eodc = (int)count;
     }
@@ -431,11 +426,11 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         _dataChannelsClosed++;
 
         if (_eodc < Integer.MAX_VALUE) {
-            debug("Closing redirector " + _dataChannelsClosed +
+            trace("Closing redirector " + _dataChannelsClosed +
                   ", remaining: " + _dataChannelConnections +
                   ", eodc says there will be: " + getEODExpected());
         } else {
-            debug("Closing redirector " + _dataChannelsClosed +
+            trace("Closing redirector " + _dataChannelsClosed +
                   ", remaining: " + _dataChannelConnections);
         }
     }
@@ -608,7 +603,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	     * adapter and the pool, there will in any case be exactly
 	     * one connection on the output channel.
 	     */
-	    info("Accepting output connection on "
+	    debug("Accepting output connection on "
                  + outputSock.socket().getLocalSocketAddress());
 	    SocketChannel output = outputSock.accept();
 	    sockets.add(output);
@@ -616,7 +611,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                 output.socket().setSendBufferSize(_bufferSize);
             }
             output.socket().setKeepAlive(true);
-            info("Opened " + output.socket());
+            debug("Opened " + output.socket());
 
 	    /* Send the EOF. The GridFTP protocol allows us to send
              * this information at any time. Doing it up front will
@@ -642,7 +637,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	     * exception when the thread was interrupted, however
 	     * select() will return normally.
 	     */
-	    info("Accepting input connection on "
+	    debug("Accepting input connection on "
                  + inputSock.socket().getLocalSocketAddress());
             int totalStreams = 0;
 	    inputSock.configureBlocking(false);
@@ -654,7 +649,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 		    if (key.isAcceptable()) {
 			SocketChannel input = inputSock.accept();
 			sockets.add(input);
-                        info("Opened " + input.socket());
+                        debug("Opened " + input.socket());
 
 			if (_bufferSize > 0) {
 			    input.socket().setSendBufferSize(_bufferSize);
@@ -680,12 +675,12 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 
 	    /* Block until all redirector threads have terminated.
              */
-	    debug("Waiting for all redirectors to finish");
+	    trace("Waiting for all redirectors to finish");
             for (Thread redirector : redirectors) {
 		redirector.join();
 	    }
 	    redirectors.clear();
-	    debug("All redirectors have finished");
+	    trace("All redirectors have finished");
 
 	    /* Send the EOD (remember that we already sent the EOF
              * earlier).
@@ -753,7 +748,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     @Override
     public void close() {
-	info("Closing listener sockets");
+	debug("Closing listener sockets");
 
         setClosing(true);
 

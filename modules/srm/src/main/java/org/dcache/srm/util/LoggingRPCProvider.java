@@ -58,7 +58,7 @@ public class LoggingRPCProvider extends RPCProvider
                 * All exceptions that are to be delivered as a SOAP Fault are
                 * subclasses of AxisFault.
                 */
-                _log.debug("Invocation produced AxisFault {}: code={}, reason={}, string={}",
+                _log.trace("Invocation produced AxisFault {}: code={}, reason={}, string={}",
                         fault.getClass().getSimpleName(), fault.getFaultCode(),
                         fault.getFaultReason(), fault.getFaultString());
             } else if(t instanceof RuntimeException) {

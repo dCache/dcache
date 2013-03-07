@@ -61,11 +61,11 @@ public class StandardPoolsDAO implements PoolsDAO {
 
     @Override
     public Set<Pool> getPoolsOfPoolGroup(String poolGroup) throws DAOException {
-        _log.debug("get pools for Poolgroup {} called", poolGroup);
+        _log.trace("get pools for Poolgroup {} called", poolGroup);
         try {
             Collection<SelectionPool> poolGroupPools = getPoolMonitor().
                     getPoolSelectionUnit().getPoolsByPoolGroup(poolGroup);
-            _log.debug("selectionPools returned: {}", poolGroupPools);
+            _log.trace("selectionPools returned: {}", poolGroupPools);
             return createReturnPoolsFromSelectionPools(poolGroupPools);
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
@@ -74,11 +74,11 @@ public class StandardPoolsDAO implements PoolsDAO {
 
     @Override
     public Set<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) throws DAOException {
-        _log.debug("get poolgroups of pool for pool {} called", poolName);
+        _log.trace("get poolgroups of pool for pool {} called", poolName);
         try {
             Set<SelectionPoolGroup> poolGroups = new HashSet(getPoolSelectionUnit().
                     getPoolGroupsOfPool(poolName));
-            _log.debug("poolgroups returned: {}", poolGroups);
+            _log.trace("poolgroups returned: {}", poolGroups);
             return poolGroups;
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
@@ -89,11 +89,11 @@ public class StandardPoolsDAO implements PoolsDAO {
 
     @Override
     public Set<Pool> getPools() throws DAOException {
-        _log.debug("getPools called");
+        _log.trace("getPools called");
         try {
             Collection<SelectionPool> pools = getPoolMonitor().
                     getPoolSelectionUnit().getAllDefinedPools(false);
-            _log.debug("selectionPools returned: {}", pools);
+            _log.trace("selectionPools returned: {}", pools);
             return createReturnPoolsFromSelectionPools(pools);
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
@@ -126,7 +126,7 @@ public class StandardPoolsDAO implements PoolsDAO {
 
     @Override
     public Set<SelectionPoolGroup> getPoolGroups() throws DAOException {
-        _log.debug("getPoolGroups called");
+        _log.trace("getPoolGroups called");
         try {
             return new HashSet(getPoolSelectionUnit().getPoolGroups());
         } catch (NoSuchContextException ex) {
@@ -136,7 +136,7 @@ public class StandardPoolsDAO implements PoolsDAO {
 
     @Override
     public Set<String> getPoolGroupNames() throws DAOException {
-        _log.debug("getPoolGroupNames called");
+        _log.trace("getPoolGroupNames called");
         try {
             Set<String> poolGroupNames = new HashSet();
             for (SelectionPoolGroup group : getPoolSelectionUnit().getPoolGroups()) {
@@ -195,7 +195,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     public void changePoolMode(Set<String> poolIds, PoolV2Mode poolMode, String userName)
             throws DAOException {
         try {
-            _log.debug("PoolModifyModeMsg-Command: {}", poolMode);
+            _log.trace("PoolModifyModeMsg-Command: {}", poolMode);
             if (!poolIds.isEmpty()) {
                 PoolModifyModeMessageGenerator messageGenerator =
                         new PoolModifyModeMessageGenerator(
@@ -208,7 +208,7 @@ public class StandardPoolsDAO implements PoolsDAO {
                     throw new DAOException(failedIds.toString());
                 }
             }
-            _log.debug("PoolDAO: Modechange-Commands send successfully");
+            _log.trace("PoolDAO: Modechange-Commands send successfully");
         } catch (InterruptedException e) {
             _log.error("blocking was interrupted, change of PoolModes not yet done completly");
         }

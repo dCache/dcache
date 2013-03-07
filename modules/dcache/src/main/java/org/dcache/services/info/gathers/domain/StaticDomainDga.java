@@ -51,7 +51,7 @@ public class StaticDomainDga extends SkelListBasedActivity
         if(domain != null) {
             CellPath path = new CellPath("System", domain);
 
-            _log.debug("sending message \"{}\" to System cell on domain {}",
+            _log.trace("sending message \"{}\" to System cell on domain {}",
                     COMMAND, domain);
 
             _sender.sendMessage(getMetricLifetime(), _handler, path,

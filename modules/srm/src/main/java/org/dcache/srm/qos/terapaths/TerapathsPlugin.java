@@ -91,7 +91,7 @@ public class TerapathsPlugin implements QOSPlugin {
 		ScheduleSlots[] ss = null;
 		long startTime = new Date().getTime();
 
-		logger.debug("Submitting qos request...");
+		logger.trace("Submitting qos request...");
 
 		if (lastRetrieval==null || lastRetrieval.before(lastModification())) {
 			try {
@@ -272,7 +272,7 @@ public class TerapathsPlugin implements QOSPlugin {
                                             .getBandwidth()
                                             .getBandwidth();
 
-                                    logger.debug("Submitted qos request " + tpTicket.id);
+                                    logger.trace("Submitted qos request " + tpTicket.id);
                                     successFlag = true;
                                     break;
                                 }
@@ -307,15 +307,15 @@ public class TerapathsPlugin implements QOSPlugin {
 		//	Date now = new Date();
 		//	long now = now.getTime();
 		//	long timeLeft = tpTicket.endTime - now;
-		//	logger.debug("End time="+(tpTicket.endTime/1000)+"s now="+(now/1000)+"s expires in "+(timeLeft/1000)+"s");
+		//	logger.trace("End time="+(tpTicket.endTime/1000)+"s now="+(now/1000)+"s expires in "+(timeLeft/1000)+"s");
 		//	long transferTimeLeft = 0;
 		//	if (tpTicket.bytes!=-1 && tpTicket.bandwidth!=-1)
 		//		transferTimeLeft = tpTicket.bytes/(tpTicket.bandwidth*8); // TODO: change bytes to remaining bytes
 		//	if (timeLeft - transferTime < 0)
-		//		logger.debug("AM: will extend end time by "+extendTime);
+		//		logger.trace("AM: will extend end time by "+extendTime);
 		//	else
-		//		logger.debug("AM: no need to extend end time");
-		//	logger.debug("Ticket "+tpTicket.id+" enabled");
+		//		logger.trace("AM: no need to extend end time");
+		//	logger.trace("Ticket "+tpTicket.id+" enabled");
 		//}
 	}
 

@@ -102,10 +102,10 @@ public class OperationREAD extends AbstractNFSv4Operation {
             }
 
         }catch(IOHimeraFsException hioe) {
-            _log.debug("READ: {}", hioe.getMessage() );
+            _log.trace("READ: {}", hioe.getMessage() );
             res.status = nfsstat.NFSERR_IO;
         }catch(ChimeraNFSException he) {
-            _log.debug("READ: {}", he.getMessage() );
+            _log.trace("READ: {}", he.getMessage() );
             res.status = he.getStatus();
         }catch(ChimeraFsException hfe) {
             res.status = nfsstat.NFSERR_NOFILEHANDLE;

@@ -80,7 +80,7 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
 
         private void visitUpdatedOrDeletedMetric( StatePath path,
                                                  StateValue value) {
-            _log.debug( "path={}  value={}", path, value);
+            _log.trace( "path={}  value={}", path, value);
 
             StatePath parentPath = path.parentPath();
             String name = path.getLastElement();
@@ -98,7 +98,7 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
 
         private void visitUpdatedMetricValue( StatePath path,
                                               StateComponent component) {
-            _log.debug( "path={}  component={}", path, component);
+            _log.trace( "path={}  component={}", path, component);
             if( component instanceof StateComposite) {
                 // This is when a metric has become a branch.
                 component.acceptVisitor( path, this);
@@ -227,7 +227,7 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
         }
 
         private void visitNewChild( StatePath path, StateComponent component) {
-            _log.debug( "Visiting new child: {}", path);
+            _log.trace( "Visiting new child: {}", path);
 
             if( component instanceof StateComposite) {
                 component.acceptVisitor( path, this);

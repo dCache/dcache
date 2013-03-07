@@ -114,7 +114,7 @@ public class MulticastCell extends CellAdapter {
        if( obj instanceof NoRouteToCellException ){
           synchronized( _ioLock ){
              NoRouteToCellException nrtc = (NoRouteToCellException)obj ;
-             _log.info( "NRTCE arrived : "+nrtc ) ;
+             _log.debug( "NRTCE arrived : "+nrtc ) ;
              removeByUOID( nrtc.getUOID() ) ;
              return ;
           }
@@ -250,12 +250,12 @@ public class MulticastCell extends CellAdapter {
        entry.setServerState(info);
 
        CellPath serverPath = entry.getSourcePath() ;
-       _log.info( "message Path : "+path+"; serverPath : "+serverPath ) ;
+       _log.debug( "message Path : "+path+"; serverPath : "+serverPath ) ;
        if( path.equals( serverPath ) ){
            for (Client client : entry.clients()) {
                CellPath outPath = client.getPath();
                try {
-                   _log.info("Distributing to " + outPath);
+                   _log.debug("Distributing to " + outPath);
                    synchronized (_ioLock) {
                        CellMessage msg = new CellMessage(outPath, message);
                        sendMessage(msg);
@@ -270,7 +270,7 @@ public class MulticastCell extends CellAdapter {
 
            }
        }else{
-          _log.info( "Message from client "+path ) ;
+          _log.debug( "Message from client "+path ) ;
           serverPath = (CellPath)serverPath.clone() ;
           serverPath.revert() ;
           originalMessage.getDestinationPath().add( serverPath ) ;
@@ -301,7 +301,7 @@ public class MulticastCell extends CellAdapter {
        for (Client client : entry.clients()) {
            CellPath path = client.getPath();
            try {
-               _log.info("Close Distributing to " + path);
+               _log.debug("Close Distributing to " + path);
                sendMessage(new CellMessage(path, close));
            } catch (Throwable t) {
                _log.warn(t.toString(), t);
@@ -319,7 +319,7 @@ public class MulticastCell extends CellAdapter {
                    }
                    if (u.equals(uoid)) {
                        entry.removeClient(client.getPath());
-                       _log.info("Removed : " + client);
+                       _log.debug("Removed : " + client);
                        return;
                    }
                }

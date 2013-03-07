@@ -121,9 +121,9 @@ public final class GetRequest extends ContainerRequest {
                 lifetime,
                 description,
                 client_host);
-        logger.debug("constructor");
-        logger.debug("user = "+user);
-        logger.debug("requestCredetialId="+requestCredentialId);
+        logger.trace("constructor");
+        logger.trace("user = "+user);
+        logger.trace("requestCredetialId="+requestCredentialId);
         int len = protocols.length;
         this.protocols = new String[len];
         System.arraycopy(protocols,0,this.protocols,0,len);
@@ -244,14 +244,14 @@ public final class GetRequest extends ContainerRequest {
     protected void stateChanged(State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
-            logger.debug("get request state changed to "+state);
+            logger.trace("get request state changed to "+state);
             for(FileRequest request : getFileRequests()) {
                 try {
                     State fr_state = request.getState();
                     if(!State.isFinalState(fr_state ))
                     {
 
-                        logger.debug("changing fr#"+request.getId()+" to "+state);
+                        logger.trace("changing fr#"+request.getId()+" to "+state);
                         request.setState(state,"changing file state because request state has changed");
                     }
                 }
@@ -349,7 +349,7 @@ public final class GetRequest extends ContainerRequest {
             s.append(" FileStatusCode = ")
                     .append(fs.getStatus().getStatusCode());
         }
-        logger.debug(s.toString());
+        logger.trace(s.toString());
         return response;
     }
 

@@ -66,7 +66,7 @@ public class SrmMkdir {
 		try {
 			response = srmMkdir();
         } catch(URISyntaxException e) {
-            logger.debug(" malformed uri : "+e.getMessage());
+            logger.trace(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
@@ -112,28 +112,28 @@ public class SrmMkdir {
                         storage.createDirectory(user, new URI(surl.toString()));
                 }
         catch (SRMDuplicationException srmde) {
-            logger.debug("srmMkdir duplication : "+srmde.toString());
+            logger.trace("srmMkdir duplication : "+srmde.toString());
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
 			response.getReturnStatus().setExplanation(surl+" : "+srmde.getMessage());
 			return response;
 
         }
         catch (SRMAuthorizationException srmae) {
-            logger.debug("srmMkdir authorization exception : "+srmae.toString());
+            logger.trace("srmMkdir authorization exception : "+srmae.toString());
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
 			response.getReturnStatus().setExplanation(surl+" : "+srmae.getMessage());
 			return response;
 
         }
         catch (SRMInvalidPathException srmipe) {
-            logger.debug("srmMkdir invalid pathh : "+srmipe.toString());
+            logger.trace("srmMkdir invalid pathh : "+srmipe.toString());
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INVALID_PATH);
 			response.getReturnStatus().setExplanation(surl+" : "+srmipe.getMessage());
 			return response;
 
         }
 		catch (SRMException srme) {
-            logger.debug("srmMkdir error ",srme);
+            logger.trace("srmMkdir error ",srme);
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 			response.getReturnStatus().setExplanation(surl+" "+srme.getMessage());
 			return response;

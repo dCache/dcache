@@ -40,7 +40,7 @@ class SourceBackedPredicateMap<TKey, TValue> {
 
         if (_source.hasChanged()) {
             try {
-                _log.info("Source changed. Recreating map.");
+                _log.debug("Source changed. Recreating map.");
                 createMapFromData(_source.getContent());
             } catch (IOException e) {
                 _log.error("Error creating map.", e);

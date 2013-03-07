@@ -105,7 +105,7 @@ public class LocationManagerConnector
 
         String security = reply.getOpt("security");
         if (security == null) {
-            _log.info("Using clear text channel");
+            _log.debug("Using clear text channel");
             return new DummyStreamEngine(socket);
         } else {
             Args x = new Args(security);
@@ -126,7 +126,7 @@ public class LocationManagerConnector
                     IOException("Security mode not supported : " + security);
             }
 
-            _log.info("Using encrypted channel");
+            _log.debug("Using encrypted channel");
             try {
                 SshCAuth_Key key = new SshCAuth_Key(getNucleus(), getArgs());
                 return new SshStreamEngine(socket, key);

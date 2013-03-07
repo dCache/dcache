@@ -132,7 +132,7 @@ public class PoolIOWriteTransfer
                    fileIoChannel.sync();
                 } catch (SyncFailedException e) {
                     fileIoChannel.sync();
-                    _log.info("First sync failed [" + e + "], but second sync suceeded");
+                    _log.debug("First sync failed [" + e + "], but second sync suceeded");
                 } finally {
                     /* This may throw an IOException, although it is
                      * not clear when this would happen. If it does,

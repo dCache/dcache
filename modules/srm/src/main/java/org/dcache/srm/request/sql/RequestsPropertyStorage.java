@@ -130,7 +130,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     }
 
     public void say(String s){
-        logger.debug(" RequestsPropertyStorage: "+s);
+        logger.trace(" RequestsPropertyStorage: "+s);
         }
 
     public void esay(String s){

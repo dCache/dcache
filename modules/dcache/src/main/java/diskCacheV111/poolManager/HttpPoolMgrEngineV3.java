@@ -75,22 +75,22 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         _endpoint = endpoint;
 
         for (int i = 0; i < argsString.length; i++) {
-            _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
+            _log.debug("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
             if (argsString[i].equals("addStorageInfo")) {
                 _addStorageInfo = true;
-                _log.info("Option accepted : addStorageInfo");
+                _log.debug("Option accepted : addStorageInfo");
             } else if (argsString[i].equals("addHsmInfo")) {
                 _addHsmInfo = true;
-                _log.info("Option accepted : addHsmInfo");
+                _log.debug("Option accepted : addHsmInfo");
             } else if (argsString[i].startsWith("details=")) {
-                _log.info("Details for lazy restore : "+argsString[i]);
+                _log.debug("Details for lazy restore : "+argsString[i]);
                 decodeDetails(argsString[i]);
             } else if (argsString[i].startsWith("css=")) {
                 decodeCss(argsString[i].substring(4));
             }
         }
         _restoreCollector = new Thread(this, "restore-collector");
-        _log.info("Using CSS file : "+_cssFile);
+        _log.debug("Using CSS file : "+_cssFile);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     @Override
     public void run()
     {
-        _log.info("Restore Collector Thread started");
+        _log.debug("Restore Collector Thread started");
         try {
             while (!Thread.interrupted()) {
                 try {
@@ -143,7 +143,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 }
             }
         } catch (InterruptedException e) {
-            _log.debug("Restore Collector interrupted");
+            _log.trace("Restore Collector interrupted");
         }
     }
 
@@ -267,7 +267,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             }
             Object reply = msg.getMessageObject();
             if ((reply == null) || !(reply instanceof HsmControlGetBfDetailsMsg)) {
-                _log.info("Invalid or missing reply from "+_hsmController);
+                _log.debug("Invalid or missing reply from "+_hsmController);
                 return null;
             }
             hsmMsg = (HsmControlGetBfDetailsMsg)msg.getMessageObject();

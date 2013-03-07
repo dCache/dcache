@@ -148,11 +148,11 @@ public class   CellAdapter
             switch (async) {
             case "async":
                 setAsyncCallback(true);
-                _log.info("Callback set to async");
+                _log.debug("Callback set to async");
                 break;
             case "sync":
                 setAsyncCallback(false);
-                _log.info("Callback set to sync");
+                _log.debug("Callback set to sync");
                 break;
             default:
                 _log.warn("Illegal value for 'callback' option : " + async);
@@ -664,9 +664,9 @@ public class   CellAdapter
      *
      */
     public void messageArrived(CellMessage msg) {
-        _log.info(" CellMessage From   : "+msg.getSourcePath());
-        _log.info(" CellMessage To     : "+msg.getDestinationPath());
-        _log.info(" CellMessage Object : "+msg.getMessageObject());
+        _log.debug(" CellMessage From   : "+msg.getSourcePath());
+        _log.debug(" CellMessage To     : "+msg.getDestinationPath());
+        _log.debug(" CellMessage Object : "+msg.getMessageObject());
 
     }
     /**
@@ -777,7 +777,7 @@ public class   CellAdapter
     }
 
     public String ac_say_$_1(Args args) {
-        _log.info(args.argv(0));
+        _log.debug(args.argv(0));
         return "";
     }
     public Object ac_xgetcellinfo(Args args) {
@@ -863,11 +863,11 @@ public class   CellAdapter
     @Override
     public void prepareRemoval(KillEvent ce)
     {
-        _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
+        _log.debug("CellAdapter : prepareRemoval : waiting for gate to open");
         _readyGate.check();
         cleanUp();
         dumpPinboard();
-        _log.info("CellAdapter : prepareRemoval : done");
+        _log.debug("CellAdapter : prepareRemoval : done");
     }
 
     //
@@ -880,17 +880,17 @@ public class   CellAdapter
             Map<String,Object> context = getDomainContext();
             String dumpDir = (String) context.get("dumpDirectory");
             if (dumpDir == null) {
-                _log.info("Pinboard not dumped (dumpDirectory not sp.)");
+                _log.debug("Pinboard not dumped (dumpDirectory not sp.)");
                 return;
             }
             File dir = new File(dumpDir);
             if (!dir.isDirectory()) {
-                _log.info("Pinboard not dumped (dumpDirectory {} not found)",
+                _log.debug("Pinboard not dumped (dumpDirectory {} not found)",
                           dumpDir);
                 return;
             }
             if (pinboard == null) {
-                _log.info("Pinboard not dumped (no pinboard defined)");
+                _log.debug("Pinboard not dumped (no pinboard defined)");
                 return;
             }
 
@@ -909,7 +909,7 @@ public class   CellAdapter
      */
     @Override
     public void   exceptionArrived(ExceptionEvent ce) {
-        _log.info(" exceptionArrived "+ce);
+        _log.debug(" exceptionArrived "+ce);
     }
     /**
      *   belongs to the Cell Interface.
@@ -935,7 +935,7 @@ public class   CellAdapter
     public void   messageArrived(MessageEvent me) {
         _startGate.check();
         if (me instanceof LastMessageEvent) {
-            _log.info("messageArrived : LastMessageEvent (opening gate)");
+            _log.debug("messageArrived : LastMessageEvent (opening gate)");
             _readyGate.open();
         } else {
             CellMessage msg = me.getMessage();

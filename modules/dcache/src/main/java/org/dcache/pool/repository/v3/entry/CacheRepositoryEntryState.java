@@ -326,7 +326,7 @@ public class CacheRepositoryEntryState
                         break;
                     default:
                         _logBussiness
-                                .info("Unknow number of arguments in " + _controlFile
+                                .debug("Unknow number of arguments in " + _controlFile
                                         .getPath() + " [" + line + "]");
                         _state = EntryState.BROKEN;
                         return;

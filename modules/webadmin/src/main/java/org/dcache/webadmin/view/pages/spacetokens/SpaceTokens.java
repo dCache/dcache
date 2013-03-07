@@ -50,7 +50,7 @@ public class SpaceTokens extends BasePage {
             _linkGroups = getWebadminApplication().getLinkGroupsService().getLinkGroups();
         } catch (LinkGroupsServiceException ex) {
             this.error(getStringResource("error.getTokenInfoFailed") + ex.getMessage());
-            _log.debug("getTokenInfo failed {}", ex.getMessage());
+            _log.trace("getTokenInfo failed {}", ex.getMessage());
             _linkGroups = new ArrayList<>();
         }
     }

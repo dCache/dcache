@@ -39,7 +39,7 @@ public class JdoDao implements PinDao
         PersistenceManager pm = _pmf.getPersistenceManager();
         pin = pm.detachCopy(pm.makePersistent(pin));
         if (_log.isDebugEnabled()) {
-            _log.debug(pin.toString());
+            _log.trace(pin.toString());
         }
         return pin;
     }
@@ -157,7 +157,7 @@ public class JdoDao implements PinDao
             /* The pin was already deleted (maybe because the file was
              * deleted). We don't care.
              */
-            _log.debug("Pin deletion failed: {}", e);
+            _log.trace("Pin deletion failed: {}", e);
         }
     }
 

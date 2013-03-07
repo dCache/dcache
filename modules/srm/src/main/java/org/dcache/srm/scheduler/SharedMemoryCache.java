@@ -50,14 +50,14 @@ public class SharedMemoryCache {
         sharedMemoryWriteLock.lock();
         try {
             boolean cached =sharedMemoryCache.containsKey(job.getId());
-            _log.debug("updateSharedMemoryChache for job ="+job.getId()+
+            _log.trace("updateSharedMemoryChache for job ="+job.getId()+
                     " state="+state+ " cached ="+cached);
             if(cached  && state.isFinalState()) {
-                _log.debug("removing job #"+job.getId() +" from memory cache");
+                _log.trace("removing job #"+job.getId() +" from memory cache");
                 sharedMemoryCache.remove(job.getId());
             }
             if(!cached && !state.isFinalState()) {
-                _log.debug("putting job #"+job.getId() +" to memory cache");
+                _log.trace("putting job #"+job.getId() +" to memory cache");
                 sharedMemoryCache.put(job.getId(),job);
             }
         } finally {
@@ -68,7 +68,7 @@ public class SharedMemoryCache {
     }
 
     public Job getJob(Long jobId) {
-        _log.debug("getJob ( "+jobId + " ) ");
+        _log.trace("getJob ( "+jobId + " ) ");
        sharedMemoryReadLock.lock();
        try {
             return sharedMemoryCache.get(jobId);

@@ -217,7 +217,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
                 getTableName() +" (ID) "+
                 " ON DELETE CASCADE"+
                 " )";
-        logger.debug("calling createTable for "+protocolsTableName);
+        logger.trace("calling createTable for "+protocolsTableName);
         createTable(protocolsTableName, createProtocolsTable);
         String protocols_columns[] = {
             "RequestID"};
@@ -259,7 +259,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
         String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
                 " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
-        logger.debug("executing statement: "+sqlStatementString);
+        logger.trace("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         Set<String> utilset = new HashSet<>();
         while(fileIdsSet.next()) {

@@ -45,13 +45,13 @@ public class CellCommandSender implements CommandSender {
     private void sendMessages() {
         for (CellMessageRequest<? extends Serializable> messageRequest : _messageGenerator) {
             MessageCallback callback = new CellMessageCallback(messageRequest);
-            _log.debug("sending to: {}", messageRequest.getDestination());
+            _log.trace("sending to: {}", messageRequest.getDestination());
             Serializable message = messageRequest.getPayload();
             CellPath destination = messageRequest.getDestination();
             Class payloadType = messageRequest.getPayloadType();
             _cellStub.send(destination, message, payloadType, callback);
         }
-        _log.debug("messages send");
+        _log.trace("messages send");
     }
 
     public void setCellStub(CellStub cellStub) {
@@ -64,7 +64,7 @@ public class CellCommandSender implements CommandSender {
     }
 
     private void processFailure() {
-        _log.debug("failure {}", System.currentTimeMillis());
+        _log.trace("failure {}", System.currentTimeMillis());
         _allSuccessful = false;
     }
 
@@ -108,7 +108,7 @@ public class CellCommandSender implements CommandSender {
 
         @Override
         public void failure(int rc, Object error) {
-            _log.debug("error object: {}", error.toString());
+            _log.trace("error object: {}", error.toString());
             processFailure();
             setAnswered();
         }
@@ -126,7 +126,7 @@ public class CellCommandSender implements CommandSender {
         }
 
         private void setAnswered() {
-            _log.debug("{} answered {}", _messageRequest.getDestination(),
+            _log.trace("{} answered {}", _messageRequest.getDestination(),
                     System.currentTimeMillis());
             processAnswered();
         }

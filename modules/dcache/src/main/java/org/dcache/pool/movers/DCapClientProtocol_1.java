@@ -54,7 +54,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
     }
 
     private void say(String str){
-        _log.info(str);
+        _log.debug(str);
     }
 
     private void esay(String str){

@@ -42,11 +42,11 @@ public class ActiveTransfers extends BasePage {
 
     private void getActiveTransfers() {
         try {
-            _log.debug("getActiveTransfers called");
+            _log.trace("getActiveTransfers called");
             _activeTransfers = getActiveTransfersService().getActiveTransferBeans();
         } catch (ActiveTransfersServiceException ex) {
             this.error(getStringResource("error.getActiveTransfersFailed") + ex.getMessage());
-            _log.debug("getActiveTransfers failed {}", ex.getMessage());
+            _log.trace("getActiveTransfers failed {}", ex.getMessage());
             _activeTransfers = null;
         }
     }
@@ -62,10 +62,10 @@ public class ActiveTransfers extends BasePage {
         @Override
         public void onSubmit() {
             try {
-                _log.debug("Kill Movers submitted");
+                _log.trace("Kill Movers submitted");
                 getActiveTransfersService().killTransfers(_activeTransfers);
             } catch (ActiveTransfersServiceException e) {
-                _log.info("couldn't kill some movers - jobIds: {}",
+                _log.debug("couldn't kill some movers - jobIds: {}",
                         e.getMessage());
                 error(getStringResource("error.notAllMoversKilled"));
             }

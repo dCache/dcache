@@ -38,7 +38,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
                 }
 
 		if( _log.isInfoEnabled()) {
-                    _log.info("received spacetokens details msg.");
+                    _log.debug("received spacetokens details msg.");
                 }
 
 		GetSpaceTokensMessage msg = (GetSpaceTokensMessage) messagePayload;
@@ -46,7 +46,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 		Set<Space> spaces = msg.getSpaceTokenSet();
 
 		if( spaces.size() == 0) {
-			_log.info( "received GetSpaceTokensMessage with no spaces listed");
+			_log.debug( "received GetSpaceTokensMessage with no spaces listed");
 			return true;
 		}
 

@@ -124,7 +124,7 @@ public class SrmAuthorizer
         this.isClientDNSLookup = isClientDNSLookup;
         this.authorization = authorization;
         this.storage = storage;
-        log.debug("Successfully initialized");
+        log.trace("Successfully initialized");
     }
 
 
@@ -146,14 +146,14 @@ public class SrmAuthorizer
             }
 
             String secureId = gsscontext.getSrcName().toString();
-            log.debug("User ID (secureId) is: " + secureId);
+            log.trace("User ID (secureId) is: " + secureId);
             GSSCredential delegcred = gsscontext.getDelegCred();
             if(delegcred != null) {
                 try {
-                    log.debug("User credential (delegcred) is: " +
+                    log.trace("User credential (delegcred) is: " +
                     delegcred.getName());
                 } catch (Exception e) {
-                    log.debug("Caught occasional (usually harmless) exception" +
+                    log.trace("Caught occasional (usually harmless) exception" +
                         " when calling " + "delegcred.getName()): ", e);
                 }
             }
@@ -210,23 +210,23 @@ public class SrmAuthorizer
             String id = credential.secureId;
             GSSCredential gssCredential = credential.credential;
 
-            log.debug("About to call RequestCredential.getRequestCredential({},{})",
+            log.trace("About to call RequestCredential.getRequestCredential({},{})",
                     id, role);
 
             RequestCredential rc = RequestCredential.getRequestCredential(id,
                     role);
 
-            log.debug("Received RequestCredential: {}", rc);
+            log.trace("Received RequestCredential: {}", rc);
 
             if(rc != null) {
                 rc.keepBestDelegatedCredential(gssCredential);
             } else {
-                log.debug("About to create new RequestCredential");
+                log.trace("About to create new RequestCredential");
                 rc = new RequestCredential(id, role, gssCredential, storage);
             }
 
             rc.saveCredential();
-            log.debug("About to return RequestCredential = {}", rc);
+            log.trace("About to return RequestCredential = {}", rc);
             return rc;
         } catch(GSSException | SQLException e) {
             throw new RuntimeException("Problem getting request credential", e);

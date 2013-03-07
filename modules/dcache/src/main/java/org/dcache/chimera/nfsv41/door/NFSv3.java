@@ -32,7 +32,7 @@ public class NFSv3 {
 
     public void init() throws Exception {
 
-        _log.info("starting NFSv3 on: {}", _port);
+        _log.debug("starting NFSv3 on: {}", _port);
 
         NfsServerV3 nfs3 = new NfsServerV3(_exports, _fs);
         MountServer ms = new MountServer(_exports, _fs);

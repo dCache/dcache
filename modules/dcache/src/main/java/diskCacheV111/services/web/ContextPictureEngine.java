@@ -67,9 +67,9 @@ public class ContextPictureEngine implements HttpResponseEngine {
       String [] tokens = request.getRequestTokens() ;
       int       offset = request.getRequestTokenOffset() ;
 
-      _log.info("Offset : "+offset);
+      _log.debug("Offset : "+offset);
       for( int i =0 ; i < tokens.length ;i++ ){
-         _log.info(""+i+" -> "+tokens[i]);
+         _log.debug(""+i+" -> "+tokens[i]);
       }
       if( tokens.length < 2 ) {
           throw new

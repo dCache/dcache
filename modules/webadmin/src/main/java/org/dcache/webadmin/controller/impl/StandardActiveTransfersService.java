@@ -38,7 +38,7 @@ public class StandardActiveTransfersService implements ActiveTransfersService {
     public List<SelectableWrapper<ActiveTransfersBean>> getActiveTransferBeans()
             throws ActiveTransfersServiceException {
         List<MoverInfo> moverInfos = getMoverDAO().getActiveTransfers();
-        _log.debug("aquired moverInfos: " + moverInfos.size());
+        _log.trace("aquired moverInfos: " + moverInfos.size());
         List<SelectableWrapper<ActiveTransfersBean>> activeTransfers =
                 new ArrayList<>();
         for (MoverInfo currentMover : moverInfos) {
@@ -46,7 +46,7 @@ public class StandardActiveTransfersService implements ActiveTransfersService {
                     BeanDataMapper.moverModelToView(currentMover);
             activeTransfers.add(new SelectableWrapper<>(newTransfer));
         }
-        _log.debug("returned activeTransferBeans: " + activeTransfers.size());
+        _log.trace("returned activeTransferBeans: " + activeTransfers.size());
         return activeTransfers;
     }
 

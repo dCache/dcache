@@ -54,7 +54,7 @@ public class CellUrl {
        @Override
        public void connect(){
 
-           _log.info( "DomainUrlConnection : Connect called" ) ;
+           _log.debug( "DomainUrlConnection : Connect called" ) ;
        }
        public void setNucleus( CellNucleus nucleus ){
           _nucleus = nucleus ;
@@ -186,7 +186,7 @@ public class CellUrl {
                throws IOException {
 
           Class<? extends Cell> cellClass = cell.getClass() ;
-          _log.info("DomainUrlConnection : Cell Class is : "+cellClass ) ;
+          _log.debug("DomainUrlConnection : Cell Class is : "+cellClass ) ;
           Class<?>[] argsClasses = new Class<?>[0] ;
           try{
              Method method = cellClass.getDeclaredMethod(

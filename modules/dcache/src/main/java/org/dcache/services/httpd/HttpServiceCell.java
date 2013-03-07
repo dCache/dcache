@@ -132,9 +132,9 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
                     + "                      <default> =  default for any type or error \n";
 
     public String ac_set_alias_$_3_16(Args args) throws Exception {
-        logger.debug("ac_set_alias_$_3_16 {}", args.toString());
+        logger.trace("ac_set_alias_$_3_16 {}", args.toString());
         final AliasEntry entry = AliasEntry.createEntry(args, this);
-        logger.debug("putting {}, {}", entry.getName(), entry);
+        logger.trace("putting {}, {}", entry.getName(), entry);
         aliases.put(entry.getName(), entry);
         return entry.getStatusMessage();
     }
@@ -216,7 +216,7 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         createAndSetHandlers();
 
         try {
-            logger.debug("starting server");
+            logger.trace("starting server");
             server.start();
         } finally {
             if (server.isFailed()) {

@@ -121,7 +121,7 @@ public class SrmCheckPermission {
 			TSURLPermissionReturn pr = new TSURLPermissionReturn();
 			pr.setStatus(rs);
 			pr.setSurl(uriarray[i]);
-			logger.debug("SURL["+i+"]= "+uriarray[i]);
+			logger.trace("SURL["+i+"]= "+uriarray[i]);
 			URI surl = new URI(uriarray[i].toString());
 			try {
                             FileMetaData fmd = storage.getFileMetaData(user,surl,false);

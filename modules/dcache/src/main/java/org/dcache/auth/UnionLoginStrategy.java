@@ -51,7 +51,7 @@ public class UnionLoginStrategy implements LoginStrategy
 
     public void setAnonymousAccess(AccessLevel level)
     {
-        _log.debug( "Setting anonymous access to {}", level);
+        _log.trace( "Setting anonymous access to {}", level);
         _anonymousAccess = level;
     }
 
@@ -64,11 +64,11 @@ public class UnionLoginStrategy implements LoginStrategy
     public LoginReply login(Subject subject) throws CacheException
     {
         for (LoginStrategy strategy: _loginStrategies) {
-            _log.debug( "Attempting login strategy: {}", strategy.getClass().getName());
+            _log.trace( "Attempting login strategy: {}", strategy.getClass().getName());
 
             try {
                 LoginReply login = strategy.login(subject);
-                _log.debug( "Login strategy returned {}", login.getSubject());
+                _log.trace( "Login strategy returned {}", login.getSubject());
 
                 if (!Subjects.isNobody(login.getSubject())) {
                     return login;
@@ -77,33 +77,33 @@ public class UnionLoginStrategy implements LoginStrategy
                 /* LoginStrategies throw IllegalArgumentException when
                  * provided with a Subject they cannot handle.
                  */
-                _log.debug("Login failed with IllegalArgumentException for {}: {}", subject,
+                _log.trace("Login failed with IllegalArgumentException for {}: {}", subject,
                         e.getMessage());
             } catch (PermissionDeniedCacheException e) {
                 /* As we form the union of all allowed logins of all
                  * strategies, we ignore the failure and try the next
                  * strategy.
                  */
-                _log.debug("Permission denied for {}: {}", subject,
+                _log.trace("Permission denied for {}: {}", subject,
                         e.getMessage());
             }
         }
-        _log.debug( "Strategies failed, trying for anonymous access");
+        _log.trace( "Strategies failed, trying for anonymous access");
 
         LoginReply reply = new LoginReply();
         switch (_anonymousAccess) {
         case READONLY:
-            _log.debug( "Allowing read-only access as an anonymous user");
+            _log.trace( "Allowing read-only access as an anonymous user");
             reply.getLoginAttributes().add(new ReadOnly(true));
             break;
 
         case FULL:
-            _log.debug( "Allowing full access as an anonymous user");
+            _log.trace( "Allowing full access as an anonymous user");
             reply.getLoginAttributes().add(new ReadOnly(false));
             break;
 
         default:
-            _log.debug( "Login failed");
+            _log.trace( "Login failed");
             throw new PermissionDeniedCacheException("Access denied");
         }
         return reply;

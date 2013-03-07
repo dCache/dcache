@@ -200,7 +200,7 @@ public final class Manager
                 connection_pool = manager.getConnectionPool();
                 spaceManagerEnabled =
                         isOptionSetToTrueOrYes("spaceManagerEnabled",spaceManagerEnabled);
-                logger.debug("spaceManagerEnabled={}", spaceManagerEnabled);
+                logger.trace("spaceManagerEnabled={}", spaceManagerEnabled);
                 if(_args.hasOption("poolManager")) {
                         poolManager = _args.getOpt("poolManager");
                 }
@@ -1208,7 +1208,7 @@ public final class Manager
                 List< Space > result = new ArrayList<>();
                 try {
                         con = connection_pool.getConnection();
-                        logger.debug("executing statement: {}", query);
+                        logger.trace("executing statement: {}", query);
                         PreparedStatement sqlStatement = con.prepareStatement( query );
                         con.setAutoCommit(false);
                         sqlStatement.setFetchSize(10000);
@@ -1385,7 +1385,7 @@ public final class Manager
                         try {
                                 PnfsHandler pnfs=new PnfsHandler(new CellPath(pnfsManager));
                                 pnfs.setCellEndpoint(this);
-                                logger.info("fix missing size: Searching for " +
+                                logger.debug("fix missing size: Searching for " +
                                         "files...");
                                 Set<File> files=
                                         manager.select(fileIO,
@@ -1393,7 +1393,7 @@ public final class Manager
                                 int counter=0;
                                 for (File file : files) {
                                         if (counter%1000==0) {
-                                            logger.info("fix missing size: " +
+                                            logger.debug("fix missing size: " +
                                                     "Processed {} of {} files.",
                                                     counter, files.size());
                                         }
@@ -1408,7 +1408,7 @@ public final class Manager
                                                         null);
                                         counter++;
                                 }
-                                logger.info("fix missing size: Done");
+                                logger.debug("fix missing size: Done");
                         }
                         catch (SQLException | CacheException e) {
                                 logger.error("failed to fix missing size: {}",
@@ -1446,7 +1446,7 @@ public final class Manager
                 " (nexttoken) VALUES ( 0 )";
 
         private void dbinit() throws SQLException {
-                logger.debug("WE ARE IN DBINIT");
+                logger.trace("WE ARE IN DBINIT");
                 String tables[] = {ManagerSchemaConstants.SpaceManagerSchemaVersionTableName,
                                    ManagerSchemaConstants.SpaceManagerNextIdTableName,
                                    ManagerSchemaConstants.LinkGroupTableName,
@@ -1470,7 +1470,7 @@ public final class Manager
                         created.put(table, Boolean.FALSE);
                         try {
                             if( manager.hasTable(table)) {
-                                logger.info("presence of table \"{}\" verified",
+                                logger.debug("presence of table \"{}\" verified",
                                         table);
                             } else {
                                 manager.createTable(table, createTables[i]);
@@ -1591,7 +1591,7 @@ public final class Manager
                 if(previousSchemaVersion == currentSchemaVersion) {
                         return;
                 }
-                logger.info("updating Schema, previous schema version " +
+                logger.debug("updating Schema, previous schema version " +
                         "number={}, updating to current version number {}",
                         previousSchemaVersion, currentSchemaVersion);
                 if(previousSchemaVersion == 0) {
@@ -1759,7 +1759,7 @@ public final class Manager
                         incrementNextLongBase();
                 }
                 long nextLong = nextLongBase +(nextLongIncrement++);
-                logger.debug("return nextLong={}", nextLong);
+                logger.trace("return nextLong={}", nextLong);
                 return nextLong;
         }
 
@@ -1785,13 +1785,13 @@ public final class Manager
                 }
 
                 long nextLong = nextLongBase +(nextLongIncrement++);
-                logger.debug("return nextLong={}", nextLong);
+                logger.trace("return nextLong={}", nextLong);
                 return nextLong;
         }
 
         private void incrementNextLongBase(Connection connection) throws SQLException{
                 PreparedStatement s = connection.prepareStatement(selectNextIdForUpdate);
-                logger.debug("getNextToken trying {}", selectNextIdForUpdate);
+                logger.trace("getNextToken trying {}", selectNextIdForUpdate);
                 ResultSet set = s.executeQuery();
                 if(!set.next()) {
                         s.close();
@@ -1799,9 +1799,9 @@ public final class Manager
                 }
                 nextLongBase = set.getLong(1);
                 s.close();
-                logger.debug("nextLongBase is = {}", nextLongBase);
+                logger.trace("nextLongBase is = {}", nextLongBase);
                 s = connection.prepareStatement(increaseNextId);
-                logger.debug("executing statement: {}", increaseNextId);
+                logger.trace("executing statement: {}", increaseNextId);
                 int i = s.executeUpdate();
                 s.close();
                 connection.commit();
@@ -1980,7 +1980,7 @@ public final class Manager
                                         RetentionPolicy rp)
                 throws SQLException {
                 try {
-                        logger.debug("findLinkGroupIds(sizeInBytes={}, " +
+                        logger.trace("findLinkGroupIds(sizeInBytes={}, " +
                                 "voGroup={} voRole={}, AccessLatency={}, " +
                                 "RetentionPolicy={})", sizeInBytes, voGroup,
                                 voRole, al, rp);
@@ -2010,7 +2010,7 @@ public final class Manager
                                                 select = selectNearlineCustodialLinkGroup;
                                         }
                         }
-                        logger.debug("executing statement: {}?={}?={}?={}?={}",
+                        logger.trace("executing statement: {}?={}?={}?={}?={}",
                                 select, latestLinkGroupUpdateTime, voGroup,
                                 voRole, sizeInBytes);
                         Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
@@ -2036,7 +2036,7 @@ public final class Manager
                                                 AccessLatency al,
                                                 RetentionPolicy rp) throws SQLException {
                 try {
-                        logger.debug("findLinkGroupIds(sizeInBytes={}, " +
+                        logger.trace("findLinkGroupIds(sizeInBytes={}, " +
                                 "AccessLatency={}, RetentionPolicy={})",
                                 sizeInBytes, al, rp);
                         String select;
@@ -2065,7 +2065,7 @@ public final class Manager
                                                 select = selectAllNearlineCustodialLinkGroup;
                                         }
                         }
-                        logger.debug("executing statement: {} ?={}?={}",
+                        logger.trace("executing statement: {} ?={}?={}",
                                 select, latestLinkGroupUpdateTime, sizeInBytes);
                         Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
                                                                      select,
@@ -2080,7 +2080,7 @@ public final class Manager
         }
 
         public Space getSpace(long id)  throws SQLException{
-                logger.debug("Executing: {},?={}", SpaceReservationIO.
+                logger.trace("Executing: {},?={}", SpaceReservationIO.
                         SELECT_SPACE_RESERVATION_BY_ID, id);
                 Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
                                                          SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
@@ -2490,7 +2490,7 @@ public final class Manager
         }
 
         public void expireSpaceReservations()  {
-                logger.debug("expireSpaceReservations()...");
+                logger.trace("expireSpaceReservations()...");
                 try {
                         if (cleanupExpiredSpaceFiles) {
                                 long time = System.currentTimeMillis();
@@ -2516,7 +2516,7 @@ public final class Manager
                                         }
                                 }
                         }
-                        logger.debug("Executing: {}",
+                        logger.trace("Executing: {}",
                                 SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1);
                         Set<Space> spaces = manager.selectPrepared(spaceReservationIO,
                                                                    SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1,
@@ -3526,7 +3526,7 @@ public final class Manager
 
         private void processMessage( CellMessage cellMessage ) {
                 Object object = cellMessage.getMessageObject();
-                logger.debug("Message  arrived: {} from {}", object,
+                logger.trace("Message  arrived: {} from {}", object,
                         cellMessage.getSourcePath());
                 if (!(object instanceof Message)) {
                         logger.error("unexpected message class {}",
@@ -3650,7 +3650,7 @@ public final class Manager
                 }
                 if (replyRequired) {
                         try {
-                                logger.debug("Sending reply {}", spaceMessage);
+                                logger.trace("Sending reply {}", spaceMessage);
                                 cellMessage.revertDirection();
                                 sendMessage(cellMessage);
                         }
@@ -3660,7 +3660,7 @@ public final class Manager
                         }
                 }
                 else {
-                    logger.debug("reply is not required, finished processing");
+                    logger.trace("reply is not required, finished processing");
                 }
         }
 
@@ -3682,7 +3682,7 @@ public final class Manager
 
         public void processMessageToForward(CellMessage cellMessage ) {
                 Object object = cellMessage.getMessageObject();
-                logger.debug("messageToForward,  arrived: type={} value={} " +
+                logger.trace("messageToForward,  arrived: type={} value={} " +
                         "from {} going to {}", object.getClass().getName(),
                         object, cellMessage.getSourcePath(),
                         cellMessage.getDestinationPath(),
@@ -3778,7 +3778,7 @@ public final class Manager
                                         Thread.sleep(expireSpaceReservationsPeriod);
                                 }
                                 catch (InterruptedException ie) {
-                                        logger.debug("expire SpaceReservations thread has been interrupted");
+                                        logger.trace("expire SpaceReservations thread has been interrupted");
                                         return;
                                 }
                         }
@@ -3791,7 +3791,7 @@ public final class Manager
                                                 updateLinkGroupsSyncObject.wait(currentUpdateLinkGroupsPeriod);
                                         }
                                         catch (InterruptedException ie) {
-                                                logger.debug("update LinkGroup thread has been interrupted");
+                                                logger.trace("update LinkGroup thread has been interrupted");
                                                 return;
                                         }
                                 }
@@ -4037,7 +4037,7 @@ public final class Manager
 
         private void releaseSpace(Release release) throws
                 SQLException,SpaceException {
-                logger.debug("releaseSpace({})", release);
+                logger.trace("releaseSpace({})", release);
 
                 long spaceToken = release.getSpaceToken();
                 Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
@@ -4122,7 +4122,7 @@ public final class Manager
 
         private void useSpace(Use use)
                 throws SQLException, SpaceException{
-                logger.debug("useSpace({})", use);
+                logger.trace("useSpace({})", use);
                 long reservationId = use.getSpaceToken();
                 long sizeInBytes = use.getSizeInBytes();
                 String voGroup = use.getAuthRecord().getVoGroup();
@@ -4142,7 +4142,7 @@ public final class Manager
 
         private void transferToBeStarted(PoolAcceptFileMessage poolRequest){
                 PnfsId pnfsId = poolRequest.getPnfsId();
-                logger.debug("transferToBeStarted({})", pnfsId);
+                logger.trace("transferToBeStarted({})", pnfsId);
                 try {
                         File f  = getFile(pnfsId);
                         Space s = getSpace(f.getSpaceId());
@@ -4159,7 +4159,7 @@ public final class Manager
                         //
                         // send message to PnfsManager
                         //
-                        logger.debug("transferToBeStarted(), set AL to {} " +
+                        logger.trace("transferToBeStarted(), set AL to {} " +
                                 "RP to {}, sending message to {}",
                                 s.getAccessLatency(), s.getRetentionPolicy(),
                                 pnfsManager);
@@ -4188,7 +4188,7 @@ public final class Manager
         }
 
         private void transferStarted(PnfsId pnfsId,boolean success) {
-                logger.debug("transferStarted({},{})", pnfsId, success);
+                logger.trace("transferStarted({},{})", pnfsId, success);
                 Connection connection = null;
                 try {
                         connection = connection_pool.getConnection();
@@ -4265,7 +4265,7 @@ public final class Manager
                 StorageInfo storageInfo = finished.getStorageInfo();
                 long size = storageInfo.getFileSize();
                 boolean success = finished.getReturnCode() == 0;
-                logger.debug("transferFinished({},{})", pnfsId, success);
+                logger.trace("transferFinished({},{})", pnfsId, success);
                 Connection connection = null;
                 try {
                         connection = connection_pool.getConnection();
@@ -4312,7 +4312,7 @@ public final class Manager
                                                 }
                                         }
                                         if(weDeleteStoredFileRecord) {
-                                                logger.debug("file transfered, " +
+                                                logger.trace("file transfered, " +
                                                         "deleting file record");
                                                 removeFileFromSpace(connection,f);
                                         }
@@ -4345,7 +4345,7 @@ public final class Manager
                                 connection = null;
                         }
                         else {
-                                logger.debug("transferFinished({}): file state={}",
+                                logger.trace("transferFinished({}): file state={}",
                                         pnfsId, f.getState());
                                 connection.commit();
                                 connection_pool.returnConnection(connection);
@@ -4386,11 +4386,11 @@ public final class Manager
                 if (files.isEmpty()==true) {
                     return;
                 }
-                logger.debug("fileFlushed({})", pnfsId);
+                logger.trace("fileFlushed({})", pnfsId);
                 StorageInfo storageInfo = fileFlushed.getStorageInfo();
                 AccessLatency ac = storageInfo.getAccessLatency();
                 if ( ac != null && ac.equals(AccessLatency.ONLINE)) {
-                        logger.debug("File Access latency is ONLINE " +
+                        logger.trace("File Access latency is ONLINE " +
                                 "fileFlushed does nothing");
                         return;
                 }
@@ -4402,7 +4402,7 @@ public final class Manager
                         File f = selectFileForUpdate(connection,pnfsId);
                         if(f.getState() == FileState.STORED) {
                                 if(deleteStoredFileRecord) {
-                                        logger.debug("returnSpaceToReservation, " +
+                                        logger.trace("returnSpaceToReservation, " +
                                                 "deleting file record");
                                         removeFileFromSpace(connection,f);
                                 }
@@ -4422,7 +4422,7 @@ public final class Manager
                                 }
                         }
                         else {
-                                logger.debug("returnSpaceToReservation({}): " +
+                                logger.trace("returnSpaceToReservation({}): " +
                                         "file state={}", pnfsId, f.getState());
                                 connection.commit();
                                 connection_pool.returnConnection(connection);
@@ -4451,7 +4451,7 @@ public final class Manager
 
         private void  fileRemoved(PoolRemoveFilesMessage fileRemoved)
         {
-                logger.debug("fileRemoved()");
+                logger.trace("fileRemoved()");
                 String[] pnfsIdStrings = fileRemoved.getFiles();
                 if(pnfsIdStrings == null || pnfsIdStrings.length == 0) {
                         return;
@@ -4466,7 +4466,7 @@ public final class Manager
                                         e.getMessage());
                                 continue;
                         }
-                        logger.debug("fileRemoved({})", pnfsId);
+                        logger.trace("fileRemoved({})", pnfsId);
                         if(!returnRemovedSpaceToReservation) {
                             return;
                         }
@@ -4481,9 +4481,9 @@ public final class Manager
                                 connection = null;
                         }
                         catch(SQLException sqle) {
-                                logger.debug("failed to remove file from space: {}",
+                                logger.trace("failed to remove file from space: {}",
                                         sqle.getMessage());
-                                logger.debug("fileRemoved({}): file not in a " +
+                                logger.trace("fileRemoved({}): file not in a " +
                                         "reservation, do nothing", pnfsId);
                                 if (connection!=null) {
                                         try {
@@ -4505,7 +4505,7 @@ public final class Manager
 
         private void cancelUseSpace(CancelUse cancelUse)
                 throws SQLException,SpaceException {
-                logger.debug("cancelUseSpace({})", cancelUse);
+                logger.trace("cancelUseSpace({})", cancelUse);
                 long reservationId = cancelUse.getSpaceToken();
                 String pnfsPath    = cancelUse.getPnfsName();
                 Connection connection = null;
@@ -4564,12 +4564,12 @@ public final class Manager
                                   String description)
                 throws SQLException,
                        SpaceException {
-                logger.debug("reserveSpace(group={}, role={}, sz={}, " +
+                logger.trace("reserveSpace(group={}, role={}, sz={}, " +
                         "latency={}, policy={}, lifetime={}, description={}",
                         voGroup, voRole, sizeInBytes, latency, policy, lifetime,
                         description);
                 boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
-                logger.debug("policy is {}, needHsmBackup is {}", policy,
+                logger.trace("policy is {}, needHsmBackup is {}", policy,
                         needHsmBackup);
                 Long[] linkGroups = findLinkGroupIds(sizeInBytes,
                                                      voGroup,
@@ -4603,11 +4603,11 @@ public final class Manager
                                   PnfsId pnfsId)
                 throws SQLException,
                        SpaceException {
-                logger.debug("reserveSpace( ar={}, sz={}, latency={}, " +
+                logger.trace("reserveSpace( ar={}, sz={}, latency={}, " +
                         "policy={}, lifetime={}, description={}", authRecord,
                         sizeInBytes, latency, policy, lifetime, description);
                 boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
-                logger.debug("policy is {}, needHsmBackup is {}", policy, needHsmBackup);
+                logger.trace("policy is {}, needHsmBackup is {}", policy, needHsmBackup);
                 Set<LinkGroup> linkGroups = findLinkGroupIds(sizeInBytes,
                                                              latency,
                                                              policy);
@@ -4635,7 +4635,7 @@ public final class Manager
                         throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
                 }
                 List<String> linkGroupNames = new ArrayList<>(linkGroupNameVoInfoMap.keySet());
-                logger.debug("Found {} linkgroups protocolInfo={}, " +
+                logger.trace("Found {} linkgroups protocolInfo={}, " +
                         "storageInfo={}, pnfsId={}", linkGroups.size(),
                         protocolInfo, storageInfo, pnfsId);
                 if (linkGroupNameVoInfoMap.size()>1 &&
@@ -4648,10 +4648,10 @@ public final class Manager
                                                                                       protocolInfo,
                                                                                       sizeInBytes);
                                 msg.setLinkGroups(linkGroupNames);
-                                logger.debug("Sending PoolManagerSelectLinkGroupForWriteMessage");
+                                logger.trace("Sending PoolManagerSelectLinkGroupForWriteMessage");
                                 msg=_poolManagerStub.sendAndWait(msg);
                                 linkGroupNames=msg.getLinkGroups();
-                                logger.debug("received PoolManagerSelectLink" +
+                                logger.trace("received PoolManagerSelectLink" +
                                         "GroupForWriteMessage reply, number " +
                                         "of LinkGroups={}", linkGroupNames.size());
                                 if(linkGroupNames.isEmpty()) {
@@ -4690,7 +4690,7 @@ public final class Manager
                                 break;
                         }
                 }
-                logger.debug("Chose linkgroup {}",linkGroup);
+                logger.trace("Chose linkgroup {}",linkGroup);
                 return reserveSpaceInLinkGroup(linkGroup.getId(),
                                                voInfo.getVoGroup(),
                                                voInfo.getVoRole(),
@@ -4711,7 +4711,7 @@ public final class Manager
                                              String description)
                 throws SQLException
         {
-                logger.debug("reserveSpaceInLinkGroup(linkGroupId={}, " +
+                logger.trace("reserveSpaceInLinkGroup(linkGroupId={}, " +
                         "group={}, role={}, sz={}, latency={}, policy={}, " +
                         "lifetime={}, description={})", linkGroupId, voGroup,
                         voRole, sizeInBytes, latency, policy, lifetime,
@@ -4815,13 +4815,13 @@ public final class Manager
                                boolean isReply )
                 throws Exception{
                 PoolMgrSelectPoolMsg selectPool = (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
-                logger.debug("selectPool({})", selectPool);
+                logger.trace("selectPool({})", selectPool);
                 String pnfsPath = selectPool.getPnfsPath();
                 PnfsId pnfsId   = selectPool.getPnfsId();
                 if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
-                        logger.debug("selectPool: pnfsPath is null");
+                        logger.trace("selectPool: pnfsPath is null");
                         if(!isReply) {
-                                logger.debug("just forwarding the message to {}", poolManager);
+                                logger.trace("just forwarding the message to {}", poolManager);
                                 cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
                                 cellMessage.nextDestination() ;
                                 sendMessage(cellMessage) ;
@@ -4830,7 +4830,7 @@ public final class Manager
                 }
                 File file = null;
                 try {
-                        logger.debug("selectPool: getFiles({})", pnfsPath);
+                        logger.trace("selectPool: getFiles({})", pnfsPath);
                         Set<File> files = getFiles(pnfsPath);
                         for (File f: files) {
                                 if (f.getPnfsId()==null) {
@@ -4840,7 +4840,7 @@ public final class Manager
                         }
                 }
                 catch (Exception e) {
-                        logger.info("failed to find pool: {}", e.getMessage());
+                        logger.debug("failed to find pool: {}", e.getMessage());
                 }
                 if(file==null) {
                         StorageInfo storageInfo = selectPool.getStorageInfo();
@@ -4862,7 +4862,7 @@ public final class Manager
                         }
                         if (defaultSpaceToken==null) {
                                 if(reserveSpaceForNonSRMTransfers && authRecord != null) {
-                                        logger.debug("selectPool: file is " +
+                                        logger.trace("selectPool: file is " +
                                                 "not found, no prior " +
                                                 "reservations for this file, " +
                                                 "calling reserveAndUseSpace()");
@@ -4875,12 +4875,12 @@ public final class Manager
                                                                   authRecord,
                                                                   protocolInfo,
                                                                   storageInfo);
-                                        logger.debug("selectPool: file is " +
+                                        logger.trace("selectPool: file is " +
                                                 "not found, reserveAndUseSpace() " +
                                                 "returned {}", file);
                                 }
                                 else {
-                                        logger.debug("selectPool: file is " +
+                                        logger.trace("selectPool: file is " +
                                                 "not found, no prior " +
                                                 "reservations for this file " +
                                                 "reserveSpaceForNonSRMTransfers={} " +
@@ -4894,7 +4894,7 @@ public final class Manager
                                 }
                         }
                         else {
-                                logger.debug("selectPool: file is not " +
+                                logger.trace("selectPool: file is not " +
                                         "found, found default space " +
                                         "token, calling useSpace()");
                                 String voGroup   = null;
@@ -4917,7 +4917,7 @@ public final class Manager
                 }
                 else {
                         if (isReply&&selectPool.getReturnCode()==0) {
-                                logger.debug("selectPool: file is not null, " +
+                                logger.trace("selectPool: file is not null, " +
                                         "calling updateSpaceFile()");
                                 updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
                         }
@@ -4971,7 +4971,7 @@ public final class Manager
                         }
                         cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
                         cellMessage.nextDestination() ;
-                        logger.debug("selectPool: found linkGroup = {}, " +
+                        logger.trace("selectPool: found linkGroup = {}, " +
                                 "forwarding message", linkGroupName);
                         sendMessage(cellMessage) ;
                 }
@@ -4979,7 +4979,7 @@ public final class Manager
 
         private void forwardToPoolmanager(CellMessage cellMessage)
         {
-            logger.debug("just forwarding the message to {}", poolManager);
+            logger.trace("just forwarding the message to {}", poolManager);
             cellMessage.getDestinationPath().add(new CellPath(poolManager));
             cellMessage.nextDestination();
 
@@ -5017,7 +5017,7 @@ public final class Manager
                                 e.getMessage());
                         return;
                 }
-                logger.debug("Marking file as deleted {}", file);
+                logger.trace("Marking file as deleted {}", file);
                 Connection connection = null;
                 int rc;
                 try {

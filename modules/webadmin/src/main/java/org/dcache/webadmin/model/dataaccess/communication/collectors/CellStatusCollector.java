@@ -45,7 +45,7 @@ public class CellStatusCollector extends Collector {
 
     private Set<CellAddressCore> getDoorNamesFromBroker(String loginBrokerName)
             throws InterruptedException {
-        _log.debug("Requesting doorInfo from LoginBroker {}", loginBrokerName);
+        _log.trace("Requesting doorInfo from LoginBroker {}", loginBrokerName);
         Set<CellAddressCore> newDoors = new HashSet<>();
         try {
             LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(loginBrokerName),
@@ -53,25 +53,25 @@ public class CellStatusCollector extends Collector {
             for (LoginBrokerInfo info : infos) {
                 newDoors.add(new CellAddressCore(info.getCellName(), info.getDomainName()));
             }
-            _log.debug("Doors found: {}", newDoors);
+            _log.trace("Doors found: {}", newDoors);
         } catch (CacheException ex) {
-            _log.debug("Could not retrieve Doors from {}", loginBrokerName);
+            _log.trace("Could not retrieve Doors from {}", loginBrokerName);
         }
         return newDoors;
     }
 
     private Set<CellAddressCore> getPoolCells() throws InterruptedException {
-        _log.debug("Requesting Pools from {}", _poolManagerName);
+        _log.trace("Requesting Pools from {}", _poolManagerName);
         Set<CellAddressCore> pools;
         try {
             PoolManagerCellInfo info = _cellStub.sendAndWait(new CellPath(_poolManagerName),
                     "xgetcellinfo",
                     PoolManagerCellInfo.class);
             pools = info.getPoolCells();
-            _log.debug("Pools found: {}", pools);
+            _log.trace("Pools found: {}", pools);
         } catch (CacheException ex) {
             pools = Collections.emptySet();
-            _log.debug("Could not retrieve Pools from {}", _poolManagerName);
+            _log.trace("Could not retrieve Pools from {}", _poolManagerName);
         }
         return pools;
     }
@@ -100,13 +100,13 @@ public class CellStatusCollector extends Collector {
     private void retrieveCellInfos() throws InterruptedException {
         CountDownLatch doneSignal = new CountDownLatch(_statusTargets.size());
         for (CellStatus status : _statusTargets.values()) {
-            _log.debug("Sending query to : {}", status.getCellPath());
+            _log.trace("Sending query to : {}", status.getCellPath());
             CellInfoCallback callback = new CellInfoCallback(status, doneSignal);
             _cellStub.send(status.getCellPath(), "xgetcellinfo",
                     CellInfo.class, callback);
         }
         doneSignal.await(_cellStub.getTimeout(), TimeUnit.MILLISECONDS);
-        _log.debug("Queries finished or timeouted");
+        _log.trace("Queries finished or timeouted");
     }
 
     private void collectCellStates() throws InterruptedException {
@@ -131,7 +131,7 @@ public class CellStatusCollector extends Collector {
         for (CellAddressCore target : newTargets) {
             CellStatus newStatus = new CellStatus(target);
             _statusTargets.put(target, newStatus);
-            _log.debug("Added new Target {}", target);
+            _log.trace("Added new Target {}", target);
         }
     }
 
@@ -140,7 +140,7 @@ public class CellStatusCollector extends Collector {
         for (CellStatus status : removables) {
             CellAddressCore address = status.getCellAddress();
             _statusTargets.remove(address);
-            _log.debug("Removed Target {}", address);
+            _log.trace("Removed Target {}", address);
         }
     }
 

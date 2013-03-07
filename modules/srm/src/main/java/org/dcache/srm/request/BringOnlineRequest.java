@@ -127,9 +127,9 @@ public final class BringOnlineRequest extends ContainerRequest {
             lifetime,
             description,
             client_host);
-        logger.debug("constructor");
-        logger.debug("user = "+user);
-        logger.debug("requestCredetialId="+requestCredentialId);
+        logger.trace("constructor");
+        logger.trace("user = "+user);
+        logger.trace("requestCredetialId="+requestCredentialId);
         if(protocols != null) {
             int len = protocols.length;
             this.protocols = new String[len];
@@ -265,10 +265,10 @@ public final class BringOnlineRequest extends ContainerRequest {
         State state = getState();
         if(State.isFinalState(state)) {
 
-            logger.debug("get request state changed to "+state);
+            logger.trace("get request state changed to "+state);
             for(FileRequest fr: getFileRequests()) {
                 try {
-                    logger.debug("changing fr#"+fr.getId()+" to "+state);
+                    logger.trace("changing fr#"+fr.getId()+" to "+state);
                     fr.setState(state,"changing file state because request state has changed");
                 }
                 catch(IllegalStateTransition ist) {
@@ -357,7 +357,7 @@ public final class BringOnlineRequest extends ContainerRequest {
             s.append(" FileStatusCode = ")
                     .append(fs.getStatus().getStatusCode());
         }
-        logger.debug(s.toString());
+        logger.trace(s.toString());
         return response;
     }
 
@@ -422,7 +422,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     public SrmReleaseFilesResponse releaseFiles(URI[] surls)
         throws SRMInvalidRequestException
     {
-        logger.debug("releaseFiles");
+        logger.trace("releaseFiles");
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {
@@ -434,7 +434,7 @@ public final class BringOnlineRequest extends ContainerRequest {
            surlLReturnStatuses = new TSURLReturnStatus[surls.length];
         }
         if(surls == null) {
-            logger.debug("releaseFiles, surls is null, releasing all "+len+" files");
+            logger.trace("releaseFiles, surls is null, releasing all "+len+" files");
             for(int i = 0; i< len; ++i) {
                 List<FileRequest> requests = getFileRequests();
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)requests.get(i);
@@ -448,7 +448,7 @@ public final class BringOnlineRequest extends ContainerRequest {
                 } catch (org.apache.axis.types.URI.MalformedURIException e) {
                     throw new SRMInvalidRequestException("Invalid surl: " + e.getMessage());
                 }
-                logger.debug("releaseFiles, releasing file " + surl);
+                logger.trace("releaseFiles, releasing file " + surl);
                 BringOnlineFileRequest fr;
                 try {
                     fr =(BringOnlineFileRequest)getFileRequestBySurl(surls[i]);

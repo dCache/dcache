@@ -58,7 +58,7 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
                } catch (Exception e) {
                   // throw new IllegalArgumentException( "CostTable is not defined (null pointer)");
 		  // don't throw anything - do default
-		  _log.debug("failed getting a cost table");
+		  _log.trace("failed getting a cost table");
                }
 
                if ( _costTable != null ) {
@@ -70,13 +70,13 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 			 if (_costTable.getPoolCostInfoByName(poolName) != null) {
 		            PoolCostInfo.PoolSpaceInfo plSpace = _costTable.getPoolCostInfoByName(poolName).getSpaceInfo ();
 
-			    _log.debug(poolName + "> checking: " + plSpace.getGap () + " " + plSpace.getFreeSpace ());
+			    _log.trace(poolName + "> checking: " + plSpace.getGap () + " " + plSpace.getFreeSpace ());
 	                    if (plSpace.getGap () < plSpace.getFreeSpace ()) {
-			      _log.debug(poolName + "> included on level " + prio);
+			      _log.trace(poolName + "> included on level " + prio);
 	                      resultList.add (poolName);
 	                    }
                          } else {
-			   _log.debug("missing data for " + poolName);
+			   _log.trace("missing data for " + poolName);
                          }
 	             }
 		     // the result can be even empty
@@ -111,12 +111,12 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
                        new CellPath("PoolManager"), command);
                CellMessage reply;
 
-               _log.debug("gtCstTble(): sendMessage, " + " command=[" + command +
+               _log.trace("gtCstTble(): sendMessage, " + " command=[" + command +
                     "]\n" + "message=" + cellMessage);
 
                reply = cell.sendAndWait(cellMessage, _TO_GetFreeSpace);
 
-               _log.debug("DEBUG: Cst tble reply arrived");
+               _log.trace("DEBUG: Cst tble reply arrived");
 
                if (reply == null ||
                    !(reply.getMessageObject() instanceof CostModulePoolInfoTable)) {

@@ -55,7 +55,7 @@ public class OperationLOOKUPP extends AbstractNFSv4Operation {
             }
 
         }catch(ChimeraNFSException he) {
-            _log.debug("LOOKUPP: {}", he.getMessage());
+            _log.trace("LOOKUPP: {}", he.getMessage());
             res.status = he.getStatus();
         }catch(Exception e) {
             _log.error("Error: ", e);

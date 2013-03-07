@@ -71,7 +71,7 @@ public class OperationREMOVE extends AbstractNFSv4Operation {
             throw new ChimeraNFSException(nfsstat.NFSERR_BADNAME, "bad name '.' or '..'");
         }
 
-        _log.debug("REMOVE: {} : {}", parentInode, name);
+        _log.trace("REMOVE: {} : {}", parentInode, name);
 
 
 	    Stat inodeStat = context.currentInode().inodeOf(name).statCache();
@@ -100,7 +100,7 @@ public class OperationREMOVE extends AbstractNFSv4Operation {
 	}catch(FileNotFoundHimeraFsException e){
 	    res.status = nfsstat.NFSERR_NOENT;
     } catch (ChimeraNFSException he) {
-        _log.debug("REMOVE: {}", he.getMessage());
+        _log.trace("REMOVE: {}", he.getMessage());
 	    res.status = he.getStatus();
 	} catch (Exception e) {
         _log.error("REMOVE: ", e);

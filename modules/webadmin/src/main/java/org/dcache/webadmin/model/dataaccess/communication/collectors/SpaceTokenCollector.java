@@ -20,28 +20,28 @@ public class SpaceTokenCollector extends Collector {
 
     private void collectSpaceTokens() throws InterruptedException {
         try {
-            _log.debug("Retrieving space tokens");
+            _log.trace("Retrieving space tokens");
             GetSpaceTokensMessage reply = _cellStub.sendAndWait(
                     new GetSpaceTokensMessage());
             _pageCache.put(ContextPaths.SPACETOKENS,
                     reply.getSpaceTokenSet());
-            _log.debug("Space tokens retrieved successfully");
+            _log.trace("Space tokens retrieved successfully");
         } catch (CacheException ex) {
-            _log.debug("Could not retrieve Space tokens ", ex);
+            _log.trace("Could not retrieve Space tokens ", ex);
             _pageCache.remove(ContextPaths.SPACETOKENS);
         }
     }
 
     private void collectLinkGroups() throws InterruptedException {
         try {
-            _log.debug("Retrieving linkgroups");
+            _log.trace("Retrieving linkgroups");
             GetLinkGroupsMessage reply = _cellStub.sendAndWait(
                     new GetLinkGroupsMessage());
             _pageCache.put(ContextPaths.LINKGROUPS,
                     reply.getLinkGroupSet());
-            _log.debug("Linkgroups retrieved successfully");
+            _log.trace("Linkgroups retrieved successfully");
         } catch (CacheException ex) {
-            _log.debug("Could not retrieve linkgroups ", ex);
+            _log.trace("Could not retrieve linkgroups ", ex);
             _pageCache.remove(ContextPaths.LINKGROUPS);
         }
     }
@@ -52,7 +52,7 @@ public class SpaceTokenCollector extends Collector {
             collectSpaceTokens();
             collectLinkGroups();
         } catch (RuntimeException e) {
-            _log.debug(e.toString(), e);
+            _log.trace(e.toString(), e);
             return Status.FAILURE;
         }
 

@@ -200,7 +200,7 @@ public class DataGatheringScheduler implements Runnable {
 		long delay;
 		Date now = new Date();
 
-		_logSched.debug("DGA Scheduler thread starting.");
+		_logSched.trace("DGA Scheduler thread starting.");
 
 		synchronized( _activity) {
 			do {
@@ -221,7 +221,7 @@ public class DataGatheringScheduler implements Runnable {
 			} while( !_timeToQuit);
 		}
 
-		_logSched.debug("DGA Scheduler thread shutting down.");
+		_logSched.trace("DGA Scheduler thread shutting down.");
 	}
 
 	/**
@@ -331,7 +331,7 @@ public class DataGatheringScheduler implements Runnable {
 	 * for data.
 	 */
 	public void shutdown() {
-		_logSched.debug("Requesting DGA Scheduler to shutdown.");
+		_logSched.trace("Requesting DGA Scheduler to shutdown.");
 		synchronized( _activity) {
 			_timeToQuit = true;
 			_activity.notify();

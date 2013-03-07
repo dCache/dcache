@@ -88,7 +88,7 @@ public class DBManager {
                                      IoPackage<T> pkg,
                                      String query,
                                      Object ... args) throws SQLException {
-                _logger.debug("executing selectForUpdate on {} with args={}",
+                _logger.trace("executing selectForUpdate on {} with args={}",
                         query, args);
 
 		PreparedStatement stmt = null;
@@ -113,7 +113,7 @@ public class DBManager {
         public <T> Set<T> selectPrepared(IoPackage<T> pkg,
                                          String query,
                                          Object ... args) throws SQLException {
-		_logger.debug("executing statement: {}", query);
+		_logger.trace("executing statement: {}", query);
 		Connection connection = null;
                 PreparedStatement stmt=null;
 		try {
@@ -231,7 +231,7 @@ public class DBManager {
 	            try {
 	                s = connection.createStatement();
 	                if (_logger.isDebugEnabled()) {
-	                    _logger.debug("Executing  "+statement);
+	                    _logger.trace("Executing  "+statement);
 	                }
 	                s.executeUpdate(statement);
 	                connection.commit();
@@ -248,7 +248,7 @@ public class DBManager {
 	                }
 	                catch (SQLException e1) { }
 	                if (_logger.isDebugEnabled()) {
-	                    _logger.debug("Failed: "+e.getMessage());
+	                    _logger.trace("Failed: "+e.getMessage());
 	                }
 	            }
 	        }
@@ -426,7 +426,7 @@ public class DBManager {
 	public int update(Connection connection,
 			   String query,
 			   Object ... args)  throws SQLException {
-                _logger.debug("executing update {}, args={}", query, args);
+                _logger.trace("executing update {}, args={}", query, args);
 
                 PreparedStatement stmt=null;
                 try {

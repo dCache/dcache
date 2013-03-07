@@ -48,7 +48,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        _endpoint = endpoint ;
 
        for( int i = 0 ; i < argsString.length ; i++ ){
-          _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
+          _log.debug("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
           if( argsString[i].startsWith("css=") ){
               decodeCss( argsString[i].substring(4) ) ;
           }else if( argsString[i].startsWith("mgr=") ){
@@ -65,8 +65,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           _managerList.add("FlushManager");
       }
 
-      _log.info("Using Manager  : "+_managerList ) ;
-      _log.info("Using CSS file : "+_cssFile ) ;
+      _log.debug("Using Manager  : "+_managerList ) ;
+      _log.debug("Using CSS file : "+_cssFile ) ;
 
    }
    private void decodeManager( String managers ){
@@ -123,7 +123,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                  optionsMap = createMap(urlItems[3]);
              }
 
-             _log.info("MAP -> "+optionsMap);
+             _log.debug("MAP -> "+optionsMap);
 
              printFlushHeader( pw ,  "Flush Info");
              printDirectory( pw ) ;

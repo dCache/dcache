@@ -176,7 +176,7 @@ public final class LsFileRequest extends FileRequest {
                                                       parent.getNumOfLevels(),
                                                       parent.getLongFormat());
                         if (logger.isDebugEnabled()) {
-                                logger.debug("LsFileRequest.run(), TOOK "+(System.currentTimeMillis()-t0));
+                                logger.trace("LsFileRequest.run(), TOOK "+(System.currentTimeMillis()-t0));
                         }
                         try {
                                 getRequest().resetRetryDeltaTime();
@@ -235,7 +235,7 @@ public final class LsFileRequest extends FileRequest {
 
         @Override
         protected void stateChanged(State oldState) {
-                logger.debug("State changed from "+oldState+" to "+getState());
+                logger.trace("State changed from "+oldState+" to "+getState());
                 super.stateChanged(oldState);
         }
 
@@ -606,7 +606,7 @@ public final class LsFileRequest extends FileRequest {
                         metaDataPathDetail.setType(TFileType.FILE);
                 }
                 else {
-                        logger.debug("file type is Unknown");
+                        logger.trace("file type is Unknown");
                 }
                 if(verbose) {
                         // TODO: this needs to be rewritten to

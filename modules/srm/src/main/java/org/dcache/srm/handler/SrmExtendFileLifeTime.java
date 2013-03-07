@@ -78,11 +78,11 @@ public class SrmExtendFileLifeTime {
         try {
             response = srmExtendFileLifeTime();
         } catch(URISyntaxException e) {
-            logger.debug(" malformed uri : "+e.getMessage());
+            logger.trace(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMInvalidRequestException e) {
-            logger.debug(e.toString());
+            logger.trace(e.toString());
             response = getFailedResponse(e.toString(), TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
@@ -97,7 +97,7 @@ public class SrmExtendFileLifeTime {
 
     public final  SrmExtendFileLifeTimeResponse
             getFailedResponse(String error,TStatusCode statusCode) {
-        logger.debug("getFailedResponse("+error+","+statusCode+")");
+        logger.trace("getFailedResponse("+error+","+statusCode+")");
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
@@ -142,7 +142,7 @@ public class SrmExtendFileLifeTime {
                 failuresCount++;
                 String error = "surl="+surls[i] +"lifetime can't extended:"+e;
                 if(logger.isDebugEnabled()) {
-                    logger.debug(error, e);
+                    logger.trace(error, e);
                 } else {
                     logger.warn(error);
                 }

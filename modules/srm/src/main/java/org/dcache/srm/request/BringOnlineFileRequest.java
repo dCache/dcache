@@ -125,7 +125,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 requestCredentalId,
                 lifetime,
                 maxNumberOfRetries);
-        logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
+        logger.trace("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         this.surl = surl;
         updateMemoryCache();
     }
@@ -271,7 +271,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             rfs.state = "Pending";
         }
 
-        //logger.debug(" returning requestFileStatus for "+rfs.toString());
+        //logger.trace(" returning requestFileStatus for "+rfs.toString());
         return rfs;
     }
 
@@ -341,17 +341,17 @@ public final class BringOnlineFileRequest extends FileRequest {
 
     @Override
     public final void run() throws NonFatalJobFailure, FatalJobFailure {
-        logger.debug("run()");
+        logger.trace("run()");
         try {
             if(getPinId() == null) {
                 // do not check explicitely if we can read the file
                 // this is done by pnfs manager when we call askFileId()
 
-                logger.debug("pinId is null, asking to pin ");
+                logger.trace("pinId is null, asking to pin ");
                 pinFile();
                 if(getPinId() == null) {
                     setState(State.ASYNCWAIT,"pinning file");
-                    logger.debug("BringOnlineFileRequest: waiting async notification about pinId...");
+                    logger.trace("BringOnlineFileRequest: waiting async notification about pinId...");
                     return;
                 }
             }
@@ -361,7 +361,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             // always retry internally even if problem isn't transitory.
             throw new NonFatalJobFailure(e.getMessage());
         }
-        logger.info("PinId is "+getPinId()+" returning, scheduler should change" +
+        logger.debug("PinId is "+getPinId()+" returning, scheduler should change" +
             " state to \"Ready\"");
     }
 
@@ -392,7 +392,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         }
 
         URI surl = getSurl();
-        logger.info("Pinning {}", surl);
+        logger.debug("Pinning {}", surl);
         getStorage().pinFile(getUser(),
                              surl,
                              getRequest().getClient_host(),
@@ -404,7 +404,7 @@ public final class BringOnlineFileRequest extends FileRequest {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.debug("State changed from "+oldState+" to "+getState());
+        logger.trace("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
                 getRequest().resetRetryDeltaTime();
@@ -416,7 +416,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         if(state == State.CANCELED || state == State.FAILED ) {
             if(getFileId() != null && getPinId() != null) {
                 UnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
-                logger.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
+                logger.debug("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
                 try {
                     getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
                 }
@@ -459,7 +459,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
         if(getFileId() != null && getPinId() != null) {
             TheUnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
-            logger.debug("srmReleaseFile, unpinning fileId= "+
+            logger.trace("srmReleaseFile, unpinning fileId= "+
                     getFileId()+" pinId = "+getPinId());
             getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
             try {
@@ -672,7 +672,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                logger.info("Pin request timed out");
+                logger.debug("Pin request timed out");
                 if (!fr.getState().isFinalState()) {
                     fr.pinFile();
                 }
@@ -685,7 +685,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         @Override
         public void Pinned(FileMetaData fileMetaData, String pinId) {
             try {
-                logger.debug("File pinned (pinId={})", pinId);
+                logger.trace("File pinned (pinId={})", pinId);
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 fr.wlock();
                 try {
@@ -802,7 +802,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 if(fr != null) {
-                    logger.debug("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
+                    logger.trace("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
                     State state = fr.getState();
                    if(state == State.ASYNCWAIT) {
                         fr.setPinId(pinId);

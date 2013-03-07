@@ -279,21 +279,21 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
              * state is a final one
              */
             if( !info.hasState() || info.getState().isFinalState()) {
-                _log.debug( "ignoring reservation " + reservationId +
+                _log.trace( "ignoring reservation " + reservationId +
                             " as state is undefined or final");
                 continue;
             }
 
             /* Skip those reservations that don't have a description */
             if( !info.hasDescription() || info.getDescription().isEmpty()) {
-                _log.debug( "ignoring reservation " + reservationId +
+                _log.trace( "ignoring reservation " + reservationId +
                             " as description is undefined or empty");
                 continue;
             }
 
             /* Skip all those reservations that don't have a well-defined VO */
             if( !info.hasVo() || info.getVo().isEmpty()) {
-                _log.debug( "ignoring reservation " + reservationId +
+                _log.trace( "ignoring reservation " + reservationId +
                             " as VO is undefined or empty");
                 continue;
             }
@@ -377,7 +377,7 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
             String voName = voEntry.getKey();
 
             if( _log.isDebugEnabled()) {
-                _log.debug("Checking vo " + voName);
+                _log.trace("Checking vo " + voName);
             }
 
             Map<String, ReservationSummaryInfo> futureDescriptions =

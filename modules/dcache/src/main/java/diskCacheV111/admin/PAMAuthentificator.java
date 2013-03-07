@@ -99,7 +99,7 @@ public class PAMAuthentificator  extends CellAdapter {
          _service = _args.getOpt( "service" ) ;
          if( _service == null ){
             _service = "dcache";
-            _log.info("'service' not defined. Using '"+_service+"' as default service");
+            _log.debug("'service' not defined. Using '"+_service+"' as default service");
          }
 
 
@@ -108,16 +108,16 @@ public class PAMAuthentificator  extends CellAdapter {
 
              if( ( tmp = _args.getOpt( "syspassword" ) ) != null ){
                 _sysPassword = new UserPasswords( new File( tmp ) ) ;
-                _log.info( "using as SystemPasswordfile : "+tmp ) ;
+                _log.debug( "using as SystemPasswordfile : "+tmp ) ;
             }
             if( ( tmp = _args.getOpt( "dcachepassword"  ) ) != null ){
                 _egPassword  = new UserPasswords( new File( tmp ) ) ;
-                _log.info( "using as dCachePassword : "+tmp ) ;
+                _log.debug( "using as dCachePassword : "+tmp ) ;
             }
 
              if( ( tmp = _args.getOpt("usepam") ) != null ){
                 _pam = new PAM_Auth( _service );
-                _log.info( "using PAM mudule") ;
+                _log.debug( "using PAM mudule") ;
              }
          }else{
             _execAuth = new ExecAuth(tmp) ;
@@ -126,7 +126,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
 
          if( ( tmp = _args.getOpt( "users"  ) ) != null ){
-            _log.info( "using as userService : "+tmp ) ;
+            _log.debug( "using as userService : "+tmp ) ;
 
             if( tmp.startsWith("nis:") ){
 
@@ -304,7 +304,7 @@ public class PAMAuthentificator  extends CellAdapter {
          _log.warn( "_pam.authorize : "+ee ) ;
       }
       if( ! pamOk ){
-         _log.info("pam _log.infos no to <"+principal+"> (switching to local)");
+         _log.debug("pam _log.infos no to <"+principal+"> (switching to local)");
          try{
             return matchPassword( principal , password ) ;
          }catch(Exception ee ){
@@ -319,7 +319,7 @@ public class PAMAuthentificator  extends CellAdapter {
       Serializable answer;
 
       try{
-         _log.info( "Message type : "+obj.getClass() ) ;
+         _log.debug( "Message type : "+obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -329,7 +329,7 @@ public class PAMAuthentificator  extends CellAdapter {
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.info( ">"+command+"< request from "+user ) ;
+            _log.debug( ">"+command+"< request from "+user ) ;
             try{
                 switch (command) {
                 case "check-password":

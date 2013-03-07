@@ -68,7 +68,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         {
             long start = System.currentTimeMillis();
             wait(_mode ? _shortPeriod / 2 : _regularPeriod / 2);
-            _log.debug("Woke up after " + (System.currentTimeMillis() - start)
+            _log.trace("Woke up after " + (System.currentTimeMillis() - start)
                        + " millis");
         }
 
@@ -86,7 +86,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         private synchronized void topologyChanged(boolean modified)
         {
-            // _log.info("Topology changed : "+modified);
+            // _log.debug("Topology changed : "+modified);
             if (!_enabled) {
                 return;
             }
@@ -95,7 +95,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 if (!_mode) {
                     _mode = true;
                     notifyAll();
-                    _log.info("Aggressive changed to ON");
+                    _log.debug("Aggressive changed to ON");
                 }
 
             } else if (_mode &&
@@ -103,7 +103,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                        (_shortPeriod * _retentionFactor)) {
                 _mode = false;
                 notifyAll();
-                _log.info("Aggressive changed to OFF");
+                _log.debug("Aggressive changed to OFF");
             }
 
         }
@@ -194,7 +194,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 } catch (NumberFormatException e) {
                     _log.warn("Parsing error in " + OPTION_REPEATHEADER + " command : " + optionString);
                 }
-                _log.info("Repeat header set to "+_repeatHeader);
+                _log.debug("Repeat header set to "+_repeatHeader);
             }
 
             String optionString = _args.getOpt("aggressive");
@@ -204,7 +204,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
             aggressive = !aggressive;
 
-            _log.info("Agressive mode : "+aggressive);
+            _log.debug("Agressive mode : "+aggressive);
 
             _sleepHandler = new SleepHandler(aggressive);
 
@@ -215,15 +215,15 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             String loginBrokers = _args.getOpt("loginBroker");
             if (loginBrokers != null && !loginBrokers.isEmpty()) {
                 for (String broker : loginBrokers.split(",")) {
-                    _log.info("Login Broker : {}", broker);
+                    _log.debug("Login Broker : {}", broker);
                     CellAddressCore address = new CellAddressCore(broker);
                     _loginBrokerTable.add(address);
                     addQuery(address);
                 }
             }
             (_senderThread  = _nucleus.newThread(this, "sender")).start();
-            _log.info("Sender started");
-            _log.info("Collector will be started a bit delayed");
+            _log.debug("Sender started");
+            _log.debug("Collector will be started a bit delayed");
             _collectThread = _nucleus.newThread(WebCollectorV3.this, "collector");
             _collectThread.start();
         } catch (Exception e) {
@@ -240,14 +240,14 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         if (_infoMap.get(address) != null) {
             return false;
         }
-        _log.debug("Adding {)", address);
+        _log.trace("Adding {)", address);
         _infoMap.put(address, new CellQueryInfo(address));
         return true;
     }
 
     private synchronized void removeQuery(String destination)
     {
-        _log.debug("Removing {}", destination);
+        _log.trace("Removing {}", destination);
         _infoMap.remove(new CellAddressCore(destination));
     }
 
@@ -269,7 +269,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         } catch (InterruptedException e1) {
             return;
         }
-        _log.info("Collector now started as well");
+        _log.debug("Collector now started as well");
 
         try {
             while (!Thread.interrupted()) {
@@ -279,7 +279,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 _sleepHandler.sleep();
             }
         } catch (InterruptedException e) {
-            _log.info("Collector Thread interrupted");
+            _log.debug("Collector Thread interrupted");
         }
     }
 
@@ -293,7 +293,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 for (CellAddressCore broker : _loginBrokerTable) {
                     try {
                         CellPath path = new CellPath(broker);
-                        _log.debug("Sending LoginBroker query to : {}", path);
+                        _log.trace("Sending LoginBroker query to : {}", path);
                         sendMessage(new CellMessage(path, "ls -binary"));
                     } catch (NoRouteToCellException ee) {
 
@@ -303,7 +303,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 synchronized (_infoLock) {
                     for (CellQueryInfo info : _infoMap.values()) {
                         try {
-                            _log.debug("Sending query to : {}", info.getName());
+                            _log.trace("Sending query to : {}", info.getName());
                             sendMessage(info.getCellMessage());
                         } catch (NoRouteToCellException e) {
 
@@ -313,7 +313,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 _sleepHandler.sleep();
             }
         } catch (InterruptedException iie) {
-            _log.info("Sender Thread interrupted");
+            _log.debug("Sender Thread interrupted");
         }
     }
 
@@ -327,7 +327,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             // We may have registered the cell as a well known cell
             info = _infoMap.get(new CellAddressCore(address.getCellName()));
             if (info == null) {
-                _log.info("Unexpected reply arrived from: {}", path);
+                _log.debug("Unexpected reply arrived from: {}", path);
                 return;
             }
         }
@@ -336,7 +336,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         int modified = 0;
 
         if (reply instanceof CellInfo) {
-            _log.debug("CellInfo: {}", ((CellInfo)reply).getCellName());
+            _log.trace("CellInfo: {}", ((CellInfo)reply).getCellName());
             info.infoArrived((CellInfo)reply);
         }
         if (reply instanceof PoolManagerCellInfo) {
@@ -352,10 +352,10 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         if (reply instanceof LoginBrokerInfo[]) {
             LoginBrokerInfo [] brokerInfos = (LoginBrokerInfo [])reply;
-            _log.debug("Login broker reply: {}", brokerInfos.length);
+            _log.trace("Login broker reply: {}", brokerInfos.length);
             synchronized (_infoLock) {
                 for (LoginBrokerInfo brokerInfo : brokerInfos) {
-                    _log.debug("Login broker reports: {}@{}", brokerInfo.getCellName(), brokerInfo.getDomainName());
+                    _log.trace("Login broker reports: {}@{}", brokerInfo.getCellName(), brokerInfo.getDomainName());
                     if (addQuery(new CellAddressCore(brokerInfo.getCellName(), brokerInfo.getDomainName()))) {
                         modified++;
                     }
@@ -656,7 +656,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             double yellow  = round(100 * freespace / (float)total);
             double blue    = Math.max(0, 100 - red - green - yellow);
 
-            _log.info(cellInfo.getCellName() + " : " +
+            _log.debug(cellInfo.getCellName() + " : " +
                 ";total=" + total + ";free=" + freespace +
                 ";precious=" + precious + ";removable=" + removable);
 
@@ -829,9 +829,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private synchronized void printPoolActionTable2(HTMLBuilder page)
     {
         // get the translated list
-        _log.debug("Preparing pool cost table");
+        _log.trace("Preparing pool cost table");
         List<PoolCostEntry> list = preparePoolCostTable();
-        _log.debug("Preparing pool cost table done " + list.size());
+        _log.trace("Preparing pool cost table done " + list.size());
         // calculate the totals ...
         TreeMap<String, int[]> moverMap = new TreeMap<>();
         int[][] total = new int[5][3];
@@ -935,18 +935,18 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     @Override
     public void cleanUp()
     {
-        _log.info("Clean Up sequence started");
+        _log.debug("Clean Up sequence started");
         //
         // wait for the worker to be done
         //
-        _log.info("Waiting for collector thread to be finished");
+        _log.debug("Waiting for collector thread to be finished");
         _collectThread.interrupt();
         _senderThread.interrupt();
         _nucleus.getDomainContext().remove("cellInfoTable.html");
 
-        _log.info("cellInfoTable.html removed from domain context");
+        _log.debug("cellInfoTable.html removed from domain context");
 
-        _log.info("Clean Up sequence done");
+        _log.debug("Clean Up sequence done");
 
     }
 

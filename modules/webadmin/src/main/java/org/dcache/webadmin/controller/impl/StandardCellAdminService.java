@@ -38,7 +38,7 @@ public class StandardCellAdminService implements CellAdminService {
     @Override
     public String sendCommand(String target, String command)
             throws CellAdminServiceException {
-        _log.debug("Sending command {} to cell {}", command, target);
+        _log.trace("Sending command {} to cell {}", command, target);
         try {
             Set<String> targets = new HashSet<>();
             targets.add(target);

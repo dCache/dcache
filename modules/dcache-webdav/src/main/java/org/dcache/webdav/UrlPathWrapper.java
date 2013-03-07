@@ -70,7 +70,7 @@ public class UrlPathWrapper
 
     private UrlPathWrapper(String path, String encoded)
     {
-        _log.debug("building string-pair '{}' and '{}'", path, encoded);
+        _log.trace("building string-pair '{}' and '{}'", path, encoded);
         _path = path;
         _encoded = encoded;
     }

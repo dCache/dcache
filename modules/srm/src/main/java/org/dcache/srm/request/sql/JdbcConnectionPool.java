@@ -54,7 +54,7 @@ public class JdbcConnectionPool implements Runnable{
                     pool.user.equals(user)) {
                 long elapsed = System.currentTimeMillis() - starttimestamp;
                 if (_log.isDebugEnabled()) {
-                    _log.debug("getPool() took " + elapsed + " ms");
+                    _log.trace("getPool() took " + elapsed + " ms");
                 }
                 return pool;
             }
@@ -63,7 +63,7 @@ public class JdbcConnectionPool implements Runnable{
         pools.add(pool);
         long elapsed = System.currentTimeMillis()-starttimestamp;
         if( _log.isDebugEnabled() ) {
-            _log.debug( "getPool() took "+elapsed+" ms");
+            _log.trace( "getPool() took "+elapsed+" ms");
         }
         return pool;
 
@@ -128,7 +128,7 @@ public class JdbcConnectionPool implements Runnable{
                     if(!_con.isClosed()) {
                         long elapsed = System.currentTimeMillis()-starttimestamp;
                         if( _log.isDebugEnabled() ) {
-                            _log.debug( "getConnection() took "+elapsed+" ms");
+                            _log.trace( "getConnection() took "+elapsed+" ms");
                         }
                         return _con;
                     }
@@ -143,7 +143,7 @@ public class JdbcConnectionPool implements Runnable{
         _con.setAutoCommit(false);
         long elapsed = System.currentTimeMillis()-starttimestamp;
         if( _log.isDebugEnabled() ) {
-            _log.debug( "getConnection() took "+elapsed+" ms");
+            _log.trace( "getConnection() took "+elapsed+" ms");
         }
         return _con;
     }
@@ -166,20 +166,20 @@ public class JdbcConnectionPool implements Runnable{
                 _con.close();
                 long elapsed = System.currentTimeMillis()-starttimestamp;
                 if( _log.isDebugEnabled() ) {
-                    _log.debug( "returnFailedConnection() took "+elapsed+" ms");
+                    _log.trace( "returnFailedConnection() took "+elapsed+" ms");
                 }
                 return;
             }
             catch(SQLException sqle) {
                 if( _log.isDebugEnabled()) {
-                    _log.debug("returnFailedConnection() exception: ",sqle);
+                    _log.trace("returnFailedConnection() exception: ",sqle);
                 }
             }
         }
 
         long elapsed = System.currentTimeMillis()-starttimestamp;
         if( _log.isDebugEnabled() ) {
-            _log.debug( "returnFailedConnection() took "+elapsed+" ms");
+            _log.trace( "returnFailedConnection() took "+elapsed+" ms");
         }
    }
 
@@ -201,7 +201,7 @@ public class JdbcConnectionPool implements Runnable{
                 if(_con.isClosed()) {
                     long elapsed = System.currentTimeMillis()-starttimestamp;
                     if( _log.isDebugEnabled() ) {
-                        _log.debug( "returnConnection() took "+elapsed+" ms");
+                        _log.trace( "returnConnection() took "+elapsed+" ms");
                     }
                     return;
                 }
@@ -209,7 +209,7 @@ public class JdbcConnectionPool implements Runnable{
                     _con.close();
                     long elapsed = System.currentTimeMillis()-starttimestamp;
                     if( _log.isDebugEnabled() ) {
-                        _log.debug( "returnConnection() took "+elapsed+" ms");
+                        _log.trace( "returnConnection() took "+elapsed+" ms");
                     }
                     return;
                 }
@@ -219,13 +219,13 @@ public class JdbcConnectionPool implements Runnable{
             catch(SQLException sqle) {
                 //esay(sqle);
                 if( _log.isDebugEnabled()) {
-                    _log.debug("returnConnection() exception: ",sqle);
+                    _log.trace("returnConnection() exception: ",sqle);
                 }
             }
         }
         long elapsed = System.currentTimeMillis()-starttimestamp;
         if( _log.isDebugEnabled() ) {
-            _log.debug( "returnConnection() took "+elapsed+" ms");
+            _log.trace( "returnConnection() took "+elapsed+" ms");
         }
     }
 
@@ -296,7 +296,7 @@ public class JdbcConnectionPool implements Runnable{
                     }
                 }
             } catch (InterruptedException e) {
-                _log.debug("Execution thread shutting down");
+                _log.trace("Execution thread shutting down");
                 break;
             } catch (Throwable e) {
                 Thread.currentThread().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);

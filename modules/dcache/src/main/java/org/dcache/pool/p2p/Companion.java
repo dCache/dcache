@@ -523,7 +523,7 @@ class Companion
                 _log.error(String.format("P2P for %s failed: %s", getPnfsId(), _error));
             }
         } else {
-            _log.info(String.format("P2P for %s completed", getPnfsId()));
+            _log.debug(String.format("P2P for %s completed", getPnfsId()));
         }
 
         if (_callback != null) {

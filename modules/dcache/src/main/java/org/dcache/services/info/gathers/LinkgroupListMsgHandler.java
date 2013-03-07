@@ -37,7 +37,7 @@ public class LinkgroupListMsgHandler implements MessageHandler {
                 }
 
 		if( _log.isInfoEnabled()) {
-                    _log.info("received linkgroup list msg.");
+                    _log.debug("received linkgroup list msg.");
                 }
 
 		GetLinkGroupNamesMessage msg = (GetLinkGroupNamesMessage) messagePayload;
@@ -52,7 +52,7 @@ public class LinkgroupListMsgHandler implements MessageHandler {
                 }
 
                 if (_log.isDebugEnabled()) {
-                    _log.debug("adding linkgroup: " + name + " lifetime: " + metricLifetime);
+                    _log.trace("adding linkgroup: " + name + " lifetime: " + metricLifetime);
                 }
 
                 update.appendUpdate(LINKGROUPS_PATH
@@ -62,7 +62,7 @@ public class LinkgroupListMsgHandler implements MessageHandler {
 		if( update != null) {
                     _sum.enqueueUpdate(update);
                 } else {
-                    _log.info("received GetLinkGroupNamesMessage with no linkgroups listed");
+                    _log.debug("received GetLinkGroupNamesMessage with no linkgroups listed");
                 }
 
 		return true;

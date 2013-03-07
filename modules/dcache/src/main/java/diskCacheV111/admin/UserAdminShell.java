@@ -624,7 +624,7 @@ public class UserAdminShell
         try {
             spreader.waitForReplies();
         } catch (InterruptedException ex) {
-            _log.info("InterruptedException while waiting for a reply from pools " + ex);
+            _log.debug("InterruptedException while waiting for a reply from pools " + ex);
         }
 
         return spreader.getReplyList();
@@ -1377,7 +1377,7 @@ public class UserAdminShell
     }
 
     protected Object executeLocalCommand( Args args ) throws Exception {
-       _log.info( "Local command "+args ) ;
+       _log.debug( "Local command "+args ) ;
        try{
           return  command( args ) ;
        }catch( CommandThrowableException cte ){
@@ -1400,14 +1400,14 @@ public class UserAdminShell
             }
             return _completor.complete(buffer, cursor, candidates);
         } catch (Exception e) {
-            _log.info("Completion failed: " + e.toString());
+            _log.debug("Completion failed: " + e.toString());
             return -1;
         }
     }
 
     public Object executeCommand(String str) throws Exception
     {
-       _log.info( "String command (super) "+str ) ;
+       _log.debug( "String command (super) "+str ) ;
 
        if( str.trim().equals("") ) {
            return "";
@@ -1519,7 +1519,7 @@ public class UserAdminShell
     public Object executeCommand( String destination , Object str )
            throws Exception {
 
-       _log.info( "Object command ("+destination+") "+str) ;
+       _log.debug( "Object command ("+destination+") "+str) ;
 
        return sendCommand( destination  , str.toString() ) ;
     }

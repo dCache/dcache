@@ -118,11 +118,11 @@ public class PoolGroupView extends BasePage {
 
     private void getPoolGroupsAction() {
         try {
-            _log.debug("getPoolGroupsAction called");
+            _log.trace("getPoolGroupsAction called");
             setPoolGroups(getPoolGroupService().getPoolGroups());
         } catch (PoolGroupServiceException ex) {
             this.error(getStringResource("error.getPoolgroupsFailed") + ex.getMessage());
-            _log.debug("getPoolGroupsAction failed {}", ex.getMessage());
+            _log.trace("getPoolGroupsAction failed {}", ex.getMessage());
             setPoolGroups(null);
         }
     }

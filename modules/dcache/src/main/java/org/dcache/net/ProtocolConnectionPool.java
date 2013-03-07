@@ -58,7 +58,7 @@ public class ProtocolConnectionPool extends Thread {
 
         portRange.bind(_serverSocketChannel.socket());
         if (_logSocketIO.isDebugEnabled()) {
-            _logSocketIO.debug("Socket BIND local = " + _serverSocketChannel.socket().getInetAddress() + ":" + _serverSocketChannel.socket().getLocalPort());
+            _logSocketIO.trace("Socket BIND local = " + _serverSocketChannel.socket().getInetAddress() + ":" + _serverSocketChannel.socket().getLocalPort());
         }
 
     }
@@ -99,7 +99,7 @@ public class ProtocolConnectionPool extends Thread {
 
                 SocketChannel newSocketChannel = _serverSocketChannel.accept();
                 if (_logSocketIO.isDebugEnabled()) {
-                    _logSocketIO.debug("Socket OPEN (ACCEPT) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
+                    _logSocketIO.trace("Socket OPEN (ACCEPT) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
                             " local = " + newSocketChannel.socket().getLocalAddress() + ":" + newSocketChannel.socket().getLocalPort());
                 }
                 Object challenge = _challengeReader.getChallenge(newSocketChannel);
@@ -107,7 +107,7 @@ public class ProtocolConnectionPool extends Thread {
                 if (challenge == null) {
                     // Unable to read challenge....skip connection
                     if (_logSocketIO.isDebugEnabled()) {
-                        _logSocketIO.debug("Socket CLOSE (no challenge) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
+                        _logSocketIO.trace("Socket CLOSE (no challenge) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
                                 " local = " + newSocketChannel.socket().getLocalAddress() + ":" + newSocketChannel.socket().getLocalPort());
                     }
                     newSocketChannel.close();
@@ -124,7 +124,7 @@ public class ProtocolConnectionPool extends Thread {
                 _logSocketIO.error("Accept loop", e);
                 _stop = true;
                 try {
-                    _logSocketIO.debug("Socket SHUTDOWN local = {}:{}",
+                    _logSocketIO.trace("Socket SHUTDOWN local = {}:{}",
                             _serverSocketChannel.socket().getInetAddress(),
                             _serverSocketChannel.socket().getLocalPort());
                     _serverSocketChannel.close();

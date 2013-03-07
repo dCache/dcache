@@ -34,7 +34,7 @@ public class DoorValidationStrategy  implements ValidationStrategy {
     @Override
     public void validate(LoginReply loginReply)
             throws AuthenticationException {
-        LOGGER.debug("Validating loginReply {}",loginReply);
+        LOGGER.trace("Validating loginReply {}",loginReply);
         if(loginReply == null) {
             throw new NullPointerException ("loginReply is null");
         }

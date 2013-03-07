@@ -56,7 +56,7 @@ public class SshCoreEngine  {
       writePacket( new SshCmsgStdinData( data , off , size ) ) ;
    }
    public void finish( int reason ) throws IOException {
-     _log.debug("Sending 'SshSmsgExitStatus' to client ");
+     _log.trace("Sending 'SshSmsgExitStatus' to client ");
      writePacket( new SshSmsgExitStatus( reason ) ) ;
    }
 
@@ -144,7 +144,7 @@ public class SshCoreEngine  {
 
       if(  cipherType == SSH_CIPHER_IDEA ){
 
-         _log.debug("Cipher is idea");
+         _log.trace("Cipher is idea");
 
          byte [] vector  = new byte[8] ;
          byte [] ideakey = new byte[16] ;
@@ -161,11 +161,11 @@ public class SshCoreEngine  {
                          vector ,
                          "cfb"               ) ;
 
-         _log.debug("Cipher created");
+         _log.trace("Cipher created");
 
       }else if(  cipherType == SSH_CIPHER_BLOWFISH ){
 
-         _log.debug("Cipher is blowfish");
+         _log.trace("Cipher is blowfish");
 
          byte [] vector  = new byte[8] ;
          byte [] ideakey = new byte[32] ;
@@ -175,7 +175,7 @@ public class SshCoreEngine  {
          System.arraycopy( sessionKey, 0 ,ideakey , 0 , ideakey.length ) ;
 
          //   vector is all zero
-         _log.debug("key: {}", byteToHexString(ideakey));
+         _log.trace("key: {}", byteToHexString(ideakey));
 
          inCipher  = new StreamFromBlockCipher(
                          new Jblowfish( ideakey ) ,
@@ -186,11 +186,11 @@ public class SshCoreEngine  {
                          vector ,
                          "cbc"               ) ;
 
-         _log.debug("Ciphers created");
+         _log.trace("Ciphers created");
 
       }else if(  cipherType == SSH_CIPHER_DES ){
 
-         _log.debug("Cipher is des");
+         _log.trace("Cipher is des");
 
          byte [] vector  = new byte[8] ;
          byte [] ideakey = new byte[8] ;
@@ -208,7 +208,7 @@ public class SshCoreEngine  {
                          vector ,
                          "cbc"               ) ;
 
-         _log.debug("Ciphers created");
+         _log.trace("Ciphers created");
 
       }else{
          _log.error("Cipher not excepted (exit) {}", cipherType);

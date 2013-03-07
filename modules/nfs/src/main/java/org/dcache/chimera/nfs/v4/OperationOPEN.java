@@ -70,7 +70,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                 }
 
                 client.updateLeaseTime();
-                _log.debug("open request form clientid: {}, owner: {}",
+                _log.trace("open request form clientid: {}, owner: {}",
                         client, new String(_args.opopen.owner.value.owner));
             } else {
                 client = context.getSession().getClient();
@@ -93,7 +93,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                     }
 
                     String name = NameFilter.convert(_args.opopen.claim.file.value.value.value);
-                    _log.debug("regular open for : {}", name);
+                    _log.trace("regular open for : {}", name);
 
                     FsInode inode;
                     if (_args.opopen.openhow.opentype == opentype4.OPEN4_CREATE) {
@@ -110,7 +110,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                                 throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
                             }
 
-                            _log.debug("Creating a new file: {}", name);
+                            _log.trace("Creating a new file: {}", name);
                             inode = context.currentInode().create(name, context.getUser().getUID(),
                                     context.getUser().getGID(), 0600);
 
@@ -131,14 +131,14 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
                             inode = context.currentInode().inodeOf(name);
 
-                            _log.debug("Opening existing file: {}", name);
+                            _log.trace("Opening existing file: {}", name);
 
                             _log.trace("Check permission");
                             // check file permissions
                             Stat fileStat = inode.statCache();
-                            _log.debug("UID  : {}", fileStat.getUid());
-                            _log.debug("GID  : {}", fileStat.getGid());
-                            _log.debug("Mode : 0{}", Integer.toOctalString(fileStat.getMode() & 0777));
+                            _log.trace("UID  : {}", fileStat.getUid());
+                            _log.trace("GID  : {}", fileStat.getGid());
+                            _log.trace("Mode : 0{}", Integer.toOctalString(fileStat.getMode() & 0777));
                             UnixAcl fileAcl = new UnixAcl(fileStat.getUid(), fileStat.getGid(), fileStat.getMode() & 0777);
                             if (!context.getAclHandler().isAllowed(fileAcl, context.getUser(), AclHandler.ACL_WRITE)) {
                                 throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
@@ -170,7 +170,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
                     break;
                 case open_claim_type4.CLAIM_PREVIOUS:
-                    _log.debug("open by Inode for : {}", context.currentInode());
+                    _log.trace("open by Inode for : {}", context.currentInode());
                     break;
                 case open_claim_type4.CLAIM_DELEGATE_CUR:
                     break;
@@ -196,18 +196,18 @@ public class OperationOPEN extends AbstractNFSv4Operation {
             NFS4State nfs4state = client.createState();
             res.resok4.stateid = nfs4state.stateid();
 
-            _log.debug("New stateID: {}", nfs4state.stateid());
+            _log.trace("New stateID: {}", nfs4state.stateid());
 
             res.status = nfsstat.NFS_OK;
 
         } catch (ChimeraNFSException he) {
-            _log.debug("OPEN:", he.getMessage());
+            _log.trace("OPEN:", he.getMessage());
             res.status = he.getStatus();
         } catch (FileExistsChimeraFsException e) {
-            _log.debug("OPEN: {}", e.getMessage());
+            _log.trace("OPEN: {}", e.getMessage());
             res.status = nfsstat.NFSERR_EXIST;
         } catch (FileNotFoundHimeraFsException fnf) {
-            _log.debug("OPEN: {}", fnf.getMessage());
+            _log.trace("OPEN: {}", fnf.getMessage());
             res.status = nfsstat.NFSERR_NOENT;
         } catch (Exception hfe) {
             _log.error("OPEN:", hfe);

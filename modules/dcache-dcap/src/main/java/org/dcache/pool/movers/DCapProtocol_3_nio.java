@@ -156,11 +156,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             while(newEof > _spaceAllocated){
                 _status = "WaitingForSpace("+_allocationSpace+")";
-                _log.debug("Allocating new space : {}", _allocationSpace);
-                _logSpaceAllocation.debug("ALLOC: {} : {}", _pnfsId, _allocationSpace);
+                _log.trace("Allocating new space : {}", _allocationSpace);
+                _logSpaceAllocation.trace("ALLOC: {} : {}", _pnfsId, _allocationSpace);
                 _allocator.allocate(_allocationSpace);
                 _spaceAllocated += _allocationSpace;
-                _log.debug("Allocated new space : {}", _allocationSpace);
+                _log.trace("Allocated new space : {}", _allocationSpace);
                 _status = "";
             }
         }
@@ -235,7 +235,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         _args    = _cell.getArgs();
         _context = _cell.getDomainContext();
         //
-        _log.info("DCapProtocol_3 (nio) created $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $");
+        _log.debug("DCapProtocol_3 (nio) created $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $");
         //
         // we are created for each request. So our data
         // is not shared.
@@ -250,8 +250,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                                      getParameterInt("maxRecvBufferSize", _maxBufferSize.getRecvBufferSize()),
                                      getParameterInt("maxIoBufferSize"  , _maxBufferSize.getIoBufferSize())
                                     );
-        _log.info("Setup : Defaults Buffer Sizes  : {}", _defaultBufferSize);
-        _log.info("Setup : Max Buffer Sizes       : {}", _maxBufferSize);
+        _log.debug("Setup : Defaults Buffer Sizes  : {}", _defaultBufferSize);
+        _log.debug("Setup : Max Buffer Sizes       : {}", _maxBufferSize);
 
     }
     private synchronized int getParameterInt(String name, int defaultValue){
@@ -310,10 +310,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 long allocSpace = Long.parseLong(allocation);
                 if(allocSpace <= 0) {
                     // negative allocation requested....Ignoring
-                    _log.info("Options : alloc-space = {} ....Ignoring", allocSpace);
+                    _log.debug("Options : alloc-space = {} ....Ignoring", allocSpace);
                 }else{
                     _spaceMonitorHandler.setAllocationSpace(allocSpace);
-                    _log.info("Options : alloc-space = {}", allocSpace);
+                    _log.debug("Options : alloc-space = {}", allocSpace);
                 }
             }
         }catch(NumberFormatException e){ /* bad values are ignored */}
@@ -324,10 +324,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _ioError = Long.parseLong(io);
             }
         }catch(NumberFormatException e){ /* bad values are ignored */}
-        _log.info("ioError = {}", _ioError);
+        _log.debug("ioError = {}", _ioError);
 //        gets the buffervalues of the storageInfo keys
         MoverIoBuffer bufferSize = prepareBufferSize(storage);
-        _log.info("Client : Buffer Sizes : {}", bufferSize);
+        _log.debug("Client : Buffer Sizes : {}", bufferSize);
 //        allocates the _bigBuffer
         initialiseBuffer(bufferSize);
 
@@ -356,12 +356,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             socketChannel.connect(dcapProtocolInfo.getSocketAddress());
 
             if (_logSocketIO.isDebugEnabled()) {
-                _logSocketIO.debug("Socket OPEN remote = {}:{} local = {}:{}", socket.getInetAddress(), socket.getPort(),
+                _logSocketIO.trace("Socket OPEN remote = {}:{} local = {}:{}", socket.getInetAddress(), socket.getPort(),
                                    socket.getLocalAddress(), socket.getLocalPort());
             }
-            _log.info("Using : Buffer Sizes (send/recv/io) : {}/{}/{}", socket.getSendBufferSize(), socket.getReceiveBufferSize(),
+            _log.debug("Using : Buffer Sizes (send/recv/io) : {}/{}/{}", socket.getSendBufferSize(), socket.getReceiveBufferSize(),
                       _bigBuffer.capacity());
-            _log.info("Connected to {}", dcapProtocolInfo.getSocketAddress());
+            _log.debug("Connected to {}", dcapProtocolInfo.getSocketAddress());
 
             //
             // send the sessionId and our (for now) 0 byte security challenge.
@@ -384,7 +384,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<>("pool",
                     socketAddress, challenge);
             msg.setId(dcapProtocolInfo.getSessionId());
-            _log.info("waiting for client to connect ({}:{})",
+            _log.debug("waiting for client to connect ({}:{})",
                       localAddress, pcp.getLocalPort());
 
             CellPath cellpath = dcapProtocolInfo.door();
@@ -426,10 +426,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                     requestBlock.read(socketChannel);
 
-                    _log.debug("Request Block : {}", requestBlock);
+                    _log.trace("Request Block : {}", requestBlock);
 
                 }catch(EOFException eofe){
-                    _log.debug("Dataconnection closed by peer : {}", eofe.toString());
+                    _log.trace("Dataconnection closed by peer : {}", eofe.toString());
                     throw eofe;
                 }catch(BufferUnderflowException bue){
                     throw new
@@ -497,7 +497,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                     long blockSize = requestBlock.nextLong();
 
-                    _log.debug("READ byte={}", blockSize);
+                    _log.trace("READ byte={}", blockSize);
 
                     if(_io_ok){
 
@@ -670,7 +670,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     try{
                         long size     = fileChannel.position();
                         long location = fileChannel.size();
-                        _log.debug("LOCATE : size={};position={}", size, location);
+                        _log.trace("LOCATE : size={};position={}", size, location);
                         cntOut.writeACK(location, size);
                         socketChannel.write(cntOut.buffer());
                     }catch(Exception e){
@@ -733,7 +733,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             try{
            	if(_logSocketIO.isDebugEnabled()) {
-                    _logSocketIO.debug("Socket CLOSE remote = " + socketChannel.socket().getInetAddress() + ":" + socketChannel.socket().getPort() +
+                    _logSocketIO.trace("Socket CLOSE remote = " + socketChannel.socket().getInetAddress() + ":" + socketChannel.socket().getPort() +
                                        " local = " + socketChannel.socket().getLocalAddress() + ":" + socketChannel.socket().getLocalPort());
            	}
 
@@ -746,7 +746,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _transferStarted;
             dcapProtocolInfo.setTransferTime(_transferTime);
 
-            _log.info("(Transfer finished : {} bytes in {} seconds) ",
+            _log.debug("(Transfer finished : {} bytes in {} seconds) ",
                     _bytesTransferred, _transferTime/1000);
 
             //
@@ -781,7 +781,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         socketChannel.write(cntOut.buffer());
 
         int blocks = requestBLock.nextInt();
-        _log.info("READV: {} to read", blocks);
+        _log.debug("READV: {} to read", blocks);
         final int maxBuffer = _bigBuffer.capacity() - 4;
         for(int i = 0; i < blocks; i++) {
 
@@ -790,7 +790,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             int count = requestBLock.nextInt();
             int len = count;
 
-            _log.info("READV: offset/len: {}/{}", offset, count);
+            _log.debug("READV: offset/len: {}/{}", offset, count);
 
             while(count > 0) {
 
@@ -810,7 +810,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                 _bigBuffer.flip();
                 _bigBuffer.putInt(rc).rewind();
-                _log.info("READV: sending: {} bytes", _bigBuffer.limit());
+                _log.debug("READV: sending: {} bytes", _bigBuffer.limit());
                 socketChannel.write(_bigBuffer);
 
                 count -= rc;
@@ -868,7 +868,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             case DCapConstants.IOCMD_SEEK_SET :
 
-                _log.debug("SEEK {} SEEK_SET", offset);
+                _log.trace("SEEK {} SEEK_SET", offset);
                 //
                 // this should reset the io state
                 //
@@ -882,13 +882,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             case DCapConstants.IOCMD_SEEK_CURRENT :
 
-                _log.debug("SEEK {} SEEK_CURRENT", offset);
+                _log.trace("SEEK {} SEEK_CURRENT", offset);
                 newOffset = position + offset;
 
                 break;
             case DCapConstants.IOCMD_SEEK_END :
 
-                _log.debug("SEEK {} SEEK_END", offset);
+                _log.trace("SEEK {} SEEK_END", offset);
                 newOffset = eofSize + offset;
 
                 break;
@@ -958,7 +958,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             _bigBuffer.rewind();
 
             rest = _bigBuffer.getInt();
-            _log.debug("Next data block : {} bytes", rest);
+            _log.trace("Next data block : {} bytes", rest);
             //
             // if there is a space monitor, we use it
             //
@@ -1017,7 +1017,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             }
             _spaceMonitorHandler.newFilePosition(position + bytesAdded);
 
-            _log.debug("Block Done");
+            _log.trace("Block Done");
         }
         _status = "Done";
 

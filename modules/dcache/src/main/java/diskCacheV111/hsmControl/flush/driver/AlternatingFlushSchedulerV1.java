@@ -222,7 +222,7 @@ import dmg.util.CommandInterpreter;
          public void poolIoModeUpdated( Pool ip , boolean newIsReadOnly ){
 
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode " + newIsReadOnly);
+                _log.debug("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode " + newIsReadOnly);
             }
             //
             // new pool mode arrived, in wrong state
@@ -255,7 +255,7 @@ import dmg.util.CommandInterpreter;
                  }
              }
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode total=" + total + ";rdOnly=" + modeOk);
+                _log.debug("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode total=" + total + ";rdOnly=" + modeOk);
             }
             //
             // not yet
@@ -270,7 +270,7 @@ import dmg.util.CommandInterpreter;
                // all pools are readyOnly; flush them all.
                //
                if(_parameter._p_poolset) {
-                   _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Flushing all");
+                   _log.debug("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Flushing all");
                }
                int flushed = 0 ;
                 for (Object o : _poolMap.values()) {
@@ -283,18 +283,18 @@ import dmg.util.CommandInterpreter;
                 }
                if( flushed > 0 ){
                   if(_parameter._p_poolset) {
-                      _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; flushed " + flushed + " pools");
+                      _log.debug("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; flushed " + flushed + " pools");
                   }
                   newState( PS_WAITING_FOR_FLUSH_DONE ) ;
                }else{
                   if(_parameter._p_poolset) {
-                      _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; nothing to flush; switching back to read/write");
+                      _log.debug("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; nothing to flush; switching back to read/write");
                   }
                   switchToNewPoolMode(false);
                }
             }else{
                if(_parameter._p_poolset) {
-                   _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Switching back to IDLE");
+                   _log.debug("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Switching back to IDLE");
                }
 
                newState( PS_IDLE ) ;
@@ -303,7 +303,7 @@ import dmg.util.CommandInterpreter;
          public boolean inProgress(){ return _progressState != 0 ; }
          public void flushingDone( Pool ip  , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") flushingDone");
+                _log.debug("PROGRESS-H(" + _name + "/" + ip._name + ") flushingDone");
             }
             //
             // check if all are done
@@ -321,7 +321,7 @@ import dmg.util.CommandInterpreter;
                  }
              }
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") flushing done : total=" + total + ";flushDone=" + flushDone);
+                _log.debug("PROGRESS-H(" + _name + "/" + ip._name + ") flushing done : total=" + total + ";flushDone=" + flushDone);
             }
             if( flushDone < total ) {
                 return;
@@ -330,7 +330,7 @@ import dmg.util.CommandInterpreter;
          }
          private void flushAll(){
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + ") flush all; switching to readOnly");
+                _log.debug("PROGRESS-H(" + _name + ") flush all; switching to readOnly");
             }
             switchToNewPoolMode(true);
          }
@@ -379,7 +379,7 @@ import dmg.util.CommandInterpreter;
 
 
      public AlternatingFlushSchedulerV1( CellAdapter cell , HsmFlushControlCore core ){
-         _log.info("AlternateFlush started");
+         _log.debug("AlternateFlush started");
          _core        = core ;
          _interpreter = new CommandInterpreter( this ) ;
      }
@@ -390,7 +390,7 @@ import dmg.util.CommandInterpreter;
      @Override
      public void init(){
          if(_parameter._p_events) {
-             _log.info("EVENT : Initiating ...");
+             _log.debug("EVENT : Initiating ...");
          }
 
          Args args = _core.getDriverArgs() ;
@@ -398,13 +398,13 @@ import dmg.util.CommandInterpreter;
          // printout what we got from our master
          //
          for( int i = 0 ; i < args.argc() ; i++ ){
-             _log.info("    args "+i+" : "+args.argv(i)) ;
+             _log.debug("    args "+i+" : "+args.argv(i)) ;
          }
          for( int i = 0 ; i < args.optc() ; i++ ){
-             _log.info("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
+             _log.debug("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
          }
          for (Object o : _core.getConfiguredPools()) {
-             _log.info("    configured pool : " + (o).toString());
+             _log.debug("    configured pool : " + (o).toString());
          }
          //
          //  Walk through the already known pools, create our internal presentation
@@ -414,7 +414,7 @@ import dmg.util.CommandInterpreter;
 
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
              Pool ip = getInternalPool(pool);
-             _log.info("init : " + pool.getName() + " " + ip);
+             _log.debug("init : " + pool.getName() + " " + ip);
          }
          String tmp = args.getOpt("driver-config-file") ;
          if( tmp != null ) {
@@ -429,7 +429,7 @@ import dmg.util.CommandInterpreter;
      @Override
      public void propertiesUpdated( Map<String,Object> properties ){
          if(_parameter._p_events) {
-             _log.info("EVENT : propertiesUpdated : " + properties);
+             _log.debug("EVENT : propertiesUpdated : " + properties);
          }
         _parameter.propertiesUpdated( properties ) ;
      }
@@ -441,7 +441,7 @@ import dmg.util.CommandInterpreter;
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
          if(_parameter._p_events) {
-             _log.info("EVENT : poolIoModeUpdated : " + pool);
+             _log.debug("EVENT : poolIoModeUpdated : " + pool);
          }
 
          if( ! pool.isActive() ){
@@ -462,7 +462,7 @@ import dmg.util.CommandInterpreter;
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          if(_parameter._p_events) {
-             _log.info("EVENT : flushingDone : pool =" + poolName + ";class=" + storageClassName /* + "flushInfo="+flushInfo */);
+             _log.debug("EVENT : flushingDone : pool =" + poolName + ";class=" + storageClassName /* + "flushInfo="+flushInfo */);
          }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
@@ -489,7 +489,7 @@ import dmg.util.CommandInterpreter;
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
          if(_parameter._p_events) {
-             _log.info("EVENT : poolFlushInfoUpdated : " + pool.getName());
+             _log.debug("EVENT : poolFlushInfoUpdated : " + pool.getName());
          }
          //
          if( ! pool.isActive() ){
@@ -504,13 +504,13 @@ import dmg.util.CommandInterpreter;
      @Override
      public void reset(){
          if(_parameter._p_events) {
-             _log.info("EVENT : reset");
+             _log.debug("EVENT : reset");
          }
      }
      @Override
      public void timer(){
          if(_parameter._p_events) {
-             _log.info("EVENT : timer");
+             _log.debug("EVENT : timer");
          }
            //
            // check if the property file has been changed.
@@ -539,7 +539,7 @@ import dmg.util.CommandInterpreter;
      @Override
      public void command( Args args  ){
          if(_parameter._p_events) {
-             _log.info("EVENT : command : " + args);
+             _log.debug("EVENT : command : " + args);
          }
          try{
              Object reply = _interpreter.command( args ) ;
@@ -547,7 +547,7 @@ import dmg.util.CommandInterpreter;
                  throw new
                          Exception("Null pointer from command call");
              }
-             _log.info("Command returns : "+reply.toString() );
+             _log.debug("Command returns : "+reply.toString() );
          }catch(Exception ee ){
              _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
          }
@@ -555,14 +555,14 @@ import dmg.util.CommandInterpreter;
      @Override
      public void prepareUnload(){
          if(_parameter._p_events) {
-             _log.info("EVENT : Preparing unload (ignoring)");
+             _log.debug("EVENT : Preparing unload (ignoring)");
          }
      }
      @Override
      public void configuredPoolAdded( String poolName ){
 
          if(_parameter._p_events) {
-             _log.info("EVENT : Configured pool added : " + poolName);
+             _log.debug("EVENT : Configured pool added : " + poolName);
          }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
@@ -580,13 +580,13 @@ import dmg.util.CommandInterpreter;
      @Override
      public void poolSetupUpdated(){
          if(_parameter._p_events) {
-             _log.info("EVENT : Pool Setup updated (ignoring)");
+             _log.debug("EVENT : Pool Setup updated (ignoring)");
          }
      }
      @Override
      public void configuredPoolRemoved( String poolName ){
          if(_parameter._p_events) {
-             _log.info("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
+             _log.debug("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
          }
      }
      //-----------------------------------------------------------------------------------------
@@ -596,7 +596,7 @@ import dmg.util.CommandInterpreter;
      private void processPoolsetRules(){
 
          if(_parameter._p_rules) {
-             _log.info("RULES : Processing PoolSet Rules...");
+             _log.debug("RULES : Processing PoolSet Rules...");
          }
          int totalAvailable = 0 ;
          int totalReadOnly  = 0 ;
@@ -640,7 +640,7 @@ import dmg.util.CommandInterpreter;
 
          }
          if(_parameter._p_rules) {
-             _log.info("RULES : statistics : " +
+             _log.debug("RULES : statistics : " +
                      "total=" + totalAvailable +
                      ";readOnly=" + totalReadOnly +
                      ";flushing=" + totalFlushing +
@@ -650,26 +650,26 @@ import dmg.util.CommandInterpreter;
 
          if( candidates.size() == 0 ){
             if(_parameter._p_rules) {
-                _log.info("RULES : no candidates found");
+                _log.debug("RULES : no candidates found");
             }
             return ;
          }
          //if( totalReadOnly > (int)( (double)totalAvailable * _parameter._percentageToFlush ) ){
-         //   if(_parameter._p_rules)_log.info("RULES : too many pools ReadOnly ("+totalReadOnly+" out of "+totalAvailable+")") ;
+         //   if(_parameter._p_rules)_log.debug("RULES : too many pools ReadOnly ("+totalReadOnly+" out of "+totalAvailable+")") ;
          //   return ;
          //}
          // DEBUG
          if(_parameter._p_rules){
              for (Object candidate : candidates) {
                  Pool pp = (Pool) candidate;
-                 _log.info("RULES : weight of " + pp._name + " " + getPoolMetric(pp));
+                 _log.debug("RULES : weight of " + pp._name + " " + getPoolMetric(pp));
              }
          }
          Collections.sort( candidates , _poolComparator );
          //
          Pool ip = candidates.get(0);
          if(_parameter._p_rules) {
-             _log.info("RULES : weight of top " + ip._name + " " + getPoolMetric(ip));
+             _log.debug("RULES : weight of top " + ip._name + " " + getPoolMetric(ip));
          }
          //
          // step through all candidates and check if they would overbook the max number
@@ -682,7 +682,7 @@ import dmg.util.CommandInterpreter;
              PoolSet ps = pp.getParentPoolSet();
 
              if (_parameter._p_rules) {
-                 _log.info("RULES : checking " + pp._name + "/" + ps._name + " " + getPoolMetric(pp));
+                 _log.debug("RULES : checking " + pp._name + "/" + ps._name + " " + getPoolMetric(pp));
              }
 
              Collection<String> potentialRdOnlyPools = new HashSet<>(rdOnlyHash);
@@ -690,13 +690,13 @@ import dmg.util.CommandInterpreter;
                  potentialRdOnlyPools.add(o.toString());
              }
              if (_parameter._p_rules) {
-                 _log.info("RULES : potential rdOnlyPools : " + potentialRdOnlyPools);
+                 _log.debug("RULES : potential rdOnlyPools : " + potentialRdOnlyPools);
              }
              int total = potentialRdOnlyPools.size();
 
              if (total > (int) ((double) totalAvailable * _parameter._percentageToFlush)) {
                  if (_parameter._p_rules) {
-                     _log.info("RULES : " + ps._name + " would be too many pools ReadOnly (" + total + " out of " + totalAvailable + ")");
+                     _log.debug("RULES : " + ps._name + " would be too many pools ReadOnly (" + total + " out of " + totalAvailable + ")");
                  }
                  continue;
              }
@@ -706,13 +706,13 @@ import dmg.util.CommandInterpreter;
          }
          if( best == null){
             if(_parameter._p_rules) {
-                _log.info("RULES : no candidates found after all");
+                _log.debug("RULES : no candidates found after all");
             }
             return ;
          }
 
          if(_parameter._p_rules) {
-             _log.info("RULES : flushing poolset : " + best._name + " with pools " + best
+             _log.debug("RULES : flushing poolset : " + best._name + " with pools " + best
                      .keySet());
          }
 
@@ -773,17 +773,17 @@ import dmg.util.CommandInterpreter;
            for (Map.Entry<String, PoolSet> hostEntry : _hostMap.entrySet()) {
                String hostName = hostEntry.getKey();
                PoolSet hostMap = hostEntry.getValue();
-               _log.info(" >>" + hostName + "<<");
+               _log.debug(" >>" + hostName + "<<");
                for (Map.Entry<String, Pool> e : hostMap.entrySet()) {
                    String name = e.getKey();
-                   _log.info("     " + name + (extended ? e.getValue()
+                   _log.debug("     " + name + (extended ? e.getValue()
                            .toString() : ""));
                }
            }
        }else if( configuredView ){
            for (Object o : _core.getConfiguredPools()) {
                HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
-               _log.info("" + pool);
+               _log.debug("" + pool);
 
            }
 
@@ -827,7 +827,7 @@ import dmg.util.CommandInterpreter;
 
              long size = flush.getTotalPendingFileSize();
 
-             _log.info("flushPool : class = " + info
+             _log.debug("flushPool : class = " + info
                      .getName() + " size = " + size + " flushing = " + info
                      .isFlushing());
              //
@@ -835,7 +835,7 @@ import dmg.util.CommandInterpreter;
              //
              try {
                  if ((size > 0L) && !info.isFlushing()) {
-                     _log.info("flushPool : !!! flushing " + _parameter._flushAtOnce + " of " + pool
+                     _log.debug("flushPool : !!! flushing " + _parameter._flushAtOnce + " of " + pool
                              .getName() + " " + info.getName());
                      info.flush(_parameter._flushAtOnce);
                      flushing++;

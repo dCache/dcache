@@ -59,7 +59,7 @@ public class OperationSECINFO extends AbstractNFSv4Operation {
             context.clearCurrentInode();
             res.status = nfsstat.NFS_OK;
         } catch (ChimeraNFSException he) {
-            _log.debug("SECINFO:", he.getMessage());
+            _log.trace("SECINFO:", he.getMessage());
             res.status = he.getStatus();
         }
 

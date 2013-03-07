@@ -31,10 +31,10 @@ public class ExternalTask implements Callable<Integer>
 
             String error = run.getErrorString().trim();
             if (error.length() > 0) {
-                _log.info(String.format("Command '%s' returned %d, and emitted the following on stderr: %s",
+                _log.debug(String.format("Command '%s' returned %d, and emitted the following on stderr: %s",
                                         _command, run.getExitValue(), error));
             } else if (run.getExitValue() != 0) {
-                _log.info(String.format("Command '%s' returned %d",
+                _log.debug(String.format("Command '%s' returned %d",
                                         _command, run.getExitValue()));
             }
 

@@ -302,7 +302,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
 
             start();
         } catch (InterruptedException e) {
-            _logger.info("Cell initialisation was interrupted.");
+            _logger.debug("Cell initialisation was interrupted.");
             start();
             kill();
             throw e;
@@ -413,6 +413,11 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
         return getCellName();
     }
 
+    public void trace(String str)
+    {
+        _logger.trace(str);
+    }
+
     public void debug(String str)
     {
         _logger.debug(str);
@@ -420,12 +425,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
 
     public void debug(Throwable t)
     {
-        _logger.debug(t.getMessage());
-        StringWriter sw = new StringWriter();
-        t.printStackTrace(new PrintWriter(sw));
-        for (String s : sw.toString().split("\n")) {
-            _logger.debug(s);
-        }
+        _logger.debug(t.getMessage(), t);
     }
 
     public void info(String str)
@@ -460,33 +460,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
 
     public void fatal(Throwable t)
     {
-        _logger.error(t.getMessage());
-        StringWriter sw = new StringWriter();
-        t.printStackTrace(new PrintWriter(sw));
-        for (String s : sw.toString().split("\n")) {
-            _logger.error(s);
-        }
-    }
-
-    /** @deprecated */
-    @Deprecated
-    public void say(String s)
-    {
-        info(s);
-    }
-
-    /** @deprecated */
-    @Deprecated
-    public void esay(String s)
-    {
-        error(s);
-    }
-
-    /** @deprecated */
-    @Deprecated
-    public void esay(Throwable t)
-    {
-        error(t);
+        _logger.error(t.getMessage(), t);
     }
 
     /**
@@ -717,9 +691,9 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
                                 description = option.name();
                             }
                             if (unit.length() > 0) {
-                                info(description + " set to " + value + " " + unit);
+                                _logger.debug(description + " set to " + value + " " + unit);
                             } else {
-                                info(description + " set to " + value);
+                                _logger.debug(description + " set to " + value);
                             }
                         }
                     }

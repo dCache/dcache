@@ -216,14 +216,14 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
         AuthorizationRecord user_rec = null;
         if( _logAuth.isDebugEnabled() ) {
-                _logAuth.debug("authorize " + requestCredentialId + ":"+
+                _logAuth.trace("authorize " + requestCredentialId + ":"+
                     secureId+":"+
                     name+":" );
         }
 
         if(cache_lifetime>0) {
             if( _logAuth.isDebugEnabled() ) {
-                    _logAuth.debug("getting user mapping");
+                    _logAuth.trace("getting user mapping");
             }
 
 
@@ -232,12 +232,12 @@ public final class DCacheAuthorization implements SRMAuthorization {
               if(tUserRec != null ) {
                   AuthorizationRecord userRec = tUserRec.user_rec;
                   if(userRec != null ) {
-                     _logAuth.debug("cached tUserRec = "+userRec);
+                     _logAuth.trace("cached tUserRec = "+userRec);
                   } else {
-                      _logAuth.debug("cached tUserRec = null ");
+                      _logAuth.trace("cached tUserRec = null ");
                   }
               } else {
-                  _logAuth.debug("cached tUserRec = null ");
+                  _logAuth.trace("cached tUserRec = null ");
               }
           }
 
@@ -262,7 +262,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
             } while (persistent != null && !persistent.equals(user_rec));
 
             if (persistent == null) {
-                _logAuth.debug("auth object not found in database, persisting ");
+                _logAuth.trace("auth object not found in database, persisting ");
                 persistent = authRecordPersistenceManager.persist(user_rec);
                 if (!persistent.equals(user_rec)) {
                     _logAuth.error("Persisted authorization record is different from the original");
@@ -315,10 +315,10 @@ public final class DCacheAuthorization implements SRMAuthorization {
                 InetAddress remoteOrigin = InetAddress.getByName(remoteIP);
                 subject.getPrincipals().add(new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                                                       remoteOrigin));
-                _logAuth.debug("User connected from the following IP, setting as origin: {}.",
+                _logAuth.trace("User connected from the following IP, setting as origin: {}.",
                               remoteIP);
             } catch (UnknownHostException uhex) {
-                _logAuth.info("Could not add the remote-IP {} as an origin principal.",
+                _logAuth.debug("Could not add the remote-IP {} as an origin principal.",
                               remoteIP);
             }
 

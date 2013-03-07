@@ -57,7 +57,7 @@ public class PoolSelectionSetup extends BasePage {
     }
 
     private void addMarkup() {
-        _log.debug("addmarkup called");
+        _log.trace("addmarkup called");
         add(new FeedbackPanel("feedback"));
         add(new PartitonsLink("partitionsLink"));
         add(new PoolsLink("poolsLink"));
@@ -79,7 +79,7 @@ public class PoolSelectionSetup extends BasePage {
             _entityContainer = getPoolSelectionSetupService().getEntityContainer();
         } catch (PoolSelectionSetupServiceException ex) {
             error("No Data available yet, please reload page: " + ex.getMessage());
-            _log.debug("no Data: " + ex.getMessage());
+            _log.trace("no Data: " + ex.getMessage());
         }
     }
 
@@ -238,7 +238,7 @@ public class PoolSelectionSetup extends BasePage {
                 _results = resultPanel;
             } catch (PoolSelectionSetupServiceException e) {
                 this.error("failed to get Partitions: {}" + e.getMessage());
-                _log.debug("Exception while getting Partitions {}", e);
+                _log.trace("Exception while getting Partitions {}", e);
             }
         }
     }

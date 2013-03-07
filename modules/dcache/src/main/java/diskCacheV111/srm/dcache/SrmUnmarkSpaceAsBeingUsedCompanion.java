@@ -124,7 +124,7 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion {
     }
 
     public void success(CancelUse message) {
-        _log.debug("success");
+        _log.trace("success");
         callbacks.UseOfSpaceSpaceCanceled();
     }
 
@@ -140,7 +140,7 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion {
             String pnfPath,
             SrmCancelUseOfSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.debug(" SrmMarkSpaceAsBeingUsedCompanion.markSpace(" +
+        _log.trace(" SrmMarkSpaceAsBeingUsedCompanion.markSpace(" +
                    user +
                    " for spaceToken" + spaceToken +
                    " pnfsPath=" + pnfPath +

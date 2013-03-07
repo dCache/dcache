@@ -105,7 +105,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         String sqlStatementString = "SELECT ID FROM " + getFileRequestsTableName() +
         " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
-        logger.debug("executing statement: "+sqlStatementString);
+        logger.trace("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         Set<Long> utilset = new HashSet<>();
         while(fileIdsSet.next()) {

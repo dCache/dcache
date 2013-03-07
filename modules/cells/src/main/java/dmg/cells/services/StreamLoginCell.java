@@ -92,15 +92,15 @@ public class      StreamLoginCell
                   print( prompt() ) ;
                }
            }catch( IOException e ){
-              _log.info("EOF Exception in read line : "+e ) ;
+              _log.debug("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              _log.info("I/O Error in read line : "+e ) ;
+              _log.debug("I/O Error in read line : "+e ) ;
               break ;
            }
 
         }
-        _log.info( "EOS encountered" ) ;
+        _log.debug( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
 
@@ -109,7 +109,7 @@ public class      StreamLoginCell
   @Override
   public void cleanUp() {
 
-    _log.info("Clean up called");
+    _log.debug("Clean up called");
     println("");
     try {
         _out.close();
@@ -119,13 +119,13 @@ public class      StreamLoginCell
      _workerThread.interrupt() ;
      try {
          if (!_engine.getSocket().isClosed()) {
-             _log.info("Close socket");
+             _log.debug("Close socket");
              _engine.getSocket().close();
          }
      } catch (Exception ee) {
      }
 //     _readyGate.check() ;
-     _log.info( "finished" ) ;
+     _log.debug( "finished" ) ;
 
    }
   public void println( String str ){

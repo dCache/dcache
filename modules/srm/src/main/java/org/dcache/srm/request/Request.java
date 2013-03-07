@@ -160,7 +160,7 @@ public abstract class Request extends Job {
                 ?null
                 :TStatusCode.fromString(statusCodeString);
         this.user = user;
-        logger.debug("restored");
+        logger.trace("restored");
     }
 
 

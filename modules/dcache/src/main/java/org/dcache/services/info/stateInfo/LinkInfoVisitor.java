@@ -86,7 +86,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
      * @return a Mapping between a link's ID and the corresponding LinkInfo.
      */
     public static Map<String, LinkInfo> getDetails( StateExhibitor exhibitor) {
-        _log.debug( "Gathering link information.");
+        _log.trace( "Gathering link information.");
 
         LinkInfoVisitor visitor = new LinkInfoVisitor();
         exhibitor.visitState( visitor);
@@ -184,7 +184,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
             UNIT_TYPE_NAMES.containsKey( parentLastElement)) {
 
             if( _log.isDebugEnabled()) {
-                _log.debug("Adding pool " + listItem);
+                _log.trace("Adding pool " + listItem);
             }
 
             _thisLink.addUnit( UNIT_TYPE_NAMES.get( parentLastElement),
@@ -195,7 +195,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
         /** If we're looking at link.<link id>.pools.<listItem> */
         if( _thisLinkPoolsPath.isParentOf( path)) {
             if( _log.isDebugEnabled()) {
-                _log.debug("Adding pool " + listItem);
+                _log.trace("Adding pool " + listItem);
             }
 
             _thisLink.addPool( listItem);
@@ -205,7 +205,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
         /** If we're looking at link.<link id>.poolgroups.<listItem> */
         if( _thisLinkPoolgroupPath.isParentOf( path)) {
             if( _log.isDebugEnabled()) {
-                _log.debug("Adding poolgroup " + listItem);
+                _log.trace("Adding poolgroup " + listItem);
             }
 
             _thisLink.addPoolgroup( listItem);
@@ -216,7 +216,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
         /** If we're looking at link.<link id>.unitgroups.<listItem> */
         if( _thisLinkUnitgroupsPath.isParentOf( path)) {
             if( _log.isDebugEnabled()) {
-                _log.debug("Adding unitgroup " + listItem);
+                _log.trace("Adding unitgroup " + listItem);
             }
 
             _thisLink.addUnitgroup( listItem);

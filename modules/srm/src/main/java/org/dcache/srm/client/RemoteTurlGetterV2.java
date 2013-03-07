@@ -156,7 +156,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             logger.error("srmReleaseFiles return status is null");
             return;
         }
-        logger.debug("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
+        logger.trace("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
 
     }
 
@@ -164,10 +164,10 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     public  void getInitialRequest() throws SRMException
     {
         if(number_of_file_reqs == 0) {
-            logger.debug("number_of_file_reqs is 0, nothing to do");
+            logger.trace("number_of_file_reqs is 0, nothing to do");
             return;
         }
-        logger.debug("SURLs[0] is "+SURLs[0]);
+        logger.trace("SURLs[0] is "+SURLs[0]);
         try {
             SrmUrl srmUrl = new SrmUrl(SURLs[0]);
             srmv2 = new SRMClientV2(srmUrl,
@@ -215,7 +215,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     public void run() {
 
         if(number_of_file_reqs == 0) {
-            logger.debug("number_of_file_reqs is 0, nothing to do");
+            logger.trace("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -236,7 +236,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                         statusCode+" explanation="+status.getExplanation());
             }
             requestToken = srmPrepareToGetResponse.getRequestToken();
-            logger.debug(" srm returned requestToken = "+requestToken);
+            logger.trace(" srm returned requestToken = "+requestToken);
             ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus  =
                 srmPrepareToGetResponse.getArrayOfFileStatuses();
             if(arrayOfTGetRequestFileStatus == null  ) {
@@ -310,7 +310,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
 
                 if(pendingSurlsToIndex.isEmpty()) {
-                    logger.debug("no more pending transfers, breaking the loop");
+                    logger.trace("no more pending transfers, breaking the loop");
                     break;
                 }
                 // do not wait longer then 60 seconds
@@ -319,7 +319,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
                 try {
 
-                    logger.debug("sleeping "+estimatedWaitInSeconds+" seconds ...");
+                    logger.trace("sleeping "+estimatedWaitInSeconds+" seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 }
                 catch(InterruptedException ie) {
@@ -430,6 +430,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             logger.error("srmReleaseFiles return status is null");
             return;
         }
-        logger.debug("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
+        logger.trace("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
     }
 }

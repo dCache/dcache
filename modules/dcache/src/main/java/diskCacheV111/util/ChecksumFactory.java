@@ -200,7 +200,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
 
         Checksum checksum = create(digest.digest());
 
-        _log.debug("Computed checksum for {}, length {}, checksum {} in {} ms{}", file, sum, checksum,
+        _log.trace("Computed checksum for {}, length {}, checksum {} in {} ms{}", file, sum, checksum,
                    System.currentTimeMillis() - start, sum == 0 ? ""
                             : ", throughput " +
                               throughputAsString(sum, System.currentTimeMillis() - start) +

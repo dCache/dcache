@@ -31,7 +31,7 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
 		super.trigger( update, currentState, futureState);
 
 		if( _log.isInfoEnabled()) {
-                    _log.info("Watcher " + this.getClass()
+                    _log.debug("Watcher " + this.getClass()
                             .getSimpleName() + " triggered");
                 }
 
@@ -39,7 +39,7 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
 		SpaceInfo info = PoolSummaryVisitor.getDetails( futureState);
 
 		if( _log.isDebugEnabled()) {
-                    _log.debug("got summary: " + info.toString());
+                    _log.trace("got summary: " + info.toString());
                 }
 
 		// Add our new information as immortal data

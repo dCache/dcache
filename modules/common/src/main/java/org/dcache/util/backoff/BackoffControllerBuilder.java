@@ -105,7 +105,7 @@ public class BackoffControllerBuilder {
                 wait = backoffAlgorithm.getWaitDuration();
 
                 if (wait == IBackoffAlgorithm.NO_WAIT) {
-                    logger.debug("algorithm returned NO_WAIT");
+                    logger.trace("algorithm returned NO_WAIT");
                     break;
                 }
 

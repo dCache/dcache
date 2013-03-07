@@ -114,9 +114,9 @@ public class      TelnetLoginManager
   @Override
   public void cleanUp(){
       try {
-          _log.info("Trying to close serverSocket");
+          _log.debug("Trying to close serverSocket");
           _serverSocket.close();
-          _log.info("Trying serverSocket close returned");
+          _log.debug("Trying serverSocket close returned");
       } catch (Exception ee) {
           _log.warn("ignoring exception on telnetoutputstream.write {}", ee.toString());
       }
@@ -130,7 +130,7 @@ public class      TelnetLoginManager
             try{
                socket = _serverSocket.accept() ;
                _connectionRequestCounter ++ ;
-               _log.info( "Connection request from "+socket.getInetAddress() ) ;
+               _log.debug( "Connection request from "+socket.getInetAddress() ) ;
                Thread t = new Thread( this ) ;
                _connectionThreads.put( t , socket ) ;
                t.start() ;
@@ -152,14 +152,14 @@ public class      TelnetLoginManager
   public void acceptConnection( Socket socket ){
     Thread t = Thread.currentThread() ;
     try{
-       _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
+       _log.debug( "acceptThread ("+t+"): creating protocol engine" ) ;
        StreamEngine engine   ;
        engine = _opt_raw ?
                new DummyStreamEngine( socket ) :
                new TelnetStreamEngine( socket , this );
 
        String name = Subjects.getDisplayName(engine.getSubject());
-       _log.info( "acceptThread ("+t+
+       _log.debug( "acceptThread ("+t+
                      "): connection created for user "+name ) ;
        String cellName = "tn-"+name+"*" ;
 
@@ -210,7 +210,7 @@ public class      TelnetLoginManager
   //
    @Override
    public boolean isHostOk( InetAddress host ){
-      _log.info( "Request for host "+host+" ("+host.getHostName()+")" ) ;
+      _log.debug( "Request for host "+host+" ("+host.getHostName()+")" ) ;
       if( _opt_dummy ) {
           return true;
       }
@@ -221,12 +221,12 @@ public class      TelnetLoginManager
    }
    @Override
    public boolean isUserOk( InetAddress host , String user ){
-      _log.info( "Request for host "+host+" user "+user ) ;
+      _log.debug( "Request for host "+host+" user "+user ) ;
       return _opt_anyuser ;
    }
    @Override
    public boolean isPasswordOk( InetAddress host , String user , String passwd ){
-      _log.info( "Request for host "+host+" user "+user+" password "+passwd ) ;
+      _log.debug( "Request for host "+host+" user "+user+" password "+passwd ) ;
       return passwd.equals("elch") ? true : false ;
    }
 }

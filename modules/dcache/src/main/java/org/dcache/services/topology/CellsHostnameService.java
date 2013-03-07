@@ -38,11 +38,11 @@ public class CellsHostnameService implements HostnameService, CellMessageSender 
     public void updateHostnames() {
         CellDomainNode[] info = _topology.getInfoMap();
         if (info == null) {
-            _log.info("Cannot update Hostnames. Domains not known yet." +
+            _log.debug("Cannot update Hostnames. Domains not known yet." +
                     " Try running update first");
             return;
         }
-        _log.info("Hostnames update started");
+        _log.debug("Hostnames update started");
         SpreadAndWait spreader = new SpreadAndWait(_endpoint, _timeout);
         for (CellDomainNode domain : info) {
             spreader.send(createMessage(domain.getAddress()));
@@ -50,7 +50,7 @@ public class CellsHostnameService implements HostnameService, CellMessageSender 
         try {
             spreader.waitForReplies();
             buildHostnameList(spreader.getReplyList());
-            _log.info("Hostnames update finished");
+            _log.debug("Hostnames update finished");
         } catch (InterruptedException ex) {
         }
     }

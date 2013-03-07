@@ -97,7 +97,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     @Override
     public void run(){
         // HsmControlGetBfDetailsMsg
-        _log.info("Starting working thread");
+        _log.debug("Starting working thread");
         try{
             while( true ){
                 CellMessage msg = (CellMessage)_fifo.pop() ;
@@ -136,7 +136,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         }catch(Exception ee ){
             _log.warn("Got exception from run while : "+ee);
         }finally{
-            _log.info("Working thread finished");
+            _log.debug("Working thread finished");
         }
     }
     private Map<String, Object[]> _driverMap = new HashMap<>() ;
@@ -206,7 +206,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         }
 
         HsmControllable hc = (HsmControllable)values[1] ;
-        _log.info("Controller found for "+hsm+" -> "+values[0]);
+        _log.debug("Controller found for "+hsm+" -> "+values[0]);
         hc.getBfDetails( storageInfo );
 
     }

@@ -232,7 +232,7 @@ public class PnfsManagerV3
     {
         _cacheModificationRelay =
             Strings.isNullOrEmpty(path) ? null : new CellPath(path);
-        _log.info("CacheModificationRelay = {}",
+        _log.debug("CacheModificationRelay = {}",
                   (_cacheModificationRelay == null) ? "NONE" : _cacheModificationRelay.toString());
     }
 
@@ -241,7 +241,7 @@ public class PnfsManagerV3
     {
         _pnfsDeleteNotificationRelay =
             Strings.isNullOrEmpty(path) ? null : new CellPath(path);
-        _log.info("pnfsDeleteRelay = {}",
+        _log.debug("pnfsDeleteRelay = {}",
                   (_pnfsDeleteNotificationRelay == null) ? "NONE" : _pnfsDeleteNotificationRelay.toString());
     }
 
@@ -249,7 +249,7 @@ public class PnfsManagerV3
     public void setLogSlowThreshold(long threshold)
     {
         _logSlowThreshold = threshold;
-        _log.info("logSlowThreshold {}",
+        _log.debug("logSlowThreshold {}",
                   (_logSlowThreshold == THRESHOLD_DISABLED) ? "NONE" : String.valueOf(_logSlowThreshold));
     }
 
@@ -292,7 +292,7 @@ public class PnfsManagerV3
     public void init()
     {
         _fifos = new BlockingQueue[_threads * _threadGroups];
-        _log.info("Starting {} threads", _fifos.length);
+        _log.debug("Starting {} threads", _fifos.length);
         for (int i = 0; i < _fifos.length; i++) {
             if (_queueMaxSize > 0) {
                 _fifos[i] = new LinkedBlockingQueue<>(_queueMaxSize);
@@ -303,7 +303,7 @@ public class PnfsManagerV3
         }
 
         if (_cacheLocationThreads > 0) {
-            _log.info("Starting {} cache location threads", _cacheLocationThreads);
+            _log.debug("Starting {} cache location threads", _cacheLocationThreads);
             _locationFifos = new BlockingQueue[_cacheLocationThreads];
             for (int i = 0; i < _locationFifos.length; i++) {
                 _locationFifos[i] = new LinkedBlockingQueue<>();
@@ -941,7 +941,7 @@ public class PnfsManagerV3
         String flagName  = pnfsMessage.getFlagName() ;
         String value     = pnfsMessage.getValue() ;
         Subject subject = pnfsMessage.getSubject();
-        _log.info("update flag "+operation+" flag="+flagName+" value="+
+        _log.debug("update flag "+operation+" flag="+flagName+" value="+
                   value+" for "+pnfsId);
 
         try{
@@ -969,13 +969,13 @@ public class PnfsManagerV3
         FileAttributes attributes;
         switch (operation) {
         case SET:
-            _log.info("flags set " + pnfsId + " " + flagName + "=" + value);
+            _log.debug("flags set " + pnfsId + " " + flagName + "=" + value);
             attributes = new FileAttributes();
             attributes.setFlags(Collections.singletonMap(flagName, value));
             _nameSpaceProvider.setFileAttributes(subject, pnfsId, attributes);
             break;
         case SETNOOVERWRITE:
-            _log.info("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
+            _log.debug("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
             attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId, EnumSet.of(FileAttribute.FLAGS));
             String current = attributes.getFlags().get(flagName);
             if ((current == null) || (!current.equals(value))) {
@@ -986,10 +986,10 @@ public class PnfsManagerV3
         case GET:
             attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId, EnumSet.of(FileAttribute.FLAGS));
             String v = attributes.getFlags().get(flagName);
-            _log.info("flags ls " + pnfsId + " " + flagName + " -> " + v);
+            _log.debug("flags ls " + pnfsId + " " + flagName + " -> " + v);
             return v;
         case REMOVE:
-            _log.info("flags remove " + pnfsId + " " + flagName);
+            _log.debug("flags remove " + pnfsId + " " + flagName);
             _nameSpaceProvider.removeFileAttribute(subject, pnfsId, flagName);
             break;
         }
@@ -997,7 +997,7 @@ public class PnfsManagerV3
     }
 
     public void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage){
-        _log.info("addCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsMessage.getPnfsId());
+        _log.debug("addCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsMessage.getPnfsId());
         try {
             /* At this point, the file is no longer new and should
              * really have level 2 set. Otherwise we would not be able
@@ -1038,7 +1038,7 @@ public class PnfsManagerV3
 
     public void clearCacheLocation(PnfsClearCacheLocationMessage pnfsMessage){
         PnfsId pnfsId = pnfsMessage.getPnfsId();
-        _log.info("clearCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsId);
+        _log.debug("clearCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsId);
         try {
             checkMask(pnfsMessage);
             _cacheLocationProvider.clearCacheLocation(pnfsMessage.getSubject(),
@@ -1062,7 +1062,7 @@ public class PnfsManagerV3
         Subject subject = pnfsMessage.getSubject();
         try {
             PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            _log.info("get cache locations for "+pnfsId);
+            _log.debug("get cache locations for "+pnfsId);
 
             checkMask(pnfsMessage);
             pnfsMessage.setCacheLocations(_cacheLocationProvider.getCacheLocation(subject, pnfsId));
@@ -1083,7 +1083,7 @@ public class PnfsManagerV3
 
     public void createDirectory(PnfsCreateDirectoryMessage pnfsMessage){
         PnfsId pnfsId;
-        _log.info("create directory "+pnfsMessage.getPath());
+        _log.debug("create directory "+pnfsMessage.getPath());
         try {
             File file = new File(pnfsMessage.getPath());
             checkMask(pnfsMessage.getSubject(), file.getParent(),
@@ -1102,7 +1102,7 @@ public class PnfsManagerV3
             // We declare the request to be successful because
             // the createEntry seem to be ok.
             try{
-                _log.info( "Trying to get storageInfo for "+pnfsId) ;
+                _log.debug( "Trying to get storageInfo for "+pnfsId) ;
 
                 /* If we were allowed to create the entry above, then
                  * we also ought to be allowed to read it here. Hence
@@ -1131,7 +1131,7 @@ public class PnfsManagerV3
     public void createEntry(PnfsCreateEntryMessage pnfsMessage){
 
         PnfsId pnfsId;
-        _log.info("create entry "+pnfsMessage.getPath());
+        _log.debug("create entry "+pnfsMessage.getPath());
         try {
             File file = new File(pnfsMessage.getPath());
             checkMask(pnfsMessage.getSubject(), file.getParent(),
@@ -1151,7 +1151,7 @@ public class PnfsManagerV3
             // the createEntry seem to be ok.
 
             try{
-                _log.info( "Trying to get storageInfo for "+pnfsId) ;
+                _log.debug( "Trying to get storageInfo for "+pnfsId) ;
 
                 Set<FileAttribute> requested =
                     pnfsMessage.getRequestedAttributes();
@@ -1188,7 +1188,7 @@ public class PnfsManagerV3
         Subject subject = pnfsMessage.getSubject();
         try {
             PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            _log.info( "setStorageInfo : "+pnfsId ) ;
+            _log.debug( "setStorageInfo : "+pnfsId ) ;
 
             checkMask(pnfsMessage);
             _nameSpaceProvider.setStorageInfo(subject, pnfsId, pnfsMessage.getStorageInfo(), pnfsMessage.getAccessMode());
@@ -1209,7 +1209,7 @@ public class PnfsManagerV3
         try {
             PnfsId pnfsId = populatePnfsId(message);
             FileMetaData meta = message.getMetaData();
-            _log.info("setFileMetaData=" + meta + " for " + pnfsId);
+            _log.debug("setFileMetaData=" + meta + " for " + pnfsId);
 
             checkMask(message);
 
@@ -1286,7 +1286,7 @@ public class PnfsManagerV3
                                              "Path exists but is not of the expected type");
                 }
 
-                _log.info("delete PNFS entry for "+ path );
+                _log.debug("delete PNFS entry for "+ path );
                 _nameSpaceProvider.deleteEntry(subject, path);
             } else {
                 if (!isOfType(pnfsId, allowed)) {
@@ -1296,7 +1296,7 @@ public class PnfsManagerV3
 
                 checkMask(pnfsMessage);
 
-                _log.info("delete PNFS entry for "+ pnfsId );
+                _log.debug("delete PNFS entry for "+ pnfsId );
                 _nameSpaceProvider.deleteEntry(subject, pnfsId);
             }
 
@@ -1345,7 +1345,7 @@ public class PnfsManagerV3
             long   length = pnfsMessage.getLength();
             Subject subject = pnfsMessage.getSubject();
 
-            _log.info("Set length of " + pnfsId + " to " + length);
+            _log.debug("Set length of " + pnfsId + " to " + length);
 
             checkMask(pnfsMessage);
 
@@ -1374,7 +1374,7 @@ public class PnfsManagerV3
         try {
             PnfsId pnfsId = populatePnfsId(msg);
             String newName = msg.newName();
-            _log.info("rename " + pnfsId + " to new name : " + newName);
+            _log.debug("rename " + pnfsId + " to new name : " + newName);
             checkMask(msg);
             rename(msg.getSubject(), pnfsId, newName, msg.getOverwrite());
         } catch (CacheException e){
@@ -1390,7 +1390,7 @@ public class PnfsManagerV3
                         String newName, boolean overwrite)
         throws CacheException
     {
-        _log.info("Renaming " + pnfsId + " to " + newName );
+        _log.debug("Renaming " + pnfsId + " to " + newName );
         _nameSpaceProvider.renameEntry(subject, pnfsId, newName, overwrite);
     }
 
@@ -1398,7 +1398,7 @@ public class PnfsManagerV3
     private void removeByPnfsId(Subject subject, PnfsId pnfsId )
         throws CacheException
     {
-        _log.info("removeByPnfsId : "+pnfsId );
+        _log.debug("removeByPnfsId : "+pnfsId );
 
         _nameSpaceProvider.deleteEntry(subject, pnfsId);
     }
@@ -1422,10 +1422,10 @@ public class PnfsManagerV3
 
         try {
             if (globalPath == null) {
-                _log.info("map:  id2path for " + pnfsId);
+                _log.debug("map:  id2path for " + pnfsId);
                 pnfsMessage.setGlobalPath(pathfinder(subject, pnfsId));
             } else {
-                _log.info("map:  path2id for " + globalPath);
+                _log.debug("map:  path2id for " + globalPath);
                 pnfsMessage.setPnfsId(pathToPnfsid(subject, globalPath, shouldResolve));
             }
             checkMask(pnfsMessage);
@@ -1569,7 +1569,7 @@ public class PnfsManagerV3
         @Override
         public void run(){
 
-            _log.info("Thread <"+Thread.currentThread().getName()+"> started");
+            _log.debug("Thread <"+Thread.currentThread().getName()+"> started");
 
             boolean done = false;
             while( !done ){
@@ -1607,7 +1607,7 @@ public class PnfsManagerV3
                     CDC.clearMessageContext();
                 }
             }
-            _log.info("Thread <"+Thread.currentThread().getName()+"> finished");
+            _log.debug("Thread <"+Thread.currentThread().getName()+"> finished");
         }
 
         protected void fold(PnfsMessage message)
@@ -1624,7 +1624,7 @@ public class PnfsManagerV3
                     }
 
                     if (other.fold(message)) {
-                        _log.info("Folded {}", other.getClass().getSimpleName());
+                        _log.debug("Folded {}", other.getClass().getSimpleName());
                         _foldedCounters.incrementRequests(message.getClass());
 
                         i.remove();
@@ -1649,10 +1649,10 @@ public class PnfsManagerV3
         int group;
         if (pnfsId != null) {
             group = pnfsIdToThreadGroup(pnfsId);
-            _log.info("Using list queue [{}] {}", pnfsId, group);
+            _log.debug("Using list queue [{}] {}", pnfsId, group);
         } else if (path != null) {
             group = pathToThreadGroup(path);
-            _log.info("Using list queue [{}] {}", path, group);
+            _log.debug("Using list queue [{}] {}", path, group);
         } else {
             throw new InvalidMessageCacheException("Missing PNFS id and path");
         }
@@ -1683,14 +1683,14 @@ public class PnfsManagerV3
             if (pnfsId != null) {
                 index =
                     (int) (Math.abs((long) pnfsId.hashCode()) % _locationFifos.length);
-                _log.info("Using location thread [{}] {}", pnfsId, index);
+                _log.debug("Using location thread [{}] {}", pnfsId, index);
             } else if (path != null) {
                 index =
                     (int) (Math.abs((long) path.hashCode()) % _locationFifos.length);
-                _log.info("Using location thread [{}] {}", path, index);
+                _log.debug("Using location thread [{}] {}", path, index);
             } else {
                 index = _random.nextInt(_locationFifos.length);
-                _log.info("Using random location thread {}", index);
+                _log.debug("Using random location thread {}", index);
             }
             fifo = _locationFifos[index];
         } else {
@@ -1699,15 +1699,15 @@ public class PnfsManagerV3
                 index =
                     pnfsIdToThreadGroup(pnfsId) * _threads +
                     (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
-                _log.info("Using thread [{}] {}", pnfsId, index);
+                _log.debug("Using thread [{}] {}", pnfsId, index);
             } else if (path != null) {
                 index =
                     pathToThreadGroup(path) * _threads +
                     (int) (Math.abs((long) path.hashCode()) % _threads);
-                _log.info("Using thread [{}] {}", path, index);
+                _log.debug("Using thread [{}] {}", path, index);
             } else {
                 index = _random.nextInt(_fifos.length);
-                _log.info("Using random thread {}", index);
+                _log.debug("Using random thread {}", index);
             }
             fifo = _fifos[index];
         }
@@ -1811,7 +1811,7 @@ public class PnfsManagerV3
         if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold) {
             _log.warn(logMsg);
         } else {
-            _log.info(logMsg);
+            _log.debug(logMsg);
         }
 
 
@@ -1880,7 +1880,7 @@ public class PnfsManagerV3
                 if (db == null || db != id) {
                     String root = getDatabaseRoot(new File(path)).getPath();
                     _pathToDBCache.put(new FsPath(root), id);
-                    _log.info("Path cache updated: " + root + " -> " + id);
+                    _log.debug("Path cache updated: " + root + " -> " + id);
                 }
             }
         } catch (Exception e) {
@@ -1956,7 +1956,7 @@ public class PnfsManagerV3
             return db % _threadGroups;
         }
 
-        _log.info("Path cache miss for " + path);
+        _log.debug("Path cache miss for " + path);
 
         return MathUtils.absModulo(path.hashCode(), _threadGroups);
     }

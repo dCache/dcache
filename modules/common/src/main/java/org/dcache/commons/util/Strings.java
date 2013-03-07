@@ -41,7 +41,7 @@ public final class Strings {
      * zero length array of strings if the argument string is null
      */
     public static String[] splitArgumentString(String argumentString) {
-        LOGGER.debug("splitting argument string {}",argumentString);
+        LOGGER.trace("splitting argument string {}",argumentString);
         if(argumentString == null) {
             return ZERO_LENGTH_STRING_ARRAY;
         }
@@ -60,17 +60,17 @@ public final class Strings {
          if (regexMatcher.group(1) != null) {
                 // Add double-quoted string without the quotes
                 String groupMatch=  regexMatcher.group(1);
-                LOGGER.debug("first group matched [{}]",groupMatch);
+                LOGGER.trace("first group matched [{}]",groupMatch);
                 matchList.add(groupMatch);
             } else if (regexMatcher.group(2) != null) {
                 // Add single-quoted string without the quotes
                 String groupMatch=  regexMatcher.group(2);
-                LOGGER.debug("second group matched [{}]",groupMatch);
+                LOGGER.trace("second group matched [{}]",groupMatch);
                 matchList.add(groupMatch);
             } else if (regexMatcher.group(3) != null) {
                 //everything else
                 String groupMatch=  regexMatcher.group(3);
-                LOGGER.debug("third group matched [{}]",groupMatch);
+                LOGGER.trace("third group matched [{}]",groupMatch);
                 matchList.add(groupMatch);
             }
         }

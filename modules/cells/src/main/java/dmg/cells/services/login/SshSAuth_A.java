@@ -56,7 +56,7 @@ public class       SshSAuth_A
 
      SshRsaKey   key =  (SshRsaKey)sshContext.get( keyName ) ;
 
-     _log.info( "Auth : Request for "+keyName+(key==null?" Failed":" o.k.") ) ;
+     _log.debug( "Auth : Request for "+keyName+(key==null?" Failed":" o.k.") ) ;
      return key ;
   }
   @Override
@@ -69,18 +69,18 @@ public class       SshSAuth_A
   }
   @Override
   public SshSharedKey  getSharedKey( InetAddress host , String keyName ){
-     _log.info( "Auth : Request for Shared Key denied" ) ;
+     _log.debug( "Auth : Request for Shared Key denied" ) ;
      return null ;
   }
 
   @Override
   public boolean   authUser( InetAddress addr, String user ){
-     _log.info( "Auth : User Request for user "+user+" host "+addr+" denied" ) ;
+     _log.debug( "Auth : User Request for user "+user+" host "+addr+" denied" ) ;
      return false ;
   }
   @Override
   public boolean   authRhosts( InetAddress addr, String user ){
-     _log.info( "Auth : Rhost Request for user "+user+" host "+addr+" denied" ) ;
+     _log.debug( "Auth : Rhost Request for user "+user+" host "+addr+" denied" ) ;
      return false ;
   }
 
@@ -89,7 +89,7 @@ public class       SshSAuth_A
                                 String user,
                                 String password             ){
 
-     _log.info( "Auth : Password Request for user "+user+" host "+addr ) ;
+     _log.debug( "Auth : Password Request for user "+user+" host "+addr ) ;
      Map<String,Object> sshContext =
          (Map<String,Object>) _nucleus.getDomainContext().get("Ssh");
      if( sshContext == null ){
@@ -117,7 +117,7 @@ public class       SshSAuth_A
         return false ;
      }else if( userObject instanceof String ){
         CellPath path = new CellPath( (String) userObject ) ;
-        _log.info( "Auth passwd : using : "+path ) ;
+        _log.debug( "Auth passwd : using : "+path ) ;
         Object [] request = new Object[5] ;
         request[0] = "request" ;
         request[1] = "unknown" ;
@@ -155,7 +155,7 @@ public class       SshSAuth_A
                _log.warn( "Not a response" ) ;
                return false ;
            }
-           _log.info( "Response for >"+user+"< : "+request[5] ) ;
+           _log.debug( "Response for >"+user+"< : "+request[5] ) ;
            return (Boolean) request[5];
         }
 
@@ -167,8 +167,8 @@ public class       SshSAuth_A
                                   InetAddress addr, String user){
      Map<String,Object> sshContext =
          (Map<String,Object>) _nucleus.getDomainContext().get("Ssh");
-     _log.info( "Serching Key in "+domain ) ;
-     _log.info( ""+modulusKey ) ;
+     _log.debug( "Serching Key in "+domain ) ;
+     _log.debug( ""+modulusKey ) ;
      if( sshContext == null ){
         _log.warn( "Auth ("+domain+
               ") : Ssh Context unavailable for request from User "+user+
@@ -186,7 +186,7 @@ public class       SshSAuth_A
 //       Enumeration e = container.elements() ;
 //       for( ; e.hasMoreElements() ; ){
 //           SshRsaKey key = (SshRsaKey)e.nextElement() ;
-//           _log.info( key.toString() ) ;
+//           _log.debug( key.toString() ) ;
 //       }
      }
      SshRsaKey key = container.findByModulus( modulusKey ) ;
@@ -213,13 +213,13 @@ public class       SshSAuth_A
      StringTokenizer st = new StringTokenizer( keyUser , "@" ) ;
      keyUser = st.nextToken() ;
      if( keyUser.equals(user) ){
-        _log.info( "Auth ("+domain+
+        _log.debug( "Auth ("+domain+
                       ") : Ssh key ("+key.getComment()+
                       ") found for user "+user+
                       " Host "+addr ) ;
         return key ;
      }else{
-        _log.info( "Auth ("+domain+
+        _log.debug( "Auth ("+domain+
                       ") : Ssh key mismatch "+keyUser+" <> "+user ) ;
         return null ;
      }
@@ -227,10 +227,10 @@ public class       SshSAuth_A
   @Override
   public SshRsaKey authRhostsRsa( InetAddress addr, String user ,
                                   String reqUser , SshRsaKey hostKey ){
-     _log.info( "Auth (authRhostsRsa) : host="+addr+
+     _log.debug( "Auth (authRhostsRsa) : host="+addr+
                    " user="+user+" reqUser="+reqUser ) ;
      if( ! user.equals( reqUser ) ){
-        _log.info( "Auth : user mismatch , proxy user not allowed" ) ;
+        _log.debug( "Auth : user mismatch , proxy user not allowed" ) ;
         return null ;
      }
      return getPublicKey( "knownHosts"  , hostKey , addr , user ) ;

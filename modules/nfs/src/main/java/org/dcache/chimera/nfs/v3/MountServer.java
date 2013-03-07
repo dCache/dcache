@@ -77,11 +77,11 @@ public class MountServer extends mount_protServerStub {
         File f = new File(arg1.value);
         String mountPoint = f.getAbsolutePath();
 
-        _log.debug("Mount request for: {}", mountPoint);
+        _log.trace("Mount request for: {}", mountPoint);
 
         if (!isAllowed(call$.getTransport().getRemoteSocketAddress().getAddress(), mountPoint)) {
             m.fhs_status = mountstat3.MNT3ERR_ACCES;
-            _log.info("Mount deny for: {}:{}", call$.getTransport().getRemoteSocketAddress().getHostName(), mountPoint);
+            _log.debug("Mount deny for: {}:{}", call$.getTransport().getRemoteSocketAddress().getHostName(), mountPoint);
             return m;
         }
 
@@ -91,9 +91,9 @@ public class MountServer extends mount_protServerStub {
 
             FsInode rootInode;
             try {
-                _log.debug("asking chimera for the root inode");
+                _log.trace("asking chimera for the root inode");
                 rootInode = _fs.path2inode(mountPoint);
-                _log.debug("root inode: {}", rootInode);
+                _log.trace("root inode: {}", rootInode);
             } catch (ChimeraFsException e1) {
                 throw new ChimeraNFSException(mountstat3.MNT3ERR_NOENT, "Path not found");
             }

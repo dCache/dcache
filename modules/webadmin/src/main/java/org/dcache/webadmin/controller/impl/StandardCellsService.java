@@ -32,14 +32,14 @@ public class StandardCellsService implements CellsService {
     public List<CellServicesBean> getCellServicesBeans()
     {
         Set<CellStatus> cellStatuses = getDomainsDAO().getCellStatuses();
-        _log.debug("returned cellStatuses: {}", cellStatuses.size());
+        _log.trace("returned cellStatuses: {}", cellStatuses.size());
         List<CellServicesBean> cells = new ArrayList<>();
 
         for (CellStatus currentCell : cellStatuses) {
             CellServicesBean newCellBean = createCellServiceBean(currentCell);
             cells.add(newCellBean);
         }
-        _log.debug("returned CellServicesBeans: {}", cells.size());
+        _log.trace("returned CellServicesBeans: {}", cells.size());
         Collections.sort(cells);
         return cells;
     }

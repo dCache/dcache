@@ -36,7 +36,7 @@ public class RestoreHandlerCollector extends Collector {
             List<RestoreInfo> agedList = filterOutNewRestores(restores);
             _pageCache.put(ContextPaths.RESTORE_INFOS, ImmutableSet.copyOf(agedList));
         } catch (CacheException ex) {
-            _log.debug("Could not retrieve restoreHandlerInfos from {}", _poolManagerName);
+            _log.trace("Could not retrieve restoreHandlerInfos from {}", _poolManagerName);
             _pageCache.remove(ContextPaths.RESTORE_INFOS);
         }
     }

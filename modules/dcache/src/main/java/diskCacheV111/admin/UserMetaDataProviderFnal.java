@@ -162,7 +162,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         answer.put("gid", String.valueOf(gid));
         answer.put("home", home);
 
-        _log.info("User "+userRole+" logged in");
+        _log.debug("User "+userRole+" logged in");
         return answer;
     }
 

@@ -27,7 +27,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
         if((spaceGroup == null || spaceGroup.equals(authRecord.getVoGroup())) &&
             (spaceRole == null || spaceRole.equals(authRecord.getVoRole()))) {
             if (logger.isDebugEnabled()) {
-                logger.debug("userGroup : "+authRecord.getVoGroup()+", userRole : "+
+                logger.trace("userGroup : "+authRecord.getVoGroup()+", userRole : "+
                              authRecord.getVoRole()+ " have permission to release ");
             }
             return;
@@ -52,7 +52,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
             if((spaceGroup == null || spaceGroup.equals(userGroup)) &&
                 (spaceRole == null || spaceRole.equals(userRole))) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
+                    logger.trace("userGroup : "+userGroup+", userRole : "+userRole+
                                  " have permission to release ");
                 }
                 return;
@@ -72,7 +72,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
             String userRole = authRecord.getVoRole();
             if (voInfo.match(userGroup,userRole)) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
+                    logger.trace("userGroup : "+userGroup+", userRole : "+userRole+
                                  " have permission to reserve ");
                 }
                 return new VOInfo(userGroup,userRole );
@@ -93,7 +93,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
                 }
                 if (voInfo.match(userGroup,userRole)) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
+                        logger.trace("userGroup : "+userGroup+", userRole : "+userRole+
                                      " have permission to reserve ");
                         return new VOInfo(userGroup,userRole );
                         }

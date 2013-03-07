@@ -87,7 +87,7 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
     @Override
 	public void process(Object msgPayload, long metricLifetime) {
 
-		_log.debug( "received msg.");
+		_log.trace( "received msg.");
 
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "received a reply message that isn't an array; type is " + msgPayload.getClass().getName());
@@ -107,7 +107,7 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
 
 		if( wellKnownCells.isEmpty() && localExports.isEmpty() &&
 		        domainHash.isEmpty()) {
-		    _log.debug("Message from domain {} with no well-known cells", domainName);
+		    _log.trace("Message from domain {} with no well-known cells", domainName);
 		    return;
 		}
 

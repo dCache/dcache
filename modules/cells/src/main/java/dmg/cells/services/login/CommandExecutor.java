@@ -33,7 +33,7 @@ public class      CommandExecutor extends CommandInterpreter {
        _user    = user ;
 
        for( int i = 0 ; i < args.argc() ; i++ ) {
-           _log.info("arg[" + i + "]=" + args.argv(i));
+           _log.debug("arg[" + i + "]=" + args.argv(i));
        }
 
        if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) ) {
@@ -47,9 +47,9 @@ public class      CommandExecutor extends CommandInterpreter {
 
           _cellShell = new CellShell( _nucleus ) ;
           addCommandListener( _cellShell ) ;
-          _log.info( "Shell installed" ) ;
+          _log.debug( "Shell installed" ) ;
        }else{
-          _log.info( "Installation of Shell not permitted" ) ;
+          _log.debug( "Installation of Shell not permitted" ) ;
        }
     }
 

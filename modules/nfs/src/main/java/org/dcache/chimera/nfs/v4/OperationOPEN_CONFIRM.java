@@ -57,7 +57,7 @@ public class OperationOPEN_CONFIRM extends AbstractNFSv4Operation {
             }
 
                 stateid4 stateid = _args.opopen_confirm.open_stateid;
-                _log.debug("confirmed stateID: {}", stateid );
+                _log.trace("confirmed stateID: {}", stateid );
 
             NFS4Client client = context.getStateHandler().getClientIdByStateId(stateid);
             if(client == null ) {
@@ -78,7 +78,7 @@ public class OperationOPEN_CONFIRM extends AbstractNFSv4Operation {
             res.status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException he) {
-            _log.debug("open_confirm failed: {}", he.getMessage());
+            _log.trace("open_confirm failed: {}", he.getMessage());
             res.status = he.getStatus();
         }catch(Exception e) {
         	_log.error("open_confirm failed:", e);

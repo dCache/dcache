@@ -104,7 +104,7 @@ public class ReflectionUtils
         } catch (IllegalAccessException e) {
             // Having a non-public getPnfsId is unfortunate, but quite
             // valid. Still we log it to better track the issue.
-            _log.debug("Failed to extract PNFS ID from object: "
+            _log.trace("Failed to extract PNFS ID from object: "
                        + e.getMessage(), e);
         } catch (InvocationTargetException e) {
             _log.error("Failed to extract PNFS ID from message: "

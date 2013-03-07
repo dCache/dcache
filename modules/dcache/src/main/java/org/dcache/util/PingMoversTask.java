@@ -48,14 +48,14 @@ public class PingMoversTask<T extends Transfer> implements Runnable
                 try {
                     if (transfer.hasMover()) {
                         transfer.queryMoverInfo();
-                        _log.debug("Mover {}/{} is alive",
+                        _log.trace("Mover {}/{} is alive",
                                    transfer.getPool(), transfer.getMoverId());
                     }
                 } catch (IllegalStateException e) {
                     // The transfer terminated before we could query it.
-                    _log.debug(e.toString());
+                    _log.trace(e.toString());
                 } catch (CacheException e) {
-                    _log.info("Failed to check status of mover {}/{}: {}", transfer.getPool(), transfer.getMoverId(),
+                    _log.debug("Failed to check status of mover {}/{}: {}", transfer.getPool(), transfer.getMoverId(),
                               e.getMessage());
                     if (missingLastTime.contains(transfer)) {
                         transfer.finished(CacheException.TIMEOUT,

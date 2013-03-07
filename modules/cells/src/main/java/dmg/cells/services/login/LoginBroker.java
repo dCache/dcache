@@ -155,7 +155,7 @@ public class LoginBroker
           Thread.sleep(60000);
         }
      }catch(Exception ee ){
-        _log.info("Worker interrupted due to : "+ee ) ;
+        _log.debug("Worker interrupted due to : "+ee ) ;
      }
   }
   @Override

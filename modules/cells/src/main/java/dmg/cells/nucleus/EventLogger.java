@@ -45,7 +45,7 @@ public class EventLogger
     static public void deliverBegin(CellMessage envelope)
     {
         if (deliver.isInfoEnabled()) {
-            deliver.info(String.format("event=%s uoid=%s lastuoid=%s session=%s message=%s source=%s destination=%s",
+            deliver.debug(String.format("event=%s uoid=%s lastuoid=%s session=%s message=%s source=%s destination=%s",
                                        DELIVER_BEGIN,
                                        envelope.getUOID(), envelope.getLastUOID(),
                                        toString(envelope.getSession()),
@@ -58,7 +58,7 @@ public class EventLogger
     static public void deliverEnd(Object session, UOID uoid)
     {
         if (deliver.isInfoEnabled()) {
-            deliver.info(String.format("event=%s uoid=%s session=%s",
+            deliver.debug(String.format("event=%s uoid=%s session=%s",
                                        DELIVER_END,
                                        uoid, toString(session)));
         }
@@ -75,7 +75,7 @@ public class EventLogger
                 source = new CellPath();
                 source.add(nucleus.getThisAddress());
             }
-            send.info(String.format("event=%s uoid=%s lastuoid=%s session=%s mode=%s message=%s source=%s destination=%s",
+            send.debug(String.format("event=%s uoid=%s lastuoid=%s session=%s mode=%s message=%s source=%s destination=%s",
                                     SEND_BEGIN,
                                     envelope.getUOID(), envelope.getLastUOID(),
                                     toString(envelope.getSession()),
@@ -89,7 +89,7 @@ public class EventLogger
     static public void sendEnd(CellMessage envelope)
     {
         if (send.isInfoEnabled() && !envelope.isStreamMode()) {
-            send.info(String.format("event=%s uoid=%s session=%s",
+            send.debug(String.format("event=%s uoid=%s session=%s",
                                     SEND_END, envelope.getUOID(),
                                     toString(envelope.getSession())));
         }
@@ -99,7 +99,7 @@ public class EventLogger
     {
         if (queue.isInfoEnabled() && event.getClass().equals(MessageEvent.class)) {
             CellMessage envelope = ((MessageEvent) event).getMessage();
-            queue.info(String.format("event=%s uoid=%s lastuoid=%s session=%s source=%s destination=%s",
+            queue.debug(String.format("event=%s uoid=%s lastuoid=%s session=%s source=%s destination=%s",
                                      QUEUE_BEGIN,
                                      envelope.getUOID(), envelope.getLastUOID(),
                                      toString(envelope.getSession()),
@@ -112,7 +112,7 @@ public class EventLogger
     {
         if (queue.isInfoEnabled() && event.getClass().equals(MessageEvent.class)) {
             CellMessage envelope = ((MessageEvent) event).getMessage();
-            queue.info(String.format("event=%s uoid=%s session=%s",
+            queue.debug(String.format("event=%s uoid=%s session=%s",
                                      QUEUE_END,
                                      envelope.getUOID(),
                                      toString(envelope.getSession())));

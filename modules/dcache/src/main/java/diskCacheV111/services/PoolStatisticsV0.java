@@ -391,28 +391,28 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           }
 
           try{
-              _log.info("Starting hourly run for : "+path);
+              _log.debug("Starting hourly run for : "+path);
 
               createHourlyRawFile( path , _calendar ) ;
 
-              _log.info("Hourly run finished for : "+path);
+              _log.debug("Hourly run finished for : "+path);
 
               File today = getTodayPath( _calendar ) ;
-              _log.info("Creating daily file : "+today);
+              _log.debug("Creating daily file : "+today);
 
               today.delete() ;
               copyFile( path , today ) ;
 
-              _log.info("Daily file done : "+today);
+              _log.debug("Daily file done : "+today);
 
               File yesterday = getYesterdayPath( _calendar ) ;
               if( yesterday.exists() ){
                  File diffFile  = getTodayDiffPath( _calendar ) ;
-                 _log.info("Starting diff run for : "+yesterday);
+                 _log.debug("Starting diff run for : "+yesterday);
 
                  createDiffFile( today , yesterday , diffFile ) ;
 
-                 _log.info("Finishing diff run for : "+diffFile);
+                 _log.debug("Finishing diff run for : "+diffFile);
               }
               if( _calendar.get(Calendar.HOUR_OF_DAY) == 23 ){
                  resetBillingStatistics() ;
@@ -428,7 +428,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           }
           try{
 
-              _log.info("Creating html tree");
+              _log.debug("Creating html tree");
               prepareDailyHtmlFiles(_calendar) ;
               if( _calendar.get(Calendar.HOUR_OF_DAY) == 23 ){
                  updateHtmlMonth(_calendar);
@@ -447,7 +447,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       if( task == _hourly ){
 
-         _log.info("Hourly ticker : "+ new Date() ) ;
+         _log.debug("Hourly ticker : "+ new Date() ) ;
 
          Calendar calendar = (Calendar)task.getCalendar().clone() ;
 
@@ -484,7 +484,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
               BufferedReader br = new BufferedReader( new FileReader( x ) ) ;
               try{
                   String line = br.readLine() ;
-//                  _log.info("DEBUG : "+i+" "+line);
+//                  _log.debug("DEBUG : "+i+" "+line);
                   if( ( line == null ) || ( line.length() < 12 ) ) {
                       continue;
                   }
@@ -728,13 +728,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                @Override
                public void run(){
                   try{
-                     _log.info("Starting internal Manual run");
+                     _log.debug("Starting internal Manual run");
                      synchronized( this ){ _recentPoolStatistics = null ; }
                       Map<String,Map<String,long[]>> map = createStatisticsMap() ;
                      synchronized( this ){ _recentPoolStatistics = map ; }
-                      _log.info("Finishing internal Manual run");
+                      _log.debug("Finishing internal Manual run");
                   }catch(Exception e){
-                     _log.info("Aborting internal Manual run "+e);
+                     _log.debug("Aborting internal Manual run "+e);
                   }
                }
             },
@@ -748,11 +748,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                @Override
                public void run(){
                   try{
-                     _log.info("Starting Manual run for file : "+file);
+                     _log.debug("Starting Manual run for file : "+file);
                      createHourlyRawFile( file , new GregorianCalendar() ) ;
-                     _log.info("Finishing Manual run for file : "+file);
+                     _log.debug("Finishing Manual run for file : "+file);
                   }catch(Exception e){
-                     _log.info("Aborting Manual run for file : "+file+" "+e);
+                     _log.debug("Aborting Manual run for file : "+file+" "+e);
                   }
                }
             },
@@ -1351,7 +1351,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        CellMessage m =
            new CellMessage( new CellPath("PoolManager") , GET_CELL_INFO ) ;
 
-       _log.info("getPoolRepositoryStatistics : asking PoolManager for cell info");
+       _log.debug("getPoolRepositoryStatistics : asking PoolManager for cell info");
        m = _nucleus.sendAndWait( m , 20000 ) ;
        if( m == null ) {
            throw new
@@ -1367,14 +1367,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        }
 
        PoolManagerCellInfo info = (PoolManagerCellInfo)o ;
-       _log.info("getPoolRepositoryStatistics :  PoolManager replied : {}", info);
+       _log.debug("getPoolRepositoryStatistics :  PoolManager replied : {}", info);
 
        for (Map.Entry<String,CellAddressCore> pool : info.getPoolMap().entrySet()) {
            CellAddressCore address = pool.getValue();
            m = new CellMessage(new CellPath(address), GET_REP_STATISTICS);
            try {
 
-               _log.info("getPoolRepositoryStatistics : asking {} for statistics", address);
+               _log.debug("getPoolRepositoryStatistics : asking {} for statistics", address);
                m = _nucleus.sendAndWait(m, 20000);
 
                if (m == null) {
@@ -1382,7 +1382,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                    continue;
                }
 
-               _log.info("getPoolRepositoryStatistics : {} replied : {}", address, m);
+               _log.debug("getPoolRepositoryStatistics : {} replied : {}", address, m);
 
                Object[] result = (Object[]) m.getMessageObject();
 
@@ -1391,7 +1391,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                    Object[] e = (Object[]) entry;
                    classMap.put((String) e[0], (long[]) e[1]);
                }
-               _log.info("getPoolRepositoryStatistics : {} replied with {}", address, classMap);
+               _log.debug("getPoolRepositoryStatistics : {} replied with {}", address, classMap);
                map.put(pool.getKey(), classMap);
 
            } catch (InterruptedException ie) {
@@ -1406,7 +1406,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    }
 
    private void resetBillingStatistics(){
-       _log.info("Resetting Billing statistics");
+       _log.debug("Resetting Billing statistics");
        CellMessage m =
            new CellMessage( new CellPath("billing") , RESET_POOL_STATISTICS ) ;
        try{
@@ -1446,7 +1446,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        CellMessage m =
            new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS ) ;
 
-       _log.info("getBillingStatistics : asking billing for generic pool statistics");
+       _log.debug("getBillingStatistics : asking billing for generic pool statistics");
        m = _nucleus.sendAndWait( m , 20000 ) ;
        if( m == null ) {
            throw new
@@ -1462,7 +1462,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        }
 
        Map<String,Map<String,long[]>> generic = (Map<String,Map<String,long[]>>) o;
-       _log.info("getBillingStatistics :  billing replied with "+generic);
+       _log.debug("getBillingStatistics :  billing replied with "+generic);
 
        Iterator<String> poolNames = generic.keySet().iterator() ;
 
@@ -1473,7 +1473,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           m = new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS+" "+poolName ) ;
           try{
 
-             _log.info("getBillingStatistics : asking billing for ["+poolName+"] statistics");
+             _log.debug("getBillingStatistics : asking billing for ["+poolName+"] statistics");
              m = _nucleus.sendAndWait( m , 20000 ) ;
 
              if( m == null ){
@@ -1482,7 +1482,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
              }
 
              Map<String,long[]> result = (Map<String,long[]>) m.getMessageObject() ;
-             _log.info("getBillingStatistics :  billing replied with "+result);
+             _log.debug("getBillingStatistics :  billing replied with "+result);
 
              map.put( poolName , result ) ;
 

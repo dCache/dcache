@@ -109,7 +109,7 @@ import dmg.util.CommandInterpreter;
      private final static int QUERY_ALL_POOLS_IO_MODE = 1 ;
 
      public AlternateFlush( CellAdapter cell , HsmFlushControlCore core ){
-         _log.info("AlternateFlush started");
+         _log.debug("AlternateFlush started");
          _core        = core ;
          _interpreter = new CommandInterpreter( this ) ;
      }
@@ -121,7 +121,7 @@ import dmg.util.CommandInterpreter;
      @Override
      public void init(){
          if(_evt) {
-             _log.info("EVENT : Initiating ...");
+             _log.debug("EVENT : Initiating ...");
          }
 
          Args args = _core.getDriverArgs() ;
@@ -129,13 +129,13 @@ import dmg.util.CommandInterpreter;
          // printout what we got from our master
          //
          for( int i = 0 ; i < args.argc() ; i++ ){
-             _log.info("    args "+i+" : "+args.argv(i)) ;
+             _log.debug("    args "+i+" : "+args.argv(i)) ;
          }
          for( int i = 0 ; i < args.optc() ; i++ ){
-             _log.info("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
+             _log.debug("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
          }
          for (Object pool : _core.getConfiguredPools()) {
-             _log.info("    configured pool : " + pool.toString());
+             _log.debug("    configured pool : " + pool.toString());
          }
          //
          //  reset the pool modes of all pools we are responsible for.
@@ -145,7 +145,7 @@ import dmg.util.CommandInterpreter;
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
              pool.setDriverHandle(new Pool(pool.getName(), pool));
              pool.setReadOnly(false);
-             _log.info("init : setting readonly=false : " + pool.getName());
+             _log.debug("init : setting readonly=false : " + pool.getName());
          }
 
      }
@@ -153,7 +153,7 @@ import dmg.util.CommandInterpreter;
      public void propertiesUpdated( Map<String,Object> properties ){
 
         if(_evt) {
-            _log.info("EVENT : propertiesUpdated : " + properties);
+            _log.debug("EVENT : propertiesUpdated : " + properties);
         }
 
         Set<String> keys = new HashSet<>( properties.keySet() ) ;
@@ -253,7 +253,7 @@ import dmg.util.CommandInterpreter;
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
          if(_evt) {
-             _log.info("EVENT : poolIoModeUpdated : " + pool);
+             _log.debug("EVENT : poolIoModeUpdated : " + pool);
          }
 
          Pool ip = getInternalPool( pool ) ;
@@ -265,7 +265,7 @@ import dmg.util.CommandInterpreter;
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          if(_evt) {
-             _log.info("EVENT : flushingDone : pool =" + poolName + ";class=" + storageClassName /* + "flushInfo="+flushInfo */);
+             _log.debug("EVENT : flushingDone : pool =" + poolName + ";class=" + storageClassName /* + "flushInfo="+flushInfo */);
          }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
@@ -281,12 +281,12 @@ import dmg.util.CommandInterpreter;
 
          if( ip.flushCounter <= 0 ){
              ip.flushCounter = 0 ;
-             _log.info("flushingDone : pool finished all flushing : "+poolName+" ; setting back to readWrite mode");
+             _log.debug("flushingDone : pool finished all flushing : "+poolName+" ; setting back to readWrite mode");
              pool.setReadOnly(false);
          }
      /*
         if( ! ip.isFlushing() ){
-             _log.info("flushingDone : pool finished all flushing : "+poolName+" ; setting back to readWrite mode");
+             _log.debug("flushingDone : pool finished all flushing : "+poolName+" ; setting back to readWrite mode");
              pool.setReadOnly(false);
         }
       */
@@ -295,13 +295,13 @@ import dmg.util.CommandInterpreter;
      @Override
      public void reset(){
          if(_evt) {
-             _log.info("EVENT : reset");
+             _log.debug("EVENT : reset");
          }
      }
      @Override
      public void timer(){
          if(_evt) {
-             _log.info("EVENT : timer");
+             _log.debug("EVENT : timer");
          }
          //
          //
@@ -317,7 +317,7 @@ import dmg.util.CommandInterpreter;
             }
             set.add( poolName ) ;
 
-            _log.info("timer : Good candidate to flush : "+poolName);
+            _log.debug("timer : Good candidate to flush : "+poolName);
 
             Pool ip = getInternalPool( pool ) ;
             if( ! ip.modeReady ) {
@@ -334,10 +334,10 @@ import dmg.util.CommandInterpreter;
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
          if(_evt) {
-             _log.info("EVENT : poolFlushInfoUpdated : " + pool.getName());
+             _log.debug("EVENT : poolFlushInfoUpdated : " + pool.getName());
          }
          if( ! pool.isActive() ){
-             _log.info( "poolFlushInfoUpdated : Pool : "+poolName+" inactive");
+             _log.debug( "poolFlushInfoUpdated : Pool : "+poolName+" inactive");
              return ;
          }
          //
@@ -352,7 +352,7 @@ import dmg.util.CommandInterpreter;
      @Override
      public void command( Args args  ){
          if(_evt) {
-             _log.info("EVENT : command : " + args);
+             _log.debug("EVENT : command : " + args);
          }
          try{
              Object reply = _interpreter.command( args ) ;
@@ -360,7 +360,7 @@ import dmg.util.CommandInterpreter;
                  throw new
                          Exception("Null pointer from command call");
              }
-             _log.info("Command returns : "+reply.toString() );
+             _log.debug("Command returns : "+reply.toString() );
          }catch(Exception ee ){
              _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
          }
@@ -368,14 +368,14 @@ import dmg.util.CommandInterpreter;
      @Override
      public void prepareUnload(){
          if(_evt) {
-             _log.info("EVENT : Preparing unload (ignoring)");
+             _log.debug("EVENT : Preparing unload (ignoring)");
          }
      }
      @Override
      public void configuredPoolAdded( String poolName ){
 
          if(_evt) {
-             _log.info("EVENT : Configured pool added : " + poolName);
+             _log.debug("EVENT : Configured pool added : " + poolName);
          }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
@@ -392,13 +392,13 @@ import dmg.util.CommandInterpreter;
      @Override
      public void poolSetupUpdated(){
          if(_evt) {
-             _log.info("EVENT : Pool Setup updated (ignoring)");
+             _log.debug("EVENT : Pool Setup updated (ignoring)");
          }
      }
      @Override
      public void configuredPoolRemoved( String poolName ){
          if(_evt) {
-             _log.info("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
+             _log.debug("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
          }
      }
      //-------------------------------------------------------------------------------------------
@@ -441,7 +441,7 @@ import dmg.util.CommandInterpreter;
 
              long size = flush.getTotalPendingFileSize();
 
-             _log.info("flushPool : class = " + info
+             _log.debug("flushPool : class = " + info
                      .getName() + " size = " + size + " flushing = " + info
                      .isFlushing());
              //
@@ -449,7 +449,7 @@ import dmg.util.CommandInterpreter;
              //
              try {
                  if ((size > 0L) && !info.isFlushing()) {
-                     _log.info("flushPool : !!! flushing " + pool
+                     _log.debug("flushPool : !!! flushing " + pool
                              .getName() + " " + info.getName());
                      info.flush(_flushAtOnce);
                      flushing++;
@@ -512,7 +512,7 @@ import dmg.util.CommandInterpreter;
 
          for (HsmFlushControlCore.Pool pool : pools) {
              if (_ntf) {
-                 _log.info("nextToFlush : checking pool " + pool);
+                 _log.debug("nextToFlush : checking pool " + pool);
              }
 
              if (!pool.isActive()) {
@@ -523,7 +523,7 @@ import dmg.util.CommandInterpreter;
 
              if (ip.isFlushing()) {
                  if (_ntf) {
-                     _log.info("nextToFlush : is already flushing " + pool
+                     _log.debug("nextToFlush : is already flushing " + pool
                              .getName());
                  }
              } else {
@@ -535,13 +535,13 @@ import dmg.util.CommandInterpreter;
          //
          if( list.size() < 2 ){
              if(_ntf) {
-                 _log.info("nextToFlush : currently not enough pools to write on (" + list
+                 _log.debug("nextToFlush : currently not enough pools to write on (" + list
                          .size() + ")");
              }
              return null ;
          }
          if(_ntf) {
-             _log.info("nextToFlush : possible candidates : " + list);
+             _log.debug("nextToFlush : possible candidates : " + list);
          }
          /**
            *  Get pool with highest pending file count and pool with highest
@@ -563,11 +563,11 @@ import dmg.util.CommandInterpreter;
              }
          }
          if(_ntf) {
-             _log.info("nextToFlush : highest percentage found for : " + poolWithHighestPercentage
+             _log.debug("nextToFlush : highest percentage found for : " + poolWithHighestPercentage
                      .pool.getName() + " (" + highestPercentage + ")");
          }
          if(_ntf) {
-             _log.info("nextToFlush : highest counter    found for : " + poolWithHighestCounter
+             _log.debug("nextToFlush : highest counter    found for : " + poolWithHighestCounter
                      .pool.getName() + " (" + highestCounter + ")");
          }
          if( highestPercentage > _percentageToFlush  ) {

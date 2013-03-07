@@ -405,7 +405,7 @@ public class WebAdminInterface extends WebApplication {
                         LogIn.signInWithCert(_logInService);
                         signedIn = true;
                     } catch (IllegalArgumentException | LogInServiceException e) {
-                        _log.debug("could not automatically authorize {}: {}",
+                        _log.trace("could not automatically authorize {}: {}",
                                    "using browser certificate", e.toString());
                     }
                 }
@@ -418,10 +418,10 @@ public class WebAdminInterface extends WebApplication {
                         new IRoleCheckingStrategy() {
                             @Override
                             public boolean hasAnyRole(Roles roles) {
-                                _log.debug("checking {}", roles.toString());
+                                _log.trace("checking {}", roles.toString());
                                 boolean hasAnyRoles = ((WebAdminInterfaceSession)
                                                 Session.get()).hasAnyRole(roles);
-                                _log.debug("results in: {}", hasAnyRoles);
+                                _log.trace("results in: {}", hasAnyRoles);
                                 return hasAnyRoles;
                             }
                         });

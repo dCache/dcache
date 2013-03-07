@@ -180,7 +180,7 @@ public class BillingInfoHistogramGenerator extends Thread {
     @Override
     public void run() {
         try {
-            logger.debug("initializing plotting ...");
+            logger.trace("initializing plotting ...");
             Properties properties = new Properties();
             ClassLoader classLoader
                 = Thread.currentThread().getContextClassLoader();
@@ -195,7 +195,7 @@ public class BillingInfoHistogramGenerator extends Thread {
             return;
         }
 
-        logger.debug("starting run ...");
+        logger.trace("starting run ...");
         setRunning(true);
 
         boolean[] isWrite = new boolean[] { false, true, false, true };
@@ -203,10 +203,10 @@ public class BillingInfoHistogramGenerator extends Thread {
 
         while (isRunning()) {
             try {
-                logger.debug("generating time frames ...");
+                logger.trace("generating time frames ...");
                 TimeFrame[] timeFrames = generateTimeFrames();
 
-                logger.debug("generating plots ...");
+                logger.trace("generating plots ...");
                 for (int tFrame = 0; tFrame < timeFrames.length; tFrame++) {
                     Date low = timeFrames[tFrame].getLow();
                     int type = 0;
@@ -230,7 +230,7 @@ public class BillingInfoHistogramGenerator extends Thread {
             }
 
             try {
-                logger.debug("sleeping ...");
+                logger.trace("sleeping ...");
                 Thread.sleep(timeout);
             } catch (final InterruptedException ignored) {
             }
@@ -292,7 +292,7 @@ public class BillingInfoHistogramGenerator extends Thread {
                 plot.addHistogram(pos, h);
             }
             plot.plot();
-            logger.debug("generateConnectionTimePlot completed for " + fileName);
+            logger.trace("generateConnectionTimePlot completed for " + fileName);
         } catch (Exception t) {
             logger.error("could not generate " + fileName + " for "
                             + timeFrame.getHigh(), t);
@@ -311,7 +311,7 @@ public class BillingInfoHistogramGenerator extends Thread {
                 plot.addHistogram(pos, h);
             }
             plot.plot();
-            logger.debug("generateHitsPlot completed for " + fileName);
+            logger.trace("generateHitsPlot completed for " + fileName);
         } catch (Exception t) {
             logger.error("could not generate " + fileName + " for "
                             + timeFrame.getHigh(), t);
@@ -323,18 +323,18 @@ public class BillingInfoHistogramGenerator extends Thread {
         try {
             ITimeFramePlot plot = factory.createPlot(fileName,
                             new String[] { title });
-            logger.debug("generateReadWritePlot created ITimeFramePlot for "
+            logger.trace("generateReadWritePlot created ITimeFramePlot for "
                             + fileName);
             ITimeFrameHistogram[] histogram = createReadWriteHistograms(
                             timeFrame, write, size);
-            logger.debug("generateReadWritePlot created histogram set for "
+            logger.trace("generateReadWritePlot created histogram set for "
                             + fileName);
             PlotGridPosition pos = new PlotGridPosition(0, 0);
             for (ITimeFrameHistogram h : histogram) {
                 plot.addHistogram(pos, h);
             }
             plot.plot();
-            logger.debug("generateReadWritePlot completed for " + fileName);
+            logger.trace("generateReadWritePlot completed for " + fileName);
         } catch (Exception t) {
             logger.error("could not generate " + fileName + " for "
                             + timeFrame.getHigh(), t);
@@ -348,7 +348,7 @@ public class BillingInfoHistogramGenerator extends Thread {
 
     private void initializeProperties(ClassLoader classLoader,
                     Properties properties) throws IOException {
-        logger.debug("initializeProperties ...");
+        logger.trace("initializeProperties ...");
         if (propertiesPath != null && !"".equals(propertiesPath.trim())) {
             File file = new File(propertiesPath);
             if (!file.exists()) {
@@ -399,7 +399,7 @@ public class BillingInfoHistogramGenerator extends Thread {
      * the former are undefined.
      */
     private void synchronizePlotProperties(Properties properties) {
-        logger.debug("synchronizePlotProperties ...");
+        logger.trace("synchronizePlotProperties ...");
         if (plotsDir != null) {
             properties.setProperty(ITimeFramePlot.EXPORT_SUBDIR, plotsDir);
         } else {

@@ -165,8 +165,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
                 }
 
 		if( _log.isDebugEnabled()) {
-			_log.debug( "fresh to-do list obtained for " + this.getClass().getSimpleName());
-			_log.debug("list now contains " + _outstandingWork.size() + " items");
+			_log.trace( "fresh to-do list obtained for " + this.getClass().getSimpleName());
+			_log.trace("list now contains " + _outstandingWork.size() + " items");
 		}
 	}
 

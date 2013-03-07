@@ -37,7 +37,7 @@ public class StandardPoolQueuesService implements PoolQueuesService {
 
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
-            _log.debug("returned pools: " + pools.size());
+            _log.trace("returned pools: " + pools.size());
             List<PoolQueueBean> poolQueues = new ArrayList<>(pools.size());
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
@@ -46,7 +46,7 @@ public class StandardPoolQueuesService implements PoolQueuesService {
                         domainMap);
                 poolQueues.add(newPoolQueueBean);
             }
-            _log.debug("returned PoolQueueBeans: " + poolQueues.size());
+            _log.trace("returned PoolQueueBeans: " + poolQueues.size());
             Collections.sort(poolQueues);
             return poolQueues;
 

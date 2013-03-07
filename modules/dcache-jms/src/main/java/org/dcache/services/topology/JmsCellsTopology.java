@@ -83,7 +83,7 @@ public class JmsCellsTopology
         try {
             CellNameService.requestUpdate(_sendSession);
         } catch (JMSException e) {
-            _log.debug("Failed to request CNS update: {}", e.getMessage());
+            _log.trace("Failed to request CNS update: {}", e.getMessage());
         }
 
         _connection.start();
@@ -145,7 +145,7 @@ public class JmsCellsTopology
                         _currentMap.putAll(map);
                         _nextMap.putAll(map);
                     } catch (InterruptedException e) {
-                        _log.info("Topology construction was interrupted");
+                        _log.debug("Topology construction was interrupted");
                     }
                 }
             });

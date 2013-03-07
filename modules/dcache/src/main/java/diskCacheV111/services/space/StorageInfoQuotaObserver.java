@@ -192,7 +192,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
               _configFile = new File(configName);
           }
 
-          _log.info("Query Engine will be started a bit delayed" ) ;
+          _log.debug("Query Engine will be started a bit delayed" ) ;
 
           _nucleus.newThread( new DoDelayedOnStartup() , "init" ).start() ;
 
@@ -263,19 +263,19 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           /*
            * wait for awhile before starting startup processes
            */
-          _log.info("Collector will be delayed");
+          _log.debug("Collector will be delayed");
 
           try{ Thread.currentThread().sleep(10000L) ;}
           catch(Exception ee){ return ; }
 
-          _log.info("QueryPoolManager now starting");
+          _log.debug("QueryPoolManager now starting");
 
           _nucleus.newThread( new QueryPoolManager() , "QueryPoolManager" ).start() ;
 
           try{ Thread.currentThread().sleep(10000L) ;}
           catch(Exception ee){ return ; }
 
-          _log.info("QueryPools now starting");
+          _log.debug("QueryPools now starting");
 
           _nucleus.newThread( new QueryPools() , "QueryPools" ).start() ;
        }
@@ -283,7 +283,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private class QueryPoolManager implements Runnable {
       @Override
       public void run(){
-          _log.info("Query Pool Manager worker started");
+          _log.debug("Query Pool Manager worker started");
           while( true ){
 
              queryLinks() ;
@@ -295,14 +295,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
              }
 
           }
-          _log.info("Query Pool Manager worker finished");
+          _log.debug("Query Pool Manager worker finished");
       }
    }
    private class QueryPools implements Runnable {
 
       @Override
       public void run(){
-          _log.info("Query Pools worker started");
+          _log.debug("Query Pools worker started");
           while( true ){
 
              queryPools() ;
@@ -314,7 +314,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
              }
 
           }
-          _log.info("Query Pools worker finished");
+          _log.debug("Query Pools worker finished");
       }
 
    }
@@ -577,7 +577,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private void queryPoolManager(){
 
       try{
-         _log.debug("Sending xgetcellinfo to "+_poolManagerName);
+         _log.trace("Sending xgetcellinfo to "+_poolManagerName);
          CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , "xgetcellinfo" );
          sendMessage( msg );
       }catch(NoRouteToCellException cee ){
@@ -593,7 +593,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private void queryLinks(){
        try{
           String command = "psux ls link -x -resolve" ;
-          _log.debug("Sending poolManager query "+command+" to "+_poolManagerName);
+          _log.trace("Sending poolManager query "+command+" to "+_poolManagerName);
           CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , command );
           sendMessage( msg );
        }catch(NoRouteToCellException cee ){
@@ -624,7 +624,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           // }
           //
           try{
-             _log.debug("Sending pool query 'rep ls -s binary' to {}", address);
+             _log.trace("Sending pool query 'rep ls -s binary' to {}", address);
              CellMessage msg = new CellMessage(new CellPath(address), "rep ls -s -sum -binary");
              sendMessage( msg );
           }catch(NoRouteToCellException cee ){
@@ -634,7 +634,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           }
 
           if( ( _poolQuerySteps > 0 ) && (  ( counter % _poolQuerySteps ) == 0 ) ){
-             _log.info("Waiting a while ("+_poolQueryBreak+") millis");
+             _log.debug("Waiting a while ("+_poolQueryBreak+") millis");
              try{
                 if( _poolQueryBreak > 0L ) {
                     Thread.sleep(_poolQueryBreak);

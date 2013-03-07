@@ -52,8 +52,8 @@ public class InfoGetSerialisedDataMessageGenerator
             if (messageData == null) {
                 throw new DataGatheringException("no payload in message from info service");
             }
-            _log.debug("Requested URL: {}", _pathElements);
-            _log.debug("InfoMessage length: {}", messageData.length());
+            _log.trace("Requested URL: {}", _pathElements);
+            _log.trace("InfoMessage length: {}", messageData.length());
             return messageData;
         } catch (SerializationException ex) {
             throw new DataGatheringException(ex);

@@ -75,7 +75,7 @@ public class SrmRm {
             try {
                 response = srmRm();
             } catch(URISyntaxException e) {
-                logger.debug(" malformed uri : "+e.getMessage());
+                logger.trace(" malformed uri : "+e.getMessage());
                 response = getResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
             } catch(SRMException srme) {
@@ -217,7 +217,7 @@ public class SrmRm {
 			status = new TReturnStatus(
 				TStatusCode.SRM_FAILURE,
 				reason);
-			logger.info("RemoveFileFailed:"+reason);
+			logger.debug("RemoveFileFailed:"+reason);
 			done();
 		}
 
@@ -226,7 +226,7 @@ public class SrmRm {
 			status = new TReturnStatus(
 				TStatusCode.SRM_INVALID_PATH,
 				reason);
-			logger.info("RemoveFileFailed:"+reason);
+			logger.debug("RemoveFileFailed:"+reason);
 			done();
 		}
 

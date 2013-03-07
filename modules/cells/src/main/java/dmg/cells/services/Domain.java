@@ -192,7 +192,7 @@ public class Domain {
          if( ( tmp = argHash.get( "-debug" )) != null ){
 
 
-             _log.info( "Starting DebugSequence" ) ;
+             _log.debug( "Starting DebugSequence" ) ;
              List<String> v = new ArrayList<>() ;
              if( ( tmp.length > 1 ) && ( tmp[1].equals("full") ) ){
                 v.add( "set printout CellGlue all" ) ;
@@ -217,7 +217,7 @@ public class Domain {
              }
              String a = sb.toString() ;
 
-             _log.info( "Loading new CellPrinter "+a ) ;
+             _log.debug( "Loading new CellPrinter "+a ) ;
              List<String> v = new ArrayList<>() ;
              v.add( "load cellprinter "+a );
 
@@ -226,7 +226,7 @@ public class Domain {
 
          }
          if( argHash.get("-routed") != null ){
-             _log.info( "Starting Routing Manager" ) ;
+             _log.debug( "Starting Routing Manager" ) ;
              new RoutingManager( "RoutingMgr" , "up0" ) ;
          }
 
@@ -242,7 +242,7 @@ public class Domain {
                 }
              }
              String a = sb.toString() ;
-             _log.info( "Installing LocationManager '"+a+"'") ;
+             _log.debug( "Installing LocationManager '"+a+"'") ;
              new LocationManager( "lm" , a ) ;
              new RoutingManager( "RoutingMgr" , "" ) ;
          }
@@ -250,7 +250,7 @@ public class Domain {
          if( argHash.get( "-silent" ) != null ){
 
 
-             _log.info( "Starting Silent Sequence" ) ;
+             _log.debug( "Starting Silent Sequence" ) ;
              List<String> v = new ArrayList<>();
              v.add( "set printout CellGlue none" ) ;
              v.add( "set printout default none" ) ;
@@ -278,7 +278,7 @@ public class Domain {
                  sb.append( " -" ).append( tmp[i] ) ;
              }
 
-             _log.info( "Starting LoginManager (telnet) on "+sb.toString() ) ;
+             _log.debug( "Starting LoginManager (telnet) on "+sb.toString() ) ;
              new LoginManager( "tlm" , sb.toString() ) ;
 
          }
@@ -300,7 +300,7 @@ public class Domain {
                  sb.append( " -" ).append( tmp[i] ) ;
              }
 
-             _log.info( "Starting RetryTunnel2 (raw) on "+sb.toString() ) ;
+             _log.debug( "Starting RetryTunnel2 (raw) on "+sb.toString() ) ;
              new LoginManager( "down" , sb.toString() ) ;
 
          }
@@ -308,41 +308,41 @@ public class Domain {
              ( tmp.length > 2 ) ){
 
 
-             _log.info( "Starting RetryTunnel on "+tmp[1]+" "+tmp[2] ) ;
+             _log.debug( "Starting RetryTunnel on "+tmp[1]+" "+tmp[2] ) ;
              new RetryTunnel( "up0" , tmp[1]+" "+tmp[2] ) ;
 
          }
          if( ( ( tmp = argHash.get( "-connect2" )) != null ) &&
              ( tmp.length > 2 ) ){
 
-             _log.info( "Starting RetryTunnel2 on "+tmp[1]+" "+tmp[2] ) ;
+             _log.debug( "Starting RetryTunnel2 on "+tmp[1]+" "+tmp[2] ) ;
              new RetryTunnel2( "up0" , tmp[1]+" "+tmp[2] ) ;
 
          }
          if( ( ( tmp = argHash.get( "-connectDomain" )) != null ) &&
              ( tmp.length > 1 ) ){
 
-             _log.info( "Starting LocationMgrTunnel on "+tmp[1] ) ;
+             _log.debug( "Starting LocationMgrTunnel on "+tmp[1] ) ;
              new LocationManagerConnector("upD", "-lm=lm " + "-domain=" + tmp[1]);
          }
          if( ( ( tmp = argHash.get( "-acm" )) != null ) &&
              ( tmp.length > 1 ) ){
 
-             _log.info( "Starting UserMgrCell on "+tmp[1] ) ;
+             _log.debug( "Starting UserMgrCell on "+tmp[1] ) ;
              new UserMgrCell( "acm" , tmp[1] ) ;
 
          }
          if( ( ( tmp = argHash.get( "-tunnel" )) != null ) &&
              ( tmp.length > 1 ) ){
 
-             _log.info( "Starting RetryTunnel on "+tmp[1] ) ;
+             _log.debug( "Starting RetryTunnel on "+tmp[1] ) ;
              new GNLCell( "down" , "dmg.cells.network.RetryTunnel "+tmp[1] ) ;
 
          }
          if( ( ( tmp = argHash.get( "-accept" )) != null ) &&
              ( tmp.length > 0 ) ){
 
-             _log.info( "Starting LocationMgrTunnel(listen)" ) ;
+             _log.debug( "Starting LocationMgrTunnel(listen)" ) ;
              new LoginManager(
                    "downD" ,
                    "0 dmg.cells.network.LocationMgrTunnel "+
@@ -353,7 +353,7 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
 
-             _log.info( "Starting BootSequence for Domain "+tmp[1] ) ;
+             _log.debug( "Starting BootSequence for Domain "+tmp[1] ) ;
              List<String> v = new ArrayList<>() ;
              v.add( "onerror shutdown" ) ;
              v.add( "set context bootDomain "+tmp[1] ) ;
@@ -370,9 +370,9 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
 
-             _log.info( "Starting TopologyManager " ) ;
+             _log.debug( "Starting TopologyManager " ) ;
              new TopoCell( "topo" , "" ) ;
-             _log.info( "Starting Spy Listener on "+tmp[1] ) ;
+             _log.debug( "Starting Spy Listener on "+tmp[1] ) ;
              new LoginManager( "Spy" ,
                 tmp[1]+
                 " dmg.cells.services.ObjectLoginCell"+
@@ -383,7 +383,7 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
 
-             _log.info( "Starting BatchCell on "+tmp[1] ) ;
+             _log.debug( "Starting BatchCell on "+tmp[1] ) ;
              new BatchCell( "batch" , tmp[1] ) ;
 
          }
@@ -391,7 +391,7 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
 
-             _log.info( "Installing interruptHandlerClass "+tmp[1] ) ;
+             _log.debug( "Installing interruptHandlerClass "+tmp[1] ) ;
              systemCell.enableInterrupts( tmp[1] ) ;
 
          }

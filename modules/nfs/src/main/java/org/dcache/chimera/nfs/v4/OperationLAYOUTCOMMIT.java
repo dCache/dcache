@@ -45,7 +45,7 @@ public class OperationLAYOUTCOMMIT extends AbstractNFSv4Operation {
 
         try {
 
-            _log.debug("LAYOUTCOMMIT: inode=" + context.currentInode() + " length="
+            _log.trace("LAYOUTCOMMIT: inode=" + context.currentInode() + " length="
                     + _args.oplayoutcommit.loca_length.value.value + " offset="
                     + _args.oplayoutcommit.loca_offset.value.value + " loca_last_write_offset="
                     + (_args.oplayoutcommit.loca_last_write_offset.no_newoffset

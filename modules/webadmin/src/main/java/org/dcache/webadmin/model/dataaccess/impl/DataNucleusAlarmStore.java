@@ -143,11 +143,11 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             Collection<LogEntry> result = AlarmJDOUtils.execute(
                             readManager, filter);
 
-            logger.debug("got collection {}", result);
+            logger.trace("got collection {}", result);
             Collection<LogEntry> detached = readManager.detachCopyAll(result);
-            logger.debug("got detatched collection {}", detached);
+            logger.trace("got detatched collection {}", detached);
             tx.commit();
-            logger.debug("successfully executed get for filter {}", filter);
+            logger.trace("successfully executed get for filter {}", filter);
             return detached;
         } catch (Throwable t) {
             rollbackIfActive(tx);
@@ -169,7 +169,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
 
             try {
                 long count = remove(currentThreshold);
-                logger.info("removed {} closed alarms with timestamp prior to {}",
+                logger.debug("removed {} closed alarms with timestamp prior to {}",
                                 count, new Date(currentThreshold));
             } catch (DAOException e) {
                 logger.error("error in alarm cleanup", e);
@@ -195,7 +195,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             tx.begin();
             long removed = AlarmJDOUtils.delete(deleteManager, filter);
             tx.commit();
-            logger.debug("successfully removed {} entries", removed);
+            logger.trace("successfully removed {} entries", removed);
             return removed;
         } catch (Throwable t) {
             rollbackIfActive(tx);
@@ -223,7 +223,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             tx.begin();
             Collection<LogEntry> result = AlarmJDOUtils.execute(
                             updateManager, filter);
-            logger.debug("got matching entries {}", result);
+            logger.trace("got matching entries {}", result);
             long updated = result.size();
 
             Map<String, LogEntry> map = new HashMap<>();
@@ -239,7 +239,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
              * result is not detached so it will be updated on commit
              */
             tx.commit();
-            logger.debug("successfully updated {} entries", updated);
+            logger.trace("successfully updated {} entries", updated);
 
             return updated;
         } catch (Throwable t) {
@@ -292,7 +292,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             tx.begin();
             long removed = AlarmJDOUtils.delete(deleteManager, filter);
             tx.commit();
-            logger.debug("successfully removed {} entries", removed);
+            logger.trace("successfully removed {} entries", removed);
             return removed;
         } catch (Throwable t) {
             rollbackIfActive(tx);

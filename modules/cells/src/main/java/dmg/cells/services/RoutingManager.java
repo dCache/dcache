@@ -133,7 +133,7 @@ public class RoutingManager
         }
 
         List<String> all = Lists.newArrayList();
-        _log.info("update requested to upstream Domains");
+        _log.debug("update requested to upstream Domains");
         //
         // the protocol requires the local DomainName
         // first
@@ -153,7 +153,7 @@ public class RoutingManager
         }
 
         String destinationManager = _nucleus.getCellName();
-        _log.info("Resending to {}: {}", destinationManager, all);
+        _log.debug("Resending to {}: {}", destinationManager, all);
         try {
             CellPath path = new CellPath(destinationManager);
             String[] arr = all.toArray(new String[all.size()]);
@@ -161,7 +161,7 @@ public class RoutingManager
         } catch (NoRouteToCellException e) {
             /* This normally happens when there is no default route.
              */
-            _log.info("Cannot send routing information to RoutingMgr: {}", e.getMessage());
+            _log.debug("Cannot send routing information to RoutingMgr: {}", e.getMessage());
         }
     }
 
@@ -172,22 +172,22 @@ public class RoutingManager
         Set<String> newCells = Sets.newHashSet(Arrays.asList(info).subList(1, info.length));
 
         if (oldCells == null) {
-            _log.info("Adding domain {}", domain);
+            _log.debug("Adding domain {}", domain);
             for (String cell : newCells) {
                 addWellknown(cell, domain);
             }
         } else {
-            _log.info("Updating domain {}", domain);
+            _log.debug("Updating domain {}", domain);
             for (String cell : newCells) {
                 if (!oldCells.remove(cell)) {
-                    _log.debug("Adding {}", cell);
+                    _log.trace("Adding {}", cell);
                     // entry not found, so make it
                     addWellknown(cell, domain);
                 }
             }
             // all additional route added now, need to remove the rest
             for (String cell : oldCells) {
-                _log.debug("Removing {}", cell);
+                _log.trace("Removing {}", cell);
                 removeWellknown(cell, domain);
             }
         }
@@ -197,10 +197,10 @@ public class RoutingManager
 
     private synchronized void removeRoutingInfo(String domain)
     {
-        _log.info("Removing all routes to domain {}", domain);
+        _log.debug("Removing all routes to domain {}", domain);
         Set<String> cells = _domainHash.remove(domain);
         if (cells == null){
-            _log.info("No entry found for domain {}", domain);
+            _log.debug("No entry found for domain {}", domain);
             return;
         }
         for (String cell : cells) {
@@ -220,7 +220,7 @@ public class RoutingManager
                 return;
             }
             final String domain = info[0];
-            _log.info("Routing info arrived for domain {}", domain);
+            _log.debug("Routing info arrived for domain {}", domain);
 
             if (_updates.put(domain, info) == null) {
                 _executor.execute(new Runnable() {
@@ -244,14 +244,14 @@ public class RoutingManager
     public void cellCreated(CellEvent ce)
     {
         String name = (String)ce.getSource();
-        _log.info("Cell created: {}", name);
+        _log.debug("Cell created: {}", name);
     }
 
     @Override
     public synchronized void cellDied(CellEvent ce)
     {
         String name = (String) ce.getSource();
-        _log.info("Cell died: {}", name);
+        _log.debug("Cell died: {}", name);
         _localExports.remove(name);
         updateUpstream();
     }
@@ -260,7 +260,7 @@ public class RoutingManager
     public synchronized void cellExported(CellEvent ce)
     {
         String name = (String)ce.getSource();
-        _log.info("Cell exported: {}", name);
+        _log.debug("Cell exported: {}", name);
         _localExports.add(name);
         updateUpstream();
     }
@@ -270,7 +270,7 @@ public class RoutingManager
     {
         CellRoute       cr   = (CellRoute)ce.getSource();
         CellAddressCore gate = new CellAddressCore(cr.getTargetName());
-        _log.info("Got 'route added' event: {}", cr);
+        _log.debug("Got 'route added' event: {}", cr);
         if (cr.getRouteType() == CellRoute.DOMAIN){
             if ((_watchCell != null) && gate.getCellName().equals(_watchCell)) {
                 //
@@ -289,8 +289,8 @@ public class RoutingManager
                 //
                 // possible downstream routes
                 //
-                // _log.info("Downstream route added : "+ cr);
-                _log.info("Downstream route added to domain {}", cr.getDomainName());
+                // _log.debug("Downstream route added : "+ cr);
+                _log.debug("Downstream route added to domain {}", cr.getDomainName());
                 //
                 // If the locationManager takes over control
                 // the default route may be installed before
@@ -299,7 +299,7 @@ public class RoutingManager
                 updateUpstream();
             }
         } else if (cr.getRouteType() == CellRoute.DEFAULT) {
-            _log.info("Default route was added");
+            _log.debug("Default route was added");
             setDefaultInstalled(true);
             updateUpstream();
         }

@@ -18,7 +18,7 @@ public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor {
 	 */
 	static public SpaceInfo getDetails( StateExhibitor exhibitor) {
 		if( _log.isDebugEnabled()) {
-                    _log.debug("Gathering summary information.");
+                    _log.trace("Gathering summary information.");
                 }
 
 		PoolSummaryVisitor visitor = new PoolSummaryVisitor();

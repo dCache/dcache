@@ -46,7 +46,7 @@ public class OperationACCESS extends AbstractNFSv4Operation {
 
         ACCESS4res res = new ACCESS4res();
 
-        _log.debug("NFS Request ACCESS uid: {}", context.getUser() );
+        _log.trace("NFS Request ACCESS uid: {}", context.getUser() );
 
         try {
             int reqAccess = _args.opaccess.access.value;
@@ -98,7 +98,7 @@ public class OperationACCESS extends AbstractNFSv4Operation {
 
             res.status = nfsstat.NFS_OK;
         }catch(ChimeraNFSException he) {
-            _log.debug("ACCESS: {}", he.getMessage() );
+            _log.trace("ACCESS: {}", he.getMessage() );
             res.status = he.getStatus();
         }catch(Exception e) {
             _log.error("ACCESS:", e);

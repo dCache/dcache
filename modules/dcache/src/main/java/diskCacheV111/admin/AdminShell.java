@@ -35,7 +35,7 @@ public class      AdminShell extends CommandInterpreter {
        _user     = user ;
        _wasAdmin = _user.equals("admin");
        for( int i = 0 ; i < args.argc() ; i++ ) {
-           _log.info("arg[" + i + "]=" + args.argv(i));
+           _log.debug("arg[" + i + "]=" + args.argv(i));
        }
 
     }
@@ -70,11 +70,11 @@ public class      AdminShell extends CommandInterpreter {
        return _cellPath.toString() + "\n" ;
     }
     public Object executeCommand( String obj ) throws Exception {
-        _log.info( "executeCommand : arriving as String : "+obj ) ;
+        _log.debug( "executeCommand : arriving as String : "+obj ) ;
         return _executeCommand( obj , false ) ;
     }
     public Object executeCommand( Object obj ) throws Exception {
-        _log.info( "executeCommand : arriving as Object : "+obj.toString() ) ;
+        _log.debug( "executeCommand : arriving as Object : "+obj.toString() ) ;
         return _executeCommand( obj.toString() , true ) ;
     }
     public Object _executeCommand( String obj , boolean wasBinary ) throws Exception {
@@ -114,7 +114,7 @@ public class      AdminShell extends CommandInterpreter {
            throw new Exception("Request timed out");
        }
        Object resObject = res.getMessageObject() ;
-       _log.info( "result from domain : "+resObject.getClass().getName() ) ;
+       _log.debug( "result from domain : "+resObject.getClass().getName() ) ;
        if( wasBinary ){
            return resObject ;
        }else{

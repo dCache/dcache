@@ -54,7 +54,7 @@ public class UnpinRequestProcessor
                 if (_pdp.canUnpin(message.getSubject(), pin)) {
                     pin.setState(Pin.State.UNPINNING);
                 }
-                _log.info("Unpinned {} ({})", pin.getPnfsId(), pin.getPinId());
+                _log.debug("Unpinned {} ({})", pin.getPnfsId(), pin.getPinId());
                 _dao.storePin(pin);
             }
         }
@@ -74,7 +74,7 @@ public class UnpinRequestProcessor
             message.setPinId(pin.getPinId());
             message.setRequestId(pin.getRequestId());
 
-            _log.info("Unpinned {} ({})", pin.getPnfsId(), pin.getPinId());
+            _log.debug("Unpinned {} ({})", pin.getPnfsId(), pin.getPinId());
         }
     }
 }

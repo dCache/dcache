@@ -43,7 +43,7 @@ public class RemoteMissingFileStrategy implements MissingFileStrategy
         } catch (CacheException e) {
             _log.error(e.getMessage());
         } catch (InterruptedException e) {
-            _log.info("interrupted while waiting for advise from missing-files service");
+            _log.debug("interrupted while waiting for advise from missing-files service");
         }
 
         return Action.FAIL;

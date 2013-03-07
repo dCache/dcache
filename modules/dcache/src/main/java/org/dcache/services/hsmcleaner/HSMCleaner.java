@@ -254,7 +254,7 @@ public class HSMCleaner extends AbstractCell
     protected void scan()
     {
         try {
-            info("Scanning " + _trashLocation);
+            debug("Scanning " + _trashLocation);
             _trash.scan(new Sink<URI>() {
                     @Override
                     public void push(URI uri) {
@@ -310,7 +310,7 @@ public class HSMCleaner extends AbstractCell
     protected void onScan(URI uri)
     {
         try {
-            debug("Detected " + uri);
+            trace("Detected " + uri);
             _limit.acquire();
             _requests.submit(uri);
         } catch (InterruptedException e) {
@@ -323,7 +323,7 @@ public class HSMCleaner extends AbstractCell
      */
     protected void onSuccess(URI uri)
     {
-        debug("Deleted " + uri);
+        trace("Deleted " + uri);
         _limit.release();
         _trash.remove(uri);
         _failures.remove(uri);
@@ -335,7 +335,7 @@ public class HSMCleaner extends AbstractCell
      */
     protected void onFailure(URI uri)
     {
-        debug("Failed " + uri);
+        trace("Failed " + uri);
         _limit.release();
         _failures.add(uri);
     }
@@ -345,7 +345,7 @@ public class HSMCleaner extends AbstractCell
      */
     protected void onQuarantine(URI uri)
     {
-        debug("Flushed " + uri);
+        trace("Flushed " + uri);
         _trash.remove(uri);
     }
 
@@ -355,7 +355,7 @@ public class HSMCleaner extends AbstractCell
     protected void onRecover(URI uri)
     {
         try {
-            debug("Retrying " + uri);
+            trace("Retrying " + uri);
             _limit.acquire();
             _requests.submit(uri);
         } catch (InterruptedException e) {

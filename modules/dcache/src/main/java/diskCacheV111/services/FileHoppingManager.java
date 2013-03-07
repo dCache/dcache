@@ -120,10 +120,10 @@ public class FileHoppingManager extends CellAdapter {
                 continue;
             }
             try{
-               _log.info( "Executing : "+line ) ;
+               _log.debug( "Executing : "+line ) ;
                String answer = command( line ) ;
                if( answer.length() > 0 ) {
-                   _log.info("Answer    : " + answer);
+                   _log.debug("Answer    : " + answer);
                }
             }catch( Exception ee ){
                _log.warn("Exception : "+ee.toString() ) ;
@@ -404,18 +404,18 @@ public class FileHoppingManager extends CellAdapter {
    }
     @Override
     public void messageToForward(  CellMessage cellMessage ){
-        _log.info("Message to forward : "+cellMessage.getMessageObject().getClass().getName());
+        _log.debug("Message to forward : "+cellMessage.getMessageObject().getClass().getName());
         // super.messageToForward(cellMessage);
     }
    public void replicateReplyArrived( CellMessage message , PoolMgrReplicateFileMsg replicate ){
-      _log.info("replicateReplyArrived : "+message);
+      _log.debug("replicateReplyArrived : "+message);
    }
    @Override
    public void messageArrived( CellMessage message ){
 
       Object   request     = message.getMessageObject() ;
 
-      _log.info("messageArrived : "+request+" : "+message);
+      _log.debug("messageArrived : "+request+" : "+message);
       if( request instanceof PoolMgrReplicateFileMsg ){
 
          PoolMgrReplicateFileMsg replicate = (PoolMgrReplicateFileMsg)request ;
@@ -456,7 +456,7 @@ public class FileHoppingManager extends CellAdapter {
 
                  matchCount++;
 
-                 _log.info("Entry found for : SC=<" + storageClass + "> source=" + replicationSource + " : " + entry);
+                 _log.debug("Entry found for : SC=<" + storageClass + "> source=" + replicationSource + " : " + entry);
                  entry._hit++;
 
                  CellPath path = entry._path == null ? _defaultDestinationPath : entry._path;
@@ -478,7 +478,7 @@ public class FileHoppingManager extends CellAdapter {
                  }
              }
          }
-         _log.info("Total match count for <"+storageClass+"> was "+matchCount ) ;
+         _log.debug("Total match count for <"+storageClass+"> was "+matchCount ) ;
 
       }
 

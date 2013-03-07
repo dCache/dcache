@@ -43,7 +43,7 @@ public class OperationSAVEFH extends AbstractNFSv4Operation {
             context.saveCurrentInode();
             res.status = nfsstat.NFS_OK;
         } catch (ChimeraNFSException he) {
-            _log.debug("SAVEFH4: {}", he.getMessage());
+            _log.trace("SAVEFH4: {}", he.getMessage());
             res.status = he.getStatus();
         } catch (Exception e) {
             _log.error("SAVEFH4:", e);

@@ -83,7 +83,7 @@ public class       UserSecurityCell
       Serializable answer;
 
       try{
-         _log.info( "Message type : "+obj.getClass() ) ;
+         _log.debug( "Message type : "+obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -93,7 +93,7 @@ public class       UserSecurityCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.info( ">"+command+"< request from "+user );
+            _log.debug( ">"+command+"< request from "+user );
             //FIXME: refactoring required
             try{
               if( command.equals( "check-password" ) ) {
@@ -210,7 +210,7 @@ public class       UserSecurityCell
           throw new Exception("Not authenticated");
       }
       String command = args.argv(0) ;
-      _log.info( "show all : mode="+command+";user=user") ;
+      _log.debug( "show all : mode="+command+";user=user") ;
       if( command.equals("exception") ) {
           throw new
                   Exception("hallo otto");

@@ -164,7 +164,7 @@ public class NFS4Client {
         _clientAddress = clientAddress;
         _localAddress = localAddress;
         _leaseTime = leaseTime;
-        _log.debug("New client id: {}", Long.toHexString(_clientId));
+        _log.trace("New client id: {}", Long.toHexString(_clientId));
 
     }
 
@@ -296,7 +296,7 @@ public class NFS4Client {
          * For unconfirmed cleints server expects sequence number to be equal to
          * value of eir_sequenceid that was returned in results of the EXCHANGE_ID.
          */
-        _log.debug("session for sequience: {}", sequence);
+        _log.trace("session for sequience: {}", sequence);
         if (sequence > _sessionSequence && _isConfirmed) {
             throw new ChimeraNFSException(nfsstat.NFSERR_SEQ_MISORDERED,
                     "bad sequence id: " + _sessionSequence + " / " + sequence);
@@ -308,7 +308,7 @@ public class NFS4Client {
         }
 
         if (sequence == _sessionSequence - 1) {
-            _log.debug("Retransmit on create session detected");
+            _log.trace("Retransmit on create session detected");
             return _sessions.get(sequence);
         }
 
@@ -323,7 +323,7 @@ public class NFS4Client {
 
         if(!_isConfirmed){
             _isConfirmed = true;
-            _log.debug("set client confirmed");
+            _log.trace("set client confirmed");
         }
 
         return session;

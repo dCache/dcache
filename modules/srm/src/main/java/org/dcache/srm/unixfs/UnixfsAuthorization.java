@@ -52,7 +52,7 @@ public final class UnixfsAuthorization implements SRMAuthorization {
     throws SRMAuthorizationException {
   /** @todo -- javadoc, there is no such arg 'chain' */
         UserAuthRecord user_rec = authorize(secureId,name);
-        logger.debug("Received authorization request from remote IP {}", remoteIP);
+        logger.trace("Received authorization request from remote IP {}", remoteIP);
         String username = user_rec.Username;
         String root = user_rec.Root;
         int uid = user_rec.UID;

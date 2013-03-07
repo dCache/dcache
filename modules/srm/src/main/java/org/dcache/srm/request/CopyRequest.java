@@ -228,7 +228,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         this.overwriteMode = overwriteMode;
         this.targetSpaceToken = spaceToken;
         updateMemoryCache();
-        logger.debug("Request.createCopyRequest : created new request succesfully");
+        logger.trace("Request.createCopyRequest : created new request succesfully");
     }
 
     /**
@@ -311,7 +311,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             SRMException, InterruptedException, IllegalStateTransition,
             FatalJobFailure
     {
-        logger.debug("Proccessing request");
+        logger.trace("Proccessing request");
         if( getNumOfFileRequest() == 0) {
             try {
                 setState(State.FAILED,"Request contains zero file requests");
@@ -324,7 +324,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
         }
         setNumber_of_file_reqs(getNumOfFileRequest());
-        logger.debug("number_of_file_reqs = "+getNumber_of_file_reqs());
+        logger.trace("number_of_file_reqs = "+getNumber_of_file_reqs());
         wlock();
         try {
             List<FileRequest> requests = getFileRequests();
@@ -413,12 +413,12 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                             URI.create(to_urls[0].getURL()));
             }
 
-            logger.debug(" from_url_is_srm = "+from_url_is_srm);
-            logger.debug(" to_url_is_srm = "+to_url_is_srm);
-            logger.debug(" from_url_is_gsiftp = "+from_url_is_gsiftp);
-            logger.debug(" to_url_is_gsiftp = "+to_url_is_gsiftp);
-            logger.debug(" from_url_is_local = "+from_url_is_local);
-            logger.debug(" to_url_is_local = "+to_url_is_local);
+            logger.trace(" from_url_is_srm = "+from_url_is_srm);
+            logger.trace(" to_url_is_srm = "+to_url_is_srm);
+            logger.trace(" from_url_is_gsiftp = "+from_url_is_gsiftp);
+            logger.trace(" to_url_is_gsiftp = "+to_url_is_gsiftp);
+            logger.trace(" from_url_is_local = "+from_url_is_local);
+            logger.trace(" to_url_is_local = "+to_url_is_local);
 
             if(!from_url_is_local && ! to_url_is_local) {
                 logger.error("both from and to url are not local srm");
@@ -447,7 +447,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             getQosPlugin().addTicket(qosTicket);
             if (getQosPlugin().submit()) {
                 cfr.setQOSTicket(qosTicket);
-                logger.debug("QOS Ticket Received "+getQosPlugin().toString());
+                logger.trace("QOS Ticket Received "+getQosPlugin().toString());
             }
         } catch(Exception e) {
             logger.error("Could not create QOS reservation: "+e.getMessage());
@@ -457,7 +457,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     private void getTURLs() throws SRMException,
     IOException,InterruptedException,IllegalStateTransition ,SQLException,
     FatalJobFailure {
-        logger.debug("getTURLS()");
+        logger.trace("getTURLS()");
         if(isFrom_url_is_srm() && ! isFrom_url_is_local()) {
             // this means that the from url is remote srm url
             // and a "to" url is a local srm url
@@ -467,7 +467,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                       "TargetFileStorageType "+getStorageType()+" is not supported");
             }
             RequestCredential credential = getCredential();
-            logger.debug("obtained credential="+credential+" id="+credential.getId());
+            logger.trace("obtained credential="+credential+" id="+credential.getId());
             //String ls_client = "SRM"; // make it not hard coded
 
             for(int i = 0 ; i<getNumber_of_file_reqs();++i) {
@@ -483,7 +483,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
                 //Since "to" url has to be local srm, we can just set the local to path
                 remoteSurlToFileReqIds.put(getFrom_url(i).getURL(),cfr.getId());
-                logger.debug("getTurlsArrived, setting local \"to\" path to "+
+                logger.trace("getTurlsArrived, setting local \"to\" path to "+
                 cfr.getToPath());
                 cfr.setLocal_to_path(
                 cfr.getToPath());
@@ -493,7 +493,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     remoteSurlToFileReqIds.keySet()
                             .toArray(new String[remoteSurlToFileReqIds.size()]);
             for(int i=0;i<remoteSurlsUniqueArray.length;++i) {
-                logger.debug("remoteSurlsUniqueArray["+i+"]="+remoteSurlsUniqueArray[i]);
+                logger.trace("remoteSurlsUniqueArray["+i+"]="+remoteSurlsUniqueArray[i]);
             }
             //need to get from remote srm system
             setRemoteSrmGet(true);
@@ -557,7 +557,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 if(cfr.getLocal_from_path() != null ) {
                     continue;
                 }
-                logger.debug("getTurlsArrived, setting local \"from\" path to "+
+                logger.trace("getTurlsArrived, setting local \"from\" path to "+
                 cfr.getFromPath());
                 cfr.setLocal_from_path(
                 cfr.getFromPath());
@@ -579,7 +579,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 if(cfr.getFrom_turl() != null ) {
                     continue;
                 }
-                logger.debug("getTurlsArrived, setting \"from\" turl to "+
+                logger.trace("getTurlsArrived, setting \"from\" turl to "+
                 getFrom_url(i).getURL());
                 cfr.setFrom_turl(URI.create(getFrom_url(i).getURL()));
                 cfr.saveJob();
@@ -601,7 +601,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     continue;
                 }
 
-                logger.debug("getTurlsArrived, setting local \"to\" path to "+
+                logger.trace("getTurlsArrived, setting local \"to\" path to "+
                 cfr.getToPath());
                 cfr.setLocal_to_path(
                 cfr.getToPath());
@@ -621,7 +621,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     // copy file request has being canceled,failed or scheduled before
                     continue;
                 }
-                logger.debug("getTurlsArrived, setting remote \"to\" TURL to "+
+                logger.trace("getTurlsArrived, setting remote \"to\" TURL to "+
                 getTo_url(i).getURL());
                 cfr.setTo_turl(URI.create(getTo_url(i).getURL()));
                 cfr.saveJob();
@@ -660,7 +660,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     .get(remoteSurlsUniqueArray[i]), null);
             CopyFileRequest cfr = (CopyFileRequest)getFileRequest(fileRequestId);
             sizes[i] = getStorage().getFileMetaData(getUser(), cfr.getFrom_surl(), false).size;
-            logger.debug("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
+            logger.trace("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
             cfr.setSize(sizes[i]);
             dests[i] = cfr.getToURL();
             if (getQosPlugin() != null) {
@@ -952,17 +952,17 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
             TurlGetterPutter a_getter_putter = getGetter_putter();
             if(a_getter_putter != null) {
-                logger.debug("copyRequest getter_putter is non null, stopping");
+                logger.trace("copyRequest getter_putter is non null, stopping");
                 a_getter_putter.stop();
             }
-            logger.debug("copy request state changed to "+state);
+            logger.trace("copy request state changed to "+state);
             for(FileRequest request : getFileRequests()) {
                 try {
                     State fr_state = request.getState();
                     if(!(State.isFinalState(fr_state)))
                     {
 
-                        logger.debug("changing fr#"+request.getId()+" to "+state);
+                        logger.trace("changing fr#"+request.getId()+" to "+state);
                             request.setState(state,"Request state changed, changing file state");
                     }
                 }
@@ -977,7 +977,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        logger.debug("propertyChange");
+        logger.trace("propertyChange");
         try {
             if(evt instanceof TURLsArrivedEvent) {
 

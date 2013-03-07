@@ -20,7 +20,7 @@ public class SshOutputStream extends OutputStream {
 
    @Override
    public void write( int out ) throws IOException {
-      _log.debug("write( int {} )", out);
+      _log.trace("write( int {} )", out);
       byte [] x = new byte[1] ;
       x[0] = (byte) out ;
       write( x , 0 , 1 ) ;
@@ -34,17 +34,17 @@ public class SshOutputStream extends OutputStream {
       }
 
       if( _mode == SshStreamEngine.SERVER_MODE ){
-         _log.debug("server-mode: write(byte [] a, int off, int {})", len);
+         _log.trace("server-mode: write(byte [] a, int off, int {})", len);
          _core.sendStdout( a , off , len ) ;
       }else{
-         _log.debug("client-mode: write(byte [] a, int off, int {})", len);
+         _log.trace("client-mode: write(byte [] a, int off, int {})", len);
          _core.sendStdin( a , off , len ) ;
       }
 
    }
    @Override
    public void write( byte [] a ) throws IOException {
-      _log.debug("write( byte [] a )");
+      _log.trace("write( byte [] a )");
       write( a , 0 , a.length ) ;
    }
 

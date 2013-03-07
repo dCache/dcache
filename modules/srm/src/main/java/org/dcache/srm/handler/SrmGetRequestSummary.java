@@ -73,7 +73,7 @@ public class SrmGetRequestSummary {
         try {
             response = srmGetRequestSummary();
         } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
+            logger.trace(" malformed uri : "+mue.getMessage());
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
@@ -81,7 +81,7 @@ public class SrmGetRequestSummary {
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMInvalidRequestException e) {
-            logger.debug(e.getMessage());
+            logger.trace(e.getMessage());
             response = getFailedResponse(e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {

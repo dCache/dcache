@@ -406,7 +406,7 @@ public class CostModuleV1
 
     public synchronized void messageToForward(Pool2PoolTransferMsg msg)
     {
-        _log.debug( "Pool2PoolTransferMsg : reply="+msg.isReply());
+        _log.trace( "Pool2PoolTransferMsg : reply="+msg.isReply());
 
         String sourceName = msg.getSourcePoolName();
         Entry source = _hash.get(sourceName);
@@ -500,7 +500,7 @@ public class CostModuleV1
     private void xsay(String queue, String pool, int diff, long pinned, Object obj)
     {
         if (_debug) {
-            _log.debug("CostModuleV1 : "+queue+" queue of "+pool+" modified by "+diff+"/" + pinned + " due to "+obj.getClass().getName());
+            _log.trace("CostModuleV1 : "+queue+" queue of "+pool+" modified by "+diff+"/" + pinned + " due to "+obj.getClass().getName());
         }
     }
 
@@ -535,11 +535,11 @@ public class CostModuleV1
    private double calculatePercentileCostCut(double fraction)
    {
        if( _hash.isEmpty()) {
-           _log.debug( "no pools available");
+           _log.trace( "no pools available");
            return 0;
        }
 
-       _log.debug( "{} pools available", _hash.size());
+       _log.trace( "{} pools available", _hash.size());
 
        double poolCosts[] = new double[_hash.size()];
 

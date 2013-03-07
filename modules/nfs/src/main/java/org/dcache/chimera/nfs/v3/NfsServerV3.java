@@ -190,7 +190,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
         ACCESS3res res = new ACCESS3res();
 
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request ACCESS uid: {}", user);
+        _log.trace("NFS Request ACCESS uid: {}", user);
 
         try {
 
@@ -287,7 +287,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public CREATE3res NFSPROC3_CREATE_3(RpcCall call$, CREATE3args arg1) {
 
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request CREATE3 uid: {}", user);
+        _log.trace("NFS Request CREATE3 uid: {}", user);
 
         CREATE3res res = new CREATE3res();
 
@@ -376,7 +376,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
 
         } catch (ChimeraNFSException hne) {
 
-            _log.debug(hne.getMessage());
+            _log.trace(hne.getMessage());
             res.resfail = new CREATE3resfail();
             res.resfail.dir_wcc = defaultWccData();
 
@@ -400,7 +400,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public FSINFO3res NFSPROC3_FSINFO_3(RpcCall call$, FSINFO3args arg1) {
 
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request FSINFO from: {}", user);
+        _log.trace("NFS Request FSINFO from: {}", user);
 
         FSINFO3res res = new FSINFO3res();
         try {
@@ -506,13 +506,13 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public GETATTR3res NFSPROC3_GETATTR_3(RpcCall call$, GETATTR3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request GETTATTR3 uid: {}", user);
+        _log.trace("NFS Request GETTATTR3 uid: {}", user);
 
         GETATTR3res res = new GETATTR3res();
 
         try {
             FsInode inode = _fs.inodeFromBytes(arg1.object.data);
-            _log.debug("NFS Request GETATTR for inode: {}", inode.toString());
+            _log.trace("NFS Request GETATTR for inode: {}", inode.toString());
 
             res.status = nfsstat.NFS_OK;
             res.resok = new GETATTR3resok();
@@ -521,7 +521,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             HimeraNfsUtils.fill_attributes(inode.stat(), res.resok.obj_attributes);
 
         } catch (FileNotFoundHimeraFsException fnf) {
-            _log.debug("GETATTR: file does not exists: {}", fnf.toString());
+            _log.trace("GETATTR: file does not exists: {}", fnf.toString());
             res.status = nfsstat.NFSERR_NOENT;
         } catch (ChimeraFsException e) {
             _log.error("GETATTR", e);
@@ -537,7 +537,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public LINK3res NFSPROC3_LINK_3(RpcCall call$, LINK3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request LINK3 uid: {}", user);
+        _log.trace("NFS Request LINK3 uid: {}", user);
 
 
         LINK3res res = new LINK3res();
@@ -643,7 +643,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             HimeraNfsUtils.fill_attributes(parent.stat(), res.resok.dir_attributes.attributes);
 
         } catch (ChimeraNFSException hne) {
-            _log.debug("lookup {}", hne.toString());
+            _log.trace("lookup {}", hne.toString());
             res.status = hne.getStatus();
             res.resfail = new LOOKUP3resfail();
             res.resfail.dir_attributes = defaultPostOpAttr();
@@ -665,7 +665,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public MKDIR3res NFSPROC3_MKDIR_3(RpcCall call$, MKDIR3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request MKDIR3 uid: {}", user);
+        _log.trace("NFS Request MKDIR3 uid: {}", user);
 
         MKDIR3res res = new MKDIR3res();
         try {
@@ -827,7 +827,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public READDIRPLUS3res NFSPROC3_READDIRPLUS_3(RpcCall call$, READDIRPLUS3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request READDIRPLUS3 uid: {}", user);
+        _log.trace("NFS Request READDIRPLUS3 uid: {}", user);
 
         READDIRPLUS3res res = new READDIRPLUS3res();
 
@@ -872,11 +872,11 @@ public class NfsServerV3 extends nfs3_protServerStub {
             InodeCacheEntry<cookieverf3> cacheKey = new InodeCacheEntry<>(dir, cookieverf);
             dirList = _dlCacheFull.getIfPresent(cacheKey);
             if (dirList == null) {
-                _log.debug("updating dirlist from db");
+                _log.trace("updating dirlist from db");
                 dirList = DirectoryStreamHelper.listOf(_fs, dir);
                 _dlCacheFull.put(cacheKey, dirList);
             } else {
-                _log.debug("using dirlist from cache");
+                _log.trace("using dirlist from cache");
             }
 
             if (startValue > dirList.size()) {
@@ -933,7 +933,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
                     res.resok.reply.eof = false;
                     lastEntry.nextentry = null;
 
-                    _log.debug("Sending {} entries ( {} bytes from {}, dircount = {} from {} ) cookie = {} total {}",
+                    _log.trace("Sending {} entries ( {} bytes from {}, dircount = {} from {} ) cookie = {} total {}",
                                i - startValue, currcount, arg1.maxcount.value.value, dircount,
                                arg1.dircount.value.value, startValue, dirList.size());
                     return res;
@@ -951,7 +951,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resok.reply.eof = true;
 
         } catch (ChimeraNFSException hne) {
-            _log.debug("READDIRPLUS3 status: {}", hne.toString());
+            _log.trace("READDIRPLUS3 status: {}", hne.toString());
             res.resfail = new READDIRPLUS3resfail();
             res.resfail.dir_attributes = defaultPostOpAttr();
             res.status = hne.getStatus();
@@ -968,7 +968,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public READDIR3res NFSPROC3_READDIR_3(RpcCall call$, READDIR3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request READDIR3 uid: {}", user);
+        _log.trace("NFS Request READDIR3 uid: {}", user);
 
         READDIR3res res = new READDIR3res();
 
@@ -1012,11 +1012,11 @@ public class NfsServerV3 extends nfs3_protServerStub {
             InodeCacheEntry<cookieverf3> cacheKey = new InodeCacheEntry<>(dir, cookieverf);
             dirList = _dlCacheFull.getIfPresent(cacheKey);
             if (dirList == null) {
-                _log.debug("updating dirlist from db");
+                _log.trace("updating dirlist from db");
                 dirList = DirectoryStreamHelper.listOf(_fs, dir);
                 _dlCacheFull.put(cacheKey, dirList);
             } else {
-                _log.debug("using dirlist from cache");
+                _log.trace("using dirlist from cache");
             }
 
             if (startValue > dirList.size()) {
@@ -1060,7 +1060,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
 
                     res.resok.reply.eof = false;
 
-                    _log.debug("Sending {} entries ( {} bytes from {}) cookie = {} total {}",
+                    _log.trace("Sending {} entries ( {} bytes from {}) cookie = {} total {}",
                                i - startValue, currcount, arg1.count.value.value, startValue, dirList.size());
 
                     return res;
@@ -1190,7 +1190,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public REMOVE3res NFSPROC3_REMOVE_3(RpcCall call$, REMOVE3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request REMOVE3 uid: {}", user);
+        _log.trace("NFS Request REMOVE3 uid: {}", user);
 
 
         REMOVE3res res = new REMOVE3res();
@@ -1262,7 +1262,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public RENAME3res NFSPROC3_RENAME_3(RpcCall call$, RENAME3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request RENAME3 uid: {}", user);
+        _log.trace("NFS Request RENAME3 uid: {}", user);
 
         RENAME3res res = new RENAME3res();
 
@@ -1332,7 +1332,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public RMDIR3res NFSPROC3_RMDIR_3(RpcCall call$, RMDIR3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request RMDIR3 uid: {}", user);
+        _log.trace("NFS Request RMDIR3 uid: {}", user);
 
 
         RMDIR3res res = new RMDIR3res();
@@ -1396,7 +1396,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public SETATTR3res NFSPROC3_SETATTR_3(RpcCall call$, SETATTR3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request SETATTR3 uid: {}", user);
+        _log.trace("NFS Request SETATTR3 uid: {}", user);
 
 
         SETATTR3res res = new SETATTR3res();
@@ -1451,7 +1451,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     @Override
     public SYMLINK3res NFSPROC3_SYMLINK_3(RpcCall call$, SYMLINK3args arg1) {
         UnixUser user = NfsUser.remoteUser(call$, _exports);
-        _log.debug("NFS Request SYMLINK3 uid: {}", user);
+        _log.trace("NFS Request SYMLINK3 uid: {}", user);
 
         SYMLINK3res res = new SYMLINK3res();
 

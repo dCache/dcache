@@ -117,7 +117,7 @@ public class ChecksumAlarmSimulator {
                                             id, pnfsId);
                             break;
                         default:
-                            logger.info("no errors for simulator {}", id);
+                            logger.debug("no errors for simulator {}", id);
                     }
                 }
             }
@@ -165,19 +165,19 @@ public class ChecksumAlarmSimulator {
         timeoutModulo = TimeUnit.SECONDS.toMillis
                             (options.getIntOption(TIMEOUT, TIMEOUT_DEFAULT));
         timeoutModulo = Math.max(1000L, timeoutModulo);
-        logger.info("timeoutModulo: % {} (milliseconds)", timeoutModulo);
+        logger.debug("timeoutModulo: % {} (milliseconds)", timeoutModulo);
     }
 
     private static void setErrorModulo(Args options) {
         Double frequency = options.getDoubleOption(FREQUENCY, FREQUENCY_DEFAULT);
         frequency = Math.abs(Math.min(1.0, frequency));
         errorModulo = (int) Math.ceil(1.0 / frequency);
-        logger.info("errorModulo: one out of {}", errorModulo);
+        logger.debug("errorModulo: one out of {}", errorModulo);
     }
 
     private static void setThreads(Args options) {
         nThreads = options.getIntOption(NUM_THRDS, NTHREADS_DEFAULT);
         nThreads = Math.max(nThreads, NTHREADS_DEFAULT);
-        logger.info("number of simulator threads {}", nThreads);
+        logger.debug("number of simulator threads {}", nThreads);
     }
 }

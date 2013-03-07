@@ -79,11 +79,11 @@ public class PoolList extends BasePage {
 
     private void getPoolsAction() {
         try {
-            _log.debug("getPoolListAction called");
+            _log.trace("getPoolListAction called");
             this._poolBeans = getPoolSpaceService().getPoolBeans();
         } catch (PoolSpaceServiceException ex) {
             this.error(getStringResource("error.getPoolsFailed") + ex.getMessage());
-            _log.debug("getPoolListAction failed {}", ex.getMessage());
+            _log.trace("getPoolListAction failed {}", ex.getMessage());
             this._poolBeans = null;
         }
     }
@@ -96,16 +96,16 @@ public class PoolList extends BasePage {
             super(id);
             Button button = new Button("submit");
             MetaDataRoleAuthorizationStrategy.authorize(button, RENDER, Role.ADMIN);
-            _log.debug("submit isEnabled : {}", String.valueOf(button.isEnabled()));
+            _log.trace("submit isEnabled : {}", String.valueOf(button.isEnabled()));
             this.add(button);
         }
 
         @Override
         protected void onSubmit() {
-            _log.debug("button pressed");
+            _log.trace("button pressed");
             if (_poolBeans != null && _selectedOption != null) {
                 try {
-                    _log.debug("selected: {}", _selectedOption.getValue());
+                    _log.trace("selected: {}", _selectedOption.getValue());
                     PoolV2Mode poolMode = new PoolV2Mode(_selectedOption.getKey());
                     getPoolSpaceService().changePoolMode(_poolBeans, poolMode,
                             getWebadminSession().getUserName());

@@ -152,7 +152,7 @@
     </threshold>
     <threshold>
       <logger>dmg.cells.nucleus</logger>
-      <level>warn</level>
+      <level>info</level>
     </threshold>
     <threshold>
       <logger>COM.claymoresystems.ptls.SSLDebug</logger>
@@ -187,7 +187,7 @@
     <threshold>
       <appender>stdout</appender>
       <logger>root</logger>
-      <level>warn</level>
+      <level>info</level>
     </threshold>
 
     <threshold>
@@ -199,7 +199,7 @@
     <threshold>
       <appender>pinboard</appender>
       <logger>root</logger>
-      <level>info</level>
+      <level>debug</level>
     </threshold>
 
     <threshold>

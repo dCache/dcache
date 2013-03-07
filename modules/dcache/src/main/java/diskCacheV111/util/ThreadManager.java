@@ -148,7 +148,7 @@ import org.dcache.util.FireAndForgetTask;
       DELAY_CANCEL_TIME = setParam("thread-timeout", DELAY_CANCEL_TIME);
       toolong = 1000*DELAY_CANCEL_TIME;
 
-      _log.info(this.toString() + " starting with " + THREAD_COUNT + " threads and timeout " + DELAY_CANCEL_TIME);
+      _log.debug(this.toString() + " starting with " + THREAD_COUNT + " threads and timeout " + DELAY_CANCEL_TIME);
 
       //authpool = Executors.newFixedThreadPool(THREAD_COUNT);
       executor =
@@ -164,7 +164,7 @@ import org.dcache.util.FireAndForgetTask;
 
       start() ;
 
-      _log.info(this.toString() + " started");
+      _log.debug(this.toString() + " started");
 
     } catch( Exception iae ){
         _log.warn(this.toString() + " couldn't start due to " + iae, iae);
@@ -179,7 +179,7 @@ import org.dcache.util.FireAndForgetTask;
     //Make the cell name well-known
     //getNucleus().export();
 
-	  _log.info(" Constructor finished" ) ;
+	  _log.debug(" Constructor finished" ) ;
    }
 
   public static ThreadManager getInstance() {
@@ -233,7 +233,7 @@ import org.dcache.util.FireAndForgetTask;
    if((option != null) && (option.length()>0)) {
        target = option;
    }
-   _log.info("Using " + name + " : " + target);
+   _log.debug("Using " + name + " : " + target);
    return target;
   }
 
@@ -243,7 +243,7 @@ import org.dcache.util.FireAndForgetTask;
    if( ( option != null ) && ( option.length() > 0 ) ) {
      try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
    }
-   _log.info("Using " + name + " : " + target);
+   _log.debug("Using " + name + " : " + target);
    return target;
   }
 
@@ -253,7 +253,7 @@ import org.dcache.util.FireAndForgetTask;
    if( ( option != null ) && ( option.length() > 0 ) ) {
      try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
    }
-   _log.info("Using " + name + " : " + target);
+   _log.debug("Using " + name + " : " + target);
    return target;
   }
 
@@ -388,7 +388,7 @@ import org.dcache.util.FireAndForgetTask;
 
 
   public synchronized void Message( String msg1, String msg2 ) {
-    _log.info("Message received");
+    _log.debug("Message received");
   }
 
   @Override

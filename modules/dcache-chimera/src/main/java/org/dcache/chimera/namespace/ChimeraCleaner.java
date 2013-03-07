@@ -260,7 +260,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         _dataSource = ds;
         _db = new JdbcTemplate(_dataSource);
 
-        _log.info("Database connection with jdbcUrl={}; user={}",
+        _log.debug("Database connection with jdbcUrl={}; user={}",
                   jdbcUrl, user);
     }
 
@@ -282,25 +282,25 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     public void run() {
 
         try {
-            _log.info("*********NEW_RUN*************");
+            _log.debug("*********NEW_RUN*************");
 
             if (_log.isDebugEnabled()){
-                _log.debug("INFO: Refresh Interval (seconds): " + _refreshInterval);
-                _log.debug("INFO: Number of files processed at once: " + _processAtOnce);
+                _log.trace("INFO: Refresh Interval (seconds): " + _refreshInterval);
+                _log.trace("INFO: Number of files processed at once: " + _processAtOnce);
             }
 
             // get list of pool names from the trash_table
             List<String> poolList = getPoolList();
 
             if (_log.isDebugEnabled()){
-                _log.debug("List of Pools from the trash-table : "+ poolList);
+                _log.trace("List of Pools from the trash-table : "+ poolList);
             }
 
             // if there are some pools in the blackPoolList (i.e.,
             //pools that are down/do not exist), extract them from the
             //poolList
             if (_poolsBlackList.size() > 0) {
-                _log.debug("htBlackPools.size()="+ _poolsBlackList.size());
+                _log.trace("htBlackPools.size()="+ _poolsBlackList.size());
 
                 for (Map.Entry<String, Long> blackListEntry : _poolsBlackList.entrySet()) {
                     String poolName = blackListEntry.getKey();
@@ -312,7 +312,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                         && ((System.currentTimeMillis() - valueTime) > _recoverTimer * 1000)) {
                         _poolsBlackList.remove(poolName);
                         if (_log.isDebugEnabled()) {
-                            _log.debug("Remove the following pool from the Black List : "+ poolName);
+                            _log.trace("Remove the following pool from the Black List : "+ poolName);
                         }
                     }
                 }
@@ -321,7 +321,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             }
 
             if (!poolList.isEmpty()) {
-                _log.debug("The following pools are sent to runDelete(..): {}",
+                _log.trace("The following pools are sent to runDelete(..): {}",
                            poolList);
                 runDelete(poolList);
             }
@@ -333,7 +333,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         } catch (DataAccessException e) {
             _log.error("Database failure: " + e.getMessage());
         } catch (InterruptedException e) {
-            _log.info("Cleaner was interrupted");
+            _log.debug("Cleaner was interrupted");
         } catch (RuntimeException e) {
             _log.error("Bug detected" , e);
         }
@@ -418,7 +418,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 throw new InterruptedException("Cleaner interrupted");
             }
 
-            _log.info("runDelete(): Now processing pool {}", pool);
+            _log.debug("runDelete(): Now processing pool {}", pool);
             if (!_poolsBlackList.containsKey(pool)) {
                 cleanPoolComplete(pool);
             }
@@ -438,8 +438,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             List<String> removeList) throws InterruptedException {
 
         if (_log.isDebugEnabled()) {
-            _log.debug("sendRemoveToPoolCleaner: poolName="+ poolName);
-            _log.debug("sendRemoveToPoolCleaner: removeList="+ removeList);
+            _log.trace("sendRemoveToPoolCleaner: poolName="+ poolName);
+            _log.trace("sendRemoveToPoolCleaner: removeList="+ removeList);
         }
         PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage(poolName);
         msg.setFiles(removeList.toArray(new String[removeList.size()]));
@@ -533,10 +533,10 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             msg.setReplyRequired(false);
 
             _broadcasterStub.send( msg ) ;
-            _log.debug("have broadcasted 'remove files' message to " +
+            _log.trace("have broadcasted 'remove files' message to " +
                                 _broadcasterStub.getDestinationPath());
         } catch (NoRouteToCellException e) {
-            _log.debug("Failed to broadcast 'remove files' message: " +
+            _log.trace("Failed to broadcast 'remove files' message: " +
                                 e.getMessage());
         }
      }
@@ -579,7 +579,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                       {
                           try {
                               URI uri = new URI(rs.getString("ilocation"));
-                              _log.debug("Submitting a request to delete a file: {}", uri);
+                              _log.trace("Submitting a request to delete a file: {}", uri);
                               _requests.submit(uri);
                           } catch (URISyntaxException e) {
                               throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);
@@ -822,7 +822,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     protected void onSuccess(URI uri)
     {
         try {
-            _log.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}", uri);
+            _log.trace("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}", uri);
             _db.update(sqlRemoveHSMFiles, uri.toString());
         } catch (DataAccessException e) {
             _log.error("Error when deleting from the trash-table: " + e.getMessage());
@@ -834,7 +834,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      */
     protected void onFailure(URI uri)
     {
-        _log.info("Failed to delete a file {} from HSM. Will try again later.", uri);
+        _log.debug("Failed to delete a file {} from HSM. Will try again later.", uri);
     }
 
     private class RemoveMessageCallback

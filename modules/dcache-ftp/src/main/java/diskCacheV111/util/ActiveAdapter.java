@@ -240,7 +240,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     }
 
     protected void say(String s) {
-        _log.info("ActiveAdapter: " + s);
+        _log.debug("ActiveAdapter: " + s);
     }
 
     protected void esay(String s) {

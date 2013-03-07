@@ -748,7 +748,7 @@ public abstract class AbstractFtpDoorV1
 
             case ACTIVE:
                 if (_isProxyRequiredOnActive) {
-                    _logger.info("Creating adapter for active mode");
+                    _logger.debug("Creating adapter for active mode");
                     _adapter =
                         new ActiveAdapter(_passiveModePortRange,
                                           _client.getAddress().getHostAddress(),
@@ -869,7 +869,7 @@ public abstract class AbstractFtpDoorV1
         public void createTransactionLog()
         {
             if (_tLogRoot != null) {
-                _logger.info("Door will log ftp transactions to {}", _tLogRoot);
+                _logger.debug("Door will log ftp transactions to {}", _tLogRoot);
                 _tLog = new FTPTransactionLog(_tLogRoot);
                 startTlog(_tLog, _path.toString(), isWrite() ? "write" : "read");
             }
@@ -961,7 +961,7 @@ public abstract class AbstractFtpDoorV1
 
                     reply127PORT(message.getPoolAddress());
 
-                    _logger.info("Closing adapter");
+                    _logger.debug("Closing adapter");
                     _adapter.close();
                     _adapter = null;
                 } else if (_reply127) {
@@ -1004,7 +1004,7 @@ public abstract class AbstractFtpDoorV1
                 /* Wait for adapter to shut down.
                  */
                 if (_adapter != null) {
-                    _logger.info("Waiting for adapter to finish.");
+                    _logger.debug("Waiting for adapter to finish.");
                     _adapter.join(300000); // 5 minutes
                     if (_adapter.isAlive()) {
                         throw new FTPCommandException(426, "FTP proxy did not shut down");
@@ -1012,7 +1012,7 @@ public abstract class AbstractFtpDoorV1
                         throw new FTPCommandException(426, "FTP proxy failed: " + _adapter.getError());
                     }
 
-                    _logger.debug("Closing adapter");
+                    _logger.trace("Closing adapter");
                     _adapter.close();
                     _adapter = null;
                 }
@@ -1111,7 +1111,7 @@ public abstract class AbstractFtpDoorV1
                 _logger.error("Transfer error: {}", msg);
             } else {
                 _logger.error("Transfer error: {} ({})", msg, exception.getMessage());
-                _logger.debug(exception.toString(), exception);
+                _logger.trace(exception.toString(), exception);
             }
             reply(msg);
             _aborted = true;
@@ -1160,7 +1160,7 @@ public abstract class AbstractFtpDoorV1
         _clientDataAddress =
             new InetSocketAddress(_engine.getInetAddress(), DEFAULT_DATA_PORT);
 
-        _logger.debug("Client host: {}",
+        _logger.trace("Client host: {}",
                       _clientDataAddress.getAddress().getHostAddress());
 
         if (_local_host == null) {
@@ -1339,10 +1339,10 @@ public abstract class AbstractFtpDoorV1
         // commands need special handling
         if (cmd.equals("mic" ) || cmd.equals("conf") || cmd.equals("enc") ||
             cmd.equals("adat") || cmd.equals("pass")) {
-            _logger.info("ftpcommand <{} ...>", cmd);
+            _logger.debug("ftpcommand <{} ...>", cmd);
         } else {
             _lastCommand = cmdline;
-            _logger.info("ftpcommand <{}>", cmdline);
+            _logger.debug("ftpcommand <{}>", cmdline);
         }
 
         // If a transfer is in progress, only permit ABORT and a few
@@ -1400,7 +1400,7 @@ public abstract class AbstractFtpDoorV1
                 socket.shutdownInput();
             }
         } catch (IOException e) {
-            _logger.info("Failed to shut down input stream of the " +
+            _logger.debug("Failed to shut down input stream of the " +
                          "control channel: {}", e.getMessage());
         }
     }
@@ -1409,7 +1409,7 @@ public abstract class AbstractFtpDoorV1
     {
         if (_passiveModeServerSocket != null) {
             try {
-                _logger.info("Closing passive mode server socket");
+                _logger.debug("Closing passive mode server socket");
                 _passiveModeServerSocket.close();
             } catch (IOException e) {
                 _logger.warn("Failed to close passive mode server socket: {}",
@@ -1481,7 +1481,7 @@ public abstract class AbstractFtpDoorV1
 
                 closePassiveModeServerSocket();
 
-                _logger.debug("End of stream encountered");
+                _logger.trace("End of stream encountered");
             }
         } finally {
             /* cleanUp() waits for us to open the gate.
@@ -1606,7 +1606,7 @@ public abstract class AbstractFtpDoorV1
      public void messageArrived(CellMessage envelope,
                                 GFtpTransferStartedMessage message)
      {
-         _logger.debug("Received TransferStarted message");
+         _logger.trace("Received TransferStarted message");
          FtpTransfer transfer = _transfer;
          if (transfer != null) {
              transfer.transferStarted(envelope, message);
@@ -1615,7 +1615,7 @@ public abstract class AbstractFtpDoorV1
 
     public void messageArrived(DoorTransferFinishedMessage message)
     {
-        _logger.debug("Received TransferFinished message [rc={}]",
+        _logger.trace("Received TransferFinished message [rc={}]",
                       message.getReturnCode());
         FtpTransfer transfer = _transfer;
         if (transfer != null) {
@@ -1630,10 +1630,10 @@ public abstract class AbstractFtpDoorV1
     protected void reply(String answer, boolean resetReply)
     {
         if (answer.startsWith("335 ADAT=")) {
-            _logger.info("REPLY(reset={} GReplyType={}): <335 ADAT=...>",
+            _logger.debug("REPLY(reset={} GReplyType={}): <335 ADAT=...>",
                          resetReply, _gReplyType);
         } else {
-            _logger.info("REPLY(reset={} GReplyType={}): <{}>", resetReply,_gReplyType, answer);
+            _logger.debug("REPLY(reset={} GReplyType={}): <{}>", resetReply,_gReplyType, answer);
         }
         switch (_gReplyType) {
         case "clear":
@@ -2128,7 +2128,7 @@ public abstract class AbstractFtpDoorV1
     {
         try {
             if (_passiveModeServerSocket == null) {
-                _logger.info("Opening server socket for passive mode");
+                _logger.debug("Opening server socket for passive mode");
                 _passiveModeServerSocket = ServerSocketChannel.open();
                 _passiveModePortRange.bind(_passiveModeServerSocket.socket(),
                                            _engine.getLocalAddress());
@@ -2419,7 +2419,7 @@ public abstract class AbstractFtpDoorV1
         if (_methodDict.containsKey(cmd)) {
             Method m = _methodDict.get(cmd);
             try {
-                _logger.info("Error return invoking: {}({})", m.getName(), arg);
+                _logger.debug("Error return invoking: {}({})", m.getName(), arg);
                 m.invoke(this, args);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 reply("500 " + e.toString());
@@ -2445,7 +2445,7 @@ public abstract class AbstractFtpDoorV1
         if (_methodDict.containsKey(cmd)) {
             Method m = _methodDict.get(cmd);
             try {
-                _logger.info("Esto invoking: {} ({})", m.getName(), arg);
+                _logger.debug("Esto invoking: {} ({})", m.getName(), arg);
                 m.invoke(this, args);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 reply("500 " + e.toString());
@@ -2492,7 +2492,7 @@ public abstract class AbstractFtpDoorV1
             reply("504 ESTO Adjusted Store Mode does not work with nonzero offset: " + offset);
             return;
         }
-        _logger.info("Performing esto in \"a\" mode with offset = {}", offset);
+        _logger.debug("Performing esto in \"a\" mode with offset = {}", offset);
         ac_stor(filename);
     }
 
@@ -2534,7 +2534,7 @@ public abstract class AbstractFtpDoorV1
             reply(err);
             return;
         }
-        _logger.info("Performing eret in \"p\" mode with offset = {} size = {}",
+        _logger.debug("Performing eret in \"p\" mode with offset = {} size = {}",
                      offset, size);
         ac_retr(filename);
     }
@@ -2624,8 +2624,8 @@ public abstract class AbstractFtpDoorV1
                             reply127,
                             version);
         try {
-            _logger.info("retrieve user={}", getUser());
-            _logger.info("retrieve addr={}", _engine.getInetAddress());
+            _logger.debug("retrieve user={}", getUser());
+            _logger.debug("retrieve addr={}", _engine.getInetAddress());
 
             transfer.readNameSpaceEntry();
             transfer.createTransactionLog();
@@ -2737,7 +2737,7 @@ public abstract class AbstractFtpDoorV1
                             reply127,
                             version);
         try {
-            _logger.info("store receiving with mode {}", xferMode);
+            _logger.debug("store receiving with mode {}", xferMode);
 
             transfer.createNameSpaceEntry();
             transfer.createTransactionLog();
@@ -3451,7 +3451,7 @@ public abstract class AbstractFtpDoorV1
                 /* Typically this is just an error message saying the
                  * mover is gone.
                  */
-                _logger.info("Performance marker engine: {}", msg);
+                _logger.debug("Performance marker engine: {}", msg);
             } else {
                 _logger.error("Performance marker engine: {}",
                               msg.getClass().getName());

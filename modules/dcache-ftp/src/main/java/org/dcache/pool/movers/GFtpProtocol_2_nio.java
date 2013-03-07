@@ -260,7 +260,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /** Utility method for logging. */
     @Override
     public void say(String str) {
-        _log.info(str);
+        _log.debug(str);
     }
 
     /** Utility method for reporting errors. */
@@ -743,7 +743,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	if (position > _reservedSpace) {
 	    long additional = Math.max(position - _reservedSpace, SPACE_INC);
             _status = "WaitingForSpace(" + additional + ")";
-            _logSpaceAllocation.debug("ALLOC: " + additional );
+            _logSpaceAllocation.trace("ALLOC: " + additional );
             _allocator.allocate(additional);
             _status = "None";
 	    _reservedSpace += additional;

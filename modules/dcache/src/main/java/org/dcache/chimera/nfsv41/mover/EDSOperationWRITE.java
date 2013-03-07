@@ -76,10 +76,10 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             res.resok4.writeverf = new verifier4();
             res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
 
-            _log.debug("MOVER: {}@{} written, {} requested.", bytesWritten, offset, bytesWritten);
+            _log.trace("MOVER: {}@{} written, {} requested.", bytesWritten, offset, bytesWritten);
 
         }catch(ChimeraNFSException he) {
-            _log.debug(he.getMessage());
+            _log.trace(he.getMessage());
             res.status = he.getStatus();
         }catch(IOException ioe) {
             _log.error("DSWRITE: ", ioe);

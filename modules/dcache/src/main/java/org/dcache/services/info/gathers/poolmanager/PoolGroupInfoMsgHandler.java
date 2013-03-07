@@ -25,7 +25,7 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 	@Override
     public void process(Object msgPayload, long metricLifetime) {
 
-		_log.info( "processing new poolgroup information");
+		_log.debug( "processing new poolgroup information");
 
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "received a message that isn't an array");

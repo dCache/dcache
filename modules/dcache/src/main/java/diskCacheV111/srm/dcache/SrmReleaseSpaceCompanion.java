@@ -126,7 +126,7 @@ public final class SrmReleaseSpaceCompanion
 
     @Override
     public void success(Release releaseResponse) {
-        _log.debug("success");
+        _log.trace("success");
         callbacks.SpaceReleased(
                 Long.toString(releaseResponse.getSpaceToken()),
                 releaseResponse.getRemainingSizeInBytes());
@@ -151,7 +151,7 @@ public final class SrmReleaseSpaceCompanion
             Long spaceToReleaseInBytes,
             SrmReleaseSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.debug("SrmReleaseSpaceCompanion.releaseSpace(" + user +
+        _log.trace("SrmReleaseSpaceCompanion.releaseSpace(" + user +
                 ", token " + spaceToken +
                 ", spaceToReleaseInBytes " + spaceToReleaseInBytes + ")");
 
@@ -162,7 +162,7 @@ public final class SrmReleaseSpaceCompanion
         Release release =
                 new Release(spaceToken,
                 spaceToReleaseInBytes);
-        _log.debug("setting group=" + user.getVoGroup() + ", role=" + user.getVoRole());
+        _log.trace("setting group=" + user.getVoGroup() + ", role=" + user.getVoRole());
         release.setAuthRecord(user);
         spaceManagerStub.send(release, Release.class,
                 new ThreadManagerMessageCallback(companion));

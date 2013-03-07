@@ -377,7 +377,7 @@ class CellGlue {
        if( ( _printoutLevel & CellNucleus.PRINT_NUCLEUS ) != 0 ) {
            _logGlue.warn(str);
        } else {
-           _logGlue.info(str);
+           _logGlue.debug(str);
        }
    }
 
@@ -385,7 +385,7 @@ class CellGlue {
        if( ( _printoutLevel & CellNucleus.PRINT_NUCLEUS ) != 0 ) {
            _logGlue.error(str);
        } else {
-           _logGlue.info(str);
+           _logGlue.debug(str);
        }
    }
    String getCellDomainName(){  return _cellDomainName ; }
@@ -553,7 +553,7 @@ class CellGlue {
     	  }
 
     	  String messageObject = messageToSend.getMessageObject() == null? "NULL" : messageToSend.getMessageObject().getClass().getName();
-    	  _logMessages.debug("glueSendMessage src=" + messageToSend.getSourcePath() +
+    	  _logMessages.trace("glueSendMessage src=" + messageToSend.getSourcePath() +
   			   " dest=" + messageToSend.getDestinationPath() + " [" + messageObject + "] UOID=" + messageToSend.getUOID().toString() );
       }
       //

@@ -53,7 +53,7 @@ public class CellInfoDga extends SkelListBasedActivity {
 		CellPath systemCellPath = new CellPath( "System", domainName);
 
 		if( _log.isInfoEnabled()) {
-                    _log.info("sending message getcellinfos to System cell on domain " + domainName);
+                    _log.debug("sending message getcellinfos to System cell on domain " + domainName);
                 }
 
 		_sender.sendMessage( getMetricLifetime(), _handler, systemCellPath, "getcellinfos");

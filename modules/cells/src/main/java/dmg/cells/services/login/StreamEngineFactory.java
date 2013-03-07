@@ -32,19 +32,19 @@ public abstract class StreamEngineFactory {
         case "ssh": {
             SshServerAuthentication auth = new SshSAuth_A(
                     nucleusForAuth, argsForAuth);
-            _log.info("Using authentication Module : " + SshSAuth_A.class);
+            _log.debug("Using authentication Module : " + SshSAuth_A.class);
             engine = new SshStreamEngine(socket, auth);
             break;
         }
         case "raw":
-            _log.info("No authentication used");
+            _log.debug("No authentication used");
             engine = new DummyStreamEngine(socket);
             break;
         case "telnet": {
             TelnetServerAuthentication auth =
                     new TelnetSAuth_A(
                             nucleusForAuth, argsForAuth);
-            _log.info("Using authentication Module : " + TelnetSAuth_A.class);
+            _log.debug("Using authentication Module : " + TelnetSAuth_A.class);
             engine = new TelnetStreamEngine(socket, auth);
             break;
         }
@@ -64,17 +64,17 @@ public abstract class StreamEngineFactory {
         switch (protocol) {
         case "ssh": {
             SshServerAuthentication auth = null;
-            _log.info("No authentication used");
+            _log.debug("No authentication used");
             engine = new SshStreamEngine(socket, auth);
             break;
         }
         case "raw":
-            _log.info("No authentication used");
+            _log.debug("No authentication used");
             engine = new DummyStreamEngine(socket);
             break;
         case "telnet": {
             TelnetServerAuthentication auth = null;
-            _log.info("No authentication used");
+            _log.debug("No authentication used");
             engine = new TelnetStreamEngine(socket, auth);
             break;
         }

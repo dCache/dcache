@@ -103,7 +103,7 @@ public class GNLCell implements Cell, Runnable  {
        while( true ){
           try{
            Socket socket = _serverSocket.accept() ;
-           _log.info( "Cell Listen Socket created " ) ;
+           _log.debug( "Cell Listen Socket created " ) ;
 
            Cell cell = _nucleus.createNewCell(
                                _cellClass  ,
@@ -112,10 +112,10 @@ public class GNLCell implements Cell, Runnable  {
                                true        ) ;
 
           }catch( IOException ioe ){
-             _log.info( " ServerSocket Got Exc : " + ioe ) ;
+             _log.debug( " ServerSocket Got Exc : " + ioe ) ;
              _nucleus.kill();
           }catch( Exception ae ){
-              _log.info( " Problem creating "+_cellClass+" : "+ae);
+              _log.debug( " Problem creating "+_cellClass+" : "+ae);
           }
        }
     }
@@ -130,16 +130,16 @@ public class GNLCell implements Cell, Runnable  {
    }
    @Override
    public void   messageArrived( MessageEvent me ){
-     _log.info( " messageArrived "+me ) ;
+     _log.debug( " messageArrived "+me ) ;
 
    }
    @Override
    public void   prepareRemoval( KillEvent ce ){
-     _log.info( " prepareRemoval "+ce ) ;
+     _log.debug( " prepareRemoval "+ce ) ;
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){
-     _log.info( " exceptionArrived "+ce ) ;
+     _log.debug( " exceptionArrived "+ce ) ;
    }
 
   @Override
