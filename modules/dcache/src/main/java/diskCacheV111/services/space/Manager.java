@@ -30,7 +30,6 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,7 +83,6 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.ThreadManager;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.VOInfo;
-import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
@@ -102,7 +100,6 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
@@ -307,12 +304,6 @@ public final class Manager
                 else {
                         return default_value;
                 }
-        }
-
-        @Override
-        public CellVersion getCellVersion(){
-                return new CellVersion(Version.getVersion(),
-                                       "$Revision: 1.63 $");
         }
 
         @Override

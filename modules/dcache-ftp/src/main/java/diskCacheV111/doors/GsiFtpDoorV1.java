@@ -6,8 +6,6 @@
 
 package diskCacheV111.doors;
 
-//cells
-
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
@@ -27,9 +25,7 @@ import java.security.cert.X509Certificate;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.Version;
 
-import dmg.cells.nucleus.CellVersion;
 import dmg.util.Args;
 import dmg.util.StreamEngine;
 
@@ -37,8 +33,6 @@ import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.Option;
 
-//jgss
-// globus gsi
 /**
  *
  * @author  timur
@@ -80,11 +74,6 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         _gssFlavor = "gsi";
 
         ftpDoorName="GSI FTP";
-    }
-
-    public static CellVersion getStaticCellVersion() {
-        return new CellVersion(Version.getVersion(),
-                               "$Revision: 1.17 $");
     }
 
     @Override

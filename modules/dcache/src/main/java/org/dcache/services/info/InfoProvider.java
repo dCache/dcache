@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import diskCacheV111.util.Version;
+import org.dcache.util.Version;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellVersion;
@@ -64,16 +64,6 @@ public class InfoProvider extends AbstractCell {
 	private final State _state = new State();
     private final StateObservatory _observatory = _state;
     private final StateUpdateManager _sum;
-
-	/**
-	 * Correctly report our version and revision information.
-	 * @return a CellVersion for this cell.
-	 */
-    @Override
-    public CellVersion getCellVersion() {
-        return new CellVersion(Version.getVersion(),
-                               "$Revision: 9086 $");
-    }
 
     /**
      * Provide information for the info command.

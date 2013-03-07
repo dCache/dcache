@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import diskCacheV111.util.Version;
+import org.dcache.util.Version;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -75,16 +75,6 @@ public class InfoHttpEngine implements HttpResponseEngine {
             }
             _endpoint = endpoint;
 	}
-
-	/**
-	 * Correctly report our version and revision information.
-	 * @return a CellVersion for this cell.
-	 */
-    public CellVersion getCellVersion() {
-        return new CellVersion(Version.getVersion(),
-                               "$Revision: 9086 $");
-    }
-
 
 	/**
 	 * Handle a request for data.  This either returns the cached contents (if

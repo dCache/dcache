@@ -16,7 +16,6 @@ package  diskCacheV111.services ;
  import java.util.TreeMap;
  import java.util.regex.Pattern;
 
- import diskCacheV111.util.Version;
  import diskCacheV111.vehicles.DCapProtocolInfo;
  import diskCacheV111.vehicles.Pool2PoolTransferMsg;
  import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
@@ -27,11 +26,10 @@ package  diskCacheV111.services ;
  import dmg.cells.nucleus.CellMessage;
  import dmg.cells.nucleus.CellNucleus;
  import dmg.cells.nucleus.CellPath;
- import dmg.cells.nucleus.CellVersion;
  import dmg.util.Args;
  import dmg.util.Formats;
 
-/**
+ /**
   *  @Author: Patrick Fuhrmann
   *
   *  The FileHoppingManager receives PoolMgrReplicateFileMsg messages from
@@ -51,9 +49,6 @@ public class FileHoppingManager extends CellAdapter {
    private File        _configFile;
 
    private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
-
-   @Override
-   public  CellVersion getCellVersion(){ return new CellVersion(Version.getVersion(),"$Revision: 1.3 $" ); }
 
    public FileHoppingManager( String name , String args )throws Exception {
 

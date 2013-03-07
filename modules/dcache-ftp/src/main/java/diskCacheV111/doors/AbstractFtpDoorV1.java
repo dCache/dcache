@@ -127,7 +127,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.ProxyAdapter;
 import diskCacheV111.util.SocketAdapter;
 import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
@@ -143,7 +142,6 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandExitException;
@@ -1133,12 +1131,6 @@ public abstract class AbstractFtpDoorV1
                 _methodDict.put(name.substring(3), method);
             }
         }
-    }
-
-    public static CellVersion getStaticCellVersion()
-    {
-        return new CellVersion(Version.getVersion(),
-                               "$Revision$");
     }
 
     public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)

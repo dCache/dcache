@@ -14,6 +14,7 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.CellShell;
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.LastMessageEvent;
@@ -23,6 +24,8 @@ import dmg.util.Args;
 import dmg.util.Gate;
 import dmg.util.StateEngine;
 import dmg.util.StateThread;
+
+import org.dcache.util.Version;
 
 /**
   *
@@ -44,8 +47,9 @@ public class ClientBootstrap
    private boolean     _routeAdded;
    private StateThread _engine ;
    private String  []  _commands ;
+   private final Version version = Version.of(this);
 
-   public ClientBootstrap( String cellName , String arguments )
+    public ClientBootstrap( String cellName , String arguments )
           throws Exception {
 
       Args args = new Args( arguments ) ;
@@ -272,4 +276,9 @@ public class ClientBootstrap
 //     _log.info( " routeDeleted "+ce ) ;
    }
 
+   @Override
+   public CellVersion getCellVersion()
+   {
+       return new CellVersion(version);
+   }
 }

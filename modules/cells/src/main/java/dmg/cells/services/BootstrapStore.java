@@ -11,12 +11,15 @@ import java.util.Vector;
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.util.Args;
 import dmg.util.Gate;
+
+import org.dcache.util.Version;
 
 /**
   *
@@ -34,8 +37,9 @@ public class BootstrapStore implements Cell {
    private CellNucleus _nucleus  ;
    private int    _requests;
    private int    _answeredRequests;
+   private final Version version = Version.of(this);
 
-   public BootstrapStore( String cellName , String arg ){
+    public BootstrapStore( String cellName , String arg ){
 
       Args args = new Args( arg ) ;
       if( args.argc() < 1 ) {
@@ -128,4 +132,9 @@ public class BootstrapStore implements Cell {
      _log.info( " exceptionArrived "+ce ) ;
    }
 
+   @Override
+   public CellVersion getCellVersion()
+   {
+       return new CellVersion(version);
+   }
 }

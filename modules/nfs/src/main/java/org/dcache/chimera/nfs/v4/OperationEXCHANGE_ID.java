@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-import diskCacheV111.util.Version;
-
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.EXCHANGE_ID4res;
@@ -44,6 +42,7 @@ import org.dcache.chimera.nfs.v4.xdr.uint64_t;
 import org.dcache.chimera.nfs.v4.xdr.utf8str_cis;
 import org.dcache.chimera.nfs.v4.xdr.utf8str_cs;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
+import org.dcache.util.Version;
 
 import static org.dcache.chimera.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_DOMAIN;
 import static org.dcache.chimera.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_ID;
@@ -52,6 +51,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(OperationEXCHANGE_ID.class);
     private final int _flag;
+    private static final Version VERSION = Version.of(OperationEXCHANGE_ID.class);
     private static final int EXCHGID4_FLAG_MASK = (nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS
             | nfs4_prot.EXCHGID4_FLAG_USE_NON_PNFS
             | nfs4_prot.EXCHGID4_FLAG_USE_PNFS_MDS
@@ -222,8 +222,8 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             res.eir_resok4.eir_server_impl_id[0].nii_domain = new utf8str_cis( NFS4_IMPLEMENTATION_DOMAIN );
             res.eir_resok4.eir_server_impl_id[0].nii_name = new utf8str_cs(
                 NFS4_IMPLEMENTATION_ID
-                + " Version: " + Version.getVersion()
-                + " build-time: " + Version.getBuildTime() );
+                + " Version: " + VERSION.getVersion()
+                + " build-time: " + VERSION.getBuildTime() );
             nfstime4 releaseDate = new nfstime4();
             releaseDate.nseconds = new uint32_t(0);
             releaseDate.seconds = new int64_t (System.currentTimeMillis() / 1000 );

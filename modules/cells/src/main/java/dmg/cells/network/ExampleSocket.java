@@ -10,10 +10,13 @@ import java.net.Socket;
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
+
+import org.dcache.util.Version;
 
 /**
   *
@@ -31,6 +34,7 @@ public class ExampleSocket implements Cell, Runnable {
    private InputStream  _input;
    private OutputStream _output;
    private Socket       _socket ;
+   private final Version version = Version.of(this);
 
    public ExampleSocket( String cellName , Socket socket ){
 
@@ -118,4 +122,9 @@ public class ExampleSocket implements Cell, Runnable {
      _log.info( " exceptionArrived "+ce ) ;
    }
 
+   @Override
+   public CellVersion getCellVersion()
+   {
+       return new CellVersion(version);
+   }
 }

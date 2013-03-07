@@ -2,7 +2,6 @@ package dmg.cells.nucleus;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,9 +29,8 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.Gate;
 import dmg.util.Pinboard;
+import org.dcache.util.Version;
 import dmg.util.logback.FilterShell;
-import dmg.util.logback.FilterThresholds;
-import dmg.util.logback.RootFilterThresholds;
 
 /**
  *
@@ -72,6 +70,7 @@ public class   CellAdapter
      */
     private final static long RETRY_PERIOD = 30000; // 30 seconds
 
+    private final CellVersion _version = new CellVersion(Version.of(this));
     private final CellNucleus _nucleus;
     private final Gate        _readyGate = new Gate(false);
     private final Gate        _startGate = new Gate(false);
@@ -636,16 +635,13 @@ public class   CellAdapter
         printWriter.println(" CellClass : "+this.getClass().getName());
         printWriter.println(" Arguments : "+_args);
     }
+
+    @Override
     public CellVersion getCellVersion()
     {
-        String pv = null;
-        Package p = Package.getPackage("dmg.cells.nucleus");
-        if (p != null) {
-            pv = p.getSpecificationVersion();
-        }
-        return new CellVersion((pv == null) ? "cells" : pv,
-                               "CA-$Revision: 1.28 $");
+        return _version;
     }
+
     @Override
     public CellInfo getCellInfo() { return _nucleus.getCellInfo(); }
     /**

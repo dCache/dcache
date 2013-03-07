@@ -17,18 +17,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.cells.nucleus.UOID;
-import dmg.cells.services.login.LoginManager;
 import dmg.util.Args;
 
 /**
@@ -931,20 +928,5 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
             }
             sendReply(endpoint, envelope, result);
         }
-    }
-
-    /**
-     * A static version of the getCellVersion method.  This method is called
-     * by reflection in
-     * {@link LoginManager#getCellVersion}
-     * @return
-     */
-    public static CellVersion getStaticCellVersion(){
-        return new CellVersion(Version.getVersion(),"$Revision$" );
-    }
-
-    @Override
-    public  CellVersion getCellVersion(){
-        return getStaticCellVersion() ;
     }
 }

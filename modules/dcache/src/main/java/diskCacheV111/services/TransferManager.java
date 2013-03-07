@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.Pgpass;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
@@ -35,7 +34,6 @@ import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.util.Args;
 
 import org.dcache.cells.AbstractCell;
@@ -197,12 +195,6 @@ public abstract class TransferManager extends AbstractCell
                 log.debug("Pool Proxy " + (_poolProxy == null ? "not set" : ("set to " + _poolProxy)));
 		_poolMgrPath = new CellPath( _poolManager ) ;
 	}
-
-        @Override
-	public CellVersion getCellVersion()
-        {
-                return new CellVersion(Version.getVersion(),"$Revision: 1.38 $" );
-        }
 
         @Override
 	public void getInfo(PrintWriter pw)

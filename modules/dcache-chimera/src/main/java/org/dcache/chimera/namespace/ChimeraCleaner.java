@@ -31,7 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.Version;
+import org.dcache.util.Version;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
@@ -805,12 +805,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
          return "HSM Cleaner is disabled.";
        }
 
-    }
-
-    @Override
-    public CellVersion getCellVersion(){
-        return new CellVersion(Version.getVersion(),
-                               "$Revision: 1.23 $" );
     }
 
     @Override

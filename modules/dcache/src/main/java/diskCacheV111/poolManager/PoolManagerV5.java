@@ -23,7 +23,6 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolCostCheckable;
@@ -64,6 +63,7 @@ import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.Utils;
+import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 
@@ -74,6 +74,7 @@ public class PoolManagerV5
     implements CellCommandListener,
                CellMessageReceiver
 {
+    private static final Version VERSION = Version.of(PoolManagerV5.class);
     private int  _writeThreads;
     private int  _readThreads;
 
@@ -163,7 +164,7 @@ public class PoolManagerV5
         }
 
         PoolManagerCellInfo pminfo = new PoolManagerCellInfo(info);
-        pminfo.setCellVersion(new CellVersion(Version.getVersion(),"$Revision$"));
+        pminfo.setCellVersion(new CellVersion(VERSION));
         pminfo.setPools(builder.build());
         return pminfo;
     }

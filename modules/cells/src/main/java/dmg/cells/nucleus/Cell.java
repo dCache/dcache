@@ -1,4 +1,4 @@
- 
+
 package  dmg.cells.nucleus ;
 /**
   * Classes, implementing the Cell interface, are the basic
@@ -7,7 +7,7 @@ package  dmg.cells.nucleus ;
   * inform the Cell about a prepared removal of the Cell and
   * to get informations out of the Cell.
   * See <a href=guide/Guide-dmg.cells.nucleus>Guide to dmg.cells.nucleus</a>.
-  * 
+  *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
 
@@ -29,16 +29,18 @@ public interface Cell {
      */
    public void   messageArrived( MessageEvent me ) ;
    /**
-     *  prepareRemoval is called by the kernel after a kill 
+     *  prepareRemoval is called by the kernel after a kill
      *  of the cell has been initialized. The KillEvent contains
      *  more informations about the initiater of the kill.
      *  After the prepareRemoval returns, the threadGroup of the
      *  cell is immediately stopped.
      *
-     *  @param killEvent containing informations about the 
+     *  @param killEvent containing informations about the
      *                   initiater.
      *  @see  KillEvent
      */
    public void   prepareRemoval( KillEvent killEvent ) ;
    public void   exceptionArrived( ExceptionEvent ce ) ;
+
+    CellVersion getCellVersion();
 }

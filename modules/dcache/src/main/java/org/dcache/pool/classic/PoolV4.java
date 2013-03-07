@@ -41,7 +41,6 @@ import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.UnitInteger;
-import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
@@ -97,6 +96,7 @@ import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.util.IoPriority;
+import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 
 public class PoolV4
@@ -132,6 +132,7 @@ public class PoolV4
      * used by PoolManager to recognize pool restarts
      */
     private final long _serialId = System.currentTimeMillis();
+    private static final CellVersion VERSION = new CellVersion(Version.of(PoolV4.class));
     private PoolV2Mode _poolMode;
     private boolean _reportOnRemovals;
     private boolean _suppressHsmLoad;
@@ -442,7 +443,7 @@ public class PoolV4
     {
         _pingThread.stop();
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
-                    666, "Shutdown");
+                666, "Shutdown");
     }
 
     public void cleanUp()
@@ -481,12 +482,6 @@ public class PoolV4
                         "Pool disabled: " + event.getMessage());
             break;
         }
-    }
-
-    public CellVersion getCellVersion()
-    {
-        return new CellVersion(Version.getVersion(),
-                               "$Revision$");
     }
 
     /**
@@ -618,7 +613,7 @@ public class PoolV4
         poolinfo.setPoolCostInfo(getPoolCostInfo());
         poolinfo.setTagMap(_tags);
         poolinfo.setErrorStatus(_poolStatusCode, _poolStatusMessage);
-        poolinfo.setCellVersion(getCellVersion());
+        poolinfo.setCellVersion(VERSION);
         return poolinfo;
     }
 
@@ -626,8 +621,7 @@ public class PoolV4
     public void getInfo(PrintWriter pw)
     {
         pw.println("Base directory    : " + _baseDir);
-        pw.println("Revision          : [$Revision$]");
-        pw.println("Version           : " + getCellVersion() + " (Sub="
+        pw.println("Version           : " + VERSION + " (Sub="
                    + _version + ")");
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));

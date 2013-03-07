@@ -32,7 +32,6 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
@@ -40,7 +39,6 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
@@ -118,12 +116,6 @@ public class XrootdDoor
      */
     private final Map<Integer,XrootdTransfer> _transfers =
         new ConcurrentHashMap<>();
-
-    public static CellVersion getStaticCellVersion()
-    {
-        return new CellVersion(Version.getVersion(),
-                               "$Revision: 11646 $");
-    }
 
     @Required
     public void setPoolStub(CellStub stub)

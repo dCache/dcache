@@ -8,12 +8,15 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellTunnel;
 import dmg.cells.nucleus.CellTunnelInfo;
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.RoutedMessageEvent;
 import dmg.util.Gate;
+
+import org.dcache.util.Version;
 
 /**
   *
@@ -29,6 +32,7 @@ public class ReflectionTunnel implements Cell,
 
    private CellNucleus  _nucleus;
    private Gate         _finalGate          = new Gate(false) ;
+   private final Version version = Version.of(this);
 
    public ReflectionTunnel( String cellName , String socket )
    {
@@ -84,4 +88,9 @@ public class ReflectionTunnel implements Cell,
      _log.info( "exceptionArrived : "+ce ) ;
    }
 
+   @Override
+   public CellVersion getCellVersion()
+   {
+       return new CellVersion(version);
+   }
 }

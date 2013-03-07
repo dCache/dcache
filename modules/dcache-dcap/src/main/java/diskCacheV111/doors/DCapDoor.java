@@ -13,13 +13,11 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.Version;
 import diskCacheV111.util.VspArgs;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellVersion;
 import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
@@ -103,13 +101,7 @@ public class      DCapDoor
 //        _anyThread.start() ;
         start() ;
     }
-    public static CellVersion getStaticCellVersion(){
-        return new CellVersion(Version.getVersion(),"$Revision: 1.17 $" );
-    }
-    @Override
-    public  CellVersion getCellVersion(){
-        return getStaticCellVersion() ;
-    }
+
     @Override
     public void keepAlive(){
        if( _interpreter instanceof KeepAliveListener ) {

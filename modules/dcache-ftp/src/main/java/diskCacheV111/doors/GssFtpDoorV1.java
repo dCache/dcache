@@ -1,7 +1,5 @@
 package diskCacheV111.doors;
 
-//cells
-
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
@@ -13,16 +11,10 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
 import diskCacheV111.util.Base64;
-import diskCacheV111.util.Version;
 
-import dmg.cells.nucleus.CellVersion;
 import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
-
-//dcache
-//java
-//jgss
 
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {
@@ -187,11 +179,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             ftpcommand(msg);
         }
 
-    }
-
-    public static CellVersion getStaticCellVersion() {
-        return new CellVersion(Version.getVersion(),
-                               "$Revision: 1.18 $" );
     }
 
     @Override

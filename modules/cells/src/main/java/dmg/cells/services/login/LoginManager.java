@@ -44,6 +44,7 @@ import dmg.util.StreamEngine;
 import dmg.util.UserValidatable;
 
 import org.dcache.auth.Subjects;
+import org.dcache.util.Version;
 
 import static com.google.common.collect.Maps.newHashMap;
 
@@ -68,12 +69,12 @@ public class       LoginManager
   private int          _loginCounter, _loginFailures;
   private boolean      _sending;
   private Class<?>     _loginClass        = Object.class ;
+  private final CellVersion _version;
   private Constructor<?>_loginConstructor;
   private Constructor<?>_authConstructor;
   private Method       _loginPrintMethod;
   private int          _maxLogin          = -1 ;
   private final Map<String,Object>      _childHash   = new HashMap<>() ;
-
   /**
    * actually, _childCount have to be equal to _childHash.size(). But while
    * cells needs some time to die, _childHash contains cells which are in removing state,
@@ -84,7 +85,6 @@ public class       LoginManager
   private KeepAliveThread _keepAlive;
 
   private LoginBrokerHandler _loginBrokerHandler;
-
   private static Logger _log = LoggerFactory.getLogger(LoginManager.class);
   private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
 
@@ -99,14 +99,13 @@ public class       LoginManager
   private Class<?> [] _authConSignature = {
      CellNucleus.class , Args.class
   } ;
-
-
   private  Class<?> [] _loginPntSignature = { int.class     } ;
-  private  int      _loginConType      = -1 ;
 
+  private  int      _loginConType      = -1 ;
   private  String _protocol ;
   private  String _authClassName ;
   private  Class<?>  _authClass ;
+
   /**
   *<pre>
   *   usage   &lt;listenPort&gt; &lt;loginCellClass&gt;
@@ -164,6 +163,7 @@ public class       LoginManager
             args.shift() ;
             _childArgs.shift();
          }
+         _version = new CellVersion(Version.of(_loginClass));
          // get the authentication
          _authenticator = args.getOption("authenticator", "pam") ;
 
@@ -278,17 +278,10 @@ public class       LoginManager
     }
 
     @Override
-public CellVersion getCellVersion(){
-     try{
+    public CellVersion getCellVersion(){
+         return _version;
+    }
 
-       Method m = _loginClass.getMethod( "getStaticCellVersion" , (Class<?>[])null ) ;
-
-       return (CellVersion)m.invoke(null, (Object[])null ) ;
-
-     }catch(Exception ee ){
-         return super.getCellVersion() ;
-     }
-  }
   public class LoginBrokerHandler implements Runnable {
 
      private static final long EAGER_UPDATE_TIME = 1000;

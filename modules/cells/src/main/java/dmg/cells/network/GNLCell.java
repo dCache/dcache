@@ -9,11 +9,14 @@ import java.net.Socket;
 
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.util.Args;
 import dmg.util.Formats;
+
+import org.dcache.util.Version;
 
 /**
  *    The GNLCell is a general Network listener cell, waiting for
@@ -37,6 +40,7 @@ public class GNLCell implements Cell, Runnable  {
   private int          _listenPort ;
   private ServerSocket _serverSocket ;
   private Thread       _listenThread ;
+  private final Version version = Version.of(this);
 
   /**
   *  Creates a GNLCell with the name <em>name</em> listening on
@@ -138,4 +142,9 @@ public class GNLCell implements Cell, Runnable  {
      _log.info( " exceptionArrived "+ce ) ;
    }
 
+  @Override
+  public CellVersion getCellVersion()
+  {
+      return new CellVersion(version);
+  }
 }

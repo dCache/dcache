@@ -135,7 +135,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.ThreadManager;
 import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.CopyManagerMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
@@ -174,7 +173,27 @@ import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.pinmanager.PinManagerExtendPinMessage;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.services.login.RemoteLoginStrategy;
-import org.dcache.srm.*;
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.AdvisoryDeleteCallbacks;
+import org.dcache.srm.CopyCallbacks;
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.PinCallbacks;
+import org.dcache.srm.PrepareToPutCallbacks;
+import org.dcache.srm.PrepareToPutInSpaceCallbacks;
+import org.dcache.srm.RemoveFileCallbacks;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMDuplicationException;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidPathException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
+import org.dcache.srm.SrmReleaseSpaceCallbacks;
+import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmUseSpaceCallbacks;
+import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -188,6 +207,7 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.LoginBrokerHandler;
+import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryListSource;
@@ -230,6 +250,7 @@ public final class Storage
      */
     private final static long TRANSIENT_FAILURE_DELAY =
         MILLISECONDS.toMillis(10);
+    private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
@@ -449,14 +470,6 @@ public final class Storage
         } catch (SQLException e) {
             _log.error(e.toString());
         }
-    }
-
-    @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        info.setCellVersion(new CellVersion(Version.getVersion(),
-                                            "$Revision$"));
-        return info;
     }
 
     public final static String hh_set_switch_to_async_mode_delay_get =
@@ -2998,7 +3011,7 @@ public final class Storage
 
     @Override
     public String getStorageBackendVersion() {
-        return Version.getVersion();
+        return VERSION.getVersion();
     }
 
     @Override
