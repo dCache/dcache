@@ -14,6 +14,8 @@ package diskCacheV111.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -82,7 +84,7 @@ public class DBManager {
 		}
 	}
 
-	public <T> T selectForUpdate(Connection connection,
+	public @Nonnull <T> T selectForUpdate(Connection connection,
                                      IoPackage<T> pkg,
                                      String query,
                                      Object ... args) throws SQLException {

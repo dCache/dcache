@@ -30,10 +30,12 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
@@ -52,6 +54,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -1801,7 +1804,7 @@ public final class Manager
                 ResultSet set = s.executeQuery();
                 if(!set.next()) {
                         s.close();
-                        throw new SQLException("table "+ManagerSchemaConstants.SpaceManagerNextIdTableName+" is empty!!!");
+                        throw new SQLException("table "+ManagerSchemaConstants.SpaceManagerNextIdTableName+" is empty!!!", "02000");
                 }
                 nextLongBase = set.getLong(1);
                 s.close();
@@ -2091,8 +2094,8 @@ public final class Manager
                 Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
                                                          SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
                                                          id);
-                if (spaces.isEmpty()==true) {
-                        throw new SQLException("space reservation with id="+id+" not found");
+                if (spaces.isEmpty()) {
+                        throw new SQLException("space reservation with id="+id+" not found", "02000");
                 }
                 return Iterables.getFirst(spaces,null);
         }
@@ -2101,8 +2104,8 @@ public final class Manager
                 Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
                                                              LinkGroupIO.SELECT_LINKGROUP_BY_ID,
                                                              id);
-                if (groups.isEmpty()==true) {
-                        throw new SQLException("linkGroup with id="+id+" not found");
+                if (groups.isEmpty()) {
+                        throw new SQLException("linkGroup with id="+id+" not found", "02000");
                 }
                 return Iterables.getFirst(groups,null);
         }
@@ -2111,8 +2114,8 @@ public final class Manager
                 Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
                                                              LinkGroupIO.SELECT_LINKGROUP_BY_NAME,
                                                              name);
-                if (groups.isEmpty()==true) {
-                        throw new SQLException("linkGroup with name="+name+" not found");
+                if (groups.isEmpty()) {
+                        throw new SQLException("linkGroup with name="+name+" not found", "02000");
                 }
                 return Iterables.getFirst(groups,null);
         }
@@ -2120,7 +2123,7 @@ public final class Manager
 //------------------------------------------------------------------------------
 // select for update functions
 //------------------------------------------------------------------------------
-        public LinkGroup selectLinkGroupForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
+        public @Nonnull LinkGroup selectLinkGroupForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
                 try {
                         return manager.selectForUpdate(connection,
                                                        linkGroupIO,
@@ -2129,13 +2132,17 @@ public final class Manager
                                                        sizeInBytes);
                 }
                 catch (SQLException e) {
-                        throw new SQLException("There is no linkgroup with id="+id+" and available space="+sizeInBytes);
+                    if (Objects.equals(e.getSQLState(), "02000")) {
+                        throw new SQLException("There is no linkgroup with id="+id+" and available space="+sizeInBytes,
+                                e.getSQLState(), e.getErrorCode(), e);
+                    }
+                    throw e;
                 }
         }
 
 
 
-        public LinkGroup selectLinkGroupForUpdate(Connection connection,long id)  throws SQLException{
+        public @Nonnull LinkGroup selectLinkGroupForUpdate(Connection connection,long id)  throws SQLException{
                 try {
                         return manager.selectForUpdate(connection,
                                                        linkGroupIO,
@@ -2143,11 +2150,15 @@ public final class Manager
                                                        id);
                 }
                 catch (SQLException e) {
-                        throw new SQLException("There is no linkgroup with id="+id);
+                    if (Objects.equals(e.getSQLState(), "02000")) {
+                        throw new SQLException("There is no linkgroup with id="+id,
+                                e.getSQLState(), e.getErrorCode(), e);
+                    }
+                    throw e;
                 }
         }
 
-        public Space selectSpaceForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
+        public @Nonnull Space selectSpaceForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
                 try {
                         return manager.selectForUpdate(connection,
                                                        spaceReservationIO,
@@ -2156,11 +2167,15 @@ public final class Manager
                                                        sizeInBytes);
                 }
                 catch (SQLException e) {
-                        throw new SQLException("There is no space reservation with id="+id+" and available size="+sizeInBytes);
+                    if (Objects.equals(e.getSQLState(), "02000")) {
+                        throw new SQLException("There is no space reservation with id="+id+" and available size="+sizeInBytes,
+                                e.getSQLState(), e.getErrorCode(), e);
+                    }
+                    throw e;
                 }
         }
 
-        public Space selectSpaceForUpdate(Connection connection,long id)  throws SQLException{
+        public @Nonnull Space selectSpaceForUpdate(Connection connection,long id)  throws SQLException{
                 try {
                         return manager.selectForUpdate(connection,
                                                        spaceReservationIO,
@@ -2168,27 +2183,15 @@ public final class Manager
                                                        id);
                 }
                 catch (SQLException e){
-                        throw new SQLException("There is no space reservation with id="+id);
+                    if (Objects.equals(e.getSQLState(), "02000")) {
+                        throw new SQLException("There is no space reservation with id="+id,
+                                e.getSQLState(), e.getErrorCode(), e);
+                    }
+                    throw e;
                 }
         }
 
-        public File selectFileForUpdate(Connection connection,
-                                        String pnfsPath)
-                throws SQLException {
-                pnfsPath=new FsPath(pnfsPath).toString();
-                try {
-                        return manager.selectForUpdate(connection,
-                                                       fileIO,
-                                                       FileIO.SELECT_FOR_UPDATE_BY_PNFSPATH,
-                                                            pnfsPath);
-                }
-                catch (SQLException e){
-                        throw new SQLException("There is no file with pnfspath="+
-                                               pnfsPath);
-                }
-        }
-
-        public File selectFileForUpdate(Connection connection,
+        public @Nonnull File selectFileForUpdate(Connection connection,
                                         PnfsId pnfsId)
                 throws SQLException {
                 try {
@@ -2198,12 +2201,15 @@ public final class Manager
                                                        pnfsId.toString());
                 }
                 catch (SQLException e){
+                    if (Objects.equals(e.getSQLState(), "02000")) {
                         throw new SQLException("There is no file with pnfsid="+
-                                               pnfsId);
+                                               pnfsId, e.getSQLState(), e.getErrorCode(), e);
+                    }
+                    throw e;
                 }
         }
 
-        public File selectFileForUpdate(Connection connection,
+        public @Nonnull File selectFileForUpdate(Connection connection,
                                         long id)
                 throws SQLException {
                 try {
@@ -2213,11 +2219,15 @@ public final class Manager
                                                        id);
                 }
                 catch (SQLException e){
-                        throw new SQLException("There is no file with id="+id);
+                    if (Objects.equals(e.getSQLState(), "02000")) {
+                        throw new SQLException("There is no file with id="+id,
+                                e.getSQLState(), e.getErrorCode(), e);
+                    }
+                    throw e;
                 }
         }
 
-        public File selectFileFromSpaceForUpdate(Connection connection,
+        public @Nonnull File selectFileFromSpaceForUpdate(Connection connection,
                                                  String pnfsPath,
                                                  long reservationId)
 
@@ -3263,9 +3273,9 @@ public final class Manager
                 Set<File> files=manager.selectPrepared(fileIO,
                                                        FileIO.SELECT_BY_PNFSID,
                                                        pnfsId.toString());
-                if (files.isEmpty()==true) {
+                if (files.isEmpty()) {
                         throw new SQLException("file with pnfsId="+pnfsId+
-                                                " is not found");
+                                                " is not found", "02000");
                 }
                 if (files.size()>1) {
                         throw new SQLException("found two records with pnfsId="+
@@ -3279,9 +3289,9 @@ public final class Manager
                 Set<File> files = manager.selectPrepared(fileIO,
                                                          FileIO.SELECT_BY_PNFSPATH,
                                                          pnfsPath);
-                if (files.isEmpty()==true) {
+                if (files.isEmpty()) {
                         throw new SQLException("file with pnfsPath="+pnfsPath+
-                                               " is not found");
+                                               " is not found", "02000");
                 }
                 if (files.size()>1) {
                         throw new SQLException("found two records with pnfsPath="+
@@ -3295,9 +3305,9 @@ public final class Manager
                 Set<File> files = manager.selectPrepared(fileIO,
                                                          FileIO.SELECT_BY_PNFSPATH,
                                                          pnfsPath);
-                if (files.isEmpty()==true) {
+                if (files.isEmpty()) {
                         throw new SQLException("file with pnfsPath="+pnfsPath+
-                                               " is not found");
+                                               " is not found", "02000");
                 }
                 return files;
         }
@@ -3306,9 +3316,9 @@ public final class Manager
                 Set<File> files = manager.selectPrepared(fileIO,
                                                          FileIO.SELECT_BY_ID,
                                                          id);
-                if (files.isEmpty()==true) {
+                if (files.isEmpty()) {
                         throw new SQLException("file with id="+id+
-                                               " is not found");
+                                               " is not found", "02000");
                 }
                 if (files.size()>1) {
                         throw new SQLException("found two records with id="+id);
@@ -4047,7 +4057,7 @@ public final class Manager
                         updateSpaceState(spaceToken,SpaceState.RELEASED);
                 }
                 else {
-                        throw new SQLException("partial release is not supported yet");
+                        throw new UnsupportedOperationException("partial release is not supported yet");
                 }
         }
 
@@ -4176,8 +4186,13 @@ public final class Manager
                         }
                 }
                 catch(SQLException sqle){
+                    if (Objects.equals(sqle.getSQLState(), "02000")) {
+                        logger.debug("failed to get space reservation: {}",
+                                sqle.getMessage());
+                    } else {
                         logger.error("failed to get space reservation: {}",
                                 sqle.getMessage());
+                    }
                 }
         }
 
@@ -4190,12 +4205,6 @@ public final class Manager
                         if(!success) {
                                 logger.error("transfer start up failed");
                                 File f = selectFileForUpdate(connection,pnfsId);
-                                if(f == null) {
-                                        connection.rollback();
-                                        connection_pool.returnConnection(connection);
-                                        connection = null;
-                                        return;
-                                }
                                 if(f.getState() == FileState.RESERVED ||
                                    f.getState() == FileState.TRANSFERRING) {
                                         removePnfsIdOfFileInSpace(connection,
@@ -4213,12 +4222,6 @@ public final class Manager
                                 return;
                         }
                         File f = selectFileForUpdate(connection,pnfsId);
-                        if(f == null) {
-                                connection.rollback();
-                                connection_pool.returnConnection(connection);
-                                connection = null;
-                                return;
-                        }
                         if(f.getState() == FileState.RESERVED ||
                            f.getState() == FileState.TRANSFERRING) {
                                 updateSpaceFile(connection,
@@ -4242,16 +4245,21 @@ public final class Manager
 
                 }
                 catch(SQLException sqle) {
+                    if (Objects.equals(sqle.getSQLState(), "02000")) {
+                        logger.debug("transferStarted failed: {}",
+                                sqle.getMessage());
+                    } else {
                         logger.error("transferStarted failed: {}",
                                 sqle.getMessage());
-                        if (connection!=null) {
-                                try {
-                                        connection.rollback();
-                                }
-                                catch (SQLException e) {}
-                                connection_pool.returnFailedConnection(connection);
-                                connection = null;
+                    }
+                    if (connection!=null) {
+                        try {
+                            connection.rollback();
                         }
+                        catch (SQLException e) {}
+                        connection_pool.returnFailedConnection(connection);
+                        connection = null;
+                    }
                 }
                 finally {
                         if(connection != null) {
@@ -4274,16 +4282,24 @@ public final class Manager
                         File f;
                         try {
                                 f = selectFileForUpdate(connection,pnfsId);
-                                if(f == null) {
-                                        connection.rollback();
-                                        connection_pool.returnConnection(connection);
-                                        connection = null;
-                                        return;
-                                }
                         }
-                        catch (Exception e) {
+                        catch (SQLException e) {
+                            if (Objects.equals(e.getSQLState(), "02000")) {
+                                logger.debug("failed to find file {}: {}", pnfsId,
+                                        e.getMessage());
+                            } else {
                                 logger.error("failed to find file {}: {}", pnfsId,
                                         e.getMessage());
+                            }
+                            if (connection!=null) {
+                                connection.rollback();
+                                connection_pool.returnConnection(connection);
+                                connection = null;
+                            }
+                            return;
+                        }
+                        catch (Exception e) {
+                                logger.error("failed to find file {}", pnfsId, e);
                                 if (connection!=null) {
                                         connection.rollback();
                                         connection_pool.returnConnection(connection);
@@ -4393,14 +4409,6 @@ public final class Manager
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);
                         File f = selectFileForUpdate(connection,pnfsId);
-                        if(f == null) {
-                                connection.rollback();
-                                connection_pool.returnConnection(connection);
-                                connection = null;
-                                logger.debug("fileFlushed({}): file not in a " +
-                                        "reservation, doing nothing", pnfsId);
-                                return;
-                        }
                         if(f.getState() == FileState.STORED) {
                                 if(deleteStoredFileRecord) {
                                         logger.debug("returnSpaceToReservation, " +
@@ -4476,15 +4484,6 @@ public final class Manager
                                 connection = connection_pool.getConnection();
                                 connection.setAutoCommit(false);
                                 File f = selectFileForUpdate(connection,pnfsId);
-                                if(f == null) {
-                                        connection.rollback();
-                                        connection_pool.returnConnection(connection);
-                                        connection = null;
-                                        logger.debug("fileRemoved({}): file " +
-                                                "not in a reservation, do " +
-                                                "nothing", pnfsId);
-                                        return;
-                                }
                                 removeFileFromSpace(connection,f);
                                 connection.commit();
                                 connection_pool.returnConnection(connection);

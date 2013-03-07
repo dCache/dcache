@@ -11,6 +11,8 @@
 
 package diskCacheV111.util;
 
+import javax.annotation.Nonnull;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -29,12 +31,12 @@ public abstract class IoPackage<T> {
                                                 PreparedStatement statement)
                 throws SQLException;
 
-	public T selectForUpdate(Connection connection,
+	public @Nonnull T selectForUpdate(Connection connection,
                                  PreparedStatement statement)
                 throws SQLException {
 		Set<T> container = selectPrepared(connection,statement);
 		if (container.isEmpty()) {
-			throw new SQLException("No records found");
+			throw new SQLException("No records found", "02000");
 		}
 		if (container.size()>1) {
 			throw new SQLException("Multiple records found, disallowed");
