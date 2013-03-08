@@ -62,19 +62,20 @@ class SchedulerEntry
         return _total;
     }
 
-    synchronized boolean isExpired(JobInfo job, long now)
+    synchronized boolean isLastAccessExpired(JobInfo job, long now)
     {
-        long started = job.getStartTime();
         long lastAccessed =
             job instanceof IoJobInfo ?
             ((IoJobInfo)job).getLastTransferred() :
-            now;
+            0;
 
-        return
-            ((getLastAccessed() > 0L) && (lastAccessed > 0L) &&
-             ((now - lastAccessed) > getLastAccessed())) ||
-            ((getTotal() > 0L) && (started > 0L) &&
-             ((now - started) > getTotal()));
+        return getLastAccessed() > 0L && lastAccessed > 0L && (now - lastAccessed) > getLastAccessed();
+    }
+
+    synchronized boolean isTotalTimeExpired(JobInfo job, long now)
+    {
+        long started = job.getStartTime();
+        return getTotal() > 0L && started > 0L && (now - started) > getTotal();
     }
 }
 
@@ -105,7 +106,7 @@ public class JobTimeoutManager
 
     public void addScheduler(String type, IoScheduler scheduler)
     {
-        say("Adding scheduler : " + type);
+        _log.trace("Adding scheduler : " + type);
         SchedulerEntry entry = findOrCreate(type);
         entry.setScheduler(scheduler);
     }
@@ -205,16 +206,6 @@ public class JobTimeoutManager
         return "";
     }
 
-    private void say(String str)
-    {
-        _log.debug(str);
-    }
-
-    private void esay(String str)
-    {
-        _log.error(str);
-    }
-
     @Override
     public void run()
     {
@@ -233,9 +224,13 @@ public class JobTimeoutManager
 
                     for (JobInfo info: jobs.getJobInfos()) {
                         int jobId = (int)info.getJobId();
-                        if (entry.isExpired(info, now)) {
-                            esay("Trying to kill <" + entry.getName()
-                                 + "> id=" + jobId);
+                        if (entry.isLastAccessExpired(info, now)) {
+                            _log.warn("Killing mover {}/{} because it has been idle for {} seconds",
+                                    entry.getName(), jobId, (now - ((IoJobInfo) info).getLastTransferred()) / 1000);
+                            jobs.cancel(jobId);
+                        } else if (entry.isTotalTimeExpired(info, now)) {
+                            _log.warn("Killing mover {}/{} because it is {} seconds old",
+                                    entry.getName(), jobId, (now - info.getStartTime()) / 1000);
                             jobs.cancel(jobId);
                         }
                     }

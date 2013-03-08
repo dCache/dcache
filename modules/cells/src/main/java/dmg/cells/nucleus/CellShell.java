@@ -504,9 +504,9 @@ public class      CellShell
          try{
             noRoute = false ;
             answer = null ;
-            _log.warn( "waitForCell : Sending request" ) ;
+            _log.debug( "waitForCell : Sending request" ) ;
             answer = _nucleus.sendAndWait( request , ((long)check)*1000 ) ;
-            _log.warn( "waitForCell : got "+answer ) ;
+            _log.debug( "waitForCell : got {}", answer ) ;
          }catch( NoRouteToCellException nrtce ){
             noRoute = true ;
          }catch( InterruptedException e ){

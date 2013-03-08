@@ -100,7 +100,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       String group = args.getOpt("resilientGroupName");
       if( group != null && (! group.equals("")) ) {
           _resilientPoolGroupName = group;
-          _log.warn("resilientGroupName=" + group + "\n");
+          _log.debug("resilientGroupName={}", group);
       }else{
         _log.warn("Argument 'resilientGroupName' is not defined, use default settings:"
                 + " _resilientPoolGroupName={}", _resilientPoolGroupName);
@@ -423,8 +423,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     _adj        = new Adjuster( _repMin, _repMax) ;
     _watchPools = new WatchPools();
 
-    _log.warn("ReplicaManager   version: " + _svnId );
-    _log.warn("DCacheController version: " + super.getSvnId() );
+    _log.debug("ReplicaManager   version: {}", _svnId );
+    _log.debug("DCacheController version: {}", super.getSvnId() );
 
     _log.debug("Parse arguments");
     parseArgs();

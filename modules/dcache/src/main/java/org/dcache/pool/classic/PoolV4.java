@@ -1430,7 +1430,7 @@ public class PoolV4
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
-        _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
+        _log.info("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
     }
 
     /**
@@ -1444,7 +1444,7 @@ public class PoolV4
         _poolStatusMessage = "OK";
 
         _pingThread.sendPoolManagerMessage(true);
-        _log.warn("Pool mode changed to " + _poolMode);
+        _log.info("Pool mode changed to {}", _poolMode);
     }
 
     private class PoolManagerPingThread implements Runnable

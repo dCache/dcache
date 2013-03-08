@@ -163,7 +163,7 @@ public class LocationManagerConnector
 
                 setStatus("Sleeping");
                 long sleep = random.nextInt(26000) + 4000;
-                _log.warn("Sleeping " + (sleep / 1000) + " seconds");
+                _log.info("Sleeping {} seconds", sleep / 1000);
                 Thread.sleep(sleep);
             }
         } catch (InterruptedIOException | InterruptedException e) {

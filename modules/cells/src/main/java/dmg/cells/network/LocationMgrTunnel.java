@@ -307,7 +307,7 @@ public class LocationMgrTunnel
             }
         } catch (EOFException | InterruptedException e) {
         } catch (ClassNotFoundException e) {
-            _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
+            _log.error("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (IOException e) {
             _log.warn("Error while reading from tunnel: " + e.getMessage());
         } finally {

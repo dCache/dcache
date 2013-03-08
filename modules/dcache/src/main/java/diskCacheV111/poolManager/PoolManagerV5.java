@@ -97,7 +97,6 @@ public class PoolManagerV5
 
 
     private final static Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
-    private final static Logger _logPoolMonitor = LoggerFactory.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
 
 
     public PoolManagerV5()
@@ -286,9 +285,7 @@ public class PoolManagerV5
                 if (pool.getActive() > deathDetectedTimer
                     && pool.setSerialId(0L)) {
 
-                    if( _logPoolMonitor.isDebugEnabled() ) {
-                        _logPoolMonitor.trace("Pool " + name + " declared as DOWN (no ping in " + deathDetectedTimer/1000 +" seconds).");
-                    }
+                    _log.warn("Pool {} declared as DOWN (no ping in {} seconds).", name, deathDetectedTimer / 1000);
                     _requestContainer.poolStatusChanged(name, PoolStatusChangedMessage.DOWN);
                     sendPoolStatusRelay(name, PoolStatusChangedMessage.DOWN,
                                         null, 666, "DEAD");
@@ -352,11 +349,8 @@ public class PoolManagerV5
         PoolV2Mode newMode = poolMessage.getPoolMode();
         PoolV2Mode oldMode = pool.getPoolMode();
 
-        if (_logPoolMonitor.isDebugEnabled()) {
-            _logPoolMonitor.trace("PoolUp message from " + poolName
-                                  + " with mode " + newMode
-                                  + " and serialId " + poolMessage.getSerialId());
-        }
+        _log.debug("Received heath beat from pool {} with mode {} and serial id {}",
+                poolName, newMode, poolMessage.getSerialId());
 
         /* For compatibility with previous versions of dCache, a pool
          * marked DISABLED, but without any other DISABLED_ flags set
@@ -397,8 +391,7 @@ public class PoolManagerV5
          * mode has changed.
          */
         if (changed) {
-            _logPoolMonitor.warn("Pool " + poolName + " changed from mode "
-                                 + oldMode + " to " + newMode);
+            _log.info("Pool {} changed from mode {} to {}", poolName, oldMode, newMode);
 
             if (disabled) {
                 _requestContainer.poolStatusChanged(poolName,
