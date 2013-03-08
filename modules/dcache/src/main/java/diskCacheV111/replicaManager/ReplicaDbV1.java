@@ -1149,24 +1149,28 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         try {
             conn = DATASOURCE.getConnection();
-            conn.setAutoCommit(true);
-            stmt =  conn.prepareStatement(sql_i);
-            stmt.setString(1, name);
-            stmt.setString(2, desc);
-            stmt.executeUpdate();
-        } catch (Exception ex) {
-            _log.trace(ex.toString());
             try {
-                stmt = conn.prepareStatement(sql_u);
-                stmt.setString(1, desc);
-                stmt.setString(2, name);
+                conn.setAutoCommit(true);
+                stmt =  conn.prepareStatement(sql_i);
+                stmt.setString(1, name);
+                stmt.setString(2, desc);
                 stmt.executeUpdate();
-            } catch (Exception ex2) {
-                _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB", ex2);
+            } catch (Exception ex) {
+                _log.trace(ex.toString());
+                try {
+                    stmt = conn.prepareStatement(sql_u);
+                    stmt.setString(1, desc);
+                    stmt.setString(2, name);
+                    stmt.executeUpdate();
+                } catch (Exception ex2) {
+                    _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB", ex2);
+                }
+            } finally {
+                tryToClose(stmt);
+                tryToClose(conn);
             }
-        } finally {
-            tryToClose(stmt);
-            tryToClose(conn);
+        } catch (SQLException e) {
+            _log.error(e.toString());
         }
     }
 
