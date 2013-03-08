@@ -4,12 +4,19 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.InvalidPropertyException;
+import org.springframework.beans.PropertyAccessException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -32,6 +39,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.lang.reflect.Array;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,11 +49,14 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+
+import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -57,6 +69,9 @@ import dmg.util.CommandException;
 import dmg.util.CommandThrowableException;
 
 import org.dcache.util.ClassNameComparator;
+import org.dcache.vehicles.BeanQueryAllPropertiesMessage;
+import org.dcache.vehicles.BeanQueryMessage;
+import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -84,6 +99,9 @@ public class UniversalSpringCell
                EnvironmentAware
 {
     private final static long WAIT_FOR_FILE_SLEEP = 30000;
+
+    private final static Logger _log = LoggerFactory
+            .getLogger(UniversalSpringCell.class);
 
     /**
      * Environment map this cell was instantiated in.
@@ -756,6 +774,131 @@ public class UniversalSpringCell
             return "";
         }
     }
+
+    public BeanQueryMessage messageArrived(BeanQueryAllPropertiesMessage message)
+            throws CacheException
+    {
+        Map<String,Object> beans = Maps.newHashMap();
+        for (String name : getBeanNames()) {
+            beans.put(name, getBean(name));
+        }
+        message.setResult(serialize(beans));
+        return message;
+    }
+
+    public BeanQueryMessage messageArrived(BeanQuerySinglePropertyMessage message)
+            throws CacheException
+    {
+        Object o = getBeanProperty(message.getPropertyName());
+        if (o == null) {
+            throw new CacheException("No such property");
+        }
+        message.setResult(serialize(o));
+        return message;
+    }
+
+    private final static Set<Class<?>> PRIMITIVES =
+            Sets.<Class<?>>newHashSet(Byte.class, Byte.TYPE, Short.class, Short.TYPE,
+                    Integer.class, Integer.TYPE, Long.class, Long.TYPE,
+                    Float.class, Float.TYPE, Double.class, Double.TYPE,
+                    Character.class, Character.TYPE, Boolean.class,
+                    Boolean.TYPE, String.class);
+    private final static Set<Class<?>> TERMINALS =
+            Sets.<Class<?>>newHashSet(Class.class);
+
+    private Object serialize(Set<Object> prune, Queue<Map.Entry<String,Object>> queue, Object o)
+    {
+        if (o == null || PRIMITIVES.contains(o.getClass())) {
+            return o;
+        } else if (TERMINALS.contains(o.getClass())) {
+            return o.toString();
+        } else if (o.getClass().isEnum()) {
+            return o;
+        } else if (o.getClass().isArray()) {
+            int len = Array.getLength(o);
+            List<Object> values = Lists.newArrayListWithCapacity(len);
+            for (int i = 0; i < len; i++) {
+                values.add(serialize(prune, queue, Array.get(o, i)));
+            }
+            return values;
+        } else if (o instanceof Map) {
+            Map<?,?> map = (Map<?,?>) o;
+            Map<String,Object> values = Maps.newHashMapWithExpectedSize(map.size());
+            for (Map.Entry<?,?> e: map.entrySet()) {
+                values.put(String.valueOf(e.getKey()), serialize(prune, queue, e
+                        .getValue()));
+            }
+            return values;
+        } else if (o instanceof Set) {
+            Collection<?> collection = (Collection<?>) o;
+            Set<Object> values = Sets.newHashSetWithExpectedSize(collection.size());
+            for (Object entry: collection) {
+                values.add(serialize(prune, queue, entry));
+            }
+            return values;
+        } else if (o instanceof Collection) {
+            Collection<?> collection = (Collection<?>) o;
+            List<Object> values = Lists.newArrayListWithCapacity(collection.size());
+            for (Object entry: collection) {
+                values.add(serialize(prune, queue, entry));
+            }
+            return values;
+        } else if (o instanceof Iterable) {
+            Iterable<?> collection = (Iterable<?>) o;
+            List<Object> values = Lists.newArrayList();
+            for (Object entry: collection) {
+                values.add(serialize(prune, queue, entry));
+            }
+            return values;
+        } else if (prune.contains(o)) {
+            return o.toString();
+        } else {
+            prune.add(o);
+
+            Map<String,Object> values = Maps.newHashMap();
+            BeanWrapper bean = new BeanWrapperImpl(o);
+            for (PropertyDescriptor p: bean.getPropertyDescriptors()) {
+                if (!p.isHidden()) {
+                    String property = p.getName();
+                    if (bean.isReadableProperty(property)) {
+                        try {
+                            values.put(property, bean.getPropertyValue(property));
+                        } catch (InvalidPropertyException | PropertyAccessException e) {
+                            _log.debug("Failed to read {} of object of class {}: {}",
+                                    new Object[] { property, o.getClass(), e.getMessage() });
+                        }
+                    }
+                }
+            }
+            if (values.isEmpty()) {
+                return o.toString();
+            }
+            queue.addAll(values.entrySet());
+            return values;
+        }
+    }
+
+    /**
+     * Breadth-first serialisation.
+     *
+     * Prunes the object tree to produce a tree even if o is a DAG or
+     * contains cycles. Using a breadth-first search tends to produce
+     * friendlier results when the object graph is pruned.
+     */
+    private Object serialize(Object o)
+    {
+        Set<Object> prune = Sets.newHashSet();
+        Queue<Map.Entry<String,Object>> queue = new ArrayDeque<>();
+        Object result = serialize(prune, queue, o);
+
+        Map.Entry<String,Object> entry;
+        while ((entry = queue.poll()) != null) {
+            entry.setValue(serialize(prune, queue, entry.getValue()));
+        }
+
+        return result;
+    }
+
 
     /**
      * Registers an info provider. Info providers contribute to the

@@ -108,6 +108,7 @@ define context ${cell.name}Setup endDefine
    set alias billing class diskCacheV111.cells.HttpBillingEngine
    set alias flushManager class diskCacheV111.hsmControl.flush.HttpHsmFlushMgrEngineV1 mgr=hfc css=default
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
+   set alias api class org.dcache.services.httpd.probe.ProbeResponseEngine
    ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
    exec context webadmin.exe

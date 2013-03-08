@@ -687,6 +687,13 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.2.2</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.freehep</groupId>
                 <artifactId>freehep-graphics2d</artifactId>
