@@ -6,6 +6,7 @@ define env startLogin.exe enddefine
   check -strong gplazmaPolicy
   check -strong gPlazmaNumberOfSimultaneousRequests
   check -strong gplazma.configuration.file
+  check -strong pnfsmanager
 
   create org.dcache.cells.UniversalSpringCell "${gplazma}" \
     "classpath:org/dcache/services/login/gplazma.xml \
@@ -14,6 +15,7 @@ define env startLogin.exe enddefine
      -gplazmaPolicy=${gplazmaPolicy} \
      -gplazmaConfig=${gplazma.configuration.file} \
      -messageExecutor=message-thread-pool \
+     -pnfsmanager=${pnfsmanager} \
   "
 
   set env useLoginService true
