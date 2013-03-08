@@ -4,7 +4,6 @@ import com.google.common.base.Joiner;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Locale;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -126,13 +125,13 @@ public class Rebalancer
         case METRIC_RELATIVE:
             double factor = (double) used / (double) total;
             command =
-                    String.format(Locale.US, "migration move -id=%s -include-when='target.used < %2$f * target.total' -stop-when='targets == 0 or source.used <= %2$f * source.total' -refresh=%3$d %4$s",
-                            JOB_NAME, factor, period, Joiner.on(" ").join(names));
+                    String.format("migration move -id=%s -include-when='target.used < %2$f * target.total' -stop-when='targets == 0 or source.used <= %2$f * source.total' -refresh=%3$d %4$s", JOB_NAME, factor, period, Joiner
+                            .on(" ").join(names));
             break;
         case METRIC_SPACE_COST:
             command =
-                    String.format(Locale.US, "migration move -id=%s -include-when='target.spaceCost < source.spaceCost' -stop-when='targets == 0' -refresh=%d %s",
-                            JOB_NAME, period, Joiner.on(" ").join(names));
+                    String.format("migration move -id=%s -include-when='target.spaceCost < source.spaceCost' -stop-when='targets == 0' -refresh=%d %s", JOB_NAME, period, Joiner
+                            .on(" ").join(names));
             break;
         default:
             throw new IllegalArgumentException("Unsupported value for -metric: " + metric);
