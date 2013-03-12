@@ -99,7 +99,7 @@ public class HttpPoolNettyServer
             pipeline.addLast("decoder", new HttpRequestDecoder());
             pipeline.addLast("encoder", new HttpResponseEncoder());
 
-            if (_logger.isDebugEnabled()) {
+            if (_logger.isTraceEnabled()) {
                 pipeline.addLast("logger",
                                  new LoggingHandler(HttpProtocol_2.class));
             }
