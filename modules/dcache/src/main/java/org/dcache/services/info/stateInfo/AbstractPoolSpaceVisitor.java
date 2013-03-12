@@ -43,7 +43,7 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 		super.newListItem( itemName);
 
 		if( _log.isDebugEnabled()) {
-                    _log.trace("Found pool " + itemName);
+                    _log.debug("Found pool " + itemName);
                 }
 
 		_currentPoolSpaceInfo = new SpaceInfo();
@@ -67,7 +67,7 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 		String metricName = path.getLastElement();
 
 		if( _log.isDebugEnabled()) {
-                    _log.trace("Found metric " + path
+                    _log.debug("Found metric " + path
                             .getLastElement() + " = " + value.getValue());
                 }
 

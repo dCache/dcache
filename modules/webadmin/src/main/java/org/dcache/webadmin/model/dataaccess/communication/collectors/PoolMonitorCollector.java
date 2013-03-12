@@ -25,7 +25,7 @@ public class PoolMonitorCollector extends Collector {
 
     private void collectPoolSelectionUnit() throws InterruptedException {
         try {
-            _log.trace("Retrieving Pool Monitor");
+            _log.debug("Retrieving Pool Monitor");
             PoolManagerGetPoolMonitor reply
                 = _cellStub.sendAndWait(new PoolManagerGetPoolMonitor());
             PoolMonitor monitor = reply.getPoolMonitor();
@@ -33,9 +33,9 @@ public class PoolMonitorCollector extends Collector {
             if (plottingEnabled) {
                 rrdAgent.notify(monitor);
             }
-            _log.trace("Pool Monitor retrieved successfully");
+            _log.debug("Pool Monitor retrieved successfully");
         } catch (CacheException ex) {
-            _log.trace("Could not retrieve Pool Monitor ", ex);
+            _log.debug("Could not retrieve Pool Monitor ", ex);
             _pageCache.remove(ContextPaths.POOLMONITOR);
         }
     }

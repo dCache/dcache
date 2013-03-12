@@ -54,7 +54,7 @@ public class OperationSETCLIENTID_CONFIRM extends AbstractNFSv4Operation {
                 client.setConfirmed();
             }
         } catch (ChimeraNFSException he) {
-            _log.trace("SETCLIENTID_CONFIRM: {}", he.getMessage());
+            _log.debug("SETCLIENTID_CONFIRM: {}", he.getMessage());
             res.status = he.getStatus();
         }
 

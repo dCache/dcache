@@ -205,7 +205,7 @@ class GssTunnel extends TunnelConverter {
             _userPrincipal = _context.getSrcName();
 
         } catch( EOFException e) {
-            _log.trace("connection closed");
+            _log.debug("connection closed");
         } catch( IOException | GSSException e) {
             _log.error("Failed to verify: {}", e.toString());
         }

@@ -106,7 +106,7 @@ public class OperationLAYOUTGET extends AbstractNFSv4Operation {
         res.logr_status = nfsstat.NFS_OK;
 
     } catch (ChimeraNFSException he) {
-        _log.trace("LAYOUTGET: {}",  he.getMessage());
+        _log.debug("LAYOUTGET: {}",  he.getMessage());
         res.logr_status = he.getStatus();
     } catch (Exception e) {
         _log.error("LAYOUTGET:", e);

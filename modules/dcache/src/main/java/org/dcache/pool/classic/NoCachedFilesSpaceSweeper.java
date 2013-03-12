@@ -68,7 +68,7 @@ public class NoCachedFilesSpaceSweeper
                 CacheEntry entry = event.getEntry();
                 if (!entry.isSticky()) {
                     _repository.setState(id, EntryState.REMOVED);
-                    _log.trace(entry.getPnfsId() + " : removed.");
+                    _log.debug(entry.getPnfsId() + " : removed.");
                 }
             }
         } catch (InterruptedException | IllegalTransitionException | CacheException e) {

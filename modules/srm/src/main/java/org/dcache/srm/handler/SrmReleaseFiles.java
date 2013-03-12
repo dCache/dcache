@@ -77,7 +77,7 @@ public class SrmReleaseFiles {
             AbstractStorageElement storage,
             SRM srm,
             String client_host) {
-        logger.debug("SrmReleaseFiles user="+user);
+        logger.info("SrmReleaseFiles user="+user);
         this.srmReleaseFilesRequest = srmReleaseFilesRequest;
         this.user = user;
         this.credential = credential;
@@ -98,7 +98,7 @@ public class SrmReleaseFiles {
         try {
             response = srmReleaseFiles();
         } catch(MalformedURIException | URISyntaxException e) {
-            logger.trace(" malformed uri : "+e.getMessage());
+            logger.debug(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {

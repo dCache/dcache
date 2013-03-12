@@ -231,7 +231,7 @@ public class ChecksumChannel implements RepositoryChannel
     {
         if (position != _digestPosition) {
             _digest = null;
-            _log.trace("On-transfer checksum not computed due to out-of-order upload");
+            _log.debug("On-transfer checksum not computed due to out-of-order upload");
         }
     }
 

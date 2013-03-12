@@ -188,7 +188,7 @@ public class PoolV4
     {
         _poolName = poolName;
 
-        _log.debug("Pool " + poolName + " starting");
+        _log.info("Pool " + poolName + " starting");
 
         //
         // repository and ping thread must exist BEFORE the setup
@@ -371,7 +371,7 @@ public class PoolV4
 
         for (Map.Entry<String,String> e: newTags.entrySet()) {
             _tags.put(e.getKey(), e.getValue());
-            _log.debug("Tag: " + e.getKey() + "="+ e.getValue());
+            _log.info("Tag: " + e.getKey() + "="+ e.getValue());
         }
     }
 
@@ -433,7 +433,7 @@ public class PoolV4
                     disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                                 666, "Init failed: " + e.getMessage());
                 }
-                _log.debug("Repository finished");
+                _log.info("Repository finished");
             }
         }.start();
     }
@@ -538,7 +538,7 @@ public class PoolV4
             }
 
             if (to == EntryState.PRECIOUS) {
-                _log.trace("Adding " + id + " to flush queue");
+                _log.debug("Adding " + id + " to flush queue");
 
                 if (_hasTapeBackend) {
                     try {
@@ -548,16 +548,16 @@ public class PoolV4
                          * anything with it. We don't care about deleted
                          * files so we ignore this.
                          */
-                        _log.debug("Failed to flush " + id + ": Replica is no longer in the pool", e);
+                        _log.info("Failed to flush " + id + ": Replica is no longer in the pool", e);
                     } catch (CacheException | InterruptedException e) {
                         _log.error("Error adding " + id + " to flush queue: "
                                 + e.getMessage());
                     }
                 }
             } else if (from == EntryState.PRECIOUS) {
-                _log.trace("Removing " + id + " from flush queue");
+                _log.debug("Removing " + id + " from flush queue");
                 if (!_storageQueue.removeCacheEntry(id)) {
-                    _log.debug("File " + id + " not found in flush queue");
+                    _log.info("File " + id + " not found in flush queue");
                 }
             }
         }
@@ -714,14 +714,14 @@ public class PoolV4
                 if (job != null) {
                     switch (_dupRequest) {
                     case DUP_REQ_NONE:
-                        _log.debug("Dup Request : none <" + door + ":" + id + ">");
+                        _log.info("Dup Request : none <" + door + ":" + id + ">");
                         break;
                     case DUP_REQ_IGNORE:
-                        _log.debug("Dup Request : ignoring <" + door + ":" + id + ">");
+                        _log.info("Dup Request : ignoring <" + door + ":" + id + ">");
                         return;
                     case DUP_REQ_REFRESH:
                         long jobId = job.getJobId();
-                        _log.debug("Dup Request : refresing <" + door + ":"
+                        _log.info("Dup Request : refresing <" + door + ":"
                             + id + "> old = " + jobId);
                         _ioQueue.cancel((int)jobId);
                         break;
@@ -1119,7 +1119,7 @@ public class PoolV4
             mover_kill(js, id, false);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
-            _log.debug(e.toString());
+            _log.info(e.toString());
             kill.setReply(1, e);
         }
         return kill;
@@ -1195,7 +1195,7 @@ public class PoolV4
         FileAttributes fileAttributes = msg.getFileAttributes();
         PnfsId pnfsId = fileAttributes.getPnfsId();
         StorageInfo storageInfo = fileAttributes.getStorageInfo();
-        _log.debug("Pool " + _poolName + " asked to fetch file "
+        _log.info("Pool " + _poolName + " asked to fetch file "
                   + pnfsId + " (hsm=" + storageInfo.getHsm() + ")");
 
         try {
@@ -1430,7 +1430,7 @@ public class PoolV4
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
-        _log.info("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
+        _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
     }
 
     /**
@@ -1444,7 +1444,7 @@ public class PoolV4
         _poolStatusMessage = "OK";
 
         _pingThread.sendPoolManagerMessage(true);
-        _log.info("Pool mode changed to {}", _poolMode);
+        _log.warn("Pool mode changed to " + _poolMode);
     }
 
     private class PoolManagerPingThread implements Runnable
@@ -1470,16 +1470,16 @@ public class PoolV4
         @Override
         public void run()
         {
-            _log.trace("Ping thread started");
+            _log.debug("Ping thread started");
             try {
                 while (!Thread.interrupted()) {
                     sendPoolManagerMessage(true);
                     Thread.sleep(_heartbeat * 1000);
                 }
             } catch (InterruptedException e) {
-                _log.trace("Ping thread was interrupted");
+                _log.debug("Ping thread was interrupted");
             }
-            _log.trace("Ping Thread finished");
+            _log.debug("Ping Thread finished");
         }
 
         public void setHeartbeat(int seconds)
@@ -1633,7 +1633,7 @@ public class PoolV4
             } catch (FileNotFoundCacheException e) {
                 try {
                     _repository.setState(id, EntryState.REMOVED);
-                    _log.debug("File not found in PNFS; removed " + id);
+                    _log.info("File not found in PNFS; removed " + id);
                 } catch (InterruptedException | IllegalTransitionException | CacheException f) {
                     _log.error("File not found in PNFS, but failed to remove "
                                + id + ": " + f);
@@ -1656,9 +1656,9 @@ public class PoolV4
 
             long startTime, stopTime;
             if (_activate) {
-                _log.debug("Registering all replicas in PNFS");
+                _log.info("Registering all replicas in PNFS");
             } else {
-                _log.debug("Unregistering all replicas in PNFS");
+                _log.info("Unregistering all replicas in PNFS");
             }
             startTime = System.currentTimeMillis();
 
@@ -1692,7 +1692,7 @@ public class PoolV4
                 _hybridInventoryActive = false;
             }
 
-            _log.debug("Replica "
+            _log.info("Replica "
                       + (_activate ? "registration" : "deregistration" )
                       + " finished. " + _hybridCurrent
                       + " replicas processed in "
@@ -1955,7 +1955,7 @@ public class PoolV4
     public String ac_set_cleaning_interval_$_1(Args args)
     {
         _cleaningInterval = Integer.parseInt(args.argv(0));
-        _log.debug("set cleaning interval to " + _cleaningInterval);
+        _log.info("set cleaning interval to " + _cleaningInterval);
         return "";
     }
 
@@ -2147,7 +2147,7 @@ public class PoolV4
         throws NoSuchElementException
     {
 
-        _log.debug("Killing mover " + id);
+        _log.info("Killing mover " + id);
         js.cancel(id);
     }
 

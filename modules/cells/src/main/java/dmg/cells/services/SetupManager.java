@@ -60,7 +60,7 @@ public class SetupManager extends CellAdapter {
          _defaultClass = _args.getOpt("defaultClass") ;
          _defaultClass = _defaultClass == null ? "default" : _defaultClass ;
 
-         _log.debug("defaultClass set to '"+_defaultClass+"'");
+         _log.info("defaultClass set to '"+_defaultClass+"'");
 
 
       }catch(Exception ee ){

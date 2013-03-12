@@ -43,10 +43,10 @@ public class OperationLAYOUTRETURN extends AbstractNFSv4Operation {
 
 	    LAYOUTRETURN4res res = new LAYOUTRETURN4res();
 
-        _log.trace("LAYOUTRETURN4args :        type: {}", _args.oplayoutreturn.lora_layout_type);
-        _log.trace("LAYOUTRETURN4args :        mode: {}", _args.oplayoutreturn.lora_iomode);
-        _log.trace("LAYOUTRETURN4args : return type: {}", _args.oplayoutreturn.lora_layoutreturn.lr_returntype);
-        _log.trace("LAYOUTRETURN4args :     reclaim: {}", _args.oplayoutreturn.lora_reclaim);
+        _log.debug("LAYOUTRETURN4args :        type: {}", _args.oplayoutreturn.lora_layout_type);
+        _log.debug("LAYOUTRETURN4args :        mode: {}", _args.oplayoutreturn.lora_iomode);
+        _log.debug("LAYOUTRETURN4args : return type: {}", _args.oplayoutreturn.lora_layoutreturn.lr_returntype);
+        _log.debug("LAYOUTRETURN4args :     reclaim: {}", _args.oplayoutreturn.lora_reclaim);
 
         try {
 

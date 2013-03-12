@@ -150,7 +150,7 @@ public class       LoginManager
 
          _protocol = args.getOpt("prot") ;
          checkProtocol();
-         _log.debug( "Using Protocol : {}",_protocol ) ;
+         _log.info( "Using Protocol : {}",_protocol ) ;
 
          int listenPort    = Integer.parseInt( args.argv(0) ) ;
          args.shift() ;
@@ -159,7 +159,7 @@ public class       LoginManager
          // which cell to start
          if( args.argc() > 0 ){
             _loginClass = Class.forName( args.argv(0) ) ;
-            _log.debug( "Using login class : {}", _loginClass.getName() ) ;
+            _log.info( "Using login class : {}", _loginClass.getName() ) ;
             args.shift() ;
             _childArgs.shift();
          }
@@ -180,20 +180,20 @@ public class       LoginManager
                  break;
              }
             if( _authClass != null ) {
-                _log.debug("Using authentication Module : " + _authClass);
+                _log.info("Using authentication Module : " + _authClass);
             }
          }else if( _authClassName.equals( "none" ) ){
 //            _authClass = dmg.cells.services.login.NoneSAuth.class ;
          }else{
-            _log.debug( "Using authentication Module : "+_authClassName ) ;
+            _log.info( "Using authentication Module : "+_authClassName ) ;
             _authClass = Class.forName(_authClassName) ;
          }
          if( _authClass != null ){
             _authConstructor = _authClass.getConstructor( _authConSignature ) ;
-            _log.debug( "Using authentication Constructor : "+_authConstructor ) ;
+            _log.info( "Using authentication Constructor : "+_authConstructor ) ;
          }else{
             _authConstructor = null ;
-            _log.debug( "No authentication used" ) ;
+            _log.info( "No authentication used" ) ;
          }
          try{
             _loginConstructor = _loginClass.getConstructor( _loginConSignature[1] ) ;
@@ -202,7 +202,7 @@ public class       LoginManager
             _loginConstructor = _loginClass.getConstructor( _loginConSignature[0] ) ;
             _loginConType     = 0 ;
          }
-         _log.debug( "Using constructor : "+_loginConstructor ) ;
+         _log.info( "Using constructor : "+_loginConstructor ) ;
          try{
 
             _loginPrintMethod = _loginClass.getMethod(
@@ -210,7 +210,7 @@ public class       LoginManager
                                    _loginPntSignature ) ;
 
          }catch( NoSuchMethodException pr ){
-            _log.debug( "No setPrintoutLevel(int) found in "+_loginClass.getName() ) ;
+            _log.info( "No setPrintoutLevel(int) found in "+_loginClass.getName() ) ;
             _loginPrintMethod = null ;
          }
          String maxLogin = args.getOpt("maxLogin") ;
@@ -231,15 +231,15 @@ public class       LoginManager
           }
 
          if( _maxLogin < 0 ){
-            _log.debug("MaxLogin feature disabled") ;
+            _log.info("MaxLogin feature disabled") ;
          }else{
             _nucleus.addCellEventListener( new LoginEventListener() ) ;
-            _log.debug("Maximum Logins set to :"+_maxLogin ) ;
+            _log.info("Maximum Logins set to :"+_maxLogin ) ;
          }
 
          // keep alive
          long   keepAlive      = args.getLongOption("keepAlive", 0L) ;
-         _log.debug("Keep Alive set to "+keepAlive+" seconds") ;
+         _log.info("Keep Alive set to "+keepAlive+" seconds") ;
          keepAlive *= 1000L ;
          _keepAlive = new KeepAliveThread(keepAlive) ;
 
@@ -247,7 +247,7 @@ public class       LoginManager
          _locationManager = args.getOpt("lm") ;
 
          _listenThread  = new ListenThread(listenPort) ;
-         _log.debug( "Listening on port "+_listenThread.getListenPort() ) ;
+         _log.info( "Listening on port "+_listenThread.getListenPort() ) ;
 
 
          _nucleus.newThread( _listenThread , "listen" ).start() ;
@@ -337,7 +337,7 @@ public class       LoginManager
              }
           }
         }catch( Exception io ){
-          _log.debug( "Login Broker Thread terminated due to "+io ) ;
+          _log.info( "Login Broker Thread terminated due to "+io ) ;
         }
      }
      public static final String hh_get_children = "[-binary]" ;
@@ -405,7 +405,7 @@ public class       LoginManager
            sendMessage(new CellMessage(new CellPath(_loginBroker),_info));
            _currentBrokerUpdateTime = _brokerUpdateTime;
         } catch (NoRouteToCellException ee) {
-            _log.debug("Failed to register with LoginBroker: {}",
+            _log.info("Failed to register with LoginBroker: {}",
                       ee.getMessage());
             _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
         }
@@ -459,7 +459,7 @@ public class       LoginManager
         	   _childHash.put(removedCell, new Object() );
         	   _log.warn("LoginEventListener : removing DEAD cell: "+removedCell);
            }
-           _log.debug("LoginEventListener : removing : "+removedCell);
+           _log.info("LoginEventListener : removing : "+removedCell);
            _childCount -- ;
            childrenCounterChanged() ;
         }
@@ -480,7 +480,7 @@ public class       LoginManager
 
         int listenPort = _listenThread.getListenPort() ;
 
-        _log.debug("Sending 'listeningOn "+getCellName()+" "+listenPort+"'") ;
+        _log.info("Sending 'listeningOn "+getCellName()+" "+listenPort+"'") ;
         _sending = true ;
         String dest = _locationManager;
         if( dest == null ) {
@@ -493,11 +493,11 @@ public class       LoginManager
                  "listening on "+getCellName()+" "+listenPort ) ;
 
         for( int i = 0 ; ! Thread.interrupted() ; i++ ){
-          _log.debug("Sending ("+i+") 'listening on "+getCellName()+" "+listenPort+"'") ;
+          _log.info("Sending ("+i+") 'listening on "+getCellName()+" "+listenPort+"'") ;
 
           try{
              if( sendAndWait( msg , 5000 ) != null ){
-                _log.debug("Portnumber successfully sent to "+dest ) ;
+                _log.info("Portnumber successfully sent to "+dest ) ;
                 _sending = false ;
                 break ;
              }
@@ -527,7 +527,7 @@ public class       LoginManager
      @Override
      public void run(){
         synchronized( _lock ){
-          _log.debug("KeepAlive Thread started");
+          _log.info("KeepAlive Thread started");
           while( ! Thread.interrupted() ){
              try{
                 if( _keepAlive < 1 ){
@@ -536,7 +536,7 @@ public class       LoginManager
                    _lock.wait( _keepAlive ) ;
                 }
              }catch(InterruptedException ie ){
-                _log.debug("KeepAlive thread done (interrupted)");
+                _log.info("KeepAlive thread done (interrupted)");
                 break ;
              }
 
@@ -555,7 +555,7 @@ public class       LoginManager
      private void setKeepAlive( long keepAlive ){
         synchronized( _lock ){
            _keepAlive = keepAlive ;
-           _log.debug("Keep Alive value changed to "+_keepAlive);
+           _log.info("Keep Alive value changed to "+_keepAlive);
            _lock.notifyAll() ;
         }
      }
@@ -645,11 +645,11 @@ public void getInfo( PrintWriter pw ){
   }
   @Override
 public void cleanUp(){
-     _log.debug( "cleanUp requested by nucleus, closing listen socket" ) ;
+     _log.info( "cleanUp requested by nucleus, closing listen socket" ) ;
      if( _listenThread != null ) {
          _listenThread.shutdown();
      }
-     _log.debug( "Bye Bye" ) ;
+     _log.info( "Bye Bye" ) ;
   }
 
   private class ListenThread implements Runnable {
@@ -766,13 +766,13 @@ public void cleanUp(){
                _isDedicated = true;
            }
 
-           _log.debug("ListenThread : got serverSocket class : "+_serverSocket.getClass().getName());
+           _log.info("ListenThread : got serverSocket class : "+_serverSocket.getClass().getName());
         }
 
         if( _logSocketIO.isDebugEnabled() ) {
-            _logSocketIO.trace("Socket BIND local = " + _serverSocket.getInetAddress() + ":" + _serverSocket.getLocalPort() );
+            _logSocketIO.debug("Socket BIND local = " + _serverSocket.getInetAddress() + ":" + _serverSocket.getLocalPort() );
         }
-        _log.debug("Nio Socket Channel : "+(_serverSocket.getChannel()!=null));
+        _log.info("Nio Socket Channel : "+(_serverSocket.getChannel()!=null));
      }
      public int getListenPort(){ return _listenPort ; }
      public InetAddress[] getInetAddress(){
@@ -825,18 +825,18 @@ public void cleanUp(){
                      socket.setKeepAlive(true);
                      socket.setTcpNoDelay(true);
                      if (_logSocketIO.isDebugEnabled()) {
-                         _logSocketIO.trace("Socket OPEN (ACCEPT) remote = "
+                         _logSocketIO.debug("Socket OPEN (ACCEPT) remote = "
                                  + socket.getInetAddress() + ":" + socket.getPort()
                                  + " local = " + socket.getLocalAddress() + ":"
                                  + socket.getLocalPort());
                      }
-                     _log.debug("Nio Channel (accept) : " + (socket.getChannel() != null));
+                     _log.info("Nio Channel (accept) : " + (socket.getChannel() != null));
 
                      int currentChildHash;
                      synchronized (_childHash) {
                          currentChildHash = _childCount;
                      }
-                     _log.debug("New connection : " + currentChildHash);
+                     _log.info("New connection : " + currentChildHash);
                      if ((_maxLogin > 0) && (currentChildHash > _maxLogin)) {
                          _connectionDeniedCounter++;
                          _log.warn("Connection denied " + currentChildHash + " > " + _maxLogin);
@@ -845,7 +845,7 @@ public void cleanUp(){
                          engine.start();
                          continue;
                      }
-                     _log.debug("Connection request from " + socket.getInetAddress());
+                     _log.info("Connection request from " + socket.getInetAddress());
                      synchronized (_childHash) {
                          _childCount++;
                      }
@@ -901,7 +901,7 @@ public void cleanUp(){
          }finally {
              stopLoginBrokerUpdates();
          }
-         _log.debug( "Listen thread finished");
+         _log.info( "Listen thread finished");
      }
 
 
@@ -940,7 +940,7 @@ public void cleanUp(){
            }finally{
         	   try {
                	if( _logSocketIO.isDebugEnabled() ) {
-            		_logSocketIO.trace("Socket CLOSE (ACCEPT) remote = " + _socket.getInetAddress() + ":" + _socket.getPort() +
+            		_logSocketIO.debug("Socket CLOSE (ACCEPT) remote = " + _socket.getInetAddress() + ":" + _socket.getPort() +
             					" local = " +_socket.getLocalAddress() + ":" + _socket.getLocalPort() );
             	}
 				_socket.close() ;
@@ -949,13 +949,13 @@ public void cleanUp(){
 			}
            }
 
-           _log.debug( "Shutdown : done");
+           _log.info( "Shutdown : done");
          }
      }
 
      public synchronized void shutdown(){
 
-        _log.debug("Listen thread shutdown requested") ;
+        _log.info("Listen thread shutdown requested") ;
         //
         // it is still hard to stop an Pending I/O call.
         //
@@ -966,7 +966,7 @@ public void cleanUp(){
 
         try{
             if (_logSocketIO.isDebugEnabled()) {
-                _logSocketIO.trace("Socket SHUTDOWN local = " +
+                _logSocketIO.debug("Socket SHUTDOWN local = " +
                         _serverSocket.getInetAddress() + ":" +
                         _serverSocket.getLocalPort());
             }
@@ -976,17 +976,17 @@ public void cleanUp(){
         }
 
         if (_serverSocket.getChannel() == null) {
-            _log.debug("Using faked connect to shutdown listen port");
+            _log.info("Using faked connect to shutdown listen port");
             try {
                 new Socket("localhost", _listenPort).close();
             } catch (IOException e) {
-                _log.trace("ServerSocket faked connect: {}", e.getMessage());
+                _log.debug("ServerSocket faked connect: {}", e.getMessage());
             }
         }
 
         _this.interrupt() ;
 
-        _log.debug("Shutdown sequence done");
+        _log.info("Shutdown sequence done");
      }
   }
 
@@ -999,7 +999,7 @@ public void cleanUp(){
      public void run(){
        Thread t = Thread.currentThread() ;
        try{
-          _log.debug( "acceptThread ("+t+"): creating protocol engine" ) ;
+          _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
 
           StreamEngine engine;
           if (_authConstructor != null) {
@@ -1011,7 +1011,7 @@ public void cleanUp(){
           }
 
           String userName = Subjects.getDisplayName(engine.getSubject());
-          _log.debug( "acceptThread ("+t+"): connection created for user "+userName ) ;
+          _log.info( "acceptThread ("+t+"): connection created for user "+userName ) ;
           Object [] args ;
 
           int p = userName.indexOf('@');
@@ -1045,7 +1045,7 @@ public void cleanUp(){
              try{
                 Method m = cell.getClass().getMethod( "getCellName" , new Class[0] ) ;
                 String cellName = (String)m.invoke( cell) ;
-                _log.debug("Invoked cell name : "+cellName ) ;
+                _log.info("Invoked cell name : "+cellName ) ;
                 synchronized( _childHash ){
 
                 	/*
@@ -1082,7 +1082,7 @@ public void cleanUp(){
   }
   private void childrenCounterChanged(){
       int children = _childHash.size() ;
-      _log.debug( "New child count : "+children ) ;
+      _log.info( "New child count : "+children ) ;
       if( _loginBrokerHandler != null ) {
           _loginBrokerHandler.loadChanged(children, _maxLogin);
       }

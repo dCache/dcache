@@ -105,7 +105,7 @@ public class LocationManagerConnector
 
         String security = reply.getOpt("security");
         if (security == null) {
-            _log.debug("Using clear text channel");
+            _log.info("Using clear text channel");
             return new DummyStreamEngine(socket);
         } else {
             Args x = new Args(security);
@@ -126,7 +126,7 @@ public class LocationManagerConnector
                     IOException("Security mode not supported : " + security);
             }
 
-            _log.debug("Using encrypted channel");
+            _log.info("Using encrypted channel");
             try {
                 SshCAuth_Key key = new SshCAuth_Key(getNucleus(), getArgs());
                 return new SshStreamEngine(socket, key);
@@ -163,7 +163,7 @@ public class LocationManagerConnector
 
                 setStatus("Sleeping");
                 long sleep = random.nextInt(26000) + 4000;
-                _log.info("Sleeping {} seconds", sleep / 1000);
+                _log.warn("Sleeping " + (sleep / 1000) + " seconds");
                 Thread.sleep(sleep);
             }
         } catch (InterruptedIOException | InterruptedException e) {

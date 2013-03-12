@@ -45,11 +45,11 @@ public class InfoXml extends BasePage {
             public void onSubmit() {
                 try {
                     String statepath = getCorrectedStatepath(_statepath);
-                    _log.trace(_statepath);
+                    _log.debug(_statepath);
                     _xmlOutput = getInfoService().getXmlForStatepath(statepath);
                 } catch (InfoServiceException ex) {
                     error(getStringResource("error.inforetrieval") + ex.getMessage());
-                    _log.trace(getStringResource("error.inforetrieval"), ex);
+                    _log.debug(getStringResource("error.inforetrieval"), ex);
                 }
             }
         };
@@ -85,7 +85,7 @@ public class InfoXml extends BasePage {
     }
 
     private String getCorrectedStatepath(String statepath) {
-        _log.trace("called with statepath: {}", statepath);
+        _log.debug("called with statepath: {}", statepath);
         String returnPath;
         if (statepath == null || statepath.equals("")) {
             returnPath = "/";

@@ -91,7 +91,7 @@ public class HandlerDelegator extends AbstractHandler {
             uri = request.getRequestURI();
             alias = extractAlias(uri);
 
-            logger.debug("handle {}, {}", uri, alias);
+            logger.info("handle {}, {}", uri, alias);
 
             entry = aliases.get(alias);
 
@@ -104,7 +104,7 @@ public class HandlerDelegator extends AbstractHandler {
                                 "Alias not found : " + alias);
             }
 
-            logger.trace("alias: {}, entry {}", alias, entry);
+            logger.debug("alias: {}, entry {}", alias, entry);
 
             /*
              * The exclusion of POST used to be absolute; we allow it now only
@@ -121,16 +121,16 @@ public class HandlerDelegator extends AbstractHandler {
              */
             final String alternate = entry.getOverwrite();
             if (alternate != null) {
-                logger.trace("handle, overwritten alias: {}", alternate);
+                logger.debug("handle, overwritten alias: {}", alternate);
                 final AliasEntry overwrittenEntry = aliases.get(alternate);
                 if (overwrittenEntry != null) {
                     entry = overwrittenEntry;
                 }
-                logger.trace("handle, alias {}, entry {}", alternate, entry);
+                logger.debug("handle, alias {}, entry {}", alternate, entry);
             }
 
             final Handler handler = entry.getHandler();
-            logger.trace("got handler: {}", handler);
+            logger.debug("got handler: {}", handler);
             if (handler != null) {
                 handler.handle(target, baseRequest, request, response);
             }
@@ -139,11 +139,11 @@ public class HandlerDelegator extends AbstractHandler {
             if (entry != null && e.getCause() instanceof OnErrorException) {
                 final String alternate = entry.getOnError();
                 if (alternate != null) {
-                    logger.trace("handle, onError alias: {}", alternate);
+                    logger.debug("handle, onError alias: {}", alternate);
                     final AliasEntry overwrittenEntry = aliases.get(alternate);
                     if (overwrittenEntry != null) {
                         entry = overwrittenEntry;
-                        logger.trace("handle, alias {}, entry {}", alternate,
+                        logger.debug("handle, alias {}, entry {}", alternate,
                                         entry);
                         final Handler handler = entry.getHandler();
                         if (handler != null) {
@@ -164,6 +164,6 @@ public class HandlerDelegator extends AbstractHandler {
             }
         }
 
-        logger.debug("Finished");
+        logger.info("Finished");
     }
 }

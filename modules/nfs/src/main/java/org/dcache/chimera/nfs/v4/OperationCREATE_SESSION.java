@@ -100,7 +100,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
 
         	NFSv41Session session = client.createSession(_args.opcreate_session.csa_sequence.value.value,
                         _args.opcreate_session.csa_fore_chan_attrs.ca_maxrequests.value.value);
-                _log.trace("adding new session [{}]", session);
+                _log.debug("adding new session [{}]", session);
                 context.getStateHandler().sessionById(session.id(), session);
 
     		client.refreshLeaseTime();
@@ -125,7 +125,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
 	    	res.csr_status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException ne) {
-            _log.trace("CREATE_SESSION4res : {}",  ne.getMessage());
+            _log.debug("CREATE_SESSION4res : {}",  ne.getMessage());
     		res.csr_status = ne.getStatus();
     	}catch(Exception e) {
             _log.error("CREATE_SESSION4 :", e);

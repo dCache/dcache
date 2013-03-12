@@ -49,15 +49,15 @@ public class ExampleSocket implements Cell, Runnable {
          _input   = _socket.getInputStream() ;
          _output  = _socket.getOutputStream() ;
       }catch( Exception nse ){
-         _log.debug( " Problem in creating streams : "+nse ) ;
+         _log.info( " Problem in creating streams : "+nse ) ;
          _nucleus.kill() ;
       }
       if( _input == null ){
-         _log.debug( " Problem _input is null ") ;
+         _log.info( " Problem _input is null ") ;
          throw new IllegalArgumentException( " input is null" ) ;
       }
       if( _output == null ){
-         _log.debug( " Problem _input is null " ) ;
+         _log.info( " Problem _input is null " ) ;
          throw new IllegalArgumentException( " output is null" ) ;
       }
 
@@ -74,14 +74,14 @@ public class ExampleSocket implements Cell, Runnable {
             }
 
          }catch( Exception nse ){
-               _log.debug( " Problem in i/o : "+nse ) ;
+               _log.info( " Problem in i/o : "+nse ) ;
          }
          try{
            _input.close();
            _output.close() ;
            _socket.close() ;
          }catch( Exception nsea ){
-               _log.debug( " Problem in i/o : "+nsea ) ;
+               _log.info( " Problem in i/o : "+nsea ) ;
          }
          _nucleus.kill();
 
@@ -99,27 +99,27 @@ public class ExampleSocket implements Cell, Runnable {
      }
 
      CellMessage msg = me.getMessage() ;
-     _log.debug( " CellMessage From   : "+msg.getSourcePath() ) ;
-     _log.debug( " CellMessage To     : "+msg.getDestinationPath() ) ;
-     _log.debug( " CellMessage Object : "+msg.getMessageObject() ) ;
-     _log.debug( "" ) ;
+     _log.info( " CellMessage From   : "+msg.getSourcePath() ) ;
+     _log.info( " CellMessage To     : "+msg.getDestinationPath() ) ;
+     _log.info( " CellMessage Object : "+msg.getMessageObject() ) ;
+     _log.info( "" ) ;
 
    }
    @Override
    public void   prepareRemoval( KillEvent ce ){
-     _log.debug( " prepareRemoval "+ce ) ;
+     _log.info( " prepareRemoval "+ce ) ;
          try{
            _input.close();
            _output.close() ;
            _socket.close() ;
          }catch( Exception nsea ){
-               _log.debug( " Problem in i/o : "+nsea ) ;
+               _log.info( " Problem in i/o : "+nsea ) ;
          }
      _worker.interrupt() ;
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){
-     _log.debug( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
    @Override

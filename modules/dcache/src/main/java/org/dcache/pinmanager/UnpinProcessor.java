@@ -55,7 +55,7 @@ public class UnpinProcessor implements Runnable
             unpin(idle);
             idle.acquire(MAX_RUNNING);
         } catch (InterruptedException e) {
-            _logger.trace(e.toString());
+            _logger.debug(e.toString());
         } catch (JDOException | DataAccessException e) {
             _logger.error("Database failure while unpinning: {}",
                           e.getMessage());

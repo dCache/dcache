@@ -55,7 +55,7 @@ public class RunSystem implements Runnable {
 
     private void say(String str) {
         if (_log.isDebugEnabled()) {
-            _log.trace("[" + _id + "] " + str);
+            _log.debug("[" + _id + "] " + str);
         }
     }
 

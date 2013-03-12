@@ -34,7 +34,7 @@ public class StandardLinkGroupsDAO implements LinkGroupsDAO {
 
     @Override
     public Set<Space> getSpaceReservations() throws DAOException {
-        _log.trace("getSpaceReservations called");
+        _log.debug("getSpaceReservations called");
         try {
             Set<Space> reservations = tryToGetSpaceReservations();
             return reservations;
@@ -45,7 +45,7 @@ public class StandardLinkGroupsDAO implements LinkGroupsDAO {
 
     @Override
     public Set<LinkGroup> getLinkGroups() throws DAOException {
-        _log.trace("getLinkGroups called");
+        _log.debug("getLinkGroups called");
         try {
             Set<LinkGroup> linkGroups = tryToGetLinkGroups();
             return linkGroups;

@@ -242,7 +242,7 @@ public final class Scheduler implements Runnable  {
 		throws IllegalStateException,
 		InterruptedException,
 		IllegalStateTransition {
-		logger.trace("schedule is called for job with id="+job.getId()+" in state="+job.getState());
+		logger.debug("schedule is called for job with id="+job.getId()+" in state="+job.getState());
 		if(! running) {
 			throw new IllegalStateException("scheduler is not running");
 		}
@@ -287,13 +287,13 @@ public final class Scheduler implements Runnable  {
 				state == state.RUNNINGWITHOUTTHREAD ) {
 				// put blocks if priorityThreadQueue is full
 				// this will block the retry timer (or the event handler)
-                logger.trace("putting job in a priority thread queue, which might block, job#"+job.getId());
+                logger.debug("putting job in a priority thread queue, which might block, job#"+job.getId());
                 job.setState(State.PRIORITYTQUEUED, "in priority thread queue");
                 if(!priorityQueue(job))
                 {
                     job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
                 }
-                logger.trace("done putting job in a priority thread queue");
+                logger.debug("done putting job in a priority thread queue");
                         }
 			else {
 				// should never get here
@@ -473,7 +473,7 @@ public final class Scheduler implements Runnable  {
 		while(true) {
 			Job job = null;
 			if(useFairness) {
-				//logger.trace("updatePriorityThreadQueue(), using ValueCalculator to find next job");
+				//logger.debug("updatePriorityThreadQueue(), using ValueCalculator to find next job");
 				ModifiableQueue.ValueCalculator calc =
 					new ModifiableQueue.ValueCalculator() {
 						@Override
@@ -492,7 +492,7 @@ public final class Scheduler implements Runnable  {
 								job);
 							try {
 								FileRequest req = (FileRequest) job;
-								logger.trace("UPDATEPRIORITYTHREADQUEUE ca " + req.getCredential());
+								logger.debug("UPDATEPRIORITYTHREADQUEUE ca " + req.getCredential());
 							}
 							catch (ClassCastException cce) {
 								logger.error("Failed to cast job to FileRequest",cce);
@@ -504,12 +504,12 @@ public final class Scheduler implements Runnable  {
 				job = priorityThreadQueue.getGreatestValueObject(calc);
 			}
 			if(job == null) {
-				//logger.trace("updatePriorityThreadQueue(), job is null, trying priorityThreadQueue.peek();");
+				//logger.debug("updatePriorityThreadQueue(), job is null, trying priorityThreadQueue.peek();");
 				job = priorityThreadQueue.peek();
 			}
 
 			if(job == null) {
-				//logger.trace("updatePriorityThreadQueue no jobs were found, breaking the update loop");
+				//logger.debug("updatePriorityThreadQueue no jobs were found, breaking the update loop");
 				break;
 			}
 
@@ -520,7 +520,7 @@ public final class Scheduler implements Runnable  {
 				break;
 			}
 
-			logger.trace("updatePriorityThreadQueue(), found job id "+job.getId());
+			logger.debug("updatePriorityThreadQueue(), found job id "+job.getId());
 
             if(job.getState() != State.PRIORITYTQUEUED) {
                 // someone has canceled the job or
@@ -531,24 +531,24 @@ public final class Scheduler implements Runnable  {
                 continue;
             }
 			try {
-				logger.trace("updatePriorityThreadQueue ()  executing job id="+job.getId());
+				logger.debug("updatePriorityThreadQueue ()  executing job id="+job.getId());
 				JobWrapper wrapper = new JobWrapper(job);
                                 pooledExecutor.execute(wrapper);
- 				logger.trace("updatePriorityThreadQueue() waiting startup");
+ 				logger.debug("updatePriorityThreadQueue() waiting startup");
 				wrapper.waitStartup();
-				logger.trace("updatePriorityThreadQueue() job started");
+				logger.debug("updatePriorityThreadQueue() job started");
 				/** let the stateChanged() always remove the jobs from the queue
 				 */
 				// the job is running in a separate thread by this time
 			// when  ThreadPoolExecutor can not accept new Job,
 			// RejectedExecutionException will be thrown
                         } catch (RejectedExecutionException ree) {
-                            logger.trace("updatePriorityThreadQueue() cannot execute job id="+
+                            logger.debug("updatePriorityThreadQueue() cannot execute job id="+
                                 job.getId()+" at this time: RejectedExecutionException");
 				return;
 			}
 			catch(RuntimeException re) {
-				logger.trace("updatePriorityThreadQueue() cannot execute job id="+job.getId()+" at this time");
+				logger.debug("updatePriorityThreadQueue() cannot execute job id="+job.getId()+" at this time");
 				return;
                         }
                 }
@@ -563,7 +563,7 @@ public final class Scheduler implements Runnable  {
         while(true) {
             Job job = null;
             if(useFairness) {
-                //logger.trace("updateThreadQueue(), using ValueCalculator to find next job");
+                //logger.debug("updateThreadQueue(), using ValueCalculator to find next job");
                 ModifiableQueue.ValueCalculator calc =
                 new ModifiableQueue.ValueCalculator() {
                     @Override
@@ -580,7 +580,7 @@ public final class Scheduler implements Runnable  {
 				numOfRunningBySameCreator,
 				maxRunningByOwner,
 				job);
-                        //logger.trace("updateThreadQueue calculateValue return value="+value+" for "+o);
+                        //logger.debug("updateThreadQueue calculateValue return value="+value+" for "+o);
                         return value;
                     }
                 };
@@ -588,12 +588,12 @@ public final class Scheduler implements Runnable  {
             }
 
             if(job == null) {
-                 //logger.trace("updateThreadQueue(), job is null, trying threadQueue.peek();");
+                 //logger.debug("updateThreadQueue(), job is null, trying threadQueue.peek();");
                  job = threadQueue.peek();
             }
 
             if(job == null) {
-                //logger.trace("updateThreadQueue no jobs were found, breaking the update loop");
+                //logger.debug("updateThreadQueue no jobs were found, breaking the update loop");
                 break;
             }
             //we consider running and runningWithoutThreadStateJobsNum as occupying slots in the
@@ -602,7 +602,7 @@ public final class Scheduler implements Runnable  {
             if(getTotalRunningThreads() + getTotalRunningWithoutThreadState() >getThreadPoolSize()) {
                 break;
             }
-           logger.trace("updateThreadQueue(), found job id "+job.getId());
+           logger.debug("updateThreadQueue(), found job id "+job.getId());
 
             State state = job.getState();
             if(state != State.TQUEUED ) {
@@ -615,19 +615,19 @@ public final class Scheduler implements Runnable  {
             }
 
             try {
-                logger.trace("updateThreadQueue() executing job id="+job.getId());
+                logger.debug("updateThreadQueue() executing job id="+job.getId());
                 JobWrapper wrapper = new JobWrapper(job);
                 pooledExecutor.execute(wrapper);
-                logger.trace("updateThreadQueue() waiting startup");
+                logger.debug("updateThreadQueue() waiting startup");
                 wrapper.waitStartup();
-                logger.trace("updateThreadQueue() job started");
+                logger.debug("updateThreadQueue() job started");
                     /*
                      * let the stateChanged() always remove the jobs from the queue
                      */
             // when  ThreadPoolExecutor can not accept new Job,
             // RejectedExecutionException will be thrown
             } catch (RejectedExecutionException ree) {
-                    logger.trace("updatePriorityThreadQueue() cannot execute job id="+
+                    logger.debug("updatePriorityThreadQueue() cannot execute job id="+
                         job.getId()+" at this time: RejectedExecutionException");
                     return;
             }
@@ -666,7 +666,7 @@ public final class Scheduler implements Runnable  {
             }
             Job job = null;
             if(useFairness) {
-                //logger.trace("updateReadyQueue(), using ValueCalculator to find next job");
+                //logger.debug("updateReadyQueue(), using ValueCalculator to find next job");
                 ModifiableQueue.ValueCalculator calc =
                 new ModifiableQueue.ValueCalculator() {
                     @Override
@@ -682,7 +682,7 @@ public final class Scheduler implements Runnable  {
 				maxReadyJobs,
 				job);
 
-                        // logger.trace("updateReadyQueue calculateValue return value="+value+" for "+o);
+                        // logger.debug("updateReadyQueue calculateValue return value="+value+" for "+o);
 
                         return value;
                     }
@@ -690,17 +690,17 @@ public final class Scheduler implements Runnable  {
                 job = readyQueue.getGreatestValueObject(calc);
             }
             if(job == null) {
-                 //logger.trace("updateReadyQueue(), job is null, trying readyQueue.peek();");
+                 //logger.debug("updateReadyQueue(), job is null, trying readyQueue.peek();");
                 job = readyQueue.peek();
             }
 
             if(job == null) {
                 // no more jobs to add to the ready state set
-                //logger.trace("updateReadyQueue no jobs were found, breaking the update loop");
+                //logger.debug("updateReadyQueue no jobs were found, breaking the update loop");
                     return;
             }
 
-            logger.trace("updateReadyQueue(), found job id "+job.getId());
+            logger.debug("updateReadyQueue(), found job id "+job.getId());
             tryToReadyJob(job);
         }
     }
@@ -750,19 +750,19 @@ public final class Scheduler implements Runnable  {
         try {
             while(running) {
                 try {
-                    //logger.trace("Scheduler(id="+getId()+").run() updating Priority Thread queue...");
+                    //logger.debug("Scheduler(id="+getId()+").run() updating Priority Thread queue...");
                     updatePriorityThreadQueue();
-                    //logger.trace("Scheduler(id="+getId()+").run() updating Thread queue...");
+                    //logger.debug("Scheduler(id="+getId()+").run() updating Thread queue...");
                     updateThreadQueue();
-                    // logger.trace("Scheduler(id="+getId()+").run() updating Ready queue...");
+                    // logger.debug("Scheduler(id="+getId()+").run() updating Ready queue...");
                     // Do not update ready queue, let users ask for statuses
                     // which will lead to the updates
                     // updateReadyQueue();
-                    // logger.trace("Scheduler(id="+getId()+").run() done updating queues");
+                    // logger.debug("Scheduler(id="+getId()+").run() done updating queues");
 
                     synchronized (this) {
                         if (!notified) {
-                            //logger.trace("Scheduler(id="+getId()+").run() waiting for events...");
+                            //logger.debug("Scheduler(id="+getId()+").run() waiting for events...");
                             wait(queuesUpdateMaxWait);
                         }
                         notified = false;
@@ -812,15 +812,15 @@ public final class Scheduler implements Runnable  {
             try {
                 increaseNumberOfRunningThreads(job);
                 State state;
-                logger.trace("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") entering sync(job) block" );
+                logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") entering sync(job) block" );
                 job.wlock();
                 try {
-                    logger.trace("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") entered sync(job) block" );
+                    logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") entered sync(job) block" );
                     state =job.getState();
-                    logger.trace("Scheduler(id="+getId()+") JobWrapper run() running job with id="+job.getId()+" in state="+state);
+                    logger.debug("Scheduler(id="+getId()+") JobWrapper run() running job with id="+job.getId()+" in state="+state);
                     if(state == State.CANCELED ||
                     state == State.FAILED) {
-                    logger.trace("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") returning" );
+                    logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") returning" );
                         return;
 
                     }
@@ -828,7 +828,7 @@ public final class Scheduler implements Runnable  {
                     state == State.TQUEUED ||
                     state == State.PRIORITYTQUEUED ) {
                         try {
-                             logger.trace("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") changing job state to runinng");
+                             logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") changing job state to runinng");
                             job.setState(State.RUNNING," executing ",false);
                             started();
                             job.saveJob();
@@ -841,7 +841,7 @@ public final class Scheduler implements Runnable  {
                     else if(state == State.ASYNCWAIT ||
                     state == State.RETRYWAIT ) {
                             try {
-                             logger.trace("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") changing job state to runinng");
+                             logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") changing job state to runinng");
                                 job.setState(State.RUNNING," executing ",false);
                                 started();
                                 job.saveJob();
@@ -859,12 +859,12 @@ public final class Scheduler implements Runnable  {
                     job.wunlock();
                 }
 
-                logger.trace("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") exited sync block");
+                logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") exited sync block");
                 Exception exception = null;
                 try {
-                   logger.trace("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") calling job.run()");
+                   logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") calling job.run()");
                    job.run();
-                   logger.trace("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") job.run() returned");
+                   logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") job.run() returned");
                 } catch(NonFatalJobFailure | FatalJobFailure | RuntimeException e)
                 {
                     exception = e;
@@ -1091,7 +1091,7 @@ public final class Scheduler implements Runnable  {
         }
 
 
-        logger.trace("state changed for job id "+job.getId()+" from "+oldState+" to "+newState);
+        logger.debug("state changed for job id "+job.getId()+" from "+oldState+" to "+newState);
         if(newState == State.DONE ||
         newState == State.CANCELED ||
         newState == State.FAILED) {

@@ -34,7 +34,7 @@ public class CheckUIDAccountPlugin implements GPlazmaAccountPlugin {
 
     @Override
     public void account(Set<Principal> authorizedPrincipals) throws AuthenticationException {
-        LOGGER.trace("account is called");
+        LOGGER.debug("account is called");
 
         checkAuthentication(authorizedPrincipals.contains(_uid),
                 "uid "+_uid+" was not present in authorizedPrincipals");

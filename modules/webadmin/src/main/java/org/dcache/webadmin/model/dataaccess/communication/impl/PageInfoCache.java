@@ -42,7 +42,7 @@ public class PageInfoCache {
     public void init() {
         for (Collector collector : _collectors) {
             collector.setPageCache(_cache);
-            _log.debug("Collector {} started", collector.getName());
+            _log.info("Collector {} started", collector.getName());
             Thread thread = new Thread(collector, collector.getName());
             _threads.add(thread);
             thread.start();

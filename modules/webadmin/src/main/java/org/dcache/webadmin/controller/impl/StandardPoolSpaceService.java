@@ -40,7 +40,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
     public List<PoolSpaceBean> getPoolBeans() throws PoolSpaceServiceException {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
-            _log.trace("returned pools: " + pools.size());
+            _log.debug("returned pools: " + pools.size());
             List<PoolSpaceBean> poolBeans = new ArrayList<>(pools.size());
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
@@ -48,7 +48,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
                 PoolSpaceBean newPoolBean = createPoolBean(currentPool, domainMap);
                 poolBeans.add(newPoolBean);
             }
-            _log.trace("returned PoolBeans: " + poolBeans.size());
+            _log.debug("returned PoolBeans: " + poolBeans.size());
             Collections.sort(poolBeans);
             return poolBeans;
 
@@ -77,7 +77,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
     @Override
     public void changePoolMode(List<PoolSpaceBean> pools, PoolV2Mode poolMode,
             String userName) throws PoolSpaceServiceException {
-        _log.trace("Change Pool mode called: {}", poolMode);
+        _log.debug("Change Pool mode called: {}", poolMode);
         Set<String> poolIds = getSelectedIds(pools);
         try {
             getPoolsDAO().changePoolMode(poolIds, poolMode, userName);

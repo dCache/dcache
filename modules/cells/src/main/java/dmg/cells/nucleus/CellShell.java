@@ -504,9 +504,9 @@ public class      CellShell
          try{
             noRoute = false ;
             answer = null ;
-            _log.debug( "waitForCell : Sending request" ) ;
+            _log.warn( "waitForCell : Sending request" ) ;
             answer = _nucleus.sendAndWait( request , ((long)check)*1000 ) ;
-            _log.debug( "waitForCell : got {}", answer ) ;
+            _log.warn( "waitForCell : got "+answer ) ;
          }catch( NoRouteToCellException nrtce ){
             noRoute = true ;
          }catch( InterruptedException e ){
@@ -1007,7 +1007,7 @@ public class      CellShell
    }
    @Override
    public byte [] getClassData( String className ) throws IOException {
-       _log.debug( "getClassData("+className+") send to classProvider" ) ;
+       _log.info( "getClassData("+className+") send to classProvider" ) ;
        CellMessage answer;
        try{
            answer = _nucleus.sendAndWait(
@@ -1018,14 +1018,14 @@ public class      CellShell
                            4000
                        ) ;
       }catch( InterruptedException e ){
-         _log.debug( "getClassData Exception : "+e ) ;
+         _log.info( "getClassData Exception : "+e ) ;
          return null ;
       }catch( NoRouteToCellException e ){
-         _log.debug( "getClassData Exception : "+e ) ;
+         _log.info( "getClassData Exception : "+e ) ;
          return null ;
       }
       if( answer == null ){
-         _log.debug( "getClassData sendAndWait timed out" ) ;
+         _log.info( "getClassData sendAndWait timed out" ) ;
          return null ;
       }
       Object answerObject = answer.getMessageObject() ;
@@ -1034,7 +1034,7 @@ public class      CellShell
       }
 
       if( ! ( answerObject instanceof byte [] ) ){
-          _log.debug( "getClassData sendAndWait got : "+answerObject.toString() ) ;
+          _log.info( "getClassData sendAndWait got : "+answerObject.toString() ) ;
           return null ;
       }
 
@@ -1083,7 +1083,7 @@ public class      CellShell
       if( ( levelString != null ) && ( levelString.length() > 0 ) ){
           switch (levelString) {
           case "say":
-              _log.debug(msg);
+              _log.info(msg);
               break;
           case "esay":
               _log.warn(msg);
@@ -1095,7 +1095,7 @@ public class      CellShell
               try {
                   int level = Integer.parseInt(levelString);
                   if ((level & CellNucleus.PRINT_CELL) != 0) {
-                      _log.debug(msg);
+                      _log.info(msg);
                   }
                   if ((level & CellNucleus.PRINT_ERROR_CELL) != 0) {
                       _log.warn(msg);
@@ -1104,7 +1104,7 @@ public class      CellShell
                       _log.error(msg);
                   }
                   if ((level & CellNucleus.PRINT_NUCLEUS) != 0) {
-                      _logNucleus.debug(msg);
+                      _logNucleus.info(msg);
                   }
                   if ((level & CellNucleus.PRINT_ERROR_NUCLEUS) != 0) {
                       _logNucleus.warn(msg);

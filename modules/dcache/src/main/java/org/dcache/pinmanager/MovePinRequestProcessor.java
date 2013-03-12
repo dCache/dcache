@@ -223,7 +223,7 @@ public class MovePinRequestProcessor
             }
         }
 
-        _log.debug("Moved pins for {} from {} to {}", pnfsId, source, target);
+        _log.info("Moved pins for {} from {} to {}", pnfsId, source, target);
 
         return message;
     }
@@ -258,7 +258,7 @@ public class MovePinRequestProcessor
             message.setExpirationTime(pin.getExpirationTime());
         }
 
-        _log.debug("Extended pin for {} ({})", pin.getPnfsId(), pin.getPinId());
+        _log.info("Extended pin for {} ({})", pin.getPnfsId(), pin.getPinId());
 
         return message;
     }

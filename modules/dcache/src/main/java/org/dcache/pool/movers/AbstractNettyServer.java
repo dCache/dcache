@@ -123,7 +123,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      */
     protected synchronized void startServer() throws IOException {
         if (_serverChannel == null) {
-            _logger.trace("Starting server.");
+            _logger.debug("Starting server.");
             ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
             bootstrap.setOption("child.tcpNoDelay", false);
             bootstrap.setOption("child.keepAlive", true);
@@ -139,7 +139,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     protected synchronized void stopServer()
     {
         if (_serverChannel != null) {
-            _logger.trace("Stopping server.");
+            _logger.debug("Stopping server.");
             _serverChannel.close();
             _serverChannel = null;
         }

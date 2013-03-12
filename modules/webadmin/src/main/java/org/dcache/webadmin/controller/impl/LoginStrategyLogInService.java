@@ -72,7 +72,7 @@ public class LoginStrategyLogInService implements LogInService {
         Roles roles = new Roles();
         boolean isAdmin = false;
         for (long gid : gids) {
-            _log.trace("GID : {}", gid);
+            _log.debug("GID : {}", gid);
             if (gid == _adminGid) {
                 roles.add(Role.ADMIN);
                 isAdmin = true;
@@ -92,7 +92,7 @@ public class LoginStrategyLogInService implements LogInService {
     }
 
     public void setAdminGid(int adminGid) {
-        _log.trace("admin GID set to {}", adminGid);
+        _log.debug("admin GID set to {}", adminGid);
         _adminGid = adminGid;
     }
 }

@@ -54,7 +54,7 @@ public class MonitoringProxy  <T> implements InvocationHandler {
         } finally {
             long execTime = System.currentTimeMillis() - startTimeStamp;
             if (logger.isDebugEnabled()) {
-                logger.trace("invocation of "+method+" took "+execTime+" ms");
+                logger.debug("invocation of "+method+" took "+execTime+" ms");
             }
             if(gauge != null) {
                 gauge.update(method, execTime);

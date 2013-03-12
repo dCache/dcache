@@ -153,7 +153,7 @@ public final class SrmReserveSpaceCompanion
 
     @Override
     public void success(Reserve reservationResponse) {
-        _log.trace("success");
+        _log.debug("success");
         callbacks.SpaceReserved(
                 Long.toString(reservationResponse.getSpaceToken()),
                 reservationResponse.getSizeInBytes());
@@ -183,7 +183,7 @@ public final class SrmReserveSpaceCompanion
             String description,
             SrmReserveSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.trace(" SrmReserveSpaceCompanion.reserveSpace(" + user + " for " + sizeInBytes +
+        _log.debug(" SrmReserveSpaceCompanion.reserveSpace(" + user + " for " + sizeInBytes +
                 " bytes, access lat.=" + accessLatencyString + " retention pol.=" + retentionPolicyString +
                 " lifetime=" + spaceReservationLifetime +
                 ")");

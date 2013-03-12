@@ -104,7 +104,7 @@ public class ClientBootstrap
    }
    @Override
    public int runState( int state ){
-      _log.debug( "runState : in state <"+getRunState()+">" ) ;
+      _log.info( "runState : in state <"+getRunState()+">" ) ;
       switch( state ){
         case 0 :
         return RST_CREATE_TUNNEL ;
@@ -138,18 +138,18 @@ public class ClientBootstrap
                 // retry after timeout ( in any case )
                 //
                 if (msg == null) {
-                    _log.debug("runState : sendAndWait timed out");
+                    _log.info("runState : sendAndWait timed out");
                     return RST_MSG_SENT_FAILED;
                 }
 
                 Object answer = msg.getMessageObject();
                 if (answer == null) {
-                    _log.debug("runState : null object received");
+                    _log.info("runState : null object received");
                     return RST_MSG_SENT_FAILED;
                 }
 
                 if (!(answer instanceof String[])) {
-                    _log.debug("runState : answer is " + answer);
+                    _log.info("runState : answer is " + answer);
                     _engine.setState(RST_WAITING);
                     try {
                         Thread.sleep(5000);
@@ -178,14 +178,14 @@ public class ClientBootstrap
            //
            CellShell shell = new CellShell( _nucleus ) ;
             for (String command : _commands) {
-                _log.debug("runState : command : " + command);
+                _log.info("runState : command : " + command);
                 try {
                     String answer = shell.command(command);
-                    _log.debug("runState : answer  : " + answer);
+                    _log.info("runState : answer  : " + answer);
                 } catch (Exception eee) {
                 }
             }
-           _log.debug( "runState : Command execution finished" ) ;
+           _log.info( "runState : Command execution finished" ) ;
            return -1 ;
         }
 
@@ -217,7 +217,7 @@ public class ClientBootstrap
         CellMessage msg  = me.getMessage() ;
         if( msg.isFinalDestination() ){
            Object      obj  = msg.getMessageObject() ;
-           _log.debug( "Msg arrived (f) : "+msg ) ;
+           _log.info( "Msg arrived (f) : "+msg ) ;
            if( obj instanceof String ){
               String command = (String)obj ;
               if( command.length() < 1 ) {
@@ -234,7 +234,7 @@ public class ClientBootstrap
    }
    @Override
    public synchronized void  routeAdded( CellEvent ce ){
-      _log.debug( "routeAdded : Got routing info" );
+      _log.info( "routeAdded : Got routing info" );
       if( ! _routeAdded  ){
          CellRoute route  = (CellRoute)ce.getSource() ;
          if( route.getRouteType() != CellRoute.DOMAIN ) {
@@ -244,7 +244,7 @@ public class ClientBootstrap
          Args args = new Args( "-default *@"+route.getDomainName() ) ;
          CellRoute defRoute =
               new CellRoute( args ) ;
-         _log.debug( "routeAdded : adding default : "+defRoute ) ;
+         _log.info( "routeAdded : adding default : "+defRoute ) ;
          _nucleus.routeAdd( defRoute ) ;
 
          _routeAdded = true ;
@@ -254,26 +254,26 @@ public class ClientBootstrap
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){
-//     _log.debug( " exceptionArrived "+ce ) ;
+//     _log.info( " exceptionArrived "+ce ) ;
    }
    //
    // interface from CellEventListener
    //
    @Override
    public void  cellCreated( CellEvent  ce ){
-//     _log.debug( " cellCreated "+ce ) ;
+//     _log.info( " cellCreated "+ce ) ;
    }
    @Override
    public void  cellDied( CellEvent ce ){
-//     _log.debug( " cellDied "+ce ) ;
+//     _log.info( " cellDied "+ce ) ;
    }
    @Override
    public void  cellExported( CellEvent ce ){
-//     _log.debug( " cellExported "+ce ) ;
+//     _log.info( " cellExported "+ce ) ;
    }
    @Override
    public void  routeDeleted( CellEvent ce ){
-//     _log.debug( " routeDeleted "+ce ) ;
+//     _log.info( " routeDeleted "+ce ) ;
    }
 
    @Override

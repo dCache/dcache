@@ -24,7 +24,7 @@ public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 	 */
 	public static Map <String,SpaceInfo> getDetails( StateExhibitor exhibitor) {
 		if( _log.isInfoEnabled()) {
-                    _log.debug("Gathering current status");
+                    _log.info("Gathering current status");
                 }
 
 		PoolSpaceVisitor visitor = new PoolSpaceVisitor();

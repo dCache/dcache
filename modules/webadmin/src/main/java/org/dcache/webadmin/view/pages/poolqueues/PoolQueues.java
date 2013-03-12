@@ -38,11 +38,11 @@ public class PoolQueues extends BasePage {
 
     private void getPoolQueuesAction() {
         try {
-            _log.trace("getPoolQueuesAction called");
+            _log.debug("getPoolQueuesAction called");
             setPoolQueues(getPoolQueuesService().getPoolQueues());
         } catch (PoolQueuesServiceException ex) {
             this.error(getStringResource("error.getPoolsQueuesFailed") + ex.getMessage());
-            _log.trace("getPoolQueuesAction failed {}", ex.getMessage());
+            _log.debug("getPoolQueuesAction failed {}", ex.getMessage());
             setPoolQueues(null);
         }
     }

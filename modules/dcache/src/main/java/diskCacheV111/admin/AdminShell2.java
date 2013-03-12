@@ -41,7 +41,7 @@ public class      AdminShell2
     }
     @Override
     public Object executeCommand( String str )throws Exception {
-       _log.debug( "String command (super) "+str ) ;
+       _log.info( "String command (super) "+str ) ;
 
        Object or = null ;
        Args args = new Args(str) ;
@@ -72,7 +72,7 @@ public class      AdminShell2
     public Object executeCommand( String destination , Object str )
            throws Exception {
 
-       _log.debug( "Object command ("+destination+") "+str) ;
+       _log.info( "Object command ("+destination+") "+str) ;
 
        return sendCommand( destination  , str.toString() ) ;
     }
@@ -80,7 +80,7 @@ public class      AdminShell2
     public Object executeCommand( String destination , String str )
            throws Exception {
 
-       _log.debug( "String command ("+destination+") "+str ) ;
+       _log.info( "String command ("+destination+") "+str ) ;
 
        Args args = new Args(str) ;
        Object or = sendCommand( destination  , str ) ;

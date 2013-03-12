@@ -219,7 +219,7 @@ class ClassDataProvider0 implements ClassDataProvider {
     private byte [] loadClassDataCell( String className )
         throws IOException {
 
-        _log.debug( "getClassData("+className+") send to classProvider" ) ;
+        _log.info( "getClassData("+className+") send to classProvider" ) ;
         CellMessage answer;
         try{
             answer = _nucleus.sendAndWait(
@@ -229,11 +229,11 @@ class ClassDataProvider0 implements ClassDataProvider {
                                           4000
                                           ) ;
         }catch( InterruptedException | NoRouteToCellException e ){
-            _log.debug( "getClassData Exception : "+e ) ;
+            _log.info( "getClassData Exception : "+e ) ;
             throw new IOException( e.toString() ) ;
         }
         if( answer == null ){
-            _log.debug( "getClassData sendAndWait timed out" ) ;
+            _log.info( "getClassData sendAndWait timed out" ) ;
             throw new IOException( "getClassData sendAndWait timed out" ) ;
         }
         Object answerObject = answer.getMessageObject() ;
@@ -242,7 +242,7 @@ class ClassDataProvider0 implements ClassDataProvider {
         }
 
         if( ! ( answerObject instanceof byte [] ) ){
-            _log.debug( "getClassData sendAndWait got : "+
+            _log.info( "getClassData sendAndWait got : "+
                           answerObject.toString() ) ;
             throw new IOException( "Unknown data arrived" ) ;
         }
@@ -253,10 +253,10 @@ class ClassDataProvider0 implements ClassDataProvider {
     private byte [] loadClassDataFile( File dir , String name)
         throws IOException {
 
-        _log.debug("loadClassData : File="+name ) ;
+        _log.info("loadClassData : File="+name ) ;
         File file = new File( dir , name ) ;
         long length = file.length() ;
-        _log.trace( "loadClassData : length="+length ) ;
+        _log.debug( "loadClassData : length="+length ) ;
         if( length == 0 ) {
             throw new IOException("Datafile has zero size");
         }

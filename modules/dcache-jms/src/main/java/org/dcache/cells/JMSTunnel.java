@@ -239,7 +239,7 @@ public class JMSTunnel
     {
         try {
             if (!(msg instanceof CellExceptionMessage)) {
-                _log.debug("Cannot deliver {}", msg);
+                _log.info("Cannot deliver {}", msg);
 
                 CellPath retAddr = (CellPath)msg.getSourcePath().clone();
                 retAddr.revert();
@@ -267,7 +267,7 @@ public class JMSTunnel
 
         String[] info = (String[]) obj;
         if (info.length > 0){
-            _log.debug("Routing info arrived for domain: {}", info[0]);
+            _log.info("Routing info arrived for domain: {}", info[0]);
 
             String domain = info[0];
             Set<String> newCells =
@@ -328,7 +328,7 @@ public class JMSTunnel
             if (!_localExports.contains(cell) && !oldCells.remove(cell)) {
                 // entry not found, so make it
                 if (!cell.startsWith("@")) {
-                    _log.debug("Adding: {}", cell);
+                    _log.info("Adding: {}", cell);
                     try {
                         _nucleus.routeAdd(createWellKnownRoute(cell, domain));
                     } catch (IllegalArgumentException e) {
@@ -341,7 +341,7 @@ public class JMSTunnel
         // all new routes added now, need to remove the rest
         for (String cell: oldCells) {
             if (!cell.startsWith("@")) {
-                _log.debug("Removing: {}", cell);
+                _log.info("Removing: {}", cell);
                 try {
                     _nucleus.routeDelete(createWellKnownRoute(cell, domain));
                 } catch (IllegalArgumentException e) {
@@ -505,7 +505,7 @@ public class JMSTunnel
                 Object object = envelope.getMessageObject();
                 String messageObject =
                     object == null ? "NULL" : object.getClass().getName();
-                _logMessages.trace("tunnelMessageArrived src="
+                _logMessages.debug("tunnelMessageArrived src="
                                    + envelope.getSourcePath()
                                    + " dest=" + envelope.getDestinationPath()
                                    + " [" + messageObject + "] UOID="
@@ -713,7 +713,7 @@ public class JMSTunnel
                     ? "NULL"
                     : envelope.getMessageObject().getClass().getName();
 
-                _logMessages.trace("tunnelSendMessage src="
+                _logMessages.debug("tunnelSendMessage src="
                                    + envelope.getSourcePath()
                                    + " dest=" + envelope.getDestinationPath()
                                    + " [" + messageObject + "] UOID="

@@ -68,7 +68,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    public WebPicturesV0( String name , String args )throws Exception {
 
       super( name , args , false ) ;
-      _log.debug("WebPictures started");
+      _log.info("WebPictures started");
       try{
          _args        = getArgs() ;
          _nucleus     = getNucleus() ;
@@ -101,7 +101,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
                 _log.warn("Invalid size string (command ignored) : "+sizeRange ) ;
             }
          }
-         _log.debug("Image size : "+_dimension);
+         _log.info("Image size : "+_dimension);
          String intervalString = _args.getOpt("interval") ;
          if( intervalString != null ) {
              try {
@@ -110,12 +110,12 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
                  _log.warn("Invalid 'interval' string (command ignored) : " + intervalString);
              }
          }
-         _log.debug("Interval (msec) : "+_sleep);
+         _log.info("Interval (msec) : "+_sleep);
 
          if( _args.hasOption("dontstart") ){ // debug only
-            _log.debug("Worker Thread not started : -dontstart");
+            _log.info("Worker Thread not started : -dontstart");
          }else{
-            _log.debug("Starting worker Thread");
+            _log.info("Starting worker Thread");
             _nucleus.newThread( this , "Worker" ).start() ;
             _wasStarted = true ;
          }
@@ -161,7 +161,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
            try{
 
-               _log.debug("Sending query : "+msg);
+               _log.info("Sending query : "+msg);
 
                sendMessage( msg ) ;
 
@@ -199,7 +199,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       Object obj = message.getMessageObject() ;
          if( obj instanceof RestoreHandlerInfo []  ){
              _currentInfo = (RestoreHandlerInfo[])obj ;
-             _log.debug("RestoreHandlerInfo ["+_currentInfo.length+"]");
+             _log.info("RestoreHandlerInfo ["+_currentInfo.length+"]");
              _lastMessageArrived = new Date() ;
              createRestorePictures();
              createFrame();
@@ -413,7 +413,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
            maxTime = Math.max(maxTime, t[0]);
        }
       long secPerBin = maxTime / (long)binCount / 1000L ;
-//      _log.debug("secPerBin : "+secPerBin);
+//      _log.info("secPerBin : "+secPerBin);
       int pos = 0 ;
       for( int n = _binDefinition.length ; pos < n ; pos++ ){
          if( _binDefinition[pos].secondsPerBin > secPerBin ) {
@@ -422,7 +422,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       }
       histogram._bin = _binDefinition[pos] ;
       secPerBin = _binDefinition[pos].secondsPerBin ;
-//      _log.debug("Seconds per bin (fixed) : "+_binDefinition[pos]);
+//      _log.info("Seconds per bin (fixed) : "+_binDefinition[pos]);
       int [] array = new int[binCount];
       int [] erray = new int[binCount];
       long largest = secPerBin * binCount ;
@@ -448,7 +448,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       int  binsPerMasterBin      = binCount / 4 ;
       long secondsPerMasterBin = binsPerMasterBin * secPerBin ;
 
-//      _log.debug("secPerBin : "+secondsPerMasterBin);
+//      _log.info("secPerBin : "+secondsPerMasterBin);
 
       int masterPos = 0 ;
       for( int n = _binDefinition.length ; masterPos < n ; masterPos++ ){
@@ -457,7 +457,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          }
       }
       masterPos = Math.max(masterPos-1,0);
-//      _log.debug("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
+//      _log.info("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
       histogram._secondsPerMasterBin = _binDefinition[masterPos].secondsPerBin ;
       histogram._masterBin           = _binDefinition[masterPos] ;
       histogram._secondsPerBin       = secPerBin ;
@@ -481,7 +481,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
            youngest = Math.min(youngest, start);
        }
       long secPerBin = ( now - youngest ) / (long)binCount / 1000L ;
-      _log.debug("secPerBin : "+secPerBin);
+      _log.info("secPerBin : "+secPerBin);
       int pos = 0 ;
       for( int n = _binDefinition.length ; pos < n ; pos++ ){
          if( _binDefinition[pos].secondsPerBin > secPerBin ) {
@@ -490,7 +490,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       }
       histogram._bin = _binDefinition[pos] ;
       secPerBin = _binDefinition[pos].secondsPerBin ;
-      _log.debug("Seconds per bin (fixed) : "+_binDefinition[pos]);
+      _log.info("Seconds per bin (fixed) : "+_binDefinition[pos]);
       int [] array = new int[binCount];
       int [] erray = new int[binCount];
       long largest = secPerBin * binCount ;
@@ -513,7 +513,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       int  binsPerMasterBin      = binCount / 4 ;
       long secondsPerMasterBin = binsPerMasterBin * secPerBin ;
 
-      _log.debug("secPerBin : "+secondsPerMasterBin);
+      _log.info("secPerBin : "+secondsPerMasterBin);
 
       int masterPos = 0 ;
       for( int n = _binDefinition.length ; masterPos < n ; masterPos++ ){
@@ -522,7 +522,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          }
       }
       masterPos = Math.max(masterPos-1,0);
-      _log.debug("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
+      _log.info("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
       histogram._secondsPerMasterBin = _binDefinition[masterPos].secondsPerBin ;
       histogram._masterBin           = _binDefinition[masterPos] ;
       histogram._secondsPerBin       = secPerBin ;
@@ -620,7 +620,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
              (float)histogram._secondsPerBin  *
              (float)pixelsPerBin ) ;
 
-//         _log.debug("Pixel : perBin : "+pixelsPerBin+
+//         _log.info("Pixel : perBin : "+pixelsPerBin+
 //                            " , perMaster : "+pixelsPerMasterBin);
          //
          // x ticks and labels

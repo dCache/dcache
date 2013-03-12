@@ -141,7 +141,7 @@ public abstract class FileRequest extends Job {
         super(lifetime, maxNumberOfRetries);
         this.credentialId = requestCredentalId;
         this.requestId = requestId;
-        logger.trace("created");
+        logger.debug("created");
     }
 
     /** this constructor is used for restoring the previously
@@ -177,7 +177,7 @@ public abstract class FileRequest extends Job {
         this.statusCode = statusCodeString==null
                 ?null
                 :TStatusCode.fromString(statusCodeString);
-        logger.trace("restored");
+        logger.debug("restored");
 
     }
 
@@ -227,7 +227,7 @@ public abstract class FileRequest extends Job {
     }
 
     public void setStatus(String status) throws SRMException, SQLException {
-        logger.trace("("+status+")");
+        logger.debug("("+status+")");
         try {
             wlock();
             try {

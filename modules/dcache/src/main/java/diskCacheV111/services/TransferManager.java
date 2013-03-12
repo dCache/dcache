@@ -192,7 +192,7 @@ public abstract class TransferManager extends AbstractCell
                 _moverTimeout = args.getIntOption("mover_timeout");
                 _ioQueueName = Strings.emptyToNull(args.getOpt("io-queue"));
                 _poolProxy = args.getOpt("poolProxy");
-                log.trace("Pool Proxy " + (_poolProxy == null ? "not set" : ("set to " + _poolProxy)));
+                log.debug("Pool Proxy " + (_poolProxy == null ? "not set" : ("set to " + _poolProxy)));
 		_poolMgrPath = new CellPath( _poolManager ) ;
 	}
 
@@ -442,14 +442,14 @@ public abstract class TransferManager extends AbstractCell
                                 TransferManagerHandler handler = e.getValue();
                                 Matcher m = p.matcher(String.valueOf(id));
                                 if (m.matches()) {
-                                        log.trace("pattern: \"{}\" matches id=\"{}\"", args.argv(0), id);
+                                        log.debug("pattern: \"{}\" matches id=\"{}\"", args.argv(0), id);
                                         if (pool != null && pool.equals(handler.getPool())) {
                                                 handlersToKill.add(handler);
                                         } else if (pool == null) {
                                                 handlersToKill.add(handler);
                                         }
                                 } else {
-                                        log.trace("pattern: \"{}\" does not match id=\"{}\"", args.argv(0), id);
+                                        log.debug("pattern: \"{}\" does not match id=\"{}\"", args.argv(0), id);
                                 }
 			}
 			if (handlersToKill.isEmpty()) {
@@ -524,20 +524,20 @@ public abstract class TransferManager extends AbstractCell
 
 	private synchronized boolean newTransfer()
         {
-                log.trace("newTransfer() num_transfers = {} max_transfers={}",
+                log.debug("newTransfer() num_transfers = {} max_transfers={}",
                           _numTransfers, _maxTransfers);
                 if(_numTransfers == _maxTransfers) {
-                        log.trace("newTransfer() returns false");
+                        log.debug("newTransfer() returns false");
                         return false;
                 }
-                log.trace("newTransfer() INCREMENT and return true");
+                log.debug("newTransfer() INCREMENT and return true");
                 _numTransfers++;
                 return true;
         }
 
 	synchronized void finishTransfer()
         {
-		log.trace("finishTransfer() num_transfers = {} DECREMENT", _numTransfers);
+		log.debug("finishTransfer() num_transfers = {} DECREMENT", _numTransfers);
 		_numTransfers--;
 	}
 
@@ -609,7 +609,7 @@ public abstract class TransferManager extends AbstractCell
 			log.error("stopTimer(): timer not found for Id={}", id);
 			return;
 		}
-		log.trace("canceling the mover timer for handler id {}", id);
+		log.debug("canceling the mover timer for handler id {}", id);
 		tt.cancel();
 	}
 
@@ -629,7 +629,7 @@ public abstract class TransferManager extends AbstractCell
 					// Detach the handler for use
 					// working_handler = (TransferManagerHandler)pm.detachCopy(handler);
 					tx.commit();
-					log.trace("Recording new handler into database.");
+					log.debug("Recording new handler into database.");
 				} catch (Exception e) {
 					log.error(e.toString());
 				} finally {
@@ -655,7 +655,7 @@ public abstract class TransferManager extends AbstractCell
 					persistanceManager.deletePersistent(handler);
 					persistanceManager.makePersistent(handlerBackup);
 					tx.commit();
-					log.trace("handler removed from db");
+					log.debug("handler removed from db");
 				} catch (Exception e) {
 					log.error(e.toString());
 				} finally {
@@ -762,7 +762,7 @@ public abstract class TransferManager extends AbstractCell
 					tx.begin();
 					persistanceManager.makePersistent(o);
 					tx.commit();
-					log.trace("["+o.toString()+"]: Recording new state of handler into database.");
+					log.debug("["+o.toString()+"]: Recording new state of handler into database.");
 				} catch (Exception e) {
 					log.error("["+o.toString()+"]: failed to persist obhject "+o.toString());
 					log.error(e.toString());

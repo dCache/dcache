@@ -137,7 +137,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
             try {
                 String target = _selectedCell + "@"
                         + _selectedDomain;
-                _log.trace("submit pressed with cell {} and command {}",
+                _log.debug("submit pressed with cell {} and command {}",
                         target, _command);
                 _lastCommand = getStringResource("cellAdmin.lastCommand") +" "+ _command;
                 clearResponse();

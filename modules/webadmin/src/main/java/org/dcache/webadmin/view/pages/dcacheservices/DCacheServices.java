@@ -37,9 +37,9 @@ public class DCacheServices extends BasePage {
             public void onClick() {
                 if (getWebadminSession().isSignedIn()) {
                     getWebadminSession().logoutUser();
-                    debug(getStringResource("user.logout"));
+                    info(getStringResource("user.logout"));
                 } else {
-                    debug(getStringResource("user.notLoggedIn"));
+                    info(getStringResource("user.notLoggedIn"));
                 }
             }
         };

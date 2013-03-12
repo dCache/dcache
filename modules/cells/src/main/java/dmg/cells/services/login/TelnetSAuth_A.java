@@ -145,7 +145,7 @@ public class      TelnetSAuth_A
              }
              return true ;
          }catch( Exception e ){
-            _log.debug( "Exception in TelnetSAuth_A : "+ e ) ;
+            _log.info( "Exception in TelnetSAuth_A : "+ e ) ;
             return false ;
          }
       }else if( __passwordFile !=  null ){

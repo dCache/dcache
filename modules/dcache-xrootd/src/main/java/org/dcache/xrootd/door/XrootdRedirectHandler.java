@@ -136,7 +136,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     {
         Throwable t = event.getCause();
         if (t instanceof ClosedChannelException) {
-            _log.debug("Connection closed");
+            _log.info("Connection closed");
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
@@ -173,7 +173,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             neededPerm = FilePerm.READ;
         }
 
-        _log.debug("Opening {} for {}", req.getPath(), neededPerm.xmlText());
+        _log.info("Opening {} for {}", req.getPath(), neededPerm.xmlText());
         if (_log.isDebugEnabled()) {
             logDebugOnOpen(req);
         }
@@ -202,7 +202,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
             // ok, open was successful
             InetSocketAddress address = transfer.getRedirect();
-            _log.debug("Redirecting to {}", address);
+            _log.info("Redirecting to {}", address);
 
             // new pool, send UUID in opaque part of redirect
             if (transfer.isUUIDSupported()) {
@@ -249,7 +249,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             FileStatus fs = convertToFileStatus(meta); // FIXME
             return new StatResponse(req, fs);
         } catch (FileNotFoundCacheException e) {
-            _log.debug("No PnfsId found for path: {}", path);
+            _log.info("No PnfsId found for path: {}", path);
             return new StatResponse(req, FileStatus.FILE_NOT_FOUND);
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
@@ -314,7 +314,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             throw new XrootdException(kXR_NotAuthorized, "Read-only access");
         }
 
-        _log.debug("Trying to delete {}", req.getPath());
+        _log.info("Trying to delete {}", req.getPath());
 
         try {
             _door.deleteFile(createFullPath(req.getPath()), req.getSubject());
@@ -343,7 +343,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             throw new XrootdException(kXR_NotAuthorized, "Read-only access");
         }
 
-        _log.debug("Trying to delete directory {}", req.getPath());
+        _log.info("Trying to delete directory {}", req.getPath());
 
         try {
             _door.deleteDirectory(createFullPath(req.getPath()), req.getSubject());
@@ -375,7 +375,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             throw new XrootdException(kXR_NotAuthorized, "Read-only access");
         }
 
-        _log.debug("Trying to create directory {}", req.getPath());
+        _log.info("Trying to create directory {}", req.getPath());
 
         try {
             _door.createDirectory(createFullPath(req.getPath()),
@@ -415,7 +415,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             throw new XrootdException(kXR_NotAuthorized, "Read-only access");
         }
 
-        _log.debug("Trying to rename {} to {}",
+        _log.info("Trying to rename {} to {}",
                   req.getSourcePath(), req.getTargetPath());
 
         try {
@@ -456,7 +456,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 throw new XrootdException(kXR_ArgMissing, "no source path specified");
             }
 
-            _log.debug("Listing directory {}", listPath);
+            _log.info("Listing directory {}", listPath);
             MessageCallback<PnfsListDirectoryMessage> callback =
                     new ListCallback(request, context, event);
             _door.listPath(createFullPath(listPath), request.getSubject(), callback);
@@ -522,7 +522,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             openFlags += " kXR_retstat";
         }
 
-        _log.trace("open flags: "+openFlags);
+        _log.debug("open flags: "+openFlags);
 
         int mode = req.getUMask();
         String s = "";
@@ -579,7 +579,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             s += "-";
         }
 
-        _log.trace("mode to apply to open path: {}", s);
+        _log.debug("mode to apply to open path: {}", s);
     }
 
     private int getFileStatusFlags(FileMetaData meta)
@@ -697,7 +697,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                 transform(message.getEntries(), DirectoryEntries.GET_NAME);
 
             if (message.isFinal()) {
-                _log.trace("XrootdRedirectHandler: Received final listing " +
+                _log.debug("XrootdRedirectHandler: Received final listing " +
                            "message!");
                 respond(_context,
                         _event,

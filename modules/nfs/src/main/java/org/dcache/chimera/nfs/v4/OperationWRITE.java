@@ -100,10 +100,10 @@ public class OperationWRITE extends AbstractNFSv4Operation {
 	        res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
 
     	}catch(IOHimeraFsException hioe) {
-            _log.trace("WRITE: {}", hioe.getMessage() );
+            _log.debug("WRITE: {}", hioe.getMessage() );
             res.status = nfsstat.NFSERR_IO;
         }catch(ChimeraNFSException he) {
-            _log.trace("WRITE: {}", he.getMessage() );
+            _log.debug("WRITE: {}", he.getMessage() );
             res.status = he.getStatus();
     	}catch(ChimeraFsException hfe) {
     		res.status = nfsstat.NFSERR_NOFILEHANDLE;

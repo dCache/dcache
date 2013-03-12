@@ -40,7 +40,7 @@ class OracleFsSqlDriver extends FsSqlDriver {
      *
      */
     protected OracleFsSqlDriver() {
-        _log.debug("Running Oracle specific Driver");
+        _log.info("Running Oracle specific Driver");
     }
     private static final String sqlInode2Path = "SELECT iname, LEVEL AS deep FROM (SELECT * FROM  t_dirs WHERE iname !='.' AND iname !='..') start with ipnfsid=? CONNECT BY  ipnfsid = PRIOR iparent ORDER BY deep DESC";
 

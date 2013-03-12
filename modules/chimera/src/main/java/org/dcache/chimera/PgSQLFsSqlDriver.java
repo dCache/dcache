@@ -48,7 +48,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
      *
      */
     protected PgSQLFsSqlDriver() {
-        _log.debug("Running PostgreSQL specific Driver");
+        _log.info("Running PostgreSQL specific Driver");
     }
     private static final String sqlInode2Path = "SELECT inode2path(?)";
     private static final String sqlPath2Inode = "SELECT path2inode(?, ?)";

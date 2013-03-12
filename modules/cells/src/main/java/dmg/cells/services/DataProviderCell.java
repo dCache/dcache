@@ -84,21 +84,21 @@ public class DataProviderCell extends CellAdapter {
    }
    private void do_getclass_command( CellMessage msg , Args args ){
       String fileName = args.argv(0) ;
-      _log.debug( "Request for class : "+fileName ) ;
+      _log.info( "Request for class : "+fileName ) ;
       File file = new File( _dir , fileName+".class" ) ;
       if( ! file.canRead() ){
           fileName = fileName.replace( '.' , '/' ) ;
           file = new File( _dir , fileName+".class" ) ;
           if( ! file.canRead() ){
               reply( msg , "Class not found" ) ;
-              _log.debug( "File not found : "+fileName ) ;
+              _log.info( "File not found : "+fileName ) ;
               _errorCounter ++ ;
               return ;
           }
       }
       int len = (int)file.length() ;
       if( len == 0 ){
-          _log.debug( "File has zero length" ) ;
+          _log.info( "File has zero length" ) ;
           reply( msg , "Zero size entry found" ) ;
           _errorCounter ++ ;
           return ;
@@ -119,7 +119,7 @@ public class DataProviderCell extends CellAdapter {
    }
    private void reply( CellMessage msg , Serializable o ){
       try{
-         _log.debug( "returning message" + o.toString() ) ;
+         _log.info( "returning message" + o.toString() ) ;
          msg.setMessageObject( o ) ;
          msg.revertDirection() ;
          sendMessage( msg ) ;

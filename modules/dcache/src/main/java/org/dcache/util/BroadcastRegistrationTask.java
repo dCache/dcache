@@ -85,7 +85,7 @@ public class BroadcastRegistrationTask implements Runnable
                 new BroadcastUnregisterMessage(_eventClass, _target);
             _cellEndpoint.sendMessage(new CellMessage(_broadcast, message));
         } catch (NoRouteToCellException e) {
-            _logger.debug("Failed to unregister with broadcast cell: No route to cell");
+            _logger.info("Failed to unregister with broadcast cell: No route to cell");
         }
     }
 }

@@ -161,7 +161,7 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
 
     @Override
     public void success(Use message) {
-        _log.trace("success");
+        _log.debug("success");
         callbacks.SpaceUsed();
     }
 
@@ -188,7 +188,7 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
             boolean overwrite,
             SrmUseSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.trace(" SrmMarkSpaceAsBeingUsedCompanion.markSpace(" + user +
+        _log.debug(" SrmMarkSpaceAsBeingUsedCompanion.markSpace(" + user +
                 " spaceToken=" + spaceToken +
                 " pnfsPath=" + pnfPath + " of " + sizeInBytes +
                 " bytes, makr lifetime=" + markLifetime +

@@ -140,11 +140,11 @@ public class XmlParser {
     }
 
     public void parse() {
-        LOGGER.trace( "starting parse");
+        LOGGER.debug( "starting parse");
         NodeList nodes = buildPluginNodeList();
-        LOGGER.trace( "NodeList has {} entries", nodes.getLength());
+        LOGGER.debug( "NodeList has {} entries", nodes.getLength());
         addPluginsFromNodeList( nodes);
-        LOGGER.trace( "Created {} plugin metadata entries", _plugins.size());
+        LOGGER.debug( "Created {} plugin metadata entries", _plugins.size());
     }
 
     public Set<PluginMetadata> getPlugins() {
@@ -194,7 +194,7 @@ public class XmlParser {
     private void tryToAddPluginFromNode( Node pluginRootNode) {
         try {
             PluginMetadata plugin = processPluginNode( pluginRootNode);
-            LOGGER.trace( "Adding plugin {}", plugin.getPluginNames());
+            LOGGER.debug( "Adding plugin {}", plugin.getPluginNames());
             _plugins.add( plugin);
         } catch (IllegalArgumentException e) {
             LOGGER.error( "Unable register new plugin: {}", e.getMessage());
@@ -216,7 +216,7 @@ public class XmlParser {
 
         Class<? extends GPlazmaPlugin> thisPluginClass =
                 metadata.getPluginClass();
-        LOGGER.trace( "examining plugin with class {}", thisPluginClass);
+        LOGGER.debug( "examining plugin with class {}", thisPluginClass);
 
         if( removeIfClassAlreadyRegistered( thisPluginClass)) {
             _bannedClasses.add( thisPluginClass);
@@ -245,7 +245,7 @@ public class XmlParser {
             Class<? extends GPlazmaPlugin> registeredPluginClass =
                     registeredPlugin.getPluginClass();
 
-            LOGGER.trace("comparing plugin class {} against registered plugin with class {}",
+            LOGGER.debug("comparing plugin class {} against registered plugin with class {}",
                          pluginClass, registeredPluginClass);
 
             if( pluginClass.equals( registeredPluginClass)) {

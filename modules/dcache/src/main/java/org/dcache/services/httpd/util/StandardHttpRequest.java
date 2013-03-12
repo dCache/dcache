@@ -146,7 +146,7 @@ public class StandardHttpRequest implements HttpRequest {
             return;
         }
         auth = new String(Base64.decode(st.nextToken()));
-        logger.debug("Authentication : >{}<", auth);
+        logger.info("Authentication : >{}<", auth);
         st = new StringTokenizer(auth, ":");
         if (st.countTokens() < 2) {
             return;

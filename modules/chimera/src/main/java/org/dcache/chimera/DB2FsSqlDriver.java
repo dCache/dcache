@@ -35,7 +35,7 @@ class DB2FsSqlDriver extends FsSqlDriver {
      *
      */
     protected DB2FsSqlDriver() {
-        _log.debug("Running DB2 specific Driver");
+        _log.info("Running DB2 specific Driver");
     }
 
     @Override

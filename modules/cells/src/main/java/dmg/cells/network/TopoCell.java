@@ -41,7 +41,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
       try{
          _waitTime = Long.parseLong( wait ) * 1000L ;
       }catch(NumberFormatException ee){ /* bad values ignored */}
-      _log.debug("Update set to "+_waitTime+" millis");
+      _log.info("Update set to "+_waitTime+" millis");
       _worker = getNucleus().newThread( this ) ;
       _worker.start() ;
    }
@@ -58,7 +58,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
                synchronized( _infoLock ){ _infoMap = info ; }
                _requestCount++;
            }catch(InterruptedException ie){
-               _log.debug( "Topology Thread was interrupted" ) ;
+               _log.info( "Topology Thread was interrupted" ) ;
                break ;
            }catch(Exception e){
                _log.warn( "Exception in Loop : "+e ) ;
@@ -196,7 +196,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
     }
 
     private void setStatus(String st) {
-        _log.debug(st);
+        _log.info(st);
     }
 
 }

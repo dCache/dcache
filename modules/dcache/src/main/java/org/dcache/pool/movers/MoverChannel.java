@@ -320,7 +320,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
 
             if (pos > _reserved) {
                 long delta = Math.max(pos - _reserved, SPACE_INC);
-                _logSpaceAllocation.trace("ALLOC: " + delta);
+                _logSpaceAllocation.debug("ALLOC: " + delta);
                 _allocator.allocate(delta);
                 _reserved += delta;
             }

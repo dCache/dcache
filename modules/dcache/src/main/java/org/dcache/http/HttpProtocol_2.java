@@ -167,7 +167,7 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
             sendAddressToDoor(address.getPort(), uuid,  fileAttributes.getPnfsId());
             _server.await(_wrappedChannel, _connectTimeout);
         } finally {
-            _logger.trace("Shutting down mover");
+            _logger.debug("Shutting down mover");
             _server.unregister(_wrappedChannel);
         }
     }
@@ -238,7 +238,7 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
             }
         }
 
-        _logger.debug("Sending the following address to the WebDAV-door: {}",
+        _logger.info("Sending the following address to the WebDAV-door: {}",
                      targetURI.toASCIIString());
 
         CellPath cellPath = new CellPath(_protocolInfo.getHttpDoorCellName(),

@@ -95,7 +95,7 @@ public class StandardPoolAdminService implements PoolAdminService {
             List<SelectableWrapper<PoolCommandBean>> pools, String command)
             throws PoolAdminServiceException {
         Set<String> poolIds = getSelectedPools(pools);
-        _log.trace("Sending commnd {} to following pools {}", command, poolIds);
+        _log.debug("Sending commnd {} to following pools {}", command, poolIds);
         try {
             Set<CellResponse> responses = getDomainsDAO().sendCommand(poolIds, command);
 

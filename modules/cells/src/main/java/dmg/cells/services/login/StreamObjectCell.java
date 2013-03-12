@@ -97,7 +97,7 @@ public class StreamObjectCell
                 Boolean.valueOf(args.getOpt("useColors")) &&
                 _engine.getTerminalType() != null;
 
-            _log.debug("StreamObjectCell " + getCellName() + "; arg0=" + args.argv(0));
+            _log.info("StreamObjectCell " + getCellName() + "; arg0=" + args.argv(0));
 
             _subject = engine.getSubject();
 
@@ -129,7 +129,7 @@ public class StreamObjectCell
         File file = new File(filename);
         try {
             if( file.createNewFile()) {
-                _log.debug( "History file " + file + " has been created.");
+                _log.info( "History file " + file + " has been created.");
             } else {
                 guardFileIsFile(file);
                 guardFileIsWriteable(file);
@@ -163,18 +163,18 @@ public class StreamObjectCell
         Class<?> commandClass = Class.forName(className);
         NoSuchMethodException nsme = null;
 
-        _log.debug("Using class : " + commandClass);
+        _log.info("Using class : " + commandClass);
         for (int i = 0; i < CONST_SIGNATURE.length; i++) {
             nsme = null;
             Class<?>[] x = CONST_SIGNATURE[i];
-            _log.debug("Looking for constructor : " + i);
+            _log.info("Looking for constructor : " + i);
             for (int ix = 0; ix < x.length; ix++) {
-                _log.debug("   arg["+ix+"] "+x[ix]);
+                _log.info("   arg["+ix+"] "+x[ix]);
             }
             try {
                 commandConst = commandClass.getConstructor(CONST_SIGNATURE[i]);
             } catch (NoSuchMethodException e) {
-                _log.debug("Constructor not found : " + CONST_SIGNATURE[i]);
+                _log.info("Constructor not found : " + CONST_SIGNATURE[i]);
                 nsme = e;
                 continue;
             }
@@ -184,7 +184,7 @@ public class StreamObjectCell
         if (nsme != null) {
             throw nsme;
         }
-        _log.debug("Using constructor : " + commandConst);
+        _log.info("Using constructor : " + commandConst);
 
         int validMethods = 0;
         for (int i= 0; i < COM_SIGNATURE.length; i++) {
@@ -196,7 +196,7 @@ public class StreamObjectCell
                 _commandMethod[i]= null;
                 continue;
             }
-            _log.debug("Using method [" + i + "] " + _commandMethod[i]);
+            _log.info("Using method [" + i + "] " + _commandMethod[i]);
         }
         if (validMethods == 0) {
             throw new
@@ -209,7 +209,7 @@ public class StreamObjectCell
             _promptMethod = null;
         }
         if (_promptMethod != null) {
-            _log.debug("Using promptMethod : " + _promptMethod);
+            _log.info("Using promptMethod : " + _promptMethod);
         }
         try {
             _helloMethod = commandClass.getMethod("getHello", new Class[0]);
@@ -217,7 +217,7 @@ public class StreamObjectCell
             _helloMethod = null;
         }
         if (_helloMethod != null) {
-            _log.debug( "Using helloMethod : " + _helloMethod);
+            _log.info( "Using helloMethod : " + _helloMethod);
         }
 
         Args extArgs = new Args(getArgs());
@@ -340,7 +340,7 @@ public class StreamObjectCell
         } catch (IOException e) {
             _log.warn("I/O Failure: " + e);
         } finally {
-            _log.trace("worker done, killing off cell");
+            _log.debug("worker done, killing off cell");
             kill();
         }
     }
@@ -365,16 +365,16 @@ public class StreamObjectCell
         {
             Object result;
             boolean done = false;
-            _log.debug("Frame id "+_frame.getId()+" arrived");
+            _log.info("Frame id "+_frame.getId()+" arrived");
             try {
                 if (_frame.getDestination() == null) {
                     Object [] array  = new Object[1];
                     array[0] = _frame.getPayload();
                     if (_commandMethod[0] != null) {
-                        _log.debug("Choosing executeCommand(Object)");
+                        _log.info("Choosing executeCommand(Object)");
                         result = _commandMethod[0].invoke(_commandObject, array);
                     } else if(_commandMethod[1] != null) {
-                        _log.debug("Choosing executeCommand(String)");
+                        _log.info("Choosing executeCommand(String)");
                         array[0] = array[0].toString();
                         result = _commandMethod[1].invoke(_commandObject, array);
 
@@ -387,11 +387,11 @@ public class StreamObjectCell
                     array[0] = _frame.getDestination();
                     array[1] = _frame.getPayload();
                     if (_commandMethod[2] != null) {
-                        _log.debug("Choosing executeCommand(String destination, Object)");
+                        _log.info("Choosing executeCommand(String destination, Object)");
                         result = _commandMethod[2].invoke(_commandObject, array);
 
                     } else if (_commandMethod[3] != null) {
-                        _log.debug("Choosing executeCommand(String destination, String)");
+                        _log.info("Choosing executeCommand(String destination, String)");
                         array[1] = array[1].toString();
                         result = _commandMethod[3].invoke(_commandObject, array);
                     } else {
@@ -451,14 +451,14 @@ public class StreamObjectCell
                 new ANSIBuffer().green(getPrompt()).toString(_useColors);
             String str = console.readLine(prompt);
             if (str == null) {
-                _log.trace( "\"null\" input (e.g., Ctrl-D) received.");
+                _log.debug( "\"null\" input (e.g., Ctrl-D) received.");
                 break;
             }
 
-            _log.trace( "received line: {}", str);
+            _log.debug( "received line: {}", str);
 
             if (str.equals("$BINARY$")) {
-                _log.debug("Opening Object Streams");
+                _log.info("Opening Object Streams");
                 console.printString(str);
                 console.printNewline();
                 console.flushConsole();
@@ -472,7 +472,7 @@ public class StreamObjectCell
             } catch (InvocationTargetException ite) {
                 result = ite.getTargetException();
                 if(result instanceof CommandExitException) {
-                    _log.trace( "User requested to logout.");
+                    _log.debug( "User requested to logout.");
                     done = true;
                 }
             }
@@ -506,7 +506,7 @@ public class StreamObjectCell
     public void cleanUp()
     {
         try {
-            _log.trace("Shutting down the SSH connection");
+            _log.debug("Shutting down the SSH connection");
             _engine.getInputStream().close();
         } catch (IOException e) {
             _log.error("Failed to close socket: " + e);

@@ -160,20 +160,20 @@ public class RetryTunnel implements Cell,
            Object obj ;
            while( ( ( obj = _input.readObject() ) != null ) && ! Thread.interrupted() ){
               CellMessage msg = (CellMessage) obj ;
-              _log.debug( "receiverThread : Message from tunnel : "+msg ) ;
+              _log.info( "receiverThread : Message from tunnel : "+msg ) ;
               try{
                  _nucleus.sendMessage( msg ) ;
                  _messagesToSystem ++ ;
               }catch( NoRouteToCellException nrtce ){
-                 _log.debug( "receiverThread : Exception in sendMessage : "+nrtce ) ;
+                 _log.info( "receiverThread : Exception in sendMessage : "+nrtce ) ;
               }
            }
         }catch( Exception ioe ){
-           _log.debug( "receiverThread : Exception in readObject : "+ioe ) ;
+           _log.info( "receiverThread : Exception in readObject : "+ioe ) ;
            if( _mode.equals("Connection") ){
               _engine.setState( SST_RECV_FAILED ) ;
            }else{
-              _log.debug( "receiverThread : Initiating kill sequence... " ) ;
+              _log.info( "receiverThread : Initiating kill sequence... " ) ;
               _nucleus.kill() ;
            }
         }
@@ -194,7 +194,7 @@ public class RetryTunnel implements Cell,
 
      long now = new Date().getTime() ;
 
-     _log.debug( " runState : "+_printState() ) ;
+     _log.info( " runState : "+_printState() ) ;
 
      switch( state ){
        case 0 :
@@ -271,7 +271,7 @@ public class RetryTunnel implements Cell,
                          _nucleus.getCellName() ,
                          CellRoute.DOMAIN ) ;
             _nucleus.routeAdd( _route ) ;
-            _log.debug( " engine : Route added : "+_route );
+            _log.info( " engine : Route added : "+_route );
          }
        return  SST_SEND_READY ;
 
@@ -362,28 +362,28 @@ public String toString(){
    }
    @Override
    public void   messageArrived( MessageEvent me ){
-//     _log.debug( "message Arrived : "+me ) ;
+//     _log.info( "message Arrived : "+me ) ;
 
      if( me instanceof RoutedMessageEvent ){
         CellMessage msg = me.getMessage() ;
-        _log.debug( "messageArrived : queuing "+msg ) ;
+        _log.info( "messageArrived : queuing "+msg ) ;
         try {
             _messageArrivedQueue.put( msg ) ;
         } catch (InterruptedException e) {
            // forced by Blocking Queue interface
         }
      }else if( me instanceof LastMessageEvent ){
-        _log.debug( "messageArrived : opening final gate" ) ;
+        _log.info( "messageArrived : opening final gate" ) ;
         _finalGate.open() ;
      }else{
-        _log.debug( "messageArrived : dumping junk message "+me ) ;
+        _log.info( "messageArrived : dumping junk message "+me ) ;
      }
 
    }
    private void removeRoute(){
      synchronized( _receiverLock ){
          if( _route != null ){
-            _log.debug( "removeRoute : removing route" ) ;
+            _log.info( "removeRoute : removing route" ) ;
             _nucleus.routeDelete( _route ) ;
             _route = null ;
          }
@@ -392,10 +392,10 @@ public String toString(){
    @Override
    public synchronized void   prepareRemoval( KillEvent ce ){
 
-     _log.debug( "prepareRemoval : initiated "+ce ) ;
-     _log.debug( "prepareRemoval : waiting for final Gate to open" ) ;
+     _log.info( "prepareRemoval : initiated "+ce ) ;
+     _log.info( "prepareRemoval : waiting for final Gate to open" ) ;
      _finalGate.check() ;
-     _log.debug( "prepareRemoval : final gate passed -> closing" ) ;
+     _log.info( "prepareRemoval : final gate passed -> closing" ) ;
      _engine.stop() ;
      synchronized( _receiverLock ){
          if( _receiverThread != null ) {
@@ -408,12 +408,12 @@ public String toString(){
          _output.close() ;
          _socket.close() ;
      }catch( Exception nsea ){
-         _log.debug( "prepareRemoval : Problem while closing : "+nsea ) ;
+         _log.info( "prepareRemoval : Problem while closing : "+nsea ) ;
      }
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){
-     _log.debug( "exceptionArrived : "+ce ) ;
+     _log.info( "exceptionArrived : "+ce ) ;
    }
 
    @Override

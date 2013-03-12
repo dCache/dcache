@@ -149,7 +149,7 @@ public class HsmStorageHandler2
 
         synchronized void executeCallbacks(Throwable exc)
         {
-            _log.trace("excecuting callbacks  "
+            _log.debug("excecuting callbacks  "
                        + _pnfsId + " (callback=" + _callbacks + ") " + exc);
             for (CacheFileAvailable callback : _callbacks) {
                 try {
@@ -311,7 +311,7 @@ public class HsmStorageHandler2
         }
 
         String completeCommand = sb.toString();
-        _log.trace("HSM_COMMAND: " + completeCommand);
+        _log.debug("HSM_COMMAND: " + completeCommand);
         return completeCommand;
     }
 
@@ -423,7 +423,7 @@ public class HsmStorageHandler2
         }
         HsmSet.HsmInfo hsm = _hsmSet.getHsmInfoByName(instance);
 
-        _log.trace("getFetchCommand for {} on HSM {}", fileAttributes, instance);
+        _log.debug("getFetchCommand for {} on HSM {}", fileAttributes, instance);
 
         return getSystemCommand(file, fileAttributes, hsm, "get");
     }
@@ -524,7 +524,7 @@ public class HsmStorageHandler2
             PnfsId pnfsId = getPnfsId();
 
             try {
-                _log.debug("Dequeuing " + pnfsId);
+                _log.info("Dequeuing " + pnfsId);
                 _handle.close();
             } finally {
                 removeFetchEntry(pnfsId);
@@ -552,7 +552,7 @@ public class HsmStorageHandler2
             try {
                 setThread(Thread.currentThread());
                 try {
-                    _log.trace("FetchThread started");
+                    _log.debug("FetchThread started");
 
                     long now = System.currentTimeMillis();
                     _infoMsg.setTimeQueued(now - _timestamp);
@@ -562,9 +562,9 @@ public class HsmStorageHandler2
                         getFetchCommand(_handle.getFile(), attributes);
                     long fileSize = attributes.getSize();
 
-                    _log.trace("Waiting for space (" + fileSize + " bytes)");
+                    _log.debug("Waiting for space (" + fileSize + " bytes)");
                     _handle.allocate(fileSize);
-                    _log.trace("Got Space (" + fileSize + " bytes)");
+                    _log.debug("Got Space (" + fileSize + " bytes)");
 
                     RunSystem run =
                         new RunSystem(fetchCommand, _maxLines, _maxRestoreRun);
@@ -632,7 +632,7 @@ public class HsmStorageHandler2
                 _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
                 sendBillingInfo();
 
-                _log.debug("File successfully restored from tape");
+                _log.info("File successfully restored from tape");
             }
         }
 
@@ -657,7 +657,7 @@ public class HsmStorageHandler2
                 if (_checksumModule.getCrcFromHsm()) {
                     infoChecksum = getChecksumFromHsm(handle.getFile());
                     if (infoChecksum != null) {
-                        _log.debug("Storing checksum {} for {}", infoChecksum, pnfsId);
+                        _log.info("Storing checksum {} for {}", infoChecksum, pnfsId);
                         _pnfs.setChecksum(pnfsId, infoChecksum);
                     }
                 } else {
@@ -690,7 +690,7 @@ public class HsmStorageHandler2
             /* Report failure in case of mismatch.
              */
             if (!infoChecksum.equals(fileChecksum)) {
-                _log.trace("Checksum error; expected="
+                _log.debug("Checksum error; expected="
                            + infoChecksum + ";file=" + fileChecksum);
                 throw new CacheException(1009,
                                          "Checksum error: expected=" + infoChecksum
@@ -766,7 +766,7 @@ public class HsmStorageHandler2
     {
         StorageInfo storageInfo = fileAttributes.getStorageInfo();
         String hsmType = storageInfo.getHsm();
-        _log.trace("getStoreCommand for pnfsid=" + fileAttributes.getPnfsId() +
+        _log.debug("getStoreCommand for pnfsid=" + fileAttributes.getPnfsId() +
                    ";hsm=" + hsmType + ";si=" + storageInfo);
         List<HsmSet.HsmInfo> hsms = _hsmSet.getHsmInfoByType(hsmType);
         if (hsms.isEmpty()) {
@@ -797,11 +797,11 @@ public class HsmStorageHandler2
     {
         assertInitialized();
 
-        _log.trace("store requested for " + pnfsId +
+        _log.debug("store requested for " + pnfsId +
                    (callback == null ? " w/o " : " with ") + "callback");
 
         if (_repository.getState(pnfsId) == EntryState.CACHED) {
-            _log.trace("is already cached " + pnfsId);
+            _log.debug("is already cached " + pnfsId);
             return true;
         }
 
@@ -810,7 +810,7 @@ public class HsmStorageHandler2
             if (callback != null) {
                 info.addCallback(callback);
             }
-            _log.trace("flush already in progress "
+            _log.debug("flush already in progress "
                        + pnfsId + " (callback=" + callback + ")");
             return false;
         }
@@ -828,7 +828,7 @@ public class HsmStorageHandler2
         }
 
         _storePnfsidList.put(pnfsId, info);
-        _log.trace("added to flush queue " + pnfsId + " (callback="+callback+")");
+        _log.debug("added to flush queue " + pnfsId + " (callback="+callback+")");
         return false;
     }
 
@@ -927,21 +927,21 @@ public class HsmStorageHandler2
             try {
                 setThread(Thread.currentThread());
 
-                _log.trace("Store thread started " + _thread);
+                _log.debug("Store thread started " + _thread);
 
                 /* Check if name space entry still exists. If the name
                  * space entry was deleted, then we delete the file on
                  * the pool right away.
                  */
                 try {
-                    _log.trace("Checking if file still exists");
+                    _log.debug("Checking if file still exists");
                     _pnfs.getFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
                 } catch (CacheException e) {
                     switch (e.getRc()) {
                     case CacheException.FILE_NOT_FOUND:
                         try {
                             _repository.setState(pnfsId, EntryState.REMOVED);
-                            _log.debug("File not found in name space; removed " + pnfsId);
+                            _log.info("File not found in name space; removed " + pnfsId);
                         } catch (IllegalTransitionException f) {
                             _log.error("File not found in name space, but failed to remove "
                                        + pnfsId + ": " + f);
@@ -997,7 +997,7 @@ public class HsmStorageHandler2
                                 URI location = HsmLocationExtractorFactory.validate(new URI(uri));
                                 storageInfo.addLocation(location);
                                 storageInfo.isSetAddLocation(true);
-                                _log.trace(pnfsId.toString()
+                                _log.debug(pnfsId.toString()
                                            + ": added HSM location "
                                            + location);
                             }
@@ -1068,7 +1068,7 @@ public class HsmStorageHandler2
 
                 notifyFlushMessageTarget(storageInfo);
 
-                _log.debug("File successfully stored to tape");
+                _log.info("File successfully stored to tape");
 
                 _repository.setState(pnfsId, EntryState.CACHED);
             } catch (IllegalTransitionException e) {
@@ -1148,7 +1148,7 @@ public class HsmStorageHandler2
                                     poolFileFlushedMessage);
                 sendMessage(msg);
             } catch (NoRouteToCellException e) {
-                _log.debug("Failed to send message to " + _flushMessageTarget + ": "
+                _log.info("Failed to send message to " + _flushMessageTarget + ": "
                           + e.getMessage());
             }
         }

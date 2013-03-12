@@ -34,7 +34,7 @@ public class MissingFileHandler implements CellMessageReceiver
 
     public Reply messageArrived(MissingFileMessage message)
     {
-        _log.trace("Received notice {} {}", message.getRequestedPath(),
+        _log.debug("Received notice {} {}", message.getRequestedPath(),
                 message.getInternalPath());
 
         MessageReply<MissingFileMessage> reply =
@@ -126,10 +126,10 @@ public class MissingFileHandler implements CellMessageReceiver
             try {
                 result = future.get();
             } catch (CancellationException e) {
-                _log.trace("Operation was cancelled");
+                _log.debug("Operation was cancelled");
                 return false;
             } catch (InterruptedException e) {
-                _log.trace("Interrupted while waiting for plugin result");
+                _log.debug("Interrupted while waiting for plugin result");
                 return false;
             } catch (ExecutionException e) {
                 Throwable t = e.getCause();

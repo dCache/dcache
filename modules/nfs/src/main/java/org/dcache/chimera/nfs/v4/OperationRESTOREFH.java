@@ -44,7 +44,7 @@ public class OperationRESTOREFH extends AbstractNFSv4Operation {
             context.restoreSavedInode();
             res.status = nfsstat.NFS_OK;
         } catch (ChimeraNFSException he) {
-            _log.trace("RESTOREFH4: {}", he.getMessage());
+            _log.debug("RESTOREFH4: {}", he.getMessage());
             res.status = he.getStatus();
         } catch (Exception e) {
             _log.error("RESTOREFH4:", e);

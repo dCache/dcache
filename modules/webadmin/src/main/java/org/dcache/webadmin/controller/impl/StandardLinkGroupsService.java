@@ -38,14 +38,14 @@ public class StandardLinkGroupsService implements LinkGroupsService {
     public List<LinkGroupBean> getLinkGroups() throws LinkGroupsServiceException {
         try {
             Set<LinkGroup> linkGroups = getLinkGroupsDAO().getLinkGroups();
-            _log.trace("returned link Groups: {} ", linkGroups.size());
+            _log.debug("returned link Groups: {} ", linkGroups.size());
             Set<Space> reservations = getLinkGroupsDAO().getSpaceReservations();
-            _log.trace("returned spacereservations: {} ", reservations.size());
+            _log.debug("returned spacereservations: {} ", reservations.size());
             List<SpaceReservationBean> reservationBeans = createReservations(reservations);
             List<LinkGroupBean> linkGroupBeans = createLinkGroups(linkGroups);
             mapReservationsToLinkGroups(reservationBeans, linkGroupBeans);
             Collections.sort(linkGroupBeans);
-            _log.trace("returned linkGroupBeans: {}", linkGroupBeans.size());
+            _log.debug("returned linkGroupBeans: {}", linkGroupBeans.size());
             return linkGroupBeans;
         } catch (DAOException e) {
             throw new LinkGroupsServiceException(e);
@@ -85,11 +85,11 @@ public class StandardLinkGroupsService implements LinkGroupsService {
 //        get lost -- normally this should not occour anyway, so skipping check,
 //        if all get mapped!
         for (LinkGroupBean linkGroup : linkGroups) {
-            _log.trace("Linkgroup id: {}", linkGroup.getId());
+            _log.debug("Linkgroup id: {}", linkGroup.getId());
             for (SpaceReservationBean reservation : reservations) {
-                _log.trace("Reservation linkgroupref: {}", reservation.getLinkGroupRef());
+                _log.debug("Reservation linkgroupref: {}", reservation.getLinkGroupRef());
                 if (reservation.belongsTo(linkGroup)) {
-                    _log.trace("Reservation added to Linkgroup");
+                    _log.debug("Reservation added to Linkgroup");
                     linkGroup.addSpaceReservation(reservation);
                 }
             }

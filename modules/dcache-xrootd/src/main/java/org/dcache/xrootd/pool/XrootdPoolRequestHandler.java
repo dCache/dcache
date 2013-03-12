@@ -138,7 +138,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 if (_log.isInfoEnabled()) {
                     long idleTime = System.currentTimeMillis() -
                         event.getLastActivityTimeMillis();
-                    _log.debug("Closing idling connection without opened files." +
+                    _log.info("Closing idling connection without opened files." +
                               " Connection has been idle for {} ms.", idleTime);
                 }
 
@@ -173,7 +173,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     {
         Throwable t = e.getCause();
         if (t instanceof ClosedChannelException) {
-            _log.debug("Connection unexpectedly closed");
+            _log.info("Connection unexpectedly closed");
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
@@ -468,7 +468,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         int fd = msg.getFileHandle();
 
         if ((!isValidFileDescriptor(fd))) {
-            _log.debug("No file descriptor for file handle {}", fd);
+            _log.info("No file descriptor for file handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
                                       "The file descriptor does not refer to " +
                                       "an open file.");
@@ -477,7 +477,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         FileDescriptor descriptor = _descriptors.get(fd);
 
         if (!(descriptor instanceof WriteDescriptor)) {
-            _log.debug("File descriptor for handle {} is read-only, user " +
+            _log.info("File descriptor for handle {} is read-only, user " +
                       "to write.", fd);
             throw new XrootdException(kXR_IOError,
                                       "Tried to write on read only file.");

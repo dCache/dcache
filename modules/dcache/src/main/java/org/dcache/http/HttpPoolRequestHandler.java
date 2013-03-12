@@ -336,7 +336,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     public void channelClosed(ChannelHandlerContext ctx,
                               ChannelStateEvent event)
     {
-        _logger.trace("Called channelClosed.");
+        _logger.debug("Called channelClosed.");
         for (MoverChannel<HttpProtocolInfo> file: _files) {
             _server.close(file);
         }
@@ -351,7 +351,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             if (_logger.isInfoEnabled()) {
                 long idleTime = System.currentTimeMillis() -
                     event.getLastActivityTimeMillis();
-                _logger.debug("Closing idling connection without opened files." +
+                _logger.info("Closing idling connection without opened files." +
                           " Connection has been idle for {} ms.", idleTime);
             }
 

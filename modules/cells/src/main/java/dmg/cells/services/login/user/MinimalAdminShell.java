@@ -37,7 +37,7 @@ public class   MinimalAdminShell
        _user    = user ;
 
        for( int i = 0 ; i < args.argc() ; i++ ) {
-           _log.debug("arg[" + i + "]=" + args.argv(i));
+           _log.info("arg[" + i + "]=" + args.argv(i));
        }
 
        if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) ) {
@@ -53,7 +53,7 @@ public class   MinimalAdminShell
             throws AclPermissionException  {
 
        String acl = className+"."+instanceName+"."+action ;
-       _log.debug("requesting acl {"+acl+"} for user "+user ) ;
+       _log.info("requesting acl {"+acl+"} for user "+user ) ;
 
        if( ! user.equals( "patrick" ) ) {
            throw new
@@ -62,7 +62,7 @@ public class   MinimalAdminShell
     }
     private String _prompt = " >> " ;
     public Object executeCommand( String str )throws Exception {
-       _log.debug( "String command "+str ) ;
+       _log.info( "String command "+str ) ;
           Object or = executeLocalCommand( new Args( str ) ) ;
           if( or == null ) {
               return _prompt;
@@ -82,7 +82,7 @@ public class   MinimalAdminShell
     //
     public String getPrompt(){ return _prompt ; }
     public Object executeCommand( Object obj ) throws Exception {
-       _log.debug( "Object command "+obj ) ;
+       _log.info( "Object command "+obj ) ;
 
        String command = obj.toString() ;
        Args args = new Args( command ) ;
@@ -110,7 +110,7 @@ public class   MinimalAdminShell
 
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
-       _log.debug( "Loacal command "+args ) ;
+       _log.info( "Loacal command "+args ) ;
        try{
           return  command( args ) ;
        }catch( CommandThrowableException cte ){
@@ -126,7 +126,7 @@ public class   MinimalAdminShell
     public static final String hh_show_all = "exception|null|object|string|exit" ;
     public Object ac_show_all_$_1( Args args )throws Exception {
         String command = args.argv(0) ;
-        _log.debug( "show all : mode="+command+";user="+_user) ;
+        _log.info( "show all : mode="+command+";user="+_user) ;
         if( command.equals("exception") ) {
             throw new Exception("hallo otto");
         }

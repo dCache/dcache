@@ -112,7 +112,7 @@ public class XrootdPoolNettyServer
 
             pipeline.addLast("encoder", new XrootdEncoder());
             pipeline.addLast("decoder", new XrootdDecoder());
-            if (_logger.isTraceEnabled()) {
+            if (_logger.isDebugEnabled()) {
                 pipeline.addLast("logger",
                                  new LoggingHandler(XrootdPoolNettyServer.class));
             }

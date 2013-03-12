@@ -41,7 +41,7 @@ public class SkeletonListVisitor implements StateVisitor {
      */
     protected SkeletonListVisitor( StatePath pathToList) {
         if( _log.isDebugEnabled()) {
-            _log.trace("Searching on path " + pathToList);
+            _log.debug("Searching on path " + pathToList);
         }
 
         _pathToList = pathToList;
@@ -73,7 +73,7 @@ public class SkeletonListVisitor implements StateVisitor {
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
         if( _pathToList.isParentOf( path)) {
             if( _log.isDebugEnabled()) {
-                _log.trace("Entering " + path);
+                _log.debug("Entering " + path);
             }
 
             newListItem( path.getLastElement());
@@ -84,7 +84,7 @@ public class SkeletonListVisitor implements StateVisitor {
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
         if( _pathToList.isParentOf( path)) {
             if( _log.isDebugEnabled()) {
-                _log.trace("Leaving " + path);
+                _log.debug("Leaving " + path);
             }
 
             exitingListItem( path.getLastElement());
@@ -98,7 +98,7 @@ public class SkeletonListVisitor implements StateVisitor {
      */
     protected void newListItem( String listItemName) {
         if( _log.isDebugEnabled()) {
-            _log.trace("Assigning _thisKey to " + listItemName);
+            _log.debug("Assigning _thisKey to " + listItemName);
         }
 
         _thisKey = listItemName;
@@ -110,7 +110,7 @@ public class SkeletonListVisitor implements StateVisitor {
      */
     protected void exitingListItem( String listItemName) {
         if( _log.isDebugEnabled()) {
-            _log.trace("Resetting _thisKey to null on leaving " + listItemName);
+            _log.debug("Resetting _thisKey to null on leaving " + listItemName);
         }
 
         _thisKey = null;

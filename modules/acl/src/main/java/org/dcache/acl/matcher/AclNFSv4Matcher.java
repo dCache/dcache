@@ -36,7 +36,7 @@ public class AclNFSv4Matcher extends AclMatcher {
 
         Boolean allowed = isAllowed(defMask, allowMask, accessMask.getValue());
 
-        logger.trace("acccess mask: {} : {}", accessMask,
+        logger.debug("acccess mask: {} : {}", accessMask,
                 (allowed == null) ? UNDEFINED : (allowed ? ALLOWED : DENIED));
 
         return allowed;

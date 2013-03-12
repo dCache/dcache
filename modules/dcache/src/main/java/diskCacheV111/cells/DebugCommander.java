@@ -36,9 +36,9 @@ public class DebugCommander extends CellAdapter {
     @Override
     public void messageArrived( CellMessage msg ){
        Object obj = msg.getMessageObject() ;
-       _log.debug( "DBC : From     : "+msg.getSourcePath() ) ;
-       _log.debug( "DBC : Class    : "+obj.getClass().getName() ) ;
-       _log.debug( "DBC : toString : "+obj.toString() ) ;
+       _log.info( "DBC : From     : "+msg.getSourcePath() ) ;
+       _log.info( "DBC : Class    : "+obj.getClass().getName() ) ;
+       _log.info( "DBC : toString : "+obj.toString() ) ;
 
     }
     public static final String hh_send_fetch = "<hsm> <pool> <pnfsId> [-path=<poolPath>]" ;

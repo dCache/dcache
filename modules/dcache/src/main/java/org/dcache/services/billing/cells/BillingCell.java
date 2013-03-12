@@ -133,7 +133,7 @@ public final class BillingCell
         if (output.isEmpty()) {
             return;
         }
-        _log.debug(output);
+        _log.info(output);
 
         if (!_disableTxt) {
             String ext = getFilenameExtension(new Date(info.getTimestamp()));
@@ -148,7 +148,7 @@ public final class BillingCell
         Date now = new Date();
         String output = _formatter.format(now) + " " + msg.toString();
 
-        _log.debug(output);
+        _log.info(output);
 
         if (!_disableTxt) {
             logInfo(output, getFilenameExtension(now));

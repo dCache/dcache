@@ -82,7 +82,7 @@ public class OperationGETDEVICELIST extends AbstractNFSv4Operation {
             res.gdlr_resok4.gdlr_deviceid_list[i] = deviceId;
         }
 
-        _log.trace("GETDEVICELIST4: new list of #{}, maxcount {}",
+        _log.debug("GETDEVICELIST4: new list of #{}, maxcount {}",
                 res.gdlr_resok4.gdlr_deviceid_list.length,
                 _args.opgetdevicelist.gdla_maxdevices.value.value);
 
@@ -91,7 +91,7 @@ public class OperationGETDEVICELIST extends AbstractNFSv4Operation {
         res.gdlr_status = nfsstat.NFS_OK;
 
     } catch (ChimeraNFSException he) {
-        _log.trace("GETDEVICELIST4: {}", he.getMessage());
+        _log.debug("GETDEVICELIST4: {}", he.getMessage());
         res.gdlr_status = he.getStatus();
     } catch (Exception e) {
         _log.error("GETDEVICELIST4:", e);

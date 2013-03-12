@@ -86,15 +86,15 @@ public class      ObjectLoginCell
                   try{ _out.close() ; }catch(Exception ee){}
                }
            }catch( IOException e ){
-              _log.debug("EOF Exception in read line : "+e ) ;
+              _log.info("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              _log.debug("I/O Error in read line : "+e ) ;
+              _log.info("I/O Error in read line : "+e ) ;
               break ;
            }
 
         }
-        _log.debug( "EOS encountered" ) ;
+        _log.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
 
@@ -103,14 +103,14 @@ public class      ObjectLoginCell
    @Override
    public void   cleanUp(){
 
-     _log.debug( "Clean up called" ) ;
+     _log.info( "Clean up called" ) ;
     try {
         _out.close();
      } catch (Exception ee) {
         _log.warn("ignoring exception on PrintWriter.close {}", ee.toString());
      }
      _readyGate.check() ;
-     _log.debug( "finished" ) ;
+     _log.info( "finished" ) ;
 
    }
    public String ac_ping( Args args )
@@ -119,7 +119,7 @@ public class      ObjectLoginCell
       try{
          msg = new CellMessage( new CellPath( "System" ) ,  "ps -a" ) ;
          sendMessage( msg ) ;
-         _log.debug( "sendMessage o.k. : "+msg ) ;
+         _log.info( "sendMessage o.k. : "+msg ) ;
       }catch( Exception e ){
          _log.warn( "Exception while sending : "+e ) ;
          return "Ok weh" ;
@@ -129,7 +129,7 @@ public class      ObjectLoginCell
    }
    public int execute( MessageObjectFrame frame ){
       CellMessage msg;
-      _log.debug( "Forwarding : "+frame.getCellPath() +
+      _log.info( "Forwarding : "+frame.getCellPath() +
                           "   "+frame.getObject().toString() ) ;
       try{
          msg = new CellMessage( frame.getCellPath() ,
@@ -137,8 +137,8 @@ public class      ObjectLoginCell
 
          synchronized( _hash ){
             sendMessage( msg ) ;
-            _log.debug( "sendMessage o.k. : "+msg ) ;
-            _log.debug( "Adding to hash "+msg.getUOID() ) ;
+            _log.info( "sendMessage o.k. : "+msg ) ;
+            _log.info( "Adding to hash "+msg.getUOID() ) ;
             _hash.put( msg.getUOID() , frame ) ;
          }
       }catch( Exception e ){
@@ -151,7 +151,7 @@ public class      ObjectLoginCell
    }
    @Override
    public void messageArrived( CellMessage msg ){
-       _log.debug( "Message arrived : "+msg ) ;
+       _log.info( "Message arrived : "+msg ) ;
        MessageObjectFrame frame ;
        synchronized( _hash ){
           frame = _hash.remove( msg.getLastUOID() );

@@ -253,13 +253,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _authorizationRequired = ( auth != null ) &&
         ( auth.equals("strong") || auth.equals("required") ) ;
 
-        _log.trace("Authorization required:  {}", _authorizationRequired);
-        _log.trace("Authorization strong: {}", _authorizationStrong);
+        _log.debug("Authorization required:  {}", _authorizationRequired);
+        _log.debug("Authorization strong: {}", _authorizationStrong);
 
         String anon = _args.getOpt("anonymous-access");
         _anonymousAccessLevel = ( anon != null ) ? UnionLoginStrategy.AccessLevel.valueOf(anon.toUpperCase()) :
             UnionLoginStrategy.AccessLevel.READONLY;
-        _log.trace("Anonymous access level : {}", _anonymousAccessLevel);
+        _log.debug("Anonymous access level : {}", _anonymousAccessLevel);
 
         _loginStrategy = createLoginStrategy();
 
@@ -268,7 +268,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _poolProxy = _args.getOpt("poolProxy");
 
         if (_poolProxy != null) {
-            _log.trace("Pool Proxy set to {}", _poolProxy);
+            _log.debug("Pool Proxy set to {}", _poolProxy);
         }
 
         // allow file truncating
@@ -276,10 +276,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _truncateAllowed = (truncate != null) && truncate.equals("true") ;
 
         _isAccessLatencyOverwriteAllowed = _args.hasOption("allow-access-policy-overwrite") ;
-        _log.trace("Allowed to overwrite AccessLatency: {}", _isAccessLatencyOverwriteAllowed);
+        _log.debug("Allowed to overwrite AccessLatency: {}", _isAccessLatencyOverwriteAllowed);
 
         _isRetentionPolicyOverwriteAllowed = _args.hasOption("allow-retention-policy-overwrite");
-        _log.trace("Allowed to overwrite RetentionPolicy: {}", _isRetentionPolicyOverwriteAllowed);
+        _log.debug("Allowed to overwrite RetentionPolicy: {}", _isRetentionPolicyOverwriteAllowed);
 
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
         _pinManagerStub = new CellStub(cell, new CellPath(_args.getOpt("pinManager")));
@@ -312,16 +312,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _log.error("Problem in setting PoolRetry Value: {}", e);
             }
         }
-        _log.trace("PoolRetry timer set to {} seconds", _poolRetry/1000L);
+        _log.debug("PoolRetry timer set to {} seconds", _poolRetry/1000L);
 
         _ioQueueName = _args.getOpt("io-queue") ;
         _ioQueueName = ( _ioQueueName == null ) || ( _ioQueueName.length() == 0 ) ? null : _ioQueueName ;
-        _log.trace("IoQueueName = {}",
+        _log.debug("IoQueueName = {}",
                    (_ioQueueName==null) ? "<undefined>" : _ioQueueName);
 
         String tmp = _args.getOpt("io-queue-overwrite") ;
         _ioQueueAllowOverwrite = ( tmp != null ) && tmp.equals("allowed" ) ;
-        _log.trace("IoQueueName : overwrite : {}",
+        _log.debug("IoQueueName : overwrite : {}",
                    _ioQueueAllowOverwrite ? "allowed" : "denied");
 
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
@@ -333,15 +333,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _readOnlyDoor = ( ro != null ) && ro.equalsIgnoreCase("true");
 
         if (_readOnlyDoor) {
-            _log.trace("Door is configured as read-only");
+            _log.debug("Door is configured as read-only");
         }
         else {
-            _log.trace("Door is configured as read/write");
+            _log.debug("Door is configured as read/write");
         }
 
         _stageConfigurationFilePath = _args.getOpt("stageConfigurationFilePath");
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
-        _log.trace("Check : {}", _checkStrict ? "Strict" : "Fuzzy");
+        _log.debug("Check : {}", _checkStrict ? "Strict" : "Fuzzy");
     }
 
     private LoginStrategy createLoginStrategy()
@@ -388,7 +388,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         login.getSubject().getPrincipals().add(origin);
 
-        _log.debug("Login completed for {}", login);
+        _log.info("Login completed for {}", login);
 
         return login;
     }
@@ -438,10 +438,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         //   majorMin.minorMin[:majorMax.minorMax]
         //
         if( versionString == null ){
-            _log.trace("Client Version not restricted");
+            _log.debug("Client Version not restricted");
             return ;
         }
-        _log.trace("Client Version Restricted to : {}", versionString);
+        _log.debug("Client Version Restricted to : {}", versionString);
         try{
             StringTokenizer st = new StringTokenizer(versionString,":");
             _minClientVersion  = new Version( st.nextToken() ) ;
@@ -452,7 +452,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
     }
     public synchronized void println( String str ){
-        _log.trace("(DCapDoorInterpreterV3) toclient(println) : {}", str);
+        _log.debug("(DCapDoorInterpreterV3) toclient(println) : {}", str);
         _out.println(str);
     }
 
@@ -499,7 +499,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                        e.toString());
         }
         version = new Version( _majorVersion , _minorVersion ) ;
-        _log.trace("Client Version : {}", version);
+        _log.debug("Client Version : {}", version);
         if( ( ( _minClientVersion != null ) && ( version.compareTo( _minClientVersion ) < 0 ) ) ||
         ( ( _maxClientVersion != null ) && ( version.compareTo( _maxClientVersion ) > 0 ) )  ){
 
@@ -818,7 +818,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             sb.append(args.argv(i)).append(" ");
         }
         String str = sb.toString() ;
-        _log.trace("toclient (commander) : {}", str);
+        _log.debug("toclient (commander) : {}", str);
         println(str);
         return "" ;
     }
@@ -930,10 +930,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             String reply = ""+_sessionId+" 1 "+
             _vargs.getName()+" "+comment ;
             println( reply ) ;
-            _log.trace(reply) ;
+            _log.debug(reply) ;
         }
         public void keepAlive(){
-            _log.trace("Keep alived called for : {}", this);
+            _log.debug("Keep alived called for : {}", this);
         }
 
         protected void sendReply( String tag , int rc , String msg){
@@ -953,7 +953,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _info.setResult( rc , msg ) ;
             }
 
-            _log.trace("{}: {}", tag, problem);
+            _log.debug("{}: {}", tag, problem);
             println( problem ) ;
             postToBilling(_info);
         }
@@ -1082,7 +1082,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 try {
                     long timeout = Long.parseLong(tmp);
                     if (timeout > 0L) {
-                        _log.debug("PnfsSessionHandler: user timeout set to {}", timeout);
+                        _log.info("PnfsSessionHandler: user timeout set to {}", timeout);
                         _timeout = System.currentTimeMillis() + (timeout * 1000L);
                     }
                 } catch (NumberFormatException e) {
@@ -1162,7 +1162,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _path = fileName;
             }
 
-            _log.trace("Requesting file attributes for {}", _message);
+            _log.debug("Requesting file attributes for {}", _message);
 
             _message.setId(_sessionId) ;
             _message.setReplyRequired(true);
@@ -1185,7 +1185,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             _message = reply;
 
-            _log.trace("pnfsGetFileAttributesArrived: {}", _message);
+            _log.debug("pnfsGetFileAttributesArrived: {}", _message);
 
             if (_message.getReturnCode() != 0) {
                 try {
@@ -1780,14 +1780,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                             for( String pool: result ){
 
-                                _log.trace("Sending query to pool {}", pool);
+                                _log.debug("Sending query to pool {}", pool);
                                 PoolCheckFileCostMessage request =
                                     new PoolCheckFileCostMessage( pool , _fileAttributes.getPnfsId() , 0L ) ;
                                 controller.send( new CellMessage( new CellPath(pool) , request ) );
                             }
                             controller.waitForReplies() ;
                             int numberOfReplies = controller.getReplyCount() ;
-                            _log.trace("Number of valied replies: {}", numberOfReplies);
+                            _log.debug("Number of valied replies: {}", numberOfReplies);
                             if( numberOfReplies == 0 ) {
                                 throw new
                                         CacheException(4, "File not cached");
@@ -1805,11 +1805,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                 }
                                 PoolCheckFileCostMessage reply = (PoolCheckFileCostMessage)obj ;
                                 if( reply.getHave() ){
-                                    _log.trace("pool {}: ok",
+                                    _log.debug("pool {}: ok",
                                                reply.getPoolName());
                                     found ++ ;
                                 }else{
-                                    _log.trace("pool {}: File not found",
+                                    _log.debug("pool {}: File not found",
                                                reply.getPoolName());
                                 }
                             }
@@ -1826,7 +1826,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //        I am changing the following log to be
                 //        logged only if the debugging is on
                 //        anyway sendReply will log the response
-                _log.trace(cee.toString());
+                _log.debug(cee.toString());
                 sendReply( "storageInfoAvailable" , cee.getRc() , cee.getMessage()) ;
             }catch(Exception ee ){
                 _log.error(ee.toString());
@@ -1885,7 +1885,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             _isHsmRequest = args.hasOption("hsm");
             if( _isHsmRequest ){
-                _log.trace("Hsm Feature Requested");
+                _log.debug("Hsm Feature Requested");
                 if( _hsmManager == null ) {
                     throw new
                             CacheException(105, "Hsm Support Not enabled");
@@ -1927,7 +1927,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _path = fileName;
             }
 
-            _log.trace("Requesting file attributes for {}", _message);
+            _log.debug("Requesting file attributes for {}", _message);
 
             if (_vargs.argv(1).equals("r")) {
                 _message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
@@ -1999,7 +1999,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return false ;
             }
 
-            _log.trace("storageInfoNotAvailable : is url (mode={})", _ioMode);
+            _log.debug("storageInfoNotAvailable : is url (mode={})", _ioMode);
 
             if( _ioMode.equals("r") ) {
                 throw new
@@ -2014,16 +2014,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             //
             String path = _message.getPnfsPath();
             String parent = new File(path).getParent();
-            _log.trace("Creating file. path=_getStorageInfo.getPnfsPath()  -> path = {}", path);
-            _log.trace("Creating file. parent = new File(path).getParent()  -> parent = {}", parent);
-            _log.debug("Creating file {}", path);
+            _log.debug("Creating file. path=_getStorageInfo.getPnfsPath()  -> path = {}", path);
+            _log.debug("Creating file. parent = new File(path).getParent()  -> parent = {}", parent);
+            _log.info("Creating file {}", path);
 
             PnfsCreateEntryMessage pnfsEntry =
                 _pnfs.createPnfsEntry(_message.getPnfsPath(),
                                       getUid(), getGid(),
                                       getMode(NameSpaceProvider.DEFAULT));
 
-            _log.trace("storageInfoNotAvailable : created pnfsid: {} path: {}",
+            _log.debug("storageInfoNotAvailable : created pnfsid: {} path: {}",
                        pnfsEntry.getPnfsId(), pnfsEntry.getPnfsPath());
             _message = pnfsEntry;
 
@@ -2035,7 +2035,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public void fileAttributesAvailable()
         {
-            _log.trace("{} storageInfoAvailable after {} ",
+            _log.debug("{} storageInfoAvailable after {} ",
                        _fileAttributes.getPnfsId(),
                        (System.currentTimeMillis()-_started));
 
@@ -2080,14 +2080,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _protocolInfo.setAllowWrite(true) ;
                 if( _overwrite ){
                     _fileAttributes.getStorageInfo().setKey("overwrite","true");
-                    _log.trace("Overwriting requested");
+                    _log.debug("Overwriting requested");
                 }
 
                 if( _truncate && ! _isNew ) {
                     try {
                         if( _isUrl ) {
                             String path = _message.getPnfsPath();
-                            _log.trace("truncating path {}", path);
+                            _log.debug("truncating path {}", path);
                             _pnfs.deletePnfsEntry( path );
                             _message = _pnfs.createPnfsEntry(path , getUid(), getGid(), getMode(NameSpaceProvider.DEFAULT));
                             _fileAttributes = _message.getFileAttributes();
@@ -2112,7 +2112,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                 if( _checksumString != null ){
                     _fileAttributes.getStorageInfo().setKey("checksum",_checksumString);
-                    _log.trace("Checksum from client {}", _checksumString);
+                    _log.debug("Checksum from client {}", _checksumString);
                     storeChecksumInPnfs( _fileAttributes.getPnfsId() , _checksumString ) ;
                 }
 
@@ -2226,8 +2226,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
 
             setTimer(0L);
-            _log.trace("poolMgrGetPoolArrived : {}", reply);
-            _log.trace("{} poolMgrSelectPoolArrived after {}",
+            _log.debug("poolMgrGetPoolArrived : {}", reply);
+            _log.debug("{} poolMgrSelectPoolArrived after {}",
                        _fileAttributes.getPnfsId(),
                        (System.currentTimeMillis() - _started));
 
@@ -2296,7 +2296,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
 
             if( _poolRequestDone ){
-                _log.trace("Ignoring double message");
+                _log.debug("Ignoring double message");
                 return ;
             }
             try{
@@ -2322,7 +2322,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void
         poolIoFileArrived( PoolIoFileMessage reply ){
 
-            _log.trace("poolIoFileArrived : {}", reply);
+            _log.debug("poolIoFileArrived : {}", reply);
             if( reply.getReturnCode() != 0 ){
                 // bad entry in cacheInfo and pool Manager did not check it ( for performance reason )
                 // try again
@@ -2371,7 +2371,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if( reply.getReturnCode() == 0 ){
 
                 long filesize = reply.getStorageInfo().getFileSize() ;
-                _log.debug("doorTransferArrived : fs={};strict={};m={}", filesize, _strictSize, _ioMode);
+                _log.info("doorTransferArrived : fs={};strict={};m={}", filesize, _strictSize, _ioMode);
                 if( _strictSize && ( filesize > 0L ) && (_ioMode.contains("w")) ){
 
                     for( int count = 0 ; count < 10 ; count++  ){
@@ -2379,7 +2379,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             long fs = _pnfs.getStorageInfoByPnfsId(_fileAttributes.getPnfsId()).
                             getStorageInfo().
                             getFileSize() ;
-                            _log.debug("doorTransferArrived : Size of {}: {}",
+                            _log.info("doorTransferArrived : Size of {}: {}",
                                       _fileAttributes.getPnfsId(), fs);
                             if( fs > 0L ) {
                                 break;
@@ -2470,7 +2470,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _path = fileName;
             }
 
-            _log.trace("Requesting file attributes for {}", _message);
+            _log.debug("Requesting file attributes for {}", _message);
 
             _message.setAccessMask(EnumSet.of(AccessMask.LIST_DIRECTORY));
             _message.setId(_sessionId);
@@ -2525,7 +2525,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void
         poolIoFileArrived( PoolIoFileMessage reply ){
 
-            _log.trace("poolIoFileArrived : {}", reply);
+            _log.debug("poolIoFileArrived : {}", reply);
             if( reply.getReturnCode() != 0 ){
                 sendReply( "poolIoFileArrived" , reply )  ;
                 removeUs() ;
@@ -2631,7 +2631,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int errorCode, String errorMessage) {
         String problem = String.format("%d %d %s failed %d \"internalError : %s\"",
                 sessionId, commandId, name, errorCode, errorMessage);
-        _log.trace(problem);
+        _log.debug(problem);
         return problem;
     }
 
@@ -2639,7 +2639,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int errorCode, String errorMessage) {
         String problem= String.format("%d %d %s failed %d \"protocolViolation : %s\"",
                 sessionId, commandId, name, errorCode, errorMessage);
-        _log.trace(problem);
+        _log.debug(problem);
         return problem;
     }
 
@@ -2687,7 +2687,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         Message reply = (Message) object;
         SessionHandler handler = _sessions.get((int) reply.getId());
         if (handler == null) {
-            _log.debug("Reply ({}) for obsolete session: {}", reply.getClass(), reply.getId());
+            _log.info("Reply ({}) for obsolete session: {}", reply.getClass(), reply.getId());
             return;
         }
 
@@ -2721,7 +2721,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         try {
             _cell.sendMessage(new CellMessage(_billingCellPath, info));
         } catch (NoRouteToCellException ee) {
-            _log.debug("Billing is not available.");
+            _log.info("Billing is not available.");
         }
     }
 }

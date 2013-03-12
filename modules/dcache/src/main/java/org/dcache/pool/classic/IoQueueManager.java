@@ -41,7 +41,7 @@ public class IoQueueManager {
             addQueue(queueName, jobTimeoutManager, executorServices);
         }
 
-        _log.debug("Defined IO queues {}: " + _hash.keySet());
+        _log.info("Defined IO queues {}: " + _hash.keySet());
     }
 
     private void addQueue(String queueName, JobTimeoutManager jobTimeoutManager,
@@ -51,7 +51,7 @@ public class IoQueueManager {
             queueName = queueName.substring(1);
         }
         if (_hash.get(queueName) == null) {
-            _log.debug("adding queue: {}", queueName);
+            _log.info("adding queue: {}", queueName);
             int id = _list.size();
             IoScheduler job = new SimpleIoScheduler(queueName, executorServices, id, fifo);
             _list.add(job);

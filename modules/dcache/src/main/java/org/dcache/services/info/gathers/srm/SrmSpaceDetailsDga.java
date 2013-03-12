@@ -52,7 +52,7 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
 		super.trigger();
 
 		if( _log.isInfoEnabled()) {
-                    _log.debug("Sending space token details request message");
+                    _log.info("Sending space token details request message");
                 }
 
 		_sender.sendMessage( _metricLifetime, _cp, new GetSpaceTokensMessage());

@@ -50,7 +50,7 @@ public class OperationREADLINK extends AbstractNFSv4Operation {
         	}
 
             byte[] link = context.currentInode().readlink();
-            _log.trace("NFS Request  READLINK4 link: {}", new String(link) );
+            _log.debug("NFS Request  READLINK4 link: {}", new String(link) );
             res.resok4 = new READLINK4resok();
             res.resok4.link = new linktext4();
             res.resok4.link.value = new utf8str_cs();
@@ -59,7 +59,7 @@ public class OperationREADLINK extends AbstractNFSv4Operation {
             res.status = nfsstat.NFS_OK;
 
         }catch(ChimeraNFSException he){
-            _log.trace("READLINK: {}", he.getMessage() );
+            _log.debug("READLINK: {}", he.getMessage() );
             res.status = he.getStatus();
         }catch(Exception e) {
             _log.error("READLINK4", e);

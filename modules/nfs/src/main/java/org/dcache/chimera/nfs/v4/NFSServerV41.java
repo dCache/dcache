@@ -72,7 +72,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
     @Override
     public void NFSPROC4_NULL_4(RpcCall call$) {
-        _log.trace("NFS PING client: {}", call$.getTransport().getRemoteSocketAddress());
+        _log.debug("NFS PING client: {}", call$.getTransport().getRemoteSocketAddress());
     }
 
     @Override
@@ -83,7 +83,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
         try {
 
-            _log.trace("NFS COMPOUND client: {}, tag: [{}]",
+            _log.debug("NFS COMPOUND client: {}, tag: [{}]",
                     call$.getTransport().getRemoteSocketAddress(),
                     new String(arg1.tag.value.value));
 
@@ -144,10 +144,10 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                 context.getSession().updateSlotCache(context.getSlotId(), res.resarray);
             }
 
-            _log.trace( "OP: [{}] status: {}", res.tag, res.status);
+            _log.debug( "OP: [{}] status: {}", res.tag, res.status);
 
         } catch (ChimeraNFSException e) {
-            _log.debug("NFS operation failed: {}", e.getMessage());
+            _log.info("NFS operation failed: {}", e.getMessage());
             res.resarray = Collections.emptyList();
             res.status = e.getStatus();
             res.tag = arg1.tag;

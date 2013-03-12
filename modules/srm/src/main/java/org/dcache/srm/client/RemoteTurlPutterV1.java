@@ -112,7 +112,7 @@ public final class RemoteTurlPutterV1 extends TurlGetterPutterV1
         boolean[] wantperm =
             new boolean[number_of_file_reqs];
         Arrays.fill(wantperm,true);
-        logger.trace("SURLs[0] is "+SURLs[0]);
+        logger.debug("SURLs[0] is "+SURLs[0]);
         return remoteSRM.put(SURLs,SURLs,sizes,wantperm,protocols);
     }
 }

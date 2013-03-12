@@ -236,7 +236,7 @@ public final class PutRequest extends ContainerRequest{
     }
 
     public void proccessRequest() {
-        logger.trace("proccessing put request");
+        logger.debug("proccessing put request");
         String supported_protocols[];
         try {
             supported_protocols = getStorage().supportedGetProtocols();
@@ -287,13 +287,13 @@ public final class PutRequest extends ContainerRequest{
         State state = getState();
         if(State.isFinalState(state)) {
 
-            logger.trace("copy request state changed to "+state);
+            logger.debug("copy request state changed to "+state);
             for(FileRequest request : getFileRequests()) {
                 try {
                     State fr_state = request.getState();
                     if(!State.isFinalState(fr_state ))
                     {
-                        logger.trace("changing fr#"+request.getId()+" to "+state);
+                        logger.debug("changing fr#"+request.getId()+" to "+state);
                         request.setState(state,"changing file state because request state has changed");
                     }
                 }
@@ -389,7 +389,7 @@ public final class PutRequest extends ContainerRequest{
             s.append(" FileStatusCode = ")
                     .append(fs.getStatus().getStatusCode());
         }
-        logger.trace(s.toString());
+        logger.debug(s.toString());
         return response;
     }
 

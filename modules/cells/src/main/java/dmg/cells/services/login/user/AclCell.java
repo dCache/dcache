@@ -79,11 +79,11 @@ public class       AclCell
           String tmp;
           if( ( tmp = _args.getOpt( "syspassword" ) ) != null ){
              _sysPassword = new UserPasswords( new File( tmp ) ) ;
-             _log.debug( "using as SystemPasswordfile : "+tmp ) ;
+             _log.info( "using as SystemPasswordfile : "+tmp ) ;
           }
           if( ( tmp = _args.getOpt( "egpassword"  ) ) != null ){
              _egPassword  = new UserPasswords( new File( tmp ) ) ;
-             _log.debug( "using as EgPasswordfile : "+tmp ) ;
+             _log.info( "using as EgPasswordfile : "+tmp ) ;
           }
       }catch( Throwable e ){
          _log.warn( "Exception while <init> : "+e, e ) ;
@@ -104,7 +104,7 @@ public class       AclCell
       Serializable answer;
 
       try{
-         _log.debug( "Message type : "+obj.getClass() ) ;
+         _log.info( "Message type : "+obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -114,7 +114,7 @@ public class       AclCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.debug( ">"+command+"< request from "+user ) ;
+            _log.info( ">"+command+"< request from "+user ) ;
             try{
                 switch (command) {
                 case "check-password":

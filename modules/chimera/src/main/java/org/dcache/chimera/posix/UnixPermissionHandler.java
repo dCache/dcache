@@ -106,7 +106,7 @@ public class UnixPermissionHandler implements AclHandler {
 
             } // switch( requsetedAcl )
 
-            _log.trace(sb.toString());
+            _log.debug(sb.toString());
         }
 
         switch (userUid) {
@@ -184,7 +184,7 @@ public class UnixPermissionHandler implements AclHandler {
 
         } // switch( userUid )
 
-        _log.trace("IsAllowed: " + isAllowed);
+        _log.debug("IsAllowed: " + isAllowed);
         return isAllowed;
     }
 }

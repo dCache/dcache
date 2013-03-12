@@ -66,31 +66,31 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
 
     protected void doOnGet(ChannelHandlerContext context, MessageEvent event,
                                     HttpRequest request) {
-        _logger.debug("Received a GET request, writing a default response.");
+        _logger.info("Received a GET request, writing a default response.");
         unsupported(context, event);
     }
 
     protected void doOnPut(ChannelHandlerContext context, MessageEvent event,
                            HttpRequest request) {
-        _logger.debug("Received a PUT request, writing a default response.");
+        _logger.info("Received a PUT request, writing a default response.");
         unsupported(context, event);
     }
 
     protected void doOnPost(ChannelHandlerContext context, MessageEvent event,
                             HttpRequest request) {
-        _logger.debug("Received a POST request, writing default response.");
+        _logger.info("Received a POST request, writing default response.");
         unsupported(context, event);
     }
 
     protected void doOnDelete(ChannelHandlerContext context, MessageEvent event,
                               HttpRequest request) {
-        _logger.debug("Received a DELETE request, writing default response.");
+        _logger.info("Received a DELETE request, writing default response.");
         unsupported(context, event);
     }
 
     protected void doOnChunk(ChannelHandlerContext context, MessageEvent event,
                              HttpChunk chunk) {
-        _logger.debug("Received an HTTP chunk, writing default response.");
+        _logger.info("Received an HTTP chunk, writing default response.");
         unsupported(context, event);
     }
 
@@ -108,7 +108,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
             HttpResponseStatus statusCode,
             String message)
     {
-        _logger.debug("Sending error {} with message {} to client.",
+        _logger.info("Sending error {} with message {} to client.",
                 statusCode, message);
 
         if (message == null || message.isEmpty()) {
@@ -139,7 +139,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
             HttpResponseStatus statusCode,
             String message)
     {
-        _logger.debug("Sending error {} with message {} to client.",
+        _logger.info("Sending error {} with message {} to client.",
                 statusCode, message);
 
         if (message == null || message.isEmpty()) {
@@ -181,7 +181,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         }
 
         if (t instanceof ClosedChannelException) {
-            _logger.debug("Connection unexpectedly closed"); // TODO: Log remote address
+            _logger.info("Connection unexpectedly closed"); // TODO: Log remote address
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);

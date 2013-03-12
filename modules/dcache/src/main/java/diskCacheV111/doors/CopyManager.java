@@ -327,7 +327,7 @@ public class CopyManager extends AbstractCell
                 CopyManagerMessage message =
                     (CopyManagerMessage) _envelope.getMessageObject();
                 try {
-                    _log.debug("starting processing transfer message with id {}",
+                    _log.info("starting processing transfer message with id {}",
                               message.getId());
 
                     copy(message.getSubject(),
@@ -356,7 +356,7 @@ public class CopyManager extends AbstractCell
                     finishTransfer();
                     message.increaseNumberOfPerformedRetries();
                     if (requeue) {
-                        _log.debug("putting on queue for retry: {}", _envelope);
+                        _log.info("putting on queue for retry: {}", _envelope);
                         putOnQueue(_envelope);
                     } else {
                         try {
@@ -424,7 +424,7 @@ public class CopyManager extends AbstractCell
                 if (!_target.waitForMover(_moverTimeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
                 }
-                _log.debug("transfer finished successfully");
+                _log.info("transfer finished successfully");
                 success = true;
             } catch (CacheException e) {
                 _source.setStatus("Failed: " + e.toString());
@@ -496,20 +496,20 @@ public class CopyManager extends AbstractCell
 
     private synchronized boolean newTransfer()
     {
-        _log.trace("newTransfer() numTransfers = {} maxTransfers = {}",
+        _log.debug("newTransfer() numTransfers = {} maxTransfers = {}",
                    _numTransfers, _maxTransfers);
         if (_numTransfers == _maxTransfers) {
-            _log.trace("newTransfer() returns false");
+            _log.debug("newTransfer() returns false");
             return false;
         }
-        _log.trace("newTransfer() INCREMENT and return true");
+        _log.debug("newTransfer() INCREMENT and return true");
         _numTransfers++;
         return true;
     }
 
     private synchronized void finishTransfer()
     {
-        _log.trace("finishTransfer() numTransfers = {} DECREMENT",
+        _log.debug("finishTransfer() numTransfers = {} DECREMENT",
                    _numTransfers);
         _numTransfers--;
     }

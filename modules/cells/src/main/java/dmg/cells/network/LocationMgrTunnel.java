@@ -210,7 +210,7 @@ public class LocationMgrTunnel
             Object object = msg.getMessageObject();
             String messageObject =
                 object == null ? "NULL" : object.getClass().getName();
-            _logMessages.trace("tunnelMessageSent src="
+            _logMessages.debug("tunnelMessageSent src="
                                + msg.getSourcePath()
                                + " dest=" + msg.getDestinationPath()
                                + " [" + messageObject + "] UOID="
@@ -225,7 +225,7 @@ public class LocationMgrTunnel
             String messageObject =
                 object == null ? "NULL" : object.getClass().getName();
 
-            _logMessages.trace("tunnelMessageReceived src="
+            _logMessages.debug("tunnelMessageReceived src="
                                + msg.getSourcePath()
                                + " dest=" + msg.getDestinationPath()
                                + " [" + messageObject + "] UOID="
@@ -295,7 +295,7 @@ public class LocationMgrTunnel
 
         try {
             _remoteDomainInfo = negotiateDomainInfo(_output, _input);
-            _log.debug("Established tunnel to " + getRemoteDomainName());
+            _log.info("Established tunnel to " + getRemoteDomainName());
 
             start();
 
@@ -307,7 +307,7 @@ public class LocationMgrTunnel
             }
         } catch (EOFException | InterruptedException e) {
         } catch (ClassNotFoundException e) {
-            _log.error("Cannot deserialize object. This is most likely due to a version mismatch.");
+            _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (IOException e) {
             _log.warn("Error while reading from tunnel: " + e.getMessage());
         } finally {
@@ -368,7 +368,7 @@ public class LocationMgrTunnel
     @Override
     public void cleanUp()
     {
-        _log.debug("Closing tunnel to " + getRemoteDomainName());
+        _log.info("Closing tunnel to " + getRemoteDomainName());
         setDown(true);
         try {
             _socket.shutdownInput();

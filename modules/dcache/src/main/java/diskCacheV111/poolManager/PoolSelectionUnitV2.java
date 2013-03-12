@@ -453,7 +453,7 @@ public class PoolSelectionUnitV2
         String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
         String dCacheUnitName = storageInfo.getCacheClass();
 
-        _log.trace("running match: type={} store={} dCacheUnit={} net={} protocol={} SI={} linkGoup={}", type,
+        _log.debug("running match: type={} store={} dCacheUnit={} net={} protocol={} SI={} linkGoup={}", type,
                    storeUnitName, dCacheUnitName, netUnitName, protocolUnitName, storageInfo, linkGroupName);
 
         Map<String, String> variableMap = storageInfo.getMap();
@@ -513,7 +513,7 @@ public class PoolSelectionUnitV2
                         if ((unit = _units.get(template)) == null) {
 
                             if ((unit = _units.get("*@*")) == null) {
-                                _log.trace("no matching storage unit found for: {}", storeUnitName);
+                                _log.debug("no matching storage unit found for: {}", storeUnitName);
                                 throw new IllegalArgumentException(
                                         "Unit not found : " + storeUnitName);
                             }
@@ -523,7 +523,7 @@ public class PoolSelectionUnitV2
                                 "IllegalUnitFormat : " + storeUnitName);
                     }
                 }
-                _log.trace("matching storage unit found for: {}", storeUnitName);
+                _log.debug("matching storage unit found for: {}", storeUnitName);
                 list.add(unit);
             }
             if (protocolUnitName != null) {
@@ -531,32 +531,32 @@ public class PoolSelectionUnitV2
                 Unit unit = findProtocolUnit(protocolUnitName);
                 //
                 if (unit == null){
-                    _log.trace("no matching protocol unit found for: {}", protocolUnitName);
+                    _log.debug("no matching protocol unit found for: {}", protocolUnitName);
                     throw new IllegalArgumentException("Unit not found : "
                             + protocolUnitName);
                 }
-                _log.trace("matching protocol unit found: {}", unit);
+                _log.debug("matching protocol unit found: {}", unit);
                 list.add(unit);
             }
             if (dCacheUnitName != null) {
                 Unit unit = _units.get(dCacheUnitName);
                 if (unit == null) {
-                    _log.trace("no matching dCache unit found for: {}", dCacheUnitName);
+                    _log.debug("no matching dCache unit found for: {}", dCacheUnitName);
                     throw new IllegalArgumentException("Unit not found : "
                             + dCacheUnitName);
                 }
-                _log.trace("matching dCache unit found: {}", unit);
+                _log.debug("matching dCache unit found: {}", unit);
                 list.add(unit);
             }
             if (netUnitName != null) {
                 try {
                     Unit unit = _netHandler.match(netUnitName);
                     if (unit == null) {
-                        _log.trace("no matching net unit found for: {}", netUnitName);
+                        _log.debug("no matching net unit found for: {}", netUnitName);
                         throw new IllegalArgumentException(
                                 "Unit not matched : " + netUnitName);
                     }
-                    _log.trace("matching net unit found: {}" + unit);
+                    _log.debug("matching net unit found: {}" + unit);
                     list.add(unit);
                 } catch (UnknownHostException uhe) {
                     throw new IllegalArgumentException(
@@ -590,7 +590,7 @@ public class PoolSelectionUnitV2
             if (linkGroupName != null) {
                 linkGroup = _linkGroups.get(linkGroupName);
                 if (linkGroup == null) {
-                    _log.trace("LinkGroup not found : {}", linkGroupName );
+                    _log.debug("LinkGroup not found : {}", linkGroupName );
                     throw new IllegalArgumentException("LinkGroup not found : "
                             + linkGroupName);
                 }
@@ -693,7 +693,7 @@ public class PoolSelectionUnitV2
                     for (PoolCore poolCore : link._poolList.values()) {
                         if (poolCore instanceof Pool) {
                             Pool pool = (Pool) poolCore;
-                            _log.trace("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
+                            _log.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
                             if (((type == DirectionType.READ && pool.canRead())
                                  || (type == DirectionType.CACHE && pool.canReadFromTape()
                                      && poolCanStageFile(pool, storageInfo))
@@ -704,7 +704,7 @@ public class PoolSelectionUnitV2
                             }
                         } else {
                             for (Pool pool : ((PGroup)poolCore)._poolList.values()) {
-                                _log.trace("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
+                                _log.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
                                 if (((type == DirectionType.READ && pool.canRead())
                                      || (type == DirectionType.CACHE && pool.canReadFromTape()
                                          && poolCanStageFile(pool, storageInfo))
@@ -734,7 +734,7 @@ public class PoolSelectionUnitV2
                     sb.append(" ").append(poolName);
                 }
             }
-            _log.trace(sb.toString());
+            _log.debug(sb.toString());
         }
         return result;
     }
@@ -837,14 +837,14 @@ public class PoolSelectionUnitV2
                             // only consider link if it isn't in any link group
                             // ( "default link group" )
                             //
-                            _log.trace("link {} matching to unit {}", link.getName(), unit);
+                            _log.debug("link {} matching to unit {}", link.getName(), unit);
                             map.put(link.getName(), link);
                         }
                     } else if (linkGroup.contains(link)) {
                         //
                         // only take link if it is in the specified link group
                         //
-                        _log.trace("link {} matching to unit {}", link.getName(), unit);
+                        _log.debug("link {} matching to unit {}", link.getName(), unit);
                         map.put(link.getName(), link);
                     }
                 }
@@ -2712,7 +2712,7 @@ public class PoolSelectionUnitV2
                 }
             }
         }
-        _log.trace("{}: matching hsm ({}) found?: {}", pool.getName(), file.getHsm(), rc);
+        _log.debug("{}: matching hsm ({}) found?: {}", pool.getName(), file.getHsm(), rc);
         return rc;
     }
 

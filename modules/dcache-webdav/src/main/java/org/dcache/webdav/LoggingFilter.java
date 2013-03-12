@@ -41,14 +41,14 @@ public class LoggingFilter implements Filter
 
             Response.Status status = response.getStatus();
             if (status != null) {
-                _log.debug("{} {} {} {} {}",
+                _log.info("{} {} {} {} {}",
                           request.getFromAddress(),
                           request.getMethod(),
                           request.getAbsolutePath(),
                           getUser(request),
                           status.code);
             } else {
-                _log.debug("{} {} {} {}",
+                _log.info("{} {} {} {}",
                           request.getFromAddress(),
                           request.getMethod(),
                           request.getAbsolutePath(),

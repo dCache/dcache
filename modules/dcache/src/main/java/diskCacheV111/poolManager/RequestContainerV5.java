@@ -220,11 +220,11 @@ public class RequestContainerV5
                 ueh.uncaughtException(thisThread, t);
             }
         }
-        _log.trace("Container-ticker done");
+        _log.debug("Container-ticker done");
     }
 
     public void poolStatusChanged(String poolName, int poolStatus) {
-        _log.debug("Restore Manager : got 'poolRestarted' for " + poolName);
+        _log.info("Restore Manager : got 'poolRestarted' for " + poolName);
         try {
             List<PoolRequestHandler> list;
             synchronized (_handlerHash) {
@@ -247,7 +247,7 @@ public class RequestContainerV5
                          * in this construction we will fall down to next case
                          */
                         if (rph.getPoolCandidate().equals(POOL_UNKNOWN_STRING) ) {
-                            _log.debug("Restore Manager : retrying : " + rph);
+                            _log.info("Restore Manager : retrying : " + rph);
                             rph.retry();
                         }
                     case PoolStatusChangedMessage.DOWN:
@@ -256,7 +256,7 @@ public class RequestContainerV5
                          * pool
                          */
                         if (rph.getPoolCandidate().equals(poolName) ) {
-                            _log.debug("Restore Manager : retrying : " + rph);
+                            _log.info("Restore Manager : retrying : " + rph);
                             rph.retry();
                         }
                 }
@@ -641,7 +641,7 @@ public class RequestContainerV5
         //
         //
         PoolRequestHandler handler;
-        _log.debug( "Adding request for : "+canonicalName ) ;
+        _log.info( "Adding request for : "+canonicalName ) ;
         synchronized( _handlerHash ){
            //
            handler = _handlerHash.get(canonicalName);
@@ -823,7 +823,7 @@ public class RequestContainerV5
                 if (now > _timer) {
                     switch (_state) {
                     case WAITING:
-                        _log.debug("CheckFilePingHandler : sending " + _query + " to " + _candidate);
+                        _log.info("CheckFilePingHandler : sending " + _query + " to " + _candidate);
                         sendQuery();
                         _state = PingState.QUERYING;
                         break;
@@ -831,7 +831,7 @@ public class RequestContainerV5
                     case QUERYING:
                         /* No reply since last query.
                          */
-                        _log.debug("CheckFilePingHandler : request died");
+                        _log.info("CheckFilePingHandler : request died");
                         stop();
                         setError(CacheException.TIMEOUT,
                                  "Replication/staging timed out");
@@ -850,7 +850,7 @@ public class RequestContainerV5
                 if (_state == PingState.QUERYING && object instanceof String) {
                     String s = (String) object;
                     if (s.contains(_pnfsId.toString())) {
-                        _log.debug("CheckFilePingHandler : request is alive");
+                        _log.info("CheckFilePingHandler : request is alive");
                         _state = PingState.WAITING;
                     }
                 }
@@ -982,7 +982,7 @@ public class RequestContainerV5
            // !!!!!!!!! remove this
            //
            //if( message instanceof PoolFetchFileMessage ){
-           //    _log.debug("mailForYou !!!!! reply ignored ") ;
+           //    _log.info("mailForYou !!!!! reply ignored ") ;
            //    return ;
            //}
            add( message ) ;
@@ -1079,7 +1079,7 @@ public class RequestContainerV5
             Pool2PoolTransferMsg pool2pool =
                   new Pool2PoolTransferMsg(sourcePool.getName(), destPool.getName(), _fileAttributes);
             pool2pool.setDestinationFileStatus( _destinationFileStatus ) ;
-            _log.debug("[p2p] Sending transfer request: "+pool2pool);
+            _log.info("[p2p] Sending transfer request: "+pool2pool);
 	    CellMessage cellMessage =
                 new CellMessage(new CellPath(destPool.getAddress()), pool2pool);
 
@@ -1114,7 +1114,7 @@ public class RequestContainerV5
                     CellMessage message = i.next();
                     long ttl = message.getTtl();
                     if (message.getLocalAge() >= ttl) {
-                        _log.debug("Discarding request from "
+                        _log.info("Discarding request from "
                                   + message.getSourcePath().getCellName()
                                   + " because its time to live has been exceeded.");
                         i.remove();
@@ -1211,12 +1211,12 @@ public class RequestContainerV5
         private void add( Object obj ){
 
            synchronized( _fifo ){
-               _log.debug( "Adding Object : "+obj ) ;
+               _log.info( "Adding Object : "+obj ) ;
                _fifo.addFirst(obj) ;
                if( _stateEngineActive ) {
                    return;
                }
-               _log.debug( "Starting Engine" ) ;
+               _log.info( "Starting Engine" ) ;
                _stateEngineActive = true ;
                try {
                    _threadPool.invokeLater(new RunEngine(), "Read-"+_pnfsId);
@@ -1229,7 +1229,7 @@ public class RequestContainerV5
         private void stateLoop(){
 
            Object inputObject ;
-           _log.debug( "ACTIVATING STATE ENGINE "+_pnfsId+" "+(System.currentTimeMillis()-_started)) ;
+           _log.info( "ACTIVATING STATE ENGINE "+_pnfsId+" "+(System.currentTimeMillis()-_started)) ;
 
            while( ! Thread.interrupted() ){
 
@@ -1247,7 +1247,7 @@ public class RequestContainerV5
               }
               _forceContinue = false ;
               try{
-                 _log.debug("StageEngine called in mode " +
+                 _log.info("StageEngine called in mode " +
                            _state + " with object " +
                         (  inputObject == null ?
                              "(NULL)":
@@ -1260,7 +1260,7 @@ public class RequestContainerV5
 
                  stateEngine( inputObject ) ;
 
-                 _log.debug("StageEngine left with: {} ({})",
+                 _log.info("StageEngine left with: {} ({})",
                            _state, (_forceContinue ? "Continue" : "Wait"));
               } catch (RuntimeException e) {
                   _log.error("Unexpected Exception in state loop for " + _pnfsId, e);
@@ -1312,7 +1312,7 @@ public class RequestContainerV5
                     _state = RequestState.ST_DONE;
                     _forceContinue = true;
                     _status = "Failed";
-                    _log.trace("Subject is not authorized to stage");
+                    _log.debug("Subject is not authorized to stage");
                     _currentRc = CacheException.FILE_NOT_ONLINE;
                     _currentRm = "File not online. Staging not allowed.";
                     sendInfoMessage(_pnfsId , _storageInfo ,
@@ -1321,7 +1321,7 @@ public class RequestContainerV5
                     _state = RequestState.ST_DONE;
                     _forceContinue = true;
                     _status = "Failed";
-                    _log.trace("No permission to perform {}", state);
+                    _log.debug("No permission to perform {}", state);
                     _currentRc = CacheException.PERMISSION_DENIED;
                     _currentRm = "Permission denied.";
                     sendInfoMessage(_pnfsId, _storageInfo, _currentRc,
@@ -1450,7 +1450,7 @@ public class RequestContainerV5
            switch( _state ){
 
               case ST_INIT :
-                 _log.trace( "stateEngine: case ST_INIT");
+                 _log.debug( "stateEngine: case ST_INIT");
                  synchronized( _selections ){
 
                     CacheException ce = _selections.get(_pnfsId) ;
@@ -1484,7 +1484,7 @@ public class RequestContainerV5
 
                        setError(0,"");
                        nextStep(RequestState.ST_DONE , CONTINUE ) ;
-                       _log.debug("AskIfAvailable found the object");
+                       _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo ) {
                            sendHitMsg(_pnfsId, (_bestPool != null) ? _bestPool.getName() : "<UNKNOWN>", true);   //VP
                        }
@@ -1492,12 +1492,12 @@ public class RequestContainerV5
                     }else if( rc == RT_NOT_FOUND ){
                        //
                        //
-                        _log.trace(" stateEngine: RT_NOT_FOUND ");
+                        _log.debug(" stateEngine: RT_NOT_FOUND ");
                        if( _parameter._hasHsmBackend && _storageInfo.isStored()){
-                           _log.trace(" stateEngine: parameter has HSM backend and the file is stored on tape ");
+                           _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
                           nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                        }else{
-                          _log.trace(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
+                          _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
                           _poolCandidate = null ;
                           setError(1010, "Pool unavailable");
                           suspendIfEnabled("Suspended (pool unavailable)");
@@ -1536,9 +1536,9 @@ public class RequestContainerV5
 
                        }
                     }else if( rc == RT_ERROR ){
-                       _log.trace( " stateEngine: RT_ERROR");
+                       _log.debug( " stateEngine: RT_ERROR");
                        nextStep(RequestState.ST_STAGE , CONTINUE ) ;
-                       _log.debug("AskIfAvailable returned an error, will continue with Staging");
+                       _log.info("AskIfAvailable returned an error, will continue with Staging");
 
                     }
 
@@ -1552,7 +1552,7 @@ public class RequestContainerV5
 
               case ST_POOL_2_POOL :
               {
-                  _log.trace( "stateEngine: case ST_POOL_2_POOL");
+                  _log.debug( "stateEngine: case ST_POOL_2_POOL");
                  if( inputObject == null ){
 
                     if( ( rc = askForPoolToPool( _overwriteCost ) ) == RT_FOUND ){
@@ -1574,7 +1574,7 @@ public class RequestContainerV5
                             if( _enforceP2P ){
                                nextStep(RequestState.ST_DONE , CONTINUE ) ;
                             }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
-                               _log.debug("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
+                               _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
                                nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                             }else{
                                setError(265, "Pool to pool not permitted");
@@ -1582,7 +1582,7 @@ public class RequestContainerV5
                             }
                         }else{
                             _poolCandidate = _bestPool;
-                            _log.debug("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
+                            _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
 
                           setError(0,"");
                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1590,14 +1590,14 @@ public class RequestContainerV5
 
                     }else if( rc == RT_S_COST_EXCEEDED ){
 
-                       _log.debug("ST_POOL_2_POOL : RT_S_COST_EXCEEDED");
+                       _log.info("ST_POOL_2_POOL : RT_S_COST_EXCEEDED");
 
                        if( _parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored() ){
 
                            if( _enforceP2P ){
                               nextStep(RequestState.ST_DONE , CONTINUE ) ;
                            }else{
-                              _log.debug("ST_POOL_2_POOL : staging");
+                              _log.info("ST_POOL_2_POOL : staging");
                               nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                            }
                        }else{
@@ -1605,7 +1605,7 @@ public class RequestContainerV5
                           if( _bestPool != null ){
 
                               _poolCandidate = _bestPool;
-                              _log.debug("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
+                              _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
 
                              setError(0,"");
                              nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1636,7 +1636,7 @@ public class RequestContainerV5
 
                            _poolCandidate = _bestPool;
 
-                          _log.debug(" found high cost object");
+                          _log.info(" found high cost object");
 
                           setError(0,"");
                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1660,7 +1660,7 @@ public class RequestContainerV5
 
               case ST_STAGE :
 
-                  _log.trace("stateEngine: case ST_STAGE");
+                  _log.debug("stateEngine: case ST_STAGE");
 
                  if( inputObject == null ){
 
@@ -1692,7 +1692,7 @@ public class RequestContainerV5
 
               break ;
               case ST_WAITING_FOR_POOL_2_POOL :
-                 _log.trace( "stateEngine: case ST_WAITING_FOR_POOL_2_POOL");
+                 _log.debug( "stateEngine: case ST_WAITING_FOR_POOL_2_POOL");
                  if( inputObject instanceof Message ){
 
                     if( ( rc =  exercisePool2PoolReply((Message)inputObject) ) == RT_OK ){
@@ -1704,10 +1704,10 @@ public class RequestContainerV5
                             nextStep(RequestState.ST_DONE, CONTINUE);
                         }
                     }else{
-                        _log.debug("ST_POOL_2_POOL : Pool to pool reported a problem");
+                        _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
                         if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
 
-                            _log.debug("ST_POOL_2_POOL : trying to stage the file");
+                            _log.info("ST_POOL_2_POOL : trying to stage the file");
                             nextStep(RequestState.ST_STAGE , CONTINUE ) ;
 
                         }else{
@@ -1726,7 +1726,7 @@ public class RequestContainerV5
 
               break ;
               case ST_WAITING_FOR_STAGING :
-                 _log.trace( "stateEngine: case ST_WAITING_FOR_STAGING" );
+                 _log.debug( "stateEngine: case ST_WAITING_FOR_STAGING" );
                  if( inputObject instanceof Message ){
 
                     if( ( rc =  exerciseStageReply( (Message)inputObject ) ) == RT_OK ){
@@ -1753,7 +1753,7 @@ public class RequestContainerV5
                  }
               break ;
               case ST_SUSPENDED :
-                 _log.trace( "stateEngine: case ST_SUSPENDED" );
+                 _log.debug( "stateEngine: case ST_SUSPENDED" );
                  if( inputObject instanceof Object [] ){
 
                     handleCommandObject( (Object []) inputObject ) ;
@@ -1762,7 +1762,7 @@ public class RequestContainerV5
               return ;
 
               case ST_DONE :
-                 _log.trace( "stateEngine: case ST_DONE" );
+                 _log.debug( "stateEngine: case ST_DONE" );
                  if( inputObject == null ){
 
                     clearSteering();
@@ -1844,7 +1844,7 @@ public class RequestContainerV5
 
         private void suspend(String status)
         {
-            _log.trace(" stateEngine: SUSPENDED/WAIT ");
+            _log.debug(" stateEngine: SUSPENDED/WAIT ");
             _status = status + " " + _formatter.format(new Date());
             nextStep(RequestState.ST_SUSPENDED, WAIT);
             sendInfoMessage(_pnfsId, _storageInfo,
@@ -1921,7 +1921,7 @@ public class RequestContainerV5
 
               if( messageArrived instanceof Pool2PoolTransferMsg ){
                  Pool2PoolTransferMsg reply = (Pool2PoolTransferMsg)messageArrived ;
-                 _log.debug("Pool2PoolTransferMsg replied with : "+reply);
+                 _log.info("Pool2PoolTransferMsg replied with : "+reply);
                  if( ( _currentRc = reply.getReturnCode() ) == 0 ){
                      _poolCandidate = _p2pDestinationPool;
                     return RT_OK ;
@@ -2001,14 +2001,14 @@ public class RequestContainerV5
                _bestPool = _poolSelector.selectReadPool();
                _parameter = _poolSelector.getCurrentPartition();
            } catch (FileNotInCacheException e) {
-               _log.debug("[read] {}", e.getMessage());
+               _log.info("[read] {}", e.getMessage());
                return RT_NOT_FOUND;
            } catch (PermissionDeniedCacheException e) {
-               _log.debug("[read] {}", e.getMessage());
+               _log.info("[read] {}", e.getMessage());
                return RT_NOT_PERMITTED;
            } catch (CostException e) {
                if (e.getPool() == null) {
-                   _log.debug("[read] {}", e.getMessage());
+                   _log.info("[read] {}", e.getMessage());
                    setError(125, e.getMessage());
                    return RT_ERROR;
                }
@@ -2016,7 +2016,7 @@ public class RequestContainerV5
                _bestPool = e.getPool();
                _parameter = _poolSelector.getCurrentPartition();
                if (e.shouldTryAlternatives()) {
-                   _log.debug("[read] {} ({})",
+                   _log.info("[read] {} ({})",
                              e.getMessage(), _bestPool);
                    return RT_COST_EXCEEDED;
                }
@@ -2030,7 +2030,7 @@ public class RequestContainerV5
                setError(130, "Read pool selection failed: " + e.toString());
                return RT_ERROR;
            } finally {
-               _log.debug("[read] Took  {} ms",
+               _log.info("[read] Took  {} ms",
                          (System.currentTimeMillis() - _started));
            }
 
@@ -2062,7 +2062,7 @@ public class RequestContainerV5
 
                 _p2pSourcePool = pools.source;
                 _p2pDestinationPool = pools.destination;
-                _log.debug("[p2p] source={};dest={}",
+                _log.info("[p2p] source={};dest={}",
                           _p2pSourcePool, _p2pDestinationPool);
                 sendPool2PoolRequest(_p2pSourcePool, _p2pDestinationPool);
 
@@ -2073,11 +2073,11 @@ public class RequestContainerV5
                 return RT_NOT_PERMITTED;
             } catch (SourceCostException e) {
                 setError(e.getRc(), e.getMessage());
-                _log.debug("[p2p] {}", e.getMessage());
+                _log.info("[p2p] {}", e.getMessage());
                 return RT_S_COST_EXCEEDED;
             } catch (DestinationCostException e) {
                 setError(e.getRc(), e.getMessage());
-                _log.debug("[p2p] {}", e.getMessage());
+                _log.info("[p2p] {}", e.getMessage());
                 return RT_COST_EXCEEDED;
             } catch (CacheException e) {
                 setError(e.getRc(), e.getMessage());
@@ -2092,7 +2092,7 @@ public class RequestContainerV5
                 _log.error("[p2p] contact support@dcache.org", e);
                 return RT_ERROR;
             } finally {
-                _log.debug("[p2p] Selection took {} ms",
+                _log.info("[p2p] Selection took {} ms",
                           (System.currentTimeMillis() - _started));
             }
         }
@@ -2116,7 +2116,7 @@ public class RequestContainerV5
                 _poolCandidate = pool;
                 _stageCandidateHost = pool.getHostName();
 
-                _log.debug("[staging] poolCandidate -> {}", _poolCandidate);
+                _log.info("[staging] poolCandidate -> {}", _poolCandidate);
                 if (!sendFetchRequest(_poolCandidate)) {
                     return RT_OUT_OF_RESOURCES;
                 }
@@ -2130,7 +2130,7 @@ public class RequestContainerV5
                    _stageCandidateHost = e.getPool().getHostName();
                    return RT_FOUND;
                }
-               _log.debug("[stage] {}", e.getMessage());
+               _log.info("[stage] {}", e.getMessage());
                setError(125, e.getMessage());
                return RT_ERROR;
             } catch (CacheException e) {
@@ -2146,7 +2146,7 @@ public class RequestContainerV5
                 _log.error("[stage] contact support@dcache.org", e);
                 return RT_ERROR;
             } finally {
-                _log.debug("[stage] Selection took {} ms",
+                _log.info("[stage] Selection took {} ms",
                           (System.currentTimeMillis() - _started));
             }
         }

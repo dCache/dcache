@@ -34,7 +34,7 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 			_thd = new Thread( this, this.getClass().getSimpleName() + " conduit");
 			_thd.start();
 			if( _log.isInfoEnabled()) {
-                            _log.debug("Thread \"" + _thd
+                            _log.info("Thread \"" + _thd
                                     .getName() + "\" started");
                         }
 		} else {
@@ -54,13 +54,13 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 		_should_run = false;
 
 		if( _log.isDebugEnabled()) {
-                    _log.trace("Signalling thread \"" + _thd
+                    _log.debug("Signalling thread \"" + _thd
                             .getName() + "\" to stop");
                 }
 
 		triggerBlockingActivityToReturn();
 
-		_log.trace("Waiting for thread to finish...");
+		_log.debug("Waiting for thread to finish...");
 
 		try {
 			_thd.join();
@@ -105,7 +105,7 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
                 }
 
 		if( _log.isInfoEnabled()) {
-                    _log.debug("Thread " + _thd.getName() + " stopped");
+                    _log.info("Thread " + _thd.getName() + " stopped");
                 }
 	}
 

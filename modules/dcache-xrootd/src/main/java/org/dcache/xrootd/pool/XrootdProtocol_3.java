@@ -232,7 +232,7 @@ public class XrootdProtocol_3
 
         UUID uuid = _protocolInfo.getUUID();
 
-        _log.trace("Received opaque information {}", uuid);
+        _log.debug("Received opaque information {}", uuid);
 
         _wrappedChannel =
             new MoverChannel<>(access, fileAttributes, _protocolInfo,
@@ -248,7 +248,7 @@ public class XrootdProtocol_3
             _server.unregister(_wrappedChannel);
         }
 
-        _log.trace("Xrootd transfer completed, transferred {} bytes.",
+        _log.debug("Xrootd transfer completed, transferred {} bytes.",
                    getBytesTransferred());
     }
 
@@ -273,7 +273,7 @@ public class XrootdProtocol_3
             Collection<InetAddress> col = new ArrayList<>(1);
             col.add(localIP);
             netifsCol.add(new NetIFContainer("", col));
-            _log.trace("sending ip-address derived from hostname " +
+            _log.debug("sending ip-address derived from hostname " +
                        "to Xrootd-door: "+localIP+" port: "+port);
         } else {
             // the ip we got from the hostname seems to be bad,
@@ -298,7 +298,7 @@ public class XrootdProtocol_3
                     if (addr instanceof Inet4Address
                         && !addr.isLoopbackAddress()) {
                         ipsCol.add(addr);
-                        _log.trace("sending ip-address derived from " +
+                        _log.debug("sending ip-address derived from " +
                                    "network-if to Xrootd-door: "+addr+
                                    " port: "+port);
                     }
@@ -326,7 +326,7 @@ public class XrootdProtocol_3
                                             port, netifsCol, uuidEnabledPool);
         _endpoint.sendMessage (new CellMessage(cellpath, doorMsg));
 
-        _log.trace("sending redirect message to Xrootd-door "+ cellpath);
+        _log.debug("sending redirect message to Xrootd-door "+ cellpath);
     }
 
     @Override

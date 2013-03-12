@@ -224,7 +224,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
             if (wrapper.isSelected()) {
                 String response = wrapper.getWrapped().getResponse();
                 if (isLongerThanCutoff(response)) {
-                    _log.trace("response longer than cutoff");
+                    _log.debug("response longer than cutoff");
                     String cutResponse = response.substring(
                             0, RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS - 1);
                     wrapper.getWrapped().setResponse(cutResponse
@@ -250,7 +250,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         public void onSubmit() {
             if (_currentPoolGroup != null) {
                 try {
-                    _log.trace("button pressed with group {} and command {}",
+                    _log.debug("button pressed with group {} and command {}",
                             _currentPoolGroup.getGroupName(), _command);
                     _lastCommand = getStringResource("poolAdmin.lastCommand") +" "+ _command;
                     if (isAtLeastOneSelected()) {

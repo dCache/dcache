@@ -321,19 +321,19 @@ public class JettyGSIConnector
         try {
             if (_credentials == null || _manager == null ||
                (timeSinceLastServerRefresh >= _hostCertRefreshInterval)) {
-                    _log.debug("Time since last server cert refresh {}",
+                    _log.info("Time since last server cert refresh {}",
                               timeSinceLastServerRefresh);
-                    _log.debug("Loading server certificates. Current refresh " +
+                    _log.info("Loading server certificates. Current refresh " +
                               "interval: {} ms",
                               _hostCertRefreshInterval);
 
                     X509Credential cred;
                     if (_serverProxy != null && !_serverProxy.equals("")) {
-                        _log.debug("Server Proxy: {}", _serverProxy);
+                        _log.info("Server Proxy: {}", _serverProxy);
                         cred = new X509Credential(_serverProxy);
                     } else if (_serverCert != null && _serverKey != null) {
-                        _log.debug("Server Certificate: {}", _serverCert);
-                        _log.debug("Server Key: {}", _serverKey);
+                        _log.info("Server Certificate: {}", _serverCert);
+                        _log.info("Server Key: {}", _serverKey);
                         cred = new X509Credential(_serverCert, _serverKey);
                     } else {
                         throw new IllegalStateException("Server credentials" +
@@ -363,10 +363,10 @@ public class JettyGSIConnector
 
         if (_caCertDir != null && (_trustedCerts == null ||
                 (timeSinceLastTARefresh >= _trustAnchorRefreshInterval))) {
-            _log.debug("Time since last TA Refresh {}", timeSinceLastTARefresh);
-            _log.debug("Loading trust anchors. Current refresh interval: {} ms",
+            _log.info("Time since last TA Refresh {}", timeSinceLastTARefresh);
+            _log.info("Loading trust anchors. Current refresh interval: {} ms",
                    _trustAnchorRefreshInterval);
-            _log.debug("CA certificate directory: {}", _caCertDir);
+            _log.info("CA certificate directory: {}", _caCertDir);
             _trustedCerts = TrustedCertificates.load(_caCertDir);
             _trustAnchorRefreshTimestamp = System.currentTimeMillis();
         }

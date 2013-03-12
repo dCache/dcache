@@ -52,7 +52,7 @@ public class MetaDataStoreCopyTool
         int size = ids.size();
         int count = 1;
         for (PnfsId id: ids) {
-            _log.debug("Copying {} ({} of {})", id, count, size);
+            _log.info("Copying {} ({} of {})", id, count, size);
             toStore.create(fromStore.get(id));
             count++;
         }

@@ -101,7 +101,7 @@ public class NFSv4MoverHandler {
      * @param moverBridge
      */
     public void addHandler(MoverBridge moverBridge) {
-        _log.trace("added io handler: {}", moverBridge);
+        _log.debug("added io handler: {}", moverBridge);
         _activeIO.put( moverBridge.getStateid() , moverBridge );
     }
 
@@ -111,7 +111,7 @@ public class NFSv4MoverHandler {
      * @param moverBridge
      */
     public void removeHandler(MoverBridge moverBridge) {
-        _log.trace("removing io handler: {}", moverBridge);
+        _log.debug("removing io handler: {}", moverBridge);
         _activeIO.remove(moverBridge.getStateid());
     }
 

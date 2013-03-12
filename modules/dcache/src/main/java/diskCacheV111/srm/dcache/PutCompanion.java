@@ -166,7 +166,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         this.recursive_directory_creation = recursive_directory_creation;
         this.overwrite = overwrite;
         pathItems = (new FsPath(path)).getPathItemsList();
-        _log.trace(" constructor path = "+path+" overwrite="+overwrite);
+        _log.debug(" constructor path = "+path+" overwrite="+overwrite);
     }
 
     @Override
@@ -243,7 +243,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     public void failure(int rc, Object error) {
         String errorString = error.toString();
         if (_log.isDebugEnabled()) {
-            _log.trace("PutCompanion.failure() {}, rc={} error={}", this.toString(), rc, errorString);
+            _log.debug("PutCompanion.failure() {}, rc={} error={}", this.toString(), rc, errorString);
         }
         if (state == State.WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
             state = State.RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
@@ -317,7 +317,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
         if(!overwrite) {
             String errorString = String.format("file/directory %s exists, overwite is not allowed ",path);
-            _log.trace(errorString);
+            _log.debug(errorString);
             callbacks.DuplicationError(errorString);
             return;
         }
@@ -405,7 +405,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             perm = parentFmd.permMode;
         }
 
-        _log.debug("attempting to create "+newDirPath+" with uid="+uid+" gid="+gid);
+        _log.info("attempting to create "+newDirPath+" with uid="+uid+" gid="+gid);
 
         PnfsGetStorageInfoMessage dirMsg
         = new PnfsCreateDirectoryMessage(newDirPath,uid,gid,perm,
@@ -563,7 +563,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             pnfsStub,
             recursive_directory_creation,
             overwrite);
-        _log.trace("sending " +message+" to PnfsManager");
+        _log.debug("sending " +message+" to PnfsManager");
         companion.state = State.WAITING_FOR_FILE_INFO_MESSAGE;
         pnfsStub.send(message,
                       PnfsMapPathMessage.class,
@@ -620,7 +620,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             if(directoryCreators.containsKey(pnfsPath)) {
                 creatorCompanion = directoryCreators.get(pnfsPath);
                 creatorCompanion.waitingForCreators.put(pnfsPath, thisCreator);
-                _log.trace("registerCreatorOrWaitForCreation("+pnfsPath+","+
+                _log.debug("registerCreatorOrWaitForCreation("+pnfsPath+","+
                         thisCreator+")"+
                 " directoryCreators already contains the creator for the path," +
                         " store and return false"
@@ -629,7 +629,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                 currentTime = System.currentTimeMillis();
             }
             else {
-                _log.trace("registerCreatorOrWaitForCreation("+pnfsPath+","+
+                _log.debug("registerCreatorOrWaitForCreation("+pnfsPath+","+
                         thisCreator+")"+
                 " storing this creator"
                 );
@@ -651,23 +651,23 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
         synchronized( directoryCreators) {
             if(directoryCreators.containsValue(thisCreator)) {
-                _log.trace("unregisterCreator("+pnfsPath+","+thisCreator+")");
+                _log.debug("unregisterCreator("+pnfsPath+","+thisCreator+")");
 
                 directoryCreators.remove(pnfsPath);
             }
             removed = thisCreator.waitingForCreators.removeAll(pnfsPath);
             for (PutCompanion companion: removed) {
-                _log.trace("unregisterCreator(" +
+                _log.debug("unregisterCreator(" +
                         pnfsPath + "," + thisCreator + ") removing " + companion);
             }
         }
 
         for (PutCompanion waitingcompanion: removed) {
-            _log.trace("  unregisterCreator("+pnfsPath+
+            _log.debug("  unregisterCreator("+pnfsPath+
                        ","+thisCreator+") notifying "+waitingcompanion);
             waitingcompanion.directoryInfoArrived(message);
         }
-        _log.trace(" unregisterCreator("+
+        _log.debug(" unregisterCreator("+
                    pnfsPath+","+thisCreator+") returning");
 
     }
@@ -697,7 +697,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
         synchronized( directoryCreators) {
             if(directoryCreators.containsValue(thisCreator)) {
-                _log.trace(" unregisterAndFailCreator("+
+                _log.debug(" unregisterAndFailCreator("+
                            pnfsPath+","+thisCreator+")");
 
                 directoryCreators.remove(pnfsPath);
@@ -705,16 +705,16 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             removed = thisCreator.waitingForCreators.removeAll(pnfsPath);
         }
         for (PutCompanion companion: removed) {
-            _log.trace("  unregisterAndFailCreator("+
+            _log.debug("  unregisterAndFailCreator("+
                     pnfsPath+","+thisCreator+") removing " + companion);
         }
 
         for (PutCompanion waitingcompanion: removed) {
-            _log.trace(" unregisterAndFailCreator("+pnfsPath+
+            _log.debug(" unregisterAndFailCreator("+pnfsPath+
                        ","+thisCreator+") notifying "+waitingcompanion);
             waitingcompanion.callbacks.Error(error);
         }
-        _log.trace(" unregisterAndFailCreator("+
+        _log.debug(" unregisterAndFailCreator("+
                    pnfsPath+","+thisCreator+") returning");
     }
 }

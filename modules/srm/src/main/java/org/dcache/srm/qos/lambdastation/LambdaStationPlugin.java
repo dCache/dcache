@@ -105,7 +105,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 			LambdaStationTicket	ls_ticket = (LambdaStationTicket)qosTicket;
 			boolean sEnabled = ls_ticket.srcEnabled();
 			boolean dEnabled = ls_ticket.dstEnabled();
-			logger.trace("src enabled="+sEnabled+" dst enabled="+dEnabled);
+			logger.debug("src enabled="+sEnabled+" dst enabled="+dEnabled);
 			return sEnabled && dEnabled && ls_ticket.getLocalTicketID() != 0;
 		}
 		else {
@@ -121,7 +121,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 				Date now = new Date();
 				long t = now.getTime();
 				long time_left = ls_ticket.getActualEndTime() - t/1000;
-				logger.trace("End time="+ls_ticket.getActualEndTime()+" Travel Time="+ls_ticket.TravelTime+" now="+t+" expires in "+time_left);
+				logger.debug("End time="+ls_ticket.getActualEndTime()+" Travel Time="+ls_ticket.TravelTime+" now="+t+" expires in "+time_left);
 				// try to calculate transfer time assuming 1Gb local connection
 				long transfer_time = 0l;
 				long rate_MB = 100000000l; // 1Gb means 100MB
@@ -130,10 +130,10 @@ public class LambdaStationPlugin implements QOSPlugin {
 				}
 				long extend_time = Math.max(transfer_time, 600l);
 				if (time_left - extend_time < 0) {
-					logger.trace("AM: will extend end time by "+extend_time);
+					logger.debug("AM: will extend end time by "+extend_time);
 				}
 				else {
-					logger.trace("AM: no need to extend end time");
+					logger.debug("AM: no need to extend end time");
 				}
 			}
 		}

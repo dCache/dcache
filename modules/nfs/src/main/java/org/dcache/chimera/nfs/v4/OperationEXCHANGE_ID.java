@@ -82,7 +82,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             * Servers MUST accept a zero length eia_client_impl_id array so this information is not always present!!!
             *
             for( nfs_impl_id4 impelemtation : _args.opexchange_id.eia_client_impl_id ) {
-                _log.debug("EXCHANGE_ID4:  " + new String(impelemtation.nii_name.value.value) );
+                _log.info("EXCHANGE_ID4:  " + new String(impelemtation.nii_name.value.value) );
             }*/
 
             byte[] clientOwner = _args.opexchange_id.eia_clientowner.co_ownerid;
@@ -93,7 +93,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
             if(_args.opexchange_id.eia_state_protect.spa_how != state_protect_how4.SP4_NONE && _args.opexchange_id.eia_state_protect.spa_how != state_protect_how4.SP4_MACH_CRED && _args.opexchange_id.eia_state_protect.spa_how != state_protect_how4.SP4_SSV)
             {
-                _log.trace("EXCHANGE_ID4: state protection : {}", _args.opexchange_id.eia_state_protect.spa_how);
+                _log.debug("EXCHANGE_ID4: state protection : {}", _args.opexchange_id.eia_state_protect.spa_how);
                 throw new ChimeraNFSException( nfsstat.NFSERR_INVAL, "invalid state protection");
             }
 
@@ -119,7 +119,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
             //Check if there is another ssv use -> TODO: Implement SSV
             if (_args.opexchange_id.eia_state_protect.spa_how != state_protect_how4.SP4_NONE){
-                _log.trace("Tried the wrong security Option! {}:", _args.opexchange_id.eia_state_protect.spa_how);
+                _log.debug("Tried the wrong security Option! {}:", _args.opexchange_id.eia_state_protect.spa_how);
                 throw new ChimeraNFSException( nfsstat.NFSERR_ACCESS, "SSV other than SP4NONE to use");
             }
 
@@ -138,12 +138,12 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             if(client == null){
 
                 if (update){
-                    _log.trace("Case 7a: Update but No Confirmed Record");
+                    _log.debug("Case 7a: Update but No Confirmed Record");
                     throw new ChimeraNFSException( nfsstat.NFSERR_NOENT, "no such client");
                 }
 
                 // create a new client: case 1
-                _log.trace("Case 1: New Owner ID");
+                _log.debug("Case 1: New Owner ID");
                 client = stateHandler.createClient(
                         remoteSocketAddress, localSocketAddress,
                         clientOwner, _args.opexchange_id.eia_clientowner.co_verifier, principal);
@@ -155,16 +155,16 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
                     if( client.isConfirmed() ) {
                         if( client.verifierEquals(verifier) && principal.equals(client.principal() ) ) {
-                            _log.trace("Case 6: Update");
+                            _log.debug("Case 6: Update");
                         }else if( !client.verifierEquals(verifier) ) {
-                          _log.trace("case 8: Update but Wrong Verifier");
+                          _log.debug("case 8: Update but Wrong Verifier");
                           throw new ChimeraNFSException(nfsstat.NFSERR_NOT_SAME,"Update but Wrong Verifier");
                         }else {
-                          _log.trace("case 9: Update but Wrong Principal");
+                          _log.debug("case 9: Update but Wrong Principal");
                           throw new ChimeraNFSException(nfsstat.NFSERR_PERM,"Principal Mismatch");
                         }
                     }else{
-                        _log.trace("Case 7b: Update but No Confirmed Record");
+                        _log.debug("Case 7b: Update but No Confirmed Record");
                         throw new ChimeraNFSException( nfsstat.NFSERR_NOENT, "no such client");
                     }
 
@@ -172,30 +172,30 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
                     if( client.isConfirmed() ) {
                         if( client.verifierEquals(verifier) && principal.equals(client.principal() ) ) {
-                            _log.trace("Case 2: Non-Update on Existing Client ID");
+                            _log.debug("Case 2: Non-Update on Existing Client ID");
                             client.refreshLeaseTime();
                         }else if ( principal.equals(client.principal() ) ) {
 
-                            _log.trace("case 5: Client Restart");
+                            _log.debug("case 5: Client Restart");
                              context.getStateHandler().removeClient(client);
                             client = stateHandler.createClient(
                                     remoteSocketAddress, localSocketAddress,
                                     clientOwner, _args.opexchange_id.eia_clientowner.co_verifier, principal);
                         }else {
                             if ((!client.hasState()) || (System.currentTimeMillis() - client.leaseTime()) > (NFSv4Defaults.NFS4_LEASE_TIME * 1000)){
-                                _log.trace("case 3a: Client Collision is equivalent to case 1 (the new Owner ID)");
+                                _log.debug("case 3a: Client Collision is equivalent to case 1 (the new Owner ID)");
                                 context.getStateHandler().removeClient(client);
                                 client = stateHandler.createClient(
                                         remoteSocketAddress, localSocketAddress,
                                         _args.opexchange_id.eia_clientowner.co_ownerid,
                                         _args.opexchange_id.eia_clientowner.co_verifier, principal);
                             } else {
-                                _log.trace("Case 3b: Client Collision");
+                                _log.debug("Case 3b: Client Collision");
                                 throw new ChimeraNFSException(nfsstat.NFSERR_CLID_INUSE, "Principal Missmatch");
                             }
                         }
                     }else{
-                        _log.trace("case 4: Replacement of Unconfirmed Record");
+                        _log.debug("case 4: Replacement of Unconfirmed Record");
                         context.getStateHandler().removeClient(client);
                         client = stateHandler.createClient(
                                 remoteSocketAddress, localSocketAddress,
@@ -238,7 +238,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
         }catch(ChimeraNFSException hne) {
             res.eir_status = hne.getStatus();
-            _log.debug(hne.getMessage());
+            _log.info(hne.getMessage());
         }catch(Exception e) {
             _log.error("EXCHANGE_ID:", e);
             res.eir_status = nfsstat.NFSERR_SERVERFAULT;

@@ -115,7 +115,7 @@ public class ChecksumModuleV1
         }
 
         if ((pnfsChecksum == null) && (checksum != null)) {
-            _log.debug("Storing checksum {} for {}", checksum, id);
+            _log.info("Storing checksum {} for {}", checksum, id);
             _pnfs.setChecksum(id, checksum);
         }
     }

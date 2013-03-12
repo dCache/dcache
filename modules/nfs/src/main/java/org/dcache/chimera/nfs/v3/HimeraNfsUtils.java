@@ -128,7 +128,7 @@ public class HimeraNfsUtils {
         }
 
         if( s.mode.set_it  ) {
-            _log.trace("New mode [" + Integer.toOctalString(s.mode.mode.value.value) + "]");
+            _log.debug("New mode [" + Integer.toOctalString(s.mode.mode.value.value) + "]");
             inode.setMode( s.mode.mode.value.value);
         }
 
@@ -192,7 +192,7 @@ public class HimeraNfsUtils {
                 ret = ftype3.NF3FIFO;
                 break;
             default:
-                _log.debug("Unknown mode [" + Integer.toOctalString(type) +"]");
+                _log.info("Unknown mode [" + Integer.toOctalString(type) +"]");
                 ret = 0;
         }
 

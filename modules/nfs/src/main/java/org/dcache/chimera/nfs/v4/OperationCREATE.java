@@ -150,7 +150,7 @@ public class OperationCREATE extends AbstractNFSv4Operation {
             context.currentInode(inode);
 
         } catch (ChimeraNFSException he) {
-            _log.trace("CREATE: {}", he.getMessage());
+            _log.debug("CREATE: {}", he.getMessage());
             res.status = he.getStatus();
         } catch (Exception e) {
             _log.error("CREATE: ", e);

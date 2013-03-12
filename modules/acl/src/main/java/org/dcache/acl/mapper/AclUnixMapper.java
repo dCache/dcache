@@ -88,7 +88,7 @@ public class AclUnixMapper {
                 break;
 
             default:
-                logger.debug("Unsupported who: " + who);
+                logger.info("Unsupported who: " + who);
             }
         }
 

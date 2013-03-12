@@ -63,7 +63,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	 * @param handler a new handler to add to the list.
 	 */
 	public void addMessageHandler( MessageHandler handler) {
-	    _log.trace( "Adding MessageHandler " + handler.getClass().getCanonicalName());
+	    _log.debug( "Adding MessageHandler " + handler.getClass().getCanonicalName());
 		_messageHandler.add(handler);
 	}
 
@@ -173,7 +173,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
         flushOldMetadata();
 
         if( _log.isDebugEnabled()) {
-            _log.trace("Querying for metric ttl stored against message-ID " + messageId);
+            _log.debug("Querying for metric ttl stored against message-ID " + messageId);
         }
 
         if( !_msgMetadata.containsKey( messageId)) {
@@ -202,7 +202,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
         }
 
         if( _log.isDebugEnabled()) {
-            _log.trace("Adding metric ttl " + ttl + " against message-ID " + messageId);
+            _log.debug("Adding metric ttl " + ttl + " against message-ID " + messageId);
         }
 
         _msgMetadata.put( messageId, new MessageMetadata( ttl));
@@ -245,7 +245,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
         Object messagePayload = answer.getMessageObject();
 
         if( !(messagePayload instanceof Message)) {
-            _log.trace( "Received msg where payload is not instanceof Message");
+            _log.debug( "Received msg where payload is not instanceof Message");
             return;
         }
 
@@ -265,7 +265,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
     @Override
     public void answerTimedOut(CellMessage request) {
         remove( request.getLastUOID());
-        _log.debug("Message timed out");
+        _log.info("Message timed out");
     }
 
     @Override
@@ -273,12 +273,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
         remove( request.getLastUOID());
         if( exception instanceof NoRouteToCellException) {
             // This can happen after a cell dies and info hasn't caught up
-            _log.trace( "Sending message to {} failed: {}",
+            _log.debug( "Sending message to {} failed: {}",
                     ((NoRouteToCellException)exception).getDestinationPath(),
                     exception.getMessage());
         } else if ( exception instanceof IllegalArgumentException) {
             // Can happen for a short while when a poolgroup is deleted
-            _log.trace( "Command failed: {}", exception.getMessage());
+            _log.debug( "Command failed: {}", exception.getMessage());
         } else {
             _log.error( "Received remote exception: ", exception);
         }

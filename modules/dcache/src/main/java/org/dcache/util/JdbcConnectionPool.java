@@ -82,7 +82,7 @@ public class JdbcConnectionPool
         pools.add(pool);
         long elapsed = System.currentTimeMillis()-starttimestamp;
         if( _logSql.isDebugEnabled() ) {
-            _logSql.trace( "getPool() took "+elapsed+" ms");
+            _logSql.debug( "getPool() took "+elapsed+" ms");
         }
 
         return pool;
@@ -165,7 +165,7 @@ public class JdbcConnectionPool
         try {
             con.close();
         } catch (SQLException e) {
-            _logSql.trace("returnFailedConnection() exception: ", e);
+            _logSql.debug("returnFailedConnection() exception: ", e);
 
         }
         }
@@ -183,7 +183,7 @@ public class JdbcConnectionPool
         try {
             con.close();
         } catch (SQLException e) {
-            _logSql.trace("returnConnection() exception: ", e);
+            _logSql.debug("returnConnection() exception: ", e);
         }
             }
 

@@ -53,7 +53,7 @@ public class StandardMoverDAO implements MoverDAO {
     public void killMoversOnSinglePool(Set<Integer> jobids, String targetPool)
             throws DAOException {
         try {
-            _log.trace("kill movers {} on pool {}", jobids, targetPool);
+            _log.debug("kill movers {} on pool {}", jobids, targetPool);
             if (!jobids.isEmpty()) {
                 PoolMoverKillMessageGenerator messageGenerator =
                         new PoolMoverKillMessageGenerator(targetPool, jobids);
@@ -62,7 +62,7 @@ public class StandardMoverDAO implements MoverDAO {
                 commandSender.sendAndWait();
                 checkForErrors(commandSender, messageGenerator);
             }
-            _log.trace("killed movers successfully");
+            _log.debug("killed movers successfully");
         } catch (InterruptedException e) {
             _log.warn("interrupted");
         }

@@ -99,7 +99,7 @@ public class CellNameService
             try {
                 requestUpdate(_session);
             } catch (JMSException e) {
-                _log.trace("Failed to request CNS update: {}", e.getMessage());
+                _log.debug("Failed to request CNS update: {}", e.getMessage());
             }
         } finally {
             _connection.start();

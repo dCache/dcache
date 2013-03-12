@@ -56,7 +56,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
      */
     public static Map<String, ReservationInfo> getDetails(
                                                            StateExhibitor exhibitor) {
-        _log.trace( "Gathering reservation information.");
+        _log.debug( "Gathering reservation information.");
 
         ReservationInfoVisitor visitor = new ReservationInfoVisitor();
         exhibitor.visitState( visitor);

@@ -111,7 +111,7 @@ public class InfoProvider extends AbstractCell {
 
     @Override
     public void init() {
-		_log.debug( "InfoProvider starting...");
+		_log.info( "InfoProvider starting...");
         _state.setStateUpdateManager( _sum);
 
         StateExhibitor exhibitor = _state;
@@ -280,7 +280,7 @@ public class InfoProvider extends AbstractCell {
 			return;
 		}
 
-		_log.trace( "Unable to handle incoming message: {}", msg);
+		_log.debug( "Unable to handle incoming message: {}", msg);
 	}
 
 	/**
@@ -292,7 +292,7 @@ public class InfoProvider extends AbstractCell {
 		try {
 			super.sendMessage(msg);
 		} catch( NoRouteToCellException e) {
-			_log.debug( "Cannot route message to cell, refraining from delivering msg.", e);
+			_log.info( "Cannot route message to cell, refraining from delivering msg.", e);
 		}
 	}
 
@@ -720,7 +720,7 @@ public class InfoProvider extends AbstractCell {
 	private void addSerialisedDataToMsg( InfoGetSerialisedDataMessage msg) {
 
 		if( _log.isInfoEnabled()) {
-                    _log.debug("Received InfoGetSerialisedDataMessage.");
+                    _log.info("Received InfoGetSerialisedDataMessage.");
                 }
 
 		StateSerialiser xmlSerialiser = _availableSerialisers.get( XmlSerialiser.NAME);

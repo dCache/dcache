@@ -1002,7 +1002,7 @@ public abstract class Job  {
         try {
             job.wlock();
             try {
-                logger.trace("expiring job id="+job.getId());
+                logger.debug("expiring job id="+job.getId());
                 if(job.state == State.READY ||
                 job.state == State.TRANSFERRING) {
                     job.setState(State.DONE,"lifetime expired");
@@ -1301,7 +1301,7 @@ public abstract class Job  {
                 if (scheduler != null) {
                     // code bellow is executed only in one SRM in the cluster
                     // the SRM that created this job
-                    logger.trace("notifySchedulerOfStateChange calls " +
+                    logger.debug("notifySchedulerOfStateChange calls " +
                             "scheduler.stateChanged()");
                     scheduler.stateChanged(this, oldState, newState);
                     // set schedulerId to null only in jvm

@@ -42,7 +42,7 @@ public class WebAdminInterfaceSession extends WebSession {
     }
 
     public boolean hasAnyRole(Roles roles) {
-        _log.trace("asking for available roles {}", roles);
+        _log.debug("asking for available roles {}", roles);
         if (!isSignedIn()) {
             return false;
         }

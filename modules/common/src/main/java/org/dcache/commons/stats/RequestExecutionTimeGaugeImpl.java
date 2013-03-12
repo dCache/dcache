@@ -108,7 +108,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     public synchronized void update(long nextExecTime) {
 
         if(nextExecTime <0) {
-            LOG.debug("possible backwards timeshift detected; discarding invalid data ({})",
+            LOG.info("possible backwards timeshift detected; discarding invalid data ({})",
                     nextExecTime);
             return;
         }

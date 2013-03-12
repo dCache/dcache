@@ -354,7 +354,7 @@ public class BroadcastCell extends CellAdapter {
             }
             if( event instanceof BroadcastRegisterMessage ){
                 BroadcastRegisterMessage reg = (BroadcastRegisterMessage)event ;
-                _log.debug("Message register : "+reg);
+                _log.info("Message register : "+reg);
                 synchronized( this ){
                     Entry entry = get( target , eventClass ) ;
                     if( entry == null ) {
@@ -371,7 +371,7 @@ public class BroadcastCell extends CellAdapter {
                 }
             }else if( event instanceof BroadcastUnregisterMessage ){
                 BroadcastUnregisterMessage unreg = (BroadcastUnregisterMessage)event ;
-                _log.debug("Message unregister : "+unreg);
+                _log.info("Message unregister : "+unreg);
 
                 unregister( target , eventClass ) ;
 
@@ -389,7 +389,7 @@ public class BroadcastCell extends CellAdapter {
         try {
             sendMessage(msg);
         }catch (NoRouteToCellException e) {
-            _log.trace("Could not send reply: {}", e.toString());
+            _log.debug("Could not send reply: {}", e.toString());
         }
     }
     @Override
@@ -406,7 +406,7 @@ public class BroadcastCell extends CellAdapter {
     }
     @Override
     public void messageArrived( CellMessage message ){
-        _log.debug("messageArrived : "+message);
+        _log.info("messageArrived : "+message);
         _received ++ ;
         if( _debug ){
             _debugging.messageArrived( message ) ;
@@ -434,16 +434,16 @@ public class BroadcastCell extends CellAdapter {
             }
             o = o.getSuperclass() ;
         }
-        _log.debug("Message arrived "+obj.getClass().getName());
+        _log.info("Message arrived "+obj.getClass().getName());
         for (Object aClass : classList) {
             String eventClass = aClass.toString();
-            //_log.debug("Checking :  "+eventClass);
+            //_log.info("Checking :  "+eventClass);
             forwardMessage(message, eventClass);
         }
     }
     @Override
     public void messageToForward( CellMessage message ){
-        _log.debug("FORWARD: "+message);
+        _log.info("FORWARD: "+message);
         _forwarded ++ ;
         Object obj = message.getMessageObject() ;
         if( ( obj != null ) && ( obj instanceof NoRouteToCellException ) ){
@@ -456,7 +456,7 @@ public class BroadcastCell extends CellAdapter {
     private synchronized void forwardMessage( CellMessage message , String classEvent ){
         Map<CellAddressCore, Entry> map = _eventClassMap.get(classEvent);
         if( map == null ){
-//            _log.debug("forwardMessage : Not found in eventClassMap : "+classEvent);
+//            _log.info("forwardMessage : Not found in eventClassMap : "+classEvent);
             return ;
         }
         List<Entry> list = new ArrayList<>() ;
@@ -484,7 +484,7 @@ public class BroadcastCell extends CellAdapter {
             //
             msg.getSourcePath().add(message.getSourcePath());
             try {
-                _log.trace("Forwarding to {}", origin);
+                _log.debug("Forwarding to {}", origin);
                 sendMessage(msg);
                 _sent++;
             } catch (NoRouteToCellException e) {
@@ -517,7 +517,7 @@ public class BroadcastCell extends CellAdapter {
             }
             for (Entry e : map.values()) {
                 if (e.isCancelOnFailure()) {
-                    _log.debug("Scheduling for cancelation : " + e);
+                    _log.info("Scheduling for cancelation : " + e);
                     list.add(e);
                 }
             }
@@ -544,13 +544,13 @@ public class BroadcastCell extends CellAdapter {
         private void messageArrived( CellMessage message ){
             Object obj = message.getMessageObject() ;
             if( _debugMode.equals("source") ){
-                _log.debug("MessageObject : "+obj ) ;
+                _log.info("MessageObject : "+obj ) ;
             }else if( _debugMode.equals("destination" ) ){
                 if( obj instanceof BroadcastCommandMessage ){
-                    _log.debug("Broadcast Message answer : "+obj ) ;
+                    _log.info("Broadcast Message answer : "+obj ) ;
                     return ;
                 }
-                _log.debug("Replying MessageObject : "+obj ) ;
+                _log.info("Replying MessageObject : "+obj ) ;
                 message.revertDirection() ;
                 try{
                     sendMessage(message);

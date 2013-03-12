@@ -134,28 +134,28 @@ public class      SshStreamEngine
    private void runClientProtocol()
            throws IOException ,
                   SshAuthenticationException {
-        _log.trace("Connected (client)");
+        _log.debug("Connected (client)");
         //
         // wait for the version string and check consistence
         //
         String version = readVersionString() ;
-        _log.trace("Received version: {}", version);
+        _log.debug("Received version: {}", version);
         //
         //  write the version string
         //
-        _log.trace("Sending our version: {}", __version);
+        _log.debug("Sending our version: {}", __version);
         writeString( __version ) ;
 
 
         client_loop() ;
-        _log.trace("Preparation Loop finished");
+        _log.debug("Preparation Loop finished");
 
    }
    private void runServerProtocol()
            throws IOException ,
                   SshAuthenticationException {
 
-        _log.trace("Connected (server)");
+        _log.debug("Connected (server)");
         //
         _remoteAddress = _socket.getInetAddress() ;
         //
@@ -167,7 +167,7 @@ public class      SshStreamEngine
         // wait for the version string and check consistence
         //
         String version = readVersionString() ;
-        _log.trace("Client has version: {}", version);
+        _log.debug("Client has version: {}", version);
         //
         // generate and send the public key message
         //
@@ -195,13 +195,13 @@ public class      SshStreamEngine
 
 
         server_loop() ;
-        _log.trace("Preparation Loop finished");
+        _log.debug("Preparation Loop finished");
    }
 
    public void close() throws IOException { close(0) ; }
 
    public void close(int val ) throws IOException {
-      _log.trace("close(closing={}; closed={})", _closing, _closed);
+      _log.debug("close(closing={}; closed={})", _closing, _closed);
       if( _mode == SERVER_MODE ){
           synchronized( _closeLock ){
              if( ( ! _closing ) && ( ! _closed ) ){
@@ -275,7 +275,7 @@ public class      SshStreamEngine
 	   return isActive;
    }
    void confirmed() throws IOException {
-      _log.trace("confirmed(closing={}; closed={})", _closing, _closed);
+      _log.debug("confirmed(closing={}; closed={})", _closing, _closed);
       if( _mode == SERVER_MODE ){
          synchronized( _closeLock ){
             if( !_closed && _closing ){
@@ -319,18 +319,18 @@ public class      SshStreamEngine
 
       while( ( packet = readPacket() ) != null  ){
          int packetType = packet.getType() ;
-         _log.trace("Packet arrived: "+packetType ) ;
+         _log.debug("Packet arrived: "+packetType ) ;
          switch(  packet.getType() ){
             case SshPacket.SSH_MSG_DISCONNECT :
-                _log.trace("SSH_MSG_DISCONNECT: not implemented");
+                _log.debug("SSH_MSG_DISCONNECT: not implemented");
                 return;
             case SshPacket.SSH_MSG_DEBUG : {
                     SshMsgDebug debug = new SshMsgDebug( packet ) ;
-                    _log.trace("SSH_MSG_DEBUG: {}",  debug.getMessage());
+                    _log.debug("SSH_MSG_DEBUG: {}",  debug.getMessage());
                 }
                 break;
             case SshPacket.SSH_SMSG_PUBLIC_KEY :  {
-                _log.trace("SSH_SMSG_PUBLIC_KEY received");
+                _log.debug("SSH_SMSG_PUBLIC_KEY received");
 
                 SshSmsgPublicKey publicKey = new SshSmsgPublicKey( packet ) ;
 
@@ -360,7 +360,7 @@ public class      SshStreamEngine
                    publicKey.getHostKey().encrypt(
                      publicKey.getServerKey().encrypt( remSessionKey ) ) ;
 
-                _log.trace("Sending SshCmsgSessionKey");
+                _log.debug("Sending SshCmsgSessionKey");
 
                 writePacket(
                    new SshCmsgSessionKey( SSH_CIPHER_IDEA ,
@@ -394,7 +394,7 @@ public class      SshStreamEngine
                byte [] cBytes = challenge.getMpInt() ;
 
                cBytes = identity.decrypt( cBytes ) ;
-               _log.trace("SSH_SMSG_AUTH_RSA_CHALLENGE received");
+               _log.debug("SSH_SMSG_AUTH_RSA_CHALLENGE received");
                try{
                   Md5 md5 = new Md5() ;
                   md5.update( cBytes ) ;
@@ -410,17 +410,17 @@ public class      SshStreamEngine
             case SshPacket.SSH_SMSG_SUCCESS :   {
               switch( state ){
                  case ST_SESSION_SEND :
-                   _log.trace("SSH_SMSG_SUCCESS on ST_SESSION_SEND");
+                   _log.debug("SSH_SMSG_SUCCESS on ST_SESSION_SEND");
                    writePacket( new SshCmsgUser( _clientAuth.getUser() ) ) ;
                    state = ST_USER_SEND ;
                    break;
                  case ST_RSA_RESPONSE :
-                   _log.trace("SSH_SMSG_SUCCESS on ST_RSA_RESPONSE");
+                   _log.debug("SSH_SMSG_SUCCESS on ST_RSA_RESPONSE");
                    writePacket( new SshCmsgExecShell(  ) ) ;
                    state = ST_INTERACTIVE ;
                    return;
                  case ST_TRY_PASSWORD_AUTH :
-                   _log.trace("SSH_SMSG_SUCCESS on ST_TRY_PASSWORD_AUTH");
+                   _log.debug("SSH_SMSG_SUCCESS on ST_TRY_PASSWORD_AUTH");
                    writePacket( new SshCmsgExecShell(  ) ) ;
                    state = ST_INTERACTIVE ;
                    return;
@@ -439,7 +439,7 @@ public class      SshStreamEngine
                  case ST_TRY_PASSWORD_AUTH :
                  case ST_USER_SEND :
                  {
-                   _log.trace("SSH_SMSG_FAILURE on {}", state);
+                   _log.debug("SSH_SMSG_FAILURE on {}", state);
                    //
                    // start rsa authentication
                    //
@@ -456,19 +456,19 @@ public class      SshStreamEngine
                               new SshCmsgAuthRsa( modulus , 0 , bits )
                                   ) ;
                        state  = ST_TRY_RSA_AUTH ;
-                       _log.trace("Sending ST_TRY_RSA_AUTH");
+                       _log.debug("Sending ST_TRY_RSA_AUTH");
                    }else if( method instanceof SshAuthRhostsRsa ){
                        identity = method.getKey() ;
                        writePacket(
                               new SshCmsgAuthRhostsRsa( method.getUser() , identity )
                                   ) ;
                        state  = ST_TRY_RHOSTS_RSA_AUTH ;
-                       _log.trace("Sending ST_TRY_RSA_RHOSTS_AUTH");
+                       _log.debug("Sending ST_TRY_RSA_RHOSTS_AUTH");
                    }else if( method instanceof SshAuthPassword ){
                        writePacket(
                               new SshCmsgAuthPassword( method.getUser() )
                                   ) ;
-                       _log.trace("Sending ST_TRY_PASSWORD_AUTH");
+                       _log.debug("Sending ST_TRY_PASSWORD_AUTH");
                        state  = ST_TRY_PASSWORD_AUTH ;
                    }else {
                        throw new SshProtocolException("Illegal class from Client");
@@ -504,16 +504,16 @@ public class      SshStreamEngine
 
          switch(  packet.getType() ){
             case SshPacket.SSH_MSG_DISCONNECT :
-               _log.trace("SSH_MSG_DISCONNECT");
+               _log.debug("SSH_MSG_DISCONNECT");
                return;
             case SshPacket.SSH_MSG_DEBUG : {
                SshMsgDebug debug = new SshMsgDebug( packet ) ;
-               _log.trace("SSH_MSG_DEBUG: {}", debug.getMessage());
+               _log.debug("SSH_MSG_DEBUG: {}", debug.getMessage());
                }
                break;
             case SshPacket.SSH_CMSG_AUTH_RSA : {
 
-               _log.trace("SSH_CMSG_AUTH_RSA");
+               _log.debug("SSH_CMSG_AUTH_RSA");
 
                SshCmsgAuthRsa rsa = new SshCmsgAuthRsa( packet ) ;
                //
@@ -528,7 +528,7 @@ public class      SshStreamEngine
                   writePacket( bad ) ;
                   break ;
                }
-               _log.trace("SSH_CMSG_AUTH_RSA: Key found");
+               _log.debug("SSH_CMSG_AUTH_RSA: Key found");
                //
                // we need to create the callenge,
                // encrypt it with the user key and send it back
@@ -548,7 +548,7 @@ public class      SshStreamEngine
             break ;
             case SshPacket.SSH_CMSG_AUTH_RHOSTS_RSA : {
 
-               _log.trace("SSH_CMSG_AUTH_RHOSTS_RSA");
+               _log.debug("SSH_CMSG_AUTH_RHOSTS_RSA");
 
                SshCmsgAuthRhostsRsa rsa = new SshCmsgAuthRhostsRsa( packet ) ;
                //
@@ -564,7 +564,7 @@ public class      SshStreamEngine
                   writePacket( bad ) ;
                   break ;
                }
-               _log.trace("SSH_CMSG_AUTH_RSA: Key found {}", hostKey);
+               _log.debug("SSH_CMSG_AUTH_RSA: Key found {}", hostKey);
                //
                // we need to create the callenge,
                // encrypt it with the user key and send it back
@@ -583,7 +583,7 @@ public class      SshStreamEngine
             break ;
             case SshPacket.SSH_CMSG_AUTH_RSA_RESPONSE : {
 
-               _log.trace("SSH_CMSG_AUTH_RSA_RESPONSE");
+               _log.debug("SSH_CMSG_AUTH_RSA_RESPONSE");
 
                SshCmsgAuthRsaResponse rsaresp = new SshCmsgAuthRsaResponse( packet ) ;
 
@@ -612,18 +612,18 @@ public class      SshStreamEngine
                     ( k < res.length ) && ( res[k] == response[k] ) ; k++ ) {
                }
                if( k == 16 ){
-                  _log.trace("SSH_CMSG_AUTH_RSA_RESPONSE: O.K." );
+                  _log.debug("SSH_CMSG_AUTH_RSA_RESPONSE: O.K." );
                   writePacket( ok ) ;
                   state  = ST_PREPARE ;
                }else{
-                  _log.trace("SSH_CMSG_AUTH_RSA_RESPONSE: failed" );
+                  _log.debug("SSH_CMSG_AUTH_RSA_RESPONSE: failed" );
                   writePacket( bad ) ;
                }
             }
             break ;
             case SshPacket.SSH_CMSG_SESSION_KEY :{
 
-                _log.trace("SSH_CMSG_SESSION_KEY");
+                _log.debug("SSH_CMSG_SESSION_KEY");
 
                if( state != ST_INIT ) {
                    throw new
@@ -650,7 +650,7 @@ public class      SshStreamEngine
             break ;
             case SshPacket.SSH_CMSG_USER : {
 
-               _log.trace("SSH_CMSG_USER: arrived");
+               _log.debug("SSH_CMSG_USER: arrived");
                if( state != ST_USER ) {
                    throw new
                            SshProtocolException("SSH_CMSG_USER in not USER state");
@@ -658,7 +658,7 @@ public class      SshStreamEngine
 
                SshCmsgUser user = new SshCmsgUser( packet ) ;
 
-                _log.trace("SSH_CMSG_USER: User = {}", user.getUser());
+                _log.debug("SSH_CMSG_USER: User = {}", user.getUser());
                 Principal principal = new UserNamePrincipal(user.getUser());
                 _remoteUser = new Subject();
                 _remoteUser.getPrincipals().add(principal);
@@ -673,7 +673,7 @@ public class      SshStreamEngine
             break ;
             case SshPacket.SSH_CMSG_AUTH_PASSWORD : {
 
-               _log.trace("SSH_CMSG_AUTH_PASSWORD: arrived");
+               _log.debug("SSH_CMSG_AUTH_PASSWORD: arrived");
                if( state != ST_AUTH ) {
                    throw new
                            SshProtocolException("SSH_CMSG_AUTH_PASSWORD in not ST_AUTH state");
@@ -702,7 +702,7 @@ public class      SshStreamEngine
                _height = requestPty.getHeight();
                _width = requestPty.getWidth();
                writePacket( ok ) ;
-               _log.trace("SSH_CMSG_REQUEST_PTY: o.k.");
+               _log.debug("SSH_CMSG_REQUEST_PTY: o.k.");
                break;
             case SshPacket.SSH_CMSG_WINDOW_SIZE :
                SshCmsgWindowSize requestWindowSize =
@@ -710,7 +710,7 @@ public class      SshStreamEngine
                _height = requestWindowSize.getHeight();
                _width = requestWindowSize.getWidth();
                writePacket( ok ) ;
-               _log.trace("SSH_CMSG_WINDOW_SIZE: o.k.");
+               _log.debug("SSH_CMSG_WINDOW_SIZE: o.k.");
                break;
             case SshPacket.SSH_CMSG_X11_REQUEST_FORWARDING :
                if( state != ST_PREPARE ) {
@@ -718,14 +718,14 @@ public class      SshStreamEngine
                            SshProtocolException("SSH_CMSG_X11_REQUEST_FORWARDING in not ST_PREPARE state");
                }
                writePacket( ok ) ;
-               _log.trace("SSH_CMSG_REQUEST_FORWARDING: o.k.");
+               _log.debug("SSH_CMSG_REQUEST_FORWARDING: o.k.");
                break;
             case SshPacket.SSH_CMSG_EXEC_SHELL :
                if( state != ST_PREPARE ) {
                    throw new
                            SshProtocolException("SSH_CMSG_EXEC_SHELL in not ST_PREPARE state");
                }
-               _log.trace("SSH_CMSG_EXEC_SHELL: o.k.");
+               _log.debug("SSH_CMSG_EXEC_SHELL: o.k.");
                state = ST_INTERACTIVE ;
                return ;
             case SshPacket.SSH_CMSG_EXEC_CMD :
@@ -733,11 +733,11 @@ public class      SshStreamEngine
                    throw new
                            SshProtocolException("SSH_CMSG_EXEC_CMD in not ST_PREPARE state");
                }
-               _log.trace("SSH_CMSG_EXEC_CMD: {}", new SshCmsgExecCmd(packet));
+               _log.debug("SSH_CMSG_EXEC_CMD: {}", new SshCmsgExecCmd(packet));
                state = ST_INTERACTIVE ;
                return ;
             case SshPacket.SSH_CMSG_EXIT_CONFORMATION :
-               _log.trace("SSH_CMSG_EXIT_CONFORMATION: o.k." );
+               _log.debug("SSH_CMSG_EXIT_CONFORMATION: o.k." );
                break ;
             case SshPacket.SSH_CMSG_STDIN_DATA :{
 

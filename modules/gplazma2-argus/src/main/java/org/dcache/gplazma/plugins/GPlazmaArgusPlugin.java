@@ -76,7 +76,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
      */
     public GPlazmaArgusPlugin(Properties properties) {
 
-        _log.trace(CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params, properties);
+        _log.debug(CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params, properties);
 
         try {
             PEPClientConfiguration pepConfiguration = initPepConfiguration(properties);
@@ -106,7 +106,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
         PEPClientConfiguration pepConfig = new PEPClientConfiguration();
 
-        _log.trace(INITIALISING_PEP_CLIENT_CONFIGURATION);
+        _log.debug(INITIALISING_PEP_CLIENT_CONFIGURATION);
 
         pepConfig.addPEPDaemonEndpoint(getProperty(properties, PEP_ENDPOINT));
         _resourceId = getProperty(properties, RESOURCE_ID);
@@ -119,7 +119,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
         pepConfig.setTrustMaterial(trustMaterial);
         pepConfig.setKeyMaterial(hostCert, hostKey, keyPass);
 
-        _log.trace(CONFIGURATION_resourceid_actionid, _resourceId, _actionId);
+        _log.debug(CONFIGURATION_resourceid_actionid, _resourceId, _actionId);
 
         return pepConfig;
     }
@@ -148,11 +148,11 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
             for (Principal principal : globusPrincipals) {
                 dn = principal.getName();
 
-                _log.debug(AUTHORISING_SUBJECT_dn, dn);
+                _log.info(AUTHORISING_SUBJECT_dn, dn);
                 Request request = ArgusPepRequestFactory.create(dn, _resourceId, _actionId, GridWNAuthorizationProfile.getInstance());
-                _log.trace(CREATED_REQUEST_request, request);
+                _log.debug(CREATED_REQUEST_request, request);
                 Response response = _pepClient.authorize(request);
-                _log.trace(RECEIVED_RESPONSE_response, response);
+                _log.debug(RECEIVED_RESPONSE_response, response);
 
                 for (Result result : response.getResults()) {
                     decision = result.getDecision();
@@ -169,7 +169,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
             _log.warn(BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN, dn ,e);
             throw new AuthenticationException("check failed", e);
         } finally {
-            _log.debug(DECISION_CODE_code, decision);
+            _log.info(DECISION_CODE_code, decision);
         }
     }
 }

@@ -31,7 +31,7 @@ public class PoolMoverKillMessageGenerator
         if (targetPool == null) {
             throw new IllegalArgumentException();
         }
-        _log.trace("Generating killmessages for pool {} jobids {}",
+        _log.debug("Generating killmessages for pool {} jobids {}",
                 targetPool, jobIds);
         _numberOfMessages = jobIds.size();
         createMessages(targetPool, jobIds);

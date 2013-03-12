@@ -168,7 +168,7 @@ public class StateUpdate {
 	protected void updateTransition( StateComposite top, StateTransition transition) throws BadStatePathException {
 		BadStatePathException caughtThis = null;
 
-		_log.trace( "preparing transition with " + _purge.size() + " purge and " + _updates.size() + " update");
+		_log.debug( "preparing transition with " + _purge.size() + " purge and " + _updates.size() + " update");
 
 		for( StatePath path : _purge) {
                     top.buildPurgeTransition(transition, null, path);
@@ -177,7 +177,7 @@ public class StateUpdate {
 		for( StateUpdateInstance update : _updates) {
 
 			if( _log.isDebugEnabled()) {
-                            _log.trace("preparing transition to alter " + update
+                            _log.debug("preparing transition to alter " + update
                                     ._path.toString());
                         }
 

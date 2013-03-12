@@ -55,7 +55,7 @@ public class BasicNavigationPanel extends BasePanel {
     public BasicNavigationPanel(String id, Class currentPage) {
         super(id);
         _currentPage = currentPage;
-        _log.trace(currentPage.getSimpleName());
+        _log.debug(currentPage.getSimpleName());
         add(new LinkListView<Class>("linkList", _linkList));
     }
 

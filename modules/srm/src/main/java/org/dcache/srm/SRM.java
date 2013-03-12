@@ -240,14 +240,14 @@ public class SRM {
         // so we do it before everything else
 
         if (configuration.getMaxQueuedJdbcTasksNum() != null) {
-            logger.trace("setMaxJdbcTasksNum to " +
+            logger.debug("setMaxJdbcTasksNum to " +
                     configuration.getMaxQueuedJdbcTasksNum());
             JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
                     configuration.getMaxQueuedJdbcTasksNum());
         }
 
         if (configuration.getJdbcExecutionThreadNum() != null) {
-            logger.trace("set JDBC ExecutionThreadNum to " +
+            logger.debug("set JDBC ExecutionThreadNum to " +
                     configuration.getJdbcExecutionThreadNum());
             JdbcConnectionPool.setExecutionThreadNum(
                     configuration.getJdbcExecutionThreadNum());
@@ -282,7 +282,7 @@ public class SRM {
         host = InetAddress.getLocalHost();
 
         configuration.addSrmHost(host.getCanonicalHostName());
-        logger.trace("srm started :\n\t" + configuration.toString());
+        logger.debug("srm started :\n\t" + configuration.toString());
     }
 
     /**
@@ -411,7 +411,7 @@ public class SRM {
 
         @Override
         public void AdvisoryDeleteSuccesseded() {
-            logger.trace(" advisoryDelete(" + user + "," + surl + ") AdvisoryDeleteSuccesseded");
+            logger.debug(" advisoryDelete(" + user + "," + surl + ") AdvisoryDeleteSuccesseded");
             done();
         }
 
@@ -470,7 +470,7 @@ public class SRM {
      * this srm method is not implemented
      */
     public void advisoryDelete(final SRMUser user, RequestCredential credential, String[] SURLS) {
-        logger.trace("SRM.advisoryDelete");
+        logger.debug("SRM.advisoryDelete");
         if (user == null) {
             String error = "advisoryDelete: user is unknown," +
                     " user needs authorization to delete ";
@@ -562,7 +562,7 @@ public class SRM {
                 sb.append("to_urls[").append(j).append("]=").append(to_urls[j]).append(",");
             }
             sb.append(")");
-            logger.trace(sb.toString());
+            logger.debug(sb.toString());
 
             if (src_num != dst_num) {
                 return createFailedRequestStatus(
@@ -583,11 +583,11 @@ public class SRM {
             }
             long lifetime = configuration.getCopyLifetime();
             if (cred_lifetime < lifetime) {
-                logger.trace("credential lifetime is less than default lifetime, using credential lifetime =" + cred_lifetime);
+                logger.debug("credential lifetime is less than default lifetime, using credential lifetime =" + cred_lifetime);
                 lifetime = cred_lifetime;
             }
             // create a request object
-            logger.trace("calling Request.createCopyRequest()");
+            logger.debug("calling Request.createCopyRequest()");
             ContainerRequest r = new CopyRequest(
                     user,
                     credential.getId(),
@@ -603,13 +603,13 @@ public class SRM {
                     null, null,
                     client_host,
                     null);
-            logger.trace(" Copy Request = " + r);
+            logger.debug(" Copy Request = " + r);
             // RequesScheduler will take care of the rest
             r.schedule();
 
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
-            logger.trace(" copy returns RequestStatus = " + rs);
+            logger.debug(" copy returns RequestStatus = " + rs);
             return rs;
         } catch (Exception e) {
             logger.error(e.toString());
@@ -638,7 +638,7 @@ public class SRM {
             String client_host) {
         // create a request object
         try {
-            logger.trace("get(): user = " + user);
+            logger.debug("get(): user = " + user);
             String[] supportedProtocols = storage.supportedGetProtocols();
             boolean foundMatchedProtocol = false;
             for (String supportedProtocol : supportedProtocols) {
@@ -671,7 +671,7 @@ public class SRM {
             //getGetRequestScheduler().add(r);
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
-            logger.trace("get() initial RequestStatus = " + rs);
+            logger.debug("get() initial RequestStatus = " + rs);
             return rs;
         } catch (Exception e) {
             logger.error(e.toString());
@@ -713,7 +713,7 @@ public class SRM {
         sb.append("getFileMetaData(");
         if (SURLS == null) {
             sb.append("SURLS are null)");
-            logger.trace(sb.toString());
+            logger.debug(sb.toString());
             throw new IllegalArgumentException(sb.toString());
         }
 
@@ -722,18 +722,18 @@ public class SRM {
             sb.append(surl).append(",");
         }
         sb.append(")");
-        logger.trace(sb.toString());
+        logger.debug(sb.toString());
 
         FileMetaData[] fmds = new FileMetaData[len];
         // call getFileMetaData(String path) for each SURL in array
         for (int i = 0; i < len; ++i) {
             try {
                 URI surl = new URI(SURLS[i]);
-                logger.trace("getFileMetaData(String[]) calling FileMetaData({})", surl);
+                logger.debug("getFileMetaData(String[]) calling FileMetaData({})", surl);
                 FileMetaData fmd = storage.getFileMetaData(user, surl, false);
                 fmd.SURL = SURLS[i];
                 fmds[i] = new FileMetaData(fmd);
-                logger.trace("FileMetaData[" + i + "]=" + fmds[i]);
+                logger.debug("FileMetaData[" + i + "]=" + fmds[i]);
             } catch (Exception e) {
                 logger.error("getFileMetaData failed to parse SURL: " + e);
                 throw new IllegalArgumentException("getFileMetaData failed to parse SURL: " + e);
@@ -764,19 +764,19 @@ public class SRM {
      * @return request status assosiated with this request
      */
     public RequestStatus getRequestStatus(SRMUser user, RequestCredential credential, int requestId) {
-        logger.trace(" getRequestStatus(" + user + "," + requestId + ")");
+        logger.debug(" getRequestStatus(" + user + "," + requestId + ")");
         try {
             // Try to get the request with such id
-            logger.trace("getRequestStatus() Request.getRequest(" + requestId + ");");
+            logger.debug("getRequestStatus() Request.getRequest(" + requestId + ");");
             ContainerRequest r = Job.getJob((long) requestId, ContainerRequest.class);
-            logger.trace("getRequestStatus() received Request  ");
+            logger.debug("getRequestStatus() received Request  ");
             if (r != null) {
                 // we found one make sure it is the same  user
                 SRMUser requestUser = r.getUser();
                 if (requestUser == null || requestUser.equals(user)) {
                     // and return the request status
                     RequestStatus rs = r.getRequestStatus();
-                    logger.trace("obtained request status, returning rs for request id=" + requestId);
+                    logger.debug("obtained request status, returning rs for request id=" + requestId);
                     return rs;
                 } else {
                     return createFailedRequestStatus("getRequestStatus(): request #" + requestId +
@@ -932,7 +932,7 @@ public class SRM {
     public RequestStatus setFileStatus(SRMUser user, RequestCredential credential,
             int requestId, int fileRequestId, String state) {
         try {
-            logger.trace(" setFileStatus(" + requestId + "," + fileRequestId + "," + state + ");");
+            logger.debug(" setFileStatus(" + requestId + "," + fileRequestId + "," + state + ");");
             if (!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running")) {
                 return createFailedRequestStatus("setFileStatus(): incorrect state " + state);
             }
@@ -955,7 +955,7 @@ public class SRM {
             synchronized (fr) {
                 State s = fr.getState();
                 if (s.isFinalState()) {
-                    logger.trace("can not set status, the file status is already " + s);
+                    logger.debug("can not set status, the file status is already " + s);
                 } else {
                     if (state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
                             (s == State.READY || s == State.RUNNING)) {
@@ -975,7 +975,7 @@ public class SRM {
                     } else {
 
                         // process request
-                        logger.trace(" calling fr.setStatus(\"" + state + "\")");
+                        logger.debug(" calling fr.setStatus(\"" + state + "\")");
                         fr.setStatus(state);
                     }
                 }
@@ -1380,7 +1380,7 @@ public class SRM {
         for (Long requestId : activeRequestIds) {
             Matcher m = p.matcher(requestId.toString());
             if (m.matches()) {
-                logger.trace("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
+                logger.debug("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
                 jobsToKill.add(requestId);
             }
         }

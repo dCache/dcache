@@ -81,11 +81,11 @@ public class SrmAbortFiles {
         try {
             response = srmAbortFiles();
         } catch(URISyntaxException mue) {
-            logger.trace(" malformed uri : "+mue.getMessage());
+            logger.debug(" malformed uri : "+mue.getMessage());
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMInvalidRequestException ire) {
-            logger.trace(" invalid request : "+ire.getMessage());
+            logger.debug(" invalid request : "+ire.getMessage());
             response = getFailedResponse(" invalid request : "+ire.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {

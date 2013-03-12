@@ -315,7 +315,7 @@ public class CacheRepositoryV5
          * generated to prepopulate the cache. That may take some
          * time. Therefore we do this outside the synchronization.
          */
-        _log.info("Reading inventory from {}", _store);
+        _log.warn("Reading inventory from " + _store);
         MetaDataCache cache = new MetaDataCache(_store);
 
         synchronized (this) {
@@ -338,7 +338,7 @@ public class CacheRepositoryV5
             }
 
             List<PnfsId> ids = new ArrayList<>(_store.list());
-            _log.debug("Found {} data files", ids.size());
+            _log.info("Found {} data files", ids.size());
 
             /* On some file systems (e.g. GPFS) stat'ing files in
              * lexicographic order seems to trigger the pre-fetch
@@ -348,21 +348,21 @@ public class CacheRepositoryV5
 
             /* Collect all entries.
              */
-            _log.debug("Checking meta data for {} files", ids.size());
+            _log.info("Checking meta data for {} files", ids.size());
             long usedDataSpace = 0L;
             List<MetaDataRecord> entries = new ArrayList<>();
             for (PnfsId id: ids) {
                 MetaDataRecord entry = readMetaDataRecord(id);
                 if (entry != null)  {
                     usedDataSpace += entry.getSize();
-                    _log.trace("{} {}", id, entry.getState());
+                    _log.debug("{} {}", id, entry.getState());
                     entries.add(entry);
                 }
             }
 
             /* Allocate space.
              */
-            _log.debug("Pool contains {} bytes of data", usedDataSpace);
+            _log.info("Pool contains {} bytes of data", usedDataSpace);
             Account account = _account;
             synchronized (account) {
                 account.setTotal(usedDataSpace);
@@ -379,13 +379,13 @@ public class CacheRepositoryV5
                 /* Register with event listeners in LRU order. The
                  * sweeper relies on the LRU order.
                  */
-                _log.debug("Registering files in sweeper");
+                _log.info("Registering files in sweeper");
                 Collections.sort(entries, new MetaDataLRUOrder());
                 for (MetaDataRecord entry: entries) {
                     stateChanged(entry, NEW, entry.getState());
                 }
 
-                _log.debug(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
+                _log.info(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
                                         entries.size(), _account.getTotal(),
                                         usedDataSpace, _account.getFree()));
 
@@ -394,7 +394,7 @@ public class CacheRepositoryV5
 
             /* Register sticky timeouts.
              */
-            _log.debug("Registering sticky bits");
+            _log.info("Registering sticky bits");
             for (MetaDataRecord entry: entries) {
                 synchronized (entry) {
                     if (entry.isSticky()) {
@@ -410,7 +410,7 @@ public class CacheRepositoryV5
             }
         }
 
-        _log.debug("Done generating inventory");
+        _log.info("Done generating inventory");
 
         if (getPeriodicChecks()) {
             CheckHealthTask task = new CheckHealthTask(this);
@@ -865,7 +865,7 @@ public class CacheRepositoryV5
 
             if (state == REMOVED) {
                 if (_log.isInfoEnabled()) {
-                    _log.debug("remove entry for: " + entry.getPnfsId().toString());
+                    _log.info("remove entry for: " + entry.getPnfsId().toString());
                 }
 
                 PnfsId id = entry.getPnfsId();
@@ -1167,7 +1167,7 @@ public class CacheRepositoryV5
             long newSize =
                 Math.max(used, Math.min(configuredMaxSize, fileSystemMaxSize));
             if (newSize != account.getTotal()) {
-                _log.debug("Adjusting pool size to " + newSize);
+                _log.info("Adjusting pool size to " + newSize);
                 account.setTotal(newSize);
             }
         }

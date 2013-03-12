@@ -127,7 +127,7 @@ public class DAOFactoryImpl implements DAOFactory {
     @Override
     public void setDefaultCommandSenderFactory(
                     CommandSenderFactory commandSenderFactory) {
-        _log.trace("DefaultCommandSenderFactory set {}",
+        _log.debug("DefaultCommandSenderFactory set {}",
                         commandSenderFactory.toString());
         _defaultCommandSenderFactory = commandSenderFactory;
     }
@@ -137,7 +137,7 @@ public class DAOFactoryImpl implements DAOFactory {
     }
 
     public void setPageCache(PageInfoCache pageCache) {
-        _log.trace("PageCache set {}", pageCache);
+        _log.debug("PageCache set {}", pageCache);
         _pageCache = pageCache;
     }
 

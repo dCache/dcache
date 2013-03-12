@@ -186,13 +186,13 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             logger.error("srmPutDone return status is null");
             return;
         }
-        logger.trace("srmPutDone status code="+returnStatus.getStatusCode());
+        logger.debug("srmPutDone status code="+returnStatus.getStatusCode());
     }
 
     @Override
     public void getInitialRequest() throws SRMException {
         if(number_of_file_reqs == 0) {
-            logger.trace("number_of_file_reqs is 0, nothing to do");
+            logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -251,7 +251,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     @Override
     public void run() {
         if(number_of_file_reqs == 0) {
-            logger.trace("number_of_file_reqs is 0, nothing to do");
+            logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -272,7 +272,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                         statusCode+" explanation="+status.getExplanation());
             }
             requestToken = srmPrepareToPutResponse.getRequestToken();
-            logger.trace(" srm returned requestToken = "+requestToken+" one of remote surls = "+SURLs[0]);
+            logger.debug(" srm returned requestToken = "+requestToken+" one of remote surls = "+SURLs[0]);
 
             ArrayOfTPutRequestFileStatus arrayOfTPutRequestFileStatus =
                 srmPrepareToPutResponse.getArrayOfFileStatuses();
@@ -340,7 +340,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 }
 
                 if(pendingSurlsToIndex.isEmpty()) {
-                    logger.trace("no more pending transfers, breaking the loop");
+                    logger.debug("no more pending transfers, breaking the loop");
                     break;
                 }
                 // do not wait longer then 60 seconds
@@ -349,7 +349,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 }
                 try {
 
-                    logger.trace("sleeping "+estimatedWaitInSeconds+" seconds ...");
+                    logger.debug("sleeping "+estimatedWaitInSeconds+" seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 }
                 catch(InterruptedException ie) {
@@ -477,6 +477,6 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             logger.error("srmPutDone return status is null");
             return;
         }
-        logger.trace("srmPutDone status code="+returnStatus.getStatusCode());
+        logger.debug("srmPutDone status code="+returnStatus.getStatusCode());
     }
 }

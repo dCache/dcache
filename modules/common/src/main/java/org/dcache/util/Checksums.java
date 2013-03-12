@@ -50,11 +50,11 @@ public class Checksums
                         return new Checksum(ChecksumType.MD5_TYPE, bytes);
 
                     default:
-                        _log.trace("Unsupported checksum type {}", type);
+                        _log.debug("Unsupported checksum type {}", type);
                         return null;
                     }
                 } catch(IllegalArgumentException e) {
-                    _log.trace("Value \"{}\" is invalid for type {}", value,
+                    _log.debug("Value \"{}\" is invalid for type {}", value,
                             type);
                     return null;
                 }

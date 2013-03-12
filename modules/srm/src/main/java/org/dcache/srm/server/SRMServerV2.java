@@ -224,14 +224,14 @@ public class SRMServerV2 implements ISRM  {
                     Character.toUpperCase(requestName.charAt(0))+
                     requestName.substring(1);
             try {
-                log.trace("Entering SRMServerV2."+requestName+"()");
+                log.debug("Entering SRMServerV2."+requestName+"()");
                 String authorizationID;
                 try {
                     Method getAuthorizationID =
                             requestClass.getMethod("getAuthorizationID",(Class[])null);
                     if(getAuthorizationID !=null) {
                         authorizationID = (String)getAuthorizationID.invoke(request,(Object[])null);
-                        log.trace("SRMServerV2."+requestName+"() : authorization id"+authorizationID);
+                        log.debug("SRMServerV2."+requestName+"() : authorization id"+authorizationID);
                     }
                 } catch(Exception e){
                     log.error("getting authorization id failed",e);
@@ -249,19 +249,19 @@ public class SRMServerV2 implements ISRM  {
                         = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
                                         pkiVerifier);
                     String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
-                    log.trace("SRMServerV2."+requestName+"() : role is "+role);
+                    log.debug("SRMServerV2."+requestName+"() : role is "+role);
                     requestCredential = srmAuth.getRequestCredential(userCred,role);
                     user              = srmAuth.getRequestUser(
                         requestCredential,
                             null,
                         userCred.context);
                 } catch (SRMAuthorizationException sae) {
-                    log.debug("SRM Authorization failed: {}", sae.getMessage());
+                    log.info("SRM Authorization failed: {}", sae.getMessage());
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_AUTHENTICATION_FAILURE,
                             "SRM Authentication failed");
                 }
-                log.trace("About to call SRMServerV2"+requestName+"()");
+                log.debug("About to call SRMServerV2"+requestName+"()");
                 Class<?> handlerClass;
                 Constructor<?> handlerConstructor;
                 Object handler;
@@ -285,9 +285,9 @@ public class SRMServerV2 implements ISRM  {
                     handleGetResponseMethod = handlerClass.getMethod("getResponse",(Class[])null);
                 } catch(ClassNotFoundException e) {
                     if( log.isDebugEnabled() ) {
-                        log.trace("handler discovery and dinamic load failed", e);
+                        log.debug("handler discovery and dinamic load failed", e);
                     }else{
-                        log.debug("handler discovery and dinamic load failed");
+                        log.info("handler discovery and dinamic load failed");
                     }
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_NOT_SUPPORTED,

@@ -53,7 +53,7 @@ public class OperationDESTROY_SESSION extends AbstractNFSv4Operation {
              * remove client if there is not sessions any more
              */
             if (client.sessions().isEmpty()) {
-                _log.trace("remove client: no sessions any more");
+                _log.debug("remove client: no sessions any more");
                 context.getStateHandler().removeClient(client);
             }
 

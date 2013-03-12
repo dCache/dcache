@@ -93,14 +93,14 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	protected void addItems( StateUpdate update, StatePath parentPath,
 							Object[] items, long metricLifetime) {
 		if( _log.isDebugEnabled()) {
-                    _log.trace("appending list-items under " + parentPath);
+                    _log.debug("appending list-items under " + parentPath);
                 }
 
             for (Object item : items) {
                 String listItem = (String) item;
 
                 if (_log.isDebugEnabled()) {
-                    _log.trace("    adding item " + listItem);
+                    _log.debug("    adding item " + listItem);
                 }
 
                 update.appendUpdate(parentPath
@@ -116,7 +116,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	 */
 	protected void applyUpdates( StateUpdate update) {
 		if( _log.isDebugEnabled()) {
-                    _log.trace("adding update to state's to-do stack with " + update
+                    _log.debug("adding update to state's to-do stack with " + update
                             .count() + " updates for " + this.getClass()
                             .getSimpleName());
                 }
@@ -143,7 +143,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		}
 
 		if( _log.isDebugEnabled()) {
-                    _log.trace("incoming CellMessage received from " + answer
+                    _log.debug("incoming CellMessage received from " + answer
                             .getSourcePath());
                 }
 
@@ -155,7 +155,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		 */
 		if( payload instanceof Exception) {
 			Exception e = (Exception) payload;
-			_log.debug( "received exception: " + e.getMessage());
+			_log.info( "received exception: " + e.getMessage());
 			return;
 		}
 
@@ -178,7 +178,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	@Override
         public void exceptionArrived( CellMessage request , Exception   exception ) {
         if( exception instanceof NoRouteToCellException) {
-            _log.debug( "Sending message to {} failed: {}",
+            _log.info( "Sending message to {} failed: {}",
                     ((NoRouteToCellException)exception).getDestinationPath(),
                     exception.getMessage());
         } else {
@@ -191,7 +191,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	 */
 	@Override
         public void answerTimedOut( CellMessage request) {
-		_log.debug("Message timed out");
+		_log.info("Message timed out");
 		_msgMetadataRepo.remove( request.getLastUOID());
 	}
 }

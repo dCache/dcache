@@ -91,7 +91,7 @@ public class SEMsgPlugin implements Plugin
                 _log.error("call to command failed: rc={}", rc);
             }
         } catch (InterruptedException e) {
-            _log.trace("Interrupted while sending notification");
+            _log.debug("Interrupted while sending notification");
         } catch (IOException e) {
             _log.error("{}", e.getMessage());
         }
@@ -124,7 +124,7 @@ public class SEMsgPlugin implements Plugin
 
         ProcessBuilder builder = new ProcessBuilder(args);
 
-        _log.trace("Command: {}", builder.command());
+        _log.debug("Command: {}", builder.command());
 
         Map<String,String> envar = builder.environment();
         envar.put("X509_USER_CERT", _certificatePath);

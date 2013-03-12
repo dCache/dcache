@@ -304,7 +304,7 @@ public class ChecksumScanner
             }
 
             if (PnfsId.isValid(fields[1])) {
-                _log.trace("Resuming scrubbing from the first file with a pnfs id greater than {}",
+                _log.debug("Resuming scrubbing from the first file with a pnfs id greater than {}",
                            fields[1]);
                 _lastFileChecked = new PnfsId(fields[1]);
             } else if (!fields[1].equals("-")) {
@@ -348,7 +348,7 @@ public class ChecksumScanner
             try {
                 while (true) {
                     if (isFinished) {
-                        _log.trace("Next scrub start is {}",
+                        _log.debug("Next scrub start is {}",
                              new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").
                                  format(new Date(_lastStart +
                                                  _csm.getScrubPeriod())));
@@ -382,7 +382,7 @@ public class ChecksumScanner
                     }
                 }
             } finally {
-                _log.trace("Stopping scrubber");
+                _log.debug("Stopping scrubber");
                 saveState();
             }
         }

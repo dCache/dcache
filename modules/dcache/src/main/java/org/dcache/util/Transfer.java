@@ -228,7 +228,7 @@ public class Transfer implements Comparable<Transfer>
     public synchronized void setStatus(String status)
     {
         if (status != null) {
-            _log.trace("Status: {}", status);
+            _log.debug("Status: {}", status);
         }
         _status = status;
     }
@@ -875,7 +875,7 @@ public class Transfer implements Comparable<Transfer>
         } catch (CacheException e) {
             // Not surprising that the pool reported a failure
             // when we killed the mover.
-            _log.trace("Killed mover and pool reported: " +
+            _log.debug("Killed mover and pool reported: " +
                        e.getMessage());
         } catch (InterruptedException e) {
             _log.warn("Failed to kill mover " + pool + "/" + moverId
@@ -1004,7 +1004,7 @@ public class Transfer implements Comparable<Transfer>
                 case CacheException.OUT_OF_DATE:
                 case CacheException.POOL_DISABLED:
                 case CacheException.FILE_NOT_IN_REPOSITORY:
-                    _log.debug("Retrying pool selection: {}", e.getMessage());
+                    _log.info("Retrying pool selection: {}", e.getMessage());
                     if (!isWrite()) {
                         readNameSpaceEntry();
                     }

@@ -244,7 +244,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         String poolName = message.getPoolName();
 
-        _log.trace("NFS mover ready: {}", poolName);
+        _log.debug("NFS mover ready: {}", poolName);
 
         InetSocketAddress[] poolAddress = message.socketAddresses();
         PoolDS device = _poolNameToIpMap.get(poolName);
@@ -269,7 +269,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             _poolNameToIpMap.put(poolName, device);
             _deviceMap.put(deviceid, device);
-            _log.trace("new mapping: {}", device);
+            _log.debug("new mapping: {}", device);
         }
 
         stateid4 stateid = message.challange();
@@ -281,7 +281,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
-        _log.trace("Mover {} done.", protocolInfo.stateId());
+        _log.debug("Mover {} done.", protocolInfo.stateId());
         Transfer transfer = _ioMessages.remove(protocolInfo.stateId());
         if(transfer != null) {
             transfer.finished(transferFinishedMessage);
@@ -391,15 +391,15 @@ public class NFSv41Door extends AbstractCellComponent implements
 
 
         if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !transfer.getStorageInfo().isCreatedOnly()) {
-            _log.trace("looking for read pool for {}", transfer.getPnfsId());
+            _log.debug("looking for read pool for {}", transfer.getPnfsId());
             transfer.setWrite(false);
         } else {
-            _log.trace("looking for write pool for {}", transfer.getPnfsId());
+            _log.debug("looking for write pool for {}", transfer.getPnfsId());
             transfer.setWrite(true);
         }
         transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
 
-        _log.trace("mover ready: pool={} moverid={}", transfer.getPool(),
+        _log.debug("mover ready: pool={} moverid={}", transfer.getPool(),
                 transfer.getMoverId());
 
         /*
@@ -431,10 +431,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Override
     public void  layoutReturn(NFS4Client client, stateid4 stateid) {
 
-        _log.trace("Releasing device by stateid: {}", stateid);
+        _log.debug("Releasing device by stateid: {}", stateid);
         Transfer transfer = _ioMessages.get(stateid);
         if (transfer != null) {
-            _log.trace("Sending KILL to {}@{}", transfer.getMoverId(), transfer.getPool());
+            _log.debug("Sending KILL to {}@{}", transfer.getMoverId(), transfer.getPool());
             transfer.killMover(5000);
         }
     }

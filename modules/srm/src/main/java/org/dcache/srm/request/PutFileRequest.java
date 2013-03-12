@@ -327,7 +327,7 @@ public final class PutFileRequest extends FileRequest {
             rfs.state = "Pending";
         }
 
-        logger.trace(" returning requestFileStatus for "+this.toString());
+        logger.debug(" returning requestFileStatus for "+this.toString());
         return rfs;
     }
 
@@ -516,7 +516,7 @@ public final class PutFileRequest extends FileRequest {
                 if( getAccessLatency() == null && getParentFmd() != null && getParentFmd().retentionPolicyInfo != null ) {
                     setAccessLatency(getParentFmd().retentionPolicyInfo.getAccessLatency());
                 }
-                logger.trace("reserving space, size="+(getSize()==0?1L:getSize()));
+                logger.debug("reserving space, size="+(getSize()==0?1L:getSize()));
                     getStorage().srmReserveSpace(
                     getUser(),
                     getSize()==0?1L:getSize(),
@@ -540,7 +540,7 @@ public final class PutFileRequest extends FileRequest {
                                     callbacks );
                 return;
             }
-            logger.trace("run() returns, scheduler should bring file request into the ready state eventually");
+            logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
         }
         catch(SRMException | IllegalStateTransition e) {
             throw new FatalJobFailure("cannot prepare to put: " + e.getMessage());
@@ -551,7 +551,7 @@ public final class PutFileRequest extends FileRequest {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.trace("State changed from "+oldState+" to "+getState());
+        logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
                 getRequest().resetRetryDeltaTime();
@@ -567,7 +567,7 @@ public final class PutFileRequest extends FileRequest {
              return;
          }
         if(State.isFinalState(state)) {
-            logger.trace("space reservation is "+getSpaceReservationId());
+            logger.debug("space reservation is "+getSpaceReservationId());
 
             if ( getSpaceReservationId() != null &&
                  isSpaceMarkedAsBeingUsed() ) {
@@ -578,7 +578,7 @@ public final class PutFileRequest extends FileRequest {
 
             }
             if(getSpaceReservationId() != null && isWeReservedSpace()) {
-                logger.trace("storage.releaseSpace("+getSpaceReservationId()+"\"");
+                logger.debug("storage.releaseSpace("+getSpaceReservationId()+"\"");
                 SrmReleaseSpaceCallbacks callbacks =
                         new PutReleaseSpaceCallbacks(this.getId());
                 getStorage().srmReleaseSpace(  user,getSpaceReservationId(),
@@ -854,10 +854,10 @@ public final class PutFileRequest extends FileRequest {
         public void StorageInfoArrived(String fileId,FileMetaData fmd,String parentFileId, FileMetaData parentFmd) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                logger.trace("StorageInfoArrived: FileId:"+fileId);
+                logger.debug("StorageInfoArrived: FileId:"+fileId);
                 State state = fr.getState();
                 if(state == State.ASYNCWAIT) {
-                    logger.trace("PutCallbacks StorageInfoArrived for file "+fr.getSurlString());
+                    logger.debug("PutCallbacks StorageInfoArrived for file "+fr.getSurlString());
                     fr.setFileId(fileId);
                     fr.setFmd(fmd);
                     fr.setParentFileId(parentFileId);
@@ -999,13 +999,13 @@ public final class PutFileRequest extends FileRequest {
         public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                logger.trace("Space Reserved: spaceReservationToken:"+spaceReservationToken);
+                logger.debug("Space Reserved: spaceReservationToken:"+spaceReservationToken);
                 State state;
                 synchronized(fr) {
                     state = fr.getState();
                 }
                 if(state == State.ASYNCWAIT) {
-                    logger.trace("PutReserveSpaceCallbacks Space Reserved for file "+fr.getSurlString());
+                    logger.debug("PutReserveSpaceCallbacks Space Reserved for file "+fr.getSurlString());
                     fr.setWeReservedSpace(true);
                     fr.setSpaceReservationId(spaceReservationToken);
                     Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
@@ -1061,7 +1061,7 @@ public final class PutFileRequest extends FileRequest {
         public void SpaceReleased(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                logger.trace("Space Released: spaceReservationToken:"+spaceReservationToken+" remaining space="+reservedSpaceSize);
+                logger.debug("Space Released: spaceReservationToken:"+spaceReservationToken+" remaining space="+reservedSpaceSize);
             } catch(Exception e) {
                 logger.error(e.toString());
             }
@@ -1209,10 +1209,10 @@ public final class PutFileRequest extends FileRequest {
         public void SpaceUsed() {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                logger.trace("Space Marked as Being Used");
+                logger.debug("Space Marked as Being Used");
                 State state = fr.getState();
                 if(state == State.ASYNCWAIT) {
-                    logger.trace("PutUseSpaceCallbacks Space Marked as Being Used for file "+fr.getSurlString());
+                    logger.debug("PutUseSpaceCallbacks Space Marked as Being Used for file "+fr.getSurlString());
                     fr.setSpaceMarkedAsBeingUsed(true);
                     Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                     try {
@@ -1266,7 +1266,7 @@ public final class PutFileRequest extends FileRequest {
         public void UseOfSpaceSpaceCanceled() {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                logger.trace("Umarked Space as Being Used");
+                logger.debug("Umarked Space as Being Used");
             } catch(Exception e) {
                 logger.error(e.toString());
             }
@@ -1326,7 +1326,7 @@ public final class PutFileRequest extends FileRequest {
         public void SpaceReleased() {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                logger.trace("TheReleaseSpaceCallbacks: SpaceReleased");
+                logger.debug("TheReleaseSpaceCallbacks: SpaceReleased");
                 fr.setSpaceReservationId(null);
             } catch(Exception e) {
                 logger.error(e.toString());

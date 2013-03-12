@@ -142,7 +142,7 @@ public class ConsistentStore
                 case REMOVED:
                 case DESTROYED:
                     delete(id, file);
-                    _log.debug(String.format(PARTIAL_FROM_TAPE_MSG, id));
+                    _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
                     return null;
                 }
 
@@ -274,7 +274,7 @@ public class ConsistentStore
         throws DuplicateEntryException, CacheException
     {
         if (_log.isInfoEnabled()) {
-            _log.debug("Creating new entry for " + id);
+            _log.info("Creating new entry for " + id);
         }
 
         /* Fail if file already exists.

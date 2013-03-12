@@ -140,7 +140,7 @@ public final class ReserveSpaceRequest extends Request {
         this.accessLatency = accessLatency;
         this.spaceReservationLifetime = spaceReservationLifetime;
         updateMemoryCache();
-        logger.trace("created");
+        logger.debug("created");
 
     }
 
@@ -198,7 +198,7 @@ public final class ReserveSpaceRequest extends Request {
         this.accessLatency = accessLatency == null ?null :TAccessLatency.fromString(accessLatency);
         this.spaceReservationLifetime = spaceReservationLifetime;
 
-        logger.trace("restored");
+        logger.debug("restored");
     }
 
 

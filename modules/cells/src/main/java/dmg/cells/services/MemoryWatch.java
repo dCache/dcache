@@ -107,7 +107,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
              }
            }catch(Exception xx){}
          }else{
-             _log.debug(str) ;
+             _log.info(str) ;
          }
       }
    }

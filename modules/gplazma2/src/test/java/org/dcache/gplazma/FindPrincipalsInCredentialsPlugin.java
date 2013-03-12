@@ -25,18 +25,18 @@ public class FindPrincipalsInCredentialsPlugin implements GPlazmaAuthenticationP
     public void authenticate(Set<Object> publicCredentials,
             Set<Object> privateCredentials,
             Set<Principal> identifiedPrincipals) throws AuthenticationException {
-        LOGGER.trace("authenticate called");
+        LOGGER.debug("authenticate called");
         for(Object credential:publicCredentials) {
-             LOGGER.trace("found pub credential : " , credential);
+             LOGGER.debug("found pub credential : " , credential);
             if(credential instanceof Principal) {
-                LOGGER.trace("found Principal: {}" , credential);
+                LOGGER.debug("found Principal: {}" , credential);
                 identifiedPrincipals.add((Principal)credential);
             }
         }
         for(Object credential:privateCredentials) {
-            LOGGER.trace("found private credential : " , credential);
+            LOGGER.debug("found private credential : " , credential);
             if(credential instanceof Principal) {
-                LOGGER.trace("found Principal: {}" , credential);
+                LOGGER.debug("found Principal: {}" , credential);
                 identifiedPrincipals.add((Principal)credential);
             }
         }

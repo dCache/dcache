@@ -76,7 +76,7 @@ public class SshInputStream extends InputStream {
          switch( packet.getType() ){
             case SshPacket.SSH_CMSG_STDIN_DATA :{
 
-               _log.trace("SSH_CMSG_STDIN_DATA");
+               _log.debug("SSH_CMSG_STDIN_DATA");
                SshCmsgStdinData stdin = new SshCmsgStdinData( packet ) ;
 
                _buffer   = stdin.getBinary() ;
@@ -88,7 +88,7 @@ public class SshInputStream extends InputStream {
             }
             case SshPacket.SSH_SMSG_STDOUT_DATA :{
 
-               _log.trace("SSH_CMSG_STDOUT_DATA");
+               _log.debug("SSH_CMSG_STDOUT_DATA");
                SshSmsgStdoutData stdin = new SshSmsgStdoutData( packet ) ;
 
                _buffer   = stdin.getBinary() ;
@@ -101,7 +101,7 @@ public class SshInputStream extends InputStream {
             break ;
             case SshPacket.SSH_SMSG_STDERR_DATA :{
 
-               _log.trace("SSH_CMSG_STDERR_DATA");
+               _log.debug("SSH_CMSG_STDERR_DATA");
                SshSmsgStderrData stdin = new SshSmsgStderrData( packet ) ;
 
                _buffer   = stdin.getBinary() ;
@@ -114,28 +114,28 @@ public class SshInputStream extends InputStream {
             break ;
             case SshPacket.SSH_SMSG_EXITSTATUS : {
                SshSmsgExitStatus status = new SshSmsgExitStatus( packet ) ;
-               _log.trace("SSH_SMSG_EXITSTATUS {}", status.getValue());
+               _log.debug("SSH_SMSG_EXITSTATUS {}", status.getValue());
                _core.writePacket( new SshCmsgExitConfirmation() ) ;
                _exitConfirmed = true ;
                _core.confirmed() ;
             }
             return false ;
             case SshPacket.SSH_CMSG_EXIT_CONFORMATION :
-               _log.trace("SSH_CMSG_EXIT_CONFORMATION");
+               _log.debug("SSH_CMSG_EXIT_CONFORMATION");
                _exitConfirmed = true ;
                _core.confirmed() ;
             return false ;
 
             case SshPacket.SSH_CMSG_EOF:
-                _log.trace("SSH_CMSG_EOF");
+                _log.debug("SSH_CMSG_EOF");
                 return false;
 
             case SshPacket.SSH_MSG_DEBUG :
                 SshMsgDebug debug = new SshMsgDebug( packet ) ;
-                _log.trace("SSH_MSG_DEBUG : {}", debug.getMessage());
+                _log.debug("SSH_MSG_DEBUG : {}", debug.getMessage());
             break ;
             default :
-                _log.trace("Unknown packet Type: {}", packet.getType());
+                _log.debug("Unknown packet Type: {}", packet.getType());
          }
       }
 

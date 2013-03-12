@@ -148,10 +148,10 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
 
     @Override
     public void dbInit1() throws SQLException {
-        logger.trace("dbInit1");
+        logger.debug("dbInit1");
         String protocolsTableName = getProtocolsTableName().toLowerCase();
         boolean should_reanamed_old_table = reanamed_old_table;
-        logger.trace("dbInit1 reanamed_old_table="+reanamed_old_table);
+        logger.debug("dbInit1 reanamed_old_table="+reanamed_old_table);
         Connection _con =null;
         try {
             _con = pool.getConnection();
@@ -220,7 +220,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
                 getTableName() +" (ID) "+
                 " ON DELETE CASCADE"+
                 " )";
-        logger.trace("calling createTable for "+protocolsTableName);
+        logger.debug("calling createTable for "+protocolsTableName);
         createTable(protocolsTableName, createProtocolsTable);
         String protocols_columns[] = {
             "RequestID"};
@@ -261,7 +261,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
                 " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
-        logger.trace("executing statement: "+sqlStatementString);
+        logger.debug("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         Set<String> utilset = new HashSet<>();
         while(fileIdsSet.next()) {

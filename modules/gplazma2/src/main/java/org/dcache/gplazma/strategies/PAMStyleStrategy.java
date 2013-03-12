@@ -107,13 +107,13 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
                             pluginElement.getName() + ": " + e.getMessage());
                 }
 
-                logger.trace("{} plugin completed", control.name());
+                logger.debug("{} plugin completed", control.name());
 
                 if(control == SUFFICIENT) {
                     return;
                 }
             } catch (AuthenticationException currentPluginException) {
-                logger.trace("{} plugin failed: {}", control.name(),
+                logger.debug("{} plugin failed: {}", control.name(),
                         currentPluginException.getMessage());
 
                 switch (control) {
@@ -142,7 +142,7 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
         }
 
         if(firstRequiredPluginException != null) {
-            logger.debug("all session plugins ran, at least one required failed, throwing exception : "+
+            logger.info("all session plugins ran, at least one required failed, throwing exception : "+
                     firstRequiredPluginException);
             throw firstRequiredPluginException;
         }

@@ -210,12 +210,12 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
                     request.getNetUnitName(), request.getProtocolUnitName(),
                     request.getStore(), request.getDcache(), request.getLinkGroupName());
             List<MatchBean> matches = new ArrayList<>();
-            _log.trace("preferences: {}", preferences.length);
+            _log.debug("preferences: {}", preferences.length);
             for (PoolPreferenceLevel preference : preferences) {
                 MatchBean match = new MatchBean(preference.getPoolList(), preference.getTag());
                 matches.add(match);
             }
-            _log.trace("matches: {}", matches.size());
+            _log.debug("matches: {}", matches.size());
             return matches;
         } catch (DAOException ex) {
             throw new PoolSelectionSetupServiceException("could not retrive selection data", ex);

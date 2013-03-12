@@ -55,7 +55,7 @@ public class SessionSlot {
 
         if( sequence == _sequence ) {
 
-            _log.debug("retransmit detected");
+            _log.info("retransmit detected");
             if( _reply != null ) {
                 return _reply;
             }

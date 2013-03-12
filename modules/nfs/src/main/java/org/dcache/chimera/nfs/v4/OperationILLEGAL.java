@@ -37,7 +37,7 @@ public class OperationILLEGAL extends AbstractNFSv4Operation {
     @Override
     public nfs_resop4 process(CompoundContext context) {
 
-        _log.debug("ILLEGAL OPCODE: {}", _args.argop);
+        _log.info("ILLEGAL OPCODE: {}", _args.argop);
 
         ILLEGAL4res opResILLEGAL = new ILLEGAL4res();
         opResILLEGAL.status = nfsstat.NFSERR_OP_ILLEGAL;

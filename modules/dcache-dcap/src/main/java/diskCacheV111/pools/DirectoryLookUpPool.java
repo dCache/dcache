@@ -72,7 +72,7 @@ public class DirectoryLookUpPool extends AbstractCell
     protected void init()
         throws IllegalArgumentException
     {
-        _log.debug("Lookup Pool " + _poolName + " starting");
+        _log.info("Lookup Pool " + _poolName + " starting");
 
         _pnfs = new PnfsHandler(this, PNFS_MANAGER);
         ListDirectoryHandler listHandler = new ListDirectoryHandler(_pnfs);
@@ -305,7 +305,7 @@ public class DirectoryLookUpPool extends AbstractCell
                         }
 
                         long numberOfEntries = cntIn.readLong();
-                        _log.trace("requested " + numberOfEntries + " bytes");
+                        _log.debug("requested " + numberOfEntries + " bytes");
 
                         cntOut.writeACK(DCapConstants.IOCMD_READ);
                         index += doReadDir(cntOut, ostream, dirList, index,
@@ -363,7 +363,7 @@ public class DirectoryLookUpPool extends AbstractCell
 
             ostream = new DCapDataOutputStream(dataSocket.getOutputStream());
             istream = new DataInputStream(dataSocket.getInputStream());
-            _log.debug("Connected to {}", dcap.getSocketAddress());
+            _log.info("Connected to {}", dcap.getSocketAddress());
             //
             // send the sessionId and our (for now) 0 byte security
             // challenge.

@@ -167,7 +167,7 @@ public class CommandTaskCell extends CellAdapter {
               ClientInfo info = (ClientInfo) client;
               if ((now - info._time) > _maxSessionLogin) {
                   String key = info.getClientKey();
-                  _log.debug("Timer : " + key + " idle time exceeded");
+                  _log.info("Timer : " + key + " idle time exceeded");
                   _clientHash.remove(key);
               }
           }
@@ -182,12 +182,12 @@ public class CommandTaskCell extends CellAdapter {
        }
        @Override
        public void run(){
-          _log.debug("Scheduler worker started");
+          _log.info("Scheduler worker started");
           while( ! Thread.interrupted() ){
              try{
                  Thread.sleep(_sleepInterval);
              }catch(InterruptedException ee ){
-                 _log.debug("Worker Thread interrupted");
+                 _log.info("Worker Thread interrupted");
                  break ;
              }
              try{
@@ -492,7 +492,7 @@ public class CommandTaskCell extends CellAdapter {
       public ModuleExample( CommandTaskCell.CellCommandTaskCore core ){
           _cell = core.getParentCell() ;
           _core = core ;
-          _log.debug("Started : "+core.getName());
+          _log.info("Started : "+core.getName());
       }
       public static final String hh_send = "<destination> <message>" ;
       public String ac_send_$_2( Args args )
@@ -511,7 +511,7 @@ public class CommandTaskCell extends CellAdapter {
       }
       @Override
       public void answerArrived( CellMessage request , CellMessage answer ){
-         _log.debug("Answer arrived for task : "+_core.getName()+" : "+answer.getMessageObject().toString());
+         _log.info("Answer arrived for task : "+_core.getName()+" : "+answer.getMessageObject().toString());
       }
       @Override
       public void exceptionArrived( CellMessage request , Exception   exception ){
@@ -528,7 +528,7 @@ public class CommandTaskCell extends CellAdapter {
       }
       @Override
       public void timer(){
-          //_log.debug("Timer of "+_core.getName()+" triggered");
+          //_log.info("Timer of "+_core.getName()+" triggered");
       }
       public String toString(){
          return "I'm "+_core.getName() ;

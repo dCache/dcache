@@ -118,7 +118,7 @@ class CheckHealthTask implements Runnable
             long total = _metaDataStore.getTotalSpace();
 
             if (total == 0) {
-                _log.trace("Java reported file system size as 0. Skipping file system size check.");
+                _log.debug("Java reported file system size as 0. Skipping file system size check.");
                 return;
             }
 

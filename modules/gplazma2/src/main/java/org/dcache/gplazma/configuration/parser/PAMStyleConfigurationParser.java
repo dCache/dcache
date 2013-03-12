@@ -127,7 +127,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
         }
 
         String[] splitLine = trimmed.split("\\s+",SPLIT_LIMIT);
-        logger.trace("splitLine = "+Arrays.toString(splitLine));
+        logger.debug("splitLine = "+Arrays.toString(splitLine));
 
         if(splitLine.length == 0) {
             return null;

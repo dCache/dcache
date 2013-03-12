@@ -141,7 +141,7 @@ public class      SshKeyManager
                   _knownHostsKeysDate   = new Date() ;
                   _knownHostsKeysUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  _log.debug( "updateKeys : knownHosts updated" ) ;
+                  _log.info( "updateKeys : knownHosts updated" ) ;
                 }
             }catch(IOException e ){
 
@@ -160,7 +160,7 @@ public class      SshKeyManager
                   _knownUsersKeysDate   = new Date() ;
                   _knownUsersKeysUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  _log.debug( "updateKeys : knownUsers updated" ) ;
+                  _log.info( "updateKeys : knownUsers updated" ) ;
                 }
             }catch(IOException e ){ }
           }
@@ -175,7 +175,7 @@ public class      SshKeyManager
                   _hostIdentityDate   = new Date() ;
                   _hostIdentityUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  _log.debug( "updateKeys : hostIdentity updated" ) ;
+                  _log.info( "updateKeys : hostIdentity updated" ) ;
                 }
             }catch(IOException e ){
                 _log.warn( "updateKeys : hostIdentity failed : "+e ) ;
@@ -192,7 +192,7 @@ public class      SshKeyManager
                   _serverIdentityDate   = new Date() ;
                   _serverIdentityUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  _log.debug( "updateKeys : serverIdentity updated" ) ;
+                  _log.info( "updateKeys : serverIdentity updated" ) ;
                 }
             }catch(IOException e ){
                 _log.warn( "updateKeys : serverIdentity failed : "+e ) ;
@@ -217,7 +217,7 @@ public class      SshKeyManager
                   _userPasswordsDate   = new Date() ;
                   _userPasswordsUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  _log.debug( "updateKeys : userPasswords updated" ) ;
+                  _log.info( "updateKeys : userPasswords updated" ) ;
                 }
             }catch(IOException e ){ }
           }
@@ -234,7 +234,7 @@ public class      SshKeyManager
             updateKeys() ;
             try{ Thread.sleep(_updateTime*1000) ; }
             catch( InterruptedException ie ){
-               _log.debug( "UpdateThreadInterrupted" ) ;
+               _log.info( "UpdateThreadInterrupted" ) ;
                break ;
             }
 
@@ -263,19 +263,19 @@ public class      SshKeyManager
    }
    @Override
    public void messageArrived( CellMessage msg ){
-     _log.debug( " CellMessage From   : "+msg.getSourcePath() ) ;
-     _log.debug( " CellMessage To     : "+msg.getDestinationPath() ) ;
-     _log.debug( " CellMessage Object : "+msg.getMessageObject() ) ;
+     _log.info( " CellMessage From   : "+msg.getSourcePath() ) ;
+     _log.info( " CellMessage To     : "+msg.getDestinationPath() ) ;
+     _log.info( " CellMessage Object : "+msg.getMessageObject() ) ;
    }
    @Override
    public void cleanUp(){
      _cellContext.remove( "Ssh" ) ;
-     _log.debug( "finished" ) ;
+     _log.info( "finished" ) ;
      _updateThread.interrupt();
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){
-     _log.debug( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
 }

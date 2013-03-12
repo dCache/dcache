@@ -25,7 +25,7 @@ public class StringCommandMessageGenerator implements CellMessageGenerator<Strin
             StringCommandMessageGenerator.class);
 
     public StringCommandMessageGenerator(Set<String> destinations, String command) {
-        _log.trace("Generating messages for {}", destinations);
+        _log.debug("Generating messages for {}", destinations);
         _command = command;
         createMessages(destinations);
     }
@@ -62,7 +62,7 @@ public class StringCommandMessageGenerator implements CellMessageGenerator<Strin
 
         @Override
         public String getPayload() {
-            _log.trace("getPayload for {}", _destination);
+            _log.debug("getPayload for {}", _destination);
             return _payload;
         }
 

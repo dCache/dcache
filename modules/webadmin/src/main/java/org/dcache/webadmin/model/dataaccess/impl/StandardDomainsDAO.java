@@ -45,7 +45,7 @@ public class StandardDomainsDAO implements DomainsDAO {
     @Override
     public Set<CellStatus> getCellStatuses()
     {
-        _log.trace("getCellStatuses called");
+        _log.debug("getCellStatuses called");
         try {
             Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(
                     ContextPaths.CELLINFO_LIST);
@@ -93,7 +93,7 @@ public class StandardDomainsDAO implements DomainsDAO {
     @Override
     public Map<String, List<String>> getDomainsMap()
     {
-        _log.trace("getDomainsMap called");
+        _log.debug("getDomainsMap called");
         try {
             Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(
                     ContextPaths.CELLINFO_LIST);

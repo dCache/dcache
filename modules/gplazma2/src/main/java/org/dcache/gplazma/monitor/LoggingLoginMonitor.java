@@ -22,7 +22,7 @@ public class LoggingLoginMonitor extends IgnoringLoginMonitor
     public void authBegins(Set<Object> publicCredentials,
             Set<Object> privateCredentials, Set<Principal> principals)
     {
-        _log.trace("phase starts (public: {}, private: {}, principals: {})", publicCredentials, privateCredentials,
+        _log.debug("phase starts (public: {}, private: {}, principals: {})", publicCredentials, privateCredentials,
                    principals);
     }
 
@@ -31,41 +31,41 @@ public class LoggingLoginMonitor extends IgnoringLoginMonitor
             Set<Object> publicCredentials, Set<Object> privateCredentials,
             Set<Principal> principals)
     {
-        _log.trace("calling (publicCred: {}, privateCred: {}, principals: {})", publicCredentials, privateCredentials,
+        _log.debug("calling (publicCred: {}, privateCred: {}, principals: {})", publicCredentials, privateCredentials,
                    principals);
     }
 
     @Override
     public void mapBegins(Set<Principal> principals)
     {
-        _log.trace("phase starts (principals: {})", principals);
+        _log.debug("phase starts (principals: {})", principals);
     }
 
     @Override
     public void mapPluginBegins(String name, ConfigurationItemControl control,
             Set<Principal> principals, Set<Principal> authorizedPrincipals)
     {
-        _log.trace("calling (principals: {}, authPrincipals: {})", principals,
+        _log.debug("calling (principals: {}, authPrincipals: {})", principals,
                 authorizedPrincipals);
     }
 
     @Override
     public void accountBegins(Set<Principal> principals)
     {
-        _log.trace("phase starts (principals: {})", principals);
+        _log.debug("phase starts (principals: {})", principals);
     }
 
     @Override
     public void accountPluginBegins(String name,
             ConfigurationItemControl control, Set<Principal> principals)
     {
-        _log.trace("calling");
+        _log.debug("calling");
     }
 
     @Override
     public void sessionBegins(Set<Principal> principals)
     {
-        _log.trace("phase starts (principals: {})", principals);
+        _log.debug("phase starts (principals: {})", principals);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class LoggingLoginMonitor extends IgnoringLoginMonitor
             ConfigurationItemControl control, Set<Principal> principals,
             Set<Object> attributes)
     {
-        _log.trace("calling (pricipals: {}, attrib: {})", principals,
+        _log.debug("calling (pricipals: {}, attrib: {})", principals,
                 attributes);
 
     }
@@ -82,7 +82,7 @@ public class LoggingLoginMonitor extends IgnoringLoginMonitor
     public void sessionEnds(Set<Principal> principals, Set<Object> attributes,
             Result result)
     {
-        _log.trace("phase ends (principals: {}, attributes: {})", principals,
+        _log.debug("phase ends (principals: {}, attributes: {})", principals,
                 attributes);
     }
 }

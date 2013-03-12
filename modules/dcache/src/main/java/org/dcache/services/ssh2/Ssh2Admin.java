@@ -86,7 +86,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
     }
 
     public void setPort(int port) {
-        _log.trace("Ssh2 port set to: {}", String.valueOf(port));
+        _log.debug("Ssh2 port set to: {}", String.valueOf(port));
         _port = port;
     }
 
@@ -108,7 +108,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
 
     public void setHostKeyPrivate(String hostKeyPrivate) {
         _hostKeyPrivate = hostKeyPrivate;
-        _log.trace("hostKeyPrivate set to: {}", _hostKeyPrivate);
+        _log.debug("hostKeyPrivate set to: {}", _hostKeyPrivate);
     }
 
     public String getHostKeyPublic() {
@@ -117,7 +117,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
 
     public void setHostKeyPublic(String hostKeyPublic) {
         _hostKeyPublic = hostKeyPublic;
-        _log.trace("hostKeyPublic set to: {}", _hostKeyPublic);
+        _log.debug("hostKeyPublic set to: {}", _hostKeyPublic);
     }
 
     public File getAuthorizedKeyList() {
@@ -131,7 +131,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
     @Override
     public void setCellEndpoint(CellEndpoint endpoint) {
         _cellEndPoint = endpoint;
-        _log.trace("CellEndpoint set to: {}", _cellEndPoint);
+        _log.debug("CellEndpoint set to: {}", _cellEndPoint);
     }
 
     public void setServerShellFactory(String userName) {
@@ -152,12 +152,12 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
         subject.getPrivateCredentials().add(passCredential);
 
         try {
-            _log.trace("LoginStrategy: {}, {}", _loginStrategy.getClass(),
+            _log.debug("LoginStrategy: {}, {}", _loginStrategy.getClass(),
                     ((UnionLoginStrategy) _loginStrategy).getLoginStrategies());
             LoginReply loginReply = _loginStrategy.login(subject);
             Subject authenticatedSubject = loginReply.getSubject();
             String authenticatedUsername =  Subjects.getDisplayName(authenticatedSubject);
-            _log.trace("All pricipals returned by login: {}", authenticatedSubject.getPrincipals());
+            _log.debug("All pricipals returned by login: {}", authenticatedSubject.getPrincipals());
             if (Subjects.hasGid(authenticatedSubject, _adminGroupId)) {
                 setServerShellFactory(authenticatedUsername);
                 return true;
@@ -186,7 +186,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
         configureKeyFiles();
         startServer();
 
-        _log.trace("Ssh2 Admin Interface started!");
+        _log.debug("Ssh2 Admin Interface started!");
     }
 
     @Override
@@ -229,7 +229,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
         @Override
         public boolean authenticate(String userName, String password,
                 ServerSession session) {
-            _log.trace("Authentication username set to: {}", userName);
+            _log.debug("Authentication username set to: {}", userName);
             return kpwdLogin(userName, password);
         }
     }
@@ -239,7 +239,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
         @Override
         public boolean authenticate(String userName, PublicKey key,
                 ServerSession session) {
-            _log.trace("Authentication username set to: {} publicKey: {}",
+            _log.debug("Authentication username set to: {} publicKey: {}",
                     userName, key);
             try {
                 AuthorizedKeyParser decoder = new AuthorizedKeyParser();
@@ -248,7 +248,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
                 for (String keyLine : keyLines) {
                     PublicKey decodedKey = decoder.decodePublicKey(keyLine);
                     if (decodedKey.equals(key)) {
-                        _log.trace("Key found! Decoded Key:"
+                        _log.debug("Key found! Decoded Key:"
                                 + " {}, SshReceivedKey: {}", decodedKey, key);
                         setServerShellFactory(userName);
                         return true;

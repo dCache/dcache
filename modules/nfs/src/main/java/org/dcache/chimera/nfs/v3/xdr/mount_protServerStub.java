@@ -31,14 +31,14 @@ public abstract class mount_protServerStub implements RpcDispatchable {
         if ( version == 3 ) {
             switch ( procedure ) {
             case 0: {
-                _log.trace("MOUNTPROC3_NULL_3");
+                _log.debug("MOUNTPROC3_NULL_3");
                 call.retrieveCall(XdrVoid.XDR_VOID);
                 MOUNTPROC3_NULL_3(call);
                 call.reply( XdrVoid.XDR_VOID);
                 break;
             }
             case 1: {
-                _log.trace("MOUNTPROC3_MNT_3");
+                _log.debug("MOUNTPROC3_MNT_3");
                 dirpath args$ = new dirpath();
                 call.retrieveCall(args$);
                 mountres3 result$ = MOUNTPROC3_MNT_3(call, args$);
@@ -108,7 +108,7 @@ public abstract class mount_protServerStub implements RpcDispatchable {
                 break;
             }
             case 5: {
-                _log.trace("processing message MOUNTPROC_EXPORT_1");
+                _log.debug("processing message MOUNTPROC_EXPORT_1");
                 call.retrieveCall(XdrVoid.XDR_VOID);
                 exports result$ = MOUNTPROC_EXPORT_1(call);
                 call.reply( result$);

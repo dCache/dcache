@@ -67,7 +67,7 @@ public class RrdRequestExecutionTimeGauges<T> {
     public RrdRequestExecutionTimeGauges(RequestExecutionTimeGauges<T> requestGauges,
             File rrdDir,long updatePeriodSecs,
             long graphPeriodSecs) throws IOException {
-        logger.trace("RrdRequestGauges("+requestGauges+", "+rrdDir);
+        logger.debug("RrdRequestGauges("+requestGauges+", "+rrdDir);
         this.gauges = requestGauges;
         this.rrdDir = rrdDir;
         if(!rrdDir.exists()) {
@@ -94,10 +94,10 @@ public class RrdRequestExecutionTimeGauges<T> {
         updateRrd = new TimerTask() {
             @Override
             public void run() {
-                logger.trace("RrdRequestGauges updateRrd running updateRrds()");
+                logger.debug("RrdRequestGauges updateRrd running updateRrds()");
                 try {
                     updateRrds() ;
-                    logger.trace("RrdRequestGauges updateRrd updateRrds() is done");
+                    logger.debug("RrdRequestGauges updateRrd updateRrds() is done");
                 } catch (IOException ioe) {
                     logger.error("updateRrds io exception : ",ioe);
                 }
@@ -108,13 +108,13 @@ public class RrdRequestExecutionTimeGauges<T> {
 
     private void updateRrds() throws IOException {
         boolean gaugesAdded = false;
-        logger.trace("updateRrds() for "+gauges);
+        logger.debug("updateRrds() for "+gauges);
         synchronized (gauges) {
             for(T key:gauges.keySet()) {
-                logger.trace("updatePrds(): key is "+key);
+                logger.debug("updatePrds(): key is "+key);
                 if(!rrdgauges.containsKey(key)) {
                     RequestExecutionTimeGauge requestGauges = gauges.getGauge(key);
-                    logger.trace("updatePrds(): creating RRDRequestExecutionTimeGauge for "+requestGauges);
+                    logger.debug("updatePrds(): creating RRDRequestExecutionTimeGauge for "+requestGauges);
                     RRDRequestExecutionTimeGauge rrdRequestGauges =
                             new RRDRequestExecutionTimeGauge(rrdDir,requestGauges,updatePeriodSecs);
                     rrdgauges.put(key, rrdRequestGauges);
@@ -124,10 +124,10 @@ public class RrdRequestExecutionTimeGauges<T> {
         }
 
         for(RRDRequestExecutionTimeGauge rrdRequestGauge:rrdgauges.values() ) {
-            logger.trace("updateRrds(): calling rrdRequestGauge.update()");
+            logger.debug("updateRrds(): calling rrdRequestGauge.update()");
             rrdRequestGauge.update();
         }
-        logger.trace("updateRrds(): calling totalRequestCounter.update()");
+        logger.debug("updateRrds(): calling totalRequestCounter.update()");
         if(gaugesAdded)  {
             updateIndex();
         }
@@ -155,7 +155,7 @@ public class RrdRequestExecutionTimeGauges<T> {
             @Override
             public void run() {
                 try {
-                    logger.trace("RrdRequestGauges updateRrd running plotGraphs()");
+                    logger.debug("RrdRequestGauges updateRrd running plotGraphs()");
                     plotGraphs() ;
                 } catch(IOException ioe) {
                     logger.error("plotGraphs io exception : ", ioe);

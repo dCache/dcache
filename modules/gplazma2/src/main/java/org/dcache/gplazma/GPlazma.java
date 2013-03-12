@@ -472,7 +472,7 @@ public class GPlazma
 
     private void loadPlugins() throws GPlazmaInternalException
     {
-        LOGGER.trace("reloading plugins");
+        LOGGER.debug("reloading plugins");
 
         pluginLoader = new CachingPluginLoaderDecorator(
                 XmlResourcePluginLoader.newPluginLoader());

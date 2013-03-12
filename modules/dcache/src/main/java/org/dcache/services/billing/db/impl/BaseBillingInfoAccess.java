@@ -33,16 +33,16 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         public void run() {
             while (isRunning()) {
                 try {
-                    logger.trace("{} sleeping", this);
+                    logger.debug("{} sleeping", this);
                     Thread.sleep(maxTimeBeforeCommit*1000L);
-                    logger.trace("{} calling doCommitIfNeeded", this);
+                    logger.debug("{} calling doCommitIfNeeded", this);
                     doCommitIfNeeded(true);
                 } catch (InterruptedException ignored) {
                 }
             }
-            logger.trace("{} calling doCommitIfNeeded", this);
+            logger.debug("{} calling doCommitIfNeeded", this);
             doCommitIfNeeded(true);
-            logger.trace("{} exiting", this);
+            logger.debug("{} exiting", this);
         }
     }
 
@@ -82,8 +82,8 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         properties = new Properties();
         initializeInternal();
 
-        logger.trace("maxInsertsBeforeCommit {}", maxInsertsBeforeCommit);
-        logger.trace("maxTimeBeforeCommit {}", maxTimeBeforeCommit);
+        logger.debug("maxInsertsBeforeCommit {}", maxInsertsBeforeCommit);
+        logger.debug("maxTimeBeforeCommit {}", maxTimeBeforeCommit);
 
         /*
          * if using delayed commits, run a flush thread
@@ -103,14 +103,14 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         setRunning(false);
         if (flushD != null) {
             try {
-                logger.trace("interrupting flush daemon");
+                logger.debug("interrupting flush daemon");
                 flushD.interrupt();
-                logger.trace("waiting for flush daemon to exit");
+                logger.debug("waiting for flush daemon to exit");
                 flushD.join();
             } catch (InterruptedException ignored) {
             }
         }
-        logger.trace("{} close exiting", this);
+        logger.debug("{} close exiting", this);
     }
 
     /**

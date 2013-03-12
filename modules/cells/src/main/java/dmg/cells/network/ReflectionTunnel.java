@@ -58,22 +58,22 @@ public class ReflectionTunnel implements Cell,
    }
    @Override
    public void   messageArrived( MessageEvent me ){
-//     _log.debug( "message Arrived : "+me ) ;
+//     _log.info( "message Arrived : "+me ) ;
 
      if( me instanceof RoutedMessageEvent ){
         CellMessage msg = me.getMessage() ;
-        _log.debug( "messageArrived : queuing "+msg ) ;
+        _log.info( "messageArrived : queuing "+msg ) ;
         try{
            _nucleus.sendMessage( msg ) ;
         }catch( Exception eee ){
-           _log.debug( "Problem sending :" + eee ) ;
+           _log.info( "Problem sending :" + eee ) ;
         }
 
      }else if( me instanceof LastMessageEvent ){
-        _log.debug( "messageArrived : opening final gate" ) ;
+        _log.info( "messageArrived : opening final gate" ) ;
         _finalGate.open() ;
      }else{
-        _log.debug( "messageArrived : dumping junk message "+me ) ;
+        _log.info( "messageArrived : dumping junk message "+me ) ;
      }
 
    }
@@ -81,11 +81,11 @@ public class ReflectionTunnel implements Cell,
    public synchronized void   prepareRemoval( KillEvent ce ){
 
      _finalGate.check() ;
-     _log.debug( "prepareRemoval : final gate passed -> closing" ) ;
+     _log.info( "prepareRemoval : final gate passed -> closing" ) ;
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){
-     _log.debug( "exceptionArrived : "+ce ) ;
+     _log.info( "exceptionArrived : "+ce ) ;
    }
 
    @Override

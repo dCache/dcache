@@ -70,10 +70,10 @@ public class OperationSETCLIENTID extends AbstractNFSv4Operation {
 	    	        ClientCB cb = new ClientCB(r_addr, r_netid, program);
 	    	        //	TODO: work around. client should send correct IP
                         cb = new ClientCB(  InetSocketAddresses.uaddrOf(context.getRpcCall().getTransport().getRemoteSocketAddress() ), r_netid, program);
-                    _log.trace("Client callback: {}", cb);
+                    _log.debug("Client callback: {}", cb);
 	                client.setCB(cb);
 		        }catch(Exception ignode_call_back) {
-                    _log.trace("no callback defined for: {}", context.getRpcCall().getTransport().getRemoteSocketAddress().getAddress());
+                    _log.debug("no callback defined for: {}", context.getRpcCall().getTransport().getRemoteSocketAddress().getAddress());
 		        }
 
 		        context.getStateHandler().addClient(client);
@@ -86,7 +86,7 @@ public class OperationSETCLIENTID extends AbstractNFSv4Operation {
 
 
         }catch(ChimeraNFSException he) {
-            _log.trace("SETCLIENTID: ", he.getMessage() );
+            _log.debug("SETCLIENTID: ", he.getMessage() );
 	        res.status = he.getStatus();
 	    }catch(Exception e) {
             _log.error("SETCLIENTID: " , e);

@@ -102,7 +102,7 @@ public class XmlConduit extends AbstractThreadedConduit {
 		if( skt != null) {
 
 			if( _log.isInfoEnabled()) {
-                            _log.debug("Incoming connection from " + skt
+                            _log.info("Incoming connection from " + skt
                                     .toString());
                         }
 

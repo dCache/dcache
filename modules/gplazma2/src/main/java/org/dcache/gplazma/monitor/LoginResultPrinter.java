@@ -431,7 +431,7 @@ public class LoginResultPrinter
                 try {
                     certificates.add(new AttributeCertificate(acSequence3));
                 } catch( IOException e) {
-                    _log.trace("Problem decoding AttributeCertificate: {}",
+                    _log.debug("Problem decoding AttributeCertificate: {}",
                             e.getMessage());
                 }
             }

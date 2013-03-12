@@ -71,7 +71,7 @@ public class SrmGetPermission {
 		try {
 			response = srmGetPermission();
         } catch(URISyntaxException e) {
-            logger.trace(" malformed uri : "+e.getMessage());
+            logger.debug(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
@@ -125,7 +125,7 @@ public class SrmGetPermission {
 		boolean haveFailure = false;
 		int nfailed = 0;
 		for(int i=0;i <length;i++){
-                        logger.trace("SURL["+i+"]= "+uriarray[i]);
+                        logger.debug("SURL["+i+"]= "+uriarray[i]);
                         URI surl = new URI(uriarray[i].toString());
 			TReturnStatus rs = new TReturnStatus();
 			rs.setStatusCode(TStatusCode.SRM_SUCCESS);

@@ -127,8 +127,8 @@ public class Storage
     StringWriter shell_err = new StringWriter();
     int return_code = ShellCommandExecuter.execute(stat_cmd+" --help",shell_out, shell_err);
     if(return_code != 0) {
-        logger.trace(stat_cmd+" --help output:");
-        logger.trace(shell_out.getBuffer().toString());
+        logger.debug(stat_cmd+" --help output:");
+        logger.debug(shell_out.getBuffer().toString());
         logger.error(stat_cmd+" --help error output:");
         logger.error(shell_err.getBuffer().toString());
         logger.error("can not find or run stat command, needed to this Storage Element implementation");
@@ -140,8 +140,8 @@ public class Storage
     shell_err = new StringWriter();
     return_code = ShellCommandExecuter.execute(chown_cmd+" --help",shell_out, shell_err);
     if(return_code != 0) {
-        logger.trace(chown_cmd+" --help output:");
-        logger.trace(shell_out.getBuffer().toString());
+        logger.debug(chown_cmd+" --help output:");
+        logger.debug(shell_out.getBuffer().toString());
         logger.error(chown_cmd+" --help error output:");
         logger.error(shell_err.getBuffer().toString());
         logger.error("can not find or run chown command, needed to this Storage Element implementation");
@@ -166,7 +166,7 @@ public class Storage
       throws SRMException {
 
     for( String protocol: getProtocols) {
-        logger.trace("supportedGetProtocols: " + protocol );
+        logger.debug("supportedGetProtocols: " + protocol );
     }
 
     return getProtocols;
@@ -178,7 +178,7 @@ public class Storage
       throws SRMException {
 
     for( String protocol: putProtocols) {
-        logger.trace("supportedPutProtocols: " + protocol );
+        logger.debug("supportedPutProtocols: " + protocol );
     }
 
     return putProtocols;
@@ -388,7 +388,7 @@ public class Storage
     Process proc;
 
     try {
-      logger.trace("Execute command in the main thread: " +cmd[0]+" "+cmd[1]+" "+cmd[2] );
+      logger.debug("Execute command in the main thread: " +cmd[0]+" "+cmd[1]+" "+cmd[2] );
       proc = Runtime.getRuntime().exec(cmd);
       proc.waitFor();
     }
@@ -468,11 +468,11 @@ public class Storage
           throw new IOException("file does not exist");
       }
       String command = stat_cmd+" -t "+file.getCanonicalPath();
-      logger.trace("executing command "+command);
+      logger.debug("executing command "+command);
       int return_code = ShellCommandExecuter.execute(command,outWriter, errWriter);
-      logger.trace("command standard output:"+outWriter.getBuffer().toString());
+      logger.debug("command standard output:"+outWriter.getBuffer().toString());
       if(return_code != 0 ) {
-          logger.trace("command error    output:"+errWriter.getBuffer().toString());
+          logger.debug("command error    output:"+errWriter.getBuffer().toString());
           throw new IOException ("command failed with return_code="+return_code);
       }
     } catch (IOException ioe) {
@@ -518,7 +518,7 @@ public class Storage
 
   /** */
   private File _getFile(String fileId, FileMetaData fmd) {
-    logger.trace("_getFile("+fileId);
+    logger.debug("_getFile("+fileId);
     return new File(fileId);
   }
 
@@ -580,7 +580,7 @@ public class Storage
     try {
       File file = _getFile(fmd.fileId, fmd);
       pinned = file.exists();
-      logger.trace("file exists is "+pinned);
+      logger.debug("file exists is "+pinned);
       if( pinned )
 
       {
@@ -681,11 +681,11 @@ public class Storage
    * */
 
   private boolean _installPath(SRMUser user, String path) {
-    logger.trace("_installPath("+user+","+path+")");
+    logger.debug("_installPath("+user+","+path+")");
     File file   = new File(path);
 
     if ( file.exists() ) {
-    logger.trace("_installPath: file exists, returning "+(file.isDirectory() && file.canWrite() ));
+    logger.debug("_installPath: file exists, returning "+(file.isDirectory() && file.canWrite() ));
       return ( file.isDirectory() && file.canWrite() );
     }
 
@@ -771,7 +771,7 @@ public class Storage
       return;
     }
 
-    logger.trace( "prepareToPut(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
+    logger.debug( "prepareToPut(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
     callbacks.StorageInfoArrived(fileId, fmd,
                                  parentFileId, parentFmd);
   }
@@ -827,11 +827,11 @@ public class Storage
           throw new IOException("file does not exist");
       }
       String command = chown_cmd+" "+uid+"."+gid+" "+file.getCanonicalPath();
-      logger.trace("executing command "+command);
+      logger.debug("executing command "+command);
       int return_code = ShellCommandExecuter.execute(command,outWriter, errWriter);
-      logger.trace("command standard output:"+outWriter.getBuffer().toString());
+      logger.debug("command standard output:"+outWriter.getBuffer().toString());
       if(return_code != 0 ) {
-          logger.trace("command error    output:"+errWriter.getBuffer().toString());
+          logger.debug("command error    output:"+errWriter.getBuffer().toString());
           throw new IOException ("command failed with return_code="+return_code);
       }
 
@@ -876,9 +876,9 @@ public class Storage
             public void run() {
                 try
                 {
-                    logger.trace("calling getFromRemoteTURL from a copy thread");
+                    logger.debug("calling getFromRemoteTURL from a copy thread");
                     getFromRemoteTURL(user, remoteTURL,surl, remoteUser, remoteCredentialId);
-                    logger.trace("calling callbacks.copyComplete for path="+surl);
+                    logger.debug("calling callbacks.copyComplete for path="+surl);
                     callbacks.copyComplete(getFileMetaData(user, surl, false));
                 }
                 catch (Exception e){
@@ -887,7 +887,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        logger.trace("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+surl);
+        logger.debug("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+surl);
 
         copyThreads.put(id, t);
         t.start();
@@ -913,9 +913,9 @@ public class Storage
             public void run() {
                 try
                 {
-                    logger.trace("calling putToRemoteTURL from a copy thread");
+                    logger.debug("calling putToRemoteTURL from a copy thread");
                     putToRemoteTURL(user, surl,remoteTURL, remoteUser, remoteCredentialId);
-                    logger.trace("calling callbacks.copyComplete for path="+surl);
+                    logger.debug("calling callbacks.copyComplete for path="+surl);
                     callbacks.copyComplete(getFileMetaData(user,surl, true));
                 }
                 catch (Exception e){
@@ -924,7 +924,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        logger.trace("putToRemoteTURL assigned id ="+id+"for transfer from "+surl+" to "+remoteTURL);
+        logger.debug("putToRemoteTURL assigned id ="+id+"for transfer from "+surl+" to "+remoteTURL);
 
         copyThreads.put(id, t);
         t.start();
@@ -936,11 +936,11 @@ public class Storage
   public void killRemoteTransfer(String transferId) {
       Thread t = copyThreads.get(transferId);
       if(t == null) {
-          logger.trace("killRemoteTransfer: cannot find thread for transfer with id="+ transferId);
+          logger.debug("killRemoteTransfer: cannot find thread for transfer with id="+ transferId);
       }
       else
       {
-          logger.trace("killRemoteTransfer: found thread for transfer with id="+ transferId+", killing");
+          logger.debug("killRemoteTransfer: found thread for transfer with id="+ transferId+", killing");
           t.interrupt();
       }
   }

@@ -97,7 +97,7 @@ public class RRDRequestCounter {
             throw new IllegalArgumentException("updatePeriodSecs="+updatePeriodSecs+
                     ", should be greater than 0 and less than "+fivemin+" secs");
         }
-        logger.trace("RRDRequestCounter("+rrdDirectory+", "+counter+","+updatePeriodSecs+")");
+        logger.debug("RRDRequestCounter("+rrdDirectory+", "+counter+","+updatePeriodSecs+")");
         File dir = new File(rrdDirectory);
         if(!dir.exists() || !dir.isDirectory() || !dir.canWrite() ) {
             throw new AccessControlException("directory "+
@@ -185,7 +185,7 @@ public class RRDRequestCounter {
      */
     public void update() throws IOException {
 
-        logger.trace("RRDRequestCounter.update() rrdFileName is "+rrdFileName);
+        logger.debug("RRDRequestCounter.update() rrdFileName is "+rrdFileName);
         RrdDb rrdDb = new RrdDb(rrdFileName);
         Sample sample = rrdDb.createSample();
         long currentTimeSecs =   Util.getTime();
@@ -194,17 +194,17 @@ public class RRDRequestCounter {
         sb.append(counter.getTotalRequests()).append(':');
         sb.append(counter.getFailed());
         sample.setAndUpdate(sb.toString());
-        logger.trace("RRDRequestCounter.update() updated with : "+sb.toString());
+        logger.debug("RRDRequestCounter.update() updated with : "+sb.toString());
         rrdDb.close();
-        logger.trace("RRDRequestCounter.update() succeeded");
-        logger.trace("RRDRequestCounter.update() let us try to fetch data");
+        logger.debug("RRDRequestCounter.update() succeeded");
+        logger.debug("RRDRequestCounter.update() let us try to fetch data");
         rrdDb = new RrdDb(rrdFileName);
         if(dumpstart == null) {
                   dumpstart = currentTimeSecs - 100;
         }
         FetchRequest fetchRequest = rrdDb.createFetchRequest(ConsolFun.AVERAGE, dumpstart, currentTimeSecs+1);
         FetchData fetchData = fetchRequest.fetchData();
-        logger.trace("RRDRequestCounter.update() dump is: "+fetchData.dump());
+        logger.debug("RRDRequestCounter.update() dump is: "+fetchData.dump());
         rrdDb.close();
     }
 
@@ -216,7 +216,7 @@ public class RRDRequestCounter {
     public void graph() throws IOException {
 
         long currentTime = Util.getTime();
-        logger.trace("RRDRequestCounter.graph()");
+        logger.debug("RRDRequestCounter.graph()");
         RrdDb rrdDb = new RrdDb(rrdFileName);
 
         RrdGraphDef graphDef = new RrdGraphDef();
@@ -248,7 +248,7 @@ public class RRDRequestCounter {
         RrdGraph graph = new RrdGraph(graphDef);
         BufferedImage bi = new BufferedImage(imageWidth,imageHeight,BufferedImage.TYPE_INT_RGB);
         graph.render(bi.getGraphics());
-        logger.trace("RRDRequestCounter.graph() wrote "+rrdHourlyImage);
+        logger.debug("RRDRequestCounter.graph() wrote "+rrdHourlyImage);
 
 
         graphDef.setTimeSpan(currentTime-hour, currentTime);
@@ -256,7 +256,7 @@ public class RRDRequestCounter {
         graph = new RrdGraph(graphDef);
         bi = new BufferedImage(imageWidth,imageHeight,BufferedImage.TYPE_INT_RGB);
         graph.render(bi.getGraphics());
-        logger.trace("RRDRequestCounter.graph() wrote "+rrdHourlyImage);
+        logger.debug("RRDRequestCounter.graph() wrote "+rrdHourlyImage);
 
         //day
         //graphDef.setStartTime(-day);

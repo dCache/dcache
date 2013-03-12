@@ -387,7 +387,7 @@ public final class Storage
     public void start() throws SQLException, CacheException, IOException,
             InterruptedException, IllegalStateTransition
     {
-        _log.debug("Starting SRM");
+        _log.info("Starting SRM");
 
         if (config.getJdbcPass() == null && config.getJdbcPwdfile() == null) {
             String error = "database parameters are not specified; use options " +
@@ -606,27 +606,27 @@ public final class Storage
             String pattern = args.argv(0);
             StringBuilder sb = new StringBuilder();
             if(get) {
-                _log.trace("calling srm.cancelAllGetRequest(\""+pattern+"\")");
+                _log.debug("calling srm.cancelAllGetRequest(\""+pattern+"\")");
                 srm.cancelAllGetRequest(sb, pattern);
             }
             if(bring) {
-                _log.trace("calling srm.cancelAllBringOnlineRequest(\""+pattern+"\")");
+                _log.debug("calling srm.cancelAllBringOnlineRequest(\""+pattern+"\")");
                 srm.cancelAllBringOnlineRequest(sb, pattern);
             }
             if(put) {
-                _log.trace("calling srm.cancelAllPutRequest(\""+pattern+"\")");
+                _log.debug("calling srm.cancelAllPutRequest(\""+pattern+"\")");
                 srm.cancelAllPutRequest(sb, pattern);
             }
             if(copy) {
-                _log.trace("calling srm.cancelAllCopyRequest(\""+pattern+"\")");
+                _log.debug("calling srm.cancelAllCopyRequest(\""+pattern+"\")");
                 srm.cancelAllCopyRequest(sb, pattern);
             }
             if(reserve) {
-                _log.trace("calling srm.cancelAllReserveSpaceRequest(\""+pattern+"\")");
+                _log.debug("calling srm.cancelAllReserveSpaceRequest(\""+pattern+"\")");
                 srm.cancelAllReserveSpaceRequest(sb, pattern);
             }
             if(ls) {
-                _log.trace("calling srm.cancelAllLsRequests(\""+pattern+"\")");
+                _log.debug("calling srm.cancelAllLsRequests(\""+pattern+"\")");
                 srm.cancelAllLsRequests(sb, pattern);
             }
             return sb.toString();
@@ -847,7 +847,7 @@ public final class Storage
         int value = Integer.parseInt(args.argv(0));
         config.setPutMaxReadyJobs(value);
         srm.getPutRequestScheduler().setMaxReadyJobs(value);
-        _log.debug("put-req-max-ready-requests="+value);
+        _log.info("put-req-max-ready-requests="+value);
         return "put-req-max-ready-requests="+value;
     }
 
@@ -861,7 +861,7 @@ public final class Storage
         int value = Integer.parseInt(args.argv(0));
         config.setGetMaxReadyJobs(value);
         srm.getGetRequestScheduler().setMaxReadyJobs(value);
-        _log.debug("get-req-max-ready-requests="+value);
+        _log.info("get-req-max-ready-requests="+value);
         return "get-req-max-ready-requests="+value;
     }
 
@@ -875,7 +875,7 @@ public final class Storage
         int value = Integer.parseInt(args.argv(0));
         config.setBringOnlineMaxReadyJobs(value);
         srm.getBringOnlineRequestScheduler().setMaxReadyJobs(value);
-        _log.debug("bring-online-req-max-ready-requests="+value);
+        _log.info("bring-online-req-max-ready-requests="+value);
         return "bring-online-req-max-ready-requests="+value;
     }
 
@@ -897,7 +897,7 @@ public final class Storage
         int value = Integer.parseInt(args.argv(0));
         config.setLsMaxReadyJobs(value);
         srm.getLsRequestScheduler().setMaxReadyJobs(value);
-        _log.debug("ls-request-max-ready-requests="+value);
+        _log.info("ls-request-max-ready-requests="+value);
         return "ls-request-max-ready-requests="+value;
     }
 
@@ -1168,7 +1168,7 @@ public final class Storage
                     new URI(protocol, null, host, port, transfer_path, null, null):
                     new URI(protocol, null, transfer_path, null);
 
-            _log.trace("getTurl() returns turl={}", turl);
+            _log.debug("getTurl() returns turl={}", turl);
             return turl;
         } catch (URISyntaxException e) {
             throw new SRMInternalErrorException(e.getMessage());
@@ -1192,7 +1192,7 @@ public final class Storage
 
         if(user_root!= null) {
             String path = absolutePath.toString();
-            _log.trace("getTurl() user root is "+user_root);
+            _log.debug("getTurl() user root is "+user_root);
             if(!path.startsWith(user_root)) {
                 String error = "verifyUserPathIsInTheRoot error:"+
                         "user's path "+absolutePath+
@@ -1250,7 +1250,7 @@ public final class Storage
             break;
         }
 
-        _log.trace("getTurlPath(path=" + path + ",protocol=" + protocol +
+        _log.debug("getTurlPath(path=" + path + ",protocol=" + protocol +
             ",user=" + user + ") = " + transferPath);
 
         return transferPath;
@@ -1299,7 +1299,7 @@ public final class Storage
         try {
             int retry = 0;
             do {
-                _log.trace("getLoginBrokerInfos sending \"" + brokerMessage +
+                _log.debug("getLoginBrokerInfos sending \"" + brokerMessage +
                            "\"  to LoginBroker");
                 try {
                     LoginBrokerInfo[] infos =
@@ -1353,7 +1353,7 @@ public final class Storage
     public String selectHost(String protocol)
         throws SRMException
     {
-        _log.trace("selectHost("+protocol+")");
+        _log.debug("selectHost("+protocol+")");
         LoginBrokerInfo[]loginBrokerInfos = getLoginBrokerInfos(protocol);
         return selectHost(loginBrokerInfos);
     }
@@ -1445,7 +1445,7 @@ public final class Storage
         }
         String doorHostPort = lbiToDoor(loginBrokerInfos[selected_indx]);
 
-        _log.trace("selectHost returns "+doorHostPort);
+        _log.debug("selectHost returns "+doorHostPort);
         return doorHostPort;
     }
 
@@ -1574,7 +1574,7 @@ public final class Storage
     public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read)
         throws SRMException
     {
-        _log.trace("getFileMetaData(" + surl + ")");
+        _log.debug("getFileMetaData(" + surl + ")");
         FsPath path = getPath(surl);
         AuthorizationRecord duser = (AuthorizationRecord) user;
         PnfsHandler handler =
@@ -1625,7 +1625,7 @@ public final class Storage
                 /* SpaceManager is optional, so we don't clasify this
                  * as an error.
                  */
-                _log.debug(e.getMessage());
+                _log.info(e.getMessage());
             }
 
             return fmd;
@@ -1657,7 +1657,7 @@ public final class Storage
         FsPath actualFromFilePath = getPath(fromSurl);
         FsPath actualToFilePath = getPath(toSurl);
         long id = getNextMessageID();
-        _log.trace("localCopy for user " + user +
+        _log.debug("localCopy for user " + user +
                    "from actualFromFilePath to actualToFilePath");
         AuthorizationRecord duser = (AuthorizationRecord)user;
         try {
@@ -1693,7 +1693,7 @@ public final class Storage
     public void advisoryDelete(final SRMUser user, final URI surl,
                                final AdvisoryDeleteCallbacks callback)
     {
-        _log.trace("Storage.advisoryDelete");
+        _log.debug("Storage.advisoryDelete");
 
         /* If not enabled, we are allowed to silently ignore the call.
          */
@@ -1758,7 +1758,7 @@ public final class Storage
                            final URI surl,
                            RemoveFileCallbacks callbacks)
     {
-        _log.trace("Storage.removeFile");
+        _log.debug("Storage.removeFile");
 
         try {
             RemoveFileCompanion.removeFile((AuthorizationRecord)user,
@@ -1775,7 +1775,7 @@ public final class Storage
     public void removeDirectory(SRMUser user, List<URI> surls)
         throws SRMException
     {
-        _log.trace("Storage.removeDirectory");
+        _log.debug("Storage.removeDirectory");
         for (URI surl: surls) {
             FsPath path = getPath(surl);
             try {
@@ -1797,7 +1797,7 @@ public final class Storage
     public void createDirectory(SRMUser user, URI surl)
         throws SRMException
     {
-        _log.trace("Storage.createDirectory");
+        _log.debug("Storage.createDirectory");
 
         Subject subject = ((AuthorizationRecord) user).toSubject();
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
@@ -2014,7 +2014,7 @@ public final class Storage
         throws SRMException
     {
         FsPath path = getPath(surl);
-        _log.trace(" getFromRemoteTURL from "+remoteTURL+" to " +path);
+        _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +path);
         return performRemoteTransfer(user,remoteTURL,path,true,
                 remoteUser,
                 remoteCredentialId,
@@ -2034,7 +2034,7 @@ public final class Storage
         throws SRMException
     {
         FsPath path = getPath(surl);
-        _log.trace(" getFromRemoteTURL from "+remoteTURL+" to " +path);
+        _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +path);
         return performRemoteTransfer(user,remoteTURL,path,true,
                 remoteUser,
                 remoteCredentialId,
@@ -2064,7 +2064,7 @@ public final class Storage
         throws SRMException
     {
         FsPath path = getPath(surl);
-        _log.trace(" putToRemoteTURL from "+path+" to " +surl);
+        _log.debug(" putToRemoteTURL from "+path+" to " +surl);
         return performRemoteTransfer(user,remoteTURL,path,false,
                 remoteUser,
                 remoteCredentialId,
@@ -2134,7 +2134,7 @@ public final class Storage
     {
         Subject subject = ((AuthorizationRecord) user).toSubject();
 
-        _log.trace("performRemoteTransfer performing "+(store?"store":"restore"));
+        _log.debug("performRemoteTransfer performing "+(store?"store":"restore"));
         if (!verifyUserPathIsRootSubpath(actualFilePath,user)) {
             throw new SRMAuthorizationException("user's path "+actualFilePath+
                                                 " is not subpath of the user's root");
@@ -2213,12 +2213,12 @@ public final class Storage
             RemoteTransferManagerMessage reply =
                 _transferManagerStub.sendAndWait(request);
             long id = reply.getId();
-            _log.trace("received first RemoteGsiftpTransferManagerMessage "
+            _log.debug("received first RemoteGsiftpTransferManagerMessage "
                        + "reply from transfer manager, id ="+id);
             TransferInfo info =
                 new TransferInfo(id, callbacks,
                                  _transferManagerStub.getDestinationPath());
-            _log.trace("storing info for callerId = {}", id);
+            _log.debug("storing info for callerId = {}", id);
             callerIdToHandler.put(id, info);
             return String.valueOf(id);
         } catch (TimeoutCacheException e) {
@@ -2253,7 +2253,7 @@ public final class Storage
 
     private void handleTransferManagerMessage(TransferManagerMessage message) {
         Long callerId = message.getId();
-        _log.trace("handleTransferManagerMessage for callerId="+callerId);
+        _log.debug("handleTransferManagerMessage for callerId="+callerId);
 
         TransferInfo info = callerIdToHandler.get(callerId);
         if (info == null) {
@@ -2263,7 +2263,7 @@ public final class Storage
 
         if (message instanceof TransferCompleteMessage ) {
             info.callbacks.copyComplete(null);
-            _log.trace("removing TransferInfo for callerId="+callerId);
+            _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
         } else if (message instanceof TransferFailedMessage) {
             Object error =  message.getErrorObject();
@@ -2284,7 +2284,7 @@ public final class Storage
             }
             info.callbacks.copyFailed(e);
 
-            _log.trace("removing TransferInfo for callerId="+callerId);
+            _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
         }
     }
@@ -2313,7 +2313,7 @@ public final class Storage
         String[] pools =
             _poolMonitor.getPoolSelectionUnit().getActivePools();
         if (pools.length == 0) {
-            _log.trace("Pool manager provided empty list of pools; assuming pool manager was restarted");
+            _log.debug("Pool manager provided empty list of pools; assuming pool manager was restarted");
             return;
         }
 
@@ -2357,7 +2357,7 @@ public final class Storage
                 Thread.sleep(config.getStorage_info_update_period());
             }
         } catch (InterruptedException e) {
-            _log.trace("Storage info update thread shut down");
+            _log.debug("Storage info update thread shut down");
         }
     }
 
@@ -2719,7 +2719,7 @@ public final class Storage
                                                 String[] spaceTokens)
         throws SRMException
     {
-        _log.trace("srmGetSpaceMetaData");
+        _log.debug("srmGetSpaceMetaData");
         if(spaceTokens == null) {
             throw new SRMException("null array of space tokens");
         }
@@ -2829,7 +2829,7 @@ public final class Storage
         throws SRMException
     {
         AuthorizationRecord duser = (AuthorizationRecord) user;
-        _log.trace("srmGetSpaceTokens ("+description+")");
+        _log.debug("srmGetSpaceTokens ("+description+")");
         GetSpaceTokens getTokens =
             new GetSpaceTokens(duser,
                                description);
@@ -2850,7 +2850,7 @@ public final class Storage
         String tokenStrings[] = new String[tokens.length];
         for(int i = 0; i < tokens.length; ++i) {
             tokenStrings[i] = Long.toString(tokens[i]);
-            _log.trace("srmGetSpaceTokens returns token#"+i+" : "+tokenStrings[i]);
+            _log.debug("srmGetSpaceTokens returns token#"+i+" : "+tokenStrings[i]);
         }
 
         return tokenStrings;

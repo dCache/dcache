@@ -175,7 +175,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             throw new NullPointerException("user credential is null");
         }
         try {
-            logger.trace("user credentials are: {} ", user_cred.getName());
+            logger.debug("user credentials are: {} ", user_cred.getName());
             if(user_cred.getRemainingLifetime() < 60) {
                 throw new IOException("credential remaining lifetime is less then a minute ");
             }
@@ -212,7 +212,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         else {
             service_url += "/"+webservice_path;
         }
-        logger.trace("SRMClientV1 calling org.globus.axis.util.Util.registerTransport() ");
+        logger.debug("SRMClientV1 calling org.globus.axis.util.Util.registerTransport() ");
         org.globus.axis.util.Util.registerTransport();
         org.apache.axis.configuration.SimpleProvider provider =
             new org.apache.axis.configuration.SimpleProvider();
@@ -226,7 +226,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         provider.deployTransport("http", c);
         org.dcache.srm.client.axis.SRMServerV1Locator sl = new org.dcache.srm.client.axis.SRMServerV1Locator(provider);
         java.net.URL url = new java.net.URL(service_url);
-        logger.trace("connecting to srm at {}",service_url);
+        logger.debug("connecting to srm at {}",service_url);
         axis_isrm = sl.getISRM(url);
         if(axis_isrm instanceof org.apache.axis.client.Stub) {
             org.apache.axis.client.Stub axis_isrm_as_stub = (org.apache.axis.client.Stub)axis_isrm;
@@ -253,7 +253,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                                                 long[] sizes,
                                                 boolean[] wantPerm,
                                                 String[] protocols ) {
-        logger.trace(" put, contacting service {} ", service_url);
+        logger.debug(" put, contacting service {} ", service_url);
         int i = 0;
         while(true) {
 
@@ -308,7 +308,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                     org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.get(surls,protocols);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
-                    logger.trace(re.toString());
+                    logger.debug(re.toString());
                     throw new RuntimeException (re.toString());
                 }
 
@@ -324,7 +324,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     public diskCacheV111.srm.RequestStatus copy( String[] srcSURLS,
                                                  String[] destSURLS,
                                                  boolean[] wantPerm ) {
-        logger.trace(" copy, contacting service {} ",service_url);
+        logger.debug(" copy, contacting service {} ",service_url);
         int i = 0;
         while(true) {
 
@@ -393,7 +393,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
 
             try {
                 long timeout = retrytimeout*i;
-                logger.trace("sleeping for {} milliseconds before retrying",timeout);
+                logger.debug("sleeping for {} milliseconds before retrying",timeout);
                 Thread.sleep(timeout);
             }
             catch(InterruptedException ie) {
@@ -403,7 +403,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
 
     @Override
     public boolean ping() {
-        logger.trace(" ping, contacting service {} ",service_url);
+        logger.debug(" ping, contacting service {} ",service_url);
         int i = 0;
         while(true) {
 
@@ -438,7 +438,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             }
             try {
                 long timeout = retrytimeout*i;
-                logger.trace("sleeping for {} milliseconds before retrying",timeout);
+                logger.debug("sleeping for {} milliseconds before retrying",timeout);
                 Thread.sleep(timeout);
             }
             catch(InterruptedException ie) {
@@ -481,7 +481,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         if (axis_isrm == null) {
             throw new NullPointerException ("both isrms are null!!!!");
         }
-        logger.trace(" getFileMetaData, contacting service {}", service_url);
+        logger.debug(" getFileMetaData, contacting service {}", service_url);
         int i = 0;
         while(true) {
 
@@ -517,7 +517,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             }
             try {
                 long timeout = retrytimeout*i;
-                logger.trace("sleeping for {} milliseconds before retrying", timeout);
+                logger.debug("sleeping for {} milliseconds before retrying", timeout);
                 Thread.sleep(timeout);
             }
             catch(InterruptedException ie) {
@@ -566,7 +566,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
 
     @Override
     public void advisoryDelete( String[] SURLS) {
-        logger.trace(" advisoryDelete, contacting service {}",service_url);
+        logger.debug(" advisoryDelete, contacting service {}",service_url);
 
         try {
             if(user_cred.getRemainingLifetime() < 60) {
@@ -592,7 +592,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
 
     @Override
     public String[] getProtocols() {
-        logger.trace(" getProtocols, contacting service "+service_url);
+        logger.debug(" getProtocols, contacting service "+service_url);
         int i = 0;
         while(true) {
 
@@ -628,7 +628,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             }
             try {
                 long timeout = retrytimeout*i;
-                logger.trace("sleeping for {} milliseconds before retrying",timeout);
+                logger.debug("sleeping for {} milliseconds before retrying",timeout);
                 Thread.sleep(timeout);
             }
             catch(InterruptedException ie) {

@@ -184,7 +184,7 @@ public class UniversalSpringCell
         checkArgument(args.argc() > 0, "Configuration location missing");
 
         _setupController = args.getOpt("setupController");
-        debug("Setup controller set to "
+        info("Setup controller set to "
              + (_setupController == null ? "none" : _setupController));
         _setupFile =
             (!args.hasOption("setupFile"))

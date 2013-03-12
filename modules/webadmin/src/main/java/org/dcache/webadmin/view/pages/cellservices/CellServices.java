@@ -37,11 +37,11 @@ public class CellServices extends BasePage {
 
     private void getCellServicesAction() {
         try {
-            _log.trace("getCellServicesAction called");
+            _log.debug("getCellServicesAction called");
             _cellBeans = getCellsService().getCellServicesBeans();
         } catch (CellsServiceException ex) {
             this.error(getStringResource("error.getCellsFailed") + ex.getMessage());
-            _log.trace("getCellServicesAction failed {}", ex.getMessage());
+            _log.debug("getCellServicesAction failed {}", ex.getMessage());
             _cellBeans = null;
         }
     }

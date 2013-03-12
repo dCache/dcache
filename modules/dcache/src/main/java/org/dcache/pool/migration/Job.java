@@ -412,7 +412,7 @@ public class Job
                     try {
                         entry.getValue().send(entry.getKey());
                     } catch (NoRouteToCellException e) {
-                        _log.debug(e.toString());
+                        _log.info(e.toString());
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }

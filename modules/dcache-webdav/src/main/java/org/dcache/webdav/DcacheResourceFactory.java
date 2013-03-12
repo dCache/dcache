@@ -513,7 +513,7 @@ public class DcacheResourceFactory
     public Resource getResource(String host, String path)
     {
         if (_log.isDebugEnabled()) {
-            _log.trace("Resolving " + HttpManager.request().getAbsoluteUrl());
+            _log.debug("Resolving " + HttpManager.request().getAbsoluteUrl());
         }
         return getResource(new FsPath(path));
     }
@@ -530,7 +530,7 @@ public class DcacheResourceFactory
         try {
             fullPath = getFullPath(requestPath);
         } catch (IllegalArgumentException e) {
-            _log.trace(e.getMessage());
+            _log.debug(e.getMessage());
             return null;
         }
 

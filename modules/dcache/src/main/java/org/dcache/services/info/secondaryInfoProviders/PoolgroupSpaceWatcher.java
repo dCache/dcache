@@ -45,32 +45,32 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 
 	    Set<String> recalcPoolgroup = new HashSet<>();
 		if( _log.isInfoEnabled()) {
-                    _log.debug("Watcher " + this.getClass()
+                    _log.info("Watcher " + this.getClass()
                             .getSimpleName() + " triggered");
                 }
 
-		_log.trace( "Gathering state:");
-		_log.trace( "  building current poolgroup membership.");
+		_log.debug( "Gathering state:");
+		_log.debug( "  building current poolgroup membership.");
 		Map <String,Set<String>> currentPoolgroupMembership = SetMapVisitor.getDetails( currentState, POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
 
-		_log.trace( "  building future poolgroup membership.");
+		_log.debug( "  building future poolgroup membership.");
 		Map <String,Set<String>> futurePoolgroupMembership = SetMapVisitor.getDetails( futureState, POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
 
-		_log.trace( "  establishing current pool space mapping.");
+		_log.debug( "  establishing current pool space mapping.");
 		Map<String, SpaceInfo> poolSpaceInfoPre = PoolSpaceVisitor.getDetails( currentState);
 
-		_log.trace( "  establishing future pool space mapping.");
+		_log.debug( "  establishing future pool space mapping.");
 		Map<String, SpaceInfo> poolSpaceInfoPost = PoolSpaceVisitor.getDetails( futureState);
 
-		_log.trace( "Looking for changes in poolgroup membership.");
+		_log.debug( "Looking for changes in poolgroup membership.");
 		updateTodoBasedOnMembership( recalcPoolgroup, currentPoolgroupMembership, futurePoolgroupMembership);
 
-		_log.trace( "Looking for changes in pool space information.");
+		_log.debug( "Looking for changes in pool space information.");
 		updateTodoBasedOnPoolSpace( recalcPoolgroup, futurePoolgroupMembership, poolSpaceInfoPre, poolSpaceInfoPost);
 
 		if( recalcPoolgroup.size() == 0) {
 			if( _log.isDebugEnabled()) {
-                            _log.trace("No poolgroups need updating");
+                            _log.debug("No poolgroups need updating");
                         }
 			return;
 		}
@@ -78,7 +78,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		for( String thisPoolgroup : recalcPoolgroup) {
 
 			if( _log.isDebugEnabled()) {
-                            _log.trace("Updating poolgroup " + thisPoolgroup);
+                            _log.debug("Updating poolgroup " + thisPoolgroup);
                         }
 
 			StatePath thisPgPath = POOLGROUPS_PATH.newChild( thisPoolgroup);
@@ -115,7 +115,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		pgSpaceInfo.addMetrics(update, path, false);
 
 		if( _log.isDebugEnabled()) {
-                    _log.trace("  new info: " + pgSpaceInfo.toString());
+                    _log.debug("  new info: " + pgSpaceInfo.toString());
                 }
 	}
 
@@ -135,7 +135,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 			String thisPoolgroup = pgEntry.getKey();
 			Set<String> thisPoolgroupFuturePoolset = pgEntry.getValue();
 			if( _log.isDebugEnabled()) {
-                            _log.trace("  examining poolgroup: " + thisPoolgroup);
+                            _log.debug("  examining poolgroup: " + thisPoolgroup);
                         }
 
 			Set<String> thisPoolgroupCurrentPoolset = currentPoolgroupMembership.get(thisPoolgroup);
@@ -145,7 +145,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 				recalcPoolgroup.add( thisPoolgroup);
 
 				if( _log.isDebugEnabled()) {
-					_log.trace( "    poolgroup "+ thisPoolgroup + " is new or has altered membership");
+					_log.debug( "    poolgroup "+ thisPoolgroup + " is new or has altered membership");
 
 					StringBuilder wasSb = new StringBuilder();
 					if( thisPoolgroupCurrentPoolset != null) {
@@ -162,7 +162,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 						wasSb.append( "<unknown>");
 					}
 
-					_log.trace( "      was: " + wasSb.toString());
+					_log.debug( "      was: " + wasSb.toString());
 
 					StringBuilder nowSb = new StringBuilder();
 					if( thisPoolgroupFuturePoolset != null) {
@@ -178,7 +178,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 					} else {
 						nowSb.append( "<unknown>");
 					}
-					_log.trace( "      now: " + nowSb.toString());
+					_log.debug( "      now: " + nowSb.toString());
 				}
 			}
 		}
@@ -206,14 +206,14 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 			SpaceInfo thisPoolPostInfo = futurePoolSpaceInfo.get( thisPool);
 
 			if( _log.isDebugEnabled()) {
-                            _log.trace("  examining pool: " + thisPool);
+                            _log.debug("  examining pool: " + thisPool);
                         }
 
 			// Pool has disappeared or size has changed
 			if( thisPoolPostInfo == null || !thisPoolPostInfo.equals(thisPoolPreInfo)) {
 				changedPools.add( thisPool);
 				if( _log.isDebugEnabled()) {
-                                    _log.trace("    pool " + thisPool + " has changed or disappeared");
+                                    _log.debug("    pool " + thisPool + " has changed or disappeared");
                                 }
 			}
 		}
@@ -224,7 +224,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
                         changedPools.add(thisPool);
 
                         if (_log.isDebugEnabled()) {
-                            _log.trace("    pool " + thisPool + " has appeared");
+                            _log.debug("    pool " + thisPool + " has appeared");
                         }
                     }
                 }
@@ -232,7 +232,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		// 2.  Nothing doing?, do nothing more.
 		if( changedPools.size() == 0) {
 			if( _log.isDebugEnabled()) {
-                            _log.trace("  no pools have changed");
+                            _log.debug("  no pools have changed");
                         }
 			return;
 		}
@@ -267,7 +267,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 				recalcPoolgroup.add( poolgroup);
 				if( changedPools.size() == 0) {
 					if( _log.isDebugEnabled()) {
-                                            _log.trace("  poolgroup " + poolgroup + " is marked as to be recalculated.");
+                                            _log.debug("  poolgroup " + poolgroup + " is marked as to be recalculated.");
                                         }
 
 					return;

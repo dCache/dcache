@@ -105,7 +105,7 @@ public class      LoginCell
      Constructor<?> con = null ;
      Object      o;
      for( int i = 0 ; i < args.argc() ; i++ ){
-        _log.debug( "Trying to load shell : "+args.argv(i) ) ;
+        _log.info( "Trying to load shell : "+args.argv(i) ) ;
         try{
            c = Class.forName( args.argv(i) ) ;
            int j ;
@@ -123,7 +123,7 @@ public class      LoginCell
 
            o = con.newInstance( objList[j] ) ;
            addCommandListener( o ) ;
-           _log.debug( "Added : "+args.argv(i) ) ;
+           _log.info( "Added : "+args.argv(i) ) ;
         }catch(Exception ee ){
            _log.warn( "Failed to load shell : "+args.argv(i)+" : "+ee ) ;
            if( ee instanceof InvocationTargetException ){
@@ -156,15 +156,15 @@ public class      LoginCell
                   print( prompt() ) ;
                }
            }catch( IOException e ){
-              _log.debug("EOF Exception in read line : "+e ) ;
+              _log.info("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              _log.debug("I/O Error in read line : "+e ) ;
+              _log.info("I/O Error in read line : "+e ) ;
               break ;
            }
 
         }
-        _log.debug( "EOS encountered" ) ;
+        _log.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
 
@@ -173,11 +173,11 @@ public class      LoginCell
    @Override
    public void   cleanUp(){
 
-     _log.debug( "Clean up called" ) ;
+     _log.info( "Clean up called" ) ;
      println("");
      _out.close();
      _readyGate.check() ;
-     _log.debug( "finished" ) ;
+     _log.info( "finished" ) ;
 
    }
   public void println( String str ){

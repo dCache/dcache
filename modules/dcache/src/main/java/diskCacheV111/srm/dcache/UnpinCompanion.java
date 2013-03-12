@@ -168,7 +168,7 @@ public class UnpinCompanion
                                  UnpinCallbacks callbacks,
                                  CellStub pinManagerStub)
     {
-        _log.debug("UnpinCompanion.unpinFile({})", pnfsId);
+        _log.info("UnpinCompanion.unpinFile({})", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
@@ -184,7 +184,7 @@ public class UnpinCompanion
                                                UnpinCallbacks callbacks,
                                                CellStub pinManagerStub)
     {
-        _log.debug("UnpinCompanion.unpinFile({})", pnfsId);
+        _log.info("UnpinCompanion.unpinFile({})", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
@@ -199,7 +199,7 @@ public class UnpinCompanion
                                  UnpinCallbacks callbacks,
                                  CellStub pinManagerStub)
     {
-        _log.debug("UnpinCompanion.unpinFile({}", pnfsId);
+        _log.info("UnpinCompanion.unpinFile({}", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);

@@ -84,7 +84,7 @@ public class StateMaintainer implements StateUpdateManager {
     @Override
     public void enqueueUpdate( final StateUpdate pendingUpdate) {
         if( _log.isDebugEnabled()) {
-            _log.trace("enqueing job to process update " + pendingUpdate);
+            _log.debug("enqueing job to process update " + pendingUpdate);
         }
 
         final NDC ndc = NDC.cloneNdc();
@@ -97,14 +97,14 @@ public class StateMaintainer implements StateUpdateManager {
                 NDC.set(ndc);
                 try {
                     if( _log.isDebugEnabled()) {
-                        _log.trace("starting job to process update " + pendingUpdate);
+                        _log.debug("starting job to process update " + pendingUpdate);
                     }
 
                     _caretaker.processUpdate( pendingUpdate);
                     checkScheduledExpungeActivity();
 
                     if( _log.isDebugEnabled()) {
-                        _log.trace("finished job to process update " + pendingUpdate);
+                        _log.debug("finished job to process update " + pendingUpdate);
                     }
                 } finally {
                     _pendingRequestCount.decrementAndGet();
@@ -119,10 +119,10 @@ public class StateMaintainer implements StateUpdateManager {
     {
         List<Runnable> unprocessed = _scheduler.shutdownNow();
         if( !unprocessed.isEmpty()) {
-            _log.debug("Shutting down with " + unprocessed.size() +
+            _log.info("Shutting down with " + unprocessed.size() +
                     " pending updates");
         } else {
-            _log.trace("Shutting down without any pending updates");
+            _log.debug("Shutting down without any pending updates");
         }
     }
 
@@ -147,7 +147,7 @@ public class StateMaintainer implements StateUpdateManager {
             if( _log.isDebugEnabled()) {
                 Date now = new Date();
                 long delay = _metricExpiryDate.getTime() - now.getTime();
-                _log.trace( "Cancelling existing metric purge, due to take place in " + delay / 1000.0 + " s");
+                _log.debug( "Cancelling existing metric purge, due to take place in " + delay / 1000.0 + " s");
             }
 
             /*  If the cancel fails (returns false) then the metric expunge is
@@ -185,21 +185,21 @@ public class StateMaintainer implements StateUpdateManager {
         long delay = whenExpunge.getTime() - System.currentTimeMillis();
 
         if( _log.isDebugEnabled()) {
-            _log.trace("Scheduling next metric purge in " + delay / 1000.0 + " s");
+            _log.debug("Scheduling next metric purge in " + delay / 1000.0 + " s");
         }
 
         try {
             _metricExpiryFuture = _scheduler.schedule( new FireAndForgetTask( new Runnable() {
                 @Override
                 public void run() {
-                    _log.trace( "Starting metric purge");
+                    _log.debug( "Starting metric purge");
                     _caretaker.removeExpiredMetrics();
                     scheduleMetricExpunge();
-                    _log.trace( "Metric purge completed");
+                    _log.debug( "Metric purge completed");
                 }
             }), delay, TimeUnit.MILLISECONDS);
         } catch( RejectedExecutionException e) {
-            _log.trace( "Failed to enqueue expunge task as queue is not accepting further work.");
+            _log.debug( "Failed to enqueue expunge task as queue is not accepting further work.");
         }
     }
 

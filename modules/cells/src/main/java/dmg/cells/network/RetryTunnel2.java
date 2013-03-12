@@ -82,7 +82,7 @@ public class      RetryTunnel2
       _ioThread = _nucleus.newThread( this , "IoThread" ) ;
       _ioThread.start() ;
 
-      _log.debug( "Constructor : acceptor started" ) ;
+      _log.info( "Constructor : acceptor started" ) ;
 
       _status = "<connected>" ;
    }
@@ -90,7 +90,7 @@ public class      RetryTunnel2
    {
 
       super( cellName , "System" , argString , false ) ;
-      _log.debug( "CellName : "+cellName+ " ; args : "+argString ) ;
+      _log.info( "CellName : "+cellName+ " ; args : "+argString ) ;
 
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
@@ -135,7 +135,7 @@ public class      RetryTunnel2
       long    start = 0 ;
       Socket  socket;
       while( ! Thread.interrupted() ){
-         _log.debug( "Trying to connect "+_host+"("+_port+")" ) ;
+         _log.info( "Trying to connect "+_host+"("+_port+")" ) ;
          _status = "<connecting-"+_connectionRetries+">" ;
          try{
             _connectionRetries ++ ;
@@ -166,7 +166,7 @@ public class      RetryTunnel2
             long diff = 30000 - ( System.currentTimeMillis() - start ) ;
             diff = diff < 4000 ? 4000 : diff ;
             try{
-               _log.debug("runConnection : Going to sleep for "+(diff/1000)+" seconds" ) ;
+               _log.info("runConnection : Going to sleep for "+(diff/1000)+" seconds" ) ;
                _status = "<waiting-"+_connectionRetries+">" ;
                Thread.sleep(diff) ;
             }catch(InterruptedException ieie){
@@ -179,15 +179,15 @@ public class      RetryTunnel2
    }
    private void runIoThread(){
       try{
-         _log.debug("runIoThread : creating streams" ) ;
+         _log.info("runIoThread : creating streams" ) ;
          _status = "<protocol>" ;
          _makeStreams( _engine.getInputStream() ,
                        _engine.getOutputStream()   ) ;
-         _log.debug("runIoThread : enabling tunnel" ) ;
+         _log.info("runIoThread : enabling tunnel" ) ;
          synchronized( _tunnelOkLock ){
               _tunnelOk = true ;
          }
-         _log.debug("runIoThread : starting IO" ) ;
+         _log.info("runIoThread : starting IO" ) ;
          runIo() ;
          _status = "<io-fin>" ;
          _log.warn( "runIoThread : unknown state 2 " ) ;
@@ -205,7 +205,7 @@ public class      RetryTunnel2
          _log.warn( "Killing myself" ) ;
          kill() ;
       }finally{
-         _log.debug( "runIoThread : finished" ) ;
+         _log.info( "runIoThread : finished" ) ;
       }
 
    }
@@ -219,7 +219,7 @@ public class      RetryTunnel2
 
             CellMessage msg = (CellMessage) obj ;
 
-            _log.debug( "receiverThread : Message from tunnel : "+msg ) ;
+            _log.info( "receiverThread : Message from tunnel : "+msg ) ;
 
             try{
                sendMessage( msg ) ;
@@ -240,7 +240,7 @@ public class      RetryTunnel2
         synchronized( _tunnelOkLock ){
            CellMessage msg = me.getMessage() ;
            if( _tunnelOk ){
-               _log.debug( "messageArrived : "+msg ) ;
+               _log.info( "messageArrived : "+msg ) ;
                try{
                    _output.writeObject( msg ) ;
                    _output.reset() ;
@@ -256,7 +256,7 @@ public class      RetryTunnel2
            }
         }
      }else if( me instanceof LastMessageEvent ){
-         _log.debug( "messageArrived : opening final gate" ) ;
+         _log.info( "messageArrived : opening final gate" ) ;
         _finalGate.open() ;
      }else{
         _log.warn( "messageArrived : dumping junk message "+me ) ;
@@ -314,7 +314,7 @@ public class      RetryTunnel2
                       _remoteDomainInfo.getCellDomainName() ,
                       _nucleus.getCellName() ,
                       CellRoute.DOMAIN ) ;
-         _log.debug( "addingRoute : "+_route) ;
+         _log.info( "addingRoute : "+_route) ;
          _nucleus.routeAdd( _route ) ;
       }
    }
@@ -347,7 +347,7 @@ public class      RetryTunnel2
    private void removeRoute(){
      synchronized( _routeLock ){
          if( _route != null ){
-            _log.debug( "removeRoute : removing route "+_route ) ;
+            _log.info( "removeRoute : removing route "+_route ) ;
             _nucleus.routeDelete( _route ) ;
             _route = null ;
          }
@@ -356,13 +356,13 @@ public class      RetryTunnel2
    @Override
    public synchronized void   prepareRemoval( KillEvent ce ){
      removeRoute() ;
-     _log.debug("Setting tunnel down" ) ;
+     _log.info("Setting tunnel down" ) ;
      synchronized( _tunnelOkLock ){ _tunnelOk = false ; }
      try{_input.close();}catch(IOException ee){}
      try{_output.close();}catch(IOException ee){}
-     _log.debug( "Streams  closed" ) ;
+     _log.info( "Streams  closed" ) ;
      _finalGate.check() ;
-     _log.debug( "Gate Opened. Bye Bye" ) ;
+     _log.info( "Gate Opened. Bye Bye" ) ;
 
 
    }

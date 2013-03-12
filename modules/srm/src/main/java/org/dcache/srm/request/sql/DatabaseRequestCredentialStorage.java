@@ -180,9 +180,9 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
          if(!tableRs.next()) {
             try {
                // Table does not exist
-               //logger.trace(getTableName()+" does not exits");
+               //logger.debug(getTableName()+" does not exits");
                Statement s = _con.createStatement();
-               logger.trace("dbInit trying "+createRequestCredentialTable);
+               logger.debug("dbInit trying "+createRequestCredentialTable);
                int result = s.executeUpdate(createRequestCredentialTable);
                s.close();
             } catch(SQLException sqle) {
@@ -294,7 +294,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                     set.close();
                             }
                             catch (SQLException e1) {
-                                    logger.trace("Failed to close ResultSet "+e1.getMessage());
+                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
                     if ( stmt != null ) {
@@ -302,7 +302,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                     stmt.close();
                             }
                             catch (SQLException e1) {
-                                    logger.trace("Failed to close ResultSet "+e1.getMessage());
+                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
                 pool.returnFailedConnection(_con);
@@ -319,7 +319,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                     set.close();
                 }
                 catch (SQLException e1) {
-                    logger.trace("Failed to close ResultSet "+e1.getMessage());
+                    logger.debug("Failed to close ResultSet "+e1.getMessage());
                 }
             }
                     if ( stmt != null ) {
@@ -327,7 +327,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                     stmt.close();
                             }
                             catch (SQLException e1) {
-                                    logger.trace("Failed to close ResultSet "+e1.getMessage());
+                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
                             }
                     }
                 pool.returnConnection(_con);
@@ -397,7 +397,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                   _con.rollback();
               }
               catch(SQLException e1) {
-                  logger.trace("Failed rollback connection "+e1.getMessage());
+                  logger.debug("Failed rollback connection "+e1.getMessage());
               }
               pool.returnFailedConnection(_con);
               _con = null;
@@ -410,7 +410,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
           }
       }
       if(result == 0) {
-         //logger.trace("update result is 0, calling createRequestCredential()");
+         //logger.debug("update result is 0, calling createRequestCredential()");
          createRequestCredential(requestCredential);
       }
    }
@@ -475,7 +475,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
            // this is not an error, as the file will
            // written if it is not found
            // so we just make a debug log
-           logger.trace("fileNameToGSSCredentilal("+fileName+") failed with "+ioe);
+           logger.debug("fileNameToGSSCredentilal("+fileName+") failed with "+ioe);
        }
        return null;
    }

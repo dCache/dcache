@@ -163,7 +163,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       new MessageProcessThread();
 
       _nucleus.export() ;
-      _log.debug("Starting");
+      _log.info("Starting");
 
    }
 
@@ -186,11 +186,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                try {
                    Thread.currentThread().sleep( _TO_MessageQueueUpdate );
                } catch (InterruptedException e){
-                   _log.debug( _threadName + " thread interrupted" ) ;
+                   _log.info( _threadName + " thread interrupted" ) ;
                    break ;
                }
            }
-           _log.debug( _threadName + " thread finished" ) ;
+           _log.info( _threadName + " thread finished" ) ;
        }
    }
 
@@ -205,7 +205,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      @Override
      public void run() {
-       _log.debug("Thread <" + Thread.currentThread().getName() + "> started");
+       _log.info("Thread <" + Thread.currentThread().getName() + "> started");
 
        boolean done = false;
        while (!done) {
@@ -226,7 +226,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          }
 
        } // - while()
-       _log.debug("Thread <" + Thread.currentThread().getName() + "> finished");
+       _log.info("Thread <" + Thread.currentThread().getName() + "> finished");
      }  // - run()
    }
 
@@ -256,7 +256,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    @Override
    public Serializable commandArrived(String str, CommandSyntaxException cse) {
        if (str.startsWith("Removed ")) {
-           _log.trace("commandArrived (ignored):  cse=[" + cse + "], str = ["+str+"]");
+           _log.debug("commandArrived (ignored):  cse=[" + cse + "], str = ["+str+"]");
            return null;
        } else if ( str.startsWith("Failed to remove ")
                ||  str.startsWith("Syntax Error")
@@ -267,7 +267,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            return null;
        }
 
-       _log.trace("commandArrived - call super cse=[" + cse + "], str = ["+str+"]");
+       _log.debug("commandArrived - call super cse=[" + cse + "], str = ["+str+"]");
        return super.commandArrived(str, cse);
    }
 
@@ -523,7 +523,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           }
 
           // Asynchronious notification
-          _log.trace("Task finished - notifyAll waiting for _taskHash");
+          _log.debug("Task finished - notifyAll waiting for _taskHash");
           synchronized( this ){
               notifyAll() ;
           }
@@ -537,11 +537,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       public long   getId(){   return _id ; }
 
       public void messageArrived( CellMessage msg ){
-        _log.trace( "DCacheCoreController::TaskObserver - CellMessage arrived, " + msg ) ;
+        _log.debug( "DCacheCoreController::TaskObserver - CellMessage arrived, " + msg ) ;
       }
 
        public void messageArrived( Message msg ){
-        _log.trace( "DCacheCoreController::TaskObserver - Message arrived, " + msg ) ;
+        _log.debug( "DCacheCoreController::TaskObserver - Message arrived, " + msg ) ;
       }
 
        public void setStatus( String status ){ _status = status ; }
@@ -603,7 +603,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        }
 /* OBSOLETE / UNUSED
        public void messageArrived( CellMessage msg ){
-         _log.trace( "DCacheCoreController::ReductionObserver - "
+         _log.debug( "DCacheCoreController::ReductionObserver - "
               +"CellMessage arrived (ignored), " + msg ) ;
        };
 */
@@ -683,7 +683,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           // @todo : process destination pool error
           if( msg.getMessageObject() instanceof NoRouteToCellException ) {
               setErrorCode(-103,"MoverTask: dmg.cells.nucleus.NoRouteToCellException");
-              _log.trace("MoverTask got error NoRouteToCellException");
+              _log.debug("MoverTask got error NoRouteToCellException");
               return;
           }
 
@@ -698,7 +698,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
              setOk();
          } else{
             setErrorCode( reply.getReturnCode() , reply.getErrorObject().toString() ) ;
-            _log.trace("MoverTask got error ReturnCode=" + reply.getReturnCode()
+            _log.debug("MoverTask got error ReturnCode=" + reply.getReturnCode()
                 +", ErrorObject=["+ reply.getReturnCode() +"]"
                 +"reply=\n["
                 + reply +"]");
@@ -763,10 +763,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       /*
       UOID idAfter = msg.getUOID();
-      _log.trace("movePnfsId: AFTER sendMessage p2p, msg src=" +source + " dest=" +destination
+      _log.debug("movePnfsId: AFTER sendMessage p2p, msg src=" +source + " dest=" +destination
            +" msg=<"+msg+">");
 
-      _log.trace("CellMessage UOID AFTER =" + idAfter + " pnfsId=" +pnfsId
+      _log.debug("CellMessage UOID AFTER =" + idAfter + " pnfsId=" +pnfsId
            +" is firstDest= " + msg.isFirstDestination() );
       */
       return task ;
@@ -827,8 +827,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      //
      if (confirmedSourcePoolList.size() <= 0) {
-         _log.trace("pnfsid = " +pnfsId+", writable pools=" + writablePools);
-         _log.trace("pnfsid = " +pnfsId+", confirmed pools=" + confirmedSourcePoolList );
+         _log.debug("pnfsid = " +pnfsId+", writable pools=" + writablePools);
+         _log.debug("pnfsid = " +pnfsId+", confirmed pools=" + confirmedSourcePoolList );
          throw new
                  IllegalArgumentException("no deletable 'online' replica found for pnfsId=" + pnfsId );
      }
@@ -882,7 +882,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                             host = _hostMap.get(poolName);
                             if (host != null && !host.equals("")
                                     && (srcHosts.contains(host))) {
-                                _log.trace("best pool: skip destination pool " + poolName + ", destination host " + host + " is on the source host list " + srcHosts);
+                                _log.debug("best pool: skip destination pool " + poolName + ", destination host " + host + " is on the source host list " + srcHosts);
                                 continue;
                             }
                         }
@@ -891,7 +891,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                     PoolCostInfo costInfo = _costTable
                             .getPoolCostInfoByName(poolName);
                     if (costInfo == null) {
-                        _log.debug("bestPool : can not find costInfo for pool " + poolName + " in _costTable");
+                        _log.info("bestPool : can not find costInfo for pool " + poolName + " in _costTable");
                         continue;
                     }
                     total = costInfo.getSpaceInfo().getTotalSpace();
@@ -931,7 +931,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                      */
                     _log.warn("bestPool : ignore exception " + e);
                     if (_dcccDebug) {
-                        _log.trace("Stack dump for ignored exception :");
+                        _log.debug("Stack dump for ignored exception :");
                         e.printStackTrace();
                     }
                 }
@@ -954,7 +954,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         bestPool = bestCostInfo.getPoolName();
 
-        _log.trace("best pool: " + bestPool + "; cost = " + bestCost);
+        _log.debug("best pool: " + bestPool + "; cost = " + bestCost);
 
         return bestPool;
     }
@@ -1084,7 +1084,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                                         String destination) throws Exception {
 
      PnfsId pnfsId = attributes.getPnfsId();
-     _log.debug("Sending p2p for " + pnfsId + " " + source + " -> " + destination);
+     _log.info("Sending p2p for " + pnfsId + " " + source + " -> " + destination);
 
      Pool2PoolTransferMsg req =
          new Pool2PoolTransferMsg(source, destination, attributes);
@@ -1100,11 +1100,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        _messageHash.put(msg.getUOID(), task);
      }
      /*
-     _log.trace("movePnfsId: replicatePnfsId AFTER send message, src=" +source + " dest=" +destination
+     _log.debug("movePnfsId: replicatePnfsId AFTER send message, src=" +source + " dest=" +destination
           +" msg=<"+msg+">");
 
      UOID idAfter = msg.getUOID();
-     _log.trace("UOID AFTER =" + idAfter + " pnfsId=" +pnfsId
+     _log.debug("UOID AFTER =" + idAfter + " pnfsId=" +pnfsId
           +" is firstDest= " + msg.isFirstDestination() );
      */
      return task;
@@ -1125,12 +1125,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                        new CellPath("PoolManager"), command);
                CellMessage reply;
 
-               _log.trace("getCostTable(): sendMessage, " + " command=[" + command +
+               _log.debug("getCostTable(): sendMessage, " + " command=[" + command +
                     "]\n" + "message=" + cellMessage);
 
                reply = cell.sendAndWait(cellMessage, _TO_GetFreeSpace);
 
-               _log.trace("DEBUG: Cost table reply arrived");
+               _log.debug("DEBUG: Cost table reply arrived");
 
                if (reply == null ||
                    !(reply.getMessageObject() instanceof CostModulePoolInfoTable)) {
@@ -1186,35 +1186,35 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    @Override
    public void cellCreated(CellEvent ce) {
        super.cellCreated(ce);
-       _log.trace("DCCC cellCreated called, ce=" + ce);
+       _log.debug("DCCC cellCreated called, ce=" + ce);
    }
 
    @Override
    public void cellDied(CellEvent ce) {
        super.cellDied(ce);
-       _log.trace("DCCC cellDied called, ce=" + ce);
+       _log.debug("DCCC cellDied called, ce=" + ce);
    }
 
    @Override
    public void cellExported(CellEvent ce) {
        super.cellExported(ce);
-       _log.trace("DCCC cellExported called, ce=" + ce);
+       _log.debug("DCCC cellExported called, ce=" + ce);
    }
 
    @Override
    public void routeAdded(CellEvent ce) {
        super.routeAdded(ce);
-       _log.trace("DCCC routeAdded called, ce=" + ce);
+       _log.debug("DCCC routeAdded called, ce=" + ce);
    }
 
    @Override
    public void routeDeleted(CellEvent ce) {
        super.routeDeleted(ce);
-       _log.trace("DCCC routeDeleted called, ce=" + ce);
+       _log.debug("DCCC routeDeleted called, ce=" + ce);
    }
    /** do not overload - it will disable messageArrived( CellMessage m);
    public void messageArrived( MessageEvent msg ){
-     _log.trace( "DCacheCoreController: Got Message (ignored): " +msg );
+     _log.debug( "DCacheCoreController: Got Message (ignored): " +msg );
    }
    */
    // end cellEventListener Interface
@@ -1222,7 +1222,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    @Override
    public void messageArrived(CellMessage msg) {
 
-     _log.trace( "DCacheCoreController: message arrived. Original msg=" +msg );
+     _log.debug( "DCacheCoreController: message arrived. Original msg=" +msg );
 
      boolean expected = preprocessCellMessage( msg ) ;
 
@@ -1233,7 +1233,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          _msgFifo.put(msg);
        }
        catch (InterruptedException ex) {
-         _log.trace("DCacheCoreController: messageArrived() - ignore InterruptedException");
+         _log.debug("DCacheCoreController: messageArrived() - ignore InterruptedException");
        }
      }
    }
@@ -1251,15 +1251,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      Object obj = msg.getMessageObject() ;
 
      if( obj == null ) {
-       _log.trace( "DCacheCoreController: preprocess Cell message null <" +msg +">" ) ;
+       _log.debug( "DCacheCoreController: preprocess Cell message null <" +msg +">" ) ;
        return false;
      }
 
      if ( _dcccDebug && obj instanceof Object[] ) {
-       _log.trace( "DCacheCoreController: preprocess Cell message Object[] <" +msg +">" ) ;
+       _log.debug( "DCacheCoreController: preprocess Cell message Object[] <" +msg +">" ) ;
        Object[] arr = (Object[]) obj;
        for( int j=0; j<arr.length; j++ ) {
-         _log.trace("msg[" +j+ "]='" +  arr[j].toString() +"'" );
+         _log.debug("msg[" +j+ "]='" +  arr[j].toString() +"'" );
        }
        return false;
      }
@@ -1269,26 +1269,26 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      if( obj instanceof PnfsAddCacheLocationMessage ){
        PnfsAddCacheLocationMessage paclm = (PnfsAddCacheLocationMessage)obj;
-       _log.trace( "DCacheCoreController: preprocess Cell message PnfsAddCacheLocationMessage <" + paclm +">" ) ;
+       _log.debug( "DCacheCoreController: preprocess Cell message PnfsAddCacheLocationMessage <" + paclm +">" ) ;
      }
      else if( obj instanceof PnfsClearCacheLocationMessage ){
        PnfsClearCacheLocationMessage pcclm = (PnfsClearCacheLocationMessage)obj;
-       _log.trace( "DCacheCoreController: preprocess Cell message PnfsClearCacheLocationMessage <" +pcclm +">" ) ;
+       _log.debug( "DCacheCoreController: preprocess Cell message PnfsClearCacheLocationMessage <" +pcclm +">" ) ;
      }
      else if( obj instanceof PoolStatusChangedMessage ){
        PoolStatusChangedMessage pscm = (PoolStatusChangedMessage)obj;
-       _log.trace( "DCacheCoreController: preprocess Cell message PoolStatusChangedMessage <" +pscm +">" ) ;
+       _log.debug( "DCacheCoreController: preprocess Cell message PoolStatusChangedMessage <" +pscm +">" ) ;
      }
      else if ( obj instanceof PoolRemoveFilesMessage ) {
        PoolRemoveFilesMessage prmf = (PoolRemoveFilesMessage)obj;
-       _log.trace( "DCacheCoreController: preprocess Cell message PoolRemoveFilesMessage <" +prmf +">" ) ;
+       _log.debug( "DCacheCoreController: preprocess Cell message PoolRemoveFilesMessage <" +prmf +">" ) ;
      } else {
        msgFound  = false;
 
        // Check message has associated task waiting
        /**
        UOID idAfter = msg.getLastUOID();
-       _log.trace("UOID CHECK =" + idAfter );
+       _log.debug("UOID CHECK =" + idAfter );
        */
        taskFound = _messageHash.containsKey( msg.getLastUOID() );
      }
@@ -1297,7 +1297,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      //
      if ( obj instanceof Pool2PoolTransferMsg ) {
        Pool2PoolTransferMsg m = (Pool2PoolTransferMsg) obj;
-       _log.trace( "DCacheCoreController: preprocess DUMP Cell message Pool2PoolTransferMsg "
+       _log.debug( "DCacheCoreController: preprocess DUMP Cell message Pool2PoolTransferMsg "
              +m + " isReply=" +m.isReply()
              + " id=" +m.getId() ) ;
      }
@@ -1306,7 +1306,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       * @todo
       * validate early pool name is on resilient pools list
       */
-     _log.trace( "DCacheCoreController: preprocess Cell message. msgFound=" +msgFound
+     _log.debug( "DCacheCoreController: preprocess Cell message. msgFound=" +msgFound
      +" taskFound="+taskFound +" msg uiod O=" + msg.getLastUOID() );
 
      if ( ! (msgFound || taskFound) )  {
@@ -1338,7 +1338,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      boolean nextPnfsAddCacheLocationMessage = (nextObj != null) &&
          (nextObj instanceof PnfsAddCacheLocationMessage);
 
-     _log.trace("DCacheCoreController: process queued CellMessage. Before adding msg="
+     _log.debug("DCacheCoreController: process queued CellMessage. Before adding msg="
          + msg + " qsize="+l.size() +" next=" +  nextPnfsAddCacheLocationMessage );
 
      // Process PnfsAddCacheLocationMessage
@@ -1357,7 +1357,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       ||  ! nextPnfsAddCacheLocationMessage
       || ( l.size() >= maxAddListSize ) ) {
        if( l.size() != 0 ) {
-         _log.trace("DCacheCoreController: process queued CellMessage. Flush queue qsize="+l.size() );
+         _log.debug("DCacheCoreController: process queued CellMessage. Flush queue qsize="+l.size() );
          processPnfsAddCacheLocationMessage( l );
          l.clear();
        }
@@ -1389,7 +1389,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      /** DEBUG
      UOID idAfter = msg.getLastUOID();
-     _log.trace("UOID REMOVE =" + idAfter );
+     _log.debug("UOID REMOVE =" + idAfter );
      */
 
      synchronized( _messageHash ){
@@ -1397,7 +1397,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      }
 
      if( task != null ) {
-       _log.trace( "DCacheCoreController: process CellMessage, task found for UOID=" + msg.getLastUOID() );
+       _log.debug( "DCacheCoreController: process CellMessage, task found for UOID=" + msg.getLastUOID() );
        task.messageArrived(msg);
      }
      else{
@@ -1408,31 +1408,31 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
    // Placeholder - This method can be overriden
    protected void processPoolStatusChangedMessage( PoolStatusChangedMessage msg ) {
-     _log.trace( "DCacheCoreController: default processPoolStatusChangedMessage() called for" + msg ) ;
+     _log.debug( "DCacheCoreController: default processPoolStatusChangedMessage() called for" + msg ) ;
    }
 
    // Placeholder - This method can be overriden
    protected void processPoolRemoveFiles( PoolRemoveFilesMessage msg )
    {
-     _log.trace( "DCacheCoreController: default processPoolRemoveFilesMessage() called" ) ;
+     _log.debug( "DCacheCoreController: default processPoolRemoveFilesMessage() called" ) ;
      String poolName     = msg.getPoolName();
      String filesList[]  = msg.getFiles();
      String stringPnfsId;
 
      if( poolName == null ) {
-       _log.trace( "PoolRemoveFilesMessage - no pool defined");
+       _log.debug( "PoolRemoveFilesMessage - no pool defined");
        return;
      }
      if( filesList == null ) {
-       _log.trace("PoolRemoveFilesMessage - no file list defined");
+       _log.debug("PoolRemoveFilesMessage - no file list defined");
        return;
      }
      for( int j=0; j<filesList.length; j++ ){
        if(filesList[j] == null ) {
-         _log.trace("DCCC: default PoolRemoveFiles(): file["+j+"]='null' removed from pool "+poolName);
+         _log.debug("DCCC: default PoolRemoveFiles(): file["+j+"]='null' removed from pool "+poolName);
        }else{
          stringPnfsId = filesList[j];
-         _log.trace("DCCC: default PoolRemoveFiles(): file["+j+"]=" + stringPnfsId +" removed from pool "+poolName);
+         _log.debug("DCCC: default PoolRemoveFiles(): file["+j+"]=" + stringPnfsId +" removed from pool "+poolName);
        }
      }
    }
@@ -1457,7 +1457,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      synchronized (_modificationHash) {
        ReductionObserver o = _modificationHash.get(key);
-       _log.trace("processPnfsClearCacheLocationMessage() : TaskObserver=<" + o +
+       _log.debug("processPnfsClearCacheLocationMessage() : TaskObserver=<" + o +
             ">;msg=[" + msg + "]");
        // Filter out async msgs triggered replica removals by Cleaner
        // for the same pool and different pnfsId
@@ -1537,7 +1537,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        CellMessage cellMessage = new CellMessage( new CellPath( "PnfsManager" ) , msg ) ;
        CellMessage answer;
 
-//       _log.trace("getFileAttributes: sendAndWait, pnfsId=" +pnfsId );
+//       _log.debug("getFileAttributes: sendAndWait, pnfsId=" +pnfsId );
        answer = sendAndWait( cellMessage , _TO_GetStorageInfo ) ;
 
        if( answer == null ) {
@@ -1551,7 +1551,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        msg = (PnfsGetStorageInfoMessage) answer.getMessageObject() ;
 
        if( msg.getReturnCode() != 0 ) {
-         _log.trace("getFileAttributes() PnfsGetStorageInfoMessage answer error: err="
+         _log.debug("getFileAttributes() PnfsGetStorageInfoMessage answer error: err="
               +msg.getReturnCode()
               + ", message='" + msg + "'" );
 
@@ -1577,7 +1577,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        CellMessage msg = new CellMessage(
             new CellPath(poolName) ,
             "rep rm "+( force ? " -force " : "" ) + pnfsId ) ;
-       //       _log.trace("removeCopy: sendMessage, pool=" + poolName +"pnfsId=" +pnfsId );
+       //       _log.debug("removeCopy: sendMessage, pool=" + poolName +"pnfsId=" +pnfsId );
        sendMessage( msg ) ;
    }
 
@@ -1608,7 +1608,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        CellMessage cellMessage = new CellMessage( new CellPath( "PnfsManager" ) , msg ) ;
        CellMessage answer;
 
-//       _log.trace("getCacheLocationList: sendAndWait, pnfsId=" +pnfsId );
+//       _log.debug("getCacheLocationList: sendAndWait, pnfsId=" +pnfsId );
        answer = sendAndWait( cellMessage , _TO_GetCacheLocationList ) ;
        if( answer == null ) {
            throw new
@@ -1620,7 +1620,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
        msg = (PnfsGetCacheLocationsMessage) answer.getMessageObject() ;
        if( msg.getReturnCode() != 0 ) {
-         _log.trace("getCacheLocationList(...) PnfsGetCacheLocationsMessage answer error: err="
+         _log.debug("getCacheLocationList(...) PnfsGetCacheLocationsMessage answer error: err="
               +msg.getReturnCode()
               + ", message='" + msg + "'" );
          if( msg.getReturnCode() == CacheException.FILE_NOT_FOUND ) {
@@ -1656,7 +1656,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
        SpreadAndWait controller = new SpreadAndWait( this , _TO_GetCacheLocationList ) ;
 
-//       _log.trace("getCacheLocationList: SpreadAndWait to " + assumed.size() +" pools");
+//       _log.debug("getCacheLocationList: SpreadAndWait to " + assumed.size() +" pools");
 
        PoolCheckFileMessage query;
        for (Object pool : assumed) {
@@ -1681,7 +1681,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
        for( Iterator<CellMessage> i = controller.getReplies() ; i.hasNext() ; ){
           query = (PoolCheckFileMessage) (i.next()).getMessageObject() ;
-	  _log.trace("getCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
+	  _log.debug("getCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
           if( query.getHave() ) {
               confirmed.add(query.getPoolName());
           }
@@ -1735,7 +1735,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        for (Iterator<CellMessage> i = controller.getReplies(); i.hasNext(); ) {
            query = (PoolCheckFileMessage) (i.next()).
                    getMessageObject();
-	   _log.trace("confirmCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
+	   _log.debug("confirmCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
            if (query.getHave()) {
                confirmed.add(query.getPoolName());
            }
@@ -1762,7 +1762,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        CellMessage cellMessage = new CellMessage( new CellPath( "PoolManager" ) , msg ) ;
        CellMessage answer;
 
-//       _log.trace("getPoolList: sendAndWait" );
+//       _log.debug("getPoolList: sendAndWait" );
        answer = sendAndWait( cellMessage , _TO_GetPoolList ) ;
        if( answer == null ) {
            throw new
@@ -1795,7 +1795,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         command ) ;
      CellMessage reply;
 
-     _log.trace("getPoolGroup: sendMessage, command=["+command+"]\n"
+     _log.debug("getPoolGroup: sendMessage, command=["+command+"]\n"
           + "message=" +cellMessage );
 
      reply = sendAndWait( cellMessage , _TO_GetPoolGroup ) ;
@@ -1808,23 +1808,23 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      Object [] r = (Object []) reply.getMessageObject();
 
      if ( r.length != 3 ) {
-       _log.debug("getPoolGroup: The length of reply=" + r.length +" != 3");
+       _log.info("getPoolGroup: The length of reply=" + r.length +" != 3");
        return null;
      }else{
        String groupName = (String) r[0];
        Object [] poolsArray = (Object []) r[1];
        List<String> poolList = new ArrayList<>();
 
-       _log.trace("Length of the group=" + poolsArray.length );
+       _log.debug("Length of the group=" + poolsArray.length );
 
        for( int j=0; j<poolsArray.length; j++ ) {
-         _log.trace("Pool " +j+ " : " + poolsArray[j]);
+         _log.debug("Pool " +j+ " : " + poolsArray[j]);
          poolList.add((String) poolsArray[j]);
        }
 
-       _log.trace("getPoolGroup: Info: '{}' pool group name='{}'", pGroup, groupName );
+       _log.debug("getPoolGroup: Info: '{}' pool group name='{}'", pGroup, groupName );
        if(_log.isDebugEnabled()){
-           _log.trace("Pools: {}", Arrays.toString(poolsArray));
+           _log.debug("Pools: {}", Arrays.toString(poolsArray));
        }
        return poolList;
      }
@@ -1832,17 +1832,17 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
    private void reportProblemGPG( CellMessage msg ) {
      if( msg == null ) {
-       _log.debug("Request Timed out");
+       _log.info("Request Timed out");
        return;
      }
 
      Object o = msg.getMessageObject() ;
      if( o instanceof Exception ){
-       _log.debug( "GetPoolGroup: got exception" +((Exception)o).getMessage() ) ;
+       _log.info( "GetPoolGroup: got exception" +((Exception)o).getMessage() ) ;
      }else if( o instanceof String ){
-       _log.debug( "GetPoolGroup: got error '" +o.toString() + "'" ) ;
+       _log.info( "GetPoolGroup: got error '" +o.toString() + "'" ) ;
      }else{
-       _log.debug( "GetPoolGroup: Unexpected class arrived : "+o.getClass().getName() ) ;
+       _log.info( "GetPoolGroup: Unexpected class arrived : "+o.getClass().getName() ) ;
      }
    }
 
@@ -1857,7 +1857,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        CellMessage answer;
        String poolHost;
 
-       _log.trace("getHostPool: send xgetcellinfo message to pool " + poolName );
+       _log.debug("getHostPool: send xgetcellinfo message to pool " + poolName );
 
        answer = sendAndWait( cellMessage , _TO_GetPoolTags ) ;
 
@@ -1888,8 +1888,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             ? null
             : map.get("hostname");
 
-       _log.trace("getHostPool: msgAnswer=" + msgAnswer );
-       _log.trace("getHostPool: tag map=" + map );
+       _log.debug("getHostPool: msgAnswer=" + msgAnswer );
+       _log.debug("getHostPool: tag map=" + map );
 
        return poolHost;
    }
@@ -1925,7 +1925,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            CellMessage cellMessage = new CellMessage( new CellPath( poolName ) , msg ) ;
            CellMessage answer;
 
-//           _log.trace("getPoolRepository: sendAndWait" );
+//           _log.debug("getPoolRepository: sendAndWait" );
            answer = sendAndWait( cellMessage , _TO_GetPoolRepository ) ;
 
            if( answer == null ) {

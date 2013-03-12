@@ -54,7 +54,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 	    super.trigger( update, currentState, futureState);
 
 		if( _log.isInfoEnabled()) {
-                    _log.debug("Watcher " + this.getClass()
+                    _log.info("Watcher " + this.getClass()
                             .getSimpleName() + " triggered");
                 }
 
@@ -96,13 +96,13 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
 		if( usedSpaceNow.equals( usedSpaceAfter)) {
 			if( _log.isDebugEnabled()) {
-                            _log.trace("No update needed for reservation used space changing.");
+                            _log.debug("No update needed for reservation used space changing.");
                         }
 			return;
 		}
 
 		if( _log.isDebugEnabled()) {
-                    _log.trace("Updates due to reservation used space changing:");
+                    _log.debug("Updates due to reservation used space changing:");
                 }
 
 		// Add the corresponding linkgroup for each space that has changed.
@@ -111,7 +111,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 				String linkgroupId = reservationToLinkgroup.get( reservationId);
 
 				if( _log.isDebugEnabled()) {
-                                    _log.trace("    linkgroup: " + linkgroupId);
+                                    _log.debug("    linkgroup: " + linkgroupId);
                                 }
 
 				linkgroupsToUpdate.add( linkgroupId);
@@ -134,20 +134,20 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 
 		if( freeSpaceNow.equals( freeSpaceAfter)) {
 			if( _log.isDebugEnabled()) {
-                            _log.trace("No update needed for linkgroup free space changing.");
+                            _log.debug("No update needed for linkgroup free space changing.");
                         }
 
 			return;
 		}
 
 		if( _log.isDebugEnabled()) {
-                    _log.trace("Updates due to linkgroup free space changing:");
+                    _log.debug("Updates due to linkgroup free space changing:");
                 }
 
 		for( String linkgroupId : freeSpaceAfter.keySet()) {
 			if( !freeSpaceAfter.get( linkgroupId).equals( freeSpaceNow.get( linkgroupId))) {
 				if( _log.isDebugEnabled()) {
-                                    _log.trace("    linkgroup: " + linkgroupId);
+                                    _log.debug("    linkgroup: " + linkgroupId);
                                 }
 				linkgroupsToUpdate.add( linkgroupId);
 			}
@@ -161,7 +161,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 		for( String linkgroupId : linkgroupsToUpdate) {
 
 			if( _log.isDebugEnabled()) {
-                            _log.trace("Building update for linkgroup " + linkgroupId);
+                            _log.debug("Building update for linkgroup " + linkgroupId);
                         }
 
 			StatePath thisLinkgroupSpace = LINKGROUPS.newChild( linkgroupId).newChild("space");
@@ -191,7 +191,7 @@ public class LinkgroupTotalSpaceMaintainer extends AbstractStateWatcher {
 									new IntegerStateValue( used + freeLong));
 			} else {
 				if( _log.isDebugEnabled()) {
-                                    _log.trace("failed to find linkgroup " + linkgroupId + " in freeStateAfter");
+                                    _log.debug("failed to find linkgroup " + linkgroupId + " in freeStateAfter");
                                 }
 			}
 		}

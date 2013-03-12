@@ -81,7 +81,7 @@ public class SrmStatusOfGetRequest {
         try {
             response = srmGetStatus();
         } catch(URISyntaxException e) {
-            logger.trace(" malformed uri : "+e.getMessage());
+            logger.debug(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {

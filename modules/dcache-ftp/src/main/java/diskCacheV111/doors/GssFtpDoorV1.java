@@ -60,7 +60,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     @Override
     public void ac_auth(String arg) {
-        debug("GssFtpDoorV1::secure_reply: going to authorize using " + _gssFlavor);
+        info("GssFtpDoorV1::secure_reply: going to authorize using " + _gssFlavor);
         if ( !arg.equals("GSSAPI") ) {
             reply("504 Authenticating method not supported");
             return;
@@ -103,11 +103,11 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         try {
             enableInterrupt();
             //_serviceContext.setChannelBinding(cb);
-            //trace("GssFtpDoorV1::ac_adat: CB set");
+            //debug("GssFtpDoorV1::ac_adat: CB set");
             token = _serviceContext.acceptSecContext(token, 0, token.length);
-            //trace("GssFtpDoorV1::ac_adat: Token created");
+            //debug("GssFtpDoorV1::ac_adat: Token created");
             _gssIdentity = _serviceContext.getSrcName();
-            //trace("GssFtpDoorV1::ac_adat: User principal: " + UserPrincipal);
+            //debug("GssFtpDoorV1::ac_adat: User principal: " + UserPrincipal);
         } catch( Exception e ) {
             _logger.error("GssFtpDoorV1::ac_adat: got service context exception", e);
             reply("535 Authentication failed: " + e);
@@ -128,7 +128,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
                 reply("335 ADAT=");
             }
             else {
-                debug("GssFtpDoorV1::ac_adat: security context established " +
+                info("GssFtpDoorV1::ac_adat: security context established " +
                      "with " + _gssIdentity);
                 reply("235 OK");
             }
@@ -194,7 +194,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // Example = ubftp client
     @Override
     public void ac_pass(String arg) {
-        trace("GssFtpDoorV1::ac_pass: PASS is a no-op with " +
+        debug("GssFtpDoorV1::ac_pass: PASS is a no-op with " +
                 "GSSAPI authentication.");
         if (_subject != null) {
             reply(ok("PASS"));

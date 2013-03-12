@@ -176,13 +176,13 @@
     <threshold>
       <appender>stdout</appender>
       <logger>root</logger>
-      <level>info</level>
+      <level>warn</level>
     </threshold>
 
     <threshold>
       <appender>pinboard</appender>
       <logger>root</logger>
-      <level>debug</level>
+      <level>info</level>
     </threshold>
 
     <threshold>

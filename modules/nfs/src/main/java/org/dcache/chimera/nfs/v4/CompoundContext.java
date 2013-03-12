@@ -136,7 +136,7 @@ public class CompoundContext {
     public void currentInode(FsInode inode)
     {
         _currentInode = inode;
-        _log.trace("current Inode: {}",  _currentInode );
+        _log.debug("current Inode: {}",  _currentInode );
     }
 
     /**
@@ -154,7 +154,7 @@ public class CompoundContext {
 
     public void rootInode(FsInode inode) {
         _rootInode = inode;
-        _log.trace("root Inode: {}", _rootInode );
+        _log.debug("root Inode: {}", _rootInode );
     }
 
     /**
@@ -168,7 +168,7 @@ public class CompoundContext {
             throw new ChimeraNFSException(nfsstat.NFSERR_RESTOREFH, "no saved file handle");
         }
         _currentInode = _savedInode;
-        _log.trace("restored Inode: {}",  _currentInode );
+        _log.debug("restored Inode: {}",  _currentInode );
     }
 
     public FsInode savedInode() throws ChimeraNFSException {
@@ -189,7 +189,7 @@ public class CompoundContext {
             throw new ChimeraNFSException(nfsstat.NFSERR_NOFILEHANDLE, "no file handle");
         }
         _savedInode = _currentInode;
-        _log.trace("saved Inode: {}", _savedInode );
+        _log.debug("saved Inode: {}", _savedInode );
     }
 
     /**

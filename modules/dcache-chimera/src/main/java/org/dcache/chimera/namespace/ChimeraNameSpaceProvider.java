@@ -519,7 +519,7 @@ public class ChimeraNameSpaceProvider
     @Override
     public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException {
 
-        _log.trace("clearCacheLocation : {} for {}", cacheLocation, pnfsId) ;
+        _log.debug("clearCacheLocation : {} for {}", cacheLocation, pnfsId) ;
 
         try {
         	FsInode inode = new FsInode(_fs, pnfsId.toIdString());
@@ -530,7 +530,7 @@ public class ChimeraNameSpaceProvider
         	List<StorageLocatable> locations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
         	    if( locations.isEmpty() ) {
 
-                        _log.trace("last location cleaned. removing file {}", inode) ;
+                        _log.debug("last location cleaned. removing file {}", inode) ;
         	        _fs.remove(inode);
         	    }
         	}
@@ -826,7 +826,7 @@ public class ChimeraNameSpaceProvider
                                   FileAttributes attr)
         throws CacheException
     {
-        _log.trace("File attributes update: {}", attr.getDefinedAttributes());
+        _log.debug("File attributes update: {}", attr.getDefinedAttributes());
 
         FsInode inode = new FsInode(_fs, pnfsId.toIdString());
 

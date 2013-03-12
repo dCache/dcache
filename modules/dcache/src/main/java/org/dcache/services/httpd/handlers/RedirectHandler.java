@@ -33,7 +33,7 @@ public class RedirectHandler extends AbstractHandler {
     public void handle(String target, Request baseRequest,
             HttpServletRequest request, HttpServletResponse response) throws
             IOException, ServletException {
-        logger.trace("target: {}", target);
+        logger.debug("target: {}", target);
         if (target.contains(fromContext)) {
             StringBuilder targetUrl = new StringBuilder(target);
             int i = targetUrl.indexOf(fromContext);
@@ -41,7 +41,7 @@ public class RedirectHandler extends AbstractHandler {
             = targetUrl.replace(i, i + fromContext.length(),
                                        toContext)
                        .toString();
-            logger.trace("redirected to: {}", newUrl);
+            logger.debug("redirected to: {}", newUrl);
             response.sendRedirect(newUrl);
         }
     }

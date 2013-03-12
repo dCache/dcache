@@ -84,7 +84,7 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
         principals.add(new GroupNamePrincipal(name, isPrimary));
         authorizedPrincipals.add(new FQANPrincipal(fqan, isPrimary));
         authorizedPrincipals.add(globusPrincipal);
-        _log.debug("VOMS authorization successful for user with DN: {} and FQAN: {} for user name: {}.", dn, fqan, name);
+        _log.info("VOMS authorization successful for user with DN: {} and FQAN: {} for user name: {}.", dn, fqan, name);
         return true;
     }
 

@@ -1601,7 +1601,7 @@ public class JdbcFs implements FileSystemProvider {
 
 
         if (level == 0 && !inode.isIoEnabled()) {
-            _log.trace(inode + ": IO (write) not allowd");
+            _log.debug(inode + ": IO (write) not allowd");
             return -1;
         }
 
@@ -1649,7 +1649,7 @@ public class JdbcFs implements FileSystemProvider {
         int count = -1;
 
         if (level == 0 && !inode.isIoEnabled()) {
-            _log.trace(inode + ": IO(read) not allowd");
+            _log.debug(inode + ": IO(read) not allowd");
             return -1;
         }
 
@@ -1668,10 +1668,10 @@ public class JdbcFs implements FileSystemProvider {
             count = _sqlDriver.read(dbConnection, inode, level, beginIndex, data, offset, len);
 
         } catch (SQLException se) {
-            _log.trace("read:", se);
+            _log.debug("read:", se);
             throw new IOHimeraFsException(se.getMessage());
         } catch (IOException e) {
-            _log.trace("read IO:", e);
+            _log.debug("read IO:", e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2570,10 +2570,10 @@ public class JdbcFs implements FileSystemProvider {
                                            TOTAL_FILES,
                                            _fs.usedSpace(),
                                            _fs.usedFiles());
-                _log.trace("updateing cached value of FsStat");
+                _log.debug("updateing cached value of FsStat");
                 _fsStatLastUpdate = System.currentTimeMillis();
             } else {
-                _log.trace("using cached value of FsStat");
+                _log.debug("using cached value of FsStat");
             }
 
             return _fsStatCached;
@@ -2727,7 +2727,7 @@ public class JdbcFs implements FileSystemProvider {
 
             }
         } catch (IllegalArgumentException iae) {
-            _log.debug("Failed to generate an inode from file handle : {} : {}", strHandle, iae);
+            _log.info("Failed to generate an inode from file handle : {} : {}", strHandle, iae);
             inode = null;
         }
 

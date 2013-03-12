@@ -60,14 +60,14 @@ public class LogIn extends BasePage {
                     setGoOnPage();
                 } catch (IllegalArgumentException ex) {
                     error(getStringResource("noCertError"));
-                    _log.trace("no certificate provided");
+                    _log.debug("no certificate provided");
                 } catch (LogInServiceException ex) {
                     String cause = "unknown";
                     if (ex.getMessage() != null) {
                         cause = ex.getMessage();
                     }
                     error(getStringResource("loginError"));
-                    _log.trace("cert sign in error - cause {}", cause);
+                    _log.debug("cert sign in error - cause {}", cause);
                 }
             }
         }
@@ -98,7 +98,7 @@ public class LogIn extends BasePage {
                     }
                     error(getStringResource("loginError") + " - cause: "
                                     + cause);
-                    _log.trace("user/pwd sign in error - cause {}", cause);
+                    _log.debug("user/pwd sign in error - cause {}", cause);
                 }
             }
         }
@@ -167,7 +167,7 @@ public class LogIn extends BasePage {
                 username = data[0];
                 password = data[1];
             }
-            _log.trace("username sign in, username: {}", username);
+            _log.debug("username sign in, username: {}", username);
             UserBean user = getLogInService().authenticate(username,
                             password.toCharArray());
             getWebadminSession().setUser(user);

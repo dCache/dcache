@@ -209,7 +209,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             LocalId localId = xacmlClient.mapCredentials(_mappingServiceURL);
             Preconditions.checkArgument(localId != null, DENIED_MESSAGE + key);
 
-            logger.debug("mapping service {} returned localId {} for {} ", _mappingServiceURL, localId, key);
+            logger.info("mapping service {} returned localId {} for {} ", _mappingServiceURL, localId, key);
             return localId;
         }
     }
@@ -319,7 +319,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         configureCache();
 
-        logger.trace("XACML plugin now loaded for URL {}", _mappingServiceURL);
+        logger.debug("XACML plugin now loaded for URL {}", _mappingServiceURL);
     }
 
     /*
@@ -370,13 +370,13 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                 VomsExtensions vomsExtensions
                     = new VomsExtensions(principal.getName(), null, null,
                                        null, null, null, false);
-                logger.trace(" {} authenticate, adding voms extensions = {}",
+                logger.debug(" {} authenticate, adding voms extensions = {}",
                             this, vomsExtensions);
                 extensions.add(vomsExtensions);
             }
         }
 
-        logger.trace("VOMS extensions found: {}", extensions);
+        logger.debug("VOMS extensions found: {}", extensions);
 
         checkAuthentication(!extensions.isEmpty(), "no subjects found to map");
 
@@ -521,7 +521,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             VomsExtensions vomsExtensions
                 = new VomsExtensions(proxySubject, proxySubjectIssuer, null,
                                    vomsSubject, null, null, primary);
-            logger.trace(" {} authenticate, adding voms extensions = {}",
+            logger.debug(" {} authenticate, adding voms extensions = {}",
                             this, vomsExtensions);
             extensionsSet.add(vomsExtensions);
         } else {
@@ -535,7 +535,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                                            vomsAttr.getVO(), vomsSubject, x500,
                                            null, primary);
                     primary = false;
-                    logger.trace(" {} authenticate, adding voms extensions = {}",
+                    logger.debug(" {} authenticate, adding voms extensions = {}",
                                     this, vomsExtensions);
                     extensionsSet.add(vomsExtensions);
                 } else {
@@ -545,7 +545,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                                                vomsAttr.getVO(), vomsSubject, x500,
                                                String.valueOf(fqan), primary);
                         primary = false;
-                        logger.trace(" {} authenticate, adding voms extensions = {}",
+                        logger.debug(" {} authenticate, adding voms extensions = {}",
                                         this, vomsExtensions);
                         extensionsSet.add(vomsExtensions);
                     }
@@ -574,14 +574,14 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                     continue;
                 }
                 if (login == null || login.getName().equals(name)) {
-                    logger.trace("getMappingFor {} = {}", extensions, name);
+                    logger.debug("getMappingFor {} = {}", extensions, name);
                     return name;
                 }
             } catch (ExecutionException t) {
                 /*
                  * Exception has already been logged inside the fetcher ...
                  */
-                logger.trace("could not find mapping for {}; continuing ...",
+                logger.debug("could not find mapping for {}; continuing ...",
                                 extensions);
             }
         }

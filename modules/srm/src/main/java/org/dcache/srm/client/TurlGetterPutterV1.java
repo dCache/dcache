@@ -128,14 +128,14 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         this.number_of_file_reqs = SURLs.length;
         this.retry_num = retry_num;
         this.retry_timout = retry_timeout;
-        logger.trace("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
+        logger.debug("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
         this.transport = transport;
     }
 
     @Override
     public void getInitialRequest() throws SRMException {
         if(number_of_file_reqs == 0) {
-            logger.trace("number_of_file_reqs is 0, nothing to do");
+            logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -151,7 +151,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
 
-        logger.trace("run() : calling getInitialRequestStatus()");
+        logger.debug("run() : calling getInitialRequestStatus()");
         try {
             rs =  getInitialRequestStatus();
         }
@@ -165,7 +165,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     public void run() {
 
         if(number_of_file_reqs == 0) {
-            logger.trace("number_of_file_reqs is 0, nothing to do");
+            logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
 
@@ -193,7 +193,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             createdMap = true;
         }
 
-        logger.trace("getFromRemoteSRM() : received requestStatus, waiting");
+        logger.debug("getFromRemoteSRM() : received requestStatus, waiting");
         try {
             waitForReadyStatuses();
         }
@@ -207,12 +207,12 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     private void waitForReadyStatuses() throws Exception{
         while(!fileIDs.isEmpty()) {
             if(isStopped()) {
-                logger.trace("TurlGetterPutter is done, still have "+fileIDs.size()+" file ids");
+                logger.debug("TurlGetterPutter is done, still have "+fileIDs.size()+" file ids");
                 for (Integer fileID : fileIDs) {
                     RequestFileStatus frs;
                     Integer nextID = fileID;
                     try {
-                        logger.trace("calling setFileStatus(" + requestID + "," + nextID + ",\"Done\") on remote server");
+                        logger.debug("calling setFileStatus(" + requestID + "," + nextID + ",\"Done\") on remote server");
                         setFileStatus(requestID, nextID, "Done");
                     } catch (Exception e) {
                         logger.error("error setting file status to done", e);
@@ -267,7 +267,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                             continue;
                         }
 
-                        logger.trace("waitForReadyStatuses() received the RequestFileStatus with Status=" + frs.state + " for SURL=" + frs.SURL);
+                        logger.debug("waitForReadyStatuses() received the RequestFileStatus with Status=" + frs.state + " for SURL=" + frs.SURL);
                         removeIDs.add(nextID);
                         removedIDsToSURL.put(nextID, frs.SURL);
 
@@ -286,7 +286,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                 removeIDsToErrorMessages
                                         .put(nextID, "  TURL nof found but fileStatus state ==" + frs.state);
                             } else {
-                                logger.trace("waitForReadyStatuses(): FileRequestStatus is Ready received TURL=" +
+                                logger.debug("waitForReadyStatuses(): FileRequestStatus is Ready received TURL=" +
                                         frs.TURL);
                                 removeIDs.add(nextID);
                                 removedIDsToResutls.put(nextID, Boolean.TRUE);
@@ -343,7 +343,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 synchronized (fileIDs) {
 
                     if(fileIDs.isEmpty()) {
-                        logger.trace("waitForReadyStatuses(): fileIDs is empty, breaking the loop");
+                        logger.debug("waitForReadyStatuses(): fileIDs is empty, breaking the loop");
                         break;
                     }
                 }
@@ -354,7 +354,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                         if( retrytime <= 0 ) {
                             retrytime = 5;
                         }
-                        logger.trace("waitForReadyStatuses(): waiting for "+retrytime+" seconds before updating status ...");
+                        logger.debug("waitForReadyStatuses(): waiting for "+retrytime+" seconds before updating status ...");
                         sync.wait( retrytime * 1000L );
                     }
                     catch(InterruptedException ie) {

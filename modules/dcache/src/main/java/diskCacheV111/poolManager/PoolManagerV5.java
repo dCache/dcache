@@ -97,6 +97,7 @@ public class PoolManagerV5
 
 
     private final static Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
+    private final static Logger _logPoolMonitor = LoggerFactory.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
 
 
     public PoolManagerV5()
@@ -150,7 +151,7 @@ public class PoolManagerV5
         } else {
             _watchdog = new WatchdogThread();
         }
-        _log.debug("Watchdog : " + _watchdog);
+        _log.info("Watchdog : " + _watchdog);
     }
 
     @Override
@@ -187,7 +188,7 @@ public class PoolManagerV5
 
         public WatchdogThread() {
             new Thread(this, "watchdog").start();
-            _log.debug("WatchdogThread initialized with : " + this);
+            _log.info("WatchdogThread initialized with : " + this);
         }
 
         public WatchdogThread(String parameter) {
@@ -227,23 +228,23 @@ public class PoolManagerV5
                 _log.warn("WatchdogThread : illegal arguments [" + parameter + "] (using defaults) " + ee.getMessage());
             }
             new Thread(this, "watchdog").start();
-            _log.debug("WatchdogThread initialized with : " + this);
+            _log.info("WatchdogThread initialized with : " + this);
         }
 
         @Override
         public void run() {
-            _log.debug("watchdog thread activated");
+            _log.info("watchdog thread activated");
             while (true) {
                 try {
                     Thread.sleep(_sleepTimer);
                 } catch (InterruptedException e) {
-                    _log.debug("watchdog thread interrupted");
+                    _log.info("watchdog thread interrupted");
                     break;
                 }
                 runWatchdogSequence(_deathDetected);
                 _watchdogSequenceCounter++;
             }
-            _log.debug("watchdog finished");
+            _log.info("watchdog finished");
         }
 
         @Override
@@ -285,7 +286,9 @@ public class PoolManagerV5
                 if (pool.getActive() > deathDetectedTimer
                     && pool.setSerialId(0L)) {
 
-                    _log.warn("Pool {} declared as DOWN (no ping in {} seconds).", name, deathDetectedTimer / 1000);
+                    if( _logPoolMonitor.isDebugEnabled() ) {
+                        _logPoolMonitor.debug("Pool " + name + " declared as DOWN (no ping in " + deathDetectedTimer/1000 +" seconds).");
+                    }
                     _requestContainer.poolStatusChanged(name, PoolStatusChangedMessage.DOWN);
                     sendPoolStatusRelay(name, PoolStatusChangedMessage.DOWN,
                                         null, 666, "DEAD");
@@ -349,8 +352,11 @@ public class PoolManagerV5
         PoolV2Mode newMode = poolMessage.getPoolMode();
         PoolV2Mode oldMode = pool.getPoolMode();
 
-        _log.debug("Received heath beat from pool {} with mode {} and serial id {}",
-                poolName, newMode, poolMessage.getSerialId());
+        if (_logPoolMonitor.isDebugEnabled()) {
+            _logPoolMonitor.debug("PoolUp message from " + poolName
+                                  + " with mode " + newMode
+                                  + " and serialId " + poolMessage.getSerialId());
+        }
 
         /* For compatibility with previous versions of dCache, a pool
          * marked DISABLED, but without any other DISABLED_ flags set
@@ -391,7 +397,8 @@ public class PoolManagerV5
          * mode has changed.
          */
         if (changed) {
-            _log.info("Pool {} changed from mode {} to {}", poolName, oldMode, newMode);
+            _logPoolMonitor.warn("Pool " + poolName + " changed from mode "
+                                 + oldMode + " to " + newMode);
 
             if (disabled) {
                 _requestContainer.poolStatusChanged(poolName,
@@ -424,7 +431,7 @@ public class PoolManagerV5
           PoolStatusChangedMessage msg = new PoolStatusChangedMessage( poolName , status ) ;
           msg.setPoolMode( poolMode ) ;
           msg.setDetail( statusCode , statusMessage ) ;
-          _log.debug("sendPoolStatusRelay : "+msg);
+          _log.info("sendPoolStatusRelay : "+msg);
           sendMessage(
                new CellMessage( _poolStatusRelayPath , msg )
                      ) ;
@@ -752,12 +759,12 @@ public class PoolManagerV5
             long started = System.currentTimeMillis();
             _cdc.restore();
             try {
-                _log.debug("Select link group handler started");
+                _log.info("Select link group handler started");
 
                 _message.setLinkGroups(selectLinkGroups());
                 _message.setSucceeded();
 
-                _log.debug("Select link group handler finished after {} ms",
+                _log.info("Select link group handler finished after {} ms",
                           (System.currentTimeMillis() - started));
             } catch (Exception e) {
                 _message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -849,7 +856,7 @@ public class PoolManagerV5
            StorageInfo  storageInfo  = _request.getStorageInfo() ;
            ProtocolInfo protocolInfo = _request.getProtocolInfo() ;
 
-           _log.debug( _pnfsId.toString()+" write handler started" );
+           _log.info( _pnfsId.toString()+" write handler started" );
            long started = System.currentTimeMillis();
 
            if( storageInfo == null ){
@@ -883,7 +890,7 @@ public class PoolManagerV5
                            .getLinkGroup())
                    .selectWritePool();
 
-              _log.debug("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
+              _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
                         System.currentTimeMillis() - started);
               requestSucceeded(pool);
 

@@ -52,8 +52,8 @@ public class OperationGETDEVICEINFO extends AbstractNFSv4Operation {
 
         deviceid4 deviceId = _args.opgetdeviceinfo.gdia_device_id;
 
-        _log.trace("             Info for #{}", deviceId);
-        _log.trace("             type for #{}",
+        _log.debug("             Info for #{}", deviceId);
+        _log.debug("             type for #{}",
                     _args.opgetdeviceinfo.gdia_layout_type);
         try {
 
@@ -75,7 +75,7 @@ public class OperationGETDEVICEINFO extends AbstractNFSv4Operation {
             res.gdir_status = nfsstat.NFS_OK;
 
         } catch (ChimeraNFSException he) {
-            _log.trace("GETDEVICEINFO: {}", he.getMessage());
+            _log.debug("GETDEVICEINFO: {}", he.getMessage());
             res.gdir_status = he.getStatus();
         } catch (Exception e) {
             _log.error("GETDEVICEINFO4: ", e);

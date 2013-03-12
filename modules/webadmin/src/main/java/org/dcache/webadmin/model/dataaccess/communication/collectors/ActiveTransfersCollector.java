@@ -36,7 +36,7 @@ public class ActiveTransfersCollector extends Collector {
 
     private Set<CellAddressCore> getAllDoorsToAsk() throws InterruptedException,
                     CacheException {
-        _log.trace("Requesting doorInfo from LoginBroker {}", _loginBrokerName);
+        _log.debug("Requesting doorInfo from LoginBroker {}", _loginBrokerName);
         LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(
                         _loginBrokerName), "ls -binary -all",
                         LoginBrokerInfo[].class);
@@ -44,7 +44,7 @@ public class ActiveTransfersCollector extends Collector {
         for (LoginBrokerInfo info : infos) {
             doors.add(new CellAddressCore(info.getCellName(), info.getDomainName()));
         }
-        _log.trace("LoginBrokers found: {}", doors);
+        _log.debug("LoginBrokers found: {}", doors);
         return doors;
     }
 
@@ -52,16 +52,16 @@ public class ActiveTransfersCollector extends Collector {
             throws InterruptedException
     {
         Map<CellAddressCore, LoginManagerChildrenInfo> doorInfos = new HashMap<>();
-        _log.trace("Asking doors for 'doorClientList' (one by one)");
+        _log.debug("Asking doors for 'doorClientList' (one by one)");
         for (CellAddressCore doorName : doors) {
-            _log.trace("Requesting client list from: {}", doorName);
+            _log.debug("Requesting client list from: {}", doorName);
             try {
                 LoginManagerChildrenInfo info = _cellStub.sendAndWait(
                                 new CellPath(doorName), "get children -binary",
                                 LoginManagerChildrenInfo.class);
                 doorInfos.put(doorName, info);
             } catch (CacheException e) {
-                _log.trace("Exception in door {}: {}", doorName, e);
+                _log.debug("Exception in door {}: {}", doorName, e);
             }
         }
         return doorInfos;
@@ -85,19 +85,19 @@ public class ActiveTransfersCollector extends Collector {
         for (LoginManagerChildrenInfo info : doorInfos) {
             for (String child : info.getChildren()) {
                 CellAddressCore childDoor = new CellAddressCore(child, info.getCellDomainName());
-                _log.trace("Requesting IoDoorInfo from {}", childDoor);
+                _log.debug("Requesting IoDoorInfo from {}", childDoor);
                 try {
                     IoDoorInfo ioDoorInfo = _cellStub.sendAndWait(new CellPath(
                                     childDoor), "get door info -binary",
                                     IoDoorInfo.class);
                     for (IoDoorEntry ioDoorEntry : ioDoorInfo.getIoDoorEntries()) {
-                        _log.trace("Adding Mover {}", ioDoorEntry);
+                        _log.debug("Adding Mover {}", ioDoorEntry);
                         transfers.put(childDoor + "#"
                                         + ioDoorEntry.getSerialId(),
                                         new MoverInfo(ioDoorInfo, ioDoorEntry));
                     }
                 } catch (CacheException e) {
-                    _log.trace("Exception asking door {}: {}", childDoor, e);
+                    _log.debug("Exception asking door {}: {}", childDoor, e);
                 }
             }
         }
@@ -107,7 +107,7 @@ public class ActiveTransfersCollector extends Collector {
                     Map<String, MoverInfo> transfers)
                     throws InterruptedException {
         for (String poolName : poolsToAskForMovers) {
-            _log.trace("Asking pool {} for movers", poolName);
+            _log.debug("Asking pool {} for movers", poolName);
             try {
                 IoJobInfo[] infos = _cellStub.sendAndWait(
                                 new CellPath(poolName), "mover ls -binary",
@@ -117,14 +117,14 @@ public class ActiveTransfersCollector extends Collector {
                                     + info.getClientId();
                     MoverInfo mover = transfers.get(client);
                     if (mover == null) {
-                        _log.trace("No door found for mover {} of pool {}",
+                        _log.debug("No door found for mover {} of pool {}",
                                         client, poolName);
                     } else {
                         mover.setIoJobInfo(info);
                     }
                 }
             } catch (CacheException e) {
-                _log.trace("Exception asking pool {}: {}", poolName, e);
+                _log.debug("Exception asking pool {}: {}", poolName, e);
             }
         }
     }
@@ -151,7 +151,7 @@ public class ActiveTransfersCollector extends Collector {
                             transfers);
             putTransfersIntoContext(transfers);
         } catch (CacheException e) {
-            _log.trace(e.toString(), e);
+            _log.debug(e.toString(), e);
             return Status.FAILURE;
         }
 

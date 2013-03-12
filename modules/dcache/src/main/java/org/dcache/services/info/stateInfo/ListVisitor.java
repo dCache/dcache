@@ -27,7 +27,7 @@ public class ListVisitor extends SkeletonListVisitor {
 	 */
 	static public Set<String> getDetails( StateExhibitor exhibitor, StatePath path) {
 		if( _log.isDebugEnabled()) {
-                    _log.trace("Gathering current status for path " + path);
+                    _log.debug("Gathering current status for path " + path);
                 }
 
 		ListVisitor visitor = new ListVisitor( path);

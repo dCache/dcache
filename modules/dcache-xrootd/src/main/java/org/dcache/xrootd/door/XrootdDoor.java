@@ -286,13 +286,13 @@ public class XrootdDoor
 
                     if (error == null) {
                         notifyBilling(0, "");
-                        _log.debug("Transfer {}@{} finished",
+                        _log.info("Transfer {}@{} finished",
                                   getPnfsId(), getPool());
                     } else {
                         int rc = error.getRc();
                         String message = error.getMessage();
                         notifyBilling(rc, message);
-                        _log.debug("Transfer {}@{} failed: {} (error code={})", getPnfsId(), getPool(), message, rc);
+                        _log.info("Transfer {}@{} failed: {} (error code={})", getPnfsId(), getPool(), message, rc);
                     }
                 }
             };
@@ -712,7 +712,7 @@ public class XrootdDoor
 
     public void messageArrived(XrootdDoorAdressInfoMessage msg)
     {
-        _log.trace("Received redirect msg from mover");
+        _log.debug("Received redirect msg from mover");
 
         XrootdTransfer transfer = _transfers.get(msg.getXrootdFileHandle());
 
@@ -765,7 +765,7 @@ public class XrootdDoor
         DirlistRequestHandler request = _requestHandlers.get(uuid);
 
         if (request == null) {
-            _log.debug("Did not find the callback for directory listing " +
+            _log.info("Did not find the callback for directory listing " +
                       "message with UUID {}.", uuid);
             return;
         }

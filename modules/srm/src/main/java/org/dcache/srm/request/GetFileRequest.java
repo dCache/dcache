@@ -129,7 +129,7 @@ public final class GetFileRequest extends FileRequest {
             requestCredentalId,
             lifetime,
             maxNumberOfRetries);
-        logger.trace("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
+        logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         surl = URI.create(url);
         updateMemoryCache();
 
@@ -329,7 +329,7 @@ public final class GetFileRequest extends FileRequest {
             rfs.state = "Pending";
         }
 
-        //logger.trace(" returning requestFileStatus for "+rfs.toString());
+        //logger.debug(" returning requestFileStatus for "+rfs.toString());
         return rfs;
     }
 
@@ -436,13 +436,13 @@ public final class GetFileRequest extends FileRequest {
 
     @Override
     public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
-        logger.trace("run()");
+        logger.debug("run()");
         try {
             if(getPinId() == null) {
                 pinFile();
                 if(getPinId() == null) {
                     setState(State.ASYNCWAIT, "pinning file");
-                    logger.trace("GetFileRequest: waiting async notification about pinId...");
+                    logger.debug("GetFileRequest: waiting async notification about pinId...");
                     return;
                 }
             }
@@ -452,7 +452,7 @@ public final class GetFileRequest extends FileRequest {
             // always retries, even if problem isn't transitory.
             throw new NonFatalJobFailure(e.toString());
         }
-        logger.debug("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
+        logger.info("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
 
     }
 
@@ -465,7 +465,7 @@ public final class GetFileRequest extends FileRequest {
         }
 
         URI surl = getSurl();
-        logger.debug("Pinning {}", surl);
+        logger.info("Pinning {}", surl);
         getStorage().pinFile(getUser(),
                              surl,
                              getRequest().getClient_host(),
@@ -477,7 +477,7 @@ public final class GetFileRequest extends FileRequest {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.trace("State changed from "+oldState+" to "+getState());
+        logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
                 getRequest().resetRetryDeltaTime();
@@ -489,7 +489,7 @@ public final class GetFileRequest extends FileRequest {
         if(State.isFinalState(state)) {
             if(getFileId() != null && getPinId() != null) {
                 UnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
-                logger.debug("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
+                logger.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
                 SRMUser user;
                 try {
                     user = getUser();
@@ -735,7 +735,7 @@ public final class GetFileRequest extends FileRequest {
         @Override
         public void Pinned(FileMetaData fileMetaData, String pinId) {
             try {
-                logger.trace("File pinned (pinId={})", pinId);
+                logger.debug("File pinned (pinId={})", pinId);
 
                 GetFileRequest fr = getGetFileRequest();
                 fr.wlock();
@@ -837,7 +837,7 @@ public final class GetFileRequest extends FileRequest {
         public void Unpinned(String pinId) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                logger.trace("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
+                logger.debug("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
                 State state = fr.getState();
                if(state == State.ASYNCWAIT) {
                     fr.setPinId(pinId);
