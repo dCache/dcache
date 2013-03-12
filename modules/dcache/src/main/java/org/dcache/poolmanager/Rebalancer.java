@@ -2,6 +2,7 @@ package org.dcache.poolmanager;
 
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
@@ -124,10 +125,12 @@ public class Rebalancer
         if (metric.equals(METRIC_RELATIVE)) {
             double factor = (double) used / (double) total;
             command =
-                String.format("migration move -id=%s -include-when='target.used < %2$f * target.total' -stop-when='targets == 0 or source.used <= %2$f * source.total' -refresh=%3$d %4$s", JOB_NAME, factor, period, Joiner.on(" ").join(names));
+                String.format(Locale.US, "migration move -id=%s -include-when='target.used < %2$f * target.total' -stop-when='targets == 0 or source.used <= %2$f * source.total' -refresh=%3$d %4$s",
+                        JOB_NAME, factor, period, Joiner.on(" ").join(names));
         } else if (metric.equals(METRIC_SPACE_COST)) {
             command =
-                String.format("migration move -id=%s -include-when='target.spaceCost < source.spaceCost' -stop-when='targets == 0' -refresh=%d %s", JOB_NAME, period, Joiner.on(" ").join(names));
+                String.format(Locale.US, "migration move -id=%s -include-when='target.spaceCost < source.spaceCost' -stop-when='targets == 0' -refresh=%d %s",
+                        JOB_NAME, period, Joiner.on(" ").join(names));
         } else {
             throw new IllegalArgumentException("Unsupported value for -metric: " + metric);
         }
