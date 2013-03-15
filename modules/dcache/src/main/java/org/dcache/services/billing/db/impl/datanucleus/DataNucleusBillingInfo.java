@@ -133,6 +133,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                 }
                 tx = insertManager.currentTransaction();
                 if (!tx.isActive()) {
+                    tx.setIsolationLevel("serializable");
                     tx.begin();
                 }
                 insertManager.makePersistent(data);

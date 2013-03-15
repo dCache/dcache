@@ -4,4 +4,5 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
     <include file="org/dcache/hsqldb/changelog/billing-1.9.13.xml"/>
+    <include file="org/dcache/hsqldb/changelog/billing-2.2.xml"/>
 </databaseChangeLog>

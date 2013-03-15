@@ -4,8 +4,10 @@
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
-    <changeSet id="0.0" author="arossi" context="billing">
-        <comment>basic fine-grained table</comment>
+    <preConditions>
+        <dbms type="hsqldb"/>
+    </preConditions>
+    <changeSet id="1.0.0" author="arossi" context="billing">
         <sql>
             CREATE TABLE "billinginfo"
             (
@@ -21,15 +23,11 @@
             "cellname"       varchar(256),
             "datestamp"      timestamp with time zone,
             "errorcode"      integer,
-            "errormessage"   varchar(256),
-            "pnfsid"         varchar(256),
+            "errormessage"   varchar(8000),
+            "pnfsid"         varchar(36),
             "transaction"    varchar(256)
             );
-        </sql>
-    </changeSet>
-    <changeSet id="0.1" author="arossi" context="billing">
-        <comment>basic fine-grained table</comment>
-        <sql>
+
             CREATE TABLE "storageinfo"
             (
             "queuedtime"     bigint,
@@ -41,14 +39,10 @@
             "datestamp"      timestamp with time zone,
             "errorcode"      integer,
             "errormessage"   varchar(256),
-            "pnfsid"         varchar(256),
-            "transaction"    varchar(256)
+            "pnfsid"         varchar(36),
+            "transaction"    varchar(8000)
             );
-        </sql>
-    </changeSet>
-    <changeSet id="0.2" author="arossi" context="billing">
-        <comment>basic fine-grained table</comment>
-        <sql>
+
             CREATE TABLE "doorinfo"
             (
             "client"         varchar(256),
@@ -63,211 +57,252 @@
             "datestamp"      timestamp with time zone,
             "errorcode"      integer,
             "errormessage"   varchar(256),
-            "pnfsid"         varchar(256),
-            "transaction"    varchar(256)
+            "pnfsid"         varchar(36),
+            "transaction"    varchar(8000)
             );
-        </sql>
-    </changeSet>
-    <changeSet id="0.3" author="arossi" context="billing">
-        <comment>basic fine-grained table</comment>
-        <sql>
-            CREATE TABLE "costinfo"
+
+            CREATE TABLE "hitinfo"
             (
-            "cost"         double precision,
+            "filecached"   boolean,
             "action"       varchar(256),
             "cellname"     varchar(256),
             "datestamp"    timestamp with time zone,
             "errorcode"    integer,
-            "errormessage" varchar(256),
-            "pnfsid"       varchar(256),
+            "errormessage" varchar(8000),
+            "pnfsid"       varchar(36),
             "transaction"  varchar(256)
             );
-        </sql>
-    </changeSet>
-    <changeSet id="0.4" author="arossi" context="billing">
-        <comment>basic fine-grained table</comment>
-        <sql>
-            CREATE TABLE "hitinfo"
+
+            CREATE TABLE "billinginfo_rd_daily"
             (
-            "filecached"     boolean,
-            "action"         varchar(256),
-            "cellname"       varchar(256),
-            "datestamp"      timestamp with time zone,
-            "errorcode"      integer,
-            "errormessage"   varchar(256),
-            "pnfsid"         varchar(256),
-            "transaction"    varchar(256)
+            "date"         timestamp with time zone,
+            "count"        bigint,
+            "size"         bigint,
+            "transferred"  bigint
             );
-        </sql>
-    </changeSet>
-    <changeSet id="1.0" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
+
+            CREATE TABLE "billinginfo_wr_daily"
+            (
+            "date"         timestamp with time zone,
+            "count"        bigint,
+            "size"         bigint,
+            "transferred"  bigint
+            );
+
+            CREATE TABLE "billinginfo_tm_daily"
+            (
+            "date"         timestamp with time zone,
+            "count"        bigint,
+            "minimum"      bigint,
+            "maximum"      bigint,
+            "totaltime"    bigint
+            );
+
+            CREATE TABLE "storageinfo_rd_daily"
+            (
+            "date"         timestamp with time zone,
+            "count"        bigint,
+            "size"         bigint
+            );
+
+            CREATE TABLE "storageinfo_wr_daily"
+            (
+            "date"         timestamp with time zone,
+            "count"        bigint,
+            "size"         bigint
+            );
+
+            CREATE TABLE "hitinfo_daily"
+            (
+            "date"         timestamp with time zone,
+            "count"        bigint,
+            "notcached"    bigint,
+            "cached"       bigint
+            );
+
             CREATE INDEX "billinginfo_date_idx"
                 ON "billinginfo" ("datestamp");
             CREATE INDEX "billinginfo_isnew_idx"
                 ON "billinginfo" ("isnew");
-        </sql>
-    </changeSet>
-    <changeSet id="1.1" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
             CREATE INDEX "storageinfo_date_idx"
                 ON "storageinfo" ("datestamp");
             CREATE INDEX "storageinfo_action_idx"
                 ON "storageinfo" ("action");
-        </sql>
-    </changeSet>
-    <changeSet id="1.2" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
-            CREATE INDEX "doorinfo_date_id"
+            CREATE INDEX "doorinfo_date_idx"
                 ON "doorinfo" ("datestamp");
-        </sql>
-    </changeSet>
-    <changeSet id="1.3" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
-            CREATE INDEX "costinfo_date_idx"
-                ON "costinfo" ("datestamp");
-        </sql>
-    </changeSet>
-    <changeSet id="1.4" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
             CREATE INDEX "hitinfo_date_idx"
                 ON "hitinfo" ("datestamp");
-        </sql>
-    </changeSet>
-    <changeSet id="2.0" author="arossi" context="billing">
-        <comment>coarse-grained aggregate table populated by by trigger</comment>
-        <sql>
-            CREATE TABLE "billinginfo_rd_daily"
-            (
-            "date"        timestamp,
-            "count"       bigint,
-            "size"        bigint,
-            "transferred" bigint
-            );
-        </sql>
-    </changeSet>
-    <changeSet id="2.1" author="arossi" context="billing">
-        <comment>coarse-grained aggregate table populated by by trigger</comment>
-        <sql>
-            CREATE TABLE "billinginfo_wr_daily"
-            (
-            "date"        timestamp,
-            "count"       bigint,
-            "size"        bigint,
-            "transferred" bigint
-            );
-        </sql>
-    </changeSet>
-    <changeSet id="2.2" author="arossi" context="billing">
-        <comment>coarse-grained aggregate table populated by by trigger</comment>
-        <sql>
-            CREATE TABLE "billinginfo_tm_daily"
-            (
-            "date"      timestamp,
-            "count"     bigint,
-            "minimum"   bigint,
-            "maximum"   bigint,
-            "totaltime" bigint
-            );
-        </sql>
-    </changeSet>
-    <changeSet id="2.3" author="arossi" context="billing">
-        <comment>coarse-grained aggregate table populated by by trigger</comment>
-        <sql>
-            CREATE TABLE "storageinfo_rd_daily"
-            (
-            "date"       timestamp,
-            "count"      bigint,
-            "size"       bigint
-            );
-        </sql>
-    </changeSet>
-    <changeSet id="2.4" author="arossi" context="billing">
-        <comment>coarse-grained aggregate table populated by by trigger</comment>
-        <sql>
-            CREATE TABLE "storageinfo_wr_daily"
-            (
-            "date"         timestamp,
-            "count"        bigint,
-            "size"         bigint
-            );
-        </sql>
-    </changeSet>
-    <changeSet id="2.5" author="arossi" context="billing">
-        <comment>coarse-grained aggregate table populated by by trigger</comment>
-        <sql>
-            CREATE TABLE "hitinfo_daily"
-            (
-            "date"       timestamp,
-            "count"      bigint,
-            "notcached"  bigint,
-            "cached"     bigint
-            );
-        </sql>
-    </changeSet>
-    <changeSet id="2.6" author="arossi" context="billing">
-        <comment>coarse-grained aggregate table populated by by trigger</comment>
-        <sql>
-            CREATE TABLE "costinfo_daily"
-            (
-            "date"      timestamp,
-            "count"     bigint,
-            "totalcost" double precision,
-            );
-        </sql>
-    </changeSet>
-    <changeSet id="3.0" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
             CREATE INDEX "billinginfo_rd_daily_date_idx"
                 ON "billinginfo_rd_daily" ("date");
-        </sql>
-    </changeSet>
-    <changeSet id="3.1" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
             CREATE INDEX "billinginfo_wr_daily_date_idx"
                 ON "billinginfo_wr_daily" ("date");
-        </sql>
-    </changeSet>
-    <changeSet id="3.2" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
             CREATE INDEX "billinginfo_tm_daily_date_idx"
                 ON "billinginfo_tm_daily" ("date");
-        </sql>
-    </changeSet>
-    <changeSet id="3.3" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
             CREATE INDEX "storageinfo_rd_daily_date_idx"
                 ON "storageinfo_rd_daily" ("date");
-        </sql>
-    </changeSet>
-    <changeSet id="3.4" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
             CREATE INDEX "storageinfo_wr_daily_date_idx"
                 ON "storageinfo_wr_daily" ("date");
-        </sql>
-    </changeSet>
-    <changeSet id="3.5" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
-            CREATE INDEX "costinfo_daily_date_idx"
-                ON "costinfo_daily" ("date");
-        </sql>
-    </changeSet>
-    <changeSet id="3.6" author="arossi" context="billing">
-        <comment>read optimization</comment>
-        <sql>
             CREATE INDEX "hitinfo_daily_date_idx"
                 ON "hitinfo_daily" ("date");
+        </sql>
+    </changeSet>
+    <changeSet id="4.1.0" author="arossi" context="billing">
+        <comment>trigger to populate daily table</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER "tgr_update_billinginfo_rd_daily"
+                AFTER INSERT ON "billinginfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE truncated_date timestamp with time zone;
+                    SET truncated_date = trunc(new."datestamp");
+                    IF (new."isnew" = false AND new."errorcode" = 0) THEN
+                        UPDATE "billinginfo_rd_daily"
+                        SET "count" = "count" + 1,
+                            "size" = "size" + new."fullsize",
+                            "transferred" = "transferred" + new."transfersize"
+                        WHERE trunc("date") = truncated_date;
+                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
+                            INSERT INTO "billinginfo_rd_daily"
+                                   ("date", "count", "size", "transferred")
+                            VALUES (truncated_date, 1, new."fullsize", new."transfersize");
+                       END IF;
+                    END IF;
+                END
+        </sql>
+    </changeSet>
+    <changeSet id="4.1.1" author="arossi" context="billing">
+        <comment>trigger to populate daily table</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER "tgr_update_billinginfo_wr_daily"
+                AFTER INSERT ON "billinginfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE truncated_date timestamp with time zone;
+                    SET truncated_date = trunc(new."datestamp");
+                    IF (new."isnew" = true AND new."errorcode" = 0) THEN
+                        UPDATE "billinginfo_wr_daily"
+                        SET "count" = "count" + 1,
+                            "size" = "size" + new."fullsize",
+                            "transferred" = "transferred" + new."transfersize"
+                        WHERE trunc("date") = truncated_date;
+                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
+                            INSERT INTO "billinginfo_wr_daily"
+                                   ("date", "count", "size", "transferred")
+                            VALUES (truncated_date, 1, new."fullsize", new."transfersize");
+                        END IF;
+                    END IF;
+                END
+        </sql>
+    </changeSet>
+    <changeSet id="4.1.2" author="arossi" context="billing">
+        <comment>trigger to populate daily table</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER "tgr_update_billinginfo_tm_daily"
+            AFTER INSERT ON "billinginfo"
+            REFERENCING NEW ROW AS new
+            FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE truncated_date timestamp with time zone;
+                    SET truncated_date = trunc(new."datestamp");
+                    IF (new."errorcode" = 0) THEN
+                        UPDATE "billinginfo_tm_daily"
+                        SET "count" = "count" + 1, 
+                            "totaltime" = "totaltime" + new."connectiontime",
+                            "minimum" = LEAST("minimum", new."connectiontime"), 
+                            "maximum" = GREATEST("maximum", new."connectiontime")
+                        WHERE trunc("date") = truncated_date;
+                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
+                            INSERT INTO "billinginfo_tm_daily"
+                                   ("date", "count", "totaltime", "minimum", "maximum")
+                            VALUES (truncated_date, 1, new."connectiontime",
+                                    new."connectiontime", new."connectiontime");
+                        END IF;
+                    END IF;
+                END
+        </sql>
+    </changeSet>
+    <changeSet id="4.1.3" author="arossi" context="billing">
+        <comment>trigger to populate daily table</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER "tgr_update_storageinfo_rd_daily"
+                AFTER INSERT ON "storageinfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE truncated_date timestamp with time zone;
+                    SET truncated_date = trunc(new."datestamp");
+                    IF (new."action" = 'restore' AND new."errorcode" = 0) THEN
+                        UPDATE "storageinfo_rd_daily"
+                        SET "count" = "count" + 1,
+                            "size" = "size" + new."fullsize"
+                        WHERE trunc("date") = truncated_date;
+                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
+                            INSERT INTO "storageinfo_rd_daily"
+                                   ("date", "count", "size")
+                            VALUES (truncated_date, 1, new."fullsize");
+                        END IF;
+                    END IF;
+                END
+        </sql>
+    </changeSet>
+    <changeSet id="4.1.4" author="arossi" context="billing">
+        <comment>trigger to populate daily table</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER "tgr_update_storageinfo_wr_daily"
+                AFTER INSERT ON "storageinfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE truncated_date timestamp with time zone;
+                    SET truncated_date = trunc(new."datestamp");
+                    IF (new."action" = 'store' AND new."errorcode" = 0) THEN
+                        UPDATE "storageinfo_wr_daily"
+                        SET "count" = "count" + 1,
+                            "size" = "size" + new."fullsize"
+                        WHERE trunc("date") = truncated_date;
+                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
+                            INSERT INTO "storageinfo_wr_daily"
+                                   ("date", "count", "size")
+                            VALUES (truncated_date, 1, new."fullsize");
+                        END IF;
+                    END IF;
+                END
+        </sql>
+    </changeSet>
+    <changeSet id="4.1.5" author="arossi" context="billing">
+        <comment>trigger to populate daily table</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER "tgr_update_hitinfo_daily"
+                AFTER INSERT ON "hitinfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE delta_notcached bigint;
+                    DECLARE delta_cached bigint;
+                    DECLARE truncated_date timestamp with time zone;
+                    SET truncated_date = trunc(new."datestamp");
+                    IF (new."errorcode" = 0) THEN
+                        IF (new."filecached" = false) THEN
+                            SET delta_notcached = 1;
+                            SET delta_cached = 0;
+                        ELSE
+                            SET delta_notcached = 0;
+                            SET delta_cached = 1;
+                        END IF;
+                        UPDATE "hitinfo_daily"
+                        SET "count" = "count" + 1,
+                            "notcached" = "notcached" + delta_notcached,
+                            "cached" = "cached" + delta_cached
+                        WHERE trunc("date") = truncated_date;
+                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
+                            INSERT INTO "hitinfo_daily"
+                                   ("date", "count", "notcached", "cached")
+                            VALUES (truncated_date, 1, delta_notcached, delta_cached);
+                        END IF;
+                    END IF;
+                END
         </sql>
     </changeSet>
 </databaseChangeLog>
