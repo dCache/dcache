@@ -208,9 +208,9 @@
                     SET truncated_date = trunc(new."datestamp");
                     IF (new."errorcode" = 0) THEN
                         UPDATE "billinginfo_tm_daily"
-                        SET "count" = "count" + 1, 
+                        SET "count" = "count" + 1,
                             "totaltime" = "totaltime" + new."connectiontime",
-                            "minimum" = LEAST("minimum", new."connectiontime"), 
+                            "minimum" = LEAST("minimum", new."connectiontime"),
                             "maximum" = GREATEST("maximum", new."connectiontime")
                         WHERE trunc("date") = truncated_date;
                         IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
