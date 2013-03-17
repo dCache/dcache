@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Prepares pools using BerkeleyDB for meta data for upgrade from dCache 2.5 to 2.6. Run this script
+# if pools fail to start with a com.sleepycat.je.EnvironmentFailureException error after upgrade.
+
+@DCACHE_LOAD_CONFIG@
+
+for domain in $(getProperty dcache.domains); do
+    for cell in $(getProperty domain.cells "$domain"); do
+        service=$(getProperty domain.service "$domain" "$cell")
+        if [ "$service" = "pool" -a $(getProperty metaDataRepository "$domain" "$cell") = "org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository" ]; then
+            path=$(getProperty path "$domain" "$cell")
+            echo "Preparing $path for upgrade"
+            $JAVA -jar $(getProperty dcache.paths.share)/misc/je-4.1.21.jar DbPreUpgrade_4_1 -h "$path"
+        fi
+    done
+done

@@ -2,6 +2,8 @@ package org.dcache.pool.repository.meta.db;
 
 import com.sleepycat.collections.StoredMap;
 import com.sleepycat.je.DatabaseException;
+
+import com.sleepycat.je.EnvironmentFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +68,7 @@ public class BerkeleyDBMetaDataRepository
      */
     public BerkeleyDBMetaDataRepository(FileStore fileStore,
                                         File directory)
-        throws FileNotFoundException, DatabaseException
+            throws FileNotFoundException, DatabaseException, CacheException
     {
         this(fileStore, directory, false);
     }
@@ -74,7 +76,7 @@ public class BerkeleyDBMetaDataRepository
     public BerkeleyDBMetaDataRepository(FileStore fileStore,
                                         File directory,
                                         boolean readOnly)
-        throws FileNotFoundException, DatabaseException
+            throws FileNotFoundException, DatabaseException, CacheException
     {
         _fileStore = fileStore;
         _dir = new File(directory, DIRECTORY_NAME);
@@ -87,8 +89,15 @@ public class BerkeleyDBMetaDataRepository
             throw new FileNotFoundException("No such directory: " + _dir);
         }
 
-        _database = new MetaDataRepositoryDatabase(_dir, readOnly);
-        _views = new MetaDataRepositoryViews(_database);
+        try {
+            _database = new MetaDataRepositoryDatabase(_dir, readOnly);
+            _views = new MetaDataRepositoryViews(_database);
+        } catch (EnvironmentFailureException e) {
+            throw new CacheException(CacheException.PANIC, "Failed to open Berkeley DB database. When upgrading to " +
+                    "dCache 2.6, it may be necessary to run the /usr/sbin/dcache-pool-meta-preupgrade utility " +
+                    "before starting the pool. If that does not resolve the problem, you should contact " +
+                    "support@dcache.org", e);
+        }
     }
 
     @Override

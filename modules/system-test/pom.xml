@@ -45,6 +45,7 @@
                                       <filename name="**/*.gif" />
                                       <filename name="**/*.jpg" />
                                       <filename name="**/*.png" />
+                                      <filename name="**/*.jar" />
                                   </or>
                               </selector>
                               <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
@@ -85,7 +86,6 @@
                       <format>dir</format>
                   </formats>
                   <appendAssemblyId>false</appendAssemblyId>
-                  <includeEmptyDirs>true</includeEmptyDirs>
                   <attach>false</attach>
               </configuration>
               <executions>
