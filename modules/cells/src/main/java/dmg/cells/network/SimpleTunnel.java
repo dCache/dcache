@@ -100,13 +100,13 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    }
    @Override
    public CellTunnelInfo getCellTunnelInfo(){
-      return new CellTunnelInfo( _nucleus.getCellName() ,
-                                 _nucleus.getCellDomainInfo() ,
+       return new CellTunnelInfo( _nucleus.getCellName() ,
+               new CellDomainInfo(_nucleus.getCellDomainName()),
                                  _remoteDomainInfo ) ;
 
    }
    private void _connector() throws Exception {
-       _output.writeObject( _nucleus.getCellDomainInfo() ) ;
+       _output.writeObject(new CellDomainInfo(_nucleus.getCellDomainName())) ;
        Object obj = _input.readObject() ;
        if( obj == null ) {
            throw new IOException("Premature EOS encountered");
@@ -114,7 +114,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
        _remoteDomainInfo = (CellDomainInfo) obj ;
    }
    private void _acceptor() throws Exception {
-       _output.writeObject( _nucleus.getCellDomainInfo() ) ;
+       _output.writeObject(new CellDomainInfo(_nucleus.getCellDomainName())) ;
        Object obj = _input.readObject() ;
        if( obj == null ) {
            throw new IOException("Premature EOS encountered");

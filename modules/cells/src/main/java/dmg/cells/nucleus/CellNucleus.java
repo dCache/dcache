@@ -9,7 +9,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -210,9 +209,7 @@ public class CellNucleus implements ThreadFactory
     public CellAddressCore getThisAddress() {
         return new CellAddressCore(_cellName, __cellGlue.getCellDomainName());
     }
-    public CellDomainInfo getCellDomainInfo() {
-        return __cellGlue.getCellDomainInfo();
-    }
+
     public String getCellDomainName() {
         return __cellGlue.getCellDomainName();
     }

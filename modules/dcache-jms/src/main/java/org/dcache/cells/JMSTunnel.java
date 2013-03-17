@@ -40,6 +40,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellDomainInfo;
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellExceptionMessage;
@@ -227,7 +228,7 @@ public class JMSTunnel
     synchronized public CellTunnelInfo getCellTunnelInfo()
     {
         return new CellTunnelInfo(getCellName(),
-                                  _nucleus.getCellDomainInfo(),
+                new CellDomainInfo(_nucleus.getCellDomainName()),
                                   null);
     }
 

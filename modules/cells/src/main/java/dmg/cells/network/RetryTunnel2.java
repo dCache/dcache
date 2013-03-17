@@ -273,8 +273,8 @@ public class      RetryTunnel2
    }
    @Override
    public CellTunnelInfo getCellTunnelInfo(){
-      return new CellTunnelInfo( _nucleus.getCellName() ,
-                                 _nucleus.getCellDomainInfo() ,
+       return new CellTunnelInfo( _nucleus.getCellName() ,
+               new CellDomainInfo(_nucleus.getCellDomainName()),
                                  _remoteDomainInfo ) ;
 
    }
@@ -296,7 +296,7 @@ public class      RetryTunnel2
       }
       Object obj;
       try{
-         _output.writeObject( _nucleus.getCellDomainInfo() ) ;
+          _output.writeObject(new CellDomainInfo(_nucleus.getCellDomainName())) ;
          if( ( obj  = _input.readObject() ) == null ) {
              throw new
                      IOException("EOS encountered while reading DomainInfo");

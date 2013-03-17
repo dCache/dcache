@@ -20,16 +20,12 @@ public class CellMessage implements Cloneable , Serializable {
   private static final long serialVersionUID = -5559658187264201731L;
 
   private CellPath    _source , _destination ;
-  private CellPath    _markSource, _markDestination;
   private Object      _message ;
   private long        _creationTime ;
   private long        _ttl = Long.MAX_VALUE;
   private int         _mode ;
   private UOID        _umid , _lastUmid ;
   private final byte[] _messageStream;
-  private boolean     _isRouted;
-  private int         _hopCount;
-  private boolean     _isAcknowledge;
   private boolean     _isPersistent;
   private Object      _session;
   private static final int   ORIGINAL_MODE  = 0 ;
@@ -50,17 +46,12 @@ public class CellMessage implements Cloneable , Serializable {
      _session      = CDC.getSession();
      _messageStream = null;
   }
+
   @Override
   public String toString(){
     StringBuilder sb = new StringBuilder() ;
     sb.append( "<CM: S=" ).append( _source.toString() ).
        append( ";D=").append( _destination.toString() ) ;
-    if( _markSource != null ) {
-        sb.append(";MS=").append(_markSource.toString());
-    }
-    if( _markDestination != null ) {
-        sb.append(";MD=").append(_markDestination.toString());
-    }
     if( _mode == ORIGINAL_MODE ) {
         sb.append(";C=").
                 append(_message.getClass().getName());
@@ -90,11 +81,7 @@ public boolean equals( Object obj ){
 
       return false ;
   }
-  public void        setAcknowledge( boolean ack ){ _isAcknowledge = ack ; }
-  public boolean     isAcknowledge(){ return _isAcknowledge ; }
   public boolean     isReply() { return _isPersistent; }
-  public int         getHopCount(){ return _hopCount ; }
-  public void        incHopCount(){ _hopCount++ ; }
   public UOID        getUOID() { return _umid ; }
   public UOID        getLastUOID() { return _lastUmid ; }
   public void        setUOID( UOID umid ) {
@@ -119,26 +106,12 @@ public boolean equals( Object obj ){
      _lastUmid    = _umid ;
      _isPersistent = true;
   }
-  public void        markLocation(){
-     _markDestination = (CellPath)_destination.clone() ;
-     _markSource      = (CellPath)_source.clone() ;
-  }
-  public void        resetLocation(){
-     if( ( _markDestination == null ) ||
-         ( _markSource      == null )    ) {
-         return;
-     }
-     _destination = _markDestination ;
-     _source      = _markSource ;
-  }
   public boolean isFinalDestination(){ return _destination.isFinalDestination() ; }
   public boolean isFirstDestination(){ return _destination.isFirstDestination() ; }
   public boolean nextDestination(){ return _destination.next() ; }
   //
   // package methods
   //
-  void    isRouted( boolean r ){ _isRouted = r ; }
-  boolean wasRouted(){ return _isRouted ; }
   boolean isStreamMode(){ return _mode == STREAM_MODE  ; }
   void touch(){
     if( _destination.isFirstDestination() ){
@@ -169,17 +142,11 @@ public boolean equals( Object obj ){
   private void _copyInternalStuff(CellMessage cm){
      _destination   = (CellPath)cm._destination.clone() ;
      _source        = (CellPath)cm._source.clone() ;
-     _markDestination = cm._markDestination==null?null:
-                        (CellPath)cm._markDestination.clone() ;
-     _markSource      = cm._markSource==null?null:
-                        (CellPath)cm._markSource.clone() ;
      _creationTime  = cm._creationTime ;
      _receivedAt    = cm._receivedAt;
      _umid          = cm._umid ;    // UOID is immutable
      _lastUmid      = cm._lastUmid ;
-     _hopCount      = cm._hopCount ;
      _isPersistent  = cm._isPersistent ;
-     _isAcknowledge = cm._isAcknowledge ;
      _session       = cm._session;
      _ttl           = cm._ttl;
   }
@@ -190,12 +157,9 @@ public boolean equals( Object obj ){
      //
      // here we have to make a bytestream out of the message object ;
      //
-     ObjectOutputStream    out;
-     ByteArrayOutputStream array;
-     try{
-         array = new ByteArrayOutputStream() ;
-         out   = new ObjectOutputStream( array ) ;
-         out.writeObject( cm._message ) ;
+     ByteArrayOutputStream array = new ByteArrayOutputStream();
+     try (ObjectOutputStream out = new ObjectOutputStream(array)) {
+         out.writeObject(cm._message);
      } catch (InvalidClassException e) {
          throw new SerializationException("Failed to serialize object: "
                                           + e + "(this is usually a bug)", e);

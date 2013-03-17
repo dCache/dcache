@@ -3685,8 +3685,7 @@ public final class Manager
                 logger.debug("messageToForward,  arrived: type={} value={} " +
                         "from {} going to {}", object.getClass().getName(),
                         object, cellMessage.getSourcePath(),
-                        cellMessage.getDestinationPath(),
-                        cellMessage.isAcknowledge());
+                        cellMessage.getDestinationPath());
                 try {
                         if( object instanceof PoolMgrSelectPoolMsg) {
                                 selectPool(cellMessage,true);

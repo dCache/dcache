@@ -235,11 +235,6 @@ class CellGlue {
    Object           getCellContext( String str ){
        return _cellContext.get( str ) ;
    }
-   CellDomainInfo   getCellDomainInfo(){
-     CellDomainInfo info = new CellDomainInfo(_cellDomainName) ;
-//     info.setCellDomainName( _cellDomainName ) ;
-     return info ;
-   }
    public void routeAdd( CellRoute route ){
       _routingTable.add( route ) ;
       sendToAll( new CellEvent( route , CellEvent.CELL_ROUTE_ADDED_EVENT ) ) ;
@@ -568,7 +563,6 @@ class CellGlue {
       }
 
 
-      transponder.isRouted( false ) ;
       //
       // this is the big iteration loop
       //
@@ -618,7 +612,6 @@ class CellGlue {
                // routing
                //
   //             destNucleus.addToEventQueue(  new RoutedMessageEvent( transponder ) ) ;
-               transponder.isRouted( true ) ;
                transponder.addSourceAddress(
                     new CellAddressCore( "*" , _cellDomainName ) ) ;
 //               say( "sendMessage : message "+transponder.getUOID()+
@@ -640,7 +633,6 @@ class CellGlue {
 //                       " addToEventQueue of "+cellName ) ;
                   destNucleus.addToEventQueue(  new MessageEvent( transponder ) ) ;
                }else{
-                  transponder.isRouted( true ) ;
                   transponder.addSourceAddress(
                        new CellAddressCore( "*" , _cellDomainName ) ) ;
 //                  say( "sendMessage : message "+transponder.getUOID()+

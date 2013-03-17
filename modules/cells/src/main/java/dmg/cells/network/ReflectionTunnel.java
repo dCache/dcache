@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellDomainInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellTunnel;
@@ -43,9 +44,9 @@ public class ReflectionTunnel implements Cell,
 
    @Override
    public CellTunnelInfo getCellTunnelInfo(){
-      return new CellTunnelInfo( _nucleus.getCellName() ,
-                                 _nucleus.getCellDomainInfo() ,
-                                  _nucleus.getCellDomainInfo() ) ;
+       return new CellTunnelInfo( _nucleus.getCellName() ,
+               new CellDomainInfo(_nucleus.getCellDomainName()),
+               new CellDomainInfo(_nucleus.getCellDomainName())) ;
 
    }
    public String toString(){ return "Reflextion Tunnel" ; }
