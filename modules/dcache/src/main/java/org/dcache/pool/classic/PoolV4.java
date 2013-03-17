@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -656,7 +657,7 @@ public class PoolV4
             pw.println("Inventory         : " + _hybridCurrent);
         }
 
-        for (IoScheduler js : _ioQueue.getSchedulers()) {
+        for (IoScheduler js : _ioQueue.getQueues()) {
             pw.println("Mover Queue (" + js.getName() + ") "
                        + js.getActiveJobs() + "(" + js.getMaxActiveJobs()
                        + ")/" + js.getQueueSize());
@@ -1544,7 +1545,7 @@ public class PoolV4
         info.getSpaceInfo().setParameter(_breakEven, _gap);
         info.setMoverCostFactor(_moverCostFactor);
 
-        for (IoScheduler js : _ioQueue.getSchedulers()) {
+        for (IoScheduler js : _ioQueue.getQueues()) {
             /*
              * we skip p2p queue as it is handled differently
              * FIXME: no special cases
@@ -1994,7 +1995,7 @@ public class PoolV4
         String queueName = args.getOpt("queue");
 
         if (queueName == null) {
-            return mover_set_max_active(_ioQueue.getDefaultScheduler(), args);
+            return mover_set_max_active(_ioQueue.getDefaultQueue(), args);
         }
 
         IoScheduler js = _ioQueue.getQueue(queueName);
@@ -2031,14 +2032,14 @@ public class PoolV4
         StringBuilder sb = new StringBuilder();
 
         if (args.hasOption("l")) {
-            for (IoScheduler js : _ioQueue.getSchedulers()) {
+            for (IoScheduler js : _ioQueue.getQueues()) {
                 sb.append(js.getName())
                     .append(" ").append(js.getActiveJobs())
                     .append(" ").append(js.getMaxActiveJobs())
                     .append(" ").append(js.getQueueSize()).append("\n");
             }
         } else {
-            for (IoScheduler js : _ioQueue.getSchedulers()) {
+            for (IoScheduler js : _ioQueue.getQueues()) {
                 sb.append(js.getName()).append("\n");
             }
         }
@@ -2061,7 +2062,7 @@ public class PoolV4
 
         if (queueName.length() == 0) {
             StringBuilder sb = new StringBuilder();
-            for (IoScheduler js : _ioQueue.getSchedulers()) {
+            for (IoScheduler js : _ioQueue.getQueues()) {
                 sb.append("[").append(js.getName()).append("]\n");
                 sb.append(mover_ls(js, binary).toString());
             }
@@ -2095,7 +2096,7 @@ public class PoolV4
         return mover_ls(Arrays.asList(js), binary);
     }
 
-    private Object mover_ls(List<IoScheduler> jobSchedulers, boolean binary) {
+    private Object mover_ls(Collection<IoScheduler> jobSchedulers, boolean binary) {
 
         if (binary) {
             List<JobInfo> list = new ArrayList<>();
