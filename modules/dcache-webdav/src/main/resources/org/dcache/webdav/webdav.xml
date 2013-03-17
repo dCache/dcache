@@ -99,8 +99,7 @@
      <description>Dispatches HTTP requests to handlers</description>
   </bean>
 
-  <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory"
-        init-method="init">
+  <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory">
       <description>Exposes dCache resources to Milton WebDAV library</description>
 
       <property name="pnfsStub" ref="pnfs-stub"/>

@@ -50,19 +50,7 @@ public class P2PClient
 
     private CellStub _pnfs;
     private CellStub _pool;
-    private String _destinationPoolCellname;
-    private String _destinationPoolCellDomainName;
     private InetAddress _interface;
-
-    @Override
-    public void afterSetup()
-    {
-    }
-
-    public void init() {
-        _destinationPoolCellname = getCellName();
-        _destinationPoolCellDomainName = getCellDomainName();
-    }
 
     public synchronized void setExecutor(ScheduledExecutorService executor)
     {
@@ -254,8 +242,8 @@ public class P2PClient
                           _pnfs, _pool,
                           fileAttributes,
                           sourcePoolName,
-                          _destinationPoolCellname,
-                          _destinationPoolCellDomainName,
+                          getCellName(),
+                          getCellDomainName(),
                           targetState, stickyRecords,
                           cb, forceSourceMode);
 

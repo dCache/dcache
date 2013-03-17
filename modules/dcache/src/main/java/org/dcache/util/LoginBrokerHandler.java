@@ -46,8 +46,6 @@ public class LoginBrokerHandler
     private int _port;
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _task;
-    private String _cellName;
-    private String _domainName;
 
     public LoginBrokerHandler()
     {
@@ -80,8 +78,8 @@ public class LoginBrokerHandler
         }
 
         LoginBrokerInfo info =
-            new LoginBrokerInfo(_cellName,
-                                _domainName,
+            new LoginBrokerInfo(getCellName(),
+                                getCellDomainName(),
                                 _protocolFamily,
                                 _protocolVersion,
                                 _protocolEngine);
@@ -265,8 +263,6 @@ public class LoginBrokerHandler
 
     public synchronized void start()
     {
-        _cellName = getCellName();
-        _domainName = getCellDomainName();
         scheduleTask();
     }
 

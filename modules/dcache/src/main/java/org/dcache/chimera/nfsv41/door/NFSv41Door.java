@@ -351,7 +351,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                         client.getRemoteAddress(), stateid);
 
                 NFS4ProtocolInfo protocolInfo = transfer.getProtocolInfoForPool();
-                protocolInfo.door(new CellPath(this.getCellName(), this.getCellDomainName()));
+                protocolInfo.door(new CellPath(getCellAddress()));
 
                 transfer.setCellName(this.getCellName());
                 transfer.setDomainName(this.getCellDomainName());

@@ -47,7 +47,6 @@ import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
-import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -90,9 +89,6 @@ public class HsmStorageHandler2
     private long _maxRestoreRun = _maxRuntime;
     private long _maxRemoveRun = _maxRuntime;
     private int _maxLines = 200;
-    private String _cellName;
-    private String _domainName;
-
     private String _flushMessageTarget;
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -186,15 +182,6 @@ public class HsmStorageHandler2
         _fetchQueue.shutdown();
         _storeQueue.shutdown();
     }
-
-    @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
-        super.setCellEndpoint(endpoint);
-        _cellName = getCellName();
-        _domainName = getCellDomainName();
-    }
-
 
     public void setFlushMessageTarget(String flushMessageTarget)
     {
@@ -440,8 +427,7 @@ public class HsmStorageHandler2
             throws CacheException, FileInCacheException
         {
             super(fileAttributes.getPnfsId());
-            String address = _cellName + "@" + _domainName;
-            _infoMsg = new StorageInfoMessage(address, fileAttributes.getPnfsId(), true);
+            _infoMsg = new StorageInfoMessage(getCellAddress().toString(), fileAttributes.getPnfsId(), true);
             _infoMsg.setStorageInfo(fileAttributes.getStorageInfo());
 
             long fileSize = fileAttributes.getSize();
@@ -847,8 +833,7 @@ public class HsmStorageHandler2
 	public StoreThread(PnfsId pnfsId)
         {
 	    super(pnfsId);
-            String address = _cellName + "@" + _domainName;
-            _infoMsg = new StorageInfoMessage(address, pnfsId, false);
+            _infoMsg = new StorageInfoMessage(getCellAddress().toString(), pnfsId, false);
 	}
 
         @Override
@@ -1138,7 +1123,7 @@ public class HsmStorageHandler2
         {
             try {
                 PoolFileFlushedMessage poolFileFlushedMessage =
-                    new PoolFileFlushedMessage(_cellName, getPnfsId(), info);
+                    new PoolFileFlushedMessage(getCellName(), getPnfsId(), info);
                 /*
                  * no replays from secondary message targets
                  */

@@ -111,8 +111,7 @@
       <property name="anonymousLoginStrategy" ref="anonymous-loginstrategy"/>
   </bean>
 
-  <bean id="door" class="org.dcache.xrootd.door.XrootdDoor"
-        init-method="init">
+  <bean id="door" class="org.dcache.xrootd.door.XrootdDoor">
     <description>Gateway between xrootd protocol handler and dCache</description>
     <property name="poolStub" ref="pool-stub"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>

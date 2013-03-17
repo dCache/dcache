@@ -153,8 +153,6 @@ public class DcacheResourceFactory
     private CellStub _billingStub;
     private PnfsHandler _pnfs;
     private String _ioQueue;
-    private String _cellName;
-    private String _domainName;
     private FsPath _rootPath = new FsPath();
     private List<FsPath> _allowedPaths =
         Collections.singletonList(new FsPath());
@@ -489,16 +487,6 @@ public class DcacheResourceFactory
     public String getInternalAddress()
     {
         return _internalAddress.getHostAddress();
-    }
-
-    /**
-     * Performs component initialization. Must be called after all
-     * dependencies have been injected.
-     */
-    public void init()
-    {
-        _cellName = getCellName();
-        _domainName = getCellDomainName();
     }
 
     @Override
@@ -837,9 +825,8 @@ public class DcacheResourceFactory
     private void sendRemoveInfoToBilling(FsPath path)
     {
         try {
-            String cell = getCellName() + "@" + getCellDomainName();
             DoorRequestInfoMessage infoRemove =
-                new DoorRequestInfoMessage(cell, "remove");
+                new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
             Subject subject = getSubject();
             infoRemove.setSubject(subject);
             infoRemove.setPath(path.toString());
@@ -1063,10 +1050,10 @@ public class DcacheResourceFactory
     {
         boolean binary = args.hasOption("binary");
         if (binary) {
-            String [] list = new String[] { _cellName };
-            return new LoginManagerChildrenInfo(_cellName, _domainName, list);
+            String [] list = new String[] { getCellName() };
+            return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
         } else {
-            return _cellName;
+            return getCellName();
         }
     }
 
@@ -1081,7 +1068,7 @@ public class DcacheResourceFactory
             transfers.add(transfer.getIoDoorEntry());
         }
 
-        IoDoorInfo doorInfo = new IoDoorInfo(_cellName, _domainName);
+        IoDoorInfo doorInfo = new IoDoorInfo(getCellName(), getCellDomainName());
         doorInfo.setProtocol("HTTP", "1.1");
         doorInfo.setOwner("");
         doorInfo.setProcess("");
@@ -1094,8 +1081,8 @@ public class DcacheResourceFactory
             throws URISyntaxException
     {
         transfer.setLocation(getLocation());
-        transfer.setCellName(_cellName);
-        transfer.setDomainName(_domainName);
+        transfer.setCellName(getCellName());
+        transfer.setDomainName(getCellDomainName());
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);
@@ -1136,7 +1123,7 @@ public class DcacheResourceFactory
                         PROTOCOL_INFO_MAJOR_VERSION,
                         PROTOCOL_INFO_MINOR_VERSION,
                         getClientAddress(),
-                        _cellName, _domainName,
+                        getCellName(), getCellDomainName(),
                         _path.toString(),
                         _location);
             protocolInfo.setSessionId((int) getSessionId());

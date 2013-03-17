@@ -90,9 +90,6 @@ public class XrootdDoor
     private final static TransferRetryPolicy RETRY_POLICY =
         TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE);
 
-    private String _cellName;
-    private String _domainName;
-
     private List<FsPath> _readPaths = Collections.singletonList(new FsPath());
     private List<FsPath> _writePaths = Collections.singletonList(new FsPath());
 
@@ -253,16 +250,6 @@ public class XrootdDoor
         _dirlistTimeoutExecutor = executor;
     }
 
-    /**
-     * Performs component initialization. Must be called after all
-     * dependencies have been injected.
-     */
-    public void init()
-    {
-        _cellName = getCellName();
-        _domainName = getCellDomainName();
-    }
-
     @Override
     public void getInfo(PrintWriter pw)
     {
@@ -296,8 +283,8 @@ public class XrootdDoor
                     }
                 }
             };
-        transfer.setCellName(_cellName);
-        transfer.setDomainName(_domainName);
+        transfer.setCellName(getCellName());
+        transfer.setDomainName(getCellDomainName());
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);
@@ -817,10 +804,10 @@ public class XrootdDoor
     {
         boolean binary = args.hasOption("binary");
         if (binary) {
-            String [] list = new String[] { _cellName };
-            return new LoginManagerChildrenInfo(_cellName, _domainName, list);
+            String [] list = new String[] { getCellName() };
+            return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
         } else {
-            return _cellName;
+            return getCellName();
         }
     }
 
@@ -834,7 +821,7 @@ public class XrootdDoor
             entries.add(transfer.getIoDoorEntry());
         }
 
-        IoDoorInfo doorInfo = new IoDoorInfo(_cellName, _domainName);
+        IoDoorInfo doorInfo = new IoDoorInfo(getCellName(), getCellDomainName());
         doorInfo.setProtocol(XROOTD_PROTOCOL_STRING, XROOTD_PROTOCOL_VERSION);
         doorInfo.setOwner("");
         doorInfo.setProcess("");
