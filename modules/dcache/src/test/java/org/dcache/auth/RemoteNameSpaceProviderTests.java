@@ -893,8 +893,7 @@ public class RemoteNameSpaceProviderTests
     private static CellMessage buildReply(CellMessage request,
             Modifier... modifiers)
     {
-        CellMessage encoded = new CellMessage(request);
-        CellMessage reply = new CellMessage(encoded);
+        CellMessage reply = request.encode().decode();
 
         PnfsMessage payload = (PnfsMessage) reply.getMessageObject();
         for(Modifier modifier : modifiers) {

@@ -9,6 +9,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
   *
   *
@@ -25,7 +27,7 @@ public class CellMessage implements Cloneable , Serializable {
   private long        _ttl = Long.MAX_VALUE;
   private int         _mode ;
   private UOID        _umid , _lastUmid ;
-  private final byte[] _messageStream;
+  private byte[]      _messageStream;
   private boolean     _isPersistent;
   private Object      _session;
   private static final int   ORIGINAL_MODE  = 0 ;
@@ -118,75 +120,71 @@ public boolean equals( Object obj ){
         _umid = new UOID() ;
     }
   }
-  CellMessage(){
-     _mode = DUMMY_MODE ;
-     _messageStream = null;
-  }
-  public CellMessage( CellMessage cm ) throws SerializationException {
-     if( cm._mode == ORIGINAL_MODE ){
-        _messageStream = _originalToStream( cm ) ;
-     }else{
-         _streamToOriginal( cm ) ;
-         _messageStream = null;
-     }
-  }
-  public void addSourceAddress( CellAddressCore source ){
-      _source.add( source ) ;
-  }
-  /*
-  void markPersistent(){ _source.wasStored() ; }
-  */
-  //
-  // and private
-  //
-  private void _copyInternalStuff(CellMessage cm){
-     _destination   = (CellPath)cm._destination.clone() ;
-     _source        = (CellPath)cm._source.clone() ;
-     _creationTime  = cm._creationTime ;
-     _receivedAt    = cm._receivedAt;
-     _umid          = cm._umid ;    // UOID is immutable
-     _lastUmid      = cm._lastUmid ;
-     _isPersistent  = cm._isPersistent ;
-     _session       = cm._session;
-     _ttl           = cm._ttl;
-  }
-  private byte[] _originalToStream( CellMessage cm )
-      throws SerializationException {
-     _copyInternalStuff( cm ) ;
-     _mode          = STREAM_MODE ;
-     //
-     // here we have to make a bytestream out of the message object ;
-     //
-     ByteArrayOutputStream array = new ByteArrayOutputStream();
-     try (ObjectOutputStream out = new ObjectOutputStream(array)) {
-         out.writeObject(cm._message);
-     } catch (InvalidClassException e) {
-         throw new SerializationException("Failed to serialize object: "
-                                          + e + "(this is usually a bug)", e);
-     } catch (NotSerializableException e) {
-         throw new SerializationException("Failed to serialize object because the object is not serializable (this is usually a bug)", e);
-     } catch (IOException e) {
-         throw new SerializationException("Failed to serialize object: " + e, e);
-     }
 
-     return array.toByteArray() ;
-  }
-  private void _streamToOriginal( CellMessage cm )
-      throws SerializationException {
-     _copyInternalStuff( cm ) ;
-     _mode         = ORIGINAL_MODE ;
-     ByteArrayInputStream in;
-     ObjectInputStream    stream;
-     try{
-        in       = new ByteArrayInputStream( cm._messageStream ) ;
-        stream   = new ObjectInputStream( in ) ;
-        _message = stream.readObject() ;
-     } catch (ClassNotFoundException e) {
-         throw new SerializationException("Failed to deserialize object: The class could not be found. Is there a software version mismatch in your installation?", e);
-     } catch (IOException e) {
-         throw new SerializationException("Failed to deserialize object: " + e, e);
-     }
+    private CellMessage()
+    {
+        _mode = DUMMY_MODE;
+        _messageStream = null;
+    }
 
+    private CellMessage cloneWithoutPayload()
+    {
+        CellMessage copy = new CellMessage();
+        copy._destination = (CellPath) _destination.clone();
+        copy._source = (CellPath) _source.clone();
+        copy._creationTime = _creationTime;
+        copy._receivedAt = _receivedAt;
+        copy._umid = _umid;    // UOID is immutable
+        copy._lastUmid = _lastUmid;
+        copy._isPersistent = _isPersistent;
+        copy._session = _session;
+        copy._ttl = _ttl;
+        return copy;
+    }
+
+    public CellMessage encode() throws SerializationException
+    {
+        checkState(_mode == ORIGINAL_MODE);
+        CellMessage encoded = cloneWithoutPayload();
+        encoded._mode = STREAM_MODE;
+        ByteArrayOutputStream array = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(array)) {
+            out.writeObject(_message);
+        } catch (InvalidClassException e) {
+            throw new SerializationException("Failed to serialize object: "
+                    + e + "(this is usually a bug)", e);
+        } catch (NotSerializableException e) {
+            throw new SerializationException("Failed to serialize object because the object is not serializable (this is usually a bug)", e);
+        } catch (IOException e) {
+            throw new SerializationException("Failed to serialize object: " + e, e);
+        }
+
+        encoded._messageStream = array.toByteArray();
+        return encoded;
+    }
+
+    public CellMessage decode() throws SerializationException
+    {
+        checkState(_mode == STREAM_MODE);
+        CellMessage decoded = cloneWithoutPayload();
+        decoded._mode = ORIGINAL_MODE;
+        ByteArrayInputStream in;
+        ObjectInputStream stream;
+        try {
+            in = new ByteArrayInputStream(_messageStream);
+            stream = new ObjectInputStream(in);
+            decoded._message = stream.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new SerializationException("Failed to deserialize object: The class could not be found. Is there a software version mismatch in your installation?", e);
+        } catch (IOException e) {
+            throw new SerializationException("Failed to deserialize object: " + e, e);
+        }
+
+        return decoded;
+    }
+
+    public void addSourceAddress( CellAddressCore source ){
+      _source.add(source) ;
   }
 
     private void readObject(ObjectInputStream stream)

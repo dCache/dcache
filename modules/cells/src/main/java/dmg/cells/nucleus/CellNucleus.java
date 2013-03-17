@@ -439,7 +439,7 @@ public class CellNucleus implements ThreadFactory
             if (answer == null) {
                 return null;
             }
-            answer = new CellMessage(answer);
+            answer = answer.decode();
 
             Object obj = answer.getMessageObject();
             if (obj instanceof NoRouteToCellException) {
@@ -1016,7 +1016,7 @@ public class CellNucleus implements ThreadFactory
             CellMessage answer;
             Object obj;
             try {
-                answer = new CellMessage(_message);
+                answer = _message.decode();
                 _lock.getCdc().restore();
                 obj = answer.getMessageObject();
             } catch (SerializationException e) {
@@ -1063,7 +1063,7 @@ public class CellNucleus implements ThreadFactory
                 _logNucleus.info("messageThread : MessageEvent arrived");
                 CellMessage msg;
                 try {
-                    msg = new CellMessage(msgEvent.getMessage());
+                    msg = msgEvent.getMessage().decode();
                 } catch (SerializationException e) {
                     CellMessage envelope = msgEvent.getMessage();
                     _logCell.error(String.format("Discarding a malformed message from %s with UOID %s and session [%s]: %s",

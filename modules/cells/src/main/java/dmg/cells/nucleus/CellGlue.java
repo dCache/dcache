@@ -523,7 +523,7 @@ class CellGlue {
           // - we have to convert the message to stream.
           // - and we have to set our address to find the way back
           //
-          transponder = new CellMessage( msg ) ;
+          transponder = msg.encode();
           transponder.addSourceAddress( nucleus.getThisAddress() ) ;
       }
 
@@ -537,19 +537,12 @@ class CellGlue {
       String      domainName;
 
       say( "sendMessage : "+transponder.getUOID()+" send to "+destination);
-      if( _logMessages.isDebugEnabled() ) {
-
-    	  CellMessage messageToSend;
-
-    	  if( transponder.isStreamMode() ) {
-    		  messageToSend = new CellMessage(transponder);
-    	  }else{
-    		  messageToSend = transponder;
-    	  }
-
-    	  String messageObject = messageToSend.getMessageObject() == null? "NULL" : messageToSend.getMessageObject().getClass().getName();
-    	  _logMessages.debug("glueSendMessage src=" + messageToSend.getSourcePath() +
-  			   " dest=" + messageToSend.getDestinationPath() + " [" + messageObject + "] UOID=" + messageToSend.getUOID().toString() );
+      if( _logMessages.isTraceEnabled() ) {
+    	  CellMessage decodedMessage = transponder.isStreamMode() ? transponder.decode() : transponder;
+    	  String messageObject = (decodedMessage.getMessageObject() == null) ? "NULL" : decodedMessage.getMessageObject().getClass().getName();
+    	  _logMessages.trace("glueSendMessage src={} dest={} [{}] UOID={}",
+                      decodedMessage.getSourcePath(), decodedMessage.getDestinationPath(),
+                      messageObject, decodedMessage.getUOID());
       }
       //
       //  if the cellname is an *, ( stream mode only ) we can skip
