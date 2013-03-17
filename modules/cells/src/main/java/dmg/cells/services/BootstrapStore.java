@@ -49,9 +49,6 @@ public class BootstrapStore implements Cell {
       _storeBase = args.argv(0) ;
 
       _nucleus   = new CellNucleus( this , cellName ) ;
-      _nucleus.setPrintoutLevel(0) ;
-
-
    }
    public String toString(){
       return  _nucleus.getCellDomainName()+

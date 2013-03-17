@@ -173,12 +173,6 @@ import org.dcache.util.FireAndForgetTask;
       throw iae ;
     }
 
-    // Should be done with cell commands.
-    setPrintoutLevel( CellNucleus.PRINT_CELL | CellNucleus.PRINT_ERROR_CELL );
-
-    //Make the cell name well-known
-    //getNucleus().export();
-
 	  _log.info(" Constructor finished" ) ;
    }
 

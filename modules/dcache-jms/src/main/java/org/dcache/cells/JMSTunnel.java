@@ -75,8 +75,6 @@ public class JMSTunnel
     extends AbstractCell
     implements CellTunnel, ExceptionListener
 {
-    private final static Logger _logMessages =
-        LoggerFactory.getLogger("logger.org.dcache.cells.messages");
     private final static Logger _log =
         LoggerFactory.getLogger(JMSTunnel.class);
 
@@ -500,20 +498,6 @@ public class JMSTunnel
             session.createConsumer(_replyQueue).setMessageListener(this);
         }
 
-        synchronized private void logSend(CellMessage envelope)
-        {
-            if (_logMessages.isDebugEnabled()) {
-                Object object = envelope.getMessageObject();
-                String messageObject =
-                    object == null ? "NULL" : object.getClass().getName();
-                _logMessages.debug("tunnelMessageArrived src="
-                                   + envelope.getSourcePath()
-                                   + " dest=" + envelope.getDestinationPath()
-                                   + " [" + messageObject + "] UOID="
-                                   + envelope.getUOID().toString());
-            }
-        }
-
         synchronized public Map<String,CacheEntry> getCnsCache()
         {
             return new HashMap(_cache);
@@ -625,7 +609,6 @@ public class JMSTunnel
             if (domain.equals("local") && (domain = lookup(cell)) == null) {
                 resolve(cell, envelope);
             } else {
-                logSend(envelope);
                 Destination destination =
                     _session.createQueue(getDomainQueue(domain));
                 Message message = _session.createObjectMessage(envelope);
@@ -706,22 +689,6 @@ public class JMSTunnel
             return _counter;
         }
 
-        synchronized private void logReceive(CellMessage envelope)
-        {
-            if (_logMessages.isDebugEnabled()) {
-                String messageObject =
-                    envelope.getMessageObject() == null
-                    ? "NULL"
-                    : envelope.getMessageObject().getClass().getName();
-
-                _logMessages.debug("tunnelSendMessage src="
-                                   + envelope.getSourcePath()
-                                   + " dest=" + envelope.getDestinationPath()
-                                   + " [" + messageObject + "] UOID="
-                                   + envelope.getUOID().toString());
-            }
-        }
-
         synchronized public Collection<String> getConsumers()
         {
             return new ArrayList(_sessions.keySet());
@@ -739,7 +706,6 @@ public class JMSTunnel
                 Object object = objectMessage.getObject();
                 CellMessage envelope = (CellMessage) object;
                 try {
-                    logReceive(envelope);
                     sendMessage(envelope);
                     _counter++;
                 } catch (NoRouteToCellException e) {

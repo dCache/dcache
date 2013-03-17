@@ -35,6 +35,7 @@ import java.util.Vector;
 
 import dmg.cells.network.PingMessage;
 import dmg.util.Args;
+import dmg.util.BufferedLineWriter;
 import dmg.util.ClassDataProvider;
 import dmg.util.ClassLoaderFactory;
 import dmg.util.CollectionFactory;
@@ -51,6 +52,8 @@ import dmg.util.Formats;
 import dmg.util.PropertiesBackedReplaceable;
 import dmg.util.Replaceable;
 import dmg.util.ReplaceableBackedProperties;
+import dmg.util.Slf4jErrorWriter;
+import dmg.util.Slf4jInfoWriter;
 
 /**
   *
@@ -547,48 +550,6 @@ public class      CellShell
    }
    ////////////////////////////////////////////////////////////
    //
-   //   set printout <cellname> <level>
-   //
-   public static final String hh_set_printout = "<cellname>|CellGlue <level>" ;
-   public static final String fh_set_printout =
-       "Syntax: set printout <cellname> <level(hex)>\n\n"+
-       "Obsolete: Replaced by the log4j command set, see help in the\n" +
-       "          System cell. The printout level now only controls the\n" +
-       "          log level at which messages generated through the old\n" +
-       "          logging system are logged to log4j.\n\n" +
-       "  <cellname> \n"+
-       "          Name of the target cell or 'CellGlue' for the kernel or\n"+
-       "          'default' for the printout level of new cells.\n"+
-       "  <level> Bitmask of the following fields:\n"+
-       "            1 -> log cell messages at WARN when set\n"+
-       "            2 -> log cell errors at ERROR when set\n"+
-       "            4 -> log nucleus messages at WARN when set\n"+
-       "            8 -> log nucleus error at ERROR when set\n"+
-       "          If a field is not set, then the corresponding messages\n"+
-       "          are logged at INFO level.\n";
-   public String ac_set_printout_$_2( Args args ){
-       String cellName = args.argv(0) ;
-       String ls = args.argv(1) ;
-       int level;
-       switch (ls) {
-       case "errors":
-           level = CellNucleus.PRINT_ERROR_CELL | CellNucleus.PRINT_ERROR_NUCLEUS;
-           break;
-       case "all":
-           level = CellNucleus.PRINT_EVERYTHING;
-           break;
-       case "none":
-           level = 0;
-           break;
-       default:
-           level = Integer.parseInt(args.argv(1), 16);
-           break;
-       }
-       _nucleus.setPrintoutLevel( cellName , level ) ;
-       return "Obsolete, see help for details\n" ;
-   }
-   ////////////////////////////////////////////////////////////
-   //
    //   route
    //
    public static final String fh_route =
@@ -1057,6 +1018,14 @@ public class      CellShell
    public String ac_show_onexit( Args args ){
       return _doOnExit != null ? _doOnExit : "" ;
    }
+
+
+    private static final int  PRINT_CELL          =    1;
+    private static final int  PRINT_ERROR_CELL    =    2;
+    private static final int  PRINT_NUCLEUS       =    4;
+    private static final int  PRINT_ERROR_NUCLEUS =    8;
+    private static final int  PRINT_FATAL         = 0x10;
+
    public static final String hh_say = "<things to echo ...> [-level=<level>]" ;
    public static final String fh_say =
                   "<things to echo ...> [-level=<level>]\n"+
@@ -1094,19 +1063,19 @@ public class      CellShell
           default:
               try {
                   int level = Integer.parseInt(levelString);
-                  if ((level & CellNucleus.PRINT_CELL) != 0) {
+                  if ((level & PRINT_CELL) != 0) {
                       _log.info(msg);
                   }
-                  if ((level & CellNucleus.PRINT_ERROR_CELL) != 0) {
+                  if ((level & PRINT_ERROR_CELL) != 0) {
                       _log.warn(msg);
                   }
-                  if ((level & CellNucleus.PRINT_FATAL) != 0) {
+                  if ((level & PRINT_FATAL) != 0) {
                       _log.error(msg);
                   }
-                  if ((level & CellNucleus.PRINT_NUCLEUS) != 0) {
+                  if ((level & PRINT_NUCLEUS) != 0) {
                       _logNucleus.info(msg);
                   }
-                  if ((level & CellNucleus.PRINT_ERROR_NUCLEUS) != 0) {
+                  if ((level & PRINT_ERROR_NUCLEUS) != 0) {
                       _logNucleus.warn(msg);
                   }
               } catch (NumberFormatException e) {
@@ -1627,8 +1596,8 @@ public class      CellShell
     public void execute(String source, Reader in, Args args)
         throws CommandExitException, IOException
     {
-        try (Writer out = _nucleus.createInfoLogWriter();
-             Writer err = _nucleus.createErrorLogWriter()) {
+        try (Writer out = new BufferedLineWriter(new Slf4jInfoWriter(_log));
+             Writer err = new BufferedLineWriter(new Slf4jErrorWriter(_log))) {
             execute(source, in, out, err, args);
         }
     }

@@ -72,7 +72,6 @@ public class       LoginManager
   private final CellVersion _version;
   private Constructor<?>_loginConstructor;
   private Constructor<?>_authConstructor;
-  private Method       _loginPrintMethod;
   private int          _maxLogin          = -1 ;
   private final Map<String,Object>      _childHash   = new HashMap<>() ;
   /**
@@ -203,16 +202,6 @@ public class       LoginManager
             _loginConType     = 0 ;
          }
          _log.info( "Using constructor : "+_loginConstructor ) ;
-         try{
-
-            _loginPrintMethod = _loginClass.getMethod(
-                                   "setPrintoutLevel" ,
-                                   _loginPntSignature ) ;
-
-         }catch( NoSuchMethodException pr ){
-            _log.info( "No setPrintoutLevel(int) found in "+_loginClass.getName() ) ;
-            _loginPrintMethod = null ;
-         }
          String maxLogin = args.getOpt("maxLogin") ;
          if( maxLogin != null ){
             try{
@@ -1032,15 +1021,6 @@ public void cleanUp(){
           }
 
           Object cell = _loginConstructor.newInstance( args ) ;
-          if( _loginPrintMethod != null ){
-             try{
-                Object [] a = new Object[1] ;
-                a[0] = _nucleus.getPrintoutLevel();
-                _loginPrintMethod.invoke( cell , a ) ;
-             }catch( Exception eee ){
-                _log.warn( "Can't setPritoutLevel of " +args[0] ) ;
-             }
-          }
           if( _maxLogin > -1 ){
              try{
                 Method m = cell.getClass().getMethod( "getCellName" , new Class[0] ) ;

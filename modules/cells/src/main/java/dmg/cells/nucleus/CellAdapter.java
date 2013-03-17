@@ -375,17 +375,6 @@ public class   CellAdapter
     }
 
     /**
-     * sets the printout level to the specified value. The printoutlevel
-     * determines whether the calls to say and esay produce output or are
-     * ignored. The value is '1' for stderr and '2' for stdout. A value of zero
-     * suppresses all printout.
-     *
-     * @param level
-     *            the printout level.
-     *
-     */
-    public void   setPrintoutLevel(int level) { _nucleus.setPrintoutLevel(level); }
-    /**
      *
      *
      * @param className Name of the cellClass which should be created
@@ -759,25 +748,6 @@ public class   CellAdapter
     // methods which are automatically scanned by
     // the CommandInterpreterFacility
     //
-   public static final String fh_set_printout =
-       "Syntax: set printout <level>\n\n"+
-       "Obsolete: Replaced by the log4j command set, see help in the\n" +
-       "          System cell. The printout level now only controls the\n" +
-       "          log level at which messages generated through the old\n" +
-       "          logging system are logged to log4j.\n\n" +
-       "  <level> Bitmask of the following fields:\n" +
-       "            1 -> log cell messages at WARN when set\n"+
-       "            2 -> log cell errors at ERROR when set\n"+
-       "            4 -> log nucleus messages at WARN when set\n"+
-       "            8 -> log nucleus error at ERROR when set\n"+
-       "          If a field is not set, then the corresponding messages\n"+
-       "          are logged at INFO level.\n";
-    public String ac_set_printout_$_1(Args args) {
-        int printout  = Integer.parseInt(args.argv(0));
-        _nucleus.setPrintoutLevel(printout);
-        return "Obsolete, see help for details";
-    }
-
     public String ac_say_$_1(Args args) {
         _log.info(args.argv(0));
         return "";

@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -60,7 +59,6 @@ public class       SshLoginManager
 
   private  Class<? extends StreamLoginCell> _loginClass        = StreamLoginCell.class ;
   private  Constructor<? extends StreamLoginCell> _loginConstructor;
-  private  Method               _loginPrintMethod;
   private  Class<?>[]           _loginConSignature0 = { String.class ,
                                                       StreamEngine.class } ;
   private  Class<?>[]           _loginConSignature1 = { String.class ,
@@ -97,16 +95,6 @@ public class       SshLoginManager
             _loginConType     = 0 ;
          }
          _log.info( "Using constructor : "+_loginConstructor ) ;
-         try{
-
-            _loginPrintMethod = _loginClass.getMethod(
-                                   "setPrintoutLevel" ,
-                                   _loginPntSignature ) ;
-
-         }catch( Exception pr ){
-            _log.info( "No setPrintoutLevel(int) found in "+_loginClass.getName() ) ;
-            _loginPrintMethod = null ;
-         }
          _serverSocket  = new ServerSocket( _listenPort ) ;
 
          _nucleus       = getNucleus() ;
@@ -114,8 +102,6 @@ public class       SshLoginManager
          _listenThread  = new Thread( this , "listenThread" ) ;
 
          _listenThread.start() ;
-         setPrintoutLevel( 0xf ) ;
-
       }catch( Exception e ){
          _log.warn( "SshLoginManger >"+getCellName()+"< got exception : "+e ) ;
          start() ;
@@ -199,15 +185,6 @@ public class       SshLoginManager
        }
        try{
             Object cell = _loginConstructor.newInstance( args ) ;
-            if( _loginPrintMethod != null ){
-               try{
-                  Object [] a = new Object[1] ;
-                  a[0] = _nucleus.getPrintoutLevel();
-                  _loginPrintMethod.invoke( cell , a ) ;
-               }catch( NumberFormatException eee ){
-                  _log.warn( "Can't setPritoutLevel of " +args[0] ) ;
-               }
-            }
             _loginCounter ++ ;
        }catch( Exception ie ){
           _log.warn( "Can't create new instance of "+_loginClass.getName()+" "+ie ) ;

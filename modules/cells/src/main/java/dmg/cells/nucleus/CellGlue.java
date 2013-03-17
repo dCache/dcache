@@ -25,31 +25,27 @@ import dmg.util.CollectionFactory;
   * @version 0.1, 15 Feb 1998
   */
 class CellGlue {
+    private final static Logger LOGGER =
+            LoggerFactory.getLogger(CellGlue.class);
 
-   private final String    _cellDomainName      ;
-   private final Map<String, CellNucleus> _cellList =
+    private final String    _cellDomainName      ;
+    private final Map<String, CellNucleus> _cellList =
        CollectionFactory.newConcurrentHashMap();
-   private final Map<String,List<CellEventListener>> _cellEventListener =
+    private final Map<String,List<CellEventListener>> _cellEventListener =
        CollectionFactory.newConcurrentHashMap();
-   private final Map<String, CellNucleus> _killedCellList =
+    private final Map<String, CellNucleus> _killedCellList =
        CollectionFactory.newConcurrentHashMap();
-   private final Map<String, Object> _cellContext =
+    private final Map<String, Object> _cellContext =
        CollectionFactory.newConcurrentHashMap();
-   private final AtomicInteger       _uniqueCounter       = new AtomicInteger(100) ;
-   public  int       _printoutLevel;
-   public  int       _defPrintoutLevel    = CellNucleus.PRINT_ERRORS ;
-   private CellNucleus          _systemNucleus;
-   private ClassLoaderProvider  _classLoader;
-   private CellRoutingTable     _routingTable      = new CellRoutingTable() ;
-   private ThreadGroup          _masterThreadGroup;
+    private final AtomicInteger       _uniqueCounter       = new AtomicInteger(100) ;
+    private CellNucleus          _systemNucleus;
+    private ClassLoaderProvider  _classLoader;
+    private CellRoutingTable     _routingTable      = new CellRoutingTable() ;
+    private ThreadGroup          _masterThreadGroup;
+
    private ThreadGroup          _killerThreadGroup;
    private final Executor _killerExecutor;
    private final ThreadPoolExecutor _emergencyKillerExecutor;
-
-   private final static Logger _logMessages =
-       LoggerFactory.getLogger("logger.org.dcache.cells.messages");
-   private final static Logger _logGlue =
-       LoggerFactory.getLogger(CellGlue.class);
 
    CellGlue( String cellDomainName ){
 
@@ -324,8 +320,8 @@ class CellGlue {
          for( CellEventListener hallo : listners ){
 
             if( hallo == null ){
-              say( "event distributor found NULL" ) ;
-              continue ;
+              LOGGER.trace("event distributor found NULL");
+              continue;
             }
             try{
                switch( event.getEventType() ){
@@ -345,8 +341,8 @@ class CellGlue {
                       hallo.routeDeleted( event ) ;
                  break ;
                }
-            }catch( Exception anye ){
-              say( "Exception while sending "+event + " ex : "+anye ) ;
+            }catch( Exception e ){
+              LOGGER.info("Error while sending {}: {}", event, e);
             }
          }
 
@@ -354,56 +350,6 @@ class CellGlue {
 
    }
 
-   void setPrintoutLevel( int level ){ _printoutLevel = level ; }
-   int  getPrintoutLevel(){ return _printoutLevel ; }
-   int  getDefaultPrintoutLevel(){ return _defPrintoutLevel ; }
-   void setPrintoutLevel( String cellName , int level ){
-
-      if( cellName.equals("CellGlue") ){
-         setPrintoutLevel(level) ;
-         return ;
-      }else if( cellName.equals("default") ){
-         _defPrintoutLevel = level ;
-         return ;
-      }
-
-      CellNucleus nucleus = _cellList.get( cellName ) ;
-      if( nucleus != null ) {
-          nucleus.setPrintoutLevel(level);
-      }
-   }
-   int getPrintoutLevel( String cellName ){
-
-      if( cellName.equals("CellGlue") ) {
-          return getPrintoutLevel();
-      }
-      if( cellName.equals("default") ) {
-          return getDefaultPrintoutLevel();
-      }
-      CellNucleus nucleus =  _cellList.get( cellName ) ;
-
-      if( nucleus != null ) {
-          return nucleus.getPrintoutLevel();
-      }
-
-      return -1 ;
-   }
-
-   void say(String str){
-       if( ( _printoutLevel & CellNucleus.PRINT_NUCLEUS ) != 0 ) {
-           _logGlue.warn(str);
-       } else {
-           _logGlue.info(str);
-       }
-   }
-
-   void esay( String str ){
-       if( ( _printoutLevel & CellNucleus.PRINT_NUCLEUS ) != 0 ) {
-           _logGlue.error(str);
-       } else {
-           _logGlue.info(str);
-       }
-   }
    String getCellDomainName(){  return _cellDomainName ; }
    void   kill( CellNucleus nucleus ){
       _kill( nucleus , nucleus , 0 ) ;
@@ -433,7 +379,7 @@ class CellGlue {
        if(nucleus != null) {
            nucleus.threadGroupList();
        } else {
-           _logGlue.warn("cell " + cellName + " is not running");
+           LOGGER.warn("cell {} is not running", cellName);
        }
    }
 
@@ -487,7 +433,7 @@ class CellGlue {
    synchronized void destroy( CellNucleus nucleus ){
        String name = nucleus.getCellName() ;
        _killedCellList.remove( name ) ;
-       say( "destroy : sendToAll : killed"+name ) ;
+       LOGGER.trace("destroy : sendToAll : killed {}", name);
        notifyAll();
 //
 //        CELL_DIED_EVENT moved to _kill. Otherwise
@@ -508,7 +454,7 @@ class CellGlue {
         final CellNucleus destNucleus = _cellList.remove(cellToKill);
 
         if (destNucleus == null) {
-            esay("Warning : (name not found in _kill) " + cellToKill);
+            LOGGER.trace("Warning : (name not found in _kill) {}", cellToKill);
             return;
         }
 
@@ -565,7 +511,7 @@ class CellGlue {
       }
 
       if( transponder.getSourcePath().hops() > 30 ){
-         esay( "Hop count exceeds 30, dumping : "+transponder ) ;
+         LOGGER.error("Hop count exceeds 30, dumping: {}", transponder);
          return ;
       }
       CellPath    destination  = transponder.getDestinationPath() ;
@@ -573,21 +519,15 @@ class CellGlue {
       String      cellName     = destCore.getCellName() ;
       String      domainName;
 
-      say( "sendMessage : "+transponder.getUOID()+" send to "+destination);
-      if( _logMessages.isTraceEnabled() ) {
-    	  CellMessage decodedMessage = transponder.isStreamMode() ? transponder.decode() : transponder;
-    	  String messageObject = (decodedMessage.getMessageObject() == null) ? "NULL" : decodedMessage.getMessageObject().getClass().getName();
-    	  _logMessages.trace("glueSendMessage src={} dest={} [{}] UOID={}",
-                      decodedMessage.getSourcePath(), decodedMessage.getDestinationPath(),
-                      messageObject, decodedMessage.getUOID());
-      }
+      LOGGER.trace("sendMessage : {} send to {}", transponder.getUOID(), destination);
+
       //
       //  if the cellname is an *, ( stream mode only ) we can skip
       //  this address, because it was needed to reach our domain,
       //  which hopefully happened.
       //
       if( ( ! firstSend ) && cellName.equals("*") ){
-            say( "sendMessage : * detected ; skipping destination" );
+            LOGGER.trace("sendMessage : * detected ; skipping destination");
             destination.next() ;
             destCore = destination.getCurrent() ;
       }
@@ -599,7 +539,7 @@ class CellGlue {
       for( int iter = 0 ; iter < MAX_ROUTE_LEVELS ; iter ++ ){
          cellName    = destCore.getCellName() ;
          domainName  = destCore.getCellDomainName() ;
-         say( "sendMessage : next hop at "+iter+" : "+cellName+"@"+domainName ) ;
+         LOGGER.trace("sendMessage : next hop at {}: {}@{}", iter, cellName, domainName);
 
          //
          //  now we try to find the destination cell in our domain
@@ -607,7 +547,7 @@ class CellGlue {
          CellNucleus destNucleus = _cellList.get( cellName ) ;
          if( domainName.equals( _cellDomainName ) ){
             if( cellName.equals("*") ){
-                  say( "sendMessagex : * detected ; skipping destination" );
+                  LOGGER.trace("sendMessagex : * detected ; skipping destination");
                   destination.next() ;
                   destCore = destination.getCurrent() ;
                   continue ;
@@ -617,7 +557,6 @@ class CellGlue {
             // and points to our domain.
             //
             if( destNucleus == null ){
-//               say( "sendMessage : Not found : "+destination ) ;
                if( firstSend ){
                   throw new
                       NoRouteToCellException(
@@ -633,8 +572,6 @@ class CellGlue {
                //
                // here we really found the destination cell ( no router )
                //
-//               say( "sendMessage : message "+transponder.getUOID()+
-//                    " addToEventQueue of "+cellName ) ;
                destNucleus.addToEventQueue(  new MessageEvent( transponder ) ) ;
             }else{
                //
@@ -644,8 +581,6 @@ class CellGlue {
   //             destNucleus.addToEventQueue(  new RoutedMessageEvent( transponder ) ) ;
                transponder.addSourceAddress(
                     new CellAddressCore( "*" , _cellDomainName ) ) ;
-//               say( "sendMessage : message "+transponder.getUOID()+
-//                    " forwarded addToEventQueue of "+cellName ) ;
                destNucleus.addToEventQueue(  new RoutedMessageEvent( transponder ) ) ;
             }
             return ;
@@ -657,21 +592,16 @@ class CellGlue {
             //    we are already in the routing part   )
             //
             if( destNucleus != null ){
-//               say( "sendMessage : locally delivered : "+destination ) ;
                if( iter == 0 ){
-//                  say( "sendMessage : message "+transponder.getUOID()+
-//                       " addToEventQueue of "+cellName ) ;
                   destNucleus.addToEventQueue(  new MessageEvent( transponder ) ) ;
                }else{
                   transponder.addSourceAddress(
                        new CellAddressCore( "*" , _cellDomainName ) ) ;
-//                  say( "sendMessage : message "+transponder.getUOID()+
-//                       " forwarded addToEventQueue of "+cellName ) ;
                   destNucleus.addToEventQueue(  new RoutedMessageEvent( transponder ) ) ;
                }
                return ;
             }else if( iter == MAX_ROUTE_LEVELS ){
-               say( "sendMessage : max route iteration reached : "+destination ) ;
+               LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
                if( firstSend ){
                   throw new
                        NoRouteToCellException(
@@ -708,7 +638,7 @@ class CellGlue {
          //
          CellRoute route = _routingTable.find( destCore ) ;
          if( ( route == null ) || ( iter == MAX_ROUTE_LEVELS )){
-            say( "sendMessage : no route destination for : "+destCore ) ;
+            LOGGER.trace("sendMessage : no route destination for : {}", destCore);
             if( firstSend ){
                throw new
                   NoRouteToCellException(
@@ -720,7 +650,7 @@ class CellGlue {
                return ;
             }
          }
-         say( "sendMessage : using route : "+route ) ;
+         LOGGER.trace("sendMessage : using route : {}", route);
          destCore    = route.getTarget() ;
          if( route.getRouteType() == CellRoute.ALIAS ) {
              destination.replaceCurrent(destCore);
@@ -739,7 +669,7 @@ class CellGlue {
             // here we try to inform the last sender that we are
             // not able to deliver the packet.
             //
-            say( "sendMessage : Route target Not found : "+routeTarget ) ;
+            LOGGER.debug("sendMessage : Route target Not found: {}", routeTarget);
             NoRouteToCellException exception =
                  new   NoRouteToCellException(
                               msg.getUOID() ,
@@ -750,7 +680,7 @@ class CellGlue {
             retAddr.revert() ;
             CellExceptionMessage ret =
                  new CellExceptionMessage( retAddr , exception )  ;
-            esay( "Sending CellException to "+retAddr ) ;
+            LOGGER.warn("Sending CellException to {}", retAddr);
             ret.setLastUOID( msg.getUOID() ) ;
             sendMessage( nucleus , ret ) ;
 

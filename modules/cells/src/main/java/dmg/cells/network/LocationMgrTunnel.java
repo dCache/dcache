@@ -54,9 +54,6 @@ public class LocationMgrTunnel
     private final static Logger _log =
         LoggerFactory.getLogger(LocationMgrTunnel.class);
 
-    private final static Logger _logMessages =
-        LoggerFactory.getLogger("logger.org.dcache.cells.messages");
-
     private final CellNucleus  _nucleus;
 
     private CellDomainInfo  _remoteDomainInfo;
@@ -131,35 +128,6 @@ public class LocationMgrTunnel
         return _down;
     }
 
-    private void logSend(CellMessage msg)
-    {
-        if (_logMessages.isDebugEnabled()) {
-            Object object = msg.getMessageObject();
-            String messageObject =
-                object == null ? "NULL" : object.getClass().getName();
-            _logMessages.debug("tunnelMessageSent src="
-                               + msg.getSourcePath()
-                               + " dest=" + msg.getDestinationPath()
-                               + " [" + messageObject + "] UOID="
-                               + msg.getUOID().toString());
-        }
-    }
-
-    private void logReceive(CellMessage msg)
-    {
-        if (_logMessages.isDebugEnabled()) {
-            Object object = msg.getMessageObject();
-            String messageObject =
-                object == null ? "NULL" : object.getClass().getName();
-
-            _logMessages.debug("tunnelMessageReceived src="
-                               + msg.getSourcePath()
-                               + " dest=" + msg.getDestinationPath()
-                               + " [" + messageObject + "] UOID="
-                               + msg.getUOID().toString());
-        }
-    }
-
     private void returnToSender(CellMessage msg, NoRouteToCellException e)
         throws SerializationException
     {
@@ -181,8 +149,6 @@ public class LocationMgrTunnel
     {
         CellMessage msg;
         while ((msg = _input.readObject()) != null) {
-            logReceive(msg);
-
             try {
                 sendMessage(msg);
                 _messagesToSystem++;
@@ -229,8 +195,6 @@ public class LocationMgrTunnel
                 if (isDown()) {
                     throw new IOException("Tunnel has been shut down.");
                 }
-
-                logSend(msg);
                 _messagesToTunnel++;
                 _output.writeObject(msg);
             } catch (IOException e) {

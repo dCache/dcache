@@ -151,16 +151,8 @@
       <level>off</level>
     </threshold>
     <threshold>
-      <logger>dmg.cells.nucleus</logger>
-      <level>warn</level>
-    </threshold>
-    <threshold>
       <logger>COM.claymoresystems.ptls.SSLDebug</logger>
       <level>off</level>
-    </threshold>
-    <threshold>
-      <logger>logger.org.dcache.cells.messages</logger>
-      <level>error</level>
     </threshold>
     <threshold>
       <logger>org.glite.security.trustmanager.CRLFileTrustManager</logger>
