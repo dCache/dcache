@@ -103,6 +103,10 @@ public class JobTimeoutManager
         _worker.start();
     }
 
+    public synchronized void stop() {
+        _worker.interrupt();
+    }
+
     public void addScheduler(String type, IoScheduler scheduler)
     {
         say("Adding scheduler : " + type);

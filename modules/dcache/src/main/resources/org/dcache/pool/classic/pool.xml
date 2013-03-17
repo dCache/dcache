@@ -60,8 +60,7 @@
   </bean>
 
   <bean id="pool" class="org.dcache.pool.classic.PoolV4"
-        init-method="init"
-        destroy-method="cleanUp">
+        init-method="init">
     <description>Main pool component</description>
     <constructor-arg index="0" value="${poolname}"/>
     <constructor-arg index="1" value="${arguments}"/>
@@ -84,7 +83,6 @@
     <property name="storageQueue" ref="queue"/>
     <property name="storageHandler" ref="storagehandler"/>
     <property name="HSMSet" ref="hsmset"/>
-    <property name="timeoutManager" ref="jtm"/>
     <property name="flushController" ref="flush"/>
     <property name="PPClient" ref="pp"/>
     <property name="account" ref="account"/>
@@ -196,7 +194,8 @@
     <constructor-arg ref="pnfs"/>
   </bean>
 
-  <bean id="jtm" class="org.dcache.pool.classic.JobTimeoutManager">
+  <bean id="jtm" class="org.dcache.pool.classic.JobTimeoutManager"
+          init-method="start" destroy-method="stop">
     <description>Job timeout manager</description>
   </bean>
 
@@ -315,12 +314,16 @@
     <property name="account" ref="account"/>
   </bean>
 
-  <bean id="io-queue-manager" class="org.dcache.pool.classic.IoQueueManager">
+  <bean id="io-queue-manager" class="org.dcache.pool.classic.IoQueueManager"
+          destroy-method="shutdown">
     <description>Requests IO manager</description>
     <constructor-arg ref="jtm" />
     <constructor-arg value="p2p,${poolIoQueue}" />
     <constructor-arg ref="mover-execution-service" />
   </bean>
+
+  <bean id="legacy-execution-service" class="org.dcache.pool.classic.LegacyMoverExecutorService"
+          destroy-method="shutdown"/>
 
   <bean id="nfs-execution-service" class="org.dcache.chimera.nfsv41.mover.NfsExcecutionService"
         init-method="init" destroy-method="shutdown">
@@ -330,6 +333,7 @@
 
   <bean id="mover-execution-service" class="org.dcache.pool.classic.MoverExecutorServices" >
       <description>Request execution service container</description>
+      <constructor-arg ref="legacy-execution-service"/>
       <constructor-arg>
         <map>
             <entry key="NFS4-4" value-ref="nfs-execution-service" />

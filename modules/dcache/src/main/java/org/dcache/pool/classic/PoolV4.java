@@ -157,7 +157,6 @@ public class PoolV4
     private final PoolManagerPingThread _pingThread ;
     private HsmFlushController _flushingThread;
     private IoQueueManager _ioQueue ;
-    private JobTimeoutManager _timeoutManager;
     private HsmSet _hsmSet;
     private HsmStorageHandler2 _storageHandler;
     private boolean _crashEnabled;
@@ -330,13 +329,6 @@ public class PoolV4
         _hsmSet = set;
     }
 
-    public void setTimeoutManager(JobTimeoutManager manager)
-    {
-        assertNotRunning("Cannot set timeout manager after initialization");
-        _timeoutManager = manager;
-        _timeoutManager.start();
-    }
-
     public void setFlushController(HsmFlushController controller)
     {
         assertNotRunning("Cannot set flushing controller after initialization");
@@ -401,7 +393,6 @@ public class PoolV4
         assert _storageQueue != null : "Storage queue must be set";
         assert _storageHandler != null : "Storage handler must be set";
         assert _hsmSet != null : "HSM set must be set";
-        assert _timeoutManager != null : "Timeout manager must be set";
         assert _flushingThread != null : "Flush controller must be set";
         assert _p2pClient != null : "P2P client must be set";
         assert _account != null : "Account must be set";
@@ -445,11 +436,6 @@ public class PoolV4
         _pingThread.stop();
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                 666, "Shutdown");
-    }
-
-    public void cleanUp()
-    {
-        _ioQueue.shutdown();
     }
 
     /**
@@ -1478,9 +1464,10 @@ public class PoolV4
                     Thread.sleep(_heartbeat * 1000);
                 }
             } catch (InterruptedException e) {
-                _log.debug("Ping thread was interrupted");
+                Thread.currentThread().interrupt();
+            } finally {
+                _log.debug("Ping Thread finished");
             }
-            _log.debug("Ping Thread finished");
         }
 
         public void setHeartbeat(int seconds)

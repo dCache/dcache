@@ -47,6 +47,11 @@ public class LegacyMoverExecutorService implements MoverExecutorService
         return moverTask;
     }
 
+    public void shutdown()
+    {
+        _executor.shutdown();
+    }
+
     private static class MoverTask implements Runnable, Cancelable {
 
         private final PoolIORequest _request;

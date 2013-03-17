@@ -1,5 +1,6 @@
 package org.dcache.pool.repository.v5;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,6 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -40,7 +42,7 @@ class StateChangeListeners
 
     public void setSynchronousNotification(boolean value)
     {
-        _executor = value ? new DirectExecutor() : _executorService;
+        _executor = value ? MoreExecutors.sameThreadExecutor() : _executorService;
     }
 
     public void add(StateChangeListener listener)
@@ -55,7 +57,8 @@ class StateChangeListeners
 
     public void stateChanged(final StateChangeEvent event)
     {
-        _executor.execute(new Runnable() {
+        try {
+            _executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     for (StateChangeListener listener: _listeners) {
@@ -74,11 +77,16 @@ class StateChangeListeners
                     }
                 }
             });
+        } catch (RejectedExecutionException e) {
+            // Happens when executor is already shut down
+            _log.debug("Dropping repository state change notification: {}", e.getMessage());
+        }
     }
 
     public void accessTimeChanged(final EntryChangeEvent event)
     {
-        _executor.execute(new Runnable() {
+        try {
+            _executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     for (StateChangeListener listener: _listeners) {
@@ -97,11 +105,16 @@ class StateChangeListeners
                     }
                 }
             });
+        } catch (RejectedExecutionException e) {
+            // Happens when executor is already shut down
+            _log.debug("Dropping repository access time change notification: {}", e.getMessage());
+        }
     }
 
     public void stickyChanged(final StickyChangeEvent event)
     {
-        _executor.execute(new Runnable() {
+        try {
+            _executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     for (StateChangeListener listener: _listeners) {
@@ -120,19 +133,14 @@ class StateChangeListeners
                     }
                 }
             });
+        } catch (RejectedExecutionException e) {
+            // Happens when executor is already shut down
+            _log.debug("Dropping repository stick flag change notification: {}", e.getMessage());
+        }
     }
 
     public void stop()
     {
         _executorService.shutdown();
-    }
-
-    private static class DirectExecutor implements Executor
-    {
-        @Override
-        public void execute(Runnable r)
-        {
-            r.run();
-        }
     }
 }

@@ -7,14 +7,14 @@ import java.util.Map;
  * @since 1.9.11
  */
 public class MoverExecutorServices {
-
-    private final MoverExecutorService _defaultExecutorService =
-        new LegacyMoverExecutorService();
+    private final MoverExecutorService _defaultExecutorService;
     private final PostTransferExecutionService _defaultPostService =
         new ClassicPostExecutionService();
     private final Map<String, MoverExecutorService> _executionService;
 
-    public MoverExecutorServices(Map<String, MoverExecutorService> executionService) {
+    public MoverExecutorServices(MoverExecutorService defaultExecutorService,
+                                 Map<String, MoverExecutorService> executionService) {
+        _defaultExecutorService = defaultExecutorService;
         _executionService = executionService;
     }
 
