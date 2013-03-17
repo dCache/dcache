@@ -41,7 +41,7 @@ public class XrootdPoolNettyServer
     /**
      * Used to generate channel-idle events for the pool handler
      */
-    private final Timer _timer = new HashedWheelTimer();
+    private Timer _timer;
 
     private final long _clientIdleTimeout;
 
@@ -78,6 +78,21 @@ public class XrootdPoolNettyServer
         PortRange portRange =
             (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
         setPortRange(portRange);
+    }
+
+    @Override
+    protected synchronized void startServer() throws IOException
+    {
+        _timer = new HashedWheelTimer();
+        super.startServer();
+    }
+
+    @Override
+    protected synchronized void stopServer()
+    {
+        super.stopServer();
+        _timer.stop();
+        _timer = null;
     }
 
     @Override

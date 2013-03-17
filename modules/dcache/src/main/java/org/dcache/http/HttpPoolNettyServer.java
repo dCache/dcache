@@ -13,6 +13,7 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.vehicles.HttpProtocolInfo;
@@ -38,7 +39,7 @@ public class HttpPoolNettyServer
     private final static PortRange DEFAULT_PORTRANGE =
         new PortRange(20000, 25000);
 
-    private final Timer _timer = new HashedWheelTimer();
+    private Timer _timer;
 
     private final long _clientIdleTimeout;
 
@@ -75,6 +76,21 @@ public class HttpPoolNettyServer
         PortRange portRange =
             (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
         setPortRange(portRange);
+    }
+
+    @Override
+    protected synchronized void startServer() throws IOException
+    {
+        _timer = new HashedWheelTimer();
+        super.startServer();
+    }
+
+    @Override
+    protected synchronized void stopServer()
+    {
+        super.stopServer();
+        _timer.stop();
+        _timer = null;
     }
 
     @Override
