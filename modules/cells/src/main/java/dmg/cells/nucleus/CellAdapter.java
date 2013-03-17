@@ -71,6 +71,9 @@ public class   CellAdapter
     private final static long RETRY_PERIOD = 30000; // 30 seconds
 
     private final CellVersion _version = new CellVersion(Version.of(this));
+
+    private final static ThreadLocal<CellMessage> CURRENT_MESSAGE = new ThreadLocal<>();
+
     private final CellNucleus _nucleus;
     private final Gate        _readyGate = new Gate(false);
     private final Gate        _startGate = new Gate(false);
@@ -78,7 +81,6 @@ public class   CellAdapter
     private boolean     _useInterpreter = true;
     private boolean     _returnCommandException = true;
     private boolean     _answerPing     = true;
-    private CellMessage _currentMessage;
     private String      _autoSetup;
     private String      _definedSetup;
 
@@ -608,8 +610,8 @@ public class   CellAdapter
      *  The result object is only 'non-zero' inside
      *  a ac_xxx method.
      */
-    public CellMessage getThisMessage() {
-        return _currentMessage;
+    public final static CellMessage getThisMessage() {
+        return CURRENT_MESSAGE.get();
     }
     //
     // methods which may be overwriten
@@ -951,7 +953,7 @@ public class   CellAdapter
                     UOID uoid = msg.getUOID();
                     EventLogger.deliverBegin(msg);
                     try {
-                        _currentMessage = msg;
+                        CURRENT_MESSAGE.set(msg);
                         o =  executeLocalCommand(obj);
                         if (o == null) {
                             return;
@@ -962,7 +964,7 @@ public class   CellAdapter
                         o = ce;
                     } finally {
                         EventLogger.deliverEnd(msg.getSession(), uoid);
-                        _currentMessage = null;
+                        CURRENT_MESSAGE.remove();
                     }
 
                     try {

@@ -29,7 +29,9 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
+import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
@@ -850,6 +852,11 @@ public class MigrationModule
             Job job = new Job(_context, definition);
             job.setConcurrency(concurrency);
             _jobs.put(id, job);
+
+            CellMessage envelope = CellAdapter.getThisMessage();
+            if (envelope != null) {
+                _commands.put(job, envelope.getMessageObject().toString());
+            }
             return getJobSummary(id);
         }
     }
