@@ -798,13 +798,45 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
-    void sendKillEvent(KillEvent ce)
+    void shutdown(KillEvent event)
     {
-        _logNucleus.info("sendKillEvent : received {}", ce);
-        Thread thread = new Thread(__cellGlue.getKillerThreadGroup(), wrapLoggingContext(new KillerTask(ce)), "killer-" + _cellName);
-        thread.start();
-        _logNucleus.info("sendKillEvent : {} started on group {}",
-                thread.getName(), thread.getThreadGroup().getName());
+        _logNucleus.trace("received {}", event);
+
+        CDC cdc = CDC.reset(CellNucleus.this);
+        try {
+            _state = REMOVING;
+            addToEventQueue(LAST_MESSAGE_EVENT);
+            try {
+                _cell.prepareRemoval(event);
+            } catch (Throwable e) {
+                Thread t = Thread.currentThread();
+                t.getUncaughtExceptionHandler().uncaughtException(t, e);
+            }
+
+            shutdownPrivateExecutors();
+
+            _logNucleus.debug("Waiting for all threads in {} to finish", _threads);
+
+            try {
+                Collection<Thread> threads = getNonDaemonThreads(_threads);
+
+                /* Some threads shut down asynchronously. Give them
+                 * one second before we start to kill them.
+                 */
+                while (!joinThreads(threads, 1000)) {
+                    killThreads(threads);
+                }
+                _threads.destroy();
+            } catch (IllegalThreadStateException e) {
+                _threads.setDaemon(true);
+            } catch (InterruptedException e) {
+                _logNucleus.warn("Interrupted while waiting for threads");
+            }
+            __cellGlue.destroy(CellNucleus.this);
+            _state = DEAD;
+        } finally {
+            cdc.restore();
+        }
     }
 
     ////////////////////////////////////////////////////////////
@@ -928,54 +960,6 @@ public class CellNucleus implements ThreadFactory
         PRINT_CELL|PRINT_ERROR_CELL|PRINT_NUCLEUS|PRINT_ERROR_NUCLEUS|PRINT_FATAL;
 
     private static final MessageEvent LAST_MESSAGE_EVENT = new LastMessageEvent();
-
-    private class KillerTask implements Runnable
-    {
-        private final KillEvent _event;
-
-        public KillerTask(KillEvent event)
-        {
-            _event = event;
-        }
-
-        @Override
-        public void run()
-        {
-            _logNucleus.info("killerThread : started");
-            _state = REMOVING;
-            addToEventQueue(LAST_MESSAGE_EVENT);
-            try {
-                _cell.prepareRemoval(_event);
-            } catch (Throwable e) {
-                Thread t = Thread.currentThread();
-                t.getUncaughtExceptionHandler().uncaughtException(t, e);
-            }
-
-            shutdownPrivateExecutors();
-
-            _logNucleus.info("killerThread : waiting for all threads in {} to finish",
-                    _threads);
-
-            try {
-                Collection<Thread> threads = getNonDaemonThreads(_threads);
-
-                /* Some threads shut down asynchronously. Give them
-                 * one second before we start to kill them.
-                 */
-                while (!joinThreads(threads, 1000)) {
-                    killThreads(threads);
-                }
-                _threads.destroy();
-            } catch (IllegalThreadStateException e) {
-                _threads.setDaemon(true);
-            } catch (InterruptedException e) {
-                _logNucleus.warn("killerThread : Interrupted while waiting for threads");
-            }
-            __cellGlue.destroy(CellNucleus.this);
-            _state = DEAD;
-            _logNucleus.info("killerThread : stopped");
-        }
-    }
 
     private abstract class AbstractNucleusTask implements Runnable
     {
