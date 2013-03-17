@@ -77,6 +77,7 @@ public class   CellAdapter
     private final CellNucleus _nucleus;
     private final Gate        _readyGate = new Gate(false);
     private final Gate        _startGate = new Gate(false);
+    private final Gate        _shutdownGate = new Gate(false);
     private final Args        _args;
     private boolean     _useInterpreter = true;
     private boolean     _returnCommandException = true;
@@ -569,8 +570,11 @@ public class   CellAdapter
             return sendAndWait(envelope, timeUntil(deadline));
         } catch (NoRouteToCellException e) {
             _log.warn("{}", e.toString());
+
             while (timeUntil(deadline) > RETRY_PERIOD) {
-                Thread.sleep(RETRY_PERIOD);
+                if (_shutdownGate.await(RETRY_PERIOD)) {
+                    break;
+                }
                 try {
                     return sendAndWait(envelope, timeUntil(deadline));
                 } catch (NoRouteToCellException ignored) {
@@ -844,6 +848,7 @@ public class   CellAdapter
     {
         _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
         _readyGate.check();
+        _shutdownGate.open();
         cleanUp();
         dumpPinboard();
         _log.info("CellAdapter : prepareRemoval : done");
