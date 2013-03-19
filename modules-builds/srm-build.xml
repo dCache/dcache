@@ -33,7 +33,7 @@
     <!-- Classpath for srm.jar -->
 
     <path id="srm.classpath">
-        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
+        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar, **/cog-*dcache*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />

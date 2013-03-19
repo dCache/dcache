@@ -64,7 +64,7 @@
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <fileset dir="${libDir}/parboiled4j/" includes="*.jar" />
-        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
+        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar, **/cog-*dcache*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
@@ -102,7 +102,7 @@
         <pathelement location="${classesDir}/gplazma.jar" />
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
         <pathelement location="${libDir}/security/bcprov-jdk15-143.jar" />
-        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/cog-*dcache*.jar"/>
     </path>
 
     <!-- Classpath for enhancement -->
@@ -364,6 +364,7 @@
             <fileset dir="${libDir}/cog/${cogVersion}">
                 <include name="*.jar" />
                 <exclude name="commons-logging-*.jar"/>
+                <exclude name="cog-*dcache*.jar"/>
             </fileset>
         </copy>
 

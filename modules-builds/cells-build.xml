@@ -102,7 +102,7 @@
     <!-- Classpath for cells.jar -->
 
     <path id="cells.classpath">
-        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
+        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar, **/cog-*dcache*.jar"/>
         <fileset dir="${libDir}/jline" includes="jline*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <path refid="dependency.classpath" />

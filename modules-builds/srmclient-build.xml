@@ -87,7 +87,7 @@
 
     <path id="srmclient.classpath">
         <pathelement location="${classesDir}/srm.jar" />
-        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
+        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar, **/cog-*dcache*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
@@ -314,6 +314,7 @@
         <copy todir="${srmclient.bin.dir}/lib/globus">
             <fileset dir="${libDir}/cog/${cogVersion}">
                 <include name="*.jar" />
+                <exclude name="cog-*dcache*.jar"/>
             </fileset>
         </copy>
 

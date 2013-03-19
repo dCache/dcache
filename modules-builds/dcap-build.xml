@@ -17,7 +17,7 @@
     <!-- Classpath for javatunnel.jar -->
 
     <path id="javatunnel.classpath">
-        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/cog-*dcache*.jar"/>
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
