@@ -85,6 +85,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
+/usr/sbin/dcache-pool-meta-preupgrade
 /usr/bin/chimera-cli
 /usr/bin/dcache
 /usr/bin/dcache-star
