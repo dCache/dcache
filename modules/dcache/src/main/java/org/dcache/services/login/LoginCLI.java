@@ -69,7 +69,11 @@ public class LoginCLI
         String name = args.argv(0);
         String type = args.argv(1);
 
-        return _loginStrategy.map( principalOf(type, name) ).getName();
+        Principal p = _loginStrategy.map( principalOf(type, name) );
+        if(p != null) {
+            return p.getName();
+        }
+        return "No mapping for specified principal found.";
     }
 
     public static final String fh_get_ridentity = "get ridentity -group <pringipal>\n"+
