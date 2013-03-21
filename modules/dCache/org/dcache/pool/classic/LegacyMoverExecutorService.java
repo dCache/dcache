@@ -59,25 +59,26 @@ public class LegacyMoverExecutorService implements MoverExecutorService
 
         @Override
         public void run() {
-
             try {
                 setThread();
                 _cdc.restore();
-                _request.getTransfer().transfer();
+                try {
+                    _request.getTransfer().transfer();
+                } catch (Throwable e) {
+                    _completionHandler.failed(e, null);
+                    throw e;
+                }
                 _completionHandler.completed(null, null);
             } catch (Exception e) {
                 _log.error("Transfer failed: {}", e.toString());
-                _completionHandler.failed(e, null);
             } catch (Throwable e) {
                 _log.error("Transfer failed:", e);
                 Thread t = Thread.currentThread();
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                _completionHandler.failed(e, null);
             } finally {
                 cleanThread();
                 CDC.clear();
             }
-
         }
 
         private synchronized void setThread() throws InterruptedException {
