@@ -7,6 +7,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -39,6 +45,8 @@ class CellGlue {
    private CellRoutingTable     _routingTable      = new CellRoutingTable() ;
    private ThreadGroup          _masterThreadGroup;
    private ThreadGroup          _killerThreadGroup;
+   private final Executor _killerExecutor;
+   private final ThreadPoolExecutor _emergencyKillerExecutor;
 
    private final static Logger _logMessages =
        LoggerFactory.getLogger("logger.org.dcache.cells.messages");
@@ -62,10 +70,23 @@ class CellGlue {
       _classLoader       = new ClassLoaderProvider() ;
       _masterThreadGroup = new ThreadGroup( "Master-Thread-Group" ) ;
       _killerThreadGroup = new ThreadGroup( "Killer-Thread-Group" ) ;
+      ThreadFactory killerThreadFactory = new ThreadFactory()
+      {
+          @Override
+          public Thread newThread(Runnable r)
+          {
+              return new Thread(_killerThreadGroup, r);
+          }
+      };
+      _killerExecutor = Executors.newCachedThreadPool(killerThreadFactory);
+      _emergencyKillerExecutor = new ThreadPoolExecutor(1, 1,
+                      0L, TimeUnit.MILLISECONDS,
+                      new LinkedBlockingQueue<Runnable>(),
+                      killerThreadFactory);
+      _emergencyKillerExecutor.prestartCoreThread();
       new CellUrl( this ) ;
    }
    ThreadGroup getMasterThreadGroup(){return _masterThreadGroup ; }
-   ThreadGroup getKillerThreadGroup(){return _killerThreadGroup ; }
 
    synchronized void addCell( String name , CellNucleus cell )
         throws IllegalArgumentException {
@@ -489,9 +510,9 @@ class CellGlue {
     {
         CellPath sourceAddr = new CellPath(source.getCellName(),
                                            getCellDomainName());
-        KillEvent killEvent = new KillEvent(sourceAddr, to);
+        final KillEvent killEvent = new KillEvent(sourceAddr, to);
         String cellToKill = destination.getCellName();
-        CellNucleus destNucleus = _cellList.remove(cellToKill);
+        final CellNucleus destNucleus = _cellList.remove(cellToKill);
 
         if (destNucleus == null) {
             esay("Warning : (name not found in _kill) " + cellToKill);
@@ -501,7 +522,23 @@ class CellGlue {
         _cellEventListener.remove(cellToKill);
         sendToAll(new CellEvent(cellToKill, CellEvent.CELL_DIED_EVENT));
         _killedCellList.put(cellToKill, destNucleus);
-        destNucleus.sendKillEvent(killEvent);
+
+        Runnable command = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                destNucleus.shutdown(killEvent);
+            }
+        };
+        try {
+            _killerExecutor.execute(command);
+        } catch (OutOfMemoryError e) {
+            /* This can signal that we cannot create any more threads. The emergency
+             * pool has one thread preallocated for this situation.
+             */
+            _emergencyKillerExecutor.execute(command);
+        }
     }
 
    private static final int MAX_ROUTE_LEVELS  =  16 ;
