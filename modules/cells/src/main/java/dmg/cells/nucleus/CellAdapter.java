@@ -566,15 +566,22 @@ public class   CellAdapter
                InterruptedException
     {
         long deadline = System.currentTimeMillis() + timeout;
-        while (true) {
-            try {
-                return sendAndWait(envelope, timeUntil(deadline));
-            } catch (NoRouteToCellException e) {
-                _log.warn(e.toString(), e);
-                Thread.sleep(Math.min(timeUntil(deadline), RETRY_PERIOD));
+        try {
+            return sendAndWait(envelope, timeUntil(deadline));
+        } catch (NoRouteToCellException e) {
+            _log.warn("{}", e.toString());
+            while (timeUntil(deadline) > RETRY_PERIOD) {
+                Thread.sleep(RETRY_PERIOD);
+                try {
+                    return sendAndWait(envelope, timeUntil(deadline));
+                } catch (NoRouteToCellException ignored) {
+                }
             }
+            return null;
         }
     }
+
+
 
     /**
      *  sends a <code>CellMessage</code> along the specified path.
