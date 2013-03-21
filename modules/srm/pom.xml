@@ -23,11 +23,11 @@
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.dcache</groupId>
+        <groupId>org.globus</groupId>
         <artifactId>cog-jglobus</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.dcache</groupId>
+        <groupId>org.globus</groupId>
         <artifactId>cog-url</artifactId>
         <scope>runtime</scope>
     </dependency>
