@@ -23,6 +23,9 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
@@ -53,7 +56,6 @@ import static org.parboiled.errors.ErrorUtils.printParseErrors;
 import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
 
-import dmg.cells.nucleus.CellEndpoint;
 
 /**
  * Module for migrating files between pools.
@@ -852,6 +854,11 @@ public class MigrationModule
             Job job = new Job(_context, definition);
             job.setConcurrency(concurrency);
             _jobs.put(id, job);
+
+            CellMessage envelope = CellAdapter.getThisMessage();
+            if (envelope != null) {
+                _commands.put(job, envelope.getMessageObject().toString());
+            }
             return getJobSummary(id);
         }
     }
