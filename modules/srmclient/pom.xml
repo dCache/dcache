@@ -35,7 +35,7 @@
         <artifactId>logback-classic</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.dcache</groupId>
+        <groupId>org.globus</groupId>
         <artifactId>cog-url</artifactId>
     </dependency>
     <dependency>
