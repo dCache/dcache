@@ -36,8 +36,9 @@ public class Glob implements Serializable
 
     public static Pattern parseGlobToPattern(String glob)
     {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder(glob.length() * 2 + 2);
         int j = 0;
+        s.append("^");
         for (int i = 0; i < glob.length(); i++) {
             switch (glob.charAt(i)) {
             case '?':
@@ -57,6 +58,7 @@ public class Glob implements Serializable
             }
         }
         s.append(Pattern.quote(glob.substring(j)));
+        s.append("$");
         return Pattern.compile(s.toString());
     }
 }

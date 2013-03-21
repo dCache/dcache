@@ -141,4 +141,13 @@ public class GlobTest
         assertTrue(pattern.matches("\\Qa"));
         assertTrue(pattern.matches("\\Q\\"));
     }
+
+    @Test
+    public void testIsAnchored()
+    {
+        Glob pattern = new Glob("foo*bar");
+
+        assertTrue(pattern.toPattern().matcher("foo-bar").find());
+        assertFalse(pattern.toPattern().matcher("<foo-bar>").find());
+    }
 }
