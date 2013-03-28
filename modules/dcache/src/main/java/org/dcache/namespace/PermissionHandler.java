@@ -9,6 +9,9 @@ import org.dcache.vehicles.FileAttributes;
 /**
  * A PermissionHandler makes policy decisions for file access. It is
  * typically used by NameSpaceProvider objects.
+ *
+ * When referring to a parent directory, null is used for the
+ * non-existing parent of the root directory.
  */
 public interface PermissionHandler
 {
@@ -51,13 +54,13 @@ public interface PermissionHandler
      *
      * @param subject
      *            identifies the subject that is trying to access a resource
-     * @param attr
+     * @param parentAttr
      *            the attributes of the directory in which to create a
      *            sub-directory
      *
      * @return Returns the access type granted
      */
-    AccessType canCreateSubDir(Subject subject, FileAttributes attr);
+    AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr);
 
 
     /**
@@ -65,13 +68,13 @@ public interface PermissionHandler
      *
      * @param subject
      *            identifies the subject that is trying to access a resource
-     * @param attr
+     * @param parentAttr
      *            the attributes of the directory in which to create a
      *            file
      *
      * @return Returns the access type granted
      */
-    AccessType canCreateFile(Subject subject, FileAttributes attr);
+    AccessType canCreateFile(Subject subject, FileAttributes parentAttr);
 
     /**
      * checks whether the user can delete file

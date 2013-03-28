@@ -58,16 +58,22 @@ public class ACLPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateSubDir(Subject subject, FileAttributes attr)
+    public AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr)
     {
-        Permission permission = getPermission(subject, attr);
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+        Permission permission = getPermission(subject, parentAttr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, CREATE, true));
     }
 
     @Override
-    public AccessType canCreateFile(Subject subject, FileAttributes attr)
+    public AccessType canCreateFile(Subject subject, FileAttributes parentAttr)
     {
-        Permission permission = getPermission(subject, attr);
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+        Permission permission = getPermission(subject, parentAttr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission, CREATE, false));
     }
 
@@ -76,6 +82,10 @@ public class ACLPermissionHandler implements PermissionHandler
                                     FileAttributes parentAttr,
                                     FileAttributes childAttr)
     {
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+
         Permission permissionParent = getPermission(subject, parentAttr);
         Permission permissionChild = getPermission(subject, childAttr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permissionParent,
@@ -119,6 +129,10 @@ public class ACLPermissionHandler implements PermissionHandler
                                 FileAttributes newParentAttr,
                                 boolean isDirectory)
     {
+        if (parentAttr == null || newParentAttr == null) {
+            return ACCESS_DENIED;
+        }
+
         Permission permission1 = getPermission(subject, parentAttr);
         Permission permission2 = getPermission(subject, newParentAttr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permission1,

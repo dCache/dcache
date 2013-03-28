@@ -66,14 +66,17 @@ public class PosixPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateSubDir(Subject subject, FileAttributes attr)
+    public AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr)
     {
-        int mode = attr.getMode();
-        if (Subjects.hasUid(subject, attr.getOwner())) {
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+        int mode = parentAttr.getMode();
+        if (Subjects.hasUid(subject, parentAttr.getOwner())) {
             return AccessType.valueOf(isSet(mode, S_IWUSR | S_IXUSR));
         }
 
-        if (Subjects.hasGid(subject, attr.getGroup())) {
+        if (Subjects.hasGid(subject, parentAttr.getGroup())) {
             return AccessType.valueOf(isSet(mode, S_IWGRP | S_IXGRP));
         }
 
@@ -81,14 +84,17 @@ public class PosixPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateFile(Subject subject, FileAttributes attr)
+    public AccessType canCreateFile(Subject subject, FileAttributes parentAttr)
     {
-        int mode = attr.getMode();
-        if (Subjects.hasUid(subject, attr.getOwner())) {
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+        int mode = parentAttr.getMode();
+        if (Subjects.hasUid(subject, parentAttr.getOwner())) {
             return AccessType.valueOf(isSet(mode, S_IWUSR | S_IXUSR));
         }
 
-        if (Subjects.hasGid(subject, attr.getGroup())) {
+        if (Subjects.hasGid(subject, parentAttr.getGroup())) {
             return AccessType.valueOf(isSet(mode, S_IWGRP | S_IXGRP));
         }
 
@@ -100,6 +106,9 @@ public class PosixPermissionHandler implements PermissionHandler
                                     FileAttributes parentAttr,
                                     FileAttributes childAttr)
     {
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
         int mode = parentAttr.getMode();
 
         if (Subjects.hasUid(subject, parentAttr.getOwner())) {
@@ -118,6 +127,9 @@ public class PosixPermissionHandler implements PermissionHandler
                                    FileAttributes parentAttr,
                                    FileAttributes childAttr)
     {
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
         int mode = parentAttr.getMode();
 
         if (Subjects.hasUid(subject, parentAttr.getOwner())) {
@@ -169,6 +181,10 @@ public class PosixPermissionHandler implements PermissionHandler
                                 FileAttributes newParentAttr,
                                 boolean isDirectory)
     {
+        if (parentAttr == null || newParentAttr == null) {
+            return ACCESS_DENIED;
+        }
+
         int parentMode = parentAttr.getMode();
         int newParentMode = newParentAttr.getMode();
         AccessType result;
@@ -211,7 +227,7 @@ public class PosixPermissionHandler implements PermissionHandler
             }
         }
 
-        /* Other flags can be changed by however got write permission.
+        /* Other flags can be changed by whoever got write permission.
          */
         int mode = attr.getMode();
         if (Subjects.hasUid(subject, attr.getOwner())) {
@@ -231,6 +247,13 @@ public class PosixPermissionHandler implements PermissionHandler
                                        FileAttributes attr,
                                        Set<FileAttribute> attributes)
     {
+        /* I'm not certain this is correct for all attributes, but it is
+         * consistent with our legacy code.
+         */
+        if (parentAttr == null) {
+            return ACCESS_ALLOWED;
+        }
+
         int mode = parentAttr.getMode();
 
         if (Subjects.hasUid(subject, parentAttr.getOwner())) {
