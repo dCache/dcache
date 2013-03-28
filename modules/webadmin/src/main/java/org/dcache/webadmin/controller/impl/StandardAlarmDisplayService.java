@@ -59,14 +59,24 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.impl;
 
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.jdom.input.SAXBuilder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.logback.AlarmDefinition;
 import org.dcache.webadmin.controller.IAlarmDisplayService;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -88,6 +98,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
 
     private final AlarmTableProvider alarmTableProvider = new AlarmTableProvider();
     private final ILogEntryDAO access;
+    private String definitions;
 
     public StandardAlarmDisplayService(DAOFactory factory) throws DAOException {
         access = factory.getLogEntryDAO();
@@ -96,6 +107,19 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
     @Override
     public AlarmTableProvider getDataProvider() {
         return alarmTableProvider;
+    }
+
+    @Override
+    public List<String> getPredefinedAlarmTypes() {
+        List<String> types = new ArrayList<>();
+        types.add(AlarmDefinition.getMarker(null).toString());
+        if (definitions != null && definitions.length() > 0) {
+            File xmlFile = new File(definitions);
+            if (xmlFile.exists()) {
+                loadDefinitions(xmlFile, types);
+            }
+        }
+        return types;
     }
 
     /**
@@ -112,13 +136,19 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         Boolean alarm = alarmTableProvider.isAlarm();
         try {
             Collection<LogEntry> refreshed
-                = access.get(after, before,
-                             severity == null ? null : Severity.valueOf(severity),
-                             type, alarm);
+                = access.get(after,
+                             before,
+                             severity == null ? null
+                                              : Severity.valueOf(severity), type,
+                             alarm);
             alarmTableProvider.setEntries(refreshed);
         } catch (DAOException e) {
             logger.error(e.getMessage(), e);
         }
+    }
+
+    public void setDefinitions(String definitions) {
+        this.definitions = definitions;
     }
 
     private void delete() {
@@ -126,6 +156,25 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
             alarmTableProvider.delete(access);
         } catch (DAOException t) {
             logger.error(t.getMessage(), t);
+        }
+    }
+
+    private void loadDefinitions(File xmlFile, List<String> types) {
+        SAXBuilder builder = new SAXBuilder();
+        Document document;
+        try {
+            document = (Document) builder.build(xmlFile);
+        } catch (JDOMException | IOException t) {
+            logger.error("cannot load alarm defintions: {}", t.getMessage());
+            return;
+        }
+        Element rootNode = document.getRootElement();
+        List<Element> list = rootNode.getChildren("alarmType");
+        for (Element node: list) {
+            Element child = node.getChild("type");
+            if (child != null) {
+                types.add(child.getTextTrim());
+            }
         }
     }
 
@@ -137,4 +186,3 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         }
     }
 }
-

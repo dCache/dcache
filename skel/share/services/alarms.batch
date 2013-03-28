@@ -17,6 +17,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -alarms.dir=${alarms.dir} \
         -alarms.server.config=${alarms.server.config} \
         -alarms.store.path=${alarms.store.path} \
+        -alarms.definitions.path=${alarms.definitions.path} \
         -alarms.store.db.changelog=${alarms.store.db.changelog} \
         -alarms.store.db.type=${alarms.store.db.type} \
         -alarms.store.db.rdbms=${alarms.store.db.rdbms} \

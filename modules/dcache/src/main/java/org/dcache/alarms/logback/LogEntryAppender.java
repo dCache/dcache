@@ -60,13 +60,16 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
 import ch.qos.logback.classic.Level;
-
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.spi.AppenderAttachable;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.jdom.input.SAXBuilder;
 import org.slf4j.Marker;
 
 import java.io.File;
@@ -74,13 +77,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.dao.ILogEntryDAO;
@@ -89,10 +92,10 @@ import org.dcache.alarms.dao.LogEntryStorageException;
 import org.dcache.alarms.dao.impl.DataNucleusLogEntryStore;
 
 /**
- * For server-side interception of log messages. Will store them to the
- * LogEntry store used by the dCache installation. If the storage plugin is
- * file-based (e.g., XML), the dCache alarm display service (webadmin) must be
- * running on a shared file-system with the logging server.
+ * For server-side interception of log messages. Will store them to the LogEntry
+ * store used by the dCache installation. If the storage plugin is file-based
+ * (e.g., XML), the dCache alarm display service (webadmin) must be running on a
+ * shared file-system with the logging server.
  *
  * @author arossi
  */
@@ -100,16 +103,18 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
                 AppenderAttachable<ILoggingEvent> {
 
     private final Properties properties = new Properties();
-    private final Collection<AlarmDefinition> definitions = new ArrayList<>();
+    private final Map<String, AlarmDefinition> definitions
+        = Collections.synchronizedMap(new TreeMap<String, AlarmDefinition>());
     private final Map<String, Appender<ILoggingEvent>> childAppenders
         = Collections.synchronizedMap(new HashMap<String, Appender<ILoggingEvent>>());
 
     private ILogEntryDAO store;
     private String path;
     private String propertiesPath;
+    private String definitionsPath;
 
     public void addAlarmType(AlarmDefinition definition) {
-        definitions.add(definition);
+        definitions.put(definition.getType(), definition);
     }
 
     @Override
@@ -155,6 +160,10 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
         return childAppenders.values().iterator();
     }
 
+    public void setDefinitionsPath(String definitionsPath) {
+        this.definitionsPath = definitionsPath;
+    }
+
     public void setDriver(String driver) {
         properties.setProperty("datanucleus.ConnectionDriverName", driver);
     }
@@ -182,6 +191,14 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
     @Override
     public void start() {
         try {
+            if (definitionsPath != null && definitionsPath.trim().length() > 0) {
+                File file = new File(definitionsPath);
+                if (!file.exists()) {
+                    throw new FileNotFoundException(file.getAbsolutePath());
+                }
+                loadDefinitions(file);
+            }
+
             if (store == null) {
                 if (propertiesPath != null
                                 && propertiesPath.trim().length() > 0) {
@@ -201,10 +218,7 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
             }
 
             super.start();
-        } catch (LogEntryStorageException t) {
-            addError(t.getMessage() + "; " + t.getCause());
-            // do not set started to true
-        } catch (IOException t) {
+        } catch ( LogEntryStorageException | JDOMException | IOException t) {
             addError(t.getMessage() + "; " + t.getCause());
             // do not set started to true
         }
@@ -217,7 +231,7 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
                 LogEntry entry = createEntryFromEvent(eventObject);
                 String type = entry.getType();
                 if (type != null && !Level.ERROR.toString().equals(type)
-                                 && !Level.WARN.toString().equals(type)) {
+                                && !Level.WARN.toString().equals(type)) {
                     /*
                      * means it was possibly not sent with an ALARM marker; add
                      * one so any delegated appender with an ALARM marker filter
@@ -291,12 +305,24 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
         return entry;
     }
 
+    private void loadDefinitions(File xmlFile) throws JDOMException,
+                    IOException {
+        SAXBuilder builder = new SAXBuilder();
+        Document document = (Document) builder.build(xmlFile);
+        Element rootNode = document.getRootElement();
+        List<Element> list = rootNode.getChildren(AlarmDefinition.ALARM_TYPE_TAG);
+        for (Element node: list) {
+            addAlarmType(new AlarmDefinition(node));
+        }
+    }
+
     private void postProcessAlarm(ILoggingEvent event, LogEntry entry) {
         Marker marker = event.getMarker();
-        boolean alarm = marker == null ? false : marker.contains(IAlarms.ALARM_MARKER);
+        boolean alarm = marker == null ? false
+                        : marker.contains(IAlarms.ALARM_MARKER);
 
         AlarmDefinition match = null;
-        for (AlarmDefinition definition : definitions) {
+        for (AlarmDefinition definition : definitions.values()) {
             if (definition.matches(event)) {
                 alarm = true;
                 match = definition;

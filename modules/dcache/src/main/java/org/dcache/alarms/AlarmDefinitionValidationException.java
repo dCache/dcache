@@ -57,23 +57,27 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.controller;
-
-import java.io.Serializable;
-import java.util.List;
-
-import org.dcache.webadmin.controller.util.AlarmTableProvider;
+package org.dcache.alarms;
 
 /**
- * Service which handles the model for the Alarms display page.
- *
  * @author arossi
  */
-public interface IAlarmDisplayService extends Serializable {
+public class AlarmDefinitionValidationException extends Exception
+{
+    private static final long serialVersionUID = -5160138147230131675L;
 
-    AlarmTableProvider getDataProvider();
+    public AlarmDefinitionValidationException() {
+    }
 
-    List<String> getPredefinedAlarmTypes();
+    public AlarmDefinitionValidationException(String message) {
+        super(message);
+    }
 
-    void refresh();
+    public AlarmDefinitionValidationException(Throwable cause) {
+        super(cause);
+    }
+
+    public AlarmDefinitionValidationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

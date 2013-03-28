@@ -26,6 +26,10 @@ usage()
     echo "Usage: $(basename $0) [OPTION]... COMMAND"
     echo
     echo "Valid commands are:"
+    echo "   alarm send [-s=<source info uri>] [-l=<log level>] [-t=<alarm type>] message"
+    echo "   alarm add    (interactive)"
+    echo "   alarm modify (interactive)"
+    echo "   alarm remove (interactive)"
     echo "   check-config"
     echo "   condrestart [<domain>]..."
     echo "   database ls"
@@ -864,6 +868,42 @@ case "$1" in
                     port number is chosen.  The chosen port is guaranteed not to
                     conflict with already open ports."
 	fi
+        ;;
+
+    alarm)
+        shift
+
+        if [ $# -eq 0 ]; then
+            usage
+        fi
+
+        command=$1
+        shift
+
+        . ${lib}/utils.sh
+        . ${lib}/alarm.sh
+
+        case "$command" in
+            send)
+                send_alarm $@
+                ;;
+
+            add)
+                handle_alarm_definition $command
+                ;;
+
+            modify)
+                handle_alarm_definition $command
+                ;;
+
+            remove)
+                handle_alarm_definition $command
+                ;;
+
+            *)
+                usage
+                ;;
+        esac
         ;;
 
     database)

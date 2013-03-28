@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.panels.alarms;
 
+import org.apache.wicket.extensions.ajax.markup.html.autocomplete.DefaultCssAutoCompleteTextField;
+
+import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
 import org.apache.wicket.extensions.markup.html.form.DateTextField;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.extensions.yui.calendar.DatePicker;
@@ -73,6 +76,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 
 import java.util.Date;
+import java.util.Iterator;
 
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.LogEntry;
@@ -80,8 +84,8 @@ import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.view.pages.alarms.AlarmsPage;
 
 /**
- * This section of the form controls the queries for page refresh
- * and table filtering.
+ * This section of the form controls the queries for page refresh and table
+ * filtering.
  *
  * @author arossi
  */
@@ -93,23 +97,23 @@ public class QueryPanel extends Panel {
     public QueryPanel(String id, final AlarmsPage parent) {
         super(id);
         AlarmTableProvider provider
-            = parent.getWebadminApplication().getAlarmDisplayService()
-                    .getDataProvider();
+            = parent.getWebadminApplication().getAlarmDisplayService().getDataProvider();
         addAlarmsGroup(provider);
         addDateFields(provider);
         addSeverityChoice(provider);
-        addTypeField(provider);
+        addTypeAutoComplete(parent, provider);
         addExpressionFields(provider);
         addShowClosed(provider);
         add(parent.getRefreshButton());
     }
 
     private void addAlarmsGroup(SortableDataProvider<LogEntry> provider) {
-        IModel<Boolean> selectAlarmValue = new PropertyModel<>(provider, "alarm");
+        IModel<Boolean> selectAlarmValue = new PropertyModel<>(provider,
+                        "alarm");
         RadioGroup rgrp = new RadioGroup("selectgroup", selectAlarmValue);
-        rgrp.add(new Radio("all", Model.of((Boolean)null)));
-        rgrp.add(new Radio("alarmsonly", Model.of((Boolean)true)));
-        rgrp.add(new Radio("noalarms", Model.of((Boolean)false)));
+        rgrp.add(new Radio("all", Model.of((Boolean) null)));
+        rgrp.add(new Radio("alarmsonly", Model.of((Boolean) true)));
+        rgrp.add(new Radio("noalarms", Model.of((Boolean) false)));
         add(rgrp);
     }
 
@@ -129,11 +133,9 @@ public class QueryPanel extends Panel {
     }
 
     private void addExpressionFields(SortableDataProvider<LogEntry> provider) {
-        IModel<String> filterValue
-            = new PropertyModel<>(provider, "expression");
+        IModel<String> filterValue = new PropertyModel<>(provider, "expression");
         add(new TextField<>("filterField", filterValue));
-        IModel<Boolean> regexValue
-            = new PropertyModel<>(provider, "regex");
+        IModel<Boolean> regexValue = new PropertyModel<>(provider, "regex");
         add(new CheckBox("regex", regexValue) {
             private static final long serialVersionUID = -5500105320665027261L;
 
@@ -145,14 +147,13 @@ public class QueryPanel extends Panel {
     }
 
     private void addSeverityChoice(SortableDataProvider<LogEntry> provider) {
-        IModel<String> choiceValue
-            = new PropertyModel<>(provider, "severity");
+        IModel<String> choiceValue = new PropertyModel<>(provider, "severity");
         add(new DropDownChoice("levels", choiceValue, Severity.asList()));
     }
 
     private void addShowClosed(SortableDataProvider<LogEntry> provider) {
-        IModel<Boolean> showClosedValue
-            = new PropertyModel<>(provider, "showClosed");
+        IModel<Boolean> showClosedValue = new PropertyModel<>(provider,
+                        "showClosed");
         add(new CheckBox("showClosed", showClosedValue) {
             private static final long serialVersionUID = -5500105320665027261L;
 
@@ -163,9 +164,19 @@ public class QueryPanel extends Panel {
         });
     }
 
-    private void addTypeField(SortableDataProvider<LogEntry> provider) {
-        IModel<String> filterValue
-            = new PropertyModel<>(provider, "type");
-        add(new TextField<>("typeField", filterValue));
+    private void addTypeAutoComplete(final AlarmsPage parent,
+                    final SortableDataProvider<LogEntry> provider) {
+        IModel<String> filterValue = new PropertyModel<>(provider, "type");
+
+        add(new DefaultCssAutoCompleteTextField("typeField", filterValue) {
+            private static final long serialVersionUID = 2438629315170621032L;
+
+            @Override
+            protected Iterator getChoices(String input) {
+                return parent.getWebadminApplication()
+                                .getAlarmDisplayService()
+                                .getPredefinedAlarmTypes().iterator();
+            }
+        });
     }
 }

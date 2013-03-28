@@ -271,6 +271,45 @@ over from failed schema updates.
 Generates schema documentation for the database of a service. The
 documentation is written as HTML to the output directory specified.
 
+.SH ALARM COMMANDS
+
+.TP
+.B alarm send [-s=<source info uri>] [-l=<log level>] [-t=<alarm type>] message
+Command for sending an arbitrary alarm message to the alarm server.
+
+.TP.TP
+.B source info uri
+the host, domain and service issuing the alarm, in the form:
+"src://[host]/[domain]/[service]"; if host is not given, it defaults
+to the hostname of the node where the command is issued; if domain is not
+given, it defaults to "NA"; if service is not given, it defaults to
+"command-line".
+
+.TP.TP
+.B log level
+can be ERROR (default) or WARN; these translate into HIGH and MODERATE
+severity levels.
+
+.TP.TP
+.B alarm type
+additional subtype marker; all alarms are marked ALARM; with type defined,
+the marker becomes: ALARM [type].
+
+.TP
+.B alarm add
+Activates interpreter for adding an alarm definition to the alarm definition
+xml file.  The path for the latter is determined from alarms.definitions.path.
+
+.TP
+.B alarm modify
+Activates interpreter for modifying an alarm definition in the alarm definition
+xml file.  The path for the latter is determined from alarms.definitions.path.
+
+.TP
+.B alarm remove
+Activates interpreter for removing an alarm definition from the alarm definition
+xml file.  The path for the latter is determined from alarms.definitions.path.
+
 .SH MISCELLANEOUS COMMANDS
 
 .TP

@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.util;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -71,6 +73,27 @@ import java.util.regex.Pattern;
  * @author arossi
  */
 public class RegexUtils {
+    public static final String CASE_INSENSITIVE = "CASE_INSENSITIVE";
+    public static final String MULTILINE = "MULTILINE";
+    public static final String DOTALL = "DOTALL";
+    public static final String UNICODE_CASE = "UNICODE_CASE";
+    public static final String CANON_EQ = "CANON_EQ";
+    public static final String LITERAL = "LITERAL";
+    public static final String COMMENTS = "COMMENTS";
+    public static final String UNIX_LINES = "UNIX_LINES";
+
+    public static final ImmutableSet<String> FLAG_VALUES
+        = new ImmutableSet.Builder<String>()
+            .add(CASE_INSENSITIVE)
+            .add(MULTILINE)
+            .add(DOTALL)
+            .add(UNICODE_CASE)
+            .add(CANON_EQ)
+            .add(LITERAL)
+            .add(COMMENTS)
+            .add(UNIX_LINES)
+            .build();
+
     /**
      * Translates the string representation of the {@link Pattern} flags into
      * the corresponding Java int value. String can be an or'd set, e.g.,
@@ -88,28 +111,28 @@ public class RegexUtils {
         String[] split = flags.split("[|]");
         for (String s : split) {
             switch (s.trim()) {
-                case "CASE_INSENSITIVE":
+                case CASE_INSENSITIVE:
                     value |= Pattern.CASE_INSENSITIVE;
                     break;
-                case "MULTILINE":
+                case MULTILINE:
                     value |= Pattern.MULTILINE;
                     break;
-                case "DOTALL":
+                case DOTALL:
                     value |= Pattern.DOTALL;
                     break;
-                case "UNICODE_CASE":
+                case UNICODE_CASE:
                     value |= Pattern.UNICODE_CASE;
                     break;
-                case "CANON_EQ":
+                case CANON_EQ:
                     value |= Pattern.CANON_EQ;
                     break;
-                case "LITERAL":
+                case LITERAL:
                     value |= Pattern.LITERAL;
                     break;
-                case "COMMENTS":
+                case COMMENTS:
                     value |= Pattern.COMMENTS;
                     break;
-                case "UNIX_LINES":
+                case UNIX_LINES:
                     value |= Pattern.UNIX_LINES;
                     break;
             }
@@ -129,35 +152,35 @@ public class RegexUtils {
         List<String> options = new ArrayList<>();
 
         if ((flags & Pattern.CASE_INSENSITIVE ) == Pattern.CASE_INSENSITIVE ) {
-            options.add("CASE_INSENSITIVE");
+            options.add(CASE_INSENSITIVE);
         }
 
         if ((flags & Pattern.MULTILINE ) == Pattern.MULTILINE ) {
-            options.add("MULTILINE");
+            options.add(MULTILINE);
         }
 
         if ((flags & Pattern.DOTALL ) == Pattern.DOTALL ) {
-            options.add("UNIX_LINES");
+            options.add(UNIX_LINES);
         }
 
         if ((flags & Pattern.UNICODE_CASE ) == Pattern.UNICODE_CASE ) {
-            options.add("UNICODE_CASE");
+            options.add(UNICODE_CASE);
         }
 
         if ((flags & Pattern.CANON_EQ ) == Pattern.CANON_EQ ) {
-            options.add("CANON_EQ");
+            options.add(CANON_EQ);
         }
 
         if ((flags & Pattern.LITERAL ) == Pattern.LITERAL ) {
-            options.add("LITERAL");
+            options.add(LITERAL);
         }
 
         if ((flags & Pattern.COMMENTS ) == Pattern.COMMENTS ) {
-            options.add("COMMENTS");
+            options.add(COMMENTS);
         }
 
         if ((flags & Pattern.UNIX_LINES ) == Pattern.UNIX_LINES ) {
-            options.add("UNIX_LINES");
+            options.add(UNIX_LINES);
         }
 
         Iterator<String> it = options.iterator();

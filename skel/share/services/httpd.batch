@@ -63,6 +63,7 @@ define context webadmin.exe endDefine
      -alarmsDbUser=${alarms.store.db.user} \
      -alarmsDbPass=${alarms.store.db.pass} \
      -alarmsPropertiesPath=${alarms.store.db.properties} \
+     -alarmsDefinitionsPath=${alarms.definitions.path} \
      -alarmsCleanerEnabled=${webadmin.alarm.cleaner.enabled} \
      -alarmsCleanerSleepInterval=${webadmin.alarm.cleaner.timeout} \
      -alarmsCleanerDeleteThreshold=${webadmin.alarm.cleaner.delete-threshold} \

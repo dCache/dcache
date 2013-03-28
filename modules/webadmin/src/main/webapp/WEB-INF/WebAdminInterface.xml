@@ -25,6 +25,7 @@
     <jee:jndi-lookup id="alarmsDbUser" jndi-name="java:comp/env/alarmsDbUser"/>
     <jee:jndi-lookup id="alarmsDbPass" jndi-name="java:comp/env/alarmsDbPass"/>
     <jee:jndi-lookup id="alarmsPropertiesPath" jndi-name="java:comp/env/alarmsPropertiesPath"/>
+    <jee:jndi-lookup id="alarmsDefinitionsPath" jndi-name="java:comp/env/alarmsDefinitionsPath"/>
     <jee:jndi-lookup id="alarmsCleanerEnabled" jndi-name="java:comp/env/alarmsCleanerEnabled"/>
     <jee:jndi-lookup id="alarmsCleanerSleepInterval" jndi-name="java:comp/env/alarmsCleanerSleepInterval"/>
     <jee:jndi-lookup id="alarmsCleanerDeleteThreshold" jndi-name="java:comp/env/alarmsCleanerDeleteThreshold"/>
@@ -270,6 +271,7 @@
         <constructor-arg>
             <ref bean="DAOFactory"/>
         </constructor-arg>
+        <property name="definitions" ref="alarmsDefinitionsPath"/>
     </bean>
 
     <bean id="ThumbnailPanelProvider" class="org.dcache.webadmin.controller.util.ThumbnailPanelProvider">

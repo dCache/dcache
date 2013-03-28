@@ -88,6 +88,7 @@ public class LogEntryServerWrapper {
 
     private String baseDir;
     private String configFile;
+    private String definitionsPath;
     private String path;
     private String properties;
     private String driver;
@@ -104,6 +105,10 @@ public class LogEntryServerWrapper {
 
     public void setConfigFile(String configFile) {
         this.configFile = configFile;
+    }
+
+    public void setDefinitions(String definitionsPath) {
+        this.definitionsPath = definitionsPath;
     }
 
     public void setDriver(String driver) {
@@ -159,6 +164,7 @@ public class LogEntryServerWrapper {
         loggerContext.putProperty("alarms.store.db.user", user);
         loggerContext.putProperty("alarms.store.db.pass", pass);
         loggerContext.putProperty("alarms.store.db.properties", properties);
+        loggerContext.putProperty("alarms.definitions.path", definitionsPath);
 
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(loggerContext);

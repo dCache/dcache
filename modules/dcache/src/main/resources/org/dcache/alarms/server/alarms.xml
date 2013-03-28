@@ -25,6 +25,7 @@
         <property name="user" value="${alarms.store.db.user}"/>
         <property name="pass" value="${alarms.store.db.pass}"/>
         <property name="properties" value="${alarms.store.db.properties}"/>
+        <property name="definitions" value="${alarms.definitions.path}"/>
     </bean>
 
     <beans profile="rdbms">
