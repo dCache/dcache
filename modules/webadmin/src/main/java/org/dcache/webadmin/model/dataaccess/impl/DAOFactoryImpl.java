@@ -8,8 +8,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.Properties;
 
+import org.dcache.alarms.Severity;
+import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
@@ -28,6 +33,28 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  * @author jans
  */
 public class DAOFactoryImpl implements DAOFactory {
+    /**
+     * Placeholder implementation which allows the page construction in case
+     * initialization of the DAO fails.  This could occur, for instance, if
+     * there is no alarm server and the default XML implementation is used.
+     */
+    public static class NOPLogEntryDAO implements ILogEntryDAO {
+        public Collection<LogEntry> get(Date after, Date before,
+                        Severity severity, String type, Boolean isAlarm)
+                        throws DAOException {
+            return new ArrayList<LogEntry>();
+        }
+
+        public long remove(Collection<LogEntry> selected) throws DAOException {
+            return 0;
+        }
+
+        public long update(Collection<LogEntry> selected) throws DAOException {
+            return 0;
+        }
+    };
+
+    private static final ILogEntryDAO NOP_LOGENTRYDAO = new NOPLogEntryDAO();
 
     private Logger _log = LoggerFactory.getLogger(DAOFactory.class);
     private CommandSenderFactory _defaultCommandSenderFactory;
@@ -44,13 +71,19 @@ public class DAOFactoryImpl implements DAOFactory {
     private int _alarmCleanerDeleteThreshold;
 
     @Override
-    public synchronized ILogEntryDAO getLogEntryDAO() throws DAOException {
+    public synchronized ILogEntryDAO getLogEntryDAO() {
         if (_logEntryDAO == null) {
-            _logEntryDAO = new DataNucleusAlarmStore(_alarmsXMLPath,
-                                                  getAlarmsProperties(),
-                                                  _alarmCleanerEnabled,
-                                                  _alarmCleanerSleepInterval,
-                                                  _alarmCleanerDeleteThreshold);
+            try {
+                _logEntryDAO = new DataNucleusAlarmStore(_alarmsXMLPath,
+                                                      getAlarmsProperties(),
+                                                      _alarmCleanerEnabled,
+                                                      _alarmCleanerSleepInterval,
+                                                      _alarmCleanerDeleteThreshold);
+            } catch (DAOException t) {
+                _log.error("NOP logging store DAO: {}; cause: {}",
+                                t.getMessage(), t.getCause());
+                _logEntryDAO = NOP_LOGENTRYDAO;
+            }
         }
         return _logEntryDAO;
     }
@@ -127,7 +160,7 @@ public class DAOFactoryImpl implements DAOFactory {
     @Override
     public void setDefaultCommandSenderFactory(
                     CommandSenderFactory commandSenderFactory) {
-        _log.debug("DefaultCommandSenderFactory set {}",
+        _log.trace("DefaultCommandSenderFactory set {}",
                         commandSenderFactory.toString());
         _defaultCommandSenderFactory = commandSenderFactory;
     }
@@ -137,7 +170,7 @@ public class DAOFactoryImpl implements DAOFactory {
     }
 
     public void setPageCache(PageInfoCache pageCache) {
-        _log.debug("PageCache set {}", pageCache);
+        _log.trace("PageCache set {}", pageCache);
         _pageCache = pageCache;
     }
 

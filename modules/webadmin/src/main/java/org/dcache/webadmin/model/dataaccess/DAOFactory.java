@@ -1,7 +1,6 @@
 package org.dcache.webadmin.model.dataaccess;
 
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
-import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
  * The instantiation of DAOs is abstracted this way to make Unittests with
@@ -20,7 +19,7 @@ public interface DAOFactory {
 
     public MoverDAO getMoverDAO();
 
-    public ILogEntryDAO getLogEntryDAO() throws DAOException;
+    public ILogEntryDAO getLogEntryDAO();
 
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }

@@ -57,70 +57,20 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.view.pages.alarms;
+package org.dcache.webadmin.view.panels.alarms;
 
-import org.apache.wicket.Component;
-import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
-import org.apache.wicket.markup.html.form.Button;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.protocol.https.RequireHttps;
-import org.apache.wicket.util.time.Duration;
-
-import java.util.concurrent.TimeUnit;
-
-import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
-import org.dcache.webadmin.view.pages.basepage.BasePage;
-import org.dcache.webadmin.view.panels.alarms.DisplayPanel;
-import org.dcache.webadmin.view.panels.alarms.ErrorPanel;
-import org.dcache.webadmin.view.panels.alarms.QueryPanel;
+import org.apache.wicket.markup.html.panel.Panel;
 
 /**
- * Auto-updating form which also allows filtering via queries to the store (on
- * date, type and severity) and in-memory expression matching.
+ * A simple place-holder for the display table when the data store has been
+ * disabled (i.e., is a NOP implementation).
  *
  * @author arossi
  */
-@RequireHttps
-public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
+public class ErrorPanel extends Panel {
+    private static final long serialVersionUID = 8373056106333659451L;
 
-    private static final long serialVersionUID = 993708875580341999L;
-    private Button refreshButton;
-
-    public AlarmsPage() {
-        refreshButton = new Button("refresh") {
-            private static final long serialVersionUID = -7985680254514578732L;
-
-            @Override
-            public void onSubmit() {
-                getWebadminApplication().getAlarmDisplayService().refresh();
-            }
-        };
-
-        Form<?> form = new Form<Void>("form");
-        form.add(new QueryPanel("filterPanel", this));
-        if(getWebadminApplication().getAlarmDisplayService().isConnected()) {
-            form.add(new DisplayPanel("displayPanel", this));
-        } else {
-            form.add(new ErrorPanel("displayPanel"));
-        }
-
-        /*
-         * auto-refresh the entire form: this is necessary because the table in
-         * the display is built on the basis of the query fields
-         */
-        form.add(new AjaxSelfUpdatingTimerBehavior(
-                        Duration.valueOf(TimeUnit.MINUTES.toMillis(1))) {
-
-            private static final long serialVersionUID = -8757270889198228816L;
-
-            public void beforeRender(Component component) {
-                getWebadminApplication().getAlarmDisplayService().refresh();
-            }
-        });
-        add(form);
-    }
-
-    public Button getRefreshButton() {
-        return refreshButton;
+    public ErrorPanel(String id) {
+        super(id);
     }
 }

@@ -75,5 +75,7 @@ public interface IAlarmDisplayService extends Serializable {
 
     List<String> getPredefinedAlarmTypes();
 
+    boolean isConnected();
+
     void refresh();
 }

@@ -72,7 +72,7 @@ import org.dcache.alarms.IAlarms;
 /**
  * This filter can be added to the appender responsible for sending logging
  * messages. It will accept all events but adds "host", "domain" and "service"
- * to the MDC.  The latter need to be kept distinct from cell.cell and
+ * to the MDC.  These need to be kept distinct from cell.cell and
  * cell.domain because the latter can get clobbered on the receiving end
  * if the messages are processed by a remote server running inside dCache
  * as a cell.<br>
@@ -103,6 +103,6 @@ public class RemoteMDCFilter extends Filter<ILoggingEvent> {
         mdc.put(IAlarms.HOST_TAG, host);
         mdc.put(IAlarms.SERVICE_TAG, mdc.get(IAlarms.CELL));
         mdc.put(IAlarms.DOMAIN_TAG, mdc.get(IAlarms.DOMAIN));
-        return FilterReply.ACCEPT;
+        return FilterReply.NEUTRAL;
     }
 }

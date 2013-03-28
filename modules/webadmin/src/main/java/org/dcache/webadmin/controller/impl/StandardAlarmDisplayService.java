@@ -81,6 +81,7 @@ import org.dcache.webadmin.controller.IAlarmDisplayService;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
+import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl.NOPLogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
@@ -100,7 +101,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
     private final ILogEntryDAO access;
     private String definitions;
 
-    public StandardAlarmDisplayService(DAOFactory factory) throws DAOException {
+    public StandardAlarmDisplayService(DAOFactory factory) {
         access = factory.getLogEntryDAO();
     }
 
@@ -122,11 +123,18 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         return types;
     }
 
+    public boolean isConnected() {
+        return !(access instanceof NOPLogEntryDAO);
+    }
+
     /**
      * Calls update, then delete, then refreshes the in-memory list.
      */
     @Override
     public void refresh() {
+        if (!isConnected()) {
+            return;
+        }
         update();
         delete();
         Date after = alarmTableProvider.getAfter();

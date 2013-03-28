@@ -105,6 +105,9 @@
 
   <!-- sends error/warn to a remote logback server -->
   <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
+      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+          <level>${alarms.remote-logging.level}</level>
+      </filter>
       <!-- adds a few properties to MDC -->
       <filter class="org.dcache.alarms.logback.RemoteMDCFilter"/>
       <remoteHost>${alarms.server.host}</remoteHost>
@@ -191,7 +194,7 @@
     <threshold>
       <appender>pinboard</appender>
       <logger>root</logger>
-      <level>info</level>
+      <level>debug</level>
     </threshold>
 
     <threshold>

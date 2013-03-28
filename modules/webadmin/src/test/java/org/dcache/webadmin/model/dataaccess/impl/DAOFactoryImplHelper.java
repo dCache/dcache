@@ -8,7 +8,6 @@ import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
-import org.dcache.webadmin.model.exceptions.DAOException;
 
 import static org.mockito.Mockito.mock;
 
@@ -27,7 +26,7 @@ public class DAOFactoryImplHelper implements DAOFactory {
     private ILogEntryDAO _logEntryDAO;
 
     @Override
-    public synchronized ILogEntryDAO getLogEntryDAO() throws DAOException {
+    public synchronized ILogEntryDAO getLogEntryDAO() {
         if (_logEntryDAO == null) {
             _logEntryDAO = mock(ILogEntryDAO.class);
         }

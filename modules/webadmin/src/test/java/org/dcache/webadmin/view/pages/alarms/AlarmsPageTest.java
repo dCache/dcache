@@ -67,7 +67,6 @@ import org.dcache.webadmin.controller.IAlarmDisplayService;
 import org.dcache.webadmin.controller.impl.StandardAlarmDisplayService;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
-import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 import org.dcache.webadmin.view.pages.login.LogIn;
@@ -82,7 +81,7 @@ public class AlarmsPageTest {
     private WicketTester tester;
 
     @Before
-    public void setUp() throws DAOException {
+    public void setUp() {
         WebAdminInterface authenticatedWebApp =
                 ApplicationFactoryHelper.createSignedInAsAdminApplication();
         DAOFactory daoFactory = new DAOFactoryImplHelper();
