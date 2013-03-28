@@ -92,15 +92,16 @@ define context webadmin.exe endDefine
 endDefine
 
 define context ${cell.name}Setup endDefine
-   set alias default context home.html
-   set alias <home> file ${httpd.static-content.index} -onError=default
+   exec context webadmin.exe
+   set alias <home> redirect webadmin
+   set alias <default> context missing.html
+   set alias old file ${httpd.static-content.index} -onError=default
+   set alias offline context offline.html
+   set alias context context *
    set alias docs directory ${httpd.static-content.docs}
    set alias images directory ${httpd.static-content.images}
    set alias styles directory ${httpd.static-content.styles}
    set alias scripts directory ${httpd.static-content.scripts}
-   set alias offline context offline.html
-   set alias context context *
-   set alias <default> context missing.html
    set alias robots.txt context robots.txt
    set alias cellInfo  context cellInfoTable.html  -onError=offline
    set alias usageInfo context poolUsageTable.html -onError=offline
@@ -112,52 +113,7 @@ define context ${cell.name}Setup endDefine
    set alias api class org.dcache.services.httpd.probe.ProbeResponseEngine
    ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
-   exec context webadmin.exe
    set update 60
-endDefine
-
-# Default navigation page
-####################################################################
-
-define context home.html endDefine
-<html>
-<head><title>Online dCache Home</title></head>
-<body background="/images/bg.svg" text="#000000" link="#000000" vlink="#000000" alink="#000000">
-
-<br><br><br>
-
-<center>
-<table border="1" width="40%">
-<tr>
-<td align="center" valign="middle" >
-<br><br>
-<img src="/images/eagle-main.gif"><br><br>
-
-<table>
-<tr>
-<td>
-<a href="/cellInfo"><h1>Cell Services</h1></a>
-<a href="/usageInfo"><h1>Pool (Space) Usage</h1></a>
-<a href="/queueInfo"><h1>Pool Request Queues</h1></a>
-<a href="/poolInfo"><h1>Pools</h1></a>
-<a href="/billing/"><h1>Actions Log</h1></a>
-<a href="/poolInfo/restoreHandler/*"><h1>Restore Queue</h1></a>
-<a href="/poolInfo/restoreHandler/lazy"><h1>Lazy Restore Queue</h1></a>
-</td></tr>
-</table>
-<br>
-
-</td></tr>
-</table>
-
-</center>
-<br><br><br>
-<hr>
-<!--
-<address><a href="/system/">system</a></address>
--->
-</body>
-</html>
 endDefine
 
 # Page to show for missing content

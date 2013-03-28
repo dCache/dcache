@@ -25,6 +25,9 @@ public class RedirectHandler extends AbstractHandler {
     private final String toContext;
 
     public RedirectHandler(String fromContext, String toContext ) {
+        if ("<home>".equals(fromContext)) {
+            fromContext = "/";
+        }
         this.fromContext = fromContext;
         this.toContext = toContext;
     }
@@ -34,6 +37,7 @@ public class RedirectHandler extends AbstractHandler {
             HttpServletRequest request, HttpServletResponse response) throws
             IOException, ServletException {
         logger.debug("target: {}", target);
+
         if (target.contains(fromContext)) {
             StringBuilder targetUrl = new StringBuilder(target);
             int i = targetUrl.indexOf(fromContext);
