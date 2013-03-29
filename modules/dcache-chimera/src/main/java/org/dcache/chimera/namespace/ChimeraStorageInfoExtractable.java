@@ -14,9 +14,7 @@ public interface ChimeraStorageInfoExtractable {
     public StorageInfo getStorageInfo( FsInode inode )
     throws CacheException ;
 
-    public void setStorageInfo( FsInode inode,
-                         StorageInfo storageInfo , int accessMode )
-    throws CacheException ;
+    void setStorageInfo(FsInode inode, StorageInfo storageInfo) throws CacheException;
 }
 
 

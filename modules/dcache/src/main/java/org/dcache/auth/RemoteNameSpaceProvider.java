@@ -15,7 +15,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
@@ -127,14 +126,6 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
         pnfs.removeChecksum(id, type);
-    }
-
-    @Override
-    public void setStorageInfo(Subject subject, PnfsId id, StorageInfo info,
-            int mode) throws CacheException
-    {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        pnfs.setStorageInfoByPnfsId(id, info, mode);
     }
 
     @Override

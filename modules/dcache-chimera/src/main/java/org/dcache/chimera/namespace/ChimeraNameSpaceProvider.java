@@ -572,15 +572,6 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws CacheException {
-
-        _log.debug ("setStorageInfo for {}", pnfsId);
-
-        FsInode inode = new FsInode(_fs, pnfsId.toString());
-        _extractor.setStorageInfo(inode, storageInfo, accessMode);
-    }
-
-    @Override
     public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
         throws CacheException
     {
@@ -932,6 +923,9 @@ public class ChimeraNameSpaceProvider
                             ACL acl = attr.getAcl();
                             _fs.setACL(inode, acl.getList());
                         }
+                        break;
+                    case STORAGEINFO:
+                        _extractor.setStorageInfo(inode, attr.getStorageInfo());
                         break;
                     default:
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");

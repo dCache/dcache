@@ -18,14 +18,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
@@ -39,7 +37,6 @@ import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
-import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
@@ -62,18 +59,14 @@ import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
-import static diskCacheV111.util.AccessLatency.ONLINE;
 import static diskCacheV111.util.CacheException.*;
-import static diskCacheV111.util.RetentionPolicy.REPLICA;
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.namespace.FileType.REGULAR;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.*;
 
 /**
@@ -700,41 +693,6 @@ public class RemoteNameSpaceProviderTests
                 attributes().size(1000).build());
     }
 
-
-    @Test
-    public void shouldSucceedForSetStorageInfoForKnownFile() throws Exception
-    {
-        givenSuccessfulResponse();
-
-        _namespace.setStorageInfo(ROOT, A_PNFSID,
-                storageInfo().rp(REPLICA).al(ONLINE).at("pool-1").at("pool-2").
-                hsm("osm").storageClass("storageClass").build(), 1);
-
-        PnfsSetStorageInfoMessage sent =
-                getSingleSendAndWaitMessage(PnfsSetStorageInfoMessage.class);
-        assertThat(sent.getSubject(), is(ROOT));
-        assertThat(sent.getPnfsId(), is(A_PNFSID));
-        StorageInfo info = sent.getStorageInfo();
-        assertThat(info.getRetentionPolicy(), is(REPLICA));
-        assertThat(info.getAccessLatency(), is(ONLINE));
-        assertThat(info.locations(), hasItem(new URI("pool-1")));
-        assertThat(info.locations(), hasItem(new URI("pool-2")));
-        assertThat(info.getHsm(), is("osm"));
-        assertThat(info.getStorageClass(), is("storageClass"));
-        assertThat(sent.getAccessMode(), is(1));
-    }
-
-
-    @Test(expected=FileNotFoundCacheException.class)
-    public void shouldFailForSetStorageInfoForUnknownFile() throws Exception
-    {
-        givenFailureResponse(FILE_NOT_FOUND);
-
-        _namespace.setStorageInfo(ROOT, A_PNFSID,
-                storageInfo().rp(REPLICA).al(ONLINE).at("pool-1").at("pool-2").
-                hsm("osm").storageClass("storageClass").build(), 1);
-    }
-
     /*
      * SUPPORT METHODS AND CLASSES
      */
@@ -1110,30 +1068,11 @@ public class RemoteNameSpaceProviderTests
             }
         }
 
-        public StorageInfoBuilder al(AccessLatency value)
-        {
-            _info.setAccessLatency(value);
-            return this;
-        }
-
-        public StorageInfoBuilder rp(RetentionPolicy value)
-        {
-            _info.setRetentionPolicy(value);
-            return this;
-        }
-
         public StorageInfoBuilder cacheClass(String cacheClass)
         {
             _info.setCacheClass(cacheClass);
             return this;
         }
-
-        public StorageInfoBuilder size(long size)
-        {
-            _info.setFileSize(size);
-            return this;
-        }
-
 
         public StorageInfoBuilder hsm(String hsm)
         {

@@ -17,7 +17,6 @@ import java.sql.Statement;
 import java.util.EnumSet;
 import java.util.List;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.PnfsManagerV3;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -31,7 +30,6 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
-import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.chimera.ChimeraFsException;
@@ -419,11 +417,13 @@ public class PnfsManagerTest
         si.addLocation(new URI( OSM_URI_STEM + "?store=tape"));
         si.isSetAddLocation(true);
 
-        PnfsSetStorageInfoMessage setStorageInfoMessage =
-            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, NameSpaceProvider.SI_APPEND);
+        FileAttributes attributesToUpdate = new FileAttributes();
+        attributesToUpdate.setStorageInfo(si);
+        PnfsSetFileAttributes setFileAttributesMessage =
+                new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), attributesToUpdate);
 
-        _pnfsManager.setStorageInfo(setStorageInfoMessage);
-        assertThat("Setting storage info failed", setStorageInfoMessage.getReturnCode(), is(0));
+        _pnfsManager.setFileAttributes(setFileAttributesMessage);
+        assertThat("Setting storage info failed", setFileAttributesMessage.getReturnCode(), is(0));
 
         PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage =
             new PnfsGetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId());
@@ -441,22 +441,26 @@ public class PnfsManagerTest
 
         StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
 
-        si.addLocation(new URI( OSM_URI_STEM + "?store=tape1"));
+        si.addLocation(new URI(OSM_URI_STEM + "?store=tape1"));
         si.isSetAddLocation(true);
 
-        PnfsSetStorageInfoMessage setStorageInfoMessage =
-            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, NameSpaceProvider.SI_APPEND);
+        FileAttributes attributesToUpdate = new FileAttributes();
+        attributesToUpdate.setStorageInfo(si);
+        PnfsSetFileAttributes setFileAttributesMessage =
+                new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), attributesToUpdate);
 
-        _pnfsManager.setStorageInfo(setStorageInfoMessage);
+        _pnfsManager.setFileAttributes(setFileAttributesMessage);
 
-        si.addLocation(new URI( OSM_URI_STEM + "?store=tape2"));
+        si.addLocation(new URI(OSM_URI_STEM + "?store=tape2"));
         si.isSetAddLocation(true);
 
-        setStorageInfoMessage =
-            new PnfsSetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId(), si, NameSpaceProvider.SI_APPEND);
+        attributesToUpdate = new FileAttributes();
+        attributesToUpdate.setStorageInfo(si);
+        setFileAttributesMessage =
+            new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), attributesToUpdate);
 
-        _pnfsManager.setStorageInfo(setStorageInfoMessage);
-        assertEquals("failed to add second tape location", 0,setStorageInfoMessage.getReturnCode() );
+        _pnfsManager.setFileAttributes(setFileAttributesMessage);
+        assertEquals("failed to add second tape location", 0, setFileAttributesMessage.getReturnCode() );
 
     }
 

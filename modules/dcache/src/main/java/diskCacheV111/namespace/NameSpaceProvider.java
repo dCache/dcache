@@ -9,7 +9,6 @@ import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
@@ -100,9 +99,6 @@ public interface NameSpaceProvider
      */
     void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
         throws CacheException;
-
-    void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException;
-
 
     /**
      * add a cache location for a file

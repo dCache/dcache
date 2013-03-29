@@ -57,7 +57,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.services.space.message.CancelUse;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
@@ -86,7 +85,6 @@ import diskCacheV111.util.VOInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
-import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
@@ -113,6 +111,8 @@ import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.JdbcConnectionPool;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 
 /**
@@ -3612,14 +3612,6 @@ public final class Manager
                                 getFileSpaceTokens(getFileTokens);
 
                         }
-                        else if (spaceMessage instanceof PnfsSetStorageInfoMessage) {
-                                PnfsSetStorageInfoMessage setStorageInfoMessage =
-                                        (PnfsSetStorageInfoMessage) spaceMessage;
-                                if (setStorageInfoMessage.getReturnCode()!=0) {
-                                        logger.error("failed to set storageinfo");
-                                }
-                                return;
-                        }
                         else if (spaceMessage instanceof PnfsDeleteEntryNotificationMessage) {
                                 PnfsDeleteEntryNotificationMessage msg=
                                         (PnfsDeleteEntryNotificationMessage) spaceMessage;
@@ -4163,9 +4155,10 @@ public final class Manager
                                 s.getAccessLatency(), s.getRetentionPolicy(),
                                 pnfsManager);
                         try {
-                                PnfsSetStorageInfoMessage msg = new PnfsSetStorageInfoMessage(pnfsId,
-                                                                                              info,
-                                                                                              NameSpaceProvider.SI_OVERWRITE);
+                                FileAttributes attributesToUpdate = new FileAttributes();
+                                attributesToUpdate.setAccessLatency(s.getAccessLatency());
+                                attributesToUpdate.setRetentionPolicy(s.getRetentionPolicy());
+                                PnfsSetFileAttributes msg = new PnfsSetFileAttributes(pnfsId, attributesToUpdate);
                                 msg.setReplyRequired(false);
                                 sendMessage(new CellMessage(new CellPath(pnfsManager),msg));
                         }

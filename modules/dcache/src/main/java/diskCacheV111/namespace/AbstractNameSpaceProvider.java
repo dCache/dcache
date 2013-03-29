@@ -9,7 +9,6 @@ import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
@@ -79,13 +78,6 @@ public class AbstractNameSpaceProvider
 
     @Override
     public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode)
         throws CacheException
     {
         throw new UnsupportedOperationException();

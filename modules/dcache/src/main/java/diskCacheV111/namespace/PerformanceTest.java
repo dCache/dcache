@@ -1,9 +1,13 @@
 package diskCacheV111.namespace;
 
+import com.google.common.base.Throwables;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -193,7 +197,8 @@ public class PerformanceTest extends Thread
         return provider.pathToPnfsid(Subjects.ROOT, path, true);
     }
 
-    private void processOperation(Operation aOp, String path) {
+    private void processOperation(Operation aOp, String path) throws URISyntaxException
+    {
         try {
             FileAttributes fileAttributes;
             switch (aOp) {
@@ -244,9 +249,13 @@ public class PerformanceTest extends Thread
                     break;
                 case SET_STORAGE_INFO:
                     info = provider.getFileAttributes(Subjects.ROOT, getPnfsid(path), EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
-                    info.isSetAccessLatency(true);
-                    info.isSetRetentionPolicy(true);
-                    provider.setStorageInfo(Subjects.ROOT, getPnfsid(path), info, NameSpaceProvider.SI_OVERWRITE);
+                    info.setHsm("hsm");
+                    info.setKey("store", "test");
+                    info.setKey("group", "disk");
+                    info.addLocation(new URI("osm://hsm/?store=test&group=disk&bdif=1234"));
+                    FileAttributes attributesToUpdate = new FileAttributes();
+                    attributesToUpdate.setStorageInfo(info);
+                    provider.setFileAttributes(Subjects.ROOT, getPnfsid(path), attributesToUpdate);
                     break;
                 default: break;
             }//switch
@@ -257,11 +266,15 @@ public class PerformanceTest extends Thread
 
     @Override
     public void run() {
-        String path;
-        while ( (path = queue.poll()) != null) {
-            for(Operation aOp: ops) {
-                processOperation(aOp, path);
+        try {
+            String path;
+            while ( (path = queue.poll()) != null) {
+                for(Operation aOp: ops) {
+                    processOperation(aOp, path);
+                }
             }
+        } catch (URISyntaxException e) {
+            Throwables.propagate(e);
         }
     }//run
 }//class

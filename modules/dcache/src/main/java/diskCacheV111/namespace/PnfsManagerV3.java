@@ -53,7 +53,6 @@ import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -179,7 +178,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsCreateEntryMessage.class);
         _gauges.addGauge(PnfsDeleteEntryMessage.class);
         _gauges.addGauge(PnfsGetStorageInfoMessage.class);
-        _gauges.addGauge(PnfsSetStorageInfoMessage.class);
         _gauges.addGauge(PnfsGetFileMetaDataMessage.class);
         _gauges.addGauge(PnfsSetFileMetaDataMessage.class);
         _gauges.addGauge(PnfsMapPathMessage.class);
@@ -468,62 +466,6 @@ public class PnfsManagerV3
         }catch(Exception e) {
             return "set metadata failed: + " + e.getMessage();
         }
-    }
-
-    public static final String hh_set_storageinfo = "<pnfsid>|<globalPath> [-<option>=<value>] # depricated";
-    public String ac_set_storageinfo_$_1(Args args)
-    {
-
-        PnfsId pnfsId;
-        String reply = "";
-
-        try {
-
-            try {
-
-                pnfsId = new PnfsId(args.argv(0));
-
-            } catch (IllegalArgumentException e) {
-                pnfsId = pathToPnfsid(ROOT,args.argv(0), true);
-            }
-
-            FileAttributes attributes =
-                _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
-                                                     EnumSet.of(FileAttribute.STORAGEINFO));
-
-            StorageInfo storageInfo = attributes.getStorageInfo();
-
-            String accessLatency = args.getOpt("accessLatency");
-            if( accessLatency != null ) {
-                AccessLatency al = AccessLatency.getAccessLatency(accessLatency);
-                if( !al.equals(storageInfo.getAccessLatency()) ) {
-                    storageInfo.setAccessLatency(al);
-                    storageInfo.isSetAccessLatency(true);
-                    _nameSpaceProvider.setStorageInfo(ROOT, pnfsId, storageInfo, NameSpaceProvider.SI_OVERWRITE);
-
-                    // get list of known locations and modify sticky flag
-                    List<String> locations = _cacheLocationProvider.getCacheLocation(ROOT, pnfsId);
-                    for( String pool : locations ) {
-
-                        PoolSetStickyMessage setSticky = new PoolSetStickyMessage(pool, pnfsId, al.equals(AccessLatency.ONLINE));
-                        setSticky.setReplyRequired(false);
-                        CellMessage cellMessage = new CellMessage(new CellPath(pool), setSticky);
-
-                        try {
-                            sendMessage(cellMessage);
-                        }catch(NoRouteToCellException nrtc) {
-                            // TODO: report it
-                        }
-
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            reply = "set storageinfo failed: + " + e.getMessage();
-        }
-
-        return reply;
     }
 
     public static final String fh_storageinfoof =
@@ -1182,26 +1124,6 @@ public class PnfsManagerV3
         }
     }
 
-    public void setStorageInfo( PnfsSetStorageInfoMessage pnfsMessage ){
-        Subject subject = pnfsMessage.getSubject();
-        try {
-            PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            _log.info( "setStorageInfo : "+pnfsId ) ;
-
-            checkMask(pnfsMessage);
-            _nameSpaceProvider.setStorageInfo(subject, pnfsId, pnfsMessage.getStorageInfo(), pnfsMessage.getAccessMode());
-
-        } catch (FileNotFoundCacheException e) {
-            pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage());
-        } catch (CacheException e) {
-            _log.warn("Failed to set storage info: " + e);
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
-        } catch (RuntimeException e) {
-            _log.warn("Failed to set storage info", e);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-        }
-    }
-
     public void setFileMetaData(PnfsSetFileMetaDataMessage message)
     {
         try {
@@ -1712,9 +1634,6 @@ public class PnfsManagerV3
         else if (pnfsMessage instanceof PnfsDeleteEntryMessage){
             deleteEntry((PnfsDeleteEntryMessage)pnfsMessage);
         }
-        else if (pnfsMessage instanceof PnfsSetStorageInfoMessage){
-            setStorageInfo((PnfsSetStorageInfoMessage)pnfsMessage);
-        }
         else if (pnfsMessage instanceof PnfsSetFileMetaDataMessage){
             setFileMetaData((PnfsSetFileMetaDataMessage)pnfsMessage);
         }
@@ -1785,7 +1704,9 @@ public class PnfsManagerV3
     public void processFlushMessage(PoolFileFlushedMessage pnfsMessage)
     {
         try {
-            _nameSpaceProvider.setStorageInfo(pnfsMessage.getSubject(), pnfsMessage.getPnfsId(), pnfsMessage.getStorageInfo(), NameSpaceProvider.SI_APPEND);
+            FileAttributes attributesToUpdate = new FileAttributes();
+            attributesToUpdate.setStorageInfo(pnfsMessage.getStorageInfo());
+            _nameSpaceProvider.setFileAttributes(pnfsMessage.getSubject(), pnfsMessage.getPnfsId(), attributesToUpdate);
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {

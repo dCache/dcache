@@ -26,7 +26,6 @@ import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -342,15 +341,6 @@ public class PnfsHandler
 
    }
 
-   public void setStorageInfoByPnfsId(
-                PnfsId pnfsId , StorageInfo  storageInfo , int accessMode )
-          throws CacheException                {
-
-       /*
-        * use request, which throws exceptions in case of.....
-        */
-       pnfsRequest( new PnfsSetStorageInfoMessage( pnfsId , storageInfo , accessMode ) ) ;
-   }
    public PnfsGetStorageInfoMessage getStorageInfoByPnfsId( PnfsId pnfsId )
           throws CacheException                {
       return  pnfsRequest(new PnfsGetStorageInfoMessage( pnfsId )) ;
