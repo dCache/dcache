@@ -1,69 +1,38 @@
 package org.dcache.pool.movers;
 
-import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.vehicles.ProtocolInfo;
+import java.security.NoSuchAlgorithmException;
 
 import org.dcache.util.Checksum;
-
+import org.dcache.util.ChecksumType;
 
 /**
- * A ChecksumMover is a Mover that supports on-transfer checksum and the
- * possibility of a client-supplied checksum.
+ * A ChecksumMover is a checksum aware Mover.
  */
 public interface ChecksumMover
 {
     /**
-     * Obtain the mover's preferred algorithm for calculated the on-transfer
-     * checksum calculation.  If on-transfer is enabled then this method is
-     * called once, before runIO.  If on-transfer is disabled then this method
-     * is not called.
+     * Instruct the mover to enable on-the-fly checksum calculation.  This
+     * method is called before runIO.  The pool provides a default or suggested
+     * algorithm that the mover is free to ignore in favour of some preferred
+     * algorithm.
+     * @param suggestedAlgorithm a default algorithm
+     */
+    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
+            throws NoSuchAlgorithmException;
+
+    /**
+     * Return an actual checksum computed on the fly during the transfer. Called
+     * after runIO.
      *
-     * @return Preferred algorithm or null to use pool's default algorithm
+     * @return a checksum value for the data or null if none is available.
      */
-    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo protocolInfo);
-
+    public Checksum getActualChecksum();
 
     /**
-     * Obtain the mover's preferred algorithm for calculating the on-write
-     * checksum.  If on-write checksum calculation is enabled and on-transfer
-     * checksum calculation is disabled then this method is called once, after
-     * runIO.  If on-write is disabled or on-transfer is enabled then this
-     * method is not called.
+     * Obtain an expected checksum provided by the remote party. Called after
+     * runIO.
      *
-     * @return Preferred algorithm or null to use pool's default algorithm
+     * @return an expected checksum value for the data or null if none is available.
      */
-    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo protocolInfo);
-
-
-    /**
-     * This method is called to provide the mover with the ChecksumFactory with
-     * which it should calculate the on-transfer checksum.  It is called once,
-     * before runIO, if on-transfer checksum calculation is enabled.
-     * If on-transfer is disabled then this method is not called.
-     * @see #getTransferChecksum()
-     */
-    public void setOnTransferChecksumFactory(ChecksumFactory checksum);
-
-
-    /**
-     * This method is called before runIO to inform the mover whether on-write
-     * checksum calculation is enabled.
-     */
-    public void setOnWriteEnabled(boolean enabled);
-
-
-    /**
-     * This method is called after runIO to discover if the client provided
-     * a checksum for the data.
-     * @return the client-supplied checksum or null
-     */
-    public Checksum getClientChecksum();
-
-
-    /**
-     * Obtain the client checksum calculated from the supplied ChecksumFactory.
-     * @see #setOnTransferChecksumFactory(diskCacheV111.util.ChecksumFactory)
-     * @return the checksum or null if no checksum was calculated.
-     */
-    public Checksum getTransferChecksum();
+    public Checksum getExpectedChecksum();
 }

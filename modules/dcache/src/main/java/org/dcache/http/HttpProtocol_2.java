@@ -9,6 +9,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,7 @@ import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
 
@@ -273,38 +275,21 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
     }
 
     @Override
-    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo protocolInfo)
+    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
+            throws NoSuchAlgorithmException
+    {
+        _checksumFactory = ChecksumFactory.getFactory(suggestedAlgorithm);
+    }
+
+    @Override
+    public Checksum getExpectedChecksum()
     {
         return null;
     }
 
     @Override
-    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo protocolInfo)
-    {
-        return null;
-    }
-
-    @Override
-    public void setOnTransferChecksumFactory(ChecksumFactory checksumFactory)
-    {
-        _checksumFactory = checksumFactory;
-    }
-
-    @Override
-    public Checksum getClientChecksum()
-    {
-        return null;
-    }
-
-    @Override
-    public Checksum getTransferChecksum()
+    public Checksum getActualChecksum()
     {
         return (_checksumChannel == null) ? null : _checksumChannel.getChecksum();
-    }
-
-    @Override
-    public void setOnWriteEnabled(boolean enabled)
-    {
-        // Ignore setting
     }
 }

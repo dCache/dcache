@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.SyncFailedException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,9 +46,6 @@ public class PoolIOWriteTransfer
     private final ReplicaDescriptor _handle;
     private final File _file;
     private final ChecksumModuleV1 _checksumModule;
-
-    private ChecksumFactory _checksumFactory;
-    private long _size;
 
     public static List<StickyRecord> getStickyRecords(StorageInfo info)
     {
@@ -111,20 +109,9 @@ public class PoolIOWriteTransfer
         try {
             RepositoryChannel fileIoChannel = new FileRepositoryChannel(_file, "rw");
             try {
-                if (_mover instanceof ChecksumMover) {
-                    ChecksumMover cm = (ChecksumMover)_mover;
-
-                    cm.setOnWriteEnabled(_checksumModule.checkOnWrite());
-
-                    if (_checksumModule.checkOnTransfer()) {
-                        _checksumFactory =
-                                cm.getOnTransferChecksumFactory(_protocolInfo);
-                        if (_checksumFactory == null) {
-                            _checksumFactory =
-                                _checksumModule.getDefaultChecksumFactory();
-                        }
-                        cm.setOnTransferChecksumFactory(_checksumFactory);
-                    }
+                if (_mover instanceof ChecksumMover && _checksumModule.checkOnTransfer()) {
+                    ((ChecksumMover)_mover).enableTransferChecksum(
+                            _checksumModule.getDefaultChecksumFactory().getType());
                 }
                 runMover(fileIoChannel);
             } finally {
@@ -155,31 +142,30 @@ public class PoolIOWriteTransfer
                IOException
     {
         try {
-            Checksum clientChecksum = null;
-            Checksum transferChecksum = null;
+            Checksum expectedChecksum = null;
+            Checksum actualChecksum = null;
             if (_mover instanceof ChecksumMover) {
-                ChecksumMover cm = (ChecksumMover)_mover;
-                clientChecksum = cm.getClientChecksum();
-
-                if (_checksumModule.checkOnTransfer()) {
-                    transferChecksum = cm.getTransferChecksum();
-                }
-
-                if (_checksumFactory == null) {
-                    _checksumFactory = cm.getOnWriteChecksumFactory(_protocolInfo);
-                }
+                ChecksumMover cm = (ChecksumMover) _mover;
+                expectedChecksum = cm.getExpectedChecksum();
+                actualChecksum = cm.getActualChecksum();
             }
 
-            if (_checksumFactory == null) {
-                _checksumFactory = _checksumModule.getDefaultChecksumFactory();
+            ChecksumFactory factory;
+            if (expectedChecksum != null) {
+                factory = ChecksumFactory.getFactory(expectedChecksum.getType());
+            } else if (actualChecksum != null) {
+                factory = ChecksumFactory.getFactory(actualChecksum.getType());
+            } else {
+                factory = _checksumModule.getDefaultChecksumFactory();
             }
-
             _checksumModule.setMoverChecksums(_fileAttributes.getPnfsId(),
                                               _file,
-                                              _checksumFactory,
-                                              clientChecksum,
-                                              transferChecksum);
+                                              factory,
+                                              expectedChecksum,
+                                              actualChecksum);
             _handle.commit(null);
+        } catch (NoSuchAlgorithmException e) {
+            throw new CacheException("Checksum calculation failed: " + e.getMessage());
         } finally {
             _handle.close();
 

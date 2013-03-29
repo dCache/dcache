@@ -12,6 +12,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -1101,34 +1102,20 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     public boolean wasChanged(){ return _wasChanged; }
 
     @Override
-    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo protocolInfo)
+    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
+            throws NoSuchAlgorithmException
     {
-        return null;
+        _checksumFactory = ChecksumFactory.getFactory(suggestedAlgorithm);
+        _digest = _checksumFactory.create();
     }
 
     @Override
-    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo protocolInfo)
-    {
-        return null;
-    }
-
-    @Override
-    public void setOnWriteEnabled(boolean enabled)
-    {
-        // Ignore value
-    }
-
-    @Override
-    public void setOnTransferChecksumFactory(ChecksumFactory factory){
-        _checksumFactory = factory;
-        _digest = factory.create();
-    }
-    @Override
-    public Checksum getClientChecksum(){
+    public Checksum getExpectedChecksum(){
         return  _clientChecksum ;
     }
+
     @Override
-    public Checksum getTransferChecksum(){
+    public Checksum getActualChecksum(){
         return (_digest == null) ? null : _checksumFactory.create(_digest.digest());
     }
 

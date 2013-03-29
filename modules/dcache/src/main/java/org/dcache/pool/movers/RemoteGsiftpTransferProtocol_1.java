@@ -188,6 +188,17 @@ public class RemoteGsiftpTransferProtocol_1
         RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo
             = (RemoteGsiftpTransferProtocolInfo) protocol;
 
+        /* If on transfer checksum calculation is enabled, check if
+         * we have a protocol specific preferred algorithm.
+         */
+        if (_checksumFactory != null) {
+            ChecksumFactory factory = getChecksumFactory(remoteGsiftpProtocolInfo);
+            if (factory != null) {
+                _checksumFactory = factory;
+            }
+            _transferMessageDigest = _checksumFactory.create();
+        }
+
         createFtpClient(remoteGsiftpProtocolInfo);
 
         if ( access == IoMode.WRITE) {
@@ -301,7 +312,7 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     @Override
-    public Checksum getClientChecksum()
+    public Checksum getExpectedChecksum()
     {
         try {
             if (_ftpCksm != null ){
@@ -314,7 +325,7 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     @Override
-    public Checksum getTransferChecksum()
+    public Checksum getActualChecksum()
     {
         try {
             if (_transferMessageDigest == null) {
@@ -336,55 +347,34 @@ public class RemoteGsiftpTransferProtocol_1
         }
     }
 
-    private ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
+    private ChecksumFactory getChecksumFactory(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo)
     {
-        if (protocol instanceof RemoteGsiftpTransferProtocolInfo) {
-
-            RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo =  (RemoteGsiftpTransferProtocolInfo) protocol;
-            try {
-                createFtpClient(remoteGsiftpProtocolInfo);
-                GlobusURL src_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
-                _ftpCksm = _client.negotiateCksm(src_url.getPath());
-                return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
-            } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
-                _log.error("Checksum algorithm is not supported: " + e.getMessage());
-            } catch (CredentialException e) {
-                _log.error("Failed to authenticate with FTP server: " + e.getMessage());
-            } catch (GSSException e) {
-                _log.error("Failed to authenticate with FTP server: " + e.getMessage());
-            } catch (IOException e) {
-                _log.error("I/O failure talking to FTP server: " + e.getMessage());
-            } catch (Exception e) {
-                _log.error("Failed to negotiate checksum with FTP server: " + e.getMessage());
-            }
+        try {
+            createFtpClient(remoteGsiftpProtocolInfo);
+            GlobusURL src_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
+            _ftpCksm = _client.negotiateCksm(src_url.getPath());
+            return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
+        } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
+            _log.error("Checksum algorithm is not supported: " + e.getMessage());
+        } catch (CredentialException e) {
+            _log.error("Failed to authenticate with FTP server: " + e.getMessage());
+        } catch (GSSException e) {
+            _log.error("Failed to authenticate with FTP server: " + e.getMessage());
+        } catch (IOException e) {
+            _log.error("I/O failure talking to FTP server: " + e.getMessage());
+        } catch (Exception e) {
+            _log.error("Failed to negotiate checksum with FTP server: " + e.getMessage());
         }
         return null;
     }
 
     @Override
-    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo info)
+    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
+            throws NoSuchAlgorithmException
     {
-        return getChecksumFactory(info);
-    }
-
-    @Override
-    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo info)
-    {
-        return getChecksumFactory(info);
-    }
-
-    @Override
-    public void setOnTransferChecksumFactory(ChecksumFactory factory)
-    {
-        _checksumFactory = factory;
+        _checksumFactory = ChecksumFactory.getFactory(suggestedAlgorithm);
         _transferMessageDigest =
-            (factory != null) ? factory.create() : null;
-    }
-
-    @Override
-    public void setOnWriteEnabled(boolean enabled)
-    {
-        // ignore value
+                (_checksumFactory != null) ? _checksumFactory.create() : null;
     }
 
     @Override

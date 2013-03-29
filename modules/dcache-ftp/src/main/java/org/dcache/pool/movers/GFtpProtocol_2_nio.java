@@ -360,7 +360,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	    _multiplexer.close();
 
 	    /* Wait for checksum computation to finish before
-	     * returning. Otherwise getTransferChecksum() could
+	     * returning. Otherwise getActualChecksum() could
 	     * possibly return an incomplete checksum.
              *
              * REVISIT: If the mover gets killed here, we break out
@@ -445,6 +445,17 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
              * this information back to the door.
              */
             throw new CacheException(44, "Internal error: Cannot do passive transfer with mover protocol version 1.");
+        }
+
+        /* If on transfer checksum calculation is enabled, check if
+         * we have a protocol specific preferred algorithm.
+         */
+        if (_checksumFactory != null) {
+            ChecksumFactory factory = getChecksumFactory(gftpProtocolInfo);
+            if (factory != null) {
+                _checksumFactory = factory;
+            }
+            _digest = _checksumFactory.create();
         }
 
         /* We initialise these things early, as the job timeout
@@ -621,62 +632,41 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the ChecksumMover interface. */
-    @Override
-    public void setOnTransferChecksumFactory(ChecksumFactory factory)
+    private ChecksumFactory getChecksumFactory(GFtpProtocolInfo protocol)
     {
-        _digest = factory.create();
-	_checksumFactory = factory;
-    }
-
-    private ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
-    {
-        if (protocol instanceof GFtpProtocolInfo) {
-            GFtpProtocolInfo ftpp = (GFtpProtocolInfo)protocol;
-            String type = ftpp.getChecksumType();
-            if (type == null || type.equals("Unknown")) {
-                return null;
-            }
-
-            try {
-                return ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
-            } catch (NoSuchAlgorithmException e) {
-                esay("CRC Algorithm is not supported: " + type);
-            }
+        String type = protocol.getChecksumType();
+        if (type == null || type.equals("Unknown")) {
+            return null;
         }
+
+        try {
+            return ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
+        } catch (NoSuchAlgorithmException e) {
+            esay("CRC Algorithm is not supported: " + type);
+        }
+
         return null;
     }
 
     @Override
-    public ChecksumFactory getOnTransferChecksumFactory(ProtocolInfo info)
+    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
+            throws NoSuchAlgorithmException
     {
-        return getChecksumFactory(info);
+        _checksumFactory = ChecksumFactory.getFactory(suggestedAlgorithm);
     }
-
-    @Override
-    public ChecksumFactory getOnWriteChecksumFactory(ProtocolInfo info)
-    {
-        return getChecksumFactory(info);
-    }
-
-    @Override
-    public void setOnWriteEnabled(boolean enabled)
-    {
-        // ignore value
-    }
-
 
     /** Part of the ChecksumMover interface. */
     @Override
-    public Checksum getClientChecksum()
+    public Checksum getExpectedChecksum()
     {
         return null;
     }
 
     /** Part of the ChecksumMover interface. */
     @Override
-    public Checksum getTransferChecksum()
+    public Checksum getActualChecksum()
     {
-	return (_checksumFactory == null) ? null : _checksumFactory.create(_digest.digest());
+	return (_digest == null) ? null : _checksumFactory.create(_digest.digest());
     }
 
     /** Part of the ConnectionMonitor interface. */
@@ -843,13 +833,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             mode.setPartialRetrieveParameters(offset, size);
 
 	    if (digest.length() > 0) {
-		mover.setOnTransferChecksumFactory(ChecksumFactory.getFactory(ChecksumType.getChecksumType(digest)));
+		mover.enableTransferChecksum(ChecksumType.getChecksumType(digest));
 	    }
 
             mover.setVerboseLogging(verbose);
 	    mover.transfer(fileChannel, role, mode, null);
 	    if (digest.length() > 0) {
-		System.out.println(mover.getTransferChecksum());
+		System.out.println(mover.getActualChecksum());
 	    }
 	} catch (Exception e) {
 	    e.printStackTrace();
