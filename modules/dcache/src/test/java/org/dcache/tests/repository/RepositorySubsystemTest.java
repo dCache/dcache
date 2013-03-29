@@ -48,7 +48,7 @@ import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.meta.file.FileMetaDataRepository;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
-import org.dcache.tests.cells.CellAdapterHelper;
+import org.dcache.tests.cells.CellEndpointHelper;
 import org.dcache.tests.cells.CellStubHelper;
 import org.dcache.tests.cells.Message;
 import org.dcache.vehicles.FileAttributes;
@@ -98,7 +98,7 @@ public class RepositorySubsystemTest
     private BlockingQueue<StateChangeEvent> stateChangeEvents =
         new LinkedBlockingQueue<>();
 
-    private CellAdapterHelper cell;
+    private CellEndpointHelper cell;
 
     private void createFile(File file, long size)
         throws IOException
@@ -116,7 +116,7 @@ public class RepositorySubsystemTest
                              final List<StickyRecord> sticky)
         throws Throwable
     {
-        new CellStubHelper() {
+        new CellStubHelper(cell) {
             @Message(cell="pnfs")
             public Object message(PnfsSetFileAttributes msg)
             {
@@ -244,7 +244,7 @@ public class RepositorySubsystemTest
             throw new IOException("Could not create meta dir");
         }
 
-        cell = new CellAdapterHelper("pool", "");
+        cell = new CellEndpointHelper("pool");
         pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
         pnfs.setCellEndpoint(cell);
 
@@ -278,7 +278,6 @@ public class RepositorySubsystemTest
     {
         repository.shutdown();
         metaDataStore.close();
-        cell.die();
         if (root != null) {
             deleteDirectory(root);
         }
@@ -449,7 +448,7 @@ public class RepositorySubsystemTest
         repository.init();
         repository.load();
         stateChangeEvents.clear();
-        new CellStubHelper() {
+        new CellStubHelper(cell) {
             /* Attempting to open a non-existing entry triggers a
              * clear cache location message.
              */
@@ -475,7 +474,7 @@ public class RepositorySubsystemTest
         repository.init();
         repository.load();
         stateChangeEvents.clear();
-        new CellStubHelper()  {
+        new CellStubHelper(cell)  {
 
             @Message(required = true, step = 1, cell = "pnfs")
             public Object message(PnfsSetFileAttributes msg) {
@@ -632,7 +631,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        new CellStubHelper() {
+        new CellStubHelper(cell) {
             @Message(required=true,step=1,cell="pnfs")
             public Object message(PnfsClearCacheLocationMessage msg)
             {
@@ -662,7 +661,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        new CellStubHelper() {
+        new CellStubHelper(cell) {
             @Message(required=true,step=0,cell="pnfs")
             public Object message(PnfsClearCacheLocationMessage msg)
             {
@@ -700,7 +699,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        new CellStubHelper() {
+        new CellStubHelper(cell) {
             @Message(required=true,step=1,cell="pnfs")
             public Object message(PnfsClearCacheLocationMessage msg)
             {
@@ -750,7 +749,7 @@ public class RepositorySubsystemTest
                               final EntryState finalState)
         throws Throwable
     {
-        new CellStubHelper() {
+        new CellStubHelper(cell) {
             boolean setAttr;
             boolean addCache;
 

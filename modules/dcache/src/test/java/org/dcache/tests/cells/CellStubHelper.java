@@ -7,15 +7,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -29,9 +24,10 @@ import static org.junit.Assert.fail;
  *
  * The subclass implements a number of message handlers. A message
  * handler is a method annotated with <code>@Message</code>. The stub
- * will create a cell for the message handler and direct messages to
- * the handler. A handler is used exactly once. If the same message is
- * expected several times, several message handlers must be defined.
+ * will send messages send to a CellEndpointHelper and forward them to
+ * the appropriate handler. A handler is used exactly once. If the same
+ * message is expected several times, several message handlers must be
+ * defined.
  *
  * To precisely test the cell interaction, the test is split into a
  * number of steps. The test starts at step 0. Each message handler is
@@ -94,19 +90,19 @@ public abstract class CellStubHelper
             return Ints.compare(getStep(), handler.getStep());
         }
 
-        public boolean call(CellMessage msg)
-            throws IllegalAccessException, InvocationTargetException
+        public CellMessage call(CellMessage msg)
+                throws Throwable
         {
             /* Cannot use handler belonging to a previous step.
              */
             if (_step > getStep()) {
-                return false;
+                return null;
             }
 
             /* Can only use handler once.
              */
             if (_used) {
-                return false;
+                return null;
             }
 
             /* Only accept messages sent to the cell for this messages
@@ -115,7 +111,22 @@ public abstract class CellStubHelper
             CellPath dest = msg.getDestinationPath();
             String cell = getCellName();
             if (!cell.equals(dest.getCellName())) {
-                return false;
+                return null;
+            }
+
+            /* Deliver message.
+             */
+            try {
+                msg.setMessageObject((Serializable) _method.invoke(CellStubHelper.this, msg.getMessageObject()));
+            } catch (IllegalAccessException e) {
+                fail("Unexpected failure while invoking message handler: " +
+                        e.getMessage());
+            } catch (InvocationTargetException e) {
+                throw e.getTargetException();
+            } catch (IllegalArgumentException e) {
+                /* Handler parameters didn't match message object.
+                 */
+                return null;
             }
 
             /* Advance step. Will fail if required handlers belonging
@@ -124,24 +135,8 @@ public abstract class CellStubHelper
             _used = true;
             assertStep("Required messages missing", getStep(), 0);
 
-            /* Deliver message.
-             */
-            try {
-                Serializable obj = msg.getMessageObject();
-                obj = (Serializable) _method.invoke(CellStubHelper.this, obj);
-
-                if (obj != null) {
-                    msg.revertDirection();
-                    msg.setMessageObject(obj);
-                    send(cell, msg);
-                }
-            } catch (IllegalArgumentException e) {
-                /* Handler parameters didn't match message object.
-                 */
-                return false;
-            }
-
-            return true;
+            msg.revertDirection();
+            return msg;
         }
 
         public String toString()
@@ -152,14 +147,11 @@ public abstract class CellStubHelper
 
     protected final List<Handler> _handlers = new ArrayList<>();
 
-    protected final Map<String, CellAdapterHelper> _cells =
-        new HashMap<>();
-
     protected int _step;
 
     protected Throwable _failed;
 
-    public CellStubHelper()
+    public CellStubHelper(CellEndpointHelper endpoint)
         throws Throwable
     {
         _step = 0;
@@ -167,78 +159,44 @@ public abstract class CellStubHelper
         try {
             /* Collect message handlers.
              */
-            Set<String> cells = new HashSet<>();
             for (Method method : getClass().getDeclaredMethods()) {
                 Message annotation = method.getAnnotation(Message.class);
                 if (annotation != null) {
-                    cells.add(annotation.cell());
                     _handlers.add(new Handler(method, annotation));
                 }
             }
             Collections.sort(_handlers);
 
-            /* Create cells.
-             */
-            for (String cell : cells) {
-                _cells.put(cell, new CellAdapterHelper(cell, "") {
-                        @Override
-                        public void messageArrived(CellMessage msg)
-                        {
-                            CellStubHelper.this.messageArrived(msg);
-                        }
-                    });
-            }
-
             /* Execute the test.
              */
-            run();
+            endpoint.execute(this);
 
             assertStep("Required messages missing", Integer.MAX_VALUE);
         } finally {
-            /* Shut down the nuclei.
-             */
-            for (CellAdapterHelper cell : _cells.values()) {
-                cell.die();
-            }
-
             if (_failed != null) {
                 throw _failed;
             }
         }
     }
 
-    synchronized public void messageArrived(CellMessage msg)
+    synchronized public CellMessage messageArrived(CellMessage msg)
     {
         try {
-            try {
-                for (Handler handler : _handlers) {
-                    if (handler.call(msg)) {
-                        return;
-                    }
+            for (Handler handler : _handlers) {
+                CellMessage reply = handler.call(msg);
+                if (reply != null) {
+                    return reply;
                 }
-
-                fail("Unexpected message: " + msg);
-            } catch (IllegalAccessException e) {
-                fail("Unexpected failure while invoking message handler: " +
-                     e.getMessage());
-            } catch (InvocationTargetException e) {
-                throw e.getTargetException();
             }
+            throw new AssertionError("Unexpected message: " + msg);
+        } catch (AssertionError e) {
+            _failed = e;
+            throw e;
         } catch (Throwable e) {
             _failed = e;
-            String cell = msg.getDestinationPath().getCellName();
             msg.revertDirection();
             msg.setMessageObject(e);
-            send(cell, msg);
-        }
-    }
-
-    protected void send(String sender, CellMessage msg)
-    {
-        try {
-            _cells.get(sender).sendMessage(msg);
-        } catch (NoRouteToCellException e) {
-            fail("No route to cell: " + e.getMessage());
+            return msg;
         }
     }
 
