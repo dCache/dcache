@@ -58,18 +58,17 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testCreateFile() throws Exception {
-
         FsInode base = _rootInode.mkdir("junit");
         Stat stat = base.stat();
 
+        Thread.sleep(1); // required to ensure file created in distinct millisecond
+
         FsInode newFile = base.create("testCreateFile", 0, 0, 0644);
 
-        assertEquals("crete file have to incrise parent's nlink count by one",
+        assertEquals("file creation has to increase parent's nlink count by one",
                 base.stat().getNlink(), stat.getNlink() + 1);
-
-        assertTrue("crete file have to update parent's mtime", base.stat().getMTime() > stat.getMTime());
-
-        assertEquals("new file should have link count equal to two", newFile.stat().getNlink(), 1);
+        assertTrue("file creation has to update parent's mtime", base.stat().getMTime() > stat.getMTime());
+        assertEquals("new file should have link count equal to one", newFile.stat().getNlink(), 1);
     }
 
     @Test
