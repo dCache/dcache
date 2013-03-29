@@ -159,6 +159,16 @@
       <logger>org.glite.security.util.DirectoryList</logger>
       <level>off</level>
     </threshold>
+    <threshold>
+        <!-- Logs all HTTP I/O. Very noisy. -->
+        <logger>org.dcache.http.HttpPoolNettyServer</logger>
+        <level>off</level>
+    </threshold>
+    <threshold>
+        <!-- Logs all XROOTD I/O. Very noisy. -->
+        <logger>org.dcache.xrootd.pool.XrootdPoolNettyServer</logger>
+        <level>off</level>
+    </threshold>
 
     <threshold>
       <logger>liquibase</logger>
