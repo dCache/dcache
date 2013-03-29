@@ -2190,7 +2190,7 @@ class FsSqlDriver {
      * @throws SQLException
      * @return
      */
-    InodeStorageInformation getSorageInfo(Connection dbConnection, FsInode inode) throws ChimeraFsException, SQLException {
+    InodeStorageInformation getStorageInfo(Connection dbConnection, FsInode inode) throws ChimeraFsException, SQLException {
 
         InodeStorageInformation storageInfo = null;
 

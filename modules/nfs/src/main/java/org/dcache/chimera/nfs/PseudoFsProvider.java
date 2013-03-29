@@ -165,8 +165,8 @@ public class PseudoFsProvider implements FileSystemProvider {
     }
 
     @Override
-    public InodeStorageInformation getSorageInfo(FsInode inode) throws ChimeraFsException {
-        return _inner.getSorageInfo(inode);
+    public InodeStorageInformation getStorageInfo(FsInode inode) throws ChimeraFsException {
+        return _inner.getStorageInfo(inode);
     }
 
     @Override

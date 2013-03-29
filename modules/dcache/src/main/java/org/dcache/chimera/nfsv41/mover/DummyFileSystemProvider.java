@@ -164,7 +164,7 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     }
 
     @Override
-    public InodeStorageInformation getSorageInfo(FsInode arg0)
+    public InodeStorageInformation getStorageInfo(FsInode arg0)
             throws ChimeraFsException {
         // TODO Auto-generated method stub
         return null;

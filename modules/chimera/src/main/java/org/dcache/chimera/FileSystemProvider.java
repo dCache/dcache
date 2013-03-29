@@ -258,7 +258,7 @@ public interface FileSystemProvider extends Closeable {
     public abstract void setRetentionPolicy(FsInode inode,
             RetentionPolicy retentionPolicy) throws ChimeraFsException;
 
-    public abstract InodeStorageInformation getSorageInfo(FsInode inode)
+    public abstract InodeStorageInformation getStorageInfo(FsInode inode)
             throws ChimeraFsException;
 
     public abstract AccessLatency getAccessLatency(FsInode inode)

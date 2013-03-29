@@ -2296,7 +2296,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public InodeStorageInformation getSorageInfo(FsInode inode) throws ChimeraFsException {
+    public InodeStorageInformation getStorageInfo(FsInode inode) throws ChimeraFsException {
 
         Connection dbConnection;
         try {
@@ -2312,7 +2312,7 @@ public class JdbcFs implements FileSystemProvider {
 
             dbConnection.setAutoCommit(true);
 
-            storageInfo = _sqlDriver.getSorageInfo(dbConnection, inode);
+            storageInfo = _sqlDriver.getStorageInfo(dbConnection, inode);
 
         } catch (SQLException e) {
             _log.error("setSorageInfo", e);

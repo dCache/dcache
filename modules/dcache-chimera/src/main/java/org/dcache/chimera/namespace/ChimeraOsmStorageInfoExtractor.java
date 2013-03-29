@@ -60,7 +60,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                         info.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp.getId()));
                     }
                 } else {
-                    InodeStorageInformation inodeStorageInfo = inode.getFs().getSorageInfo(inode);
+                    InodeStorageInformation inodeStorageInfo = inode.getFs().getStorageInfo(inode);
 
                     info = new OSMStorageInfo(inodeStorageInfo.storageGroup(),
                             inodeStorageInfo.storageSubGroup());
