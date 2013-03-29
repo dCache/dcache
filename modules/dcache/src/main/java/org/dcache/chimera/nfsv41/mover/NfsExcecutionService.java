@@ -13,8 +13,6 @@ import java.util.List;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.CellMessageSender;
 import org.dcache.chimera.ChimeraFsException;
@@ -79,11 +77,8 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
                     request.getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), descriptor);
             _nfsIO.addHandler(moverBridge);
 
-            PoolPassiveIoFileMessage<stateid4> msg = new PoolPassiveIoFileMessage<>(request.getCellEndpoint().getCellInfo().getCellName(),
-                    _localSocketAddresses, stateid);
-
-            CellPath cellpath = nfs4ProtocolInfo.door();
-            request.getCellEndpoint().sendMessage(new CellMessage(cellpath, msg));
+            request.sendToDoor(new PoolPassiveIoFileMessage<>(
+                    request.getPoolAddress().getCellName(), _localSocketAddresses, stateid));
 
             return new Cancelable() {
                 @Override

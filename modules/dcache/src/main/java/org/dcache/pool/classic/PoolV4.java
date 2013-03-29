@@ -81,6 +81,7 @@ import dmg.util.CommandSyntaxException;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.MoverProtocol;
@@ -150,7 +151,7 @@ public class PoolV4
     private String _poolupDestination = "PoolManager";
 
     private int _version = 4;
-    private CellPath _billingCell = new CellPath("billing");
+    private CellStub _billingStub;
     private final Map<String, String> _tags = new HashMap<>();
     private String _baseDir;
 
@@ -277,9 +278,9 @@ public class PoolV4
         _poolupDestination = name;
     }
 
-    public void setBillingCellName(String name)
+    public void setBillingStub(CellStub stub)
     {
-        _billingCell = new CellPath(name);
+        _billingStub = stub;
     }
 
     public void setPnfsHandler(PnfsHandler pnfs)
@@ -559,15 +560,13 @@ public class PoolV4
             if (_reportOnRemovals && event.getNewState() == EntryState.REMOVED) {
                 try {
                     CacheEntry entry = event.getEntry();
-                    String source = getCellName() + "@" + getCellDomainName();
                     RemoveFileInfoMessage msg =
-                        new RemoveFileInfoMessage(source, entry.getPnfsId());
+                        new RemoveFileInfoMessage(getCellAddress().toString(), entry.getPnfsId());
                     msg.setFileSize(entry.getReplicaSize());
                     msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
-                    sendMessage(new CellMessage(_billingCell, msg));
+                    _billingStub.send(msg);
                 } catch (NoRouteToCellException e) {
-                    _log.error("Failed to send message to " + _billingCell + ": "
-                         + e.getMessage());
+                    _log.error("Failed to register removal in billing: {}", e.getMessage());
                 }
             }
         }
@@ -745,8 +744,8 @@ public class PoolV4
             try {
                 source.revert();
                 PoolIORequest request =
-                    new PoolIORequest(transfer, id, initiator,
-                                      source, pool, queueName, getCellEndpoint(), _billingCell,  this);
+                    new PoolIORequest(transfer, id, initiator, pool, queueName, _billingStub,
+                            new CellStub(getCellEndpoint(), source), getCellAddress(), this);
                 message.setMoverId(queueIoRequest(message, request));
                 transfer = null;
             } finally {

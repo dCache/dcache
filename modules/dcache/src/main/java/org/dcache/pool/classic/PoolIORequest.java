@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.channels.CompletionHandler;
 
 import diskCacheV111.util.CacheException;
@@ -12,11 +13,10 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultListener;
 import org.dcache.vehicles.FileAttributes;
 
@@ -38,10 +38,7 @@ public class PoolIORequest implements IoProcessable {
     private final long _id;
     private final String _queue;
     private final String _poolName;
-    private final CellPath _door;
     private final String _initiator;
-    private CellPath _billingCell;
-    private final CellEndpoint _cellEndpoint;
     private final static Logger _log = LoggerFactory.getLogger(PoolIORequest.class);
     private final FaultListener _faultListener;
 
@@ -65,36 +62,38 @@ public class PoolIORequest implements IoProcessable {
     private volatile String _errorMessage = "";
 
     private boolean _canceled;
+    private final CellStub _billing;
+    private final CellStub _door;
+    private final CellAddressCore _pool;
 
     /**
      * @param transfer the read or write transfer to execute
      * @param id the client id of the request
-     * @param initiator the initiator string identifying who
-     * requested the transfer
-     * @param door the cell path to the cell requesting the
-     * transfer
-     * @param poolName the name of the pool
+     * @param initiator the initiator string identifying who requested the transfer
+     * @param poolName the name of this pool
      * @param queue the name of the queue used for the request
-     * @param cellEndpoint the cellEndpoint of the pool
-     * @param billingCell  the CellPath of the billing cell
+     * @param billing communication stub to the billing cell
+     * @param door communication stub to the door that generated the request
+     * @param pool the cell address of this pool
+     * @param poolName faultListener listener to notify in case of faults
      */
     public PoolIORequest(PoolIOTransfer transfer, long id, String initiator,
-            CellPath door, String poolName, String queue, CellEndpoint cellEndpoint, CellPath billingCell, FaultListener faultListener) {
+            String poolName, String queue, CellStub billing, CellStub door,
+            CellAddressCore pool, FaultListener faultListener) {
         _transfer = transfer;
         _id = id;
         _initiator = initiator;
-        _door = door;
         _poolName = poolName;
         _queue = queue;
-        _cellEndpoint = cellEndpoint;
-        _billingCell = billingCell;
+        _billing = billing;
+        _door = door;
+        _pool = pool;
         _faultListener = faultListener;
     }
 
     void sendBillingMessage() {
         MoverInfoMessage info =
-                new MoverInfoMessage(_cellEndpoint.getCellInfo().getCellName() + "@" + _cellEndpoint.getCellInfo().getDomainName(),
-                getFileAttributes().getPnfsId());
+                new MoverInfoMessage(_pool.toString(), getFileAttributes().getPnfsId());
 
         info.setSubject(_transfer.getSubject());
         info.setInitiator(_initiator);
@@ -107,9 +106,9 @@ public class PoolIORequest implements IoProcessable {
                 getProtocolInfo());
 
         try {
-            _cellEndpoint.sendMessage(new CellMessage(_billingCell, info));
+            _billing.send(info);
         } catch (NoRouteToCellException e) {
-            _log.error("Cannot send message to " + _billingCell + ": No route to cell");
+            _log.error("Failed to register transfer in billing: {}", e.getMessage());
         }
     }
 
@@ -128,9 +127,9 @@ public class PoolIORequest implements IoProcessable {
         }
 
         try {
-            _cellEndpoint.sendMessage(new CellMessage(_door, finished));
+            _door.send(finished);
         } catch (NoRouteToCellException e) {
-            _log.error("Cannot send message to " + _door + ": No route to cell");
+            _log.error("Failed to notify door about transfer termination: {}", e.getMessage());
         }
     }
 
@@ -168,7 +167,7 @@ public class PoolIORequest implements IoProcessable {
 
     @Override
     public String getClient() {
-        return _door.getDestinationAddress().toString();
+        return _door.getDestinationPath().getDestinationAddress().toString();
     }
 
     @Override
@@ -214,12 +213,18 @@ public class PoolIORequest implements IoProcessable {
         }
     }
 
+    public void sendToDoor(Serializable msg) throws NoRouteToCellException
+    {
+        _door.send(msg);
+    }
+
     public PoolIOTransfer getTransfer() {
         return _transfer;
     }
 
-    public CellEndpoint getCellEndpoint() {
-        return _cellEndpoint;
+    public CellAddressCore getPoolAddress()
+    {
+        return _pool;
     }
 
     public void setState( IoRequestState state) {

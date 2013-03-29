@@ -93,6 +93,7 @@
               value="#{ '${lfs}' == 'none' }"/>
     <property name="ioQueueManager" ref="io-queue-manager" />
     <property name="poolMode" ref="pool-mode"/>
+    <property name="billingStub" ref="billing-stub"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -203,6 +204,11 @@
     <description>Controller for centralising flushing</description>
     <constructor-arg ref="queue"/>
     <constructor-arg ref="storagehandler"/>
+  </bean>
+
+  <bean id="billing-stub" class="org.dcache.cells.CellStub">
+      <description>Billing communication stub</description>
+      <property name="destination" value="billing"/>
   </bean>
 
   <bean id="pnfsStub" class="org.dcache.cells.CellStub">
