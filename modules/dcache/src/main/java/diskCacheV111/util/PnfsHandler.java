@@ -26,7 +26,6 @@ import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsSetLengthMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -205,14 +204,6 @@ public class PnfsHandler
        pnfsRequest( new PnfsAddCacheLocationMessage(id, pool));
    }
 
-   public void setFileSize( PnfsId pnfsId , long length )throws CacheException {
-
-       pnfsRequest( new PnfsSetLengthMessage(
-                           pnfsId,
-                           length  )
-           ) ;
-
-   }
    public List<String> getCacheLocations( PnfsId pnfsId )throws CacheException {
       PnfsGetCacheLocationsMessage pnfsMessage = new PnfsGetCacheLocationsMessage(pnfsId) ;
       pnfsMessage = pnfsRequest(pnfsMessage) ;

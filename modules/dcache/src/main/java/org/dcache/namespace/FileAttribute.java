@@ -15,8 +15,6 @@ public enum FileAttribute {
     ACL,
     CHECKSUM,
     CREATION_TIME,
-    DEFAULT_ACCESS_LATENCY,
-    DEFAULT_RETENTION_POLICY,
     FLAGS,
     HSM,
     LOCATIONS,

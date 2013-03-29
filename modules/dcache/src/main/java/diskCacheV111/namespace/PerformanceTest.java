@@ -13,9 +13,11 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.util.Args;
@@ -224,8 +226,8 @@ public class PerformanceTest extends Thread
                     break;
                 case SET_FILE_ATTR:
                     fileAttributes = new FileAttributes();
-                    fileAttributes.setDefaultAccessLatency();
-                    fileAttributes.setDefaultRetentionPolicy();
+                    fileAttributes.setAccessLatency(AccessLatency.ONLINE);
+                    fileAttributes.setRetentionPolicy(RetentionPolicy.REPLICA);
                     provider.setFileAttributes(Subjects.ROOT, getPnfsid(path), fileAttributes);
                     break;
                 case GET_FILE_ATTR:

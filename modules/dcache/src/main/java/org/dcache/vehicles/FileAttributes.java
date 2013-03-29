@@ -285,16 +285,6 @@ public class FileAttributes implements Serializable {
         _checksums = checksums;
     }
 
-    public void setDefaultAccessLatency()
-    {
-        define(DEFAULT_RETENTION_POLICY);
-    }
-
-    public void setDefaultRetentionPolicy()
-    {
-        define(DEFAULT_ACCESS_LATENCY);
-    }
-
     public void setFileType(FileType fileType) {
         define(TYPE);
         _fileType = fileType;

@@ -53,7 +53,6 @@ import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsSetLengthMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
@@ -183,7 +182,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsSetStorageInfoMessage.class);
         _gauges.addGauge(PnfsGetFileMetaDataMessage.class);
         _gauges.addGauge(PnfsSetFileMetaDataMessage.class);
-        _gauges.addGauge(PnfsSetLengthMessage.class);
         _gauges.addGauge(PnfsMapPathMessage.class);
         _gauges.addGauge(PnfsRenameMessage.class);
         _gauges.addGauge(PnfsFlagMessage.class);
@@ -1330,45 +1328,6 @@ public class PnfsManagerV3
 
     }
 
-    public void setLength(PnfsSetLengthMessage pnfsMessage){
-
-        /*
-         * While new pools will send PnfsSetFileAttributes old pools
-         * will send setLength. This is will happen only during a transition
-         * period when old pools combined with new PnfsManager.
-         *
-         * Let use this to update default AccessLatency and RetentionPloicy as well.
-         *
-         */
-        try {
-            PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            long   length = pnfsMessage.getLength();
-            Subject subject = pnfsMessage.getSubject();
-
-            _log.info("Set length of " + pnfsId + " to " + length);
-
-            checkMask(pnfsMessage);
-
-            FileAttributes fileAttributes = new FileAttributes();
-            fileAttributes.setSize(length);
-            fileAttributes.setDefaultAccessLatency();
-            fileAttributes.setDefaultRetentionPolicy();
-
-            _nameSpaceProvider.setFileAttributes(subject, pnfsId, fileAttributes);
-
-        } catch (FileNotFoundCacheException e) {
-            // file is gone.....
-            pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage());
-        } catch (CacheException ce) {
-            pnfsMessage.setFailed(ce.getRc(), ce.getMessage());
-            _log.warn("Failed to set length: " + ce.getMessage());
-        } catch (RuntimeException e){
-            _log.warn("Failed to set length", e);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-        }
-
-    }
-
     public void rename(PnfsRenameMessage msg)
     {
         try {
@@ -1758,9 +1717,6 @@ public class PnfsManagerV3
         }
         else if (pnfsMessage instanceof PnfsSetFileMetaDataMessage){
             setFileMetaData((PnfsSetFileMetaDataMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsSetLengthMessage){
-            setLength((PnfsSetLengthMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsMapPathMessage){
             mapPath((PnfsMapPathMessage)pnfsMessage);

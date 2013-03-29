@@ -919,36 +919,6 @@ public class ChimeraNameSpaceProvider
                     case RETENTION_POLICY:
                         _fs.setRetentionPolicy(inode, attr.getRetentionPolicy());
                         break;
-                    case DEFAULT_ACCESS_LATENCY:
-                        /*
-                         * update the value only if some one did not
-                         * updated it yet
-                         *
-                         * FIXME: this is a quick hack and have to go
-                         * into Chimera code
-                         */
-                        if (_fs.getAccessLatency(inode) == null) {
-                            if (dir == null) {
-                                dir = _extractor.getStorageInfo(inode);
-                            }
-                            _fs.setAccessLatency(inode, dir.getAccessLatency());
-                        }
-                        break;
-                    case DEFAULT_RETENTION_POLICY:
-                        /*
-                         * update the value only if some one did not
-                         * updated it yet
-                         *
-                         * FIXME: this is a quick hack and have to go
-                         * into Chimera code
-                         */
-                        if(_fs.getRetentionPolicy(inode) == null) {
-                            if (dir == null) {
-                                dir = _extractor.getStorageInfo(inode);
-                            }
-                            _fs.setRetentionPolicy(inode, dir.getRetentionPolicy());
-                        }
-                        break;
                     case FLAGS:
                         FsInode level2 = new FsInode(_fs, pnfsId.toString(), 2);
                         ChimeraCacheInfo cacheInfo = new ChimeraCacheInfo(level2);
