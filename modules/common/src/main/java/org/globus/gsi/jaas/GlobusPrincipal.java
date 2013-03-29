@@ -47,6 +47,8 @@ package org.globus.gsi.jaas;
 public class GlobusPrincipal
     extends SimplePrincipal
 {
+    static final long serialVersionUID = 5628962522401578196L;
+
     public GlobusPrincipal(String globusDn)
     {
 	super(globusDn);
