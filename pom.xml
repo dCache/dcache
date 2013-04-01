@@ -876,6 +876,11 @@
                     <artifactId>animal-sniffer-maven-plugin</artifactId>
                     <version>1.9</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>3.0.1</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1026,7 +1031,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>2.7.1</version>
+                <version>3.0.1</version>
                 <configuration>
                     <sourceEncoding>utf-8</sourceEncoding>
                     <minimumTokens>100</minimumTokens>
