@@ -337,6 +337,9 @@
       <property name="enableGss" value="${nfs.rpcsec_gss}" />
   </bean>
 
+  <bean id="classic-post-execution-service" class="org.dcache.pool.classic.ClassicPostExecutionService"
+        destroy-method="shutdown"/>
+
   <bean id="mover-execution-service" class="org.dcache.pool.classic.MoverExecutorServices" >
       <description>Request execution service container</description>
       <constructor-arg ref="legacy-execution-service"/>
@@ -345,5 +348,6 @@
             <entry key="NFS4-4" value-ref="nfs-execution-service" />
         </map>
       </constructor-arg>
+      <constructor-arg ref="classic-post-execution-service"/>
   </bean>
 </beans>

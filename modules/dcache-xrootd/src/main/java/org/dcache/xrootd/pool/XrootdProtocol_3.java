@@ -26,6 +26,7 @@ import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -153,21 +154,28 @@ public class XrootdProtocol_3
             String socketThreads = properties.getProperty("xrootd-mover-socket-threads");
             List<ChannelHandlerFactory> plugins = createPluginFactories(properties);
 
-            if (socketThreads == null || socketThreads.isEmpty()) {
-                _server = new XrootdPoolNettyServer(
-                        threads,
-                        perChannelLimit,
-                        totalLimit,
-                        clientIdleTimeout,
-                        plugins);
-            } else {
-                _server = new XrootdPoolNettyServer(
-                        threads,
-                        perChannelLimit,
-                        totalLimit,
-                        clientIdleTimeout,
-                        plugins,
-                        Integer.parseInt(socketThreads));
+            CDC cdc = new CDC();
+            try {
+                // The server is shared among all pools, thus we cannot bind a single cell name to it
+                CDC.reset(null, CDC.getDomainName());
+                if (socketThreads == null || socketThreads.isEmpty()) {
+                    _server = new XrootdPoolNettyServer(
+                            threads,
+                            perChannelLimit,
+                            totalLimit,
+                            clientIdleTimeout,
+                            plugins);
+                } else {
+                    _server = new XrootdPoolNettyServer(
+                            threads,
+                            perChannelLimit,
+                            totalLimit,
+                            clientIdleTimeout,
+                            plugins,
+                            Integer.parseInt(socketThreads));
+                }
+            } finally {
+                cdc.restore();
             }
         }
     }

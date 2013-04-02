@@ -64,10 +64,7 @@ public class HttpPoolNettyServer
                                int chunkSize,
                                long clientIdleTimeout,
                                int socketThreads) {
-        super(threadPoolSize,
-              memoryPerConnection,
-              maxMemory,
-              socketThreads);
+        super("http", threadPoolSize, memoryPerConnection, maxMemory, socketThreads);
 
         _clientIdleTimeout = clientIdleTimeout;
         _chunkSize = chunkSize;

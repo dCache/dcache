@@ -67,10 +67,7 @@ public class XrootdPoolNettyServer
                                  long clientIdleTimeout,
                                  List<ChannelHandlerFactory> plugins,
                                  int socketThreads) {
-        super(threadPoolSize,
-              memoryPerConnection,
-              maxMemory,
-              socketThreads);
+        super("xrootd", threadPoolSize, memoryPerConnection, maxMemory, socketThreads);
         _clientIdleTimeout = clientIdleTimeout;
         _plugins = plugins;
 

@@ -21,6 +21,7 @@ import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -115,19 +116,26 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
 
             String socketThreads = args.getOpt("http-mover-socket-threads");
 
-            if (socketThreads == null || socketThreads.isEmpty()) {
-                _server = new HttpPoolNettyServer(threads,
-                                                  perChannelLimit,
-                                                  totalLimit,
-                                                  chunkSize,
-                                                  clientIdleTimeout);
-            } else {
-                _server = new HttpPoolNettyServer(threads,
-                                                  perChannelLimit,
-                                                  totalLimit,
-                                                  chunkSize,
-                                                  clientIdleTimeout,
-                                                  Integer.parseInt(socketThreads));
+            CDC cdc = new CDC();
+            try {
+                // The server is shared among all pools, thus we cannot bind a single cell name to it
+                CDC.reset(null, CDC.getDomainName());
+                if (socketThreads == null || socketThreads.isEmpty()) {
+                    _server = new HttpPoolNettyServer(threads,
+                            perChannelLimit,
+                            totalLimit,
+                            chunkSize,
+                            clientIdleTimeout);
+                } else {
+                    _server = new HttpPoolNettyServer(threads,
+                            perChannelLimit,
+                            totalLimit,
+                            chunkSize,
+                            clientIdleTimeout,
+                            Integer.parseInt(socketThreads));
+                }
+            } finally {
+                cdc.restore();
             }
         }
     }

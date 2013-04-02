@@ -1,6 +1,7 @@
 package org.dcache.pool.movers;
 
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -85,24 +86,24 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
     }
 
-    public AbstractNettyServer(int threadPoolSize,
-                           int memoryPerConnection,
-                           int maxMemory,
-                           int socketThreads) {
-        /* The disk executor handles the http request
-         * processing. This boils down to reading and writing from
-         * disk.
-         */
-        _diskExecutor =
-            new OrderedMemoryAwareThreadPoolExecutor(threadPoolSize,
-                                                     memoryPerConnection,
-                                                     maxMemory);
-
+    public AbstractNettyServer(
+            String name,
+            int threadPoolSize,
+            int memoryPerConnection,
+            int maxMemory,
+            int socketThreads)
+    {
         CDCThreadFactory factory = new CDCThreadFactory(
-                Executors.defaultThreadFactory(),
-                CDC.getCellName(), CDC.getDomainName());
-        _acceptExecutor = Executors.newCachedThreadPool(factory);
-        _socketExecutor = Executors.newCachedThreadPool(factory);
+                Executors.defaultThreadFactory(), CDC.getCellName(), CDC.getDomainName());
+
+        _diskExecutor =
+            new OrderedMemoryAwareThreadPoolExecutor(
+                    threadPoolSize, memoryPerConnection, maxMemory, 30, TimeUnit.SECONDS,
+                    new ThreadFactoryBuilder().setDaemon(true).setNameFormat(name + "-disk-%d").setThreadFactory(factory).build());
+        _acceptExecutor =
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setDaemon(true).setNameFormat(name + "-listen-%d").setThreadFactory(factory).build());
+        _socketExecutor =
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setDaemon(true).setNameFormat(name + "-net-%d").setThreadFactory(factory).build());
 
         if (socketThreads == -1) {
             _channelFactory =

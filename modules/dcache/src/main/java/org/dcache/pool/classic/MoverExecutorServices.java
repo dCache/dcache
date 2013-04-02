@@ -8,14 +8,15 @@ import java.util.Map;
  */
 public class MoverExecutorServices {
     private final MoverExecutorService _defaultExecutorService;
-    private final PostTransferExecutionService _defaultPostService =
-        new ClassicPostExecutionService();
+    private final PostTransferExecutionService _defaultPostService;
     private final Map<String, MoverExecutorService> _executionService;
 
     public MoverExecutorServices(MoverExecutorService defaultExecutorService,
-                                 Map<String, MoverExecutorService> executionService) {
+                                 Map<String, MoverExecutorService> executionService,
+                                 PostTransferExecutionService postTransferExecutionService) {
         _defaultExecutorService = defaultExecutorService;
         _executionService = executionService;
+        _defaultPostService = postTransferExecutionService;
     }
 
     public MoverExecutorService getExecutorService(String protocol) {

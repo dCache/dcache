@@ -3,12 +3,11 @@ package org.dcache.pool.classic;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.util.concurrent.Executors;
 
 import diskCacheV111.util.CacheException;
-
-import dmg.cells.nucleus.CDC;
 
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
@@ -22,7 +21,8 @@ public class ClassicPostExecutionService implements PostTransferExecutionService
 {
     private final ListeningExecutorService _executor =
             new CDCListeningExecutorServiceDecorator(
-                    MoreExecutors.listeningDecorator(Executors.newCachedThreadPool()));
+                    MoreExecutors.listeningDecorator(Executors.newCachedThreadPool(
+                            new ThreadFactoryBuilder().setNameFormat("post-execution-%d").build())));
 
     @Override
     public ListenableFuture<?> execute(final PoolIORequest request)
@@ -58,5 +58,10 @@ public class ClassicPostExecutionService implements PostTransferExecutionService
                 request.sendFinished();
             }
         });
+    }
+
+    public void shutdown()
+    {
+        _executor.shutdown();
     }
 }
