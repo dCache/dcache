@@ -39,9 +39,9 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
     }
 
     @Override
-    public nfs_resop4 process(CompoundContext context) {
+    public void process(CompoundContext context, nfs_resop4 result) {
 
-        WRITE4res res = new WRITE4res();
+        final WRITE4res res = result.opwrite;
 
         try {
 
@@ -88,8 +88,5 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             _log.error("DSWRITE: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }
-
-       _result.opwrite = res;
-        return _result;
     }
 }

@@ -729,6 +729,25 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+        <dependency>
+            <groupId>org.dcache.chimera</groupId>
+            <artifactId>jpnfs</artifactId>
+            <version>0.0.5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.dcache.chimera</groupId>
+                    <artifactId>chimera-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.dcache.common</groupId>
+                    <artifactId>dcache-auth</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.dcache</groupId>
+                    <artifactId>oncrpc4j-spring</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1113,7 +1132,6 @@
         <module>modules/webadmin</module>
         <module>modules/srmclient</module>
         <module>modules/acl</module>
-        <module>modules/nfs</module>
         <module>modules/chimera</module>
         <module>plugins</module>
         <module>modules/packaging</module>

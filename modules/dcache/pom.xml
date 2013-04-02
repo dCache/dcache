@@ -51,11 +51,6 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>nfs</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcache</groupId>
       <artifactId>acl</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -280,6 +275,11 @@
           <groupId>com.google.code.gson</groupId>
           <artifactId>gson</artifactId>
       </dependency>
+
+    <dependency>
+        <groupId>org.dcache.chimera</groupId>
+        <artifactId>jpnfs</artifactId>
+    </dependency>
 
   </dependencies>
 

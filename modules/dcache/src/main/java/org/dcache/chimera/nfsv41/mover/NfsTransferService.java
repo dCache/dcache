@@ -32,6 +32,7 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
+import org.dcache.xdr.OncRpcException;
 
 /**
  * Factory and transfer service for NFS movers.
@@ -48,7 +49,7 @@ public class NfsTransferService extends AbstractCellComponent
     private CellStub _door;
     private PostTransferService _postTransferService;
 
-    public void init() throws ChimeraFsException, IOException, GSSException {
+    public void init() throws ChimeraFsException, IOException, GSSException, OncRpcException {
 
         String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
         PortRange portRange;

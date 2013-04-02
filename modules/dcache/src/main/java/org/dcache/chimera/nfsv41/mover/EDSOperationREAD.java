@@ -31,8 +31,8 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
     }
 
     @Override
-    public nfs_resop4 process(CompoundContext context) {
-        READ4res res = new READ4res();
+    public void process(CompoundContext context, nfs_resop4 result) {
+        final READ4res res = result.opread;
 
         try {
 
@@ -73,8 +73,5 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             _log.error("DSREAD: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }
-
-       _result.opread = res;
-        return _result;
     }
 }
