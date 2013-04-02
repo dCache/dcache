@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,7 +116,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
      * @return mover id
      */
     @Override
-    public  int add(PoolIORequest request, IoPriority priority) {
+    public synchronized int add(PoolIORequest request, IoPriority priority) {
 
         int id = _queueId << 24 | nextId();
 
@@ -141,8 +142,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     }
 
     @Override
-    public int getActiveJobs() {
-        return _semaphore.getUsedPermits();
+    public synchronized int getActiveJobs() {
+        return _jobs.size() - _queue.size();
     }
 
     @Override
@@ -197,7 +198,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     }
 
     @Override
-    public void cancel(int id) throws NoSuchElementException {
+    public synchronized void cancel(int id) throws NoSuchElementException {
 
         PrioritizedRequest wrapper;
         wrapper = _jobs.get(id);
@@ -245,18 +246,17 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     @Override
     public void run() {
+        try {
             while (!_shutdown) {
-
+                _semaphore.acquire();
                 try {
                     final PrioritizedRequest wrapp = _queue.take();
                     wrapp.getCdc().restore();
-                    _semaphore.acquire();
 
                     final PoolIORequest request = wrapp.getRequest();
                     final String protocolName = protocolNameOf(request);
                     request.transfer(_executorServices.getExecutorService(protocolName),
                         new CompletionHandler<Object,Object>() {
-
                         @Override
                         public void completed(Object result, Object attachment)
                         {
@@ -286,18 +286,31 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                         }
 
                         private void postProcess() {
-                            _semaphore.release();
-                            _jobs.remove(wrapp.getId());
-                            request.setState(IoRequestState.DONE);
-                            _executorServices.getPostExecutorService(protocolName).execute(request);
+                            _executorServices
+                                    .getPostExecutorService(protocolName)
+                                    .execute(request)
+                                    .addListener(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            request.setState(IoRequestState.DONE);
+                                            _jobs.remove(wrapp.getId());
+                                            _semaphore.release();
+                                        }
+                                    }, MoreExecutors.sameThreadExecutor());
                         }
                     });
-                } catch(InterruptedException e) {
-                    _shutdown = true;
+                } catch (RuntimeException | Error | InterruptedException e) {
+                    _semaphore.release();
+                    throw e;
                 } finally {
                     CDC.clear();
                 }
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private String protocolNameOf(PoolIORequest request) {
