@@ -1,5 +1,7 @@
 package org.dcache.pool.classic;
 
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -28,6 +31,9 @@ import org.dcache.util.FifoPriorityComparator;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
 import org.dcache.util.LifoPriorityComparator;
+
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.transform;
 
 /**
  *
@@ -70,7 +76,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     /**
      * are we need to shutdown.
      */
-    boolean _shutdown;
+    private volatile boolean _shutdown;
 
     private final AdjustableSemaphore _semaphore = new AdjustableSemaphore();
 
@@ -117,6 +123,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
      */
     @Override
     public synchronized int add(PoolIORequest request, IoPriority priority) {
+        checkState(!_shutdown);
 
         int id = _queueId << 24 | nextId();
 
@@ -199,27 +206,29 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     @Override
     public synchronized void cancel(int id) throws NoSuchElementException {
-
         PrioritizedRequest wrapper;
         wrapper = _jobs.get(id);
-
         if (wrapper == null) {
             throw new NoSuchElementException("Job " + id + " not found");
         }
+        cancel(wrapper);
+    }
 
-        if(_queue.remove(wrapper)) {
+    private void cancel(PrioritizedRequest wrapper)
+    {
+        if (_queue.remove(wrapper)) {
             /*
-             * if request still in the queue, then we can cancel it right now.
+             * as request is still in the queue, we can cancel it right away.
              */
-            _jobs.remove(id);
-            final PoolIORequest request = wrapper.getRequest();
+            _jobs.remove(wrapper.getId());
+            PoolIORequest request = wrapper.getRequest();
             request.setState(IoRequestState.DONE);
             request.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer canceled");
 
             /*
-             * go though standart procedure to update billing and notity door.
+             * go through the standard procedure to update billing and notify door.
              */
-            final String protocolName = protocolNameOf(request);
+            String protocolName = protocolNameOf(request);
             _executorServices.getPostExecutorService(protocolName).execute(request);
         } else {
             wrapper.getRequest().kill();
@@ -240,8 +249,29 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     }
 
     @Override
-    public void shutdown() {
-        // NOP for now
+    public synchronized void shutdown() throws InterruptedException
+    {
+        if (!_shutdown) {
+            _shutdown = true;
+            _worker.interrupt();
+            for (PrioritizedRequest request : _jobs.values()) {
+                cancel(request);
+            }
+            _log.info("Waiting for movers on queue '{}' to finish", _name);
+            if (!_semaphore.tryAcquire(_semaphore.getMaxPermits(), 2000L, TimeUnit.MILLISECONDS)) {
+                // This is often due to a mover not reacting to interrupt or the transfer
+                // doing a lengthy checksum calculation during post processing.
+                _log.warn("Failed to terminate some movers prior to shutdown: {}",
+                        Joiner.on(",").join(transform(_jobs.values(), new Function<PrioritizedRequest, String>()
+                        {
+                            @Override
+                            public String apply(PrioritizedRequest input)
+                            {
+                                return input.getRequest().getProtocolInfo().getVersionString();
+                            }
+                        })));
+            }
+        }
     }
 
     @Override

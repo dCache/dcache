@@ -68,7 +68,7 @@ public interface IoScheduler {
     /**
      * Shutdown the scheduler. All subsequent execution request will be rejected.
      */
-    public void shutdown();
+    public void shutdown() throws InterruptedException;
 
     // legacy crap
     public List<JobInfo> getJobInfos();

@@ -1,6 +1,7 @@
 package org.dcache.util;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A simple implementation of an adjustable semaphore.
@@ -81,6 +82,14 @@ final public class AdjustableSemaphore {
      */
     public void acquire() throws InterruptedException {
         this.semaphore.acquire();
+    }
+
+    /**
+     * @see Semaphore#tryAcquire(int, long, java.util.concurrent.TimeUnit)
+     */
+    public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException
+    {
+        return semaphore.tryAcquire(permits, timeout, unit);
     }
 
     /**

@@ -137,7 +137,7 @@ public class IoQueueManager {
         return null;
     }
 
-    public synchronized void shutdown() {
+    public synchronized void shutdown() throws InterruptedException {
         for (IoScheduler queue : _queues) {
             queue.shutdown();
         }
