@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 
@@ -104,8 +105,7 @@ public class PoolIOWriteTransfer
                 }
             }
         } catch (FileNotFoundException e) {
-            throw new CacheException(CacheException.ERROR_IO_DISK,
-                                     "File could not be created; please check the file system");
+            throw new DiskErrorCacheException("File could not be created; please check the file system");
         }
     }
 

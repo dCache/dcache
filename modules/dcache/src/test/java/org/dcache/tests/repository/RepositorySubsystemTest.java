@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -486,7 +487,7 @@ public class RepositorySubsystemTest
                     createFile(handle.getFile(), attributes5.getSize());
                     handle.commit();
                 }catch( IOException e) {
-                    throw new CacheException(CacheException.ERROR_IO_DISK, e.getMessage());
+                    throw new DiskErrorCacheException(e.getMessage());
                 } finally {
                     handle.close();
                 }

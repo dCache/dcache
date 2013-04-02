@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import org.dcache.pool.movers.IoMode;
@@ -66,7 +67,7 @@ public class PoolIOReadTransfer
             //                     + sysTimer.getDifference().toString());
 
         } catch (FileNotFoundException e) {
-            throw new CacheException(CacheException.ERROR_IO_DISK,
+            throw new DiskErrorCacheException(
                                      "File could not be opened  [" +
                                      e.getMessage() +
                                      "]; please check the file system");

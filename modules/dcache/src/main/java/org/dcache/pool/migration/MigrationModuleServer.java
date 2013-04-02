@@ -16,6 +16,7 @@ import java.util.concurrent.Future;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
@@ -315,8 +316,7 @@ public class MigrationModuleServer
                 }
                 finished(null);
             } catch (IOException e) {
-                finished(new CacheException(CacheException.ERROR_IO_DISK,
-                                            "I/O error during checksum calculation: " + e.getMessage()));
+                finished(new DiskErrorCacheException("I/O error during checksum calculation: " + e.getMessage()));
             } catch (InterruptedException e) {
                 finished(new CacheException("Task was cancelled"));
             } catch (IllegalTransitionException e) {

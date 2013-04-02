@@ -19,6 +19,7 @@ import java.util.UUID;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DCapProrocolChallenge;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
@@ -759,10 +760,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             if(! _io_ok) {
                 throw new
-                    CacheException(
-                                   CacheException.ERROR_IO_DISK,
+                        DiskErrorCacheException(
                                    "Disk I/O Error " +
-                                   (ioException!=null?ioException.toString():"")    );
+                                   (ioException!=null?ioException.toString():""));
             }else{
                 if (ioException != null && !(ioException instanceof EOFException)) {
                      _log.warn("Problem in command block : {} {}", requestBlock, ioException.toString());
