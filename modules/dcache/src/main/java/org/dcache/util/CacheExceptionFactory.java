@@ -2,6 +2,7 @@ package org.dcache.util;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -64,7 +65,8 @@ public class CacheExceptionFactory {
                 return new OutOfDateCacheException(message);
             case FILE_IN_CACHE:
                 return new FileInCacheException(message);
-
+            case FILE_CORRUPTED:
+                return new FileCorruptedCacheException(message);
             /*
              * these do not have exception classes
              */
@@ -72,7 +74,6 @@ public class CacheExceptionFactory {
             case FILE_PRECIOUS:
             case INVALID_ARGS:
             case FILESIZE_UNKNOWN:
-            case FILESIZE_MISMATCH:
             case UNEXPECTED_SYSTEM_EXCEPTION:
             case ATTRIBUTE_FORMAT_ERROR:
             case HSM_DELAY_ERROR:

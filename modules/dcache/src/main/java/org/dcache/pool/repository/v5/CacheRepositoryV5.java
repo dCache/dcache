@@ -468,7 +468,7 @@ public class CacheRepositoryV5
                 setState(entry, transferState);
 
                 return new WriteHandleImpl(
-                        this, _allocator, _pnfs, entry, targetState, stickyRecords);
+                        this, _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords);
             }
         } catch (DuplicateEntryException e) {
             throw new FileInCacheException("Entry already exists: " + fileAttributes.getPnfsId());
@@ -510,7 +510,7 @@ public class CacheRepositoryV5
                 case REMOVED:
                     break;
                 }
-                handle = new ReadHandleImpl(this, entry);
+                handle = new ReadHandleImpl(this, _pnfs, entry);
             }
 
             if (!flags.contains(OpenFlags.NOATIME)) {

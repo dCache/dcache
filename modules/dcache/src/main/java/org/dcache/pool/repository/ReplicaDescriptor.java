@@ -5,7 +5,7 @@ import java.io.File;
 import diskCacheV111.util.CacheException;
 
 import org.dcache.util.Checksum;
-
+import org.dcache.vehicles.FileAttributes;
 
 
 /**
@@ -43,18 +43,12 @@ public interface ReplicaDescriptor extends Allocator
      * PNFS to be updated. Committing sets the repository entry to its
      * target state.
      *
-     * The checksum provided is compared to a known checksum, if
-     * possible. If a mismatch is detected CacheException is
-     * thrown. If no checksum was known, the checksum is stored in the
-     * storage info and in PNFS.
-     *
      * In case of problems, the descriptor is not closed and an exception
      * is thrown.
      *
      * Committing a descriptor multiple times causes an
      * IllegalStateException.
      *
-     * @param checksum Checksum of the replica. May be null.
      * @throws IllegalStateException if the descriptor is already
      * committed or closed.
      * @throws FileSizeMismatchException if file size does not match
@@ -62,7 +56,7 @@ public interface ReplicaDescriptor extends Allocator
      * @throws CacheException if the repository or PNFS state could
      * not be updated.
      */
-    void commit(Checksum checksum)
+    void commit()
         throws IllegalStateException, InterruptedException, FileSizeMismatchException, CacheException;
 
     /**
@@ -80,15 +74,38 @@ public interface ReplicaDescriptor extends Allocator
     void close() throws IllegalStateException;
 
     /**
-     * @return disk file
-     * @throws IllegalStateException if EntryIODescriptor is closed.
+     * Returns the disk file of this replica.
+     *
+     * @throws IllegalStateException if the descriptor is closed.
      */
     File getFile() throws IllegalStateException;
 
     /**
+     * Return the file attributes of the file represented by this replica.
      *
-     * @return cache entry
-     * @throws IllegalStateException
+     * @throws IllegalStateException if the descriptor is closed.
      */
-    CacheEntry getEntry()  throws IllegalStateException;
+    FileAttributes getFileAttributes() throws IllegalStateException;
+
+    /**
+     * Returns known checksums of the file.
+     *
+     * These are the expected checksums, not the actual checksums of the replica. If the
+     * replica is corrupted, the actual checksums may differ from the expected checksums.
+     *
+     * This method differs from calling getEntry().getFileAttributes().getChecksums() by
+     * doing a name space lookup if checksums are not defined in the file attributes. The
+     * result of such a lookup is cached.
+     */
+    Iterable<Checksum> getChecksums() throws CacheException;
+
+    /**
+     * Add checksums of the file.
+     *
+     * The checksums are not in any way verified. Only valid checksums should be added.
+     * The checksums will be stored in the name space on commit or close.
+     *
+     * @param checksum Checksum of the file
+     */
+    void addChecksums(Iterable<Checksum> checksum) throws CacheException;
 }

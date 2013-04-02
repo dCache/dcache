@@ -42,6 +42,24 @@ public abstract class ChecksumFactory
 	return new GenericIdChecksumFactory(type);
     }
 
+    /**
+     * Returns a ChecksumFactory for the first supported checksum.
+     *
+     * @param preferredChecksums Ordered list of checksums
+     * @param defaultType Default type used when none of the preferred types are supported
+     */
+    public static ChecksumFactory getFactory(Iterable<Checksum> preferredChecksums, ChecksumType defaultType)
+            throws NoSuchAlgorithmException
+    {
+        for (Checksum checksum : preferredChecksums) {
+            try {
+                return getFactory(checksum.getType());
+            } catch (NoSuchAlgorithmException ignored) {
+            }
+        }
+        return getFactory(defaultType);
+    }
+
     public static void main( String [] args ) throws Exception {
        System.out.println("Getting MD4 first time");
        ChecksumFactory.getFactory(ChecksumType.MD4_TYPE);

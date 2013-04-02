@@ -15,16 +15,18 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import diskCacheV111.util.Adler32;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -38,14 +40,12 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.classic.ChecksumModuleV1;
-import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -64,6 +64,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 class Companion
 {
+    private static final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES = EnumSet.of(
+            FileAttribute.PNFSID, FileAttribute.STORAGEINFO, FileAttribute.CHECKSUM, FileAttribute.SIZE);
     private final static Logger _log = LoggerFactory.getLogger(Companion.class);
 
     private final static long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
@@ -76,7 +78,7 @@ class Companion
 
     private final InetAddress _address;
     private final Repository _repository;
-    private final ChecksumModuleV1 _checksumModule;
+    private final ChecksumModule _checksumModule;
     private final String _sourcePoolName;
     private final String _destinationPoolCellname;
     private final String _destinationPoolCellDomainName;
@@ -131,7 +133,7 @@ class Companion
     Companion(ScheduledExecutorService executor,
               InetAddress address,
               Repository repository,
-              ChecksumModuleV1 checksumModule,
+              ChecksumModule checksumModule,
               CellStub pnfs,
               CellStub pool,
               FileAttributes fileAttributes,
@@ -258,12 +260,20 @@ class Companion
         try {
             try {
                 File file = handle.getFile();
-                CacheEntry entry = handle.getEntry();
-                long size = entry.getFileAttributes().getSize();
+                long size = handle.getFileAttributes().getSize();
 
                 handle.allocate(size);
 
-                MessageDigest digest = createDigest();
+                ChecksumFactory checksumFactory;
+                MessageDigest digest;
+                if (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER)) {
+                    checksumFactory = _checksumModule.getPreferredChecksumFactory(handle);
+                    digest = checksumFactory.create();
+                } else {
+                    checksumFactory = null;
+                    digest = null;
+                }
+
                 HttpURLConnection connection = createConnection(uri);
                 try {
                     try (InputStream input = connection.getInputStream()) {
@@ -272,16 +282,20 @@ class Companion
                             throw new IOException("Amount of received data does not match expected file size");
                         }
                     }
-
                 } finally {
                     connection.disconnect();
                 }
-                setChecksum(file, digest);
+
+                Set<Checksum> actualChecksums =
+                        (digest == null)
+                                ? Collections.<Checksum>emptySet()
+                                : Collections.singleton(checksumFactory.create(digest.digest()));
+                _checksumModule.enforcePostTransferPolicy(handle, actualChecksums);
             } finally {
                 setThread(null);
                 Thread.interrupted();
             }
-            handle.commit(null);
+            handle.commit();
         } catch (Throwable e) {
             error = e;
         } finally {
@@ -301,11 +315,6 @@ class Companion
                                        _stickyRecords);
     }
 
-    private MessageDigest createDigest()
-    {
-        return _checksumModule.checkOnTransfer() ? new Adler32() : null;
-    }
-
     private HttpURLConnection createConnection(String uri)
         throws MalformedURLException, IOException
     {
@@ -315,21 +324,6 @@ class Companion
         connection.setRequestProperty("Connection", "close");
         connection.connect();
         return connection;
-    }
-
-    private void setChecksum(File file, MessageDigest digest)
-        throws CacheException, InterruptedException, IOException
-    {
-        Checksum checksum = null;
-        if (digest != null) {
-            checksum = new Checksum(ChecksumType.ADLER32, digest.digest());
-        }
-
-        _checksumModule.setMoverChecksums(getPnfsId(),
-                                          file,
-                                          _checksumModule.getDefaultChecksumFactory(),
-                                          null,
-                                          checksum);
     }
 
     private long copy(InputStream input, File file, MessageDigest digest)
@@ -379,17 +373,16 @@ class Companion
         _error = null;
     }
 
-    /** Returns true iff storage info is known. */
-    synchronized boolean hasStorageInfo()
+    /** Returns true iff all required attributes are available. */
+    synchronized boolean hasRequiredAttributes()
     {
-        return _fileAttributes.isDefined(FileAttribute.STORAGEINFO);
+        return _fileAttributes.isDefined(REQUIRED_ATTRIBUTES);
     }
 
     /** Asynchronously retrieves the file attributes. */
     synchronized void fetchFileAttributes()
     {
-        _pnfs.send(new PnfsGetFileAttributes(getPnfsId(),
-                EnumSet.of(FileAttribute.PNFSID, FileAttribute.STORAGEINFO)),
+        _pnfs.send(new PnfsGetFileAttributes(getPnfsId(), REQUIRED_ATTRIBUTES),
                    PnfsGetFileAttributes.class,
                    new Callback<PnfsGetFileAttributes>()
                    {

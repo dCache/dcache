@@ -165,7 +165,6 @@
 
   <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
     <description>Checksum module</description>
-    <constructor-arg ref="pnfs"/>
     <property name="checksumScanner" ref="scanner"/>
   </bean>
 

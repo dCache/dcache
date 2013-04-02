@@ -5,14 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.EnumSet;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
 
-import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Allocator;
-import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -20,8 +20,11 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.collect.Iterables.concat;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.*;
 import static java.util.Collections.singleton;
+import static org.dcache.namespace.FileAttribute.*;
 
 class WriteHandleImpl implements ReplicaDescriptor
 {
@@ -30,14 +33,14 @@ class WriteHandleImpl implements ReplicaDescriptor
         OPEN, COMMITTED, CLOSED
     }
 
-    private static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
     /**
      * Time that a new CACHED file with no sticky flags will be marked
      * sticky.
      */
-    private static long HOLD_TIME = 5 * 60 * 1000; // 5 minutes
+    private static final long HOLD_TIME = 5 * 60 * 1000; // 5 minutes
 
     private final CacheRepositoryV5 _repository;
 
@@ -46,6 +49,9 @@ class WriteHandleImpl implements ReplicaDescriptor
 
     /** The handler provides access to this entry. */
     private final MetaDataRecord _entry;
+
+    /** File attributes of the file being written. */
+    private final FileAttributes _fileAttributes;
 
     /** Stub for talking to the PNFS manager. */
     private final PnfsHandler _pnfs;
@@ -72,18 +78,23 @@ class WriteHandleImpl implements ReplicaDescriptor
                     Allocator allocator,
                     PnfsHandler pnfs,
                     MetaDataRecord entry,
+                    FileAttributes fileAttributes,
                     EntryState targetState,
                     List<StickyRecord> stickyRecords)
     {
-        _repository = repository;
-        _allocator = allocator;
-        _pnfs = pnfs;
-        _entry = entry;
+        _repository = checkNotNull(repository);
+        _allocator = checkNotNull(allocator);
+        _pnfs = checkNotNull(pnfs);
+        _entry = checkNotNull(entry);
+        _fileAttributes = checkNotNull(fileAttributes);
         _initialState = entry.getState();
-        _targetState = targetState;
-        _stickyRecords = stickyRecords;
+        _targetState = checkNotNull(targetState);
+        _stickyRecords = checkNotNull(stickyRecords);
         _state = HandleState.OPEN;
         _allocated = 0;
+
+        checkState(_initialState != EntryState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
+        checkState(_initialState == EntryState.FROM_CLIENT || _fileAttributes.isDefined(SIZE));
     }
 
     private synchronized void setState(HandleState state)
@@ -204,57 +215,24 @@ class WriteHandleImpl implements ReplicaDescriptor
         }
     }
 
-    /**
-     * Compare and update checksum. For now we only store the checksum
-     * locally. TODO: Compare and update in PNFS.
-     */
-    private void storeChecksum(FileAttributes fileAttributes, Checksum checksum)
-        throws CacheException
-    {
-        if (fileAttributes.isDefined(FileAttribute.CHECKSUM)) {
-            for (Checksum existingChecksum : fileAttributes.getChecksums()) {
-                if (checksum.getType() == existingChecksum.getType() && !checksum.equals(existingChecksum)) {
-                    throw new CacheException(String.format("Checksum error: file=%s, expected=%s",
-                            checksum, existingChecksum));
-                }
-            }
-            fileAttributes.setChecksums(Sets.newHashSet(concat(fileAttributes
-                    .getChecksums(), singleton(checksum))));
-        } else {
-            fileAttributes.setChecksums(Sets.newHashSet(checksum));
-        }
-        _entry.setFileAttributes(fileAttributes);
-    }
-
-    /**
-     * Set file size in PNFS.
-     *
-     * If this is a new file, i.e. we did not get it from tape or
-     * another pool, then update the size in the storage info and in
-     * PNFS.  Otherwise fail the operation if the file size is wrong.
-     */
-    private void storeFileSize(FileAttributes fileAttributes, long length)
-        throws CacheException
-    {
-        if (_initialState == EntryState.FROM_CLIENT &&
-            (fileAttributes.isUndefined(FileAttribute.SIZE) || fileAttributes.getSize() == 0)) {
-            fileAttributes.setSize(length);
-            _entry.setFileAttributes(fileAttributes);
-        } else if (fileAttributes.getSize() != length) {
-            throw new CacheException("File does not have expected length");
-        }
-    }
-
-    private void registerCacheLocation()
-        throws CacheException
-    {
-        _pnfs.addCacheLocation(_entry.getPnfsId());
-    }
-
-    private void registerFileAttributes(FileAttributes attr)
+    private void registerFileAttributesInNameSpace()
             throws CacheException
     {
-        _pnfs.setFileAttributes(_entry.getPnfsId(), attr);
+        FileAttributes attributesToUpdate = new FileAttributes();
+        if (_fileAttributes.isDefined(CHECKSUM)) {
+                /* PnfsManager detects conflicting checksums and will fail the update. */
+            attributesToUpdate.setChecksums(_fileAttributes.getChecksums());
+        }
+        if (_initialState == EntryState.FROM_CLIENT) {
+            attributesToUpdate.setAccessLatency(_fileAttributes.getAccessLatency());
+            attributesToUpdate.setRetentionPolicy(_fileAttributes.getRetentionPolicy());
+            if (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0) {
+                attributesToUpdate.setSize(_fileAttributes.getSize());
+            }
+        }
+        attributesToUpdate.setLocations(singleton(_repository.getPoolName()));
+
+        _pnfs.setFileAttributes(_entry.getPnfsId(), attributesToUpdate);
     }
 
     private void setToTargetState()
@@ -278,8 +256,18 @@ class WriteHandleImpl implements ReplicaDescriptor
         _repository.setState(_entry, _targetState);
     }
 
+    private void verifyFileSize(long length) throws CacheException
+    {
+        assert _initialState == EntryState.FROM_CLIENT || _fileAttributes.isDefined(SIZE);
+        if ((_initialState != EntryState.FROM_CLIENT ||
+                (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0)) &&
+                _fileAttributes.getSize() != length) {
+            throw new FileCorruptedCacheException(_fileAttributes.getSize(), length);
+        }
+    }
+
     @Override
-    public synchronized void commit(Checksum checksum)
+    public synchronized void commit()
         throws IllegalStateException, InterruptedException, CacheException
     {
         if (_state != HandleState.OPEN) {
@@ -291,22 +279,12 @@ class WriteHandleImpl implements ReplicaDescriptor
 
             long length = getFile().length();
             adjustReservation(length);
+            verifyFileSize(length);
+            _fileAttributes.setSize(length);
 
-            FileAttributes fileAttributes = _entry.getFileAttributes();
-            storeFileSize(fileAttributes, length);
-            if (checksum != null) {
-                storeChecksum(fileAttributes, checksum);
-            }
+            registerFileAttributesInNameSpace();
 
-            FileAttributes attributesToUpdate = new FileAttributes();
-            if(_initialState == EntryState.FROM_CLIENT) {
-                attributesToUpdate.setAccessLatency(fileAttributes.getAccessLatency());
-                attributesToUpdate.setRetentionPolicy(fileAttributes.getRetentionPolicy());
-                attributesToUpdate.setSize(length);
-            }
-            attributesToUpdate.setLocations(singleton(_repository.getPoolName()));
-            registerFileAttributes(attributesToUpdate);
-
+            _entry.setFileAttributes(_fileAttributes);
             setToTargetState();
 
             setState(HandleState.COMMITTED);
@@ -333,7 +311,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         try {
             adjustReservation(length);
         } catch (InterruptedException e) {
-            // Carry on
+            Thread.currentThread().interrupt();
         }
 
         /* Files from tape or from another pool are deleted in case of
@@ -344,15 +322,24 @@ class WriteHandleImpl implements ReplicaDescriptor
             _targetState = EntryState.REMOVED;
         }
 
-        /* Register cache location unless replica is to be
-         * removed.
+        /* Unless replica is to be removed, register cache location and
+         * other attributes.
          */
         if (_targetState != EntryState.REMOVED) {
             try {
-                registerCacheLocation();
+                /* We register cache location separately in the failure flow, because
+                 * updating other attributes (such as checksums) may itself trigger
+                 * failures in PNFS, and at the very least our cache location should
+                 * be registered.
+                 */
+                _pnfs.addCacheLocation(_entry.getPnfsId(), _repository.getPoolName());
+                registerFileAttributesInNameSpace();
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
                     _targetState = EntryState.REMOVED;
+                } else {
+                    _log.warn("Failed to register {} after failed replica creation: {}",
+                            _fileAttributes, e.getMessage());
                 }
             }
         }
@@ -399,18 +386,38 @@ class WriteHandleImpl implements ReplicaDescriptor
         return _entry.getDataFile();
     }
 
-    /**
-     *
-     * @return cache entry
-     * @throws IllegalStateException
-     */
     @Override
-    public synchronized CacheEntry getEntry()  throws IllegalStateException
+    public synchronized FileAttributes getFileAttributes()  throws IllegalStateException
     {
         if (_state == HandleState.CLOSED) {
             throw new IllegalStateException("Handle is closed");
         }
 
-        return new CacheEntryImpl(_entry);
+        return _entry.getFileAttributes();
+    }
+
+    @Override
+    public synchronized Iterable<Checksum> getChecksums() throws CacheException
+    {
+        if (!_fileAttributes.isDefined(CHECKSUM)) {
+            _fileAttributes.setChecksums(_pnfs
+                    .getFileAttributes(_entry.getPnfsId(), EnumSet.of(CHECKSUM))
+                    .getChecksums());
+        }
+        return unmodifiableIterable(_fileAttributes.getChecksums());
+    }
+
+    @Override
+    public synchronized void addChecksums(Iterable<Checksum> checksums) throws CacheException
+    {
+        if (!isEmpty(checksums)) {
+            Iterable<Checksum> newChecksums;
+            if (_fileAttributes.isDefined(CHECKSUM)) {
+                newChecksums = concat(_fileAttributes.getChecksums(), checksums);
+            } else {
+                newChecksums = checksums;
+            }
+            _fileAttributes.setChecksums(Sets.newHashSet(newChecksums));
+        }
     }
 }

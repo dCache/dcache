@@ -15,12 +15,12 @@
 Init
 {
         start
-                [ !ctxt.hasStorageInfo() ]
+                [ !ctxt.hasRequiredAttributes() ]
                 GettingFileAttributes
                 {
                 }
         start
-                [ ctxt.hasStorageInfo() ]
+                [ ctxt.hasRequiredAttributes() ]
                 CreatingMover
                 {
                 }

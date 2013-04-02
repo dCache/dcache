@@ -8,13 +8,13 @@ import org.mockito.Mockito;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.OSMStorageInfo;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 
@@ -22,6 +22,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
 import org.dcache.tests.repository.MetaDataRepositoryHelper;
 import org.dcache.tests.repository.RepositoryHealerTestChimeraHelper;
+import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.pool.repository.EntryState.*;
@@ -67,18 +68,17 @@ public class ConsistentStoreTest
         return info;
     }
 
-    private static PnfsGetStorageInfoMessage
-        storageInfoMessage(PnfsId pnfsId, StorageInfo info)
+    private static FileAttributes
+        fileAttributes(PnfsId pnfsId, StorageInfo info)
     {
-        PnfsGetStorageInfoMessage message =
-            new PnfsGetStorageInfoMessage(pnfsId);
         FileAttributes attributes = new FileAttributes();
         attributes.setSize(info.getLegacySize());
         attributes.setAccessLatency(info.getLegacyAccessLatency());
         attributes.setRetentionPolicy(info.getLegacyRetentionPolicy());
+        attributes.setChecksums(Collections.<Checksum>emptySet());
+        attributes.setPnfsId(pnfsId);
         attributes.setStorageInfo(info);
-        message.setFileAttributes(attributes);
-        return message;
+        return attributes;
     }
 
     private void givenStoreHasFileOfSize(PnfsId pnfsId, long size)
@@ -111,8 +111,8 @@ public class ConsistentStoreTest
         givenMetaDataStoreHas(PNFSID, CACHED, info);
 
         // and given that the name space provides the same storage info
-        given(_pnfs.getStorageInfoByPnfsId(PNFSID))
-            .willReturn(storageInfoMessage(PNFSID, info));
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
+            .willReturn(fileAttributes(PNFSID, info));
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
@@ -142,8 +142,8 @@ public class ConsistentStoreTest
         givenMetaDataStoreHas(PNFSID, FROM_CLIENT, info);
 
         // and given the name space entry exists without any size
-        given(_pnfs.getStorageInfoByPnfsId(PNFSID))
-            .willReturn(storageInfoMessage(PNFSID, info));
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
+            .willReturn(fileAttributes(PNFSID, info));
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
@@ -176,7 +176,7 @@ public class ConsistentStoreTest
         givenMetaDataStoreHas(PNFSID, FROM_CLIENT, info);
 
         // and given the name space entry does not exist
-        given(_pnfs.getStorageInfoByPnfsId(PNFSID))
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
             .willThrow(new FileNotFoundCacheException("No such file"));
 
         // when reading the meta data record
@@ -205,14 +205,14 @@ public class ConsistentStoreTest
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the name space entry does not exist
-        given(_pnfs.getStorageInfoByPnfsId(PNFSID))
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
             .willThrow(new FileNotFoundCacheException("No such file"));
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
 
         // then recovery is attempted
-        verify(_pnfs).getStorageInfoByPnfsId(PNFSID);
+        verify(_pnfs).getFileAttributes(eq(PNFSID), Mockito.anySet());
 
         // but nothing is returned
         assertThat(record, is(nullValue()));
@@ -241,8 +241,8 @@ public class ConsistentStoreTest
         givenMetaDataStoreHas(PNFSID, BROKEN, info);
 
         // and given the name space entry exists without any size
-        given(_pnfs.getStorageInfoByPnfsId(PNFSID))
-                .willReturn(storageInfoMessage(PNFSID, info));
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
+                .willReturn(fileAttributes(PNFSID, info));
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
@@ -303,8 +303,8 @@ public class ConsistentStoreTest
 
         // and given the name space entry reports a different size
         StorageInfo info = createStorageInfo(20);
-        given(_pnfs.getStorageInfoByPnfsId(PNFSID))
-            .willReturn(storageInfoMessage(PNFSID, info));
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
+            .willReturn(fileAttributes(PNFSID, info));
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);

@@ -27,11 +27,12 @@ public class CacheException extends Exception
     public final static int FILE_PRECIOUS = 10002;
 
     public final static int FILESIZE_UNKNOWN = 10003;
+
     /**
-     * file size in pnfs/stoageInfo do not match to data file size or restored
-     * from tape/receved by p2p file do not match expected size
+     * File size or checksum in name space does not match actual size or checksum of
+     * the data file.
      */
-    public final static int FILESIZE_MISMATCH = 10004;
+    public final static int FILE_CORRUPTED = 10004;
 
     public final static int FILE_NOT_STORED = 10005;
 

@@ -3,8 +3,8 @@ package org.dcache.pool.migration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +16,6 @@ import java.util.concurrent.Future;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
@@ -27,7 +26,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
-import org.dcache.pool.classic.ChecksumModuleV1;
+import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
@@ -35,7 +34,6 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.pool.repository.EntryState.CACHED;
@@ -65,7 +63,7 @@ public class MigrationModuleServer
     private P2PClient _p2p;
     private Repository _repository;
     private ExecutorService _executor;
-    private ChecksumModuleV1 _checksumModule;
+    private ChecksumModule _checksumModule;
     private MigrationModule _migration;
     private PoolV2Mode _poolMode;
 
@@ -84,7 +82,7 @@ public class MigrationModuleServer
         _repository = repository;
     }
 
-    public synchronized void setChecksumModule(ChecksumModuleV1 csm)
+    public synchronized void setChecksumModule(ChecksumModule csm)
     {
         _checksumModule = csm;
     }
@@ -280,7 +278,7 @@ public class MigrationModuleServer
         }
 
         /**
-         * Executed to update an exiting replica
+         * Executed to update an existing replica
          */
         @Override
         public void run()
@@ -290,16 +288,7 @@ public class MigrationModuleServer
                     ReplicaDescriptor handle =
                         _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME));
                     try {
-                        File file = handle.getFile();
-                        ChecksumFactory factory =
-                            _checksumModule.getDefaultChecksumFactory();
-                        Checksum checksum =
-                            factory.computeChecksum(file);
-                        _checksumModule.setMoverChecksums(_pnfsId,
-                                                          file,
-                                                          factory,
-                                                          null,
-                                                          checksum);
+                        _checksumModule.verifyChecksum(handle);
                     } finally {
                         handle.close();
                     }
@@ -332,7 +321,7 @@ public class MigrationModuleServer
                 finished(new CacheException("Task was cancelled"));
             } catch (IllegalTransitionException e) {
                 finished(new CacheException("Cannot update file in state " + e.getSourceState()));
-            } catch (CacheException | RuntimeException e) {
+            } catch (CacheException | NoSuchAlgorithmException | RuntimeException e) {
                 finished(e);
             } finally {
                 _requests.remove(_uuid);

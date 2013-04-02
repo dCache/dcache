@@ -28,7 +28,7 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
-import org.dcache.pool.classic.ChecksumModuleV1;
+import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
@@ -44,7 +44,7 @@ public class P2PClient
     private final Map<Integer, Companion> _companions = new HashMap();
     private ScheduledExecutorService _executor;
     private Repository _repository;
-    private ChecksumModuleV1 _checksumModule;
+    private ChecksumModule _checksumModule;
 
     private int _maxActive;
 
@@ -62,7 +62,7 @@ public class P2PClient
         _repository = repository;
     }
 
-    public synchronized void setChecksumModule(ChecksumModuleV1 csm)
+    public synchronized void setChecksumModule(ChecksumModule csm)
     {
         _checksumModule = csm;
     }

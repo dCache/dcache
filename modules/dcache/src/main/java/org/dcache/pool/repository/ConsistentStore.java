@@ -1,26 +1,33 @@
 package org.dcache.pool.repository;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.classic.ChecksumModuleV1;
+import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.ReplicaStatePolicy;
+import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Iterables.isEmpty;
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * Wrapper for a MetaDataStore which encapsulates the logic for
@@ -41,7 +48,7 @@ public class ConsistentStore
         "Recovering: Reconstructing meta data for %1$s";
     private final static String PARTIAL_FROM_TAPE_MSG =
         "Recovering: Removed %1$s because it was not fully staged";
-    private final static String RECOVERING_FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS =
+    private final static String FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS =
         "Recovering: Fetched storage info for %1$s from PNFS";
     private final static String FILE_NOT_FOUND_MSG =
         "Recovering: Removed %1$s because name space entry was deleted";
@@ -57,15 +64,18 @@ public class ConsistentStore
     private final static String BAD_SIZE_MSG =
         "File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.";
 
+    private final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =
+            EnumSet.of(STORAGEINFO, ACCESS_LATENCY, RETENTION_POLICY, SIZE, CHECKSUM);
+
     private final PnfsHandler _pnfsHandler;
     private final MetaDataStore _metaDataStore;
     private final FileStore _fileStore;
-    private final ChecksumModuleV1 _checksumModule;
+    private final ChecksumModule _checksumModule;
     private final ReplicaStatePolicy _replicaStatePolicy;
     private String _poolName;
 
     public ConsistentStore(PnfsHandler pnfsHandler,
-                           ChecksumModuleV1 checksumModule,
+                           ChecksumModule checksumModule,
                            FileStore fileStore,
                            MetaDataStore metaDataStore,
                            ReplicaStatePolicy replicaStatePolicy)
@@ -164,6 +174,9 @@ public class ConsistentStore
                     _log.error(String.format(BAD_MSG, id, e.getMessage()));
                     break;
                 }
+            } catch (NoSuchAlgorithmException e) {
+                entry.setState(EntryState.BROKEN);
+                _log.error(String.format(BAD_MSG, id, e.getMessage()));
             }
         }
 
@@ -186,7 +199,8 @@ public class ConsistentStore
     }
 
     private MetaDataRecord rebuildEntry(MetaDataRecord entry)
-            throws CacheException, InterruptedException, IOException {
+            throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException
+    {
 
                PnfsId id = entry.getPnfsId();
 
@@ -197,18 +211,15 @@ public class ConsistentStore
                    state = EntryState.FROM_CLIENT;
                }
 
-               _log.warn(String.format(RECOVERING_FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
-               FileAttributes fileAttributes = _pnfsHandler.getStorageInfoByPnfsId(id).getFileAttributes();
+               _log.warn(String.format(FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
+               FileAttributes fileAttributes = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
                entry.setFileAttributes(fileAttributes);
 
                 /* If the intended file size is known, then compare it
                  * to the actual file size on disk. Fail in case of a
-                 * mismatch. Notice we do this before the checksum
-                 * check: First of all it is a lot cheaper than the
-                 * checksum check and we may thus safe some time for
-                 * incomplete files. Second, if file size is known but
-                 * checksum is not, then we want to fail before the
-                 * checksum is updated in PNFS.
+                 * mismatch. Notice we do this before the checksum check,
+                 * as it is a lot cheaper than the checksum check and we
+                 * may thus safe some time for incomplete files.
                  */
                 long length = entry.getDataFile().length();
                 if ((state != EntryState.FROM_CLIENT || fileAttributes.isDefined(FileAttribute.SIZE) && fileAttributes.getSize() != 0)
@@ -216,14 +227,17 @@ public class ConsistentStore
                     throw new CacheException(String.format(BAD_SIZE_MSG, id, fileAttributes.getSize(), length));
                 }
 
-                /* Compute and update checksum. May fail if there is a
-                 * mismatch.
+                /* Verify checksum. Will fail if there is a mismatch.
                  */
-                if (_checksumModule != null) {
-                    ChecksumFactory factory =
-                        _checksumModule.getDefaultChecksumFactory();
-                    _checksumModule.setMoverChecksums(id, entry.getDataFile(), factory,
-                                                      null, null);
+                Iterable<Checksum> expectedChecksums = fileAttributes.getChecksums();
+                Iterable<Checksum> actualChecksums;
+                if (_checksumModule != null &&
+                        (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_WRITE) ||
+                                _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER) ||
+                                _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_RESTORE))) {
+                    actualChecksums = _checksumModule.verifyChecksum(entry.getDataFile(), expectedChecksums);
+                } else {
+                    actualChecksums = Collections.emptySet();
                 }
 
                 /* We always register the file location.
@@ -231,15 +245,17 @@ public class ConsistentStore
                 FileAttributes attributesToUpdate = new FileAttributes();
                 attributesToUpdate.setLocations(Collections.singleton(_poolName));
 
-                /* Update the size in the locally cached meta data and in the name space if not previously
-                 * registered. We initialize access latency and retention policy at the same time (just as
-                 * in WriteHandleImpl).
+                /* If file size was not registered in the name space, we now replay the registration just as it would happen
+                 * in WriteHandleImpl. This includes initializing access latency, retention policy, and checksums.
                  */
                 if (state == EntryState.FROM_CLIENT && (fileAttributes.isUndefined(FileAttribute.SIZE) || fileAttributes.getSize() == 0)) {
                     attributesToUpdate.setSize(length);
                     attributesToUpdate.setAccessLatency(fileAttributes.getAccessLatency());
                     attributesToUpdate.setRetentionPolicy(fileAttributes.getRetentionPolicy());
-
+                    if (!isEmpty(actualChecksums)) {
+                        attributesToUpdate.setChecksums(Sets.newHashSet(actualChecksums));
+                        fileAttributes.setChecksums(Sets.newHashSet(concat(expectedChecksums, actualChecksums)));
+                    }
                     fileAttributes.setSize(length);
                     entry.setFileAttributes(fileAttributes);
 

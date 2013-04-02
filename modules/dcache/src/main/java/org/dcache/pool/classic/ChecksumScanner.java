@@ -9,17 +9,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -30,15 +30,12 @@ import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellLifeCycleAware;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.util.Checksum;
-import org.dcache.vehicles.FileAttributes;
 
 public class ChecksumScanner
     implements CellCommandListener, CellLifeCycleAware
@@ -58,7 +55,7 @@ public class ChecksumScanner
 
     /** Errors found while running 'csm check'.
      */
-    private final Map<PnfsId,Checksum> _bad =
+    private final Map<PnfsId,Iterable<Checksum>> _bad =
         new ConcurrentHashMap<>();
 
     public void startScrubber()
@@ -91,25 +88,6 @@ public class ChecksumScanner
         _scrubberStateFile = path;
     }
 
-    private Checksum checkFile(File file, double throughputLimit)
-        throws IOException, InterruptedException
-    {
-        return _csm.getDefaultChecksumFactory()
-            .computeChecksum(file, throughputLimit);
-    }
-
-    private Checksum readChecksum(CacheEntry entry) throws CacheException
-    {
-        Set<Checksum> checksums;
-        FileAttributes attributes = entry.getFileAttributes();
-        if (attributes.isDefined(FileAttribute.CHECKSUM)) {
-            checksums = attributes.getChecksums();
-        } else {
-            checksums = _pnfs.getFileAttributes(entry.getPnfsId(), EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
-        }
-        return _csm.getDefaultChecksumFactory().find(checksums);
-    }
-
     private class FullScan extends Singleton
     {
         private volatile int _totalCount;
@@ -133,23 +111,21 @@ public class ChecksumScanner
                         ReplicaDescriptor handle =
                             _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
                         try {
-                            Checksum replica =
-                                checkFile(handle.getFile(),
-                                          Double.POSITIVE_INFINITY);
-                            Checksum file = readChecksum(handle.getEntry());
-                            _totalCount++;
-
-                            if (file != null && !file.equals(replica)) {
-                                _bad.put(id, replica);
-                                _badCount++;
-                            }
+                            _csm.verifyChecksum(handle);
                         } finally {
                             handle.close();
                         }
                     } catch (FileNotInCacheException | NotInTrashCacheException e) {
                         /* It was removed before we could get it. No problem.
                          */
+                    } catch (FileCorruptedCacheException e) {
+                        _bad.put(id, e.getActualChecksums().get());
+                        _badCount++;
+                    } catch (CacheException e) {
+                        _log.warn("Checksum scanner failed for {}: {}", id, e.getMessage());
+                        _badCount++;
                     }
+                    _totalCount++;
                 }
             } finally {
                 startScrubber();
@@ -167,35 +143,36 @@ public class ChecksumScanner
     private class SingleScan extends Singleton
     {
         private volatile PnfsId _pnfsId;
-        private volatile Checksum _fileCRC;
-        private volatile Checksum _infoCRC;
+        private volatile Iterable<Checksum> _actualChecksums;
+        private volatile Iterable<Checksum> _expectedChecksums;
 
         public SingleScan()
         {
-            super("SingeScan");
+            super("SingleScan");
         }
 
         public synchronized void go(PnfsId pnfsId)
         {
+            _expectedChecksums = null;
+            _actualChecksums = null;
             _pnfsId = pnfsId;
             start();
         }
 
         @Override
-        public void runIt() throws Exception
+        public void runIt()
+                throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException
         {
             stopScrubber();
             try {
-                _fileCRC = null;
-                _infoCRC = null;
                 ReplicaDescriptor handle =
                     _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME));
                 try {
-                    _fileCRC = checkFile(handle.getFile(), Double.POSITIVE_INFINITY);
-                    _infoCRC = readChecksum(handle.getEntry());
-                    if (_infoCRC != null && !_infoCRC.equals(_fileCRC)) {
-                        _bad.put(_pnfsId, _fileCRC);
-                    }
+                    _actualChecksums = _csm.verifyChecksum(handle);
+                } catch (FileCorruptedCacheException e) {
+                    _expectedChecksums = e.getExpectedChecksums().get();
+                    _actualChecksums = e.getActualChecksums().get();
+                    _bad.put(_pnfsId, _actualChecksums);
                 } finally {
                     handle.close();
                 }
@@ -204,21 +181,19 @@ public class ChecksumScanner
             }
         }
 
-        public String toString()
+        public synchronized String toString()
         {
             StringBuilder sb = new StringBuilder();
             sb.append(super.toString());
             if (_pnfsId != null) {
                 sb.append("  ").append(_pnfsId).append(" ");
-                if ((_fileCRC != null) && (_infoCRC == null)) {
-                    sb.append("No StorageInfo, crc = ").append(_fileCRC);
-                } else if ((_fileCRC == null) || (_infoCRC == null)) {
+                if (_actualChecksums == null) {
                     sb.append("BUSY");
-                } else if (_fileCRC.equals(_infoCRC)) {
-                    sb.append("OK ").append(_fileCRC.toString());
+                } else if (_expectedChecksums == null) {
+                    sb.append("OK ").append(_actualChecksums);
                 } else {
-                    sb.append("BAD File = ").append(_fileCRC)
-                        .append(" Expected = ").append(_infoCRC);
+                    sb.append("BAD File = ").append(_actualChecksums)
+                        .append(" Expected = ").append(_expectedChecksums);
                 }
             }
             return sb.toString();
@@ -334,7 +309,7 @@ public class ChecksumScanner
         @Override
         public synchronized void start()
         {
-            if (_csm.isScrubbingEnabled() && !isActive()) {
+            if (_csm.hasPolicy(ChecksumModule.PolicyFlag.SCRUB) && !isActive()) {
                 super.start();
             }
         }
@@ -375,7 +350,7 @@ public class ChecksumScanner
                         isFinished = true;
                     } catch (IllegalStateException | TimeoutCacheException e) {
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
-                    } catch (CacheException e) {
+                    } catch (CacheException | NoSuchAlgorithmException e) {
                         _log.error("Received an unexpected error during scrubbing: {}",
                                    e.getMessage());
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
@@ -418,29 +393,6 @@ public class ChecksumScanner
             }
         }
 
-        private boolean isChecksumOk(PnfsId id)
-            throws InterruptedException, CacheException
-        {
-            ReplicaDescriptor handle =
-                _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
-            try {
-                Checksum storedChecksum = readChecksum(handle.getEntry());
-                if (storedChecksum == null) {
-                    return true;
-                }
-                Checksum newChecksum;
-                File file = handle.getFile();
-                newChecksum = checkFile(file, _csm.getThroughputLimit());
-                return storedChecksum.equals(newChecksum);
-            } catch (IOException e) {
-                throw new DiskErrorCacheException("Failed to checksum " +
-                                                  id + ": " +
-                                                  e.getMessage());
-            } finally {
-                handle.close();
-            }
-        }
-
         /**
          * Save state information only every <code>CHECKPOINT_INTERVAL</code>
          * period.
@@ -454,37 +406,39 @@ public class ChecksumScanner
         }
 
         private void scanFiles(PnfsId[] repository)
-            throws InterruptedException, CacheException
+                throws InterruptedException, NoSuchAlgorithmException, CacheException
         {
             for (PnfsId id : repository) {
-                if (_repository.getState(id) == EntryState.CACHED ||
-                    _repository.getState(id) == EntryState.PRECIOUS) {
-                    try {
-                        if (!isChecksumOk(id)) {
-                            _badCount++;
-                            /**
-                             * This can now be configured as an alarm by using
-                             * the org.dcache.alarms.logback.AlarmDefinitionFilter
-                             */
-                            _log.error("Checksum mismatch detected for {} - marking as BROKEN",
-                                       id);
-                            try {
-                                _repository.setState(id, EntryState.BROKEN);
-                            } catch (IllegalTransitionException e) {
-                                _log.warn("Failed to mark {} as BROKEN: {}",
-                                          id, e.getMessage());
-                            }
+                try {
+                    if (_repository.getState(id) == EntryState.CACHED ||
+                            _repository.getState(id) == EntryState.PRECIOUS) {
+                        ReplicaDescriptor handle =
+                            _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
+                        try {
+                            _csm.verifyChecksumWithThroughputLimit(handle);
+                        } finally {
+                            handle.close();
                         }
-                        _lastFileChecked = id;
-                    } catch (FileNotInCacheException e) {
-                        /**
-                         * It was removed before we could get it. No problem.
-                         */
-                    } catch (DiskErrorCacheException e) {
-                        _log.error("Failed to verify the checksum of {} (skipping): {}",
-                                   id, e.getMessage());
                     }
+                } catch (FileCorruptedCacheException e) {
+                    _badCount++;
+                    /* This can now be configured as an alarm by using
+                     * the org.dcache.alarms.logback.AlarmDefinitionFilter
+                     */
+                    _log.error("Marking {} as BROKEN: {}", id, e.getMessage());
+                    try {
+                        _repository.setState(id, EntryState.BROKEN);
+                    } catch (IllegalTransitionException | CacheException f) {
+                        _log.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
+                    }
+                } catch (FileNotInCacheException | NotInTrashCacheException e) {
+                    /* It was removed before we could get it. No problem.
+                     */
+                } catch (IOException e) {
+                    _log.error("Failed to verify the checksum of {} (skipping): {}",
+                            id, e.getMessage());
                 }
+                _lastFileChecked = id;
                 _totalCount++;
                 checkpointIfNeeded();
             }
@@ -580,7 +534,7 @@ public class ChecksumScanner
     public String ac_csm_show_errors(Args args)
     {
         StringBuilder builder = new StringBuilder();
-        for (Map.Entry<PnfsId,Checksum> e: _bad.entrySet()) {
+        for (Map.Entry<PnfsId,Iterable<Checksum>> e: _bad.entrySet()) {
             builder
                 .append(e.getKey())
                 .append(" -> ")

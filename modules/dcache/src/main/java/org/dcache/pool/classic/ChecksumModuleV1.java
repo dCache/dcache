@@ -1,256 +1,180 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2007-2013 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.pool.classic;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FileCorruptedCacheException;
 
-import dmg.util.Args;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
-import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Iterables.isEmpty;
+import static org.dcache.pool.classic.ChecksumModule.PolicyFlag.*;
+import static org.dcache.util.ChecksumType.*;
+
 public class ChecksumModuleV1
     extends AbstractCellComponent
-    implements CellCommandListener
+    implements CellCommandListener, ChecksumModule
 {
-    private final static Logger _log =
-        LoggerFactory.getLogger(ChecksumModuleV1.class);
+    private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDERING =
+            Ordering.explicit(MD5_TYPE, ADLER32, MD4_TYPE);
+    private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
+            PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(
+                    new Function<Checksum, ChecksumType>()
+                    {
+                        @Override
+                        public ChecksumType apply(Checksum checksum)
+                        {
+                            return checksum.getType();
+                        }
+                    });
 
-    public final static long BYTES_IN_MEBIBYTE = 1024 * 1024;
+    private static final long BYTES_IN_MEBIBYTE = 1024 * 1024;
 
-    private boolean _onRead;
-    private boolean _onWrite;
-    private boolean _onTransfer;
-    private boolean _onFlush;
-    private boolean _onRestore;
-    private boolean _enforceCRC;
-    private boolean _updatepnfs;
+    private final EnumSet<PolicyFlag> _policy = EnumSet.of(ON_TRANSFER, ENFORCE_CRC);
 
-    private volatile boolean _scrub;
-    private volatile double  _throughputLimit = Double.POSITIVE_INFINITY;
-    private volatile long    _scrubPeriod     = TimeUnit.HOURS.toMillis(24L);
+    private double _throughputLimit = Double.POSITIVE_INFINITY;
+    private long _scrubPeriod = TimeUnit.HOURS.toMillis(24L);
+    private ChecksumType _defaultChecksumType = ADLER32;
 
-    private ChecksumFactory _defaultChecksumFactory;
     private ChecksumScanner _scanner;
-
-    private final PnfsHandler _pnfs;
-
-    public ChecksumModuleV1(PnfsHandler pnfs)
-    {
-        _pnfs = pnfs;
-        try {
-            _defaultChecksumFactory =
-                ChecksumFactory.getFactory(ChecksumType.ADLER32);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("adler32 is not supported", e);
-        }
-    }
-
-    /**
-     * Returns the first non-null argument.
-     */
-    private <T> T getFirstNonNull(T ... objects)
-    {
-        for (T t : objects) {
-            if (t != null) {
-                return t;
-            }
-        }
-        return null;
-    }
 
     public void setChecksumScanner(ChecksumScanner scanner)
     {
         _scanner = scanner;
     }
 
-    public void setMoverChecksums(PnfsId id,
-                                  File file,
-                                  ChecksumFactory factory,
-                                  Checksum clientChecksum, // can be null
-                                  Checksum transferChecksum)
-        throws CacheException,
-               InterruptedException,
-               IOException
+    public synchronized ChecksumType getDefaultChecksumType()
     {
-        Checksum pnfsChecksum =
-            (clientChecksum == null)
-            ? factory.find(_pnfs.getFileAttributes(id, EnumSet.of(FileAttribute.CHECKSUM)).getChecksums())
-            : null;
-        Checksum fileChecksum =
-            (_onWrite || (_onTransfer && transferChecksum == null))
-            ? factory.computeChecksum(file)
-            : null;
-        Checksum checksum =
-            getFirstNonNull(clientChecksum, pnfsChecksum, transferChecksum, fileChecksum);
-
-        if (checksum == null) {
-            if (!_enforceCRC) {
-                return;
-            }
-            checksum = factory.computeChecksum(file);
-        }
-
-        if ((((transferChecksum != null) && !transferChecksum.equals(checksum)))
-            || (((fileChecksum != null) && !fileChecksum.equals(checksum)))) {
-            throw new CacheException(String.format("Checksum error: client=%s,pnfs=%s,transfer=%s,file=%s",
-                                                   clientChecksum,
-                                                   pnfsChecksum,
-                                                   transferChecksum,
-                                                   fileChecksum));
-        }
-
-        if ((pnfsChecksum == null) && (checksum != null)) {
-            _log.info("Storing checksum {} for {}", checksum, id);
-            _pnfs.setChecksum(id, checksum);
-        }
+        return _defaultChecksumType;
     }
 
-    public ChecksumFactory getDefaultChecksumFactory()
-    {
-        return _defaultChecksumFactory;
-    }
-
-    @Override
-    public void printSetup(PrintWriter pw)
-    {
-        pw.println("csm set checksumtype "+_defaultChecksumFactory.getType());
-        if (_scrub) {
-            pw.print("csm set policy -scrub=on");
-            pw.print(" -limit="+
-                     (Double.isInfinite(_throughputLimit) ? "off"
-                                                          : _throughputLimit / BYTES_IN_MEBIBYTE));
-            pw.println(" -period="+TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
-        } else {
-            pw.println("csm set policy -scrub=off");
-        }
-        pw.print("csm set policy");
-        pw.print(" -onread="); pw.print(_onRead?"on":"off");
-        pw.print(" -onwrite="); pw.print(_onWrite?"on":"off");
-        pw.print(" -onflush="); pw.print(_onFlush?"on":"off");
-        pw.print(" -onrestore="); pw.print(_onRestore?"on":"off");
-        pw.print(" -ontransfer="); pw.print(_onTransfer?"on":"off");
-        pw.print(" -enforcecrc="); pw.print(_enforceCRC?"on":"off");
-        pw.print(" -getcrcfromhsm="); pw.print(_updatepnfs?"on":"off");
-        pw.println("");
-    }
-
-    public long getScrubPeriod()
+    public synchronized long getScrubPeriod()
     {
         return _scrubPeriod;
     }
 
-    public double getThroughputLimit()
+    public synchronized double getThroughputLimit()
     {
         return _throughputLimit;
     }
 
-    public boolean isScrubbingEnabled()
+    @Override
+    public synchronized void printSetup(PrintWriter pw)
     {
-        return _scrub;
-    }
-
-    public boolean checkOnRead()
-    {
-        return _onRead;
-    }
-
-    public boolean checkOnFlush()
-    {
-        return _onFlush;
-    }
-
-    public boolean checkOnRestore()
-    {
-        return _onRestore;
-    }
-
-    public boolean checkOnWrite()
-    {
-        return _onWrite;
-    }
-
-    public boolean checkOnTransfer()
-    {
-        return _onTransfer;
-    }
-
-    public boolean enforceCRC()
-    {
-        return _enforceCRC;
+        pw.println("csm set checksumtype " + _defaultChecksumType);
+        if (hasPolicy(SCRUB)) {
+            pw.print("csm set policy -scrub=on");
+            pw.print(" -limit=" +
+                    (Double.isInfinite(_throughputLimit) ? "off" : _throughputLimit / BYTES_IN_MEBIBYTE));
+            pw.println(" -period=" + TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
+        } else {
+            pw.println("csm set policy -scrub=off");
+        }
+        pw.print("csm set policy");
+        pw.print(" -onread="); pw.print(hasPolicy(ON_READ) ? "on" : "off");
+        pw.print(" -onwrite="); pw.print(hasPolicy(ON_WRITE) ? "on" : "off");
+        pw.print(" -onflush="); pw.print(hasPolicy(ON_FLUSH) ? "on" : "off");
+        pw.print(" -onrestore="); pw.print(hasPolicy(ON_RESTORE) ? "on" : "off");
+        pw.print(" -ontransfer="); pw.print(hasPolicy(ON_TRANSFER) ? "on" : "off");
+        pw.print(" -enforcecrc="); pw.print(hasPolicy(ENFORCE_CRC) ? "on" : "off");
+        pw.print(" -getcrcfromhsm="); pw.print(hasPolicy(GET_CRC_FROM_HSM) ? "on" : "off");
+        pw.println("");
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
+    public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("                Version : $Id$");
-        pw.println("          Checksum type : "+_defaultChecksumFactory.getType());
+        pw.println("          Checksum type : " + _defaultChecksumType);
         pw.print(" Checkum calculation on : ");
-        if (_onRead) {
-            pw.print("read ");
-        }
-        if (_onWrite) {
-            pw.print("write ");
-        }
-        if (_onFlush) {
-            pw.print("flush ");
-        }
-        if (_onRestore) {
-            pw.print("restore ");
-        }
-        if (_onTransfer) {
-            pw.print("transfer ");
-        }
-        if (_enforceCRC) {
-            pw.print("enforceCRC ");
-        }
-        if (_updatepnfs) {
-            pw.print("getcrcfromhsm ");
-        }
-        if (_scrub) {
-            pw.print("scrub(");
-            pw.print("limit=" + (Double.isInfinite(_throughputLimit) ? "off" : _throughputLimit / BYTES_IN_MEBIBYTE));
-            pw.print(",");
-            pw.print("period=" + TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
-            pw.print(")");
+        for (PolicyFlag flag: _policy) {
+            switch (flag) {
+            case ON_READ:
+                pw.print("read ");
+                break;
+            case ON_WRITE:
+                pw.print("write ");
+                break;
+            case ON_FLUSH:
+                pw.print("flush ");
+                break;
+            case ON_RESTORE:
+                pw.print("restore ");
+                break;
+            case ON_TRANSFER:
+                pw.print("transfer ");
+                break;
+            case ENFORCE_CRC:
+                pw.print("enforceCRC ");
+                break;
+            case GET_CRC_FROM_HSM:
+                pw.print("getcrcfromhsm ");
+                break;
+            case SCRUB:
+                pw.print("scrub(");
+                pw.print("limit=" + (Double.isInfinite(_throughputLimit) ? "off" : _throughputLimit / BYTES_IN_MEBIBYTE));
+                pw.print(",");
+                pw.print("period=" + TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
+                pw.print(") ");
+            }
         }
         pw.println("");
     }
 
-    public final static String hh_csm_info = "";
-    public String ac_csm_info_$_0(Args args)
-    {
-        return getPolicies();
-    }
-
-    private String getPolicies()
+    private synchronized String getPolicies()
     {
         StringBuilder sb = new StringBuilder();
 
         sb.append(" Policies :\n").
-            append("        on read : ").append(_onRead).append("\n").
-            append("       on write : ").append(_onWrite).append("\n").
-            append("       on flush : ").append(_onFlush).append("\n").
-            append("     on restore : ").append(_onRestore).append("\n").
-            append("    on transfer : ").append(_onTransfer).append("\n").
-            append("    enforce crc : ").append(_enforceCRC).append("\n").
-            append("  getcrcfromhsm : ").append(_updatepnfs).append("\n").
-            append("          scrub : ").append(_scrub).append("\n");
-        if (_scrub) {
+            append("        on read : ").append(hasPolicy(ON_READ)).append("\n").
+            append("       on write : ").append(hasPolicy(ON_WRITE)).append("\n").
+            append("       on flush : ").append(hasPolicy(ON_FLUSH)).append("\n").
+            append("     on restore : ").append(hasPolicy(ON_RESTORE)).append("\n").
+            append("    on transfer : ").append(hasPolicy(ON_TRANSFER)).append("\n").
+            append("    enforce crc : ").append(hasPolicy(ENFORCE_CRC)).append("\n").
+            append("  getcrcfromhsm : ").append(hasPolicy(GET_CRC_FROM_HSM)).append("\n").
+            append("          scrub : ").append(hasPolicy(SCRUB)).append("\n");
+        if (hasPolicy(SCRUB)) {
             if (Double.isInfinite(_throughputLimit)) {
                 sb.append("             limit  = off\n");
             } else {
@@ -261,103 +185,273 @@ public class ChecksumModuleV1
         return sb.toString();
     }
 
-    public final static String hh_csm_set_policy = "[-<option>=on|off] ... # see 'help csm set policy";
-    public final static String fh_csm_set_policy =
-        "  Syntax : csm set policy [-<option>=on[|off]] ...\n"+
-        "\n"+
-        "    OPTIONS :\n"+
-        "       -scrub:  periodically verify pool data against checksums (suboptions :)\n"+
-        "\n"+
-        "            -limit=<MiB/s>|off : checksum computation throughput limit\n"+
-        "            -period=<hours>    : run scrubber every <hours> hours\n"+
-        "\n"+
-        "       -onread          : run check before each open for reading\n"+
-        "       -onwrite         : run check after receiving the file from client (on fs)\n"+
-        "       -onflush         : run check before flush to HSM\n"+
-        "       -onrestore       : run check after restore from HSM\n"+
-        "       -ontransfer      : run check while receiving data from client (on the fly)\n"+
-        "       -enforcecrc      : make sure there is at least one crc stored in pnfs\n"+
-        "       -getcrcfromhsm   : read the <pool>/data/<pnfsid>.crcval file and send to pnfs\n"+
-        "\n";
-
-    public String ac_csm_set_policy_$_0(Args args)
+    @Command(name = "csm info",
+            usage = "Shows current checksum module configuration.")
+    public class InfoCommand implements Callable<String>
     {
-        _scrub      = checkBoolean(args, "scrub"      , _scrub);
-        _onRead     = checkBoolean(args, "onread"     , _onRead);
-        _onWrite    = checkBoolean(args, "onwrite"    , _onWrite);
-        _onFlush    = checkBoolean(args, "onflush"    , _onFlush);
-        _onRestore  = checkBoolean(args, "onrestore"  , _onRestore);
-        _onTransfer = checkBoolean(args, "ontransfer" , _onTransfer);
-        _enforceCRC = checkBoolean(args, "enforcecrc" , _enforceCRC);
-        _updatepnfs = checkBoolean(args, "getcrcfromhsm" , _updatepnfs);
+        @Override
+        public String call() throws Exception
+        {
+            return getPolicies();
+        }
+    }
 
-        String limitOption = args.getOpt("limit");
-        if (limitOption != null) {
-            if (limitOption.equals("off")) {
-                _throughputLimit = Double.POSITIVE_INFINITY;
-            } else {
-                double limit =
-                    args.getDoubleOption("limit",
-                                         _throughputLimit / BYTES_IN_MEBIBYTE)
-                                         * BYTES_IN_MEBIBYTE;
-                if (limit <= 0) {
-                    throw new IllegalArgumentException("Throughput limit must be > 0");
+    @Command(name = "csm set policy",
+            usage = "Define the checksum policy of the pool.")
+    public class SetPolicyCommand implements Callable<String>
+    {
+        @Option(name = "scrub",
+                category = "Scrubber options",
+                usage = "Periodically verify pool data against checksums.",
+                values = { "", "on", "off" },
+                valueSpec = "on|off")
+        String scrub;
+
+        @Option(name = "limit",
+                category = "Scrubber options",
+                usage = "Checksum computation throughput limit.",
+                valueSpec = "<MiB/s>|off")
+        String limit;
+
+        @Option(name = "period",
+                category = "Scrubber options",
+                usage = "Run scrubber every HOURS hours.",
+                metaVar = "hours")
+        Integer period;
+
+        @Option(name = "onread",
+                category = "Transfer options",
+                usage = "Not implemented.",
+                values = { "", "on", "off" },
+                valueSpec = "on|off")
+        String onRead;
+
+        @Option(name = "onwrite",
+                category = "Transfer options",
+                usage = "Compute checksum after receiving the file form the client. In contrast to " +
+                        "-ontransfer, -onwrite will read back the file from disk or the disk cache " +
+                        "after the transfer has completed. Be aware that this will introduce a delay " +
+                        "after the transfer and that some clients may time out in the meantime.",
+                values = { "", "on", "off" },
+                valueSpec = "on|off")
+        String onWrite;
+
+        @Option(name = "ontransfer",
+                category = "Transfer options",
+                usage = "Compute checksum while receiving data from the client. If not supported " +
+                        "by the transfer protocol, the checksum is computed after the upload has " +
+                        "completed.",
+                values = { "", "on", "off" },
+                valueSpec = "on|off")
+        String onTransfer;
+
+        @Option(name = "enforcecrc",
+                category = "Transfer options",
+                usage = "If no checksum was calculated during the transfer and no checksum was provided " +
+                        "by the client, then a checksum will be computed from the uploaded file.",
+                values = { "", "on", "off" },
+                valueSpec = "on|off")
+        String enforceCrc;
+
+        @Option(name = "onflush",
+                category = "HSM options",
+                usage = "Compute checksum before flush to HSM.",
+                values = { "", "on", "off" },
+                valueSpec = "on|off")
+        String onFlush;
+
+        @Option(name = "onrestore",
+                category = "HSM options",
+                usage = "Compute checksum after restore from HSM.",
+                values = { "", "on", "off" },
+                valueSpec = "on|off")
+        String onRestore;
+
+        @Option(name = "getcrcfromhsm",
+                category = "HSM options",
+                usage = "If enabled, the pool will collect any checksum provided by the HSM and " +
+                        "store it in the name space.",
+                values = { "", "on", "off" },
+                valueSpec = "on|off")
+        String getCrcFromHsm;
+
+        @Option(name = "v",
+                usage = "Verbose.")
+        boolean verbose;
+
+        private void updatePolicy(String value, PolicyFlag flag)
+        {
+            if (value != null) {
+                switch (value) {
+                case "on":
+                case "":
+                    _policy.add(flag);
+                    break;
+                case "off":
+                    _policy.remove(flag);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid value: " + value);
                 }
-                _throughputLimit = limit;
             }
         }
 
-        String periodOption = args.getOpt("period");
-        if (periodOption != null) {
-            long period = TimeUnit.HOURS.toMillis(Integer.parseInt(periodOption));
-            if (period <= 0) {
-                throw new IllegalArgumentException("Scrub interval must be > 0");
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            synchronized (ChecksumModuleV1.this) {
+                updatePolicy(onRead, ON_READ);
+                updatePolicy(onWrite, ON_WRITE);
+                updatePolicy(onFlush, ON_FLUSH);
+                updatePolicy(onRestore, ON_RESTORE);
+                updatePolicy(onTransfer, ON_TRANSFER);
+                updatePolicy(enforceCrc, ENFORCE_CRC);
+                updatePolicy(getCrcFromHsm, GET_CRC_FROM_HSM);
+                updatePolicy(scrub, SCRUB);
+
+                if (limit != null) {
+                    if (limit.equals("off")) {
+                        _throughputLimit = Double.POSITIVE_INFINITY;
+                    } else {
+                        double value =
+                                Double.parseDouble(limit) * BYTES_IN_MEBIBYTE;
+                        if (value <= 0) {
+                            throw new IllegalArgumentException("Throughput limit must be > 0");
+                        }
+                        _throughputLimit = value;
+                    }
+                }
+
+                if (period != null) {
+                    long value = TimeUnit.HOURS.toMillis(period);
+                    if (value <= 0) {
+                        throw new IllegalArgumentException("Scrub interval must be > 0");
+                    }
+                    _scrubPeriod = value;
+                }
+
+                if (hasPolicy(SCRUB)) {
+                    _scanner.startScrubber();
+                } else {
+                    _scanner.stopScrubber();
+                }
+
+                return verbose ? getPolicies() : "";
             }
-            _scrubPeriod = period;
         }
-
-        if (_scrub) {
-            _scanner.startScrubber();
-        } else {
-            _scanner.stopScrubber();
-        }
-
-        return !args.hasOption("v") ? "" : getPolicies();
     }
 
-    public boolean getCrcFromHsm()
+    @Command(name = "csm set checksumtype",
+            usage = "Sets the default checksum type to compute and store for new files.\n\n" +
+                    "Unless the client has specified a checksum of a different type, the default " +
+                    "checksum defines the checksum that is computed for each new file and stored " +
+                    "in the name space.")
+    public class SetChecksumTypeCommand implements Callable<String>
     {
-        return _updatepnfs;
+        @Argument(valueSpec = "adler32|md5")
+        String type;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            synchronized (ChecksumModuleV1.this) {
+                _defaultChecksumType = getChecksumType(type);
+                return "New checksumtype : "+ _defaultChecksumType;
+            }
+        }
     }
 
-    public final static String hh_csm_set_checksumtype = "adler32|md5";
-    public String ac_csm_set_checksumtype_$_1(Args args) throws Exception
+    @Override
+    public synchronized boolean hasPolicy(PolicyFlag flag)
     {
-        String newChecksumType = args.argv(0);
-        //
-        // can we do that  ?
-        //
-        _defaultChecksumFactory =
-            ChecksumFactory.getFactory(ChecksumType.getChecksumType(newChecksumType));
-
-        //
-        // seems to be ok
-        //
-        return "New checksumtype : "+ _defaultChecksumFactory.getType();
+        return _policy.contains(flag);
     }
 
-    private boolean checkBoolean(Args args, String key, boolean currentValue)
+    @Override
+    public ChecksumFactory getPreferredChecksumFactory(ReplicaDescriptor handle)
+            throws NoSuchAlgorithmException, CacheException
     {
-        String value = args.getOpt(key);
-        if (value == null) {
-            return currentValue;
-        }
-        if (value.equals("on") || value.equals("")) {
-            return true;
-        } else if (value.equals("off")) {
-            return false;
-        }
+        List<Checksum> existingChecksumsByPreference = PREFERRED_CHECKSUM_ORDERING.sortedCopy(handle.getChecksums());
+        return ChecksumFactory.getFactory(existingChecksumsByPreference, getDefaultChecksumType());
+    }
 
-        throw new IllegalArgumentException("-"+key+"[=on|off]");
+    @Override
+    public void enforcePostTransferPolicy(
+            ReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
+            throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException
+    {
+        if (hasPolicy(ON_WRITE) || hasPolicy(ON_TRANSFER) || hasPolicy(ENFORCE_CRC) || !isEmpty(actualChecksums)) {
+            Iterable<Checksum> expectedChecksums = handle.getChecksums();
+            if (hasPolicy(ON_WRITE) ||
+                    (hasPolicy(ON_TRANSFER) && isEmpty(actualChecksums)) ||
+                    (hasPolicy(ENFORCE_CRC) && isEmpty(expectedChecksums) && isEmpty(actualChecksums))) {
+                ChecksumFactory factory = ChecksumFactory.getFactory(
+                        concat(expectedChecksums, actualChecksums), getDefaultChecksumType());
+                actualChecksums =
+                        concat(actualChecksums,
+                                Collections.singleton(factory.computeChecksum(handle.getFile())));
+            }
+            compareChecksums(expectedChecksums, actualChecksums);
+            handle.addChecksums(actualChecksums);
+        }
+    }
+
+    @Override
+    public void enforcePreFlushPolicy(ReplicaDescriptor handle)
+            throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException
+    {
+        if (hasPolicy(ON_FLUSH)) {
+            verifyChecksum(handle);
+        }
+    }
+
+    @Override
+    public void enforcePostRestorePolicy(ReplicaDescriptor handle)
+            throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException
+    {
+        if (hasPolicy(ON_RESTORE)) {
+            handle.addChecksums(verifyChecksum(handle));
+        }
+    }
+
+    @Override
+    public Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
+            throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
+    {
+        return verifyChecksum(handle.getFile(), handle.getChecksums());
+    }
+
+    @Override
+    public Iterable<Checksum> verifyChecksum(File file, Iterable<Checksum> expectedChecksums)
+            throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
+    {
+        return verifyChecksum(file, expectedChecksums, Double.POSITIVE_INFINITY);
+    }
+
+    public Iterable<Checksum> verifyChecksumWithThroughputLimit(ReplicaDescriptor handle)
+            throws IOException, InterruptedException, NoSuchAlgorithmException, CacheException
+    {
+        return verifyChecksum(handle.getFile(), handle.getChecksums(), getThroughputLimit());
+    }
+
+    private Iterable<Checksum> verifyChecksum(File file, Iterable<Checksum> expectedChecksums, double throughputLimit)
+            throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
+    {
+        ChecksumFactory factory = ChecksumFactory.getFactory(expectedChecksums, getDefaultChecksumType());
+        Iterable<Checksum> actualChecksums = Collections.singleton(factory.computeChecksum(file, throughputLimit));
+        compareChecksums(expectedChecksums, actualChecksums);
+        return actualChecksums;
+    }
+
+    private void compareChecksums(Iterable<Checksum> expected, Iterable<Checksum> actual) throws CacheException
+    {
+        Map<ChecksumType, Checksum> checksumByType = Maps.newHashMap();
+        for (Checksum checksum: concat(expected, actual)) {
+            Checksum otherChecksum = checksumByType.get(checksum.getType());
+            if (otherChecksum != null && !otherChecksum.equals(checksum)) {
+                throw new FileCorruptedCacheException(ImmutableSet.copyOf(expected), ImmutableSet.copyOf(actual));
+            }
+            checksumByType.put(checksum.getType(), checksum);
+        }
     }
 }

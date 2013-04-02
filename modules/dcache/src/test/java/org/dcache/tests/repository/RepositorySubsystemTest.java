@@ -1,5 +1,7 @@
 package org.dcache.tests.repository;
 
+import com.google.common.io.Files;
+import com.google.common.primitives.Bytes;
 import com.sleepycat.je.DatabaseException;
 import org.junit.After;
 import org.junit.Before;
@@ -9,7 +11,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -103,12 +104,7 @@ public class RepositorySubsystemTest
     private void createFile(File file, long size)
         throws IOException
     {
-        try (RandomAccessFile handle = new RandomAccessFile(file, "rw")) {
-            for (long i = 0; i < size; i++) {
-                handle.writeByte(0);
-            }
-        }
-
+        Files.write(Bytes.toArray(Collections.nCopies((int) size, (byte) 0)), file);
     }
 
     private void createEntry(final FileAttributes attributes,
@@ -136,7 +132,7 @@ public class RepositorySubsystemTest
                 try {
                     handle.allocate(attributes.getSize());
                     createFile(handle.getFile(), attributes.getSize());
-                    handle.commit(null);
+                    handle.commit();
                 } finally {
                     handle.close();
                 }
@@ -325,7 +321,7 @@ public class RepositorySubsystemTest
                 repository.openEntry(id, EnumSet.noneOf(OpenFlags.class));
             try {
                 assertEquals(new File(dataDir, id.toString()), handle.getFile());
-                assertCacheEntry(handle.getEntry(), id, size, state);
+                assertCacheEntry(repository.getEntry(id), id, size, state);
             } finally {
                 handle.close();
             }
@@ -488,7 +484,7 @@ public class RepositorySubsystemTest
                 try {
                     handle.allocate(attributes5.getSize());
                     createFile(handle.getFile(), attributes5.getSize());
-                    handle.commit(null);
+                    handle.commit();
                 }catch( IOException e) {
                     throw new CacheException(CacheException.ERROR_IO_DISK, e.getMessage());
                 } finally {
@@ -582,7 +578,7 @@ public class RepositorySubsystemTest
     }
 
     @Test(expected=IllegalStateException.class)
-    public void testClosedReadHandleGetEntry()
+    public void testClosedReadHandleGetFileAttributes()
         throws IOException, CacheException, InterruptedException
     {
         repository.init();
@@ -592,7 +588,7 @@ public class RepositorySubsystemTest
         ReplicaDescriptor handle =
             repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
-        handle.getEntry();
+        handle.getFileAttributes();
     }
 
     @Test
@@ -748,20 +744,15 @@ public class RepositorySubsystemTest
             boolean setAttr;
             boolean addCache;
 
-            /* If files get garbage collected, then locations are
-             * cleared.
-             */
             @Message(required=false,step=1,cell="pnfs")
-            public Object message(PnfsClearCacheLocationMessage msg)
+            public Object whenFileIsGarbageCollected(PnfsClearCacheLocationMessage msg)
             {
                 msg.setSucceeded();
                 return msg;
             }
 
-            /* In case of commit.
-             */
             @Message(required=false,step=3,cell="pnfs")
-            public Object message(PnfsSetFileAttributes msg)
+            public Object whenDescriptorIsCommitted(PnfsSetFileAttributes msg)
             {
                 assertEquals(size4, msg.getFileAttributes().getSize());
                 if (failSetAttributes) {
@@ -773,14 +764,20 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
-            /* In case we cancel or fail to commit.
-             */
             @Message(required=false,step=5,cell="pnfs")
-            public Object message2(PnfsAddCacheLocationMessage msg)
+            public Object whenDescriptorFails(PnfsAddCacheLocationMessage msg)
             {
                 assertTrue(failSetAttributes || cancel);
                 msg.setSucceeded();
                 addCache = true;
+                return msg;
+            }
+
+            @Message(required=false,step=5,cell="pnfs")
+            public Object whenDescriptorFails(PnfsSetFileAttributes msg)
+            {
+                assertTrue(failSetAttributes || cancel);
+                msg.setSucceeded();
                 return msg;
             }
 
@@ -800,15 +797,15 @@ public class RepositorySubsystemTest
                     assertStep("No clear after this point", 2);
                     createFile(handle.getFile(), size4);
                     if (!cancel) {
-                        handle.commit(null);
+                        handle.commit();
                     }
                 } finally {
-                    assertStep("No set attributes after this point", 4);
+                    assertStep("Only failure registration after this point", 4);
                     handle.close();
                 }
                 assertEquals("SetFileAttributes must be sent unless we don't try to commit",
                              !cancel, setAttr);
-                assertEquals("AddCacheLocation must be sent if not committd ",
+                assertEquals("AddCacheLocation must be sent if not committed",
                              cancel || failSetAttributes, addCache);
             }
         };

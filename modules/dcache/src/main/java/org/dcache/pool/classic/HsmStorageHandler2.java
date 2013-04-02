@@ -2,19 +2,22 @@
 
 package org.dcache.pool.classic;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
+import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.Batchable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.HsmLocationExtractorFactory;
@@ -54,7 +57,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -74,7 +76,7 @@ public class HsmStorageHandler2
     private final Repository _repository;
     private final HsmSet _hsmSet;
     private final PnfsHandler _pnfs;
-    private final ChecksumModuleV1 _checksumModule;
+    private final ChecksumModule _checksumModule;
     private final Map<PnfsId, StoreThread> _storePnfsidList   = new HashMap();
     private final Map<PnfsId, FetchThread> _restorePnfsidList = new HashMap();
     private final JobScheduler _fetchQueue;
@@ -167,7 +169,7 @@ public class HsmStorageHandler2
     public HsmStorageHandler2(Repository repository,
                               HsmSet hsmSet,
                               PnfsHandler pnfs,
-                              ChecksumModuleV1 checksumModule)
+                              ChecksumModule checksumModule)
     {
         _repository = repository;
         _hsmSet = hsmSet;
@@ -533,8 +535,7 @@ public class HsmStorageHandler2
             int returnCode;
             Exception excep = null;
             PnfsId pnfsId = getPnfsId();
-            CacheEntry entry = _handle.getEntry();
-            FileAttributes attributes = entry.getFileAttributes();
+            FileAttributes attributes = _handle.getFileAttributes();
 
             try {
                 setThread(Thread.currentThread());
@@ -578,7 +579,7 @@ public class HsmStorageHandler2
                     setThread(null);
                     Thread.interrupted();
                 }
-                _handle.commit(null);
+                _handle.commit();
             } catch (CacheException e) {
                 _log.error(e.toString());
                 returnCode = 1;
@@ -626,92 +627,41 @@ public class HsmStorageHandler2
         private void doChecksum(ReplicaDescriptor handle)
             throws CacheException, InterruptedException
         {
-            /* Return early without opening the entry if we don't need
-             * to.
-             */
-            if (!_checksumModule.getCrcFromHsm() &&
-                !_checksumModule.checkOnRestore()) {
-                return;
-            }
-
-            /* Check the checksum.
-             */
-            CacheEntry entry = handle.getEntry();
-            PnfsId pnfsId = entry.getPnfsId();
-
-            Checksum infoChecksum, fileChecksum;
             try {
-                if (_checksumModule.getCrcFromHsm()) {
-                    infoChecksum = getChecksumFromHsm(handle.getFile());
-                    if (infoChecksum != null) {
-                        _log.info("Storing checksum {} for {}", infoChecksum, pnfsId);
-                        _pnfs.setChecksum(pnfsId, infoChecksum);
-                    }
-                } else {
-                    infoChecksum = null;
+                if (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.GET_CRC_FROM_HSM)) {
+                    readChecksumFromHsm(handle);
                 }
-
-                if (!_checksumModule.checkOnRestore()) {
-                    return;
-                }
-
-                ChecksumFactory factory =
-                    _checksumModule.getDefaultChecksumFactory();
-
-                if (infoChecksum == null) {
-                    infoChecksum = factory.find(_pnfs.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.CHECKSUM)).getChecksums());
-                    if (infoChecksum == null) {
-                        _log.error("No checksum found; checksum not verified after restore.");
-                        return;
-                    }
-                }
-
-                fileChecksum =
-                    factory.computeChecksum(handle.getFile());
+                _checksumModule.enforcePostRestorePolicy(handle);
             } catch (IOException e) {
-                throw new CacheException(1010, "Checksum calculation failed due to I/O error: " + e.getMessage());
-            } catch (CacheException e) {
-                throw new CacheException(1010, "Checksum calculation failed: " + e.getMessage());
-            }
-
-            /* Report failure in case of mismatch.
-             */
-            if (!infoChecksum.equals(fileChecksum)) {
-                _log.debug("Checksum error; expected="
-                           + infoChecksum + ";file=" + fileChecksum);
-                throw new CacheException(1009,
-                                         "Checksum error: expected=" + infoChecksum
-                                         + ";actual=" + fileChecksum);
+                throw new DiskErrorCacheException("Checksum calculation failed due to I/O error: " + e.getMessage(), e);
+            } catch (NoSuchAlgorithmException | CacheException e) {
+                throw new CacheException(1010, "Checksum calculation failed: " + e.getMessage(), e);
             }
         }
 
-        private Checksum getChecksumFromHsm(File file)
-            throws IOException
+        private void readChecksumFromHsm(ReplicaDescriptor handle)
+                throws IOException, CacheException
         {
-            file = new File(file.getCanonicalPath() + ".crcval");
+            File file = new File(handle.getFile().getCanonicalPath() + ".crcval");
             try {
-                String line;
                 if (file.exists()) {
-                    BufferedReader br =
-                        new BufferedReader(new FileReader(file));
                     try {
-                        line = "1:" + br.readLine();
-                    } finally {
-                        try {
-                            br.close();
-                        } catch (IOException e) {
+                        String firstLine = Files.readFirstLine(file, Charsets.US_ASCII);
+                        if (firstLine != null) {
+                            Checksum checksum = Checksum.parseChecksum("1:" + firstLine);
+                            _log.info("Obtained checksum {} for {} from HSM", checksum, getPnfsId());
+                            handle.addChecksums(Collections.singleton(checksum));
                         }
+                    } finally {
                         file.delete();
                     }
-                    return Checksum.parseChecksum(line);
                 }
             } catch (FileNotFoundException e) {
                 /* Should not happen unless somebody else is removing
                  * the file before we got a chance to read it.
                  */
-                throw new RuntimeException("File not found: " + file, e);
+                Throwables.propagate(e);
             }
-            return null;
         }
     }
 
@@ -945,9 +895,9 @@ public class HsmStorageHandler2
                 ReplicaDescriptor handle = _repository.openEntry(pnfsId, flags);
                 FileAttributes fileAttributesForNotification = new FileAttributes();
                 try {
-                    doChecksum(handle);
+                    _checksumModule.enforcePreFlushPolicy(handle);
 
-                    FileAttributes fileAttributes = handle.getEntry().getFileAttributes();
+                    FileAttributes fileAttributes = handle.getFileAttributes();
                     StorageInfo storageInfo = fileAttributes.getStorageInfo().clone();
                     _infoMsg.setStorageInfo(storageInfo);
                     _infoMsg.setFileSize(fileAttributes.getSize());
@@ -1103,26 +1053,6 @@ public class HsmStorageHandler2
                 sendBillingInfo();
                 executeCallbacks(excep);
             }
-        }
-
-        private void doChecksum(ReplicaDescriptor handle)
-            throws CacheException, IOException, InterruptedException
-        {
-            if (!_checksumModule.checkOnFlush()) {
-                return;
-            }
-
-            File file = handle.getFile();
-            ChecksumFactory factory =
-                _checksumModule.getDefaultChecksumFactory();
-            Checksum checksum =
-                factory.computeChecksum(file);
-
-            /* This will compare the checksum to any known value or
-             * store the checksum if it was not already known.
-             */
-            _checksumModule.setMoverChecksums(getPnfsId(), file,
-                                              factory, null, checksum);
         }
 
         private void notifyFlushMessageTarget(FileAttributes fileAttributes)
