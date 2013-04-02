@@ -4254,8 +4254,7 @@ public final class Manager
         private void transferFinished(DoorTransferFinishedMessage finished) throws Exception {
                 boolean weDeleteStoredFileRecord = deleteStoredFileRecord;
                 PnfsId pnfsId = finished.getPnfsId();
-                StorageInfo storageInfo = finished.getStorageInfo();
-                long size = storageInfo.getFileSize();
+                long size = finished.getFileAttributes().getSize();
                 boolean success = finished.getReturnCode() == 0;
                 logger.debug("transferFinished({},{})", pnfsId, success);
                 Connection connection = null;
@@ -4379,14 +4378,14 @@ public final class Manager
                     return;
                 }
                 logger.debug("fileFlushed({})", pnfsId);
-                StorageInfo storageInfo = fileFlushed.getStorageInfo();
-                AccessLatency ac = storageInfo.getAccessLatency();
-                if ( ac != null && ac.equals(AccessLatency.ONLINE)) {
+                FileAttributes fileAttributes = fileFlushed.getFileAttributes();
+                AccessLatency ac = fileAttributes.getAccessLatency();
+                if (ac.equals(AccessLatency.ONLINE)) {
                         logger.debug("File Access latency is ONLINE " +
                                 "fileFlushed does nothing");
                         return;
                 }
-                long size               = storageInfo.getFileSize();
+                long size = fileAttributes.getSize();
                 Connection connection   = null;
                 try {
                         connection = connection_pool.getConnection();

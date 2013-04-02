@@ -942,12 +942,12 @@ public class HsmStorageHandler2
 
                 Set<OpenFlags> flags = Collections.emptySet();
                 ReplicaDescriptor handle = _repository.openEntry(pnfsId, flags);
-                StorageInfo storageInfo;
+                FileAttributes fileAttributesForNotification = new FileAttributes();
                 try {
                     doChecksum(handle);
 
                     FileAttributes fileAttributes = handle.getEntry().getFileAttributes();
-                    storageInfo = fileAttributes.getStorageInfo().clone();
+                    StorageInfo storageInfo = fileAttributes.getStorageInfo().clone();
                     _infoMsg.setStorageInfo(storageInfo);
                     _infoMsg.setFileSize(fileAttributes.getSize());
                     long now = System.currentTimeMillis();
@@ -994,6 +994,11 @@ public class HsmStorageHandler2
                             throw new RuntimeException("Bug detected");
                         }
                     }
+
+                    fileAttributesForNotification.setAccessLatency(storageInfo.getAccessLatency());
+                    fileAttributesForNotification.setRetentionPolicy(storageInfo.getRetentionPolicy());
+                    fileAttributesForNotification.setStorageInfo(storageInfo);
+                    fileAttributesForNotification.setSize(fileAttributes.getSize());
                 } finally {
                     /* Surpress thread interruptions after this point.
                      */
@@ -1005,7 +1010,7 @@ public class HsmStorageHandler2
 
                 while (true) {
                     try {
-                        _pnfs.fileFlushed(pnfsId, storageInfo);
+                        _pnfs.fileFlushed(pnfsId, fileAttributesForNotification);
                         break;
                     } catch (CacheException e) {
                         if (e.getRc() == CacheException.FILE_NOT_FOUND ||
@@ -1051,7 +1056,7 @@ public class HsmStorageHandler2
                     Thread.sleep(120000); // 2 minutes
                 }
 
-                notifyFlushMessageTarget(storageInfo);
+                notifyFlushMessageTarget(fileAttributesForNotification);
 
                 _log.info("File successfully stored to tape");
 
@@ -1119,14 +1124,11 @@ public class HsmStorageHandler2
                                               factory, null, checksum);
         }
 
-        private void notifyFlushMessageTarget(StorageInfo info)
+        private void notifyFlushMessageTarget(FileAttributes fileAttributes)
         {
             try {
                 PoolFileFlushedMessage poolFileFlushedMessage =
-                    new PoolFileFlushedMessage(getCellName(), getPnfsId(), info);
-                /*
-                 * no replays from secondary message targets
-                 */
+                    new PoolFileFlushedMessage(getCellName(), getPnfsId(), fileAttributes);
                 poolFileFlushedMessage.setReplyRequired(false);
                 CellMessage msg =
                     new CellMessage(new CellPath(_flushMessageTarget),

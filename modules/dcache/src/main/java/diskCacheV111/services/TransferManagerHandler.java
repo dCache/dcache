@@ -556,7 +556,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 
 		DoorTransferFinishedMessage finished = doorMessage;
 		if(store && tlog != null) {
-			tlog.middle(finished.getStorageInfo().getFileSize());
+			tlog.middle(finished.getFileAttributes().getSize());
 		}
 		sendSuccessReply();
 	}

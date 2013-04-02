@@ -434,9 +434,9 @@ public class PnfsHandler
        notify(flagMessage);
    }
 
-   public void fileFlushed(PnfsId pnfsId, StorageInfo storageInfo ) throws CacheException {
+   public void fileFlushed(PnfsId pnfsId, FileAttributes fileAttributes) throws CacheException {
 
-	   PoolFileFlushedMessage fileFlushedMessage = new PoolFileFlushedMessage(_poolName, pnfsId, storageInfo);
+	   PoolFileFlushedMessage fileFlushedMessage = new PoolFileFlushedMessage(_poolName, pnfsId, fileAttributes);
 
 	   // throws exception if something goes wrong
 	   pnfsRequest(fileFlushedMessage);

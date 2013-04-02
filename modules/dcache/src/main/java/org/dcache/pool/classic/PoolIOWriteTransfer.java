@@ -172,6 +172,7 @@ public class PoolIOWriteTransfer
             /* Temporary workaround to ensure that the correct size is
              * logged in billing and send back to the door.
              */
+            _fileAttributes.setSize(getFileSize());
             _fileAttributes.getStorageInfo().setFileSize(getFileSize());
         }
     }

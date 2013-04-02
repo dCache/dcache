@@ -442,7 +442,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public final synchronized void finished(DoorTransferFinishedMessage msg)
     {
-        setStorageInfo(msg.getStorageInfo());
+        setFileAttributes(msg.getFileAttributes());
         setProtocolInfo(msg.getProtocolInfo());
         if (msg.getReturnCode() != 0) {
             finished(CacheExceptionFactory.exceptionOf(msg));

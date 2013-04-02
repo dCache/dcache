@@ -4,59 +4,62 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.vehicles.FileAttributes;
+
+/**
+ * Signals the completion of a transfer on a pool.
+ */
 public class DoorTransferFinishedMessage extends Message {
-   private ProtocolInfo _protocol;
-   private StorageInfo  _info;
-   private PnfsId       _pnfsId;
-   private String       _poolName;
-   private String       _ioQueueName;
+   private final ProtocolInfo _protocol;
+   private FileAttributes _fileAttributes;
+   @Deprecated // Can be removed in 2.7
+   private final StorageInfo  _info;
+   private final PnfsId _pnfsId;
+   private final String _poolName;
+   private final String _ioQueueName;
    private static final long serialVersionUID = -7563456962335030196L;
 
-   public DoorTransferFinishedMessage( long id ,
-                                       PnfsId pnfsId ,
-                                       ProtocolInfo protocol ,
-                                       StorageInfo  info          ){
+   public DoorTransferFinishedMessage(long id,
+                                      PnfsId pnfsId,
+                                      ProtocolInfo protocol,
+                                      FileAttributes fileAttributes,
+                                      String poolName,
+                                      String ioQueueName) {
+        setId(id);
+        _protocol = protocol;
+        _fileAttributes = fileAttributes;
+        _info = fileAttributes.getStorageInfo();
+        _pnfsId   = pnfsId;
+        _poolName = poolName;
+        _ioQueueName = ioQueueName;
+   }
 
-        setId( id ) ;
-        _protocol = protocol ;
-        _info     = info ;
-        _pnfsId   = pnfsId ;
+   public String getIoQueueName() {
+       return _ioQueueName;
    }
-   public DoorTransferFinishedMessage( long id ,
-                                       PnfsId pnfsId ,
-                                       ProtocolInfo protocol ,
-                                       StorageInfo  info      ,
-                                       String       poolName    ){
 
-        setId( id ) ;
-        _protocol = protocol ;
-        _info     = info ;
-        _pnfsId   = pnfsId ;
-        _poolName = poolName ;
+   public ProtocolInfo getProtocolInfo() {
+       return _protocol;
    }
-   /*
-   public DoorTransferFinishedMessage( long id , ProtocolInfo info,
-                                       int rc  , String errorMsg     ){
-       setFailed( rc , errorMsg ) ;
-       setId( id ) ;
-       _protocol = info ;
+
+   public FileAttributes getFileAttributes() {
+       if (_fileAttributes == null && _info != null) {
+           _fileAttributes = new FileAttributes();
+           _fileAttributes.setStorageInfo(_info);
+           _fileAttributes.setSize(_info.getFileSize());
+           _fileAttributes.setAccessLatency(_info.getAccessLatency());
+           _fileAttributes.setRetentionPolicy(_info.getRetentionPolicy());
+       }
+       return _fileAttributes;
    }
-   public DoorTransferFinishedMessage( long id , ProtocolInfo info ){
-       setSucceeded() ;
-       setId(id) ;
-       _protocol = info ;
+
+   public PnfsId getPnfsId() {
+       return _pnfsId;
    }
-   */
-   public void setIoQueueName( String ioQueueName ){
-       _ioQueueName = ioQueueName ;
+
+   public String getPoolName() {
+       return _poolName;
    }
-   public String getIoQueueName(){
-       return _ioQueueName ;
-   }
-   public ProtocolInfo getProtocolInfo(){ return _protocol ; }
-   public StorageInfo  getStorageInfo(){ return _info ; }
-   public PnfsId       getPnfsId(){ return _pnfsId ; }
-   public String       getPoolName(){ return _poolName ; }
 }
 
 

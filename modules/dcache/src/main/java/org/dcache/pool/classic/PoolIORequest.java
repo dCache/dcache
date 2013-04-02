@@ -122,9 +122,9 @@ public class PoolIORequest implements IoProcessable {
                 new DoorTransferFinishedMessage(getClientId(),
                 getFileAttributes().getPnfsId(),
                 getProtocolInfo(),
-                getFileAttributes().getStorageInfo(),
-                _poolName);
-        finished.setIoQueueName(_queue);
+                getFileAttributes(),
+                _poolName,
+                _queue);
         if (_errorCode == 0) {
             finished.setSucceeded();
         } else {

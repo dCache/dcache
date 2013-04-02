@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileMetaData;
@@ -54,7 +53,6 @@ import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
-import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CDC;
@@ -1705,7 +1703,7 @@ public class PnfsManagerV3
     {
         try {
             FileAttributes attributesToUpdate = new FileAttributes();
-            attributesToUpdate.setStorageInfo(pnfsMessage.getStorageInfo());
+            attributesToUpdate.setStorageInfo(pnfsMessage.getFileAttributes().getStorageInfo());
             _nameSpaceProvider.setFileAttributes(pnfsMessage.getSubject(), pnfsMessage.getPnfsId(), attributesToUpdate);
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
