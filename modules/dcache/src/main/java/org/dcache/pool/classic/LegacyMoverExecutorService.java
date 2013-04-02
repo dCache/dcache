@@ -1,12 +1,14 @@
 package org.dcache.pool.classic;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.channels.CompletionHandler;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import dmg.cells.nucleus.CDC;
 
@@ -21,30 +23,14 @@ public class LegacyMoverExecutorService implements MoverExecutorService
     private final static String _name =
         LegacyMoverExecutorService.class.getSimpleName();
 
-    private final ExecutorService _executor =
-        Executors.newCachedThreadPool(
-            new ThreadFactory()
-            {
-                private int _counter;
-
-                private ThreadFactory _factory =
-                    Executors.defaultThreadFactory();
-
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = _factory.newThread(r);
-                    t.setName(_name + "-worker-" + ++_counter);
-                    return t;
-                }
-            });
+    private final ListeningExecutorService _executor =
+            MoreExecutors.listeningDecorator(Executors.newCachedThreadPool(
+                    new ThreadFactoryBuilder().setNameFormat(_name + "-worker-%d").build()));
 
     @Override
-    public Cancelable execute(final PoolIORequest request,
-                          final CompletionHandler completionHandler)
+    public ListenableFuture<Void> execute(PoolIORequest request)
     {
-        final MoverTask moverTask = new MoverTask(request, completionHandler);
-        _executor.execute(moverTask);
-        return moverTask;
+        return _executor.submit(new MoverTask(request));
     }
 
     public void shutdown()
@@ -52,62 +38,34 @@ public class LegacyMoverExecutorService implements MoverExecutorService
         _executor.shutdown();
     }
 
-    private static class MoverTask implements Runnable, Cancelable {
-
+    private static class MoverTask implements Callable<Void>
+    {
         private final PoolIORequest _request;
         private final CDC _cdc = new CDC();
-        private final CompletionHandler _completionHandler;
 
-        private Thread _thread;
-        private boolean _needInterruption;
-
-        public MoverTask(PoolIORequest request, CompletionHandler completionHandler) {
+        public MoverTask(PoolIORequest request) {
             _request = request;
-            _completionHandler = completionHandler;
         }
 
         @Override
-        public void run() {
+        public Void call() throws Exception {
             try {
-                setThread();
                 _cdc.restore();
-                try {
-                    _request.getTransfer().transfer();
-                } catch (Throwable e) {
-                    _completionHandler.failed(e, null);
-                    throw e;
-                }
-                _completionHandler.completed(null, null);
+                _request.getTransfer().transfer();
+                return null;
+            } catch (RuntimeException e) {
+                _log.error("Transfer failed due to a bug: {}", e);
+                throw e;
             } catch (Exception e) {
                 _log.error("Transfer failed: {}", e.toString());
+                throw e;
             } catch (Throwable e) {
                 _log.error("Transfer failed:", e);
                 Thread t = Thread.currentThread();
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                throw e;
             } finally {
-                cleanThread();
                 CDC.clear();
-            }
-        }
-
-        private synchronized void setThread() throws InterruptedException {
-            if(_needInterruption) {
-                throw new InterruptedException("Thread interrupted before excecution");
-            }
-
-            _thread = Thread.currentThread();
-        }
-
-        private synchronized void cleanThread() {
-            _thread = null;
-        }
-
-        @Override
-        public synchronized void cancel() {
-            if (_thread != null) {
-                _thread.interrupt();
-            } else {
-                _needInterruption = true;
             }
         }
     }

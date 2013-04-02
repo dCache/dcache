@@ -25,5 +25,5 @@ public interface IoProcessable {
      *
      * @return true if successful, false otherwise
      */
-    public boolean kill();
+    public void kill();
 }

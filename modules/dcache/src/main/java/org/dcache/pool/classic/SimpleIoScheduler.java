@@ -6,7 +6,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,8 +23,6 @@ import diskCacheV111.vehicles.JobInfo;
 
 import dmg.cells.nucleus.CDC;
 
-import org.dcache.pool.FaultAction;
-import org.dcache.pool.FaultEvent;
 import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.FifoPriorityComparator;
 import org.dcache.util.IoPrioritizable;
@@ -285,52 +282,29 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
                     final PoolIORequest request = wrapp.getRequest();
                     final String protocolName = protocolNameOf(request);
-                    request.transfer(_executorServices.getExecutorService(protocolName),
-                        new CompletionHandler<Object,Object>() {
-                        @Override
-                        public void completed(Object result, Object attachment)
-                        {
-                            postProcess();
-                        }
 
-                        @Override
-                        public void failed(Throwable e, Object attachment)
-                        {
-                            int rc;
-                            String msg;
-                            if (e instanceof InterruptedException) {
-                                rc = CacheException.DEFAULT_ERROR_CODE;
-                                msg = "Transfer was killed";
-                            } else if (e instanceof CacheException) {
-                                rc = ((CacheException) e).getRc();
-                                msg = e.getMessage();
-                                if (rc == CacheException.ERROR_IO_DISK) {
-                                    request.getFaultListener().faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, msg, e));
-                                }
-                            } else {
-                                rc = CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
-                                msg = "Transfer failed due to unexpected exception: " + e;
-                            }
-                            request.setTransferStatus(rc, msg);
-                            postProcess();
-                        }
-
-                        private void postProcess() {
-                            _executorServices
-                                    .getPostExecutorService(protocolName)
-                                    .execute(request)
-                                    .addListener(new Runnable()
+                    request.transfer(_executorServices.getExecutorService(protocolName))
+                            .addListener(
+                                    new Runnable()
                                     {
                                         @Override
                                         public void run()
                                         {
-                                            request.setState(IoRequestState.DONE);
-                                            _jobs.remove(wrapp.getId());
-                                            _semaphore.release();
+                                            _executorServices
+                                                    .getPostExecutorService(protocolName)
+                                                    .execute(request)
+                                                    .addListener(new Runnable()
+                                                    {
+                                                        @Override
+                                                        public void run()
+                                                        {
+                                                            request.setState(IoRequestState.DONE);
+                                                            _jobs.remove(wrapp.getId());
+                                                            _semaphore.release();
+                                                        }
+                                                    }, MoreExecutors.sameThreadExecutor());
                                         }
                                     }, MoreExecutors.sameThreadExecutor());
-                        }
-                    });
                 } catch (RuntimeException | Error | InterruptedException e) {
                     _semaphore.release();
                     throw e;

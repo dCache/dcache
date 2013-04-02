@@ -1,11 +1,15 @@
 package org.dcache.pool.classic;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.channels.CompletionHandler;
+import java.util.concurrent.CancellationException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -17,6 +21,8 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
+import org.dcache.pool.FaultAction;
+import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.vehicles.FileAttributes;
 
@@ -42,7 +48,7 @@ public class PoolIORequest implements IoProcessable {
     private final static Logger _log = LoggerFactory.getLogger(PoolIORequest.class);
     private final FaultListener _faultListener;
 
-    private Cancelable _mover;
+    private ListenableFuture<Void> _mover;
     /**
      * Request creation time.
      */
@@ -61,7 +67,6 @@ public class PoolIORequest implements IoProcessable {
     /** transfer status error message */
     private volatile String _errorMessage = "";
 
-    private boolean _canceled;
     private final CellStub _billing;
     private final CellStub _door;
     private final CellAddressCore _pool;
@@ -176,26 +181,54 @@ public class PoolIORequest implements IoProcessable {
     }
 
     @Override
-    public synchronized boolean kill() {
+    public synchronized void kill() {
         _state = CANCELED;
-        _canceled = true;
-
-        if (_mover == null) {
-            return false;
+        if (_mover != null) {
+            _mover.cancel(true);
         }
-
-        _mover.cancel();
-        return true;
     }
 
-    synchronized void transfer(MoverExecutorService moverExecutorService, CompletionHandler<Object,Object> completionHandler) {
-        _startTime = System.currentTimeMillis();
-        if(_canceled) {
-            completionHandler.failed( new InterruptedException("Mover canceled"), null);
-        } else {
-            _state = RUNNING;
-            _mover = moverExecutorService.execute(this, completionHandler);
+    synchronized ListenableFuture<Void> transfer(MoverExecutorService moverExecutorService) {
+        if (_state != QUEUED) {
+            return Futures.immediateFailedFuture(new InterruptedException("Mover canceled"));
         }
+
+        _state = RUNNING;
+        _startTime = System.currentTimeMillis();
+        _mover = moverExecutorService.execute(this);
+        final SettableFuture<Void> future = SettableFuture.create();
+        Futures.addCallback(_mover,
+                new FutureCallback<Void>()
+                {
+                    @Override
+                    public void onSuccess(Void result)
+                    {
+                        future.set(null);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e)
+                    {
+                        int rc;
+                        String msg;
+                        if (e instanceof CancellationException) {
+                            rc = CacheException.DEFAULT_ERROR_CODE;
+                            msg = "Transfer was killed";
+                        } else if (e instanceof CacheException) {
+                            rc = ((CacheException) e).getRc();
+                            msg = e.getMessage();
+                            if (rc == CacheException.ERROR_IO_DISK) {
+                                getFaultListener().faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, msg, e));
+                            }
+                        } else {
+                            rc = CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
+                            msg = "Transfer failed due to unexpected exception: " + e;
+                        }
+                        setTransferStatus(rc, msg);
+                        future.set(null);
+                    }
+                });
+        return future;
     }
 
     void close()

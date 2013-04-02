@@ -1,5 +1,8 @@
 package org.dcache.chimera.nfsv41.mover;
 
+import com.google.common.util.concurrent.AbstractFuture;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.channels.CompletionHandler;
 import java.util.List;
 
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
@@ -17,7 +19,6 @@ import dmg.cells.nucleus.CellEndpoint;
 import org.dcache.cells.CellMessageSender;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
-import org.dcache.pool.classic.Cancelable;
 import org.dcache.pool.classic.MoverExecutorService;
 import org.dcache.pool.classic.PoolIORequest;
 import org.dcache.pool.classic.PoolIOTransfer;
@@ -62,8 +63,7 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
     }
 
     @Override
-    public Cancelable execute(PoolIORequest request, final CompletionHandler completionHandler) {
-
+    public ListenableFuture<Void> execute(PoolIORequest request) {
         try {
             NFS4ProtocolInfo nfs4ProtocolInfo = (NFS4ProtocolInfo) request.getTransfer().getProtocolInfo();
             PoolIOTransfer transfer = request.getTransfer();
@@ -80,22 +80,26 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
             request.sendToDoor(new PoolPassiveIoFileMessage<>(
                     request.getPoolAddress().getCellName(), _localSocketAddresses, stateid));
 
-            return new Cancelable() {
+            /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
+             * message when the file is closed).
+             */
+            return new AbstractFuture<Void>() {
                 @Override
-                public void cancel() {
+                public boolean cancel(boolean mayInterruptIfRunning)
+                {
                     _nfsIO.removeHandler(moverBridge);
                     try {
                         repositoryChannel.close();
                     } catch (IOException e) {
                         _log.error("failed to close RAF", e);
                     }
-                    completionHandler.completed(null, null);
+                    set(null);
+                    return false;
                 }
             };
-        } catch (Throwable e) {
-            completionHandler.failed(e, null);
+        } catch (Exception e) {
+            return Futures.immediateFailedFuture(e);
         }
-        return null;
     }
 
     public void setEnableGss(boolean withGss) {
