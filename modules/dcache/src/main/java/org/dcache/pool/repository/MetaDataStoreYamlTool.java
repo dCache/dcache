@@ -13,6 +13,9 @@ import java.util.Map;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+
 public class MetaDataStoreYamlTool
 {
     private final static Logger _log =
@@ -49,7 +52,7 @@ public class MetaDataStoreYamlTool
         for (PnfsId id: metaStore.list()) {
             try {
                 MetaDataRecord record = metaStore.get(id);
-                StorageInfo info = record.getStorageInfo();
+                FileAttributes attributes = record.getFileAttributes();
 
                 out.format("%s:\n", id);
                 out.format("  state: %s\n", record.getState());
@@ -57,7 +60,8 @@ public class MetaDataStoreYamlTool
                 for (StickyRecord sticky: record.stickyRecords()) {
                     out.format("    %s: %d\n", sticky.owner(), sticky.expire());
                 }
-                if (info != null) {
+                if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
+                    StorageInfo info = attributes.getStorageInfo();
                     out.format("  storageclass: %s\n", info.getStorageClass());
                     out.format("  cacheclass: %s\n", info.getCacheClass());
                     out.format("  bitfileid: %s\n", info.getBitfileId());
@@ -66,13 +70,21 @@ public class MetaDataStoreYamlTool
                         out.format("    - %s\n", location);
                     }
                     out.format("  hsm: %s\n", info.getHsm());
-                    out.format("  filesize: %s\n", info.getFileSize());
+                }
+                if (attributes.isDefined(FileAttribute.SIZE)) {
+                    out.format("  filesize: %s\n", attributes.getSize());
+                }
+                if (attributes.isDefined(FileAttribute.FLAGS)) {
                     out.format("  map:\n");
-                    for (Map.Entry<String,String> entry : info.getMap().entrySet()) {
+                    for (Map.Entry<String,String> entry : attributes.getFlags().entrySet()) {
                         out.format("    %s: %s\n", entry.getKey(), entry.getValue());
                     }
-                    out.format("  retentionpolicy: %s\n", info.getRetentionPolicy());
-                    out.format("  accesslatency: %s\n", info.getAccessLatency());
+                }
+                if (attributes.isDefined(FileAttribute.RETENTION_POLICY)) {
+                    out.format("  retentionpolicy: %s\n", attributes.getRetentionPolicy());
+                }
+                if (attributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
+                    out.format("  accesslatency: %s\n", attributes.getAccessLatency());
                 }
             } catch (Exception e) {
                 error.println("Failed to read " + id + ": " + e.getMessage());

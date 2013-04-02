@@ -43,7 +43,7 @@ public class PoolIoFileMessage extends PoolMessage {
                 EnumSet.of(STORAGEINFO, PNFSID)));
 
        _fileAttributes = fileAttributes;
-       _storageInfo  = fileAttributes.getStorageInfo();
+       _storageInfo  = StorageInfos.extractFrom(fileAttributes);
        _protocolInfo = protocolInfo ;
        _pnfsId       = fileAttributes.getPnfsId();
     }
@@ -106,7 +106,7 @@ public class PoolIoFileMessage extends PoolMessage {
         if (_fileAttributes == null) {
             _fileAttributes = new FileAttributes();
             if (_storageInfo != null) {
-                _fileAttributes.setStorageInfo(_storageInfo);
+                StorageInfos.injectInto(_storageInfo, _fileAttributes);
             }
             _fileAttributes.setPnfsId(_pnfsId);
         }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
@@ -44,7 +45,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
         checkNotNull(stickyRecords);
 
         _fileAttributes = fileAttributes;
-        _storageInfo = fileAttributes.getStorageInfo();
+        _storageInfo = StorageInfos.extractFrom(fileAttributes);
         _state = state;
         _stickyRecords = stickyRecords;
         _computeChecksumOnUpdate = computeChecksumOnUpdate;
@@ -82,7 +83,9 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
         stream.defaultReadObject();
         if (_fileAttributes == null) {
             _fileAttributes = new FileAttributes();
-            _fileAttributes.setStorageInfo(_storageInfo);
+            if (_storageInfo != null) {
+                StorageInfos.injectInto(_storageInfo, _fileAttributes);
+            }
             _fileAttributes.setPnfsId(getPnfsId());
         }
     }

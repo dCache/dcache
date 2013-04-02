@@ -464,15 +464,11 @@ public class CacheRepositoryV5
 
             MetaDataRecord entry = _store.create(fileAttributes.getPnfsId());
             synchronized (entry) {
-                entry.setStorageInfo(fileAttributes.getStorageInfo());
+                entry.setFileAttributes(fileAttributes);
                 setState(entry, transferState);
 
-                return new WriteHandleImpl(this,
-                                           _allocator,
-                                           _pnfs,
-                                           entry,
-                                           targetState,
-                                           stickyRecords);
+                return new WriteHandleImpl(
+                        this, _allocator, _pnfs, entry, targetState, stickyRecords);
             }
         } catch (DuplicateEntryException e) {
             throw new FileInCacheException("Entry already exists: " + fileAttributes.getPnfsId());

@@ -135,7 +135,6 @@ import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
@@ -776,7 +775,7 @@ public abstract class AbstractFtpDoorV1
         public synchronized void checkAndDeriveOffsetAndSize()
             throws FTPCommandException
         {
-            long fileSize = getStorageInfo().getFileSize();
+            long fileSize = getFileAttributes().getSize();
             if (_offset == -1) {
                 _offset = 0;
             }
@@ -1021,9 +1020,8 @@ public abstract class AbstractFtpDoorV1
                     _perfMarkerTask.stop((GFtpProtocolInfo) getProtocolInfo());
                 }
 
-                StorageInfo storageInfo = getStorageInfo();
                 if (_tLog != null) {
-                    _tLog.middle(storageInfo.getFileSize());
+                    _tLog.middle(getFileAttributes().getSize());
                     _tLog.success();
                     _tLog = null;
                 }

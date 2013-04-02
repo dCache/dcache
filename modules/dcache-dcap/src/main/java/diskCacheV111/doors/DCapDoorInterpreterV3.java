@@ -2122,8 +2122,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 if( _isAccessLatencyOverwriteAllowed && _accessLatency != null ) {
                     try {
                         AccessLatency accessLatency = AccessLatency.getAccessLatency(_accessLatency);
-                        _fileAttributes.getStorageInfo().setAccessLatency(accessLatency);
-                        _fileAttributes.getStorageInfo().isSetAccessLatency(true);
+                        _fileAttributes.setAccessLatency(accessLatency);
 
                     }catch(IllegalArgumentException e) { /* bad AccessLatency ignored*/}
                 }
@@ -2131,8 +2130,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 if( _isRetentionPolicyOverwriteAllowed && _retentionPolicy != null ) {
                     try {
                         RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(_retentionPolicy);
-                        _fileAttributes.getStorageInfo().setRetentionPolicy(retentionPolicy);
-                        _fileAttributes.getStorageInfo().isSetRetentionPolicy(true);
+                        _fileAttributes.setRetentionPolicy(retentionPolicy);
 
                     }catch(IllegalArgumentException e) { /* bad RetentionPolicy ignored*/}
                 }
@@ -2384,9 +2382,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                     for( int count = 0 ; count < 10 ; count++  ){
                         try{
-                            long fs = _pnfs.getStorageInfoByPnfsId(_fileAttributes.getPnfsId()).
-                            getStorageInfo().
-                            getFileSize() ;
+                            long fs = _pnfs.getFileAttributes(_fileAttributes.getPnfsId(), EnumSet.of(SIZE)).getSize();
                             _log.info("doorTransferArrived : Size of {}: {}",
                                       _fileAttributes.getPnfsId(), fs);
                             if( fs > 0L ) {

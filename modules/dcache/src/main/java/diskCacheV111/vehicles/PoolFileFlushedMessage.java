@@ -1,5 +1,8 @@
 package diskCacheV111.vehicles;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.vehicles.FileAttributes;
@@ -24,17 +27,23 @@ public class PoolFileFlushedMessage extends PnfsMessage
     }
 
     public FileAttributes getFileAttributes() {
-        if (_fileAttributes == null && _storageInfo != null) {
-            _fileAttributes = new FileAttributes();
-            _fileAttributes.setStorageInfo(_storageInfo);
-            _fileAttributes.setAccessLatency(_storageInfo.getAccessLatency());
-            _fileAttributes.setRetentionPolicy(_storageInfo.getRetentionPolicy());
-            _fileAttributes.setSize(_storageInfo.getFileSize());
-        }
         return _fileAttributes;
     }
 
     public String getPoolName() {
     	return _poolName;
+    }
+
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_fileAttributes == null) {
+            _fileAttributes = new FileAttributes();
+            if (_storageInfo != null) {
+                StorageInfos.injectInto(_storageInfo, _fileAttributes);
+            }
+            _fileAttributes.setPnfsId(getPnfsId());
+        }
     }
 }

@@ -9,6 +9,7 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * A ReplicaStatePolicy which uses the AccessLatency and
@@ -27,10 +28,9 @@ import org.dcache.pool.repository.StickyRecord;
 public class ALRPReplicaStatePolicy implements ReplicaStatePolicy
 {
     @Override
-    public List<StickyRecord> getStickyRecords(StorageInfo info)
+    public List<StickyRecord> getStickyRecords(FileAttributes fileAttributes)
     {
-        AccessLatency al = info.getAccessLatency();
-        if (al != null && al.equals(AccessLatency.ONLINE)) {
+        if (fileAttributes.getAccessLatency().equals(AccessLatency.ONLINE)) {
             return Collections.singletonList(new StickyRecord("system", -1));
         } else {
             return Collections.emptyList();
@@ -38,14 +38,14 @@ public class ALRPReplicaStatePolicy implements ReplicaStatePolicy
     }
 
     @Override
-    public EntryState getTargetState(StorageInfo info)
+    public EntryState getTargetState(FileAttributes fileAttributes)
     {
         // flush to tape only if the file defined as a 'tape
         // file'( RP = Custodial) and the HSM is defined
-        RetentionPolicy rp = info.getRetentionPolicy();
+        StorageInfo info = fileAttributes.getStorageInfo();
         if (info.getKey("overwrite") != null) {
             return EntryState.CACHED;
-        } else if (rp != null && !info.isStored() && rp.equals(RetentionPolicy.CUSTODIAL)) {
+        } else if (!info.isStored() && fileAttributes.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
             return EntryState.PRECIOUS;
         } else {
             return EntryState.CACHED;

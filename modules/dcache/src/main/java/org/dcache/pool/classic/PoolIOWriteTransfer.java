@@ -10,16 +10,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.SyncFailedException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import java.util.List;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.movers.ChecksumMover;
 import org.dcache.pool.movers.IoMode;
@@ -46,30 +42,6 @@ public class PoolIOWriteTransfer
     private final ReplicaDescriptor _handle;
     private final File _file;
     private final ChecksumModuleV1 _checksumModule;
-
-    public static List<StickyRecord> getStickyRecords(StorageInfo info)
-    {
-        AccessLatency al = info.getAccessLatency();
-        if (al != null && al.equals(AccessLatency.ONLINE)) {
-            return Collections.singletonList(new StickyRecord("system", -1));
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-    public static EntryState getTargetState(StorageInfo info)
-    {
-        // flush to tape only if the file defined as a 'tape
-        // file'( RP = Custodial) and the HSM is defined
-        RetentionPolicy rp = info.getRetentionPolicy();
-        if (info.getKey("overwrite") != null) {
-            return EntryState.CACHED;
-        } else if (rp != null && rp.equals(RetentionPolicy.CUSTODIAL)) {
-            return EntryState.PRECIOUS;
-        } else {
-            return EntryState.CACHED;
-        }
-    }
 
     public PoolIOWriteTransfer(FileAttributes fileAttributes,
                                ProtocolInfo protocolInfo,
@@ -173,7 +145,6 @@ public class PoolIOWriteTransfer
              * logged in billing and send back to the door.
              */
             _fileAttributes.setSize(getFileSize());
-            _fileAttributes.getStorageInfo().setFileSize(getFileSize());
         }
     }
 

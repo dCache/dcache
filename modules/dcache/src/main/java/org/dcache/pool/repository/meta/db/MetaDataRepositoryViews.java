@@ -5,13 +5,7 @@ import com.sleepycat.bind.serial.ClassCatalog;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.collections.StoredMap;
 
-import java.io.PrintWriter;
-import java.net.URI;
-import java.util.Map;
-
 import diskCacheV111.vehicles.StorageInfo;
-
-import org.dcache.pool.repository.StickyRecord;
 
 /**
  * MetaDataRepositoryViews encapsulates creation of views into
@@ -48,46 +42,5 @@ class MetaDataRepositoryViews
     public final StoredMap<String, CacheRepositoryEntryState> getStateMap()
     {
         return stateMap;
-    }
-
-    public void toYaml(PrintWriter out, PrintWriter error)
-    {
-        for (String id : getStateMap().keySet()) {
-            try {
-                CacheRepositoryEntryState state =
-                        getStateMap().get(id);
-                StorageInfo info =
-                        getStorageInfoMap().get(id);
-
-                out.format("%s:\n", id);
-                out.format("  state: %s\n", state.toString());
-                out.format("  sticky:\n");
-                for (StickyRecord record : state.stickyRecords()) {
-                    out.format("    %s: %d\n", record.owner(), record.expire());
-                }
-                if (info != null) {
-                    out.format("  storageclass: %s\n", info.getStorageClass());
-                    out.format("  cacheclass: %s\n", info.getCacheClass());
-                    out.format("  bitfileid: %s\n", info.getBitfileId());
-                    out.format("  locations:\n");
-                    for (URI location : info.locations()) {
-                        out.format("    - %s\n", location);
-                    }
-                    out.format("  hsm: %s\n", info.getHsm());
-                    out.format("  filesize: %s\n", info.getFileSize());
-                    out.format("  map:\n");
-                    for (Map.Entry<String,String> entry : info.getMap().entrySet()) {
-                        out.format("    %s: %s\n", entry.getKey(), entry
-                                .getValue());
-                    }
-                    out.format("  retentionpolicy: %s\n", info.getRetentionPolicy());
-                    out.format("  accesslatency: %s\n", info.getAccessLatency());
-                }
-            } catch (Throwable e) {
-                error.println("Failed to read " + id + ": " + e.getMessage());
-            }
-        }
-        out.flush();
-        error.flush();
     }
 }

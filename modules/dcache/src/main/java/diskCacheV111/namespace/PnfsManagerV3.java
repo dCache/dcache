@@ -500,7 +500,8 @@ public class PnfsManagerV3
 
             FileAttributes attributes =
                 _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
-                                                     EnumSet.of(FileAttribute.STORAGEINFO));
+                        EnumSet.of(FileAttribute.STORAGEINFO, FileAttribute.ACCESS_LATENCY,
+                                FileAttribute.RETENTION_POLICY,  FileAttribute.SIZE));
 
             StorageInfo info = attributes.getStorageInfo();
             if(v) {

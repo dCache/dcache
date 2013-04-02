@@ -730,9 +730,9 @@ public class PoolV4
             PoolIOTransfer transfer;
             if (message instanceof PoolAcceptFileMessage) {
                 List<StickyRecord> stickyRecords =
-                    _replicaStatePolicy.getStickyRecords(si);
+                    _replicaStatePolicy.getStickyRecords(attributes);
                 EntryState targetState =
-                    _replicaStatePolicy.getTargetState(si);
+                    _replicaStatePolicy.getTargetState(attributes);
                 transfer =
                     new PoolIOWriteTransfer(attributes, pi, subject, mover, _repository,
                                             _checksumModule,
@@ -902,7 +902,8 @@ public class PoolV4
             throws NoRouteToCellException
         {
             PnfsId pnfsId = entry.getPnfsId();
-            StorageInfo storageInfo = entry.getFileAttributes().getStorageInfo().clone();
+            FileAttributes fileAttributes = entry.getFileAttributes();
+            StorageInfo storageInfo = fileAttributes.getStorageInfo().clone();
 
             storageInfo.setKey("replication.source", source);
 
@@ -910,7 +911,7 @@ public class PoolV4
             attributes.setPnfsId(pnfsId);
             attributes.setStorageInfo(storageInfo);
             attributes.setLocations(Collections.singleton(_poolName));
-            attributes.setSize(storageInfo.getFileSize());
+            attributes.setSize(fileAttributes.getSize());
 
             PoolMgrReplicateFileMsg req =
                 new PoolMgrReplicateFileMsg(attributes,
@@ -1178,11 +1179,8 @@ public class PoolV4
         }
 
         FileAttributes fileAttributes = msg.getFileAttributes();
-        PnfsId pnfsId = fileAttributes.getPnfsId();
-        StorageInfo storageInfo = fileAttributes.getStorageInfo();
-        _log.info("Pool " + _poolName + " asked to fetch file "
-                  + pnfsId + " (hsm=" + storageInfo.getHsm() + ")");
-
+        _log.info("Pool {} asked to fetch file {} (hsm={})",
+                _poolName, fileAttributes.getPnfsId(), fileAttributes.getStorageInfo().getHsm());
         try {
             ReplyToPoolFetch reply = new ReplyToPoolFetch(msg);
             _storageHandler.fetch(fileAttributes, reply);

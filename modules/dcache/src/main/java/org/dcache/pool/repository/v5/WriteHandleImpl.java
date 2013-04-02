@@ -1,16 +1,16 @@
 package org.dcache.pool.repository.v5;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
@@ -19,6 +19,9 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.collect.Iterables.concat;
+import static java.util.Collections.singleton;
 
 class WriteHandleImpl implements ReplicaDescriptor
 {
@@ -205,17 +208,22 @@ class WriteHandleImpl implements ReplicaDescriptor
      * Compare and update checksum. For now we only store the checksum
      * locally. TODO: Compare and update in PNFS.
      */
-    private void setChecksum(StorageInfo info, Checksum checksum)
+    private void storeChecksum(FileAttributes fileAttributes, Checksum checksum)
         throws CacheException
     {
-        String flags = info.getKey("flag-c");
-        if (flags == null) {
-            info.setKey("flag-c", checksum.toString());
-            _entry.setStorageInfo(info);
-        } else if (!checksum.equals(Checksum.parseChecksum(flags))) {
-            throw new CacheException(String.format("Checksum error: file=%s, expected=%s",
-                                                   checksum, flags));
+        if (fileAttributes.isDefined(FileAttribute.CHECKSUM)) {
+            for (Checksum existingChecksum : fileAttributes.getChecksums()) {
+                if (checksum.getType() == existingChecksum.getType() && !checksum.equals(existingChecksum)) {
+                    throw new CacheException(String.format("Checksum error: file=%s, expected=%s",
+                            checksum, existingChecksum));
+                }
+            }
+            fileAttributes.setChecksums(Sets.newHashSet(concat(fileAttributes
+                    .getChecksums(), singleton(checksum))));
+        } else {
+            fileAttributes.setChecksums(Sets.newHashSet(checksum));
         }
+        _entry.setFileAttributes(fileAttributes);
     }
 
     /**
@@ -225,14 +233,14 @@ class WriteHandleImpl implements ReplicaDescriptor
      * another pool, then update the size in the storage info and in
      * PNFS.  Otherwise fail the operation if the file size is wrong.
      */
-    private void setFileSize(StorageInfo info, long length)
+    private void storeFileSize(FileAttributes fileAttributes, long length)
         throws CacheException
     {
         if (_initialState == EntryState.FROM_CLIENT &&
-            info.getFileSize() == 0) {
-            info.setFileSize(length);
-            _entry.setStorageInfo(info);
-        } else if (info.getFileSize() != length) {
+            (fileAttributes.isUndefined(FileAttribute.SIZE) || fileAttributes.getSize() == 0)) {
+            fileAttributes.setSize(length);
+            _entry.setFileAttributes(fileAttributes);
+        } else if (fileAttributes.getSize() != length) {
             throw new CacheException("File does not have expected length");
         }
     }
@@ -243,7 +251,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         _pnfs.addCacheLocation(_entry.getPnfsId());
     }
 
-    private void setFileAttributes(FileAttributes attr)
+    private void registerFileAttributes(FileAttributes attr)
             throws CacheException
     {
         _pnfs.setFileAttributes(_entry.getPnfsId(), attr);
@@ -284,27 +292,20 @@ class WriteHandleImpl implements ReplicaDescriptor
             long length = getFile().length();
             adjustReservation(length);
 
-            StorageInfo info = _entry.getStorageInfo();
-            setFileSize(info, length);
+            FileAttributes fileAttributes = _entry.getFileAttributes();
+            storeFileSize(fileAttributes, length);
             if (checksum != null) {
-                setChecksum(info, checksum);
+                storeChecksum(fileAttributes, checksum);
             }
 
-            FileAttributes fileAttributes = new FileAttributes();
+            FileAttributes attributesToUpdate = new FileAttributes();
             if(_initialState == EntryState.FROM_CLIENT) {
-                fileAttributes.setAccessLatency(info.getAccessLatency());
-                fileAttributes.setRetentionPolicy(info.getRetentionPolicy());
-                fileAttributes.setSize(length);
+                attributesToUpdate.setAccessLatency(fileAttributes.getAccessLatency());
+                attributesToUpdate.setRetentionPolicy(fileAttributes.getRetentionPolicy());
+                attributesToUpdate.setSize(length);
             }
-
-            fileAttributes.setLocations(Collections.singleton(_repository.getPoolName()));
-
-            /*
-             * Update file size, checksum, location, access_latency and
-             * retention_policy with in namespace (pnfs or chimera).
-             */
-            setFileAttributes(fileAttributes);
-
+            attributesToUpdate.setLocations(singleton(_repository.getPoolName()));
+            registerFileAttributes(attributesToUpdate);
 
             setToTargetState();
 

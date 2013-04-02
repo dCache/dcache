@@ -40,22 +40,12 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
             EnstoreStorageInfo parentStorageInfo = (EnstoreStorageInfo) getDirStorageInfo(inode);
             if (locations.isEmpty()) {
                 info = parentStorageInfo;
-                AccessLatency al = inode.getFs().getAccessLatency(inode);
-                if(al != null) {
-                    info.setAccessLatency(AccessLatency.getAccessLatency(al.getId()));
-                }
-                RetentionPolicy rp = inode.getFs().getRetentionPolicy(inode);
-                if( rp != null ) {
-                    info.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp.getId()));
-                }
             }
             else {
                 InodeStorageInformation inodeStorageInfo = inode.getFs().getStorageInfo(inode);
                 info = new EnstoreStorageInfo(parentStorageInfo.getStorageGroup(),
                                               parentStorageInfo.getFileFamily());
                 info.setIsNew(false);
-                info.setAccessLatency(inodeStorageInfo.accessLatency());
-                info.setRetentionPolicy(inodeStorageInfo.retentionPolicy());
                 for(StorageLocatable location: locations) {
                     if( location.isOnline() ) {
                         try {
@@ -88,7 +78,6 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                 }
             }
             stat = inode.stat();
-            info.setFileSize(stat.getSize());
             info.setIsNew((stat.getSize() == 0) && (!level2.exists()));
         }
         catch (ChimeraFsException e) {
@@ -125,31 +114,6 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
             String ff = (family==null||family.length == 0)||(ff=family[0].trim()).equals("") ? "none" : ff;
             EnstoreStorageInfo info = new EnstoreStorageInfo(sg,ff);
             info.addKeys(hash);
-            String[] accessLatency   = getTag(dirInode, "AccessLatency");
-            String[] retentionPolicy = getTag(dirInode, "RetentionPolicy");
-            if(accessLatency != null) {
-                try {
-                    info.setAccessLatency(AccessLatency.getAccessLatency(accessLatency[0].trim()));
-                    info.isSetAccessLatency(true);
-                }
-                catch(IllegalArgumentException iae) {
-                }
-            }
-            else{
-                info.setAccessLatency(getDefaultAccessLatency());
-            }
-
-            if(retentionPolicy != null) {
-                try {
-                    info.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim()));
-                    info.isSetRetentionPolicy(true);
-                }
-                catch(IllegalArgumentException iae) {
-                }
-            }
-            else{
-                info.setRetentionPolicy(getDefaultRetentionPolicy());
-            }
             return info;
         }
         catch (IOException e) {

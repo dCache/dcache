@@ -150,6 +150,11 @@ public class FileAttributes implements Serializable {
         _definedAttributes.add(attribute);
     }
 
+    public boolean isUndefined(FileAttribute attribute)
+    {
+        return !_definedAttributes.contains(attribute);
+    }
+
     public boolean isDefined(FileAttribute attribute)
     {
         return _definedAttributes.contains(attribute);

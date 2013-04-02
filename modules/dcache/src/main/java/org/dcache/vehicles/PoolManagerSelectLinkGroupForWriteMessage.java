@@ -5,7 +5,11 @@ import java.util.List;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.namespace.FileAttribute;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Message to project a set of link groups to the link groups capable
@@ -27,21 +31,27 @@ public class PoolManagerSelectLinkGroupForWriteMessage extends Message
 {
     private static final long serialVersionUID = -5329660627613167395L;
     private PnfsId _pnfsId;
-    private StorageInfo _storageInfo;
+    private FileAttributes _fileAttributes;
     private ProtocolInfo _protocolInfo;
     private long _fileSize;
     private String _pnfsPath;
     private List<String> _linkGroups;
 
     public PoolManagerSelectLinkGroupForWriteMessage(PnfsId pnfsId,
-                                                     StorageInfo storageInfo,
+                                                     FileAttributes fileAttributes,
                                                      ProtocolInfo protocolInfo,
                                                      long fileSize)
     {
-        _pnfsId = pnfsId;
-        _storageInfo = storageInfo;
-        _protocolInfo = protocolInfo;
+        _pnfsId = checkNotNull(pnfsId);
+        _fileAttributes = checkNotNull(fileAttributes);
+        _protocolInfo = checkNotNull(protocolInfo);
+        checkArgument(fileAttributes.isDefined(FileAttribute.STORAGEINFO));
         _fileSize = fileSize;
+    }
+
+    public PnfsId getPnfsId()
+    {
+        return _pnfsId;
     }
 
     public long getFileSize()
@@ -49,39 +59,14 @@ public class PoolManagerSelectLinkGroupForWriteMessage extends Message
         return _fileSize;
     }
 
-    public void setFileSize(long fileSize)
+    public FileAttributes getFileAttributes()
     {
-        _fileSize = fileSize;
-    }
-
-    public StorageInfo getStorageInfo()
-    {
-        return _storageInfo;
-    }
-
-    public void setStorageInfo(StorageInfo storageInfo)
-    {
-        _storageInfo = storageInfo;
+        return _fileAttributes;
     }
 
     public ProtocolInfo getProtocolInfo()
     {
         return _protocolInfo;
-    }
-
-    public void setProtocolInfo(ProtocolInfo protocolInfo)
-    {
-        _protocolInfo = protocolInfo;
-    }
-
-    public String getPnfsPath()
-    {
-        return _pnfsPath;
-    }
-
-    public void setPnfsPath(String pnfsPath)
-    {
-        _pnfsPath = pnfsPath;
     }
 
     public List<String> getLinkGroups()

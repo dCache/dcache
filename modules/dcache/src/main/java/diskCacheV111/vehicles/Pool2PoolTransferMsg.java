@@ -45,7 +45,7 @@ public class Pool2PoolTransferMsg extends PoolMessage {
         _fileAttributes = fileAttributes;
         _pnfsId      = fileAttributes.getPnfsId();
         if (fileAttributes.isDefined(STORAGEINFO)) {
-            _storageInfo = fileAttributes.getStorageInfo();
+            _storageInfo = StorageInfos.extractFrom(fileAttributes);
         }
         _destinationPoolName = destinationPoolName ;
         setReplyRequired(true);
@@ -84,7 +84,9 @@ public class Pool2PoolTransferMsg extends PoolMessage {
         stream.defaultReadObject();
         if (_fileAttributes == null) {
             _fileAttributes = new FileAttributes();
-            _fileAttributes.setStorageInfo(_storageInfo);
+            if (_storageInfo != null) {
+                StorageInfos.injectInto(_storageInfo, _fileAttributes);
+            }
             _fileAttributes.setPnfsId(_pnfsId);
         }
     }

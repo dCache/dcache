@@ -46,6 +46,7 @@ import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -257,7 +258,7 @@ public class HsmStorageHandler2
                          HsmSet.HsmInfo hsm, String direction)
     {
         PnfsId pnfsId = fileAttributes.getPnfsId();
-        StorageInfo storageInfo = fileAttributes.getStorageInfo();
+        StorageInfo storageInfo = StorageInfos.extractFrom(fileAttributes);
 
         String hsmCommand = hsm.getAttribute("command");
         if (hsmCommand == null) {
@@ -995,8 +996,8 @@ public class HsmStorageHandler2
                         }
                     }
 
-                    fileAttributesForNotification.setAccessLatency(storageInfo.getAccessLatency());
-                    fileAttributesForNotification.setRetentionPolicy(storageInfo.getRetentionPolicy());
+                    fileAttributesForNotification.setAccessLatency(fileAttributes.getAccessLatency());
+                    fileAttributesForNotification.setRetentionPolicy(fileAttributes.getRetentionPolicy());
                     fileAttributesForNotification.setStorageInfo(storageInfo);
                     fileAttributesForNotification.setSize(fileAttributes.getSize());
                 } finally {

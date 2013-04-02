@@ -16,6 +16,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
@@ -62,7 +63,7 @@ public class ConsistentStoreTest
     {
         StorageInfo info = new OSMStorageInfo("h1", "rawd");
         info.addLocation(new URI("osm://mystore/?store=mystore&group=mygroup&bdid=1"));
-        info.setFileSize(size);
+        info.setLegacySize(size);
         return info;
     }
 
@@ -72,6 +73,9 @@ public class ConsistentStoreTest
         PnfsGetStorageInfoMessage message =
             new PnfsGetStorageInfoMessage(pnfsId);
         FileAttributes attributes = new FileAttributes();
+        attributes.setSize(info.getLegacySize());
+        attributes.setAccessLatency(info.getLegacyAccessLatency());
+        attributes.setRetentionPolicy(info.getLegacyRetentionPolicy());
         attributes.setStorageInfo(info);
         message.setFileAttributes(attributes);
         return message;
@@ -89,7 +93,9 @@ public class ConsistentStoreTest
     {
         MetaDataRecord entry = _metaDataStore.create(pnfsId);
         entry.setState(state);
-        entry.setStorageInfo(info);
+        FileAttributes attributes = StorageInfos.injectInto(info, new FileAttributes());
+        attributes.setPnfsId(pnfsId);
+        entry.setFileAttributes(attributes);
     }
 
     @Test
@@ -115,7 +121,7 @@ public class ConsistentStoreTest
         assertThat(record.getState(), is(EntryState.BROKEN));
 
         // and the storage info size is unaltered
-        assertThat(record.getStorageInfo().getFileSize(), is(20L));
+        assertThat(record.getFileAttributes().getSize(), is(20L));
 
         // and no attributes are updated in the name space
         verify(_pnfs, never())
@@ -143,7 +149,7 @@ public class ConsistentStoreTest
         MetaDataRecord record = _consistentStore.get(PNFSID);
 
         // then the correct size is set in storage info
-        assertThat(_metaDataStore.get(PNFSID).getStorageInfo().getFileSize(),
+        assertThat(_metaDataStore.get(PNFSID).getFileAttributes().getSize(),
                    is(17L));
 
         // and the correct file size and location is registered in
@@ -242,7 +248,7 @@ public class ConsistentStoreTest
         MetaDataRecord record = _consistentStore.get(PNFSID);
 
         // then the correct size is set in storage info
-        assertThat(_metaDataStore.get(PNFSID).getStorageInfo().getFileSize(),
+        assertThat(_metaDataStore.get(PNFSID).getFileAttributes().getSize(),
                 is(17L));
 
         // and the correct file size and location is registered in

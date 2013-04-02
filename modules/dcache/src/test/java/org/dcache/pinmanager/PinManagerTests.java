@@ -99,6 +99,8 @@ public class PinManagerTests
         // Required attributes, but the values are not relevant
         // when pool manager and pool are stubbed out.
         attributes.setSize(0L);
+        attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
+        attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         return attributes;
     }
 

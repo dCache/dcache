@@ -2,6 +2,9 @@
 
 package diskCacheV111.vehicles;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.vehicles.FileAttributes;
@@ -25,13 +28,13 @@ public class DoorTransferFinishedMessage extends Message {
                                       FileAttributes fileAttributes,
                                       String poolName,
                                       String ioQueueName) {
-        setId(id);
-        _protocol = protocol;
-        _fileAttributes = fileAttributes;
-        _info = fileAttributes.getStorageInfo();
-        _pnfsId   = pnfsId;
-        _poolName = poolName;
-        _ioQueueName = ioQueueName;
+       setId(id);
+       _protocol = protocol;
+       _fileAttributes = fileAttributes;
+       _info = StorageInfos.extractFrom(fileAttributes);
+       _pnfsId   = pnfsId;
+       _poolName = poolName;
+       _ioQueueName = ioQueueName;
    }
 
    public String getIoQueueName() {
@@ -43,13 +46,6 @@ public class DoorTransferFinishedMessage extends Message {
    }
 
    public FileAttributes getFileAttributes() {
-       if (_fileAttributes == null && _info != null) {
-           _fileAttributes = new FileAttributes();
-           _fileAttributes.setStorageInfo(_info);
-           _fileAttributes.setSize(_info.getFileSize());
-           _fileAttributes.setAccessLatency(_info.getAccessLatency());
-           _fileAttributes.setRetentionPolicy(_info.getRetentionPolicy());
-       }
        return _fileAttributes;
    }
 
@@ -60,6 +56,20 @@ public class DoorTransferFinishedMessage extends Message {
    public String getPoolName() {
        return _poolName;
    }
+
+    // Can be removed in 2.7
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_fileAttributes == null) {
+            _fileAttributes = new FileAttributes();
+            if (_info != null) {
+                StorageInfos.injectInto(_info, _fileAttributes);
+            }
+            _fileAttributes.setPnfsId(_pnfsId);
+        }
+    }
 }
 
 

@@ -5,7 +5,8 @@ import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * Implementations provide access to meta data for replicas.
@@ -41,11 +42,9 @@ public interface MetaDataRecord
      */
     public long getSize();
 
-    public void setStorageInfo(StorageInfo storageInfo)
-        throws CacheException;
+    public void setFileAttributes(FileAttributes attributes) throws CacheException;
 
-    public StorageInfo getStorageInfo()
-            ;
+    public FileAttributes getFileAttributes();
 
     public void setState(EntryState state)
         throws CacheException;

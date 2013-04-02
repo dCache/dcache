@@ -1,5 +1,8 @@
 package org.dcache.chimera.namespace;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.CharArrayReader;
 import java.io.IOException;
@@ -23,6 +26,9 @@ import org.dcache.chimera.store.InodeStorageInformation;
 
 public abstract class ChimeraHsmStorageInfoExtractor implements
        ChimeraStorageInfoExtractable {
+
+    private final static Logger LOGGER =
+            LoggerFactory.getLogger(ChimeraHsmStorageInfoExtractor.class);
 
     /**
      * default access latency for newly created files
@@ -50,6 +56,82 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         return _defaultRetentionPolicy;
     }
 
+    @Override
+    public AccessLatency getAccessLatency(FsInode inode) throws CacheException
+    {
+        try {
+            if( !inode.exists() ) {
+                throw new FileNotFoundCacheException(inode.toString() + " does not exist");
+            }
+
+            FsInode dirInode;
+            if (inode.isDirectory()) {
+                dirInode = inode;
+            } else {
+                AccessLatency al = inode.getFs().getAccessLatency(inode);
+                if (al != null) {
+                    return AccessLatency.getAccessLatency(al.getId());
+                }
+                dirInode = inode.getParent();
+            }
+
+            String[] accessLatency = getTag(dirInode, "AccessLatency");
+            if (accessLatency != null) {
+                try {
+                    return AccessLatency.getAccessLatency(accessLatency[0].trim());
+                } catch (IllegalArgumentException e) {
+                    LOGGER.error("Badly formated AccessLatency tag in {}: {}", dirInode, e.getMessage());
+                }
+            }
+
+            return getDefaultAccessLatency();
+        }catch(FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage(), e);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to obtain AccessLatency: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new CacheException(37, "Failed to obtain AccessLatency: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public RetentionPolicy getRetentionPolicy(FsInode inode) throws CacheException
+    {
+        try {
+            if( !inode.exists() ) {
+                throw new FileNotFoundCacheException(inode.toString() + " does not exists");
+            }
+
+            FsInode dirInode;
+            if (inode.isDirectory()) {
+                dirInode = inode;
+            } else {
+                RetentionPolicy rp = inode.getFs().getRetentionPolicy(inode);
+                if (rp != null) {
+                    return RetentionPolicy.getRetentionPolicy(rp.getId());
+                }
+                dirInode = inode.getParent();
+            }
+
+            String[] retentionPolicy = getTag(dirInode, "RetentionPolicy");
+            if (retentionPolicy != null) {
+                try {
+                    return RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim());
+                } catch (IllegalArgumentException e) {
+                    LOGGER.error("Badly formated RetentionPolicy tag in {}: {}", dirInode, e.getMessage());
+                }
+            }
+
+            return getDefaultRetentionPolicy();
+        }catch(FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage(), e);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to obtain RetentionPolicy: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new CacheException(37, "Failed to obtain RetentionPolicy: " + e.getMessage(), e);
+        }
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -63,7 +145,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
 
         try {
             if( !inode.exists() ) {
-                throw new FileNotFoundCacheException(inode.toString() + " does not exists");
+                throw new FileNotFoundCacheException(inode.toString() + " does not exist");
             }
         } catch (ChimeraFsException e) {
             throw new CacheException(e.getMessage());
@@ -117,17 +199,6 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     public void setStorageInfo(FsInode inode, StorageInfo dCacheStorageInfo) throws CacheException {
 
         try {
-
-            if( dCacheStorageInfo.isSetAccessLatency() ) {
-                AccessLatency accessLatency = dCacheStorageInfo.getAccessLatency();
-                inode.getFs().setAccessLatency(inode, accessLatency);
-            }
-
-            if( dCacheStorageInfo.isSetRetentionPolicy() ) {
-                RetentionPolicy retentionPolicy = dCacheStorageInfo.getRetentionPolicy();
-                inode.getFs().setRetentionPolicy(inode, retentionPolicy);
-            }
-
             if(dCacheStorageInfo.isSetAddLocation() ) {
                 List<URI> locationURIs = dCacheStorageInfo.locations();
 

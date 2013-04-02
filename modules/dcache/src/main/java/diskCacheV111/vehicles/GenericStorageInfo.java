@@ -25,7 +25,9 @@ public class GenericStorageInfo
      * to simulate the 'classic' behavior : new files go to tape and, after
      * flushing, removed by sweeper if space needed.
      */
+    @Deprecated
     private AccessLatency _accessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
+    @Deprecated
     private RetentionPolicy _retentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
 
     private HashMap<String, String> _keyHash = new HashMap<>();
@@ -33,8 +35,6 @@ public class GenericStorageInfo
     private boolean _setHsm;
     private boolean _setStorageClass;
     private boolean _setBitFileId;
-    private boolean _setRetentionPolicy;
-    private boolean _setAccessLatency;
     private boolean _setLocation;
 
     private boolean _isNew = true;
@@ -42,6 +42,7 @@ public class GenericStorageInfo
 
     private String _hsm;
     private String _cacheClass;
+    @Deprecated
     private long _fileSize;
     private String _storageClass;
 
@@ -68,11 +69,6 @@ public class GenericStorageInfo
     }
 
     @Override
-    public AccessLatency getAccessLatency() {
-        return _accessLatency;
-    }
-
-    @Override
     @Deprecated
     public String getBitfileId() {
         return _bitfileId == null ? "<Unknown>" : _bitfileId;
@@ -81,11 +77,6 @@ public class GenericStorageInfo
     @Override
     public String getCacheClass() {
         return _cacheClass;
-    }
-
-    @Override
-    public long getFileSize() {
-        return _fileSize;
     }
 
     @Override
@@ -106,11 +97,6 @@ public class GenericStorageInfo
     }
 
     @Override
-    public RetentionPolicy getRetentionPolicy() {
-        return _retentionPolicy;
-    }
-
-    @Override
     public String getStorageClass() {
         return _storageClass;
     }
@@ -118,16 +104,6 @@ public class GenericStorageInfo
     @Override
     public boolean isCreatedOnly() {
         return _isNew;
-    }
-
-    @Override
-    public boolean isSetAccessLatency() {
-        return _setAccessLatency;
-    }
-
-    @Override
-    public void isSetAccessLatency(boolean isSet) {
-        _setAccessLatency = isSet;
     }
 
     @Override
@@ -168,16 +144,6 @@ public class GenericStorageInfo
     }
 
     @Override
-    public boolean isSetRetentionPolicy() {
-        return _setRetentionPolicy;
-    }
-
-    @Override
-    public void isSetRetentionPolicy(boolean isSet) {
-        _setRetentionPolicy = isSet;
-    }
-
-    @Override
     public boolean isSetStorageClass() {
         return _setStorageClass;
     }
@@ -206,20 +172,9 @@ public class GenericStorageInfo
     }
 
     @Override
-    public void setAccessLatency(AccessLatency accessLatency) {
-        _accessLatency = accessLatency;
-
-    }
-
-    @Override
     @Deprecated
     public void setBitfileId(String bitfileId) {
         _bitfileId = bitfileId;
-    }
-
-    @Override
-    public void setFileSize(long fileSize) {
-        _fileSize = fileSize;
     }
 
     @Override
@@ -243,11 +198,6 @@ public class GenericStorageInfo
     }
 
     @Override
-    public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
-        _retentionPolicy = retentionPolicy;
-    }
-
-    @Override
     public void setStorageClass(String newStorageClass) {
         _storageClass = newStorageClass;
     }
@@ -266,10 +216,10 @@ public class GenericStorageInfo
         String sc = getStorageClass();
         String cc = getCacheClass();
         String hsm = getHsm();
-        AccessLatency ac = getAccessLatency();
-        RetentionPolicy rp = getRetentionPolicy();
+        AccessLatency ac = getLegacyAccessLatency();
+        RetentionPolicy rp = getLegacyRetentionPolicy();
         StringBuilder sb = new StringBuilder();
-        sb.append("size=").append(getFileSize()).append(";new=").append(
+        sb.append("size=").append(getLegacySize()).append(";new=").append(
                 isCreatedOnly()).append(";stored=").append(isStored()).append(
                 ";sClass=").append(sc == null ? "-" : sc).append(";cClass=")
                 .append(cc == null ? "-" : cc).append(";hsm=").append(
@@ -300,10 +250,10 @@ public class GenericStorageInfo
     public int hashCode() {
         Set<URI> ourLocations = new HashSet<>( locations());
 
-        return getAccessLatency().hashCode() ^
-        getRetentionPolicy().hashCode() ^
+        return getLegacyAccessLatency().hashCode() ^
+        getLegacyRetentionPolicy().hashCode() ^
         ourLocations.hashCode() ^
-        (int) getFileSize() ^
+        (int) getLegacySize() ^
         getStorageClass().hashCode() ^
         (isStored() ? 1 << 0 : 0) ^
         (isCreatedOnly() ? 1 << 1 : 0);
@@ -322,10 +272,10 @@ public class GenericStorageInfo
 
         GenericStorageInfo other = (GenericStorageInfo)o;
 
-        if ( !other.getAccessLatency().equals( this.getAccessLatency()) ) {
+        if ( !other.getLegacyAccessLatency().equals( this.getLegacyAccessLatency()) ) {
             return false;
         }
-        if ( !other.getRetentionPolicy().equals( this.getRetentionPolicy()) ) {
+        if ( !other.getLegacyRetentionPolicy().equals( this.getLegacyRetentionPolicy()) ) {
             return false;
         }
 
@@ -380,7 +330,7 @@ public class GenericStorageInfo
             return false;
         }
 
-        if( other.getFileSize() != this.getFileSize() ) {
+        if( other.getLegacySize() != this.getLegacySize() ) {
             return false;
         }
         if( !other.getStorageClass().equals(this.getStorageClass())) {
@@ -399,9 +349,8 @@ public class GenericStorageInfo
 
 
     /**
-     * pre 1.8 read problems
-     * @return
-     * @Since 1.8
+     * Allow pre 1.8 storage info to be read. Allows old persistent storage info
+     * objects on pools to be read.
      */
     Object readResolve() {
 
@@ -464,4 +413,37 @@ public class GenericStorageInfo
         }
         return si;
     }
+
+    @Override
+    public void setLegacyAccessLatency(AccessLatency al) {
+        _accessLatency = al;
+    }
+
+    @Override
+    public AccessLatency getLegacyAccessLatency()
+    {
+        return _accessLatency;
+    }
+
+    @Override
+    public void setLegacyRetentionPolicy(RetentionPolicy rp) {
+        _retentionPolicy = rp;
+    }
+
+    @Override
+    public RetentionPolicy getLegacyRetentionPolicy()
+    {
+        return _retentionPolicy;
+    }
+
+    @Override
+    public long getLegacySize() {
+        return _fileSize;
+    }
+
+    @Override
+    public void setLegacySize(long fileSize) {
+        _fileSize = fileSize;
+    }
+
 }

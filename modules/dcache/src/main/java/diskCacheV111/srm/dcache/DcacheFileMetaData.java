@@ -213,37 +213,36 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
                 size = attributes.getSize();
                 break;
 
-            case STORAGEINFO:
-                StorageInfo storage_info =
-                    attributes.getStorageInfo();
-                TRetentionPolicy retention = null;
+            case RETENTION_POLICY:
                 TAccessLatency latency = null;
-                if (storage_info.getRetentionPolicy() != null) {
-		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
-                        retention = TRetentionPolicy.CUSTODIAL;
-		    }
-		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) {
-                        retention = TRetentionPolicy.REPLICA;
-		    }
-		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) {
-                        retention = TRetentionPolicy.OUTPUT;
-		    }
-                }
-                if (storage_info.getAccessLatency() != null) {
-		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) {
+                if (attributes.isDefined(ACCESS_LATENCY)) {
+                    if (attributes.getAccessLatency().equals(AccessLatency.ONLINE)) {
                         latency = TAccessLatency.ONLINE;
-		    }
-		    else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) {
+                    } else if (attributes.getAccessLatency().equals(AccessLatency.NEARLINE)) {
                         latency = TAccessLatency.NEARLINE;
-		    }
+                    }
+                }
+
+                TRetentionPolicy retention = null;
+                if (attributes.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
+                    retention = TRetentionPolicy.CUSTODIAL;
+                } else if (attributes.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) {
+                    retention = TRetentionPolicy.REPLICA;
+                } else if (attributes.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) {
+                    retention = TRetentionPolicy.OUTPUT;
                 }
                 // RetentionPolicy is non-nillable element of the
                 // TRetentionPolicyInfo, if retetion is null, we shold leave
                 // the whole retentionPolicyInfo null
                 if (retention != null) {
                     retentionPolicyInfo =
-                        new TRetentionPolicyInfo(retention, latency);
+                            new TRetentionPolicyInfo(retention, latency);
                 }
+                break;
+
+            case STORAGEINFO:
+                StorageInfo storage_info =
+                        attributes.getStorageInfo();
                 isStored = storage_info.isStored();
                 if (storage_info.getMap() != null) {
                     String writeToken = storage_info.getMap().get("writeToken");
@@ -311,7 +310,8 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     public static Set<FileAttribute> getKnownAttributes()
     {
         return EnumSet.of(PNFSID, STORAGEINFO, CHECKSUM,
-                          OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
-                          ACCESS_TIME, MODIFICATION_TIME, CREATION_TIME);
+                OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
+                ACCESS_TIME, MODIFICATION_TIME, CREATION_TIME,
+                ACCESS_LATENCY, RETENTION_POLICY);
     }
 }

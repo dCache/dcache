@@ -21,6 +21,7 @@ import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.meta.db.CacheRepositoryEntryState;
 import org.dcache.pool.repository.v3.RepositoryException;
+import org.dcache.vehicles.FileAttributes;
 
 public class MetaDataRepositoryHelper implements MetaDataStore {
 
@@ -38,8 +39,8 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
         private long _size;
 
-        private StorageInfo _storageInfo;
         private final FileStore _repository;
+        private FileAttributes _fileAttributes;
 
         public CacheRepositoryEntryImpl(FileStore repository, PnfsId pnfsId)
         {
@@ -48,18 +49,6 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             _state = new CacheRepositoryEntryState();
             _lastAccess = getDataFile().lastModified();
             _size = getDataFile().length();
-        }
-
-        public CacheRepositoryEntryImpl(FileStore repository,
-                                        MetaDataRecord entry)
-        {
-            _repository   = repository;
-            _pnfsId       = entry.getPnfsId();
-            _lastAccess   = entry.getLastAccessTime();
-            _linkCount    = entry.getLinkCount();
-            _creationTime = entry.getCreationTime();
-            _state        = new CacheRepositoryEntryState(entry);
-            setStorageInfo(entry.getStorageInfo());
         }
 
         @Override
@@ -111,12 +100,6 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             return _size;
         }
 
-        @Override
-        public synchronized StorageInfo getStorageInfo()
-        {
-            return _storageInfo;
-        }
-
         private synchronized void setLastAccess(long time)
         {
             _lastAccess = time;
@@ -164,12 +147,6 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized void setStorageInfo(StorageInfo info)
-        {
-            _storageInfo = info;
-        }
-
-        @Override
         public synchronized void touch() throws CacheException
         {
             File file = getDataFile();
@@ -200,9 +177,21 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
+        public void setFileAttributes(FileAttributes attributes) throws CacheException
+        {
+            _fileAttributes = attributes;
+        }
+
+        @Override
+        public FileAttributes getFileAttributes()
+        {
+            return _fileAttributes;
+        }
+
+        @Override
         public synchronized String toString()
         {
-            StorageInfo info = getStorageInfo();
+            StorageInfo info = _fileAttributes.getStorageInfo();
             return _pnfsId.toString()+
                 " <"+_state.toString()+"-"+
                 "(0)"+
@@ -214,7 +203,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
 
-    private final Map<PnfsId, MetaDataRecord> _entryList = new HashMap();
+    private final Map<PnfsId, MetaDataRecord> _entryList = new HashMap<>();
     private final FileStore _repository;
     public MetaDataRepositoryHelper(FileStore repository) {
         _repository = repository;

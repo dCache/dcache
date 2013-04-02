@@ -144,19 +144,14 @@ public class RepositorySubsystemTest
         };
     }
 
-    private StorageInfo createStorageInfo(long size)
-    {
-        GenericStorageInfo info = new GenericStorageInfo();
-        info.setFileSize(size);
-        return info;
-    }
-
-    private FileAttributes createFileAttributes(PnfsId pnfsId, StorageInfo info)
+    private FileAttributes createFileAttributes(PnfsId pnfsId, long size, StorageInfo info)
     {
         FileAttributes attributes = new FileAttributes();
         attributes.setPnfsId(pnfsId);
         attributes.setStorageInfo(info);
-        attributes.setSize(info.getFileSize());
+        attributes.setSize(size);
+        attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
+        attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         return attributes;
     }
 
@@ -215,17 +210,17 @@ public class RepositorySubsystemTest
         id4 = new PnfsId("000000000004");
         id5 = new PnfsId("000000000005");
 
-        info1 = createStorageInfo(size1);
-        info2 = createStorageInfo(size2);
-        info3 = createStorageInfo(size3);
-        info4 = createStorageInfo(0);
-        info5 = createStorageInfo(size5);
+        info1 = new GenericStorageInfo();
+        info2 = new GenericStorageInfo();
+        info3 = new GenericStorageInfo();
+        info4 = new GenericStorageInfo();
+        info5 = new GenericStorageInfo();
 
-        attributes1 = createFileAttributes(id1, info1);
-        attributes2 = createFileAttributes(id2, info2);
-        attributes3 = createFileAttributes(id3, info3);
-        attributes4 = createFileAttributes(id4, info4);
-        attributes5 = createFileAttributes(id5, info5);
+        attributes1 = createFileAttributes(id1, size1, info1);
+        attributes2 = createFileAttributes(id2, size2, info2);
+        attributes3 = createFileAttributes(id3, size3, info3);
+        attributes4 = createFileAttributes(id4, 0, info4);
+        attributes5 = createFileAttributes(id5, size5, info5);
 
         root = File.createTempFile("dtest", null);
         if (!root.delete()) {
@@ -491,8 +486,8 @@ public class RepositorySubsystemTest
                 List<StickyRecord> stickyRecords = Collections.emptyList();
                 ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED, stickyRecords);
                 try {
-                    handle.allocate(info5.getFileSize());
-                    createFile(handle.getFile(), info5.getFileSize());
+                    handle.allocate(attributes5.getSize());
+                    createFile(handle.getFile(), attributes5.getSize());
                     handle.commit(null);
                 }catch( IOException e) {
                     throw new CacheException(CacheException.ERROR_IO_DISK, e.getMessage());

@@ -106,14 +106,6 @@ public interface StorageInfo
     public String getHsm() ;
     public void setHsm( String newHsm);
     /**
-      * Get size of BitFile.
-      */
-    public long   getFileSize() ;
-    /**
-      *  Set size of BitFile
-      */
-    public void   setFileSize( long fileSize ) ;
-    /**
       * Determines whether the file exists somewhere (cache or HSM)
       * or not. Currently isCreatedOnly returns true is the
       * size of the level-0 file is not zero.
@@ -166,25 +158,26 @@ public interface StorageInfo
     public boolean isSetBitFileId();
     public void isSetBitFileId( boolean isSet);
 
-    // RetentionPolicy related methods
-    // we use the class RetentionPolicy instead
-    // of the string value to allow the storage
-    // of the numeric values in the underlying pnfs
-    // in order to save space in pnfs
-    public RetentionPolicy getRetentionPolicy() ;
-    public void setRetentionPolicy( RetentionPolicy retentionPolicy);
-    public boolean isSetRetentionPolicy();
-    public void isSetRetentionPolicy( boolean isSet );
-
-    // AccessLatency related methods
-    // we use the class AccessLatency instead
-    // of the string value to allow the storage
-    // of the numeric values in the underlying pnfs
-    // in order to save space in pnfs
-    public AccessLatency getAccessLatency() ;
-    public void setAccessLatency( AccessLatency accessLatency);
-    public boolean isSetAccessLatency();
-    public void isSetAccessLatency( boolean isSet );
-
     public StorageInfo clone();
+
+    @Override
+    String toString();
+
+    @Deprecated
+    long getLegacySize();
+
+    @Deprecated
+    void setLegacySize(long fileSize);
+
+    @Deprecated
+    void setLegacyAccessLatency(AccessLatency al);
+
+    @Deprecated
+    AccessLatency getLegacyAccessLatency();
+
+    @Deprecated
+    void setLegacyRetentionPolicy(RetentionPolicy rp);
+
+    @Deprecated
+    RetentionPolicy getLegacyRetentionPolicy();
 }

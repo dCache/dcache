@@ -35,6 +35,7 @@ import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
 import org.dcache.poolmanager.Partition;
+import org.dcache.vehicles.FileAttributes;
 
 public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 {
@@ -55,7 +56,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private CellEndpoint _endpoint;
     private AgingHash   _pnfsPathMap     = new AgingHash(500);
-    private AgingHash   _storageInfoMap  = new AgingHash(500);
+    private AgingHash _fileAttributesMap = new AgingHash(500);
     private boolean     _takeAll         = true;
     private SimpleDateFormat _formatter  = new SimpleDateFormat ("MM.dd HH:mm:ss");
     private volatile List<Object[]> _lazyRestoreList =
@@ -221,26 +222,28 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                     // collect the storage infos
                     //
                     if (_addStorageInfo) {
-                        StorageInfo storageInfo = (StorageInfo)_storageInfoMap.get(pnfsId);
-                        if (storageInfo == null) {
-                            storageInfo = getStorageInfoByPnfsId(pnfsId);
+                        FileAttributes fileAttributes = (FileAttributes) _fileAttributesMap.get(pnfsId);
+                        if (fileAttributes == null) {
+                            fileAttributes = getFileAttributesByPnfsId(pnfsId);
                         }
-                        if (storageInfo != null) {
+                        if (fileAttributes != null) {
+                            StorageInfo storageInfo = fileAttributes.getStorageInfo();
                             if (_addHsmInfo) {
                                 StorageInfo si = getHsmInfoByStorageInfo(pnfsId,storageInfo);
                                 if (si != null) {
                                     storageInfo = si;
+                                    fileAttributes.setStorageInfo(si);
                                 }
                             }
                             if (_siDetails != null) { // allows to select items
-                                storageInfo.setKey("size",""+storageInfo.getFileSize());
+                                storageInfo.setKey("size",""+fileAttributes.getSize());
                                 storageInfo.setKey("new",""+storageInfo.isCreatedOnly());
                                 storageInfo.setKey("stored",""+storageInfo.isStored());
                                 storageInfo.setKey("sClass",storageInfo.getStorageClass());
                                 storageInfo.setKey("cClass",storageInfo.getCacheClass());
                                 storageInfo.setKey("hsm",storageInfo.getHsm());
                             }
-                            _storageInfoMap.put(pnfsId, a[2] = storageInfo);
+                            _fileAttributesMap.put(pnfsId, a[2] = storageInfo);
                         }
 
                     }
@@ -298,7 +301,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private StorageInfo getStorageInfoByPnfsId(String pnfsId)
+    private FileAttributes getFileAttributesByPnfsId(String pnfsId)
     {
         try {
             PnfsGetStorageInfoMessage pnfsMsg = new PnfsGetStorageInfoMessage(new PnfsId(pnfsId));
@@ -308,7 +311,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 return null;
             }
             pnfsMsg = (PnfsGetStorageInfoMessage)msg.getMessageObject();
-            return pnfsMsg.getStorageInfo();
+            return pnfsMsg.getFileAttributes();
 
         } catch (Exception e) {
             _log.warn(e.toString(), e);

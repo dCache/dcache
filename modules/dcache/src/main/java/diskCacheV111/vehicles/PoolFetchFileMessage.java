@@ -26,7 +26,7 @@ public class PoolFetchFileMessage extends PoolMessage {
         super(poolName);
         _fileAttributes = fileAttributes;
         _pnfsId = fileAttributes.getPnfsId();
-        _storageInfo = fileAttributes.getStorageInfo();
+        _storageInfo = StorageInfos.extractFrom(fileAttributes);
         setReplyRequired(true);
     }
 
@@ -47,7 +47,7 @@ public class PoolFetchFileMessage extends PoolMessage {
         if (_fileAttributes == null) {
             _fileAttributes = new FileAttributes();
             if (_storageInfo != null) {
-                _fileAttributes.setStorageInfo(_storageInfo);
+                StorageInfos.injectInto(_storageInfo, _fileAttributes);
             }
             _fileAttributes.setPnfsId(_pnfsId);
         }

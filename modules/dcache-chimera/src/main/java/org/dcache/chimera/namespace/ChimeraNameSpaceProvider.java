@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
@@ -34,7 +33,6 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.acl.ACE;
@@ -653,7 +651,6 @@ public class ChimeraNameSpaceProvider
 
         FileAttributes attributes = new FileAttributes();
         Stat stat;
-        StorageInfo storageInfo = null;
 
         for (FileAttribute attribute: attr) {
             switch (attribute) {
@@ -667,28 +664,14 @@ public class ChimeraNameSpaceProvider
                 }
                 break;
             case ACCESS_LATENCY:
-                AccessLatency al = _fs.getAccessLatency(inode);
-                if (al == null) {
-                    if (storageInfo == null) {
-                        storageInfo = _extractor.getStorageInfo(inode);
-                    }
-                    al = storageInfo.getAccessLatency();
-                }
-                attributes.setAccessLatency(al);
+                attributes.setAccessLatency(_extractor.getAccessLatency(inode));
                 break;
             case ACCESS_TIME:
                 stat = inode.statCache();
                 attributes.setAccessTime(stat.getATime());
                 break;
             case RETENTION_POLICY:
-                RetentionPolicy rp = _fs.getRetentionPolicy(inode);
-                if (rp == null) {
-                    if (storageInfo == null) {
-                        storageInfo = _extractor.getStorageInfo(inode);
-                    }
-                    rp = storageInfo.getRetentionPolicy();
-                }
-                attributes.setRetentionPolicy(rp);
+                attributes.setRetentionPolicy(_extractor.getRetentionPolicy(inode));
                 break;
             case SIZE:
                 stat = inode.statCache();
@@ -760,10 +743,7 @@ public class ChimeraNameSpaceProvider
                 attributes.setPnfsId(new PnfsId(inode.toString()));
                 break;
             case STORAGEINFO:
-                if (storageInfo == null) {
-                    storageInfo = _extractor.getStorageInfo(inode);
-                }
-                attributes.setStorageInfo(storageInfo);
+                attributes.setStorageInfo(_extractor.getStorageInfo(inode));
                 break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");

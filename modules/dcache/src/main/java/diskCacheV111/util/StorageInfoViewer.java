@@ -50,7 +50,7 @@ public class StorageInfoViewer {
                            System.out.println("  Cache Class  : " +
                                    (cacheClass == null ? "None" : cacheClass));
                            System.out.println("  File Size    : " + info
-                                   .getFileSize());
+                                   .getLegacySize());
                            System.out.println("  Created Only : " + info
                                    .isCreatedOnly());
                            System.out.println("  Stored       : " + info

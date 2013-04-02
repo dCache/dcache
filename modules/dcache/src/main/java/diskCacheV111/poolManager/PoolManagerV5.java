@@ -2,6 +2,7 @@ package diskCacheV111.poolManager ;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -38,6 +38,7 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
 import diskCacheV111.vehicles.PoolMgrGetPoolLinkGroups;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -57,7 +58,6 @@ import dmg.util.Args;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
@@ -589,55 +589,42 @@ public class PoolManagerV5
            return _addr;
        }
     }
+
     private static class XStorageInfo extends GenericStorageInfo {
+        private static final long serialVersionUID = -6624549402952279903L;
 
-       private static final long serialVersionUID = -6624549402952279903L;
+        private XStorageInfo(String hsm, String storageClass) {
+            super(hsm, storageClass);
+        }
 
-       private XStorageInfo( String hsm , String storageClass ){
-    	   super(hsm,storageClass);
-       }
-       @Override
-    public String getBitfileId(){ return "" ; }
-       @Override
-    public long   getFileSize(){ return 100 ; }
-       @Override
-    public void   setFileSize( long fileSize ){}
-       @Override
-    public boolean isStored(){ return true ; }
+        @Override
+        public String getBitfileId() {
+            return "";
+        }
 
+        @Override
+        public boolean isStored() {
+            return true;
+        }
     }
-    public static final String hh_get_av_pools = "<pnfsId> <hsm> <storageClass> <host>" ;
-    public String ac_get_av_pools_$_4( Args args ) throws Exception {
-       try{
-          PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
-          XStorageInfo storageInfo = new XStorageInfo( args.argv(1) , args.argv(2) ) ;
-          XProtocolInfo protocolInfo = new XProtocolInfo( new InetSocketAddress(args.argv(3), 0) ) ;
 
-          FileAttributes fileAttributes =
-              _pnfsHandler.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.LOCATIONS));
-          fileAttributes.setPnfsId(pnfsId);
-          fileAttributes.setStorageInfo(storageInfo);
+    public static final String hh_get_av_pools = "<pnfsId> <hsm> <storageClass> <host>";
 
-          PoolSelector poolSelector =
-              _poolMonitor.getPoolSelector(fileAttributes,
-                      protocolInfo, null) ;
-
-          List<List<PoolInfo>> available = poolSelector.getReadPools();
-
-          StringBuilder sb = new StringBuilder() ;
-          sb.append("Available and allowed\n");
-          for (PoolInfo pool: available.get(0)) {
-              sb.append("  ").append(pool).append("\n");
-          }
-          sb.append("Allowed (not available)\n");
-
-          return sb.toString() ;
-
-       }catch( Exception ee ){
-
-          ee.printStackTrace() ;
-          throw ee ;
-       }
+    public String ac_get_av_pools_$_4(Args args) throws CacheException {
+        PnfsId pnfsId = new PnfsId(args.argv(0));
+        XStorageInfo storageInfo = new XStorageInfo(args.argv(1), args.argv(2));
+        XProtocolInfo protocolInfo = new XProtocolInfo(new InetSocketAddress(args.argv(3), 0));
+        FileAttributes fileAttributes =
+                _pnfsHandler.getFileAttributes(pnfsId, PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+        fileAttributes.setStorageInfo(storageInfo);
+        PoolSelector poolSelector = _poolMonitor.getPoolSelector(fileAttributes, protocolInfo, null);
+        List<List<PoolInfo>> available = poolSelector.getReadPools();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Available and allowed\n");
+        for (PoolInfo pool : Iterables.getFirst(available, Collections.<PoolInfo>emptyList())) {
+            sb.append("  ").append(pool).append("\n");
+        }
+        return sb.toString();
     }
     /*
     public static final String hh_get_pools = "<hsm> <storageClass> <host>"+
@@ -702,13 +689,6 @@ public class PoolManagerV5
 
     public DelayedReply messageArrived(PoolManagerSelectLinkGroupForWriteMessage message)
     {
-        if (message.getStorageInfo() == null) {
-            throw new IllegalArgumentException("Storage info is missing");
-        }
-        if (message.getProtocolInfo() == null ){
-            throw new IllegalArgumentException("Protocol info is missing");
-        }
-
         return new LinkGroupSelectionTask(message);
     }
 
@@ -760,7 +740,7 @@ public class PoolManagerV5
 
         protected List<String> selectLinkGroups()
         {
-            StorageInfo storageInfo = _message.getStorageInfo();
+            FileAttributes fileAttributes = _message.getFileAttributes();
             ProtocolInfo protocolInfo = _message.getProtocolInfo();
             String protocol =
                 protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
@@ -783,7 +763,7 @@ public class PoolManagerV5
                     _selectionUnit.match(DirectionType.WRITE,
                                          hostName,
                                          protocol,
-                                         storageInfo,
+                                         fileAttributes.getStorageInfo(),
                                          linkGroup);
                 if (level.length > 0) {
                     outputLinkGroups.add(linkGroup);

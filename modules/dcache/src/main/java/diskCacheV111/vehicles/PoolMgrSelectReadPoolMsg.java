@@ -56,8 +56,8 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
                                     Context context)
     {
         this(fileAttributes, protocolInfo, context, RequestContainerV5.allStates);
-        checkArgument(fileAttributes.getDefinedAttributes().containsAll(getRequiredAttributes()),
-                      "Required attributes are missing");
+        checkArgument(fileAttributes.isDefined(getRequiredAttributes()),
+                "Required attributes are missing");
     }
 
     /**
@@ -77,7 +77,7 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
 
     public static EnumSet<FileAttribute> getRequiredAttributes()
     {
-        return EnumSet.of(PNFSID, STORAGEINFO, LOCATIONS, SIZE);
+        return EnumSet.of(PNFSID, STORAGEINFO, LOCATIONS, SIZE, ACCESS_LATENCY, RETENTION_POLICY);
     }
 
     public Context getContext()

@@ -43,27 +43,14 @@ public class StorageInfoTest {
 
     @Test
     public void testStorageinfoAccessLatency() throws Exception {
-        AccessLatency accessLatency = _storageInfo.getAccessLatency();
+        AccessLatency accessLatency = _storageInfo.getLegacyAccessLatency();
         assertNotNull("pre 1.8 storageInfo should return non null access latency", accessLatency);
     }
 
     @Test
     public void testStorageInfoRetentionPolicy() throws Exception {
-        RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
+        RetentionPolicy retentionPolicy = _storageInfo.getLegacyRetentionPolicy();
         assertNotNull("pre 1.8 storageInfo should return non null retention policy", retentionPolicy);
-    }
-
-    @Test
-    public void testStorageInfoRetentionPolicySet() throws Exception {
-        _storageInfo.isSetRetentionPolicy();
-        // do nothing , just check for null pointer exception
-    }
-
-
-    @Test
-    public void testStorageInfoAccessLatencySet() throws Exception {
-        _storageInfo.isSetAccessLatency();
-        // do nothing , just check for null pointer exception
     }
 
     @Test
@@ -148,13 +135,13 @@ public class StorageInfoTest {
 
 
     @Test
-    public void testNotEqualsByAP() {
+    public void testNotEqualsByRP() {
 
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
-        storageInfo.setRetentionPolicy(RetentionPolicy.REPLICA);
+        storageInfo.setLegacyRetentionPolicy(RetentionPolicy.REPLICA);
 
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
-        otherInfo.setRetentionPolicy(RetentionPolicy.OUTPUT);
+        otherInfo.setLegacyRetentionPolicy(RetentionPolicy.OUTPUT);
 
         assertFalse("not equal by RetantionPolicy storageInfo pass", storageInfo.equals(otherInfo) );
     }
@@ -163,10 +150,10 @@ public class StorageInfoTest {
     public void testNotEqualsByAL() {
 
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
-        storageInfo.setAccessLatency(AccessLatency.NEARLINE);
+        storageInfo.setLegacyAccessLatency(AccessLatency.NEARLINE);
 
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
-        otherInfo.setAccessLatency(AccessLatency.ONLINE);
+        otherInfo.setLegacyAccessLatency(AccessLatency.ONLINE);
 
         assertFalse("not equal by AccessLatency storageInfo pass", storageInfo.equals(otherInfo) );
     }
@@ -184,9 +171,9 @@ public class StorageInfoTest {
     public void testNotEqualsByFileSize() {
 
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
-        storageInfo.setFileSize(17);
+        storageInfo.setLegacySize(17);
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
-        otherInfo.setFileSize(21);
+        otherInfo.setLegacySize(21);
 
         assertFalse("not equal by file size storageInfo pass", storageInfo.equals(otherInfo) );
     }
@@ -262,9 +249,9 @@ public class StorageInfoTest {
         storageInfo.addLocation(new URI(URI_STRING));
         storageInfo.addLocation(new URI(URI_STRING));
         storageInfo.setKey("bla", "bla");
-        storageInfo.setFileSize(17);
-        storageInfo.setRetentionPolicy(RetentionPolicy.REPLICA);
-        storageInfo.setAccessLatency(AccessLatency.NEARLINE);
+        storageInfo.setLegacySize(17);
+        storageInfo.setLegacyRetentionPolicy(RetentionPolicy.REPLICA);
+        storageInfo.setLegacyAccessLatency(AccessLatency.NEARLINE);
 
         assertTrue("Clone is not equals to original",
                    storageInfo.equals(storageInfo.clone()));

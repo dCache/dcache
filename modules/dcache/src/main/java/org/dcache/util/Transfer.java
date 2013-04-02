@@ -680,7 +680,6 @@ public class Transfer implements Comparable<Transfer>
             throw new IllegalStateException("Can only set length for uploads");
         }
         _fileAttributes.setSize(length);
-        _fileAttributes.getStorageInfo().setFileSize(length);
     }
 
     /**

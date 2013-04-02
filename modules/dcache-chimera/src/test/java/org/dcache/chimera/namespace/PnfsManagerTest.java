@@ -301,15 +301,15 @@ public class PnfsManagerTest
 
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
-        StorageInfo storageInfo = pnfsCreateEntryMessage.getStorageInfo();
+        FileAttributes fileAttributes = pnfsCreateEntryMessage.getFileAttributes();
 
         assertEquals("AccessLatensy is not taken from the parent directory",
                 AccessLatency.ONLINE,
-                storageInfo.getAccessLatency());
+                fileAttributes.getAccessLatency());
 
         assertEquals("RetentionPolicy is not taken from the parent directory",
                 RetentionPolicy.OUTPUT,
-                storageInfo.getRetentionPolicy());
+                fileAttributes.getRetentionPolicy());
 
     }
 
@@ -409,15 +409,12 @@ public class PnfsManagerTest
         assertThat("Creating entry failed", pnfsCreateEntryMessage.getReturnCode(), is(0));
 
         StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
-
-        si.setAccessLatency(AccessLatency.NEARLINE);
-        si.isSetAccessLatency(true);
-        si.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
-        si.isSetRetentionPolicy(true);
-        si.addLocation(new URI( OSM_URI_STEM + "?store=tape"));
+        si.addLocation(new URI(OSM_URI_STEM + "?store=tape"));
         si.isSetAddLocation(true);
 
         FileAttributes attributesToUpdate = new FileAttributes();
+        attributesToUpdate.setAccessLatency(AccessLatency.NEARLINE);
+        attributesToUpdate.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
         attributesToUpdate.setStorageInfo(si);
         PnfsSetFileAttributes setFileAttributesMessage =
                 new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), attributesToUpdate);

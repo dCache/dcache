@@ -16,8 +16,8 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.classic.ReplicaStatePolicy;
 import org.dcache.vehicles.FileAttributes;
@@ -172,13 +172,18 @@ public class ConsistentStore
 
     private boolean isBroken(MetaDataRecord entry)
     {
-        return (entry == null)
-                || (entry.getStorageInfo() == null)
-                || (entry.getStorageInfo().getFileSize() != entry.getSize())
-                || (entry.getState() != EntryState.CACHED && entry.getState() != EntryState.PRECIOUS);
+        boolean isBroken = true;
+        if (entry != null) {
+            FileAttributes attributes = entry.getFileAttributes();
+            EntryState state = entry.getState();
+            if (attributes.isDefined(FileAttribute.SIZE)
+                    && attributes.getSize() == entry.getSize()
+                    && (state == EntryState.CACHED || state == EntryState.PRECIOUS)) {
+                isBroken = false;
+            }
+        }
+        return isBroken;
     }
-
-
 
     private MetaDataRecord rebuildEntry(MetaDataRecord entry)
             throws CacheException, InterruptedException, IOException {
@@ -193,9 +198,8 @@ public class ConsistentStore
                }
 
                _log.warn(String.format(RECOVERING_FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
-               StorageInfo info =
-                       _pnfsHandler.getStorageInfoByPnfsId(id).getStorageInfo();
-               entry.setStorageInfo(info);
+               FileAttributes fileAttributes = _pnfsHandler.getStorageInfoByPnfsId(id).getFileAttributes();
+               entry.setFileAttributes(fileAttributes);
 
                 /* If the intended file size is known, then compare it
                  * to the actual file size on disk. Fail in case of a
@@ -207,9 +211,9 @@ public class ConsistentStore
                  * checksum is updated in PNFS.
                  */
                 long length = entry.getDataFile().length();
-                if (!(state == EntryState.FROM_CLIENT && info.getFileSize() == 0)
-                    && info.getFileSize() != length) {
-                    throw new CacheException(String.format(BAD_SIZE_MSG, id, info.getFileSize(), length));
+                if ((state != EntryState.FROM_CLIENT || fileAttributes.isDefined(FileAttribute.SIZE) && fileAttributes.getSize() != 0)
+                    && fileAttributes.getSize() != length) {
+                    throw new CacheException(String.format(BAD_SIZE_MSG, id, fileAttributes.getSize(), length));
                 }
 
                 /* Compute and update checksum. May fail if there is a
@@ -224,35 +228,37 @@ public class ConsistentStore
 
                 /* We always register the file location.
                  */
-                FileAttributes fileAttributes = new FileAttributes();
-                fileAttributes.setLocations(Collections.singleton(_poolName));
+                FileAttributes attributesToUpdate = new FileAttributes();
+                attributesToUpdate.setLocations(Collections.singleton(_poolName));
 
-                /* Update the size in the storage info and in PNFS if
-                 * file size is unknown. We initialize access latency
-                 * and retention policy at the same time.
+                /* Update the size in the locally cached meta data and in the name space if not previously
+                 * registered. We initialize access latency and retention policy at the same time (just as
+                 * in WriteHandleImpl).
                  */
-                if (state == EntryState.FROM_CLIENT && info.getFileSize() == 0) {
+                if (state == EntryState.FROM_CLIENT && (fileAttributes.isUndefined(FileAttribute.SIZE) || fileAttributes.getSize() == 0)) {
+                    attributesToUpdate.setSize(length);
+                    attributesToUpdate.setAccessLatency(fileAttributes.getAccessLatency());
+                    attributesToUpdate.setRetentionPolicy(fileAttributes.getRetentionPolicy());
+
                     fileAttributes.setSize(length);
-                    fileAttributes.setAccessLatency(info.getAccessLatency());
-                    fileAttributes.setRetentionPolicy(info.getRetentionPolicy());
-                    info.setFileSize(length);
-                    entry.setStorageInfo(info);
+                    entry.setFileAttributes(fileAttributes);
+
                     _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
                 }
 
                 /* Update file size, location, access_latency and
                  * retention_policy within namespace (pnfs or chimera).
                  */
-                _pnfsHandler.setFileAttributes(id, fileAttributes);
+                _pnfsHandler.setFileAttributes(id, attributesToUpdate);
 
                 /* If not already precious or cached, we move the entry to
                  * the target state of a newly uploaded file.
                  */
                 if (state != EntryState.CACHED && state != EntryState.PRECIOUS) {
                     EntryState targetState =
-                        _replicaStatePolicy.getTargetState(info);
+                        _replicaStatePolicy.getTargetState(fileAttributes);
                     List<StickyRecord> stickyRecords =
-                        _replicaStatePolicy.getStickyRecords(info);
+                        _replicaStatePolicy.getStickyRecords(fileAttributes);
 
                     for (StickyRecord record: stickyRecords) {
                         entry.setSticky(record.owner(), record.expire(), false);

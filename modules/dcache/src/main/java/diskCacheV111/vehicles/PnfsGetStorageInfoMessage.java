@@ -8,11 +8,10 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsGetStorageInfoMessage extends PnfsGetFileMetaDataMessage {
 
-    private StorageInfo  _storageInfo;
     private boolean      _followLinks = true;
 
     private static final long serialVersionUID = -2574949600859502380L;
@@ -21,47 +20,33 @@ public class PnfsGetStorageInfoMessage extends PnfsGetFileMetaDataMessage {
     {
         super();
         _attributes.add(STORAGEINFO);
+        _attributes.add(ACCESS_LATENCY);
+        _attributes.add(RETENTION_POLICY);
+        _attributes.add(SIZE);
     }
 
     public PnfsGetStorageInfoMessage(Set<FileAttribute> attr)
     {
         super(attr);
         _attributes.add(STORAGEINFO);
+        _attributes.add(ACCESS_LATENCY);
+        _attributes.add(RETENTION_POLICY);
+        _attributes.add(SIZE);
     }
 
     public PnfsGetStorageInfoMessage(PnfsId pnfsId)
     {
         super(pnfsId);
         _attributes.add(STORAGEINFO);
-    }
-
-    /* To ensure backwards compatibility with pre 1.9.6 clients, we
-     * explicitly add attributes compatible with
-     * PnfsGetStorageInfoMessage to the set of requested attributes if
-     * the attribute set is null.
-     */
-    @Override
-    public Set<FileAttribute> getRequestedAttributes()
-    {
-        Set<FileAttribute> attributes = _attributes;
-        if (attributes == null) {
-            attributes = super.getRequestedAttributes();
-            attributes.add(STORAGEINFO);
-        }
-        return attributes;
+        _attributes.add(ACCESS_LATENCY);
+        _attributes.add(RETENTION_POLICY);
+        _attributes.add(SIZE);
     }
 
     @Override
     public void setFileAttributes(FileAttributes fileAttributes)
     {
         super.setFileAttributes(fileAttributes);
-
-        /* For backwards compatibility with old versions we set this
-         * field. We do this even though we don't use the field.
-         */
-        if (fileAttributes.isDefined(STORAGEINFO)) {
-            _storageInfo = fileAttributes.getStorageInfo();
-        }
     }
 
     public StorageInfo getStorageInfo()

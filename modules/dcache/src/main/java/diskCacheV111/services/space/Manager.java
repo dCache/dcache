@@ -4074,7 +4074,7 @@ public final class Manager
                                        RetentionPolicy policy,
                                        AuthorizationRecord authRecord,
                                        ProtocolInfo protocolInfo,
-                                       StorageInfo storageInfo)
+                                       FileAttributes fileAttributes)
                 throws SQLException,
                        SpaceException {
                 long sizeInBytes = size;
@@ -4097,7 +4097,7 @@ public final class Manager
                                                   lifetime,
                                                   description,
                                                   protocolInfo,
-                                                  storageInfo,
+                                                  fileAttributes,
                                                   pnfsId);
                 Space space = getSpace(reservationId);
                 long fileId = useSpace(reservationId,
@@ -4137,14 +4137,11 @@ public final class Manager
                 try {
                         File f  = getFile(pnfsId);
                         Space s = getSpace(f.getSpaceId());
-                        StorageInfo info = poolRequest.getFileAttributes().getStorageInfo();
-                        info.setAccessLatency(s.getAccessLatency());
-                        info.isSetAccessLatency(true);
-                        info.setRetentionPolicy(s.getRetentionPolicy());
-                        info.isSetRetentionPolicy(true);
-
-                        if (info.getFileSize() == 0 && f.getSizeInBytes() > 1) {
-                                info.setFileSize(f.getSizeInBytes());
+                        FileAttributes fileAttributes = poolRequest.getFileAttributes();
+                        fileAttributes.setAccessLatency(s.getAccessLatency());
+                        fileAttributes.setRetentionPolicy(s.getRetentionPolicy());
+                        if (fileAttributes.getSize() == 0 && f.getSizeInBytes() > 1) {
+                                fileAttributes.setSize(f.getSizeInBytes());
                         }
 
                         //
@@ -4590,7 +4587,7 @@ public final class Manager
                                   long lifetime,
                                   String description,
                                   ProtocolInfo protocolInfo,
-                                  StorageInfo storageInfo,
+                                  FileAttributes fileAttributes,
                                   PnfsId pnfsId)
                 throws SQLException,
                        SpaceException {
@@ -4628,14 +4625,14 @@ public final class Manager
                 List<String> linkGroupNames = new ArrayList<>(linkGroupNameVoInfoMap.keySet());
                 logger.debug("Found {} linkgroups protocolInfo={}, " +
                         "storageInfo={}, pnfsId={}", linkGroups.size(),
-                        protocolInfo, storageInfo, pnfsId);
+                        protocolInfo, fileAttributes.getStorageInfo(), pnfsId);
                 if (linkGroupNameVoInfoMap.size()>1 &&
                     protocolInfo != null &&
-                    storageInfo  != null) {
+                    fileAttributes != null) {
                         try {
                                 PoolManagerSelectLinkGroupForWriteMessage msg=
                                         new PoolManagerSelectLinkGroupForWriteMessage(pnfsId,
-                                                                                      storageInfo,
+                                                                                      fileAttributes,
                                                                                       protocolInfo,
                                                                                       sizeInBytes);
                                 msg.setLinkGroups(linkGroupNames);
@@ -4834,14 +4831,11 @@ public final class Manager
                 catch (Exception e) {
                         logger.info("failed to find pool: {}", e.getMessage());
                 }
+                FileAttributes fileAttributes = selectPool.getFileAttributes();
                 if(file==null) {
-                        StorageInfo storageInfo = selectWritePool.getStorageInfo();
-                        AccessLatency al;
-                        RetentionPolicy rp;
-                        String defaultSpaceToken;
-                        al  = storageInfo.getAccessLatency();
-                        rp  = storageInfo.getRetentionPolicy();
-                        defaultSpaceToken=storageInfo.getMap().get("writeToken");
+                        AccessLatency al = fileAttributes.getAccessLatency();
+                        RetentionPolicy rp = fileAttributes.getRetentionPolicy();
+                        String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
                         ProtocolInfo protocolInfo = selectWritePool.getProtocolInfo();
                         Subject subject = selectWritePool.getSubject();
                         AuthorizationRecord authRecord;
@@ -4852,6 +4846,7 @@ public final class Manager
                         else {
                                 authRecord = new AuthorizationRecord(subject);
                         }
+
                         if (defaultSpaceToken==null) {
                                 if(reserveSpaceForNonSRMTransfers && authRecord != null) {
                                         logger.debug("selectPool: file is " +
@@ -4866,7 +4861,7 @@ public final class Manager
                                                                   rp,
                                                                   authRecord,
                                                                   protocolInfo,
-                                                                  storageInfo);
+                                                                  fileAttributes);
                                         logger.debug("selectPool: file is " +
                                                 "not found, reserveAndUseSpace() " +
                                                 "returned {}", file);
@@ -4951,9 +4946,8 @@ public final class Manager
                         selectWritePool.setLinkGroup(linkGroupName);
                         StorageInfo storageInfo = selectWritePool.getStorageInfo();
                         storageInfo.setKey("SpaceToken",Long.toString(spaceId));
-                        if (storageInfo.getFileSize() == 0 &&
-                             file.getSizeInBytes() > 1) {
-                                storageInfo.setFileSize(file.getSizeInBytes());
+                        if (fileAttributes.getSize() == 0 && file.getSizeInBytes() > 1) {
+                            fileAttributes.setSize(file.getSizeInBytes());
                         }
                         //
                         // add Space Token description

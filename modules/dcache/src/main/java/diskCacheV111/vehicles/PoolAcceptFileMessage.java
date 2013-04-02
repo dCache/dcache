@@ -2,7 +2,13 @@
 
 package diskCacheV111.vehicles;
 
+import java.util.EnumSet;
+
 import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
+import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 
 public class PoolAcceptFileMessage extends PoolIoFileMessage {
 
@@ -11,6 +17,9 @@ public class PoolAcceptFileMessage extends PoolIoFileMessage {
     public PoolAcceptFileMessage( String pool ,
                                   ProtocolInfo protocolInfo ,
                                   FileAttributes fileAttributes){
-       super( pool , protocolInfo , fileAttributes ) ;
+        super( pool , protocolInfo , fileAttributes ) ;
+        checkArgument(fileAttributes.isDefined(
+                EnumSet.of(ACCESS_LATENCY, RETENTION_POLICY)));
+
     }
 }

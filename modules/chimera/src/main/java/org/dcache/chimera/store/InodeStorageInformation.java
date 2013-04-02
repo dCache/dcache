@@ -16,21 +16,16 @@
  */
 package org.dcache.chimera.store;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-
 import org.dcache.chimera.FsInode;
 
 /*
 STORAGE INFO
 
-Generic storage information. Represents X:Y@Z + AL +RP
+Generic storage information. Represents X:Y@Z
 ipnfsid          : pnfsid of the inode
 ihsmName         : Z-component of storageGroup
 istorageGroup    : X-component of storageGroup
 istorageSubGroup : Y-component of storageGroup
-iaccessLatency   : ONLINE / NEARLINE ( keep on disk / keep on disk, if there is a space)
-iretentionPolicy : CUSTODIAL / OUTPUT ( tape / disk )
 
  */
 /*
@@ -42,15 +37,8 @@ public class InodeStorageInformation {
     private final String _hsmName;
     private final String _storageGroup;
     private final String _storageSubGroup;
-    private final AccessLatency _accessLatency;
-    private final RetentionPolicy _retentionPolicy;
 
     public InodeStorageInformation(FsInode inode, String hsm, String sGroup, String ssGroup) {
-        // default tape + cached copy on disk
-        this(inode, hsm, sGroup, ssGroup, AccessLatency.NEARLINE, RetentionPolicy.CUSTODIAL);
-    }
-
-    public InodeStorageInformation(FsInode inode, String hsm, String sGroup, String ssGroup, AccessLatency al, RetentionPolicy rp) {
 
         if (inode == null) {
             throw new IllegalArgumentException("inode is null");
@@ -72,24 +60,14 @@ public class InodeStorageInformation {
         _hsmName = hsm;
         _storageGroup = sGroup;
         _storageSubGroup = ssGroup;
-        _accessLatency = al;
-        _retentionPolicy = rp;
     }
 
     public FsInode inode() {
         return _inode;
     }
 
-    public AccessLatency accessLatency() {
-        return _accessLatency;
-    }
-
     public String hsmName() {
         return _hsmName;
-    }
-
-    public RetentionPolicy retentionPolicy() {
-        return _retentionPolicy;
     }
 
     public String storageGroup() {
@@ -100,9 +78,3 @@ public class InodeStorageInformation {
         return _storageSubGroup;
     }
 }
-/*
- * $Log: InodeStorageInformation.java,v $
- * Revision 1.1  2006/11/20 15:04:53  tigran
- * added storageInfo manipulation
- *
- */

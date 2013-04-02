@@ -2174,10 +2174,8 @@ class FsSqlDriver {
             SqlHelper.tryToClose(stRemoveStorageInfo);
         }
     }
-    private static final String sqlGetStorageInfo = "SELECT ihsmName, istorageGroup, istorageSubGroup, iaccessLatency, iretentionPolicy FROM "
-            + "t_storageinfo,t_access_latency,t_retention_policy "
-            + "WHERE t_storageinfo.ipnfsid=t_access_latency.ipnfsid "
-            + "AND t_storageinfo.ipnfsid=t_retention_policy.ipnfsid AND t_storageinfo.ipnfsid=?";
+    private static final String sqlGetStorageInfo = "SELECT ihsmName, istorageGroup, istorageSubGroup " +
+            "FROM t_storageinfo WHERE t_storageinfo.ipnfsid=?";
 
     /**
      *
@@ -2207,11 +2205,8 @@ class FsSqlDriver {
                 String hsmName = storageInfoResult.getString("ihsmName");
                 String storageGroup = storageInfoResult.getString("istoragegroup");
                 String storageSubGroup = storageInfoResult.getString("istoragesubgroup");
-                AccessLatency accessLatency = AccessLatency.getAccessLatency(storageInfoResult.getInt("iaccessLatency"));
-                RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(storageInfoResult.getInt("iretentionPolicy"));
 
-                storageInfo = new InodeStorageInformation(inode, hsmName, storageGroup, storageSubGroup,
-                        accessLatency, retentionPolicy);
+                storageInfo = new InodeStorageInformation(inode, hsmName, storageGroup, storageSubGroup);
             } else {
                 // file not found
                 throw new FileNotFoundHimeraFsException(inode.toString());

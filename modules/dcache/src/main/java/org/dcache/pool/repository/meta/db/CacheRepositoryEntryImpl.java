@@ -12,10 +12,13 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.
@@ -62,7 +65,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _size         = entry.getSize();
         _state        = new CacheRepositoryEntryState(entry);
         storeStateIfDirty();
-        setStorageInfo(entry.getStorageInfo());
+        setFileAttributes(entry.getFileAttributes());
         if (_lastAccess == 0) {
             _lastAccess = _creationTime;
         }
@@ -140,11 +143,32 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return _size;
     }
 
+    private synchronized StorageInfo getStorageInfo()
+    {
+        return _repository.getStorageInfoMap().get(_pnfsId.toString());
+    }
+
     @Override
-    public synchronized StorageInfo getStorageInfo()
+    public synchronized FileAttributes getFileAttributes()
+    {
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(_pnfsId);
+        StorageInfo storageInfo = getStorageInfo();
+        if (storageInfo != null) {
+            StorageInfos.injectInto(storageInfo, attributes);
+        }
+        return attributes;
+    }
+
+    @Override
+    public void setFileAttributes(FileAttributes attributes)
     {
         String id = _pnfsId.toString();
-        return _repository.getStorageInfoMap().get(id);
+        if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
+            _repository.getStorageInfoMap().put(id, StorageInfos.extractFrom(attributes));
+        } else {
+            _repository.getStorageInfoMap().remove(id);
+        }
     }
 
     @Override
@@ -199,17 +223,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             return false;
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
-        }
-    }
-
-    @Override
-    public synchronized void setStorageInfo(StorageInfo info)
-    {
-        String id = _pnfsId.toString();
-        if (info != null) {
-            _repository.getStorageInfoMap().put(id, info);
-        } else {
-            _repository.getStorageInfoMap().remove(id);
         }
     }
 

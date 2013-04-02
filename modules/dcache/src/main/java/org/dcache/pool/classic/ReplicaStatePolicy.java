@@ -2,10 +2,9 @@ package org.dcache.pool.classic;
 
 import java.util.List;
 
-import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * A ReplicaStatePolicy defines the initial EntryState and
@@ -14,7 +13,6 @@ import org.dcache.pool.repository.StickyRecord;
  */
 public interface ReplicaStatePolicy
 {
-
-    List<StickyRecord> getStickyRecords(StorageInfo info);
-    EntryState getTargetState(StorageInfo info);
+    List<StickyRecord> getStickyRecords(FileAttributes fileAttributes);
+    EntryState getTargetState(FileAttributes fileAttributes);
 }

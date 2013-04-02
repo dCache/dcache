@@ -133,29 +133,58 @@ public class CacheException extends Exception
 
     /**
      * Create a new CacheException with default error code and given error
-     * message
+     * message.
      *
-     * @param msg error message
+     * @param  message the detail message (which is saved for later retrieval
+     *         by the {@link #getMessage()} method).
      */
-    public CacheException(String msg)
+    public CacheException(String message)
     {
-        this(DEFAULT_ERROR_CODE, msg);
+        this(message, null);
     }
 
     /**
-     * Create a new CacheException with given error code and message
+     * Create a new CacheException with default error code, and the given error
+     * message and cause.
      *
-     * @param rc  error code
-     * @param msg error message
+     * @param  message the detail message (which is saved for later retrieval
+     *         by the {@link #getMessage()} method).
+     * @param  cause the cause (which is saved for later retrieval by the
+     *         {@link #getCause()} method).  (A <tt>null</tt> value is
+     *         permitted, and indicates that the cause is nonexistent or
+     *         unknown.)
      */
-    public CacheException(int rc, String msg)
+    public CacheException(String message, Exception cause)
     {
-        this(rc, msg, null);
+        this(DEFAULT_ERROR_CODE, message, cause);
     }
 
-    public CacheException(int rc, String msg, Exception cause)
+    /**
+     * Create a new CacheException with given error code and message.
+     *
+     * @param rc  error code
+     * @param  message the detail message (which is saved for later retrieval
+     *         by the {@link #getMessage()} method).
+     */
+    public CacheException(int rc, String message)
     {
-        super(formatMessage(msg), cause);
+        this(rc, message, null);
+    }
+
+    /**
+     * Create a new CacheException with given error code, message and cause.
+     *
+     * @param rc  error code
+     * @param  message the detail message (which is saved for later retrieval
+     *         by the {@link #getMessage()} method).
+     * @param  cause the cause (which is saved for later retrieval by the
+     *         {@link #getCause()} method).  (A <tt>null</tt> value is
+     *         permitted, and indicates that the cause is nonexistent or
+     *         unknown.)
+     */
+    public CacheException(int rc, String message, Exception cause)
+    {
+        super(formatMessage(message), cause);
         _message = getMessage();
         _rc = rc;
     }

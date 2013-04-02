@@ -127,7 +127,6 @@ public class HsmRestoreTest {
          */
 
         _storageInfo.addLocation(new URI("osm://osm?"));
-        _storageInfo.setFileSize(5);
         _storageInfo.setIsNew(false);
 
         PnfsGetFileAttributes fileAttributesMessage =
@@ -137,6 +136,8 @@ public class HsmRestoreTest {
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
         attributes.setSize(5);
+        attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
+        attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -203,7 +204,6 @@ public class HsmRestoreTest {
          */
 
         _storageInfo.addLocation(new URI("osm://osm?"));
-        _storageInfo.setFileSize(5);
         _storageInfo.setIsNew(false);
 
         PnfsGetFileAttributes fileAttributesMessage =
@@ -213,6 +213,8 @@ public class HsmRestoreTest {
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
         attributes.setSize(5);
+        attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
+        attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -301,7 +303,6 @@ public class HsmRestoreTest {
          */
 
         _storageInfo.addLocation(new URI("osm://osm?"));
-        _storageInfo.setFileSize(5);
         _storageInfo.setIsNew(false);
 
         PnfsGetFileAttributes fileAttributesMessage =
@@ -311,6 +312,8 @@ public class HsmRestoreTest {
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
         attributes.setSize(5);
+        attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
+        attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -399,7 +402,6 @@ public class HsmRestoreTest {
          */
 
         _storageInfo.addLocation(new URI("osm://osm?"));
-        _storageInfo.setFileSize(5);
         _storageInfo.setIsNew(false);
 
         PnfsGetFileAttributes fileAttributesMessage =
@@ -409,6 +411,8 @@ public class HsmRestoreTest {
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
         attributes.setSize(5);
+        attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
+        attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
