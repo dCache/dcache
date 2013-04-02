@@ -219,8 +219,7 @@ public class MulticastCell extends CellAdapter {
            throw new
                    NoSuchElementException("Not found : " + eventClass + ":" + eventName);
        }
-       path.revert() ;
-       entry.addClient(new Client(path)) ;
+       entry.addClient(new Client(path.revert())) ;
        register.setServerInfo( entry.getServerDetail() , entry.getServerState() ) ;
    }
    private void unregisterArrived( MulticastUnregister register , CellPath path )
@@ -231,8 +230,7 @@ public class MulticastCell extends CellAdapter {
        if( entry == null ) {
            return;
        }
-       path.revert() ;
-       entry.removeClient(path) ;
+       entry.removeClient(path.revert()) ;
    }
    private void registerMessageArrived(
                   MulticastMessage message ,
@@ -271,8 +269,7 @@ public class MulticastCell extends CellAdapter {
            }
        }else{
           _log.info( "Message from client "+path ) ;
-          serverPath = (CellPath)serverPath.clone() ;
-          serverPath.revert() ;
+          serverPath = serverPath.revert();
           originalMessage.getDestinationPath().add( serverPath ) ;
           originalMessage.nextDestination() ;
           try{

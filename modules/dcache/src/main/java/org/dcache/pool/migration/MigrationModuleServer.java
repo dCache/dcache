@@ -259,8 +259,7 @@ public class MigrationModuleServer
             }
 
             try {
-                _requestor.revert();
-                sendMessage(new CellMessage(_requestor, message));
+                sendMessage(new CellMessage(_requestor.revert(), message));
             } catch (NoRouteToCellException f) {
                 // We cannot tell the requestor that the
                 // transfer has finished. Not much we can do

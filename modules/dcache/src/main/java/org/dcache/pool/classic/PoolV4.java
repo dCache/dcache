@@ -706,21 +706,18 @@ public class PoolV4
             String initiator = message.getInitiator();
             String pool = message.getPoolName();
             String queueName = message.getIoQueueName();
-            CellPath source = (CellPath)envelope.getSourcePath().clone();
+            CellPath source = envelope.getSourcePath().revert();
             Set<Repository.OpenFlags> openFlags =
                     (Set<Repository.OpenFlags>) (
                         message.isPool2Pool() ? Collections.emptySet() :
                             Collections.singleton(Repository.OpenFlags.NOATIME)
                     );
 
-            String door =
-                source.getCellName() + "@" + source.getCellDomainName();
-
             /* Eliminate duplicate requests.
              */
             if (!(message instanceof PoolAcceptFileMessage)
                 && !message.isPool2Pool()) {
-
+                String door = source.getDestinationAddress().toString();
                 JobInfo job = _ioQueue.findJob(door, id);
                 if (job != null) {
                     switch (_dupRequest) {
@@ -751,8 +748,6 @@ public class PoolV4
                         "PANIC : Could not get handler for " +
                                 pi);
             }
-
-            source.revert();
 
             String protocolName = protocolNameOf(pi);
             MoverExecutorService moverExecutorService = _moverExecutorServices.getExecutorService(protocolName);

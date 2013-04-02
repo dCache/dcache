@@ -37,9 +37,8 @@ public class MulticastCommander extends CellAdapter {
         }catch( NoRouteToCellException nrtc ){
            _log.warn( "NoRouteToCell in messageToForward : "+nrtc ) ;
            _log.warn( "Sending NoRouteToCellt to : "+source ) ;
-           source.revert() ;
            try{
-              sendMessage( new CellMessage( source , nrtc ) ) ;
+              sendMessage( new CellMessage( source.revert() , nrtc ) ) ;
            }catch(Exception ee ){
               _log.warn( "can't return NoRouteToCell to : "+source ) ;
            }

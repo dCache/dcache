@@ -37,7 +37,7 @@ public class CellMessage implements Cloneable , Serializable {
 
   public CellMessage( CellPath addr , Serializable msg ){
 
-     _destination  = addr ;
+     _destination  = (CellPath) addr.clone();
      _message      = msg ;
      _source       = new CellPath() ;
      _creationTime = System.currentTimeMillis() ;
@@ -102,8 +102,7 @@ public boolean equals( Object obj ){
   public Serializable getMessageObject(){ return (Serializable) _message  ; }
   public void        setMessageObject( Serializable obj ){ _message = obj ; }
   public void        revertDirection(){
-     _destination = _source ;
-     _destination.revert() ;
+     _destination = _source.revert();
      _source      = new CellPath() ;
      _lastUmid    = _umid ;
      _isPersistent = true;

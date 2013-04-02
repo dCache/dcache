@@ -240,8 +240,7 @@ public class JMSTunnel
             if (!(msg instanceof CellExceptionMessage)) {
                 _log.info("Cannot deliver {}", msg);
 
-                CellPath retAddr = (CellPath)msg.getSourcePath().clone();
-                retAddr.revert();
+                CellPath retAddr = msg.getSourcePath().revert();
                 CellExceptionMessage ret = new CellExceptionMessage(retAddr, e);
                 ret.setLastUOID(msg.getUOID());
                 sendMessage(ret);

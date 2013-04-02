@@ -676,8 +676,7 @@ class CellGlue {
                               destination ,
                               "Tunnel cell >"+routeTarget+
                               "< not found at >"+_cellDomainName+"<" ) ;
-            CellPath retAddr = (CellPath)msg.getSourcePath().clone() ;
-            retAddr.revert() ;
+            CellPath retAddr = msg.getSourcePath().revert();
             CellExceptionMessage ret =
                  new CellExceptionMessage( retAddr , exception )  ;
             LOGGER.warn("Sending CellException to {}", retAddr);

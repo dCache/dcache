@@ -1,5 +1,7 @@
 package dmg.cells.nucleus ;
 
+import com.google.common.collect.Lists;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -138,14 +140,13 @@ public class CellPath  implements Cloneable , Serializable {
       _position++ ;
       return true;
    }
-   public synchronized void toFirstDestination(){
-      _position = _list.size() == 0 ? -1 : 0 ;
-   }
-   public synchronized void revert(){
 
-	 Collections.reverse(_list);
-     toFirstDestination() ;
-   }
+    public synchronized CellPath revert(){
+        CellPath copy = new CellPath();
+        copy._list = Lists.newArrayList(Lists.reverse(_list));
+        copy._position = copy._list.size() == 0 ? -1 : 0 ;
+        return copy;
+    }
    public synchronized boolean isFinalDestination(){
       return _position >= ( _list.size() - 1 ) ;
    }

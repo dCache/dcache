@@ -1420,8 +1420,7 @@ public class PnfsManagerV3
                 (delay == Long.MAX_VALUE)
                 ? Long.MAX_VALUE
                 : delay - envelope.getLocalAge();
-            CellPath source = (CellPath)envelope.getSourcePath().clone();
-            source.revert();
+            CellPath source = envelope.getSourcePath().revert();
             ListHandler handler =
                 new ListHandlerImpl(source, envelope.getUOID(),
                                     msg, initialDelay, delay);

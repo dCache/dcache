@@ -18,7 +18,7 @@ public class CellPathTest extends TestCase {
 
 		assertEquals("Incorrect path constructed", "[>source@local:gateway1@local:gateway2@local:destination@local]", path.toString());
 
-		path.revert();
+		path = path.revert();
 		assertEquals("Incorrect reverce path constructed", "[>destination@local:gateway2@local:gateway1@local:source@local]", path.toString());
         }
 

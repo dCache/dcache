@@ -349,8 +349,7 @@ public class BroadcastCell extends CellAdapter {
             String eventClass = event.getEventClass() ;
             CellPath target   = event.getTarget() ;
             if( target == null ){
-                target = (CellPath)msg.getSourcePath().clone() ;
-                target.revert() ;
+                target = msg.getSourcePath().revert();
             }
             if( event instanceof BroadcastRegisterMessage ){
                 BroadcastRegisterMessage reg = (BroadcastRegisterMessage)event ;

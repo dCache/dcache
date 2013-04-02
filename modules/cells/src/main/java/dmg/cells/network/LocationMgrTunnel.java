@@ -133,8 +133,7 @@ public class LocationMgrTunnel
     {
         try {
             if (!(msg instanceof CellExceptionMessage)) {
-                CellPath retAddr = (CellPath)msg.getSourcePath().clone();
-                retAddr.revert();
+                CellPath retAddr = msg.getSourcePath().revert();
                 CellExceptionMessage ret = new CellExceptionMessage(retAddr, e);
                 ret.setLastUOID(msg.getUOID());
                 _nucleus.sendMessage(ret);
