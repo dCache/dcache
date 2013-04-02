@@ -13,7 +13,6 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private static final long serialVersionUID = -5874326080375390208L;
 
     private ProtocolInfo _protocolInfo;
-    private long         _fileSize;
     private String       _ioQueueName;
     private String       _pnfsPath;
     private String       _linkGroup;
@@ -22,20 +21,17 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private boolean _skipCostUpdate;
 
     public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,
-                                ProtocolInfo protocolInfo,
-                                long fileSize)
+                                ProtocolInfo protocolInfo)
     {
-        this(fileAttributes, protocolInfo, fileSize, RequestContainerV5.allStates);
+        this(fileAttributes, protocolInfo, RequestContainerV5.allStates);
     }
 
     public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo,
-                                long fileSize,
                                 EnumSet<RequestContainerV5.RequestState> allowedStates)
     {
         super(fileAttributes);
         _protocolInfo = protocolInfo;
-        _fileSize     = fileSize;
         _allowedStates = allowedStates;
     }
 
@@ -48,13 +44,6 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     {
         return _skipCostUpdate;
     }
-
-    public void setFileSize(long fileSize)
-    {
-        _fileSize = fileSize;
-    }
-
-    public long getFileSize(){ return _fileSize; }
 
     public ProtocolInfo getProtocolInfo(){ return _protocolInfo; }
     public void setProtocolInfo( ProtocolInfo protocolInfo ){ _protocolInfo = protocolInfo ; }

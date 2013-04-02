@@ -174,7 +174,7 @@ public class HsmRestoreTest {
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction );
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction );
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
         _rc.messageArrived(cellMessage, selectReadPool);
@@ -254,7 +254,7 @@ public class HsmRestoreTest {
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
         GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
         cellMessage.getSourcePath().add("door", "local");
 
@@ -274,7 +274,7 @@ public class HsmRestoreTest {
 ;
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool.getContext());
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool.getContext());
         CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
         _rc.messageArrived(cellMessage2, selectReadPool2);
 
@@ -350,7 +350,7 @@ public class HsmRestoreTest {
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
         GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction2);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
         cellMessage.getSourcePath().add("door", "local");
 
@@ -370,7 +370,7 @@ public class HsmRestoreTest {
 ;
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool.getContext());
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool.getContext());
         CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
         _rc.messageArrived(cellMessage2, selectReadPool2);
 
@@ -451,7 +451,7 @@ public class HsmRestoreTest {
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
         GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
         cellMessage.getSourcePath().add("door", "local");
 
@@ -470,7 +470,7 @@ public class HsmRestoreTest {
                      17, selectReadPool.getReturnCode());
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool.getContext());
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool.getContext());
         CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
         cellMessage2.getSourcePath().add("door", "local");
         _rc.messageArrived(cellMessage2, selectReadPool2);
@@ -488,7 +488,7 @@ public class HsmRestoreTest {
                      17, selectReadPool.getReturnCode());
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool3 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool2.getContext());
+        PoolMgrSelectReadPoolMsg selectReadPool3 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool2.getContext());
         CellMessage cellMessage3 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
         _rc.messageArrived(cellMessage3, selectReadPool3);
 

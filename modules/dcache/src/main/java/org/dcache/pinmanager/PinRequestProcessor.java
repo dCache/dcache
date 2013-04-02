@@ -318,7 +318,6 @@ public class PinRequestProcessor
         PoolMgrSelectReadPoolMsg msg =
             new PoolMgrSelectReadPoolMsg(task.getFileAttributes(),
                                          task.getProtocolInfo(),
-                                         0,
                                          task.getReadPoolSelectionContext(),
                                          checkStaging(task));
         msg.setSubject(task.getSubject());

@@ -4820,6 +4820,7 @@ public final class Manager
                         }
                         return;
                 }
+                PoolMgrSelectWritePoolMsg selectWritePool = (PoolMgrSelectWritePoolMsg) selectPool;
                 File file = null;
                 try {
                         logger.debug("selectPool: getFiles({})", pnfsPath);
@@ -4835,15 +4836,15 @@ public final class Manager
                         logger.info("failed to find pool: {}", e.getMessage());
                 }
                 if(file==null) {
-                        StorageInfo storageInfo = selectPool.getStorageInfo();
+                        StorageInfo storageInfo = selectWritePool.getStorageInfo();
                         AccessLatency al;
                         RetentionPolicy rp;
                         String defaultSpaceToken;
                         al  = storageInfo.getAccessLatency();
                         rp  = storageInfo.getRetentionPolicy();
                         defaultSpaceToken=storageInfo.getMap().get("writeToken");
-                        ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
-                        Subject subject = selectPool.getSubject();
+                        ProtocolInfo protocolInfo = selectWritePool.getProtocolInfo();
+                        Subject subject = selectWritePool.getSubject();
                         AuthorizationRecord authRecord;
                         if (Subjects.getFqans(subject).isEmpty()&&
                             Subjects.getUserName(subject)==null) {
@@ -4860,8 +4861,8 @@ public final class Manager
                                                 "calling reserveAndUseSpace()");
 
                                         file = reserveAndUseSpace(pnfsPath,
-                                                                  null, //  selectPool.getPnfsId(),
-                                                                  selectPool.getFileSize(),
+                                                                  null, //  selectWritePool.getPnfsId(),
+                                                                  selectWritePool.getPreallocated(),
                                                                   al,
                                                                   rp,
                                                                   authRecord,
@@ -4900,21 +4901,21 @@ public final class Manager
                                 long fileId     = useSpace(spaceToken,
                                                            voGroup,
                                                            voRole,
-                                                           selectPool.getFileSize(),
+                                                           selectWritePool.getPreallocated(),
                                                            lifetime,
                                                            pnfsPath,
-                                                           selectPool.getPnfsId());
+                                                           selectWritePool.getPnfsId());
                                 file = getFile(fileId);
                         }
                 }
                 else {
-                        if (isReply&&selectPool.getReturnCode()==0) {
+                        if (isReply&&selectWritePool.getReturnCode()==0) {
                                 logger.debug("selectPool: file is not null, " +
                                         "calling updateSpaceFile()");
                                 updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
                         }
                 }
-                if (isReply&&selectPool.getReturnCode()!=0) {
+                if (isReply&&selectWritePool.getReturnCode()!=0) {
                         Connection connection = null;
                         try {
                                 connection = connection_pool.getConnection();
@@ -4948,8 +4949,8 @@ public final class Manager
                         long linkGroupid = space.getLinkGroupId();
                         LinkGroup linkGroup  = getLinkGroup(linkGroupid);
                         String linkGroupName = linkGroup.getName();
-                        selectPool.setLinkGroup(linkGroupName);
-                        StorageInfo storageInfo = selectPool.getStorageInfo();
+                        selectWritePool.setLinkGroup(linkGroupName);
+                        StorageInfo storageInfo = selectWritePool.getStorageInfo();
                         storageInfo.setKey("SpaceToken",Long.toString(spaceId));
                         if (storageInfo.getFileSize() == 0 &&
                              file.getSizeInBytes() > 1) {

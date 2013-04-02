@@ -263,14 +263,13 @@ public class WassPartition extends ClassicPartition
      * Returns null if all pools are full.
      */
     protected PoolInfo
-        selectByAvailableSpace(List<PoolInfo> pools, FileAttributes attributes)
+        selectByAvailableSpace(List<PoolInfo> pools, long size)
     {
-        long filesize = attributes.getSize();
         double[] available = new double[pools.size()];
         double sum = 0.0;
 
         for (int i = 0; i < available.length; i++) {
-            sum += getWeightedAvailable(pools.get(i).getCostInfo(), filesize);
+            sum += getWeightedAvailable(pools.get(i).getCostInfo(), size);
             available[i] = sum;
         }
 
@@ -288,10 +287,11 @@ public class WassPartition extends ClassicPartition
     @Override
     public PoolInfo selectWritePool(CostModule cm,
                                     List<PoolInfo> pools,
-                                    FileAttributes attributes)
+                                    FileAttributes attributes,
+                                    long preallocated)
         throws CacheException
     {
-        PoolInfo pool = selectByAvailableSpace(pools, attributes);
+        PoolInfo pool = selectByAvailableSpace(pools, preallocated);
         if (pool == null) {
             throw new CacheException(21, "All pools are full");
         }
@@ -371,7 +371,7 @@ public class WassPartition extends ClassicPartition
                 }
 
                 PoolInfo destination =
-                    selectByAvailableSpace(destinations, attributes);
+                    selectByAvailableSpace(destinations, attributes.getSize());
                 if (destination != null) {
                     return new P2pPair(source.pool, destination);
                 }
@@ -384,7 +384,7 @@ public class WassPartition extends ClassicPartition
             }
         }
 
-        PoolInfo destination = selectByAvailableSpace(dst, attributes);
+        PoolInfo destination = selectByAvailableSpace(dst, attributes.getSize());
         if (destination == null) {
             throw new DestinationCostException("All pools are full");
         }
@@ -403,7 +403,7 @@ public class WassPartition extends ClassicPartition
                 compose(not(equalTo(previousHost)), _getHost);
             List<PoolInfo> filteredPools =
                 Lists.newArrayList(filter(pools, and(notSamePool, notSameHost)));
-            PoolInfo pool = selectByAvailableSpace(filteredPools, attributes);
+            PoolInfo pool = selectByAvailableSpace(filteredPools, attributes.getSize());
             if (pool != null) {
                 return pool;
             }
@@ -415,13 +415,13 @@ public class WassPartition extends ClassicPartition
         if (previousPool != null) {
             List<PoolInfo> filteredPools =
                 Lists.newArrayList(filter(pools, notSamePool));
-            PoolInfo pool = selectByAvailableSpace(filteredPools, attributes);
+            PoolInfo pool = selectByAvailableSpace(filteredPools, attributes.getSize());
             if (pool != null) {
                 return pool;
             }
         }
 
-        return selectByAvailableSpace(pools, attributes);
+        return selectByAvailableSpace(pools, attributes.getSize());
     }
 
     @Override

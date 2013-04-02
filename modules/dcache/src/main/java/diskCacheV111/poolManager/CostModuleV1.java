@@ -397,7 +397,7 @@ public class CostModuleV1
 
          int diff = 1;
          long pinned =
-             (msg instanceof PoolMgrSelectWritePoolMsg) ? msg.getFileSize() : 0;
+             (msg instanceof PoolMgrSelectWritePoolMsg) ? ((PoolMgrSelectWritePoolMsg) msg).getPreallocated() : 0;
          queue.modifyQueue(diff);
          spaceInfo.modifyPinnedSpace(pinned);
          considerInvalidatingCache(currentPerformanceCost, costInfo);

@@ -20,9 +20,9 @@ public class PoolMgrReplicateFileMsg extends PoolMgrSelectReadPoolMsg {
     private int     _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED ;
 
     /** Creates a new instance of PoolMgrReplicateFile */
-    public PoolMgrReplicateFileMsg(FileAttributes fileAttributes, ProtocolInfo protocolInfo, long fileSize)
+    public PoolMgrReplicateFileMsg(FileAttributes fileAttributes, ProtocolInfo protocolInfo)
     {
-        super(fileAttributes, protocolInfo, fileSize, null);
+        super(fileAttributes, protocolInfo, null);
     }
     public void setAllowRestore( boolean allowRestore ){
         _allowRestore = allowRestore ;

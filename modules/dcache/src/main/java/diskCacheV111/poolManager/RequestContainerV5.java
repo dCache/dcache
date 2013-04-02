@@ -673,8 +673,7 @@ public class RequestContainerV5
                 new PoolMgrReplicateFileMsg(fileAttributes,
                                             new DCapProtocolInfo("DCap", 3, 0,
                                                                  new InetSocketAddress(args.argv(1),
-                                                                 2222)),
-                                            fileAttributes.getStorageInfo().getFileSize());
+                                                                 2222)));
 
             sendMessage( new CellMessage(new CellPath("PoolManager"), req) );
 

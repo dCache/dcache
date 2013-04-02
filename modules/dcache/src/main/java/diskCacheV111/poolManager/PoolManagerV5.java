@@ -483,11 +483,9 @@ public class PoolManagerV5
             throw new CacheException(57, "No appropriate pools found for link: " + linkName);
         }
 
-        FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setSize(filesize);
         Partition partition =
             _poolMonitor.getPartitionManager().getPartition(link.getTag());
-        msg.setPoolName(partition.selectWritePool(_costModule, pools, fileAttributes).getName());
+        msg.setPoolName(partition.selectWritePool(_costModule, pools, new FileAttributes(), filesize).getName());
         msg.setSucceeded();
         return msg;
     }
@@ -673,8 +671,8 @@ public class PoolManagerV5
     }
     */
 
-    private boolean quotasExceeded( StorageInfo info ){
-
+    private boolean quotasExceeded(FileAttributes fileAttributes) {
+       StorageInfo info = fileAttributes.getStorageInfo();
        String storageClass = info.getStorageClass()+"@"+info.getHsm() ;
 
        QuotaMgrCheckQuotaMessage quotas = new QuotaMgrCheckQuotaMessage( storageClass ) ;
@@ -700,28 +698,6 @@ public class PoolManagerV5
            return false ;
        }
 
-    }
-
-    private long determineExpectedFileSize(long expectedLength, StorageInfo storageInfo)
-    {
-        if (expectedLength > 0) {
-            return expectedLength;
-        }
-
-        if (storageInfo.getFileSize() > 0) {
-            return storageInfo.getFileSize();
-        }
-
-        String s = storageInfo.getKey("alloc-size");
-        if (s != null) {
-            try {
-                return Long.parseLong(s);
-            } catch (NumberFormatException e) {
-                // bad values are ignored
-            }
-        }
-
-        return 0;
     }
 
     public DelayedReply messageArrived(PoolManagerSelectLinkGroupForWriteMessage message)
@@ -852,43 +828,23 @@ public class PoolManagerV5
 
        @Override
        public void run(){
+           FileAttributes fileAttributes = _request.getFileAttributes();
+           StorageInfo storageInfo = fileAttributes.getStorageInfo();
+           ProtocolInfo protocolInfo = _request.getProtocolInfo();
 
-           StorageInfo  storageInfo  = _request.getStorageInfo() ;
-           ProtocolInfo protocolInfo = _request.getProtocolInfo() ;
-
-           _log.info( _pnfsId.toString()+" write handler started" );
+           _log.info("{} write handler started", _pnfsId);
            long started = System.currentTimeMillis();
 
-           if( storageInfo == null ){
-              requestFailed( 21 , "Storage info not available for write request : "+_pnfsId ) ;
-              return ;
-           }else if( protocolInfo == null ){
-              requestFailed( 22 , "Protocol info not available for write request : "+_pnfsId ) ;
-              return ;
-           }
-           if( _quotasEnabled && quotasExceeded( storageInfo ) ){
+           if( _quotasEnabled && quotasExceeded(fileAttributes) ){
               requestFailed( 55 , "Quotas Exceeded for StorageClass : "+storageInfo.getStorageClass() ) ;
               return ;
            }
 
-           long expectedLength =
-               determineExpectedFileSize(_request.getFileSize(), storageInfo);
-
-           /* The cost module relies on the expected file size.
-            */
-           _request.setFileSize(expectedLength);
-
-           try{
-
-               FileAttributes fileAttributes = new FileAttributes();
-               fileAttributes.setPnfsId(_pnfsId);
-               fileAttributes.setStorageInfo(storageInfo);
-               fileAttributes.setSize(expectedLength);
+           try {
                PoolInfo pool =
                    _poolMonitor
-                   .getPoolSelector(fileAttributes, protocolInfo, _request
-                           .getLinkGroup())
-                   .selectWritePool();
+                   .getPoolSelector(fileAttributes, protocolInfo, _request.getLinkGroup())
+                   .selectWritePool(_request.getPreallocated());
 
               _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
                         System.currentTimeMillis() - started);

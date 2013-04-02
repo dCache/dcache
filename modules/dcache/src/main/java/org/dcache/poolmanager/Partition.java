@@ -341,13 +341,13 @@ abstract public class Partition implements Serializable
      * Selects a pool for writing among a set of pools. May modify
      * the input list of pools.
      *
-     * An implementation cannot rely on any file attributes other than
-     * expected file size being defined.
+     * An implementation cannot rely on any file attributes being defined.
      */
     abstract public PoolInfo
         selectWritePool(CostModule cm,
                         List<PoolInfo> pools,
-                        FileAttributes attributes)
+                        FileAttributes attributes,
+                        long preallocated)
         throws CacheException;
 
     /**

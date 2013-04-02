@@ -95,6 +95,10 @@ public class PinManagerTests
         attributes.setPnfsId(pnfsId);
         attributes.setStorageInfo(STORAGE_INFO);
         attributes.setLocations(Collections.singleton(POOL1));
+
+        // Required attributes, but the values are not relevant
+        // when pool manager and pool are stubbed out.
+        attributes.setSize(0L);
         return attributes;
     }
 

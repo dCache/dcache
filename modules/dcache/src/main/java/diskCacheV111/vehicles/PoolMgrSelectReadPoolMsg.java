@@ -53,34 +53,31 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
 
     public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
                                     ProtocolInfo protocolInfo,
-                                    long fileSize,
                                     Context context)
     {
-        this(fileAttributes, protocolInfo, fileSize, context,
-             RequestContainerV5.allStates);
+        this(fileAttributes, protocolInfo, context, RequestContainerV5.allStates);
         checkArgument(fileAttributes.getDefinedAttributes().containsAll(getRequiredAttributes()),
-                      "Required attributes are missing");    }
+                      "Required attributes are missing");
+    }
 
     /**
      * @param fileAttributes FileAttributes of the file to read
      * @param protocolInfo ProtocolInfo describe the transfer
-     * @param fileSize The size of the file
      * @param context The context of the previous attempt; may be null
      * @param allowedStates Allowed states of the pool manager state machine
      */
     public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
                                     ProtocolInfo protocolInfo,
-                                    long fileSize,
                                     Context context,
                                     EnumSet<RequestContainerV5.RequestState> allowedStates)
     {
-        super(fileAttributes, protocolInfo , fileSize , allowedStates);
+        super(fileAttributes, protocolInfo, allowedStates);
         _context = (context == null) ? new Context() : context;
     }
 
     public static EnumSet<FileAttribute> getRequiredAttributes()
     {
-        return EnumSet.of(PNFSID, STORAGEINFO, LOCATIONS);
+        return EnumSet.of(PNFSID, STORAGEINFO, LOCATIONS, SIZE);
     }
 
     public Context getContext()

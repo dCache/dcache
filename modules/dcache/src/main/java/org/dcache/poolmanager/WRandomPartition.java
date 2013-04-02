@@ -63,7 +63,7 @@ public class WRandomPartition extends Partition
                     filter(dst, new DifferentHost(srcPoolInfo.getHostName())));
 
             if (!tryList.isEmpty()) {
-                PoolInfo destPoolInfo = selectWritePool(cm, tryList, attributes);
+                PoolInfo destPoolInfo = selectWritePool(cm, tryList, attributes, attributes.getSize());
                 return new P2pPair(srcPoolInfo, destPoolInfo);
             }
         }
@@ -78,11 +78,11 @@ public class WRandomPartition extends Partition
 
     @Override
     public PoolInfo selectStagePool(CostModule cm, List<PoolInfo> pools, String previousPool, String previousHost, FileAttributes attributes) throws CacheException {
-        return selectWritePool(cm, pools, attributes);
+        return selectWritePool(cm, pools, attributes, attributes.getSize());
     }
 
     @Override
-    public PoolInfo selectWritePool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes) throws CacheException {
+    public PoolInfo selectWritePool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes, long preallocated) throws CacheException {
         WeightedPool weightedPools[] = toWeightedWritePoolsArray(pools);
         int index = selectWrandomIndex(weightedPools);
         return weightedPools[index].getCostInfo();

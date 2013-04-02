@@ -70,16 +70,15 @@ public class LruPartition extends Partition
         return TYPE;
     }
 
-    private Predicate<PoolInfo> canHoldFile(FileAttributes attributes)
+    private Predicate<PoolInfo> canHoldFile(final long size)
     {
-        final long filesize = attributes.getSize();
         return new Predicate<PoolInfo>() {
             @Override
             public boolean apply(PoolInfo pool) {
                 PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
                 long available =
                     space.getFreeSpace() + space.getRemovableSpace();
-                return available - filesize > space.getGap();
+                return available - size > space.getGap();
             }
         };
     }
@@ -123,11 +122,12 @@ public class LruPartition extends Partition
     @Override
     public PoolInfo selectWritePool(CostModule cm,
                                     List<PoolInfo> pools,
-                                    FileAttributes attributes)
+                                    FileAttributes attributes,
+                                    long preallocated)
         throws CacheException
     {
         List<PoolInfo> freePools =
-            Lists.newArrayList(filter(pools, canHoldFile(attributes)));
+            Lists.newArrayList(filter(pools, canHoldFile(preallocated)));
         if (freePools.isEmpty()) {
             throw new CacheException(21, "All pools are full");
         }
@@ -152,7 +152,7 @@ public class LruPartition extends Partition
         throws CacheException
     {
         return new P2pPair(select(src, _lastRead),
-                           selectWritePool(cm, dst, attributes));
+                           selectWritePool(cm, dst, attributes, attributes.getSize()));
     }
 
     @Override
@@ -163,6 +163,6 @@ public class LruPartition extends Partition
                                     FileAttributes attributes)
         throws CacheException
     {
-        return selectWritePool(cm, pools, attributes);
+        return selectWritePool(cm, pools, attributes, attributes.getSize());
     }
 }

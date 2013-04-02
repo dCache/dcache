@@ -2141,7 +2141,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // try to get some space to store the file.
                 //
-                getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes,_protocolInfo,0) ;
+                long preallocated = 0L;
+                String value = _fileAttributes.getStorageInfo().getKey("alloc-size");
+                if (value != null) {
+                    try {
+                        preallocated = Long.parseLong(value);
+                    } catch (NumberFormatException e) {
+                        // bad values are ignored
+                    }
+                }
+                getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes, _protocolInfo, preallocated);
                 getPoolMessage.setIoQueueName(_ioQueueName );
                 if( _path != null ) {
                     getPoolMessage.setPnfsPath(_path);
@@ -2181,7 +2190,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                getPoolMessage =
                    new PoolMgrSelectReadPoolMsg(_fileAttributes,
                                                 _protocolInfo,
-                                                0,
                                                 _readPoolSelectionContext,
                                                 allowedStates);
                getPoolMessage.setIoQueueName(_ioQueueName );

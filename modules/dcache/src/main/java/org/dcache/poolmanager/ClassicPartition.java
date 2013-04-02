@@ -182,7 +182,8 @@ public class ClassicPartition extends Partition
     @Override
     public PoolInfo selectWritePool(CostModule cm,
                                     List<PoolInfo> pools,
-                                    FileAttributes attributes)
+                                    FileAttributes attributes,
+                                    long preallocated)
         throws CacheException
     {
         checkState(!pools.isEmpty());
@@ -197,7 +198,7 @@ public class ClassicPartition extends Partition
          * and performance cost.
          */
         PoolCost best =
-            _byFullCost.min(transform(pools, toPoolCost(attributes.getSize())));
+            _byFullCost.min(transform(pools, toPoolCost(preallocated)));
 
         /* Note that
          *

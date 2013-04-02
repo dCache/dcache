@@ -761,7 +761,6 @@ public class Transfer implements Comparable<Transfer>
                 PoolMgrSelectReadPoolMsg request =
                     new PoolMgrSelectReadPoolMsg(fileAttributes,
                                                  protocolInfo,
-                                                 fileAttributes.getSize(),
                                                  getReadPoolSelectionContext(),
                                                  allowedStates);
                 request.setId(_sessionId);

@@ -39,10 +39,11 @@ public interface PoolSelector
     PoolInfo selectReadPool() throws CacheException;
 
     /**
-     * Returns a pool for writing a file of the given size described by
-     * this PoolSelector.
+     * Returns a pool for writing a file described by this PoolSelector.
+     *
+     * @param preallocated Space in bytes reserved for the file, or zero.
      */
-    PoolInfo selectWritePool() throws CacheException;
+    PoolInfo selectWritePool(long preallocated) throws CacheException;
 
     Partition.P2pPair selectPool2Pool(boolean force) throws CacheException;
 

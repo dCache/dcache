@@ -1005,8 +1005,7 @@ public class UserAdminShell
 
 
           PoolMgrReplicateFileMsg select =
-              new PoolMgrReplicateFileMsg(fileAttributesMsg.getFileAttributes(),
-                                          pinfo, 0L);
+              new PoolMgrReplicateFileMsg(fileAttributesMsg.getFileAttributes(), pinfo);
 
           msg = new CellMessage( new CellPath("PoolManager"),select ) ;
 

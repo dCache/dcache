@@ -172,7 +172,7 @@ public class PoolMonitorV5
         }
 
         @Override
-        public PoolInfo selectWritePool()
+        public PoolInfo selectWritePool(long preallocated)
             throws CacheException
         {
             PoolPreferenceLevel[] levels = match(DirectionType.WRITE);
@@ -191,7 +191,7 @@ public class PoolMonitorV5
                 if (!pools.isEmpty()) {
                     Partition partition =
                         _partitionManager.getPartition(level.getTag());
-                    return partition.selectWritePool(_costModule, pools, _fileAttributes);
+                    return partition.selectWritePool(_costModule, pools, _fileAttributes, preallocated);
                 }
             }
 

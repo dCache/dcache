@@ -333,6 +333,9 @@ public class TransferManagerHandler implements CellMessageAnswerable
                 manager.persist(this);
 
 		fileAttributes = create.getFileAttributes();
+                if (size != null) {
+                    fileAttributes.setSize(size);
+                }
                 pnfsId  = create.getPnfsId();
 		pnfsIdString  = pnfsId.toString();
 		info.setPnfsId(pnfsId);
@@ -349,7 +352,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
                         return;
 		}
 		if(!store && tlog != null) {
-			tlog.middle(storage_info_msg.getStorageInfo().getFileSize());
+			tlog.middle(storage_info_msg.getFileAttributes().getSize());
 		}
 		//
 		// Added by litvinse@fnal.gov
@@ -385,18 +388,9 @@ public class TransferManagerHandler implements CellMessageAnswerable
         public void selectPool()
         {
 		protocol_info = manager.getProtocolInfo(transferRequest);
-                long sizeToSend =transferRequest.getSize() == null ? 0L: transferRequest
-                        .getSize();
-		PoolMgrSelectPoolMsg request =
-			store ?
-                                new PoolMgrSelectWritePoolMsg(fileAttributes,
-protocol_info,
-sizeToSend)
-			:
-                                new PoolMgrSelectReadPoolMsg(fileAttributes,
-                                                             protocol_info,
-                                                             sizeToSend,
-                                                             _readPoolSelectionContext);
+                PoolMgrSelectPoolMsg request = store
+                        ? new PoolMgrSelectWritePoolMsg(fileAttributes, protocol_info, (size == null) ? 0L: size)
+                        : new PoolMgrSelectReadPoolMsg(fileAttributes, protocol_info, _readPoolSelectionContext);
                 request.setPnfsPath(pnfsPath);
                 request.setSubject(transferRequest.getSubject());
 		log.debug("PoolMgrSelectPoolMsg: " + request );

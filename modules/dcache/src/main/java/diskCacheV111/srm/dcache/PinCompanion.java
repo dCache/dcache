@@ -216,7 +216,6 @@ public class PinCompanion
             PoolMgrSelectReadPoolMsg msg =
                 new PoolMgrSelectReadPoolMsg(_attributes,
                                              getProtocolInfo(),
-                                             _attributes.getSize(),
                                              _selectPoolContext);
             msg.setSkipCostUpdate(true);
             msg.setSubject(_subject);

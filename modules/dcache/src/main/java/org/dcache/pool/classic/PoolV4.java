@@ -915,8 +915,7 @@ public class PoolV4
             PoolMgrReplicateFileMsg req =
                 new PoolMgrReplicateFileMsg(attributes,
                                             new DCapProtocolInfo("DCap", 3, 0,
-                                                  new InetSocketAddress(_destinationHostName, 2222)),
-                                            storageInfo.getFileSize());
+                                                  new InetSocketAddress(_destinationHostName, 2222)));
             req.setReplyRequired(false);
             sendMessage(new CellMessage(_replicationManager, req));
         }
