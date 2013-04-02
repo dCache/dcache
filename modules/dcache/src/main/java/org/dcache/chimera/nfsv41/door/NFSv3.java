@@ -11,6 +11,7 @@ import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v3.NfsServerV3;
 import org.dcache.chimera.nfs.v3.xdr.mount_prot;
 import org.dcache.chimera.nfs.v3.xdr.nfs3_prot;
+import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 
@@ -21,7 +22,7 @@ public class NFSv3 {
 
     private final static Logger _log = LoggerFactory.getLogger(NFSv3.class);
 
-    private FileSystemProvider _fs;
+    private VirtualFileSystem _fs;
     private ExportFile _exports;
     private OncRpcSvc _service;
 
@@ -47,7 +48,7 @@ public class NFSv3 {
         _service.stop();
     }
 
-    public void setFileSystemProvider(FileSystemProvider fs) {
+    public void setFileSystemProvider(VirtualFileSystem fs) {
         _fs = fs;
     }
 
