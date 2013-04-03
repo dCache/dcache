@@ -44,7 +44,6 @@ public class DCapClientProtocol_1 implements MoverProtocol
     private DCapClientProtocolInfo dcapClient;
     private long starttime;
     private volatile long transfered;
-    private boolean changed;
 
 
     public DCapClientProtocol_1(CellEndpoint cell)
@@ -157,12 +156,6 @@ public class DCapClientProtocol_1 implements MoverProtocol
     public long getTransferTime()
     {
         return System.currentTimeMillis() -starttime;
-    }
-
-    @Override
-    public boolean wasChanged()
-    {
-        return changed;
     }
 
     private void dcapReadFile(Socket _socket,
@@ -309,7 +302,6 @@ public class DCapClientProtocol_1 implements MoverProtocol
                     rest     -= rc;
                     position += rc;
                 }
-                changed = true;
                 transfered +=block;
                 bb.limit(block);
                 fileChannel.write(bb);

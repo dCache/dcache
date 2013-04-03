@@ -35,7 +35,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
     private long last_transfer_time = System.currentTimeMillis();
     private long starttime;
     private volatile long transferred ;
-    private boolean changed;
 
     public RemoteHttpDataTransferProtocol_1(CellEndpoint cell)
     {
@@ -92,7 +91,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                 }
                 bb.limit(read);
                 fileChannel.write(bb);
-                changed = true;
                 transferred +=read;
                 bb.clear();
             }
@@ -123,11 +121,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         return System.currentTimeMillis() - starttime;
     }
 
-    @Override
-    public boolean wasChanged()
-    {
-        return changed;
-    }
 }
 
 

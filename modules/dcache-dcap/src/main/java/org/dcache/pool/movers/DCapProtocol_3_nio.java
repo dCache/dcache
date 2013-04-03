@@ -1099,9 +1099,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     }
 
     @Override
-    public boolean wasChanged(){ return _wasChanged; }
-
-    @Override
     public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
             throws NoSuchAlgorithmException
     {

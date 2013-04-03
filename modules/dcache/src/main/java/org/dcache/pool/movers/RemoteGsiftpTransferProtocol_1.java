@@ -240,12 +240,6 @@ public class RemoteGsiftpTransferProtocol_1
         return System.currentTimeMillis() - _starttime;
     }
 
-    @Override
-    public boolean wasChanged()
-    {
-        return _client == null;
-    }
-
     public void gridFTPRead(RemoteGsiftpTransferProtocolInfo protocolInfo,
                             StorageInfo storage,
                             Allocator allocator)

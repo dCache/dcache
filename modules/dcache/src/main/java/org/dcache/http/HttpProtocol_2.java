@@ -274,11 +274,6 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
     }
 
     @Override
-    public boolean wasChanged() {
-        return (_wrappedChannel != null) && _wrappedChannel.wasChanged();
-    }
-
-    @Override
     public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
             throws NoSuchAlgorithmException
     {

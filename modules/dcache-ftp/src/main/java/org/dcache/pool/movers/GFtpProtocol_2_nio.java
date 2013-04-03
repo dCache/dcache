@@ -624,13 +624,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	return _lastTransferred;
     }
 
-    /** Part of the MoverProtocol interface. */
-    @Override
-    public boolean wasChanged()
-    {
-	return _role == Role.Receiver;
-    }
-
     /** Part of the ChecksumMover interface. */
     private ChecksumFactory getChecksumFactory(GFtpProtocolInfo protocol)
     {

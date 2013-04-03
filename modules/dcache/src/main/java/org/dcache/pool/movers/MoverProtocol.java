@@ -42,11 +42,4 @@ public interface MoverProtocol
      * @return last access time in milliseconds.
      */
     public long getLastTransferred();
-
-    /**
-     * Get file modification status.
-     *
-     * @return true if file was changes.
-     */
-    public boolean wasChanged();
 }

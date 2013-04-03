@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -62,12 +61,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
      */
     private final AtomicLong _lastTransferred =
         new AtomicLong(_transferStarted);
-
-    /**
-     * True if the transfer any data.
-     */
-    private final AtomicBoolean _wasChanged =
-        new AtomicBoolean(false);
 
     /**
      * The number of bytes transferred.
@@ -131,7 +124,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     public synchronized MoverChannel<T> truncate(long size) throws IOException
     {
         try {
-            _wasChanged.set(true);
             _channel.truncate(size);
             return this;
         } finally {
@@ -213,7 +205,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     public int write(ByteBuffer buffer, long position) throws IOException {
         try {
             preallocate(position + buffer.remaining());
-            _wasChanged.set(true);
             int bytes = _channel.write(buffer, position);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -231,7 +222,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
             }
             preallocate(position() + remaining);
 
-            _wasChanged.set(true);
             long bytes = _channel.write(srcs, offset, length);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -249,7 +239,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
             }
             preallocate(position() + remaining);
 
-            _wasChanged.set(true);
             long bytes = _channel.write(srcs);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -273,7 +262,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
         try {
             preallocate(position + count);
-            _wasChanged.set(true);
             long bytes = _channel.transferFrom(src, position, count);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -306,10 +294,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
 
     public long getLastTransferred() {
         return _lastTransferred.get();
-    }
-
-    public boolean wasChanged() {
-        return _wasChanged.get();
     }
 
     private synchronized void preallocate(long pos)

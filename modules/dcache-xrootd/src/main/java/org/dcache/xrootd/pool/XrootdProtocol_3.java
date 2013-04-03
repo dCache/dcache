@@ -348,8 +348,4 @@ public class XrootdProtocol_3
         return (_wrappedChannel == null) ? 0 : _wrappedChannel.getLastTransferred();
     }
 
-    @Override
-    public boolean wasChanged() {
-        return (_wrappedChannel == null) ? false : _wrappedChannel.wasChanged();
-    }
 }

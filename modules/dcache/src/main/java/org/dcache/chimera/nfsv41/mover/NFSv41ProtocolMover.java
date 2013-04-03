@@ -73,16 +73,6 @@ public class NFSv41ProtocolMover implements ManualMover {
             throw new RuntimeException("This mover it not suposed to run in legacy mode");
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see diskCacheV111.movers.MoverProtocol#wasChanged()
-     */
-	@Override
-    public boolean wasChanged() {
-        return  _ioMode == IoMode.WRITE && (getBytesTransferred() > 0);
-    }
-
 
     /**
      * Set number of transfered bytes. The total transfered bytes count will
