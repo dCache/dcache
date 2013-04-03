@@ -21,6 +21,7 @@ class ReadHandleImpl implements ReplicaDescriptor
     private final CacheRepositoryV5 _repository;
     private final PnfsHandler _pnfs;
     private final MetaDataRecord _entry;
+    private FileAttributes _fileAttributes;
     private boolean _open;
 
     ReadHandleImpl(CacheRepositoryV5 repository,
@@ -30,6 +31,7 @@ class ReadHandleImpl implements ReplicaDescriptor
         _repository = checkNotNull(repository);
         _pnfs = checkNotNull(pnfs);
         _entry = checkNotNull(entry);
+        _fileAttributes = _entry.getFileAttributes();
         _open = true;
         _entry.incrementLinkCount();
     }
@@ -65,34 +67,25 @@ class ReadHandleImpl implements ReplicaDescriptor
         return _entry.getDataFile();
     }
 
-    /**
-     *
-     * @return cache entry
-     * @throws IllegalStateException
-     */
     @Override
     public synchronized FileAttributes getFileAttributes()  throws IllegalStateException {
-        if (!_open) {
-            throw new IllegalStateException("Handle is closed");
-        }
-        return _entry.getFileAttributes();
+        return _fileAttributes;
     }
 
     @Override
     public synchronized Iterable<Checksum> getChecksums() throws CacheException {
-        FileAttributes attributes = _entry.getFileAttributes();
-        if (attributes.isUndefined(FileAttribute.CHECKSUM)) {
+        if (_fileAttributes.isUndefined(FileAttribute.CHECKSUM)) {
             Set<Checksum> checksums = _pnfs.getFileAttributes(
                     _entry.getPnfsId(), EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
             synchronized (_entry) {
-                attributes = _entry.getFileAttributes();
-                if (attributes.isUndefined(FileAttribute.CHECKSUM)) {
-                    attributes.setChecksums(checksums);
-                    _entry.setFileAttributes(attributes);
+                _fileAttributes = _entry.getFileAttributes();
+                if (_fileAttributes.isUndefined(FileAttribute.CHECKSUM)) {
+                    _fileAttributes.setChecksums(checksums);
+                    _entry.setFileAttributes(_fileAttributes);
                 }
             }
         }
-        return unmodifiableIterable(attributes.getChecksums());
+        return unmodifiableIterable(_fileAttributes.getChecksums());
     }
 
     @Override

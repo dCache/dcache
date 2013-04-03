@@ -387,13 +387,9 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public synchronized FileAttributes getFileAttributes()  throws IllegalStateException
+    public FileAttributes getFileAttributes()  throws IllegalStateException
     {
-        if (_state == HandleState.CLOSED) {
-            throw new IllegalStateException("Handle is closed");
-        }
-
-        return _entry.getFileAttributes();
+        return _fileAttributes;
     }
 
     @Override
@@ -408,7 +404,7 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public synchronized void addChecksums(Iterable<Checksum> checksums) throws CacheException
+    public synchronized void addChecksums(Iterable<Checksum> checksums)
     {
         if (!isEmpty(checksums)) {
             Iterable<Checksum> newChecksums;

@@ -578,7 +578,7 @@ public class RepositorySubsystemTest
         handle.getFile();
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test
     public void testClosedReadHandleGetFileAttributes()
         throws IOException, CacheException, InterruptedException
     {
@@ -589,7 +589,10 @@ public class RepositorySubsystemTest
         ReplicaDescriptor handle =
             repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
-        handle.getFileAttributes();
+        FileAttributes fileAttributes = handle.getFileAttributes();
+        assertEquals(id1, fileAttributes.getPnfsId());
+        assertEquals(size1, fileAttributes.getSize());
+        assertEquals(info1, fileAttributes.getStorageInfo());
     }
 
     @Test

@@ -81,9 +81,7 @@ public interface ReplicaDescriptor extends Allocator
     File getFile() throws IllegalStateException;
 
     /**
-     * Return the file attributes of the file represented by this replica.
-     *
-     * @throws IllegalStateException if the descriptor is closed.
+     * Returns the file attributes of the file represented by this replica.
      */
     FileAttributes getFileAttributes() throws IllegalStateException;
 
@@ -107,5 +105,5 @@ public interface ReplicaDescriptor extends Allocator
      *
      * @param checksum Checksum of the file
      */
-    void addChecksums(Iterable<Checksum> checksum) throws CacheException;
+    void addChecksums(Iterable<Checksum> checksum);
 }
