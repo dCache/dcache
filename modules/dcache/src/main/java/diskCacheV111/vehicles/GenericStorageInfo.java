@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
@@ -310,37 +311,29 @@ public class GenericStorageInfo
             }
         }
 
-        if( !other.getHsm().equals(this.getHsm() )) {
+        if (!Objects.equals(other.getHsm(), this.getHsm())) {
             return false;
         }
 
-        if( other.getCacheClass() != null && this.getCacheClass() != null &&
-                !other.getCacheClass().equals(this.getCacheClass())) {
+        if (!Objects.equals(other.getCacheClass(), this.getCacheClass())) {
             return false;
         }
 
-        if( other.getCacheClass() == null && this.getCacheClass() != null ) {
-            return false;
-        }
-        if( other.getCacheClass() != null && this.getCacheClass() == null ) {
+        if (!Objects.equals(other._keyHash, this._keyHash)) {
             return false;
         }
 
-        if( !(other._keyHash.equals(this._keyHash))) {
+        if (other.getLegacySize() != this.getLegacySize() ) {
+            return false;
+        }
+        if (!Objects.equals(other.getStorageClass(), this.getStorageClass())) {
             return false;
         }
 
-        if( other.getLegacySize() != this.getLegacySize() ) {
+        if (other.isStored() != this.isStored() ) {
             return false;
         }
-        if( !other.getStorageClass().equals(this.getStorageClass())) {
-            return false;
-        }
-
-        if( other.isStored() != this.isStored() ) {
-            return false;
-        }
-        if( other.isCreatedOnly() != this.isCreatedOnly() ) {
+        if (other.isCreatedOnly() != this.isCreatedOnly() ) {
             return false;
         }
 
