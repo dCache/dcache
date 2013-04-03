@@ -298,11 +298,12 @@ public abstract class Job  {
             boolean isFinalState = State.isFinalState(this.getState());
             getJobStorage().saveJob(this, isFinalState || force);
             savedInFinalState = isFinalState;
-        } catch(Throwable t) {
+        } catch (SQLException e) {
             // if saving fails we do not want to fail the request
-
-            logger.error(t.toString());
-
+            logger.error("Failed to save SQL request to database: {}", e.toString());
+        } catch (RuntimeException e) {
+            // if saving fails we do not want to fail the request
+            logger.error("Failed to save SQL request to database. Please report to support@dcache.org.", e);
         } finally {
             wunlock();
        }
