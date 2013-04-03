@@ -1,9 +1,11 @@
 package org.dcache.srm.request.sql;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +23,7 @@ import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.scheduler.FinalStateOnlyJobStorageDecorator;
+import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.NoopJobStorage;
@@ -62,7 +65,8 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
         }
     }
 
-    public DatabaseJobStorageFactory(Configuration config) {
+    public DatabaseJobStorageFactory(Configuration config) throws SQLException
+    {
         try {
             add(config.getDatabaseParametersForBringOnline(),
                 BringOnlineFileRequest.class,
@@ -106,39 +110,43 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
             for (JobStorage js: jobStorageMap.values()) {
                 Job.registerJobStorage(js);
             }
-            for (JobStorage js: jobStorageMap.values()) {
-                try {
-                    if (js instanceof DatabaseJobStorage) {
-                        ((DatabaseJobStorage) js).updatePendingJobs();
-                    }
-                } catch (Exception e) {
-                    logger.error("updatePendingJobs failed",e);
+        } catch (InstantiationException e) {
+            Throwables.propagateIfPossible(e.getCause(), SQLException.class);
+            throw new RuntimeException("Request perisistence initialization failed: " + e.toString(), e);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException("Request perisistence initialization failed: " + e.toString(), e);
+        }
+    }
+
+    public void loadExistingJobs() throws SQLException, InterruptedException, IllegalStateTransition
+    {
+        for (JobStorage js: jobStorageMap.values()) {
+            try {
+                if (js instanceof DatabaseJobStorage) {
+                    ((DatabaseJobStorage) js).updatePendingJobs();
                 }
+            } catch (Exception e) {
+                logger.error("updatePendingJobs failed",e);
             }
-            SchedulerFactory schedulerFactory =
-                    SchedulerFactory.getSchedulerFactory();
+        }
+        SchedulerFactory schedulerFactory =
+                SchedulerFactory.getSchedulerFactory();
 
-            for(Class<? extends Job> jobType: jobStorageMap.keySet()) {
-                Scheduler scheduler;
-                try {
-                    scheduler = schedulerFactory.getScheduler(jobType);
-                } catch(UnsupportedOperationException uoe) {
-                    //ignore, not all types of jobs are scheuled
-                    //some are just containers for file requests
-                    continue;
-                }
-                JobStorage djs = jobStorageMap.get(jobType);
-                // get all pending unsheduled jobs
-                Set<Job> jobs = djs.getJobs(null, State.PENDING);
-                for(Job job:jobs) {
-                    scheduler.schedule(job);
-                }
+        for(Class<? extends Job> jobType: jobStorageMap.keySet()) {
+            Scheduler scheduler;
+            try {
+                scheduler = schedulerFactory.getScheduler(jobType);
+            } catch(UnsupportedOperationException uoe) {
+                //ignore, not all types of jobs are scheuled
+                //some are just containers for file requests
+                continue;
             }
-
-
-        } catch(Exception e) {
-            throw new RuntimeException("DatabaseJobStorageFactory intialization",
-                    e);
+            JobStorage djs = jobStorageMap.get(jobType);
+            // get all pending unsheduled jobs
+            Set<Job> jobs = djs.getJobs(null, State.PENDING);
+            for(Job job:jobs) {
+                scheduler.schedule(job);
+            }
         }
     }
 
