@@ -3,6 +3,7 @@
  */
 package org.dcache.chimera.nfsv41.door;
 
+import com.google.common.base.Joiner;
 import org.glassfish.grizzly.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -487,14 +488,14 @@ public class NFSv41Door extends AbstractCellComponent implements
         _exportFile.rescan();
         return "Done";
     }
-    public static final String fh_exports_ls = " # dump nfs exports";
-    public String ac_exports_ls(Args args) {
-        StringBuilder sb = new StringBuilder();
-        for(FsExport export: _exportFile.getExports()) {
-            sb.append(export).append("\n");
+    public static final String fh_exports_ls = " [host] # dump nfs exports";
+    public String ac_exports_ls_$_0_1(Args args) throws UnknownHostException {
+        InetAddress address = InetAddress.getByName(args.argv(0));
+        if (args.argc() > 0 ) {
+            return Joiner.on('\n').join(_exportFile.exportsFor(address));
+        } else {
+            return Joiner.on('\n').join(_exportFile.getExports());
         }
-
-        return sb.toString();
     }
 
     private static deviceid4 deviceidOf(int id) {
