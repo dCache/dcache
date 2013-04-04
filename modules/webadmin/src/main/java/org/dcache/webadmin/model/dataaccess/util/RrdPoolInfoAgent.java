@@ -280,22 +280,25 @@ public class RrdPoolInfoAgent implements Runnable {
         PoolQueuePlotData all = new PoolQueuePlotData(ALL_POOLS);
 
         long now = getAlignedCurrentTimeInSecs();
+        boolean updateAll = false;
 
         for (SelectionPool selectionPool : pools) {
             PoolCostInfo costInfo
                 = costModule.getPoolCostInfo(selectionPool.getName());
             if (costInfo == null) {
-                costInfo = new PoolCostInfo(selectionPool.getName());
-                costInfo.setSpaceUsage(0, 0, 0, 0, 0);
+                continue;
             }
             storeToRRD(new PoolQueuePlotData(costInfo), now);
             logger.debug("successfully wrote pool queue data for {}",
                             selectionPool.getName());
             all.addValues(costInfo);
+            updateAll = true;
         }
 
-        storeToRRD(all, now);
-        logger.debug("successfully wrote pool queue data for {}", ALL_POOLS);
+        if (updateAll) {
+            storeToRRD(all, now);
+            logger.debug("successfully wrote pool queue data for {}", ALL_POOLS);
+        }
     }
 
     /**
