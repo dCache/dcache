@@ -66,9 +66,9 @@
     </properties>
 
     <scm>
-        <connection>scm:svn:http://svn.dcache.org/dCache/trunk</connection>
-        <developerConnection>scm:svn:svn+ssh://svn.dcache.org/data/svn/dCache/trunk</developerConnection>
-        <url>http://www.dcache.org/WebSVN/listing.php?repname=dCache</url>
+        <connection>scm:git:https://github.com/dCache/dcache.git</connection>
+        <developerConnection>scm:git:git@github.com:dCache/dcache.git</developerConnection>
+        <url>https://github.com/dCache/dcache.git</url>
     </scm>
 
     <repositories>
