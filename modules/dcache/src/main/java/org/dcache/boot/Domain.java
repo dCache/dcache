@@ -4,7 +4,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
-import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +53,6 @@ public class Domain
 
     public ConfigurationProperties properties()
     {
-        _properties.put(PROPERTY_DOMAIN_CELLS,
-                        Joiner.on(" ").join(getCellNames()));
         return _properties;
     }
 
@@ -71,12 +68,12 @@ public class Domain
         return cells;
     }
 
-    public ConfigurationProperties createService(String name)
+    public ConfigurationProperties createService(String type)
     {
         ScopedConfigurationProperties service =
-            new ScopedConfigurationProperties(_properties, name);
+            new ScopedConfigurationProperties(_properties, type);
         service.setIsService(true);
-        service.put(PROPERTY_DOMAIN_SERVICE, name);
+        service.put(PROPERTY_DOMAIN_SERVICE, type);
         _services.add(service);
         return service;
     }

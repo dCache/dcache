@@ -26,6 +26,7 @@ import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 import org.dcache.util.NetworkUtils;
 
 import static org.dcache.boot.Properties.PROPERTY_DOMAINS;
+import static org.dcache.boot.Properties.PROPERTY_DOMAIN_CELLS;
 
 /**
  * Layout encapsulates the configuration of a set of domains.
@@ -110,10 +111,10 @@ public class Layout
 
             String domainName =
                 _properties.replaceKeywords(matcher.group(1));
-            String serviceName =
+            String serviceType =
                 matcher.group(3);
 
-            if (serviceName == null) {
+            if (serviceType == null) {
                 Domain domain = createDomain(domainName);
                 loadSection(reader, domain.properties());
             } else {
@@ -121,12 +122,17 @@ public class Layout
                 if (domain == null) {
                     String message = String.format("Service declaration " +
                             "%s/%s lacks definition of domain %s",
-                            domainName, serviceName, domainName);
+                            domainName, serviceType, domainName);
                     discardSection(reader, message);
                 } else {
-                    loadSection(reader, domain.createService(serviceName));
+                    loadSection(reader, domain.createService(serviceType));
                 }
             }
+        }
+
+        // Cannot do this until all services have been defined
+        for (Domain domain : _domains.values()) {
+            domain.properties().put(PROPERTY_DOMAIN_CELLS, Joiner.on(" ").join(domain.getCellNames()));
         }
     }
 
