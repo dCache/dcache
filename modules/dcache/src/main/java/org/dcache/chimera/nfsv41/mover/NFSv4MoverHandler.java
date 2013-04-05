@@ -283,4 +283,8 @@ public class NFSv4MoverHandler {
     public void shutdown() throws IOException {
         _rpcService.stop();
     }
+
+    NFSServerV41 getNFSServer() {
+        return _embededDS;
+    }
 }
