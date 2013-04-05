@@ -16,10 +16,14 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
 import dmg.cells.nucleus.CellPath;
+import dmg.util.Args;
 
 import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.nfs.v4.NFS4Client;
+import org.dcache.chimera.nfs.v4.NFSv41Session;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
@@ -40,7 +44,7 @@ import org.dcache.xdr.OncRpcException;
  * @since 1.9.11
  */
 public class NfsTransferService extends AbstractCellComponent
-        implements MoverFactory, TransferService<MoverProtocolMover>
+        implements MoverFactory, TransferService<MoverProtocolMover>, CellCommandListener
 {
     private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
     private NFSv4MoverHandler _nfsIO;
@@ -129,5 +133,32 @@ public class NfsTransferService extends AbstractCellComponent
             i++;
         }
         return socketAddresses;
+    }
+
+    public final static String hh_nfs_stats = " # show nfs mover statstics";
+    public String ac_nfs_stats(Args args) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Stats:").append("\n").append(_nfsIO.getNFSServer().getStatistics());
+
+        return sb.toString();
+    }
+
+    public final static String hh_nfs_sessions = " # show nfs sessions";
+    public String ac_nfs_sessions(Args args) {
+
+       StringBuilder sb = new StringBuilder();
+        for (NFS4Client client : _nfsIO.getNFSServer().getClients()) {
+            sb.append(client).append('\n');
+            for (NFSv41Session session : client.sessions()) {
+                sb.append("  ")
+                        .append(session)
+                        .append(" slots (max/used): ")
+                        .append(session.getHighestSlot())
+                        .append('/')
+                        .append(session.getHighestUsedSlot())
+                        .append('\n');
+            }
+        }
+        return sb.toString();
     }
 }
