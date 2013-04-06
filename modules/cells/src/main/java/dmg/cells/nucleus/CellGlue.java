@@ -19,6 +19,7 @@ import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -31,6 +32,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import dmg.util.CpuUsage;
+import dmg.util.FractionalCpuUsage;
 import dmg.util.TimebasedCounter;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -685,5 +688,20 @@ class CellGlue
     {
         _curatorFramework.close();
         _killerExecutor.shutdown();
+    }
+
+    void setAccumulatedCellCpuUsage(Map<String,CpuUsage> usage)
+    {
+
+    }
+
+    void setCurrentCellCpuUsage(Map<String,FractionalCpuUsage> usage)
+    {
+
+    }
+
+    String cellNameFor(Thread thread)
+    {
+        return "";
     }
 }
