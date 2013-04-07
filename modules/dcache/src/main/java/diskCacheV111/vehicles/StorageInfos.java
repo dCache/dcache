@@ -89,7 +89,7 @@ public class StorageInfos
         attributes.setRetentionPolicy(info.getLegacyRetentionPolicy());
         String cFlag = info.getKey("flag-c");
         if (cFlag != null) {
-            attributes.setChecksums(Sets.newHashSet(transform(Splitter.on(',').split(cFlag),
+            attributes.setChecksums(Sets.newHashSet(transform(Splitter.on(',').trimResults().omitEmptyStrings().split(cFlag),
                     new Function<String, Checksum>() {
                         @Override
                         public Checksum apply(String digest) {
