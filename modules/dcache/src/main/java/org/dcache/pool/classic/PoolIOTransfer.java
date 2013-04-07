@@ -4,6 +4,7 @@ import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.channels.CompletionHandler;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -66,6 +67,12 @@ public abstract class PoolIOTransfer
     /** identify of the entity requesting the transfer */
     protected final Subject _subject;
 
+    /** mover executor service to be used with this transfer */
+    private final MoverExecutorService _moverExecutorService;
+
+    /** post transfer execution service to be used with this transfer */
+    private final PostTransferExecutionService _postTransferExecutionService;
+
     /**
      * @param id the client id of the request
      * @param initiator the initiator string identifying who requested the transfer
@@ -82,7 +89,9 @@ public abstract class PoolIOTransfer
                           FileAttributes fileAttributes,
                           ProtocolInfo protocolInfo,
                           Subject subject,
-                          MoverProtocol mover)
+                          MoverProtocol mover,
+                          MoverExecutorService moverExecutorService,
+                          PostTransferExecutionService postTransferExecutionService)
     {
         _id = id;
         _initiator = initiator;
@@ -93,6 +102,8 @@ public abstract class PoolIOTransfer
         _protocolInfo = protocolInfo;
         _subject = subject;
         _mover = mover;
+        _moverExecutorService = moverExecutorService;
+        _postTransferExecutionService = postTransferExecutionService;
     }
 
     public FileAttributes getFileAttributes()
@@ -194,6 +205,14 @@ public abstract class PoolIOTransfer
             sb.append((System.currentTimeMillis() - lastTransferTime) / 1000L);
         }
         return sb.toString();
+    }
+
+    public Cancellable execute(CompletionHandler<Void, Void> completionHandler) {
+        return _moverExecutorService.execute(this, completionHandler);
+    }
+
+    public void postprocess(CompletionHandler<Void, Void> completionHandler) {
+        _postTransferExecutionService.execute(this, completionHandler);
     }
 
     /**

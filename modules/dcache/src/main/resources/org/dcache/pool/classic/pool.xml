@@ -91,6 +91,7 @@
               value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
     <property name="hasTapeBackend"
               value="#{ '${lfs}' == 'none' }"/>
+    <property name="moverExecutionServices" ref="mover-execution-services" />
     <property name="ioQueueManager" ref="io-queue-manager" />
     <property name="poolMode" ref="pool-mode"/>
     <property name="billingStub" ref="billing-stub"/>
@@ -324,7 +325,6 @@
     <description>Requests IO manager</description>
     <constructor-arg ref="jtm" />
     <constructor-arg value="p2p,${poolIoQueue}" />
-    <constructor-arg ref="mover-execution-service" />
   </bean>
 
   <bean id="legacy-execution-service" class="org.dcache.pool.classic.LegacyMoverExecutorService"
@@ -345,7 +345,7 @@
       <property name="faultListener" ref="pool"/>
   </bean>
 
-  <bean id="mover-execution-service" class="org.dcache.pool.classic.MoverExecutorServices" >
+  <bean id="mover-execution-services" class="org.dcache.pool.classic.MoverExecutorServices" >
       <description>Request execution service container</description>
       <constructor-arg ref="legacy-execution-service"/>
       <constructor-arg>

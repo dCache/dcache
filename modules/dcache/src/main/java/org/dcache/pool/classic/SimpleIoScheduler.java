@@ -79,22 +79,17 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     private final AdjustableSemaphore _semaphore = new AdjustableSemaphore();
 
-    private final MoverExecutorServices _executorServices;
-
     public SimpleIoScheduler(String name,
-                             MoverExecutorServices executorServices,
                              int queueId)
     {
-        this(name, executorServices, queueId, true);
+        this(name, queueId, true);
     }
 
     public SimpleIoScheduler(String name,
-                             MoverExecutorServices executorServices,
                              int queueId,
                              boolean fifo)
     {
         _name = name;
-        _executorServices = executorServices;
         _queueId = queueId;
 
         Comparator<IoPrioritizable> comparator =
@@ -213,8 +208,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
              * the transfer and to notify billing and door.
              */
             request.kill();
-            String protocolName = protocolNameOf(request.getTransfer());
-            _executorServices.getPostExecutorService(protocolName).execute(request.getTransfer(),
+            request.getTransfer().postprocess(
                     new CompletionHandler<Void,Void>()
                     {
                         @Override
@@ -288,9 +282,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                 try {
                     final PrioritizedRequest request = _queue.take();
                     final PoolIOTransfer transfer = request.getTransfer();
-                    final String protocolName = protocolNameOf(transfer);
                     request.getCdc().restore();
-                    request.transfer(_executorServices.getExecutorService(protocolName),
+                    request.transfer(
                             new CompletionHandler<Void,Void>()
                             {
                                 @Override
@@ -310,32 +303,30 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
                                 private void postprocess()
                                 {
-                                    _executorServices
-                                            .getPostExecutorService(protocolName)
-                                            .execute(request.getTransfer(),
-                                                    new CompletionHandler<Void, Void>()
-                                                    {
-                                                        @Override
-                                                        public void completed(Void result,
-                                                                              Void attachment)
-                                                        {
-                                                            release();
-                                                        }
+                                    transfer.postprocess(
+                                            new CompletionHandler<Void, Void>()
+                                            {
+                                                @Override
+                                                public void completed(Void result,
+                                                                      Void attachment)
+                                                {
+                                                    release();
+                                                }
 
-                                                        @Override
-                                                        public void failed(Throwable exc,
-                                                                           Void attachment)
-                                                        {
-                                                            release();
-                                                        }
+                                                @Override
+                                                public void failed(Throwable exc,
+                                                                   Void attachment)
+                                                {
+                                                    release();
+                                                }
 
-                                                        private void release()
-                                                        {
-                                                            request.done();
-                                                            _jobs.remove(request.getId());
-                                                            _semaphore.release();
-                                                        }
-                                                    });
+                                                private void release()
+                                                {
+                                                    request.done();
+                                                    _jobs.remove(request.getId());
+                                                    _semaphore.release();
+                                                }
+                                            });
                                 }
                             });
                 } catch (RuntimeException | Error | InterruptedException e) {
@@ -348,11 +339,6 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-    }
-
-    private String protocolNameOf(PoolIOTransfer request) {
-        return request.getProtocolInfo().getProtocol() + "-"
-                        + request.getProtocolInfo().getMajorVersion();
     }
 
     private static class PrioritizedRequest implements IoPrioritizable  {
@@ -431,14 +417,14 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             return new IoJobInfo(_submitTime, _startTime, _state, _id, _transfer);
         }
 
-        public synchronized void transfer(MoverExecutorService service, CompletionHandler<Void,Void> completionHandler) {
+        public synchronized void transfer(CompletionHandler<Void,Void> completionHandler) {
             try {
                 if (_state != QUEUED) {
                     completionHandler.failed(new InterruptedException("Transfer cancelled"), null);
                 }
                 _state = RUNNING;
                 _startTime = System.currentTimeMillis();
-                _mover = service.execute(_transfer, completionHandler);
+                _mover = _transfer.execute(completionHandler);
             } catch (RuntimeException e) {
                 completionHandler.failed(e, null);
             }

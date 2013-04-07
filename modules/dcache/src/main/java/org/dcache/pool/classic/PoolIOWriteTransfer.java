@@ -53,13 +53,16 @@ public class PoolIOWriteTransfer
                                ProtocolInfo protocolInfo,
                                Subject subject,
                                MoverProtocol mover,
+                               MoverExecutorService moverExecutorService,
+                               PostTransferExecutionService postTransferExecutorSevice,
                                Repository repository,
                                ChecksumModule checksumModule,
                                EntryState targetState,
                                List<StickyRecord> stickyRecords)
         throws FileInCacheException, IOException
     {
-        super(id, initiator, isPoolToPoolTransfer, queue, door, fileAttributes, protocolInfo, subject, mover);
+        super(id, initiator, isPoolToPoolTransfer, queue, door, fileAttributes,
+                protocolInfo, subject, mover, moverExecutorService, postTransferExecutorSevice);
 
         _checksumModule = checksumModule;
         _handle = repository.createEntry(fileAttributes,

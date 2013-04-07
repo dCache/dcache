@@ -28,8 +28,7 @@ public class IoQueueManager {
     private final ImmutableList<IoScheduler> _queues;
     private final ImmutableMap<String, IoScheduler> _queuesByName;
 
-    public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] names,
-            MoverExecutorServices executorServices) {
+    public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] names) {
         Map<String,IoScheduler> queuesByName = new HashMap<>();
         List<IoScheduler> queues = new ArrayList<>();
         for (String name : concat(asList(DEFAULT_QUEUE), asList(names))) {
@@ -41,7 +40,7 @@ public class IoQueueManager {
                 }
                 if (!queuesByName.containsKey(name)) {
                     _log.debug("Creating queue: {}", name);
-                    IoScheduler job = new SimpleIoScheduler(name, executorServices, queues.size(), fifo);
+                    IoScheduler job = new SimpleIoScheduler(name, queues.size(), fifo);
                     queues.add(job);
                     queuesByName.put(name, job);
                     jobTimeoutManager.addScheduler(name, job);

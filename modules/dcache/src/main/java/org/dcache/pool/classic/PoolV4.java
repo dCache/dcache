@@ -4,6 +4,7 @@ package org.dcache.pool.classic;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
 
@@ -101,6 +102,8 @@ import org.dcache.util.IoPriority;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class PoolV4
     extends AbstractCellComponent
     implements FaultListener,
@@ -184,6 +187,7 @@ public class PoolV4
     private boolean _running;
     private double _breakEven = 0.7;
     private double _moverCostFactor = 0.5;
+    private MoverExecutorServices _moverExecutorServices;
 
     public PoolV4(String poolName, String args)
     {
@@ -201,32 +205,35 @@ public class PoolV4
 
     protected void assertNotRunning(String error)
     {
-        if (_running) {
-            throw new IllegalStateException(error);
-        }
+        checkState(!_running, error);
     }
 
+    @Required
     public void setBaseDir(String baseDir)
     {
         assertNotRunning("Cannot change base dir after initialisation");
         _baseDir = baseDir;
     }
 
+    @Required
     public void setVersion(int version)
     {
         _version = version;
     }
 
+    @Required
     public void setReplicateOnArrival(String replicate)
     {
         _replicationHandler.init(replicate.equals("") ? "on" : replicate);
     }
 
+    @Required
     public void setAllowCleaningPreciousFiles(boolean allow)
     {
         _cleanPreciousFiles = allow;
     }
 
+    @Required
     public void setVolatile(boolean isVolatile)
     {
         _isVolatile = isVolatile;
@@ -237,6 +244,7 @@ public class PoolV4
         return _isVolatile;
     }
 
+    @Required
     public void setHasTapeBackend(boolean hasTapeBackend)
     {
         _hasTapeBackend = hasTapeBackend;
@@ -247,6 +255,7 @@ public class PoolV4
         return _hasTapeBackend;
     }
 
+    @Required
     public void setP2PMode(String mode)
     {
         if (mode == null) {
@@ -260,6 +269,7 @@ public class PoolV4
         }
     }
 
+    @Required
     public void setDuplicateRequestMode(String mode)
     {
         if (mode == null || mode.equals("none")) {
@@ -273,23 +283,30 @@ public class PoolV4
         }
     }
 
+    @Required
     public void setPoolUpDestination(String name)
     {
         _poolupDestination = name;
     }
 
+    @Required
     public void setBillingStub(CellStub stub)
     {
+        assertNotRunning("Cannot set billing stub after initialization");
         _billingStub = stub;
     }
 
+    @Required
     public void setPnfsHandler(PnfsHandler pnfs)
     {
+        assertNotRunning("Cannot set PNFS handler after initialization");
         _pnfs = pnfs;
     }
 
+    @Required
     public void setRepository(CacheRepositoryV5 repository)
     {
+        assertNotRunning("Cannot set repository after initialization");
         if (_repository != null) {
             _repository.removeFaultListener(this);
         }
@@ -302,51 +319,63 @@ public class PoolV4
         _repository.addListener(new ATimeMaintainer());
     }
 
+    @Required
     public void setAccount(Account account)
     {
+        assertNotRunning("Cannot set account after initialization");
         _account = account;
     }
 
+    @Required
     public void setChecksumModule(ChecksumModule module)
     {
         assertNotRunning("Cannot set checksum module after initialization");
         _checksumModule = module;
     }
 
+    @Required
     public void setStorageQueue(StorageClassContainer queue)
     {
         assertNotRunning("Cannot set storage queue after initialization");
         _storageQueue = queue;
     }
 
+    @Required
     public void setStorageHandler(HsmStorageHandler2 handler)
     {
+        assertNotRunning("Cannot set HSM storage handler after initialization");
         _storageHandler = handler;
     }
 
+    @Required
     public void setHSMSet(HsmSet set)
     {
         assertNotRunning("Cannot set HSM set after initialization");
         _hsmSet = set;
     }
 
+    @Required
     public void setFlushController(HsmFlushController controller)
     {
         assertNotRunning("Cannot set flushing controller after initialization");
         _flushingThread = controller;
     }
 
+    @Required
     public void setPPClient(P2PClient client)
     {
         assertNotRunning("Cannot set P2P client after initialization");
         _p2pClient = client;
     }
 
+    @Required
     public void setReplicaStatePolicy(ReplicaStatePolicy replicaStatePolicy)
     {
+        assertNotRunning("Cannot set replica state policy after initialization");
         _replicaStatePolicy = replicaStatePolicy;
     }
 
+    @Required
     public void setTags(String tags)
     {
         Map<String,String> newTags = new HashMap<>();
@@ -369,14 +398,24 @@ public class PoolV4
         }
     }
 
+    @Required
     public void setIoQueueManager(IoQueueManager ioQueueManager)
     {
+        assertNotRunning("Cannot set I/O queue manager after initialization");
         _ioQueue = ioQueueManager;
     }
 
+    @Required
     public void setPoolMode(PoolV2Mode mode)
     {
         _poolMode = mode;
+    }
+
+    @Required
+    public void setMoverExecutionServices(MoverExecutorServices moverExecutionServices)
+    {
+        assertNotRunning("Cannot set Imover execution services after initialization");
+        _moverExecutorServices = moverExecutionServices;
     }
 
     /**
@@ -387,21 +426,7 @@ public class PoolV4
      */
     public void init()
     {
-        assert _baseDir != null : "Base directory must be set";
-        assert _pnfs != null : "PNFS handler must be set";
-        assert _repository != null : "Repository must be set";
-        assert _checksumModule != null : "Checksum module must be set";
-        assert _storageQueue != null : "Storage queue must be set";
-        assert _storageHandler != null : "Storage handler must be set";
-        assert _hsmSet != null : "HSM set must be set";
-        assert _flushingThread != null : "Flush controller must be set";
-        assert _p2pClient != null : "P2P client must be set";
-        assert _account != null : "Account must be set";
-
-        if (_isVolatile && _hasTapeBackend) {
-            throw new IllegalStateException("Volatile pool cannot have a tape backend");
-        }
-
+        checkState(!_isVolatile || !_hasTapeBackend, "Volatile pool cannot have a tape backend");
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
         _pingThread.start();
     }
@@ -729,6 +754,11 @@ public class PoolV4
 
             source.revert();
 
+            String protocolName = protocolNameOf(pi);
+            MoverExecutorService moverExecutorService = _moverExecutorServices.getExecutorService(protocolName);
+            PostTransferExecutionService postExecutorService =
+                    _moverExecutorServices.getPostExecutorService(protocolName);
+
             PoolIOTransfer transfer;
             if (message instanceof PoolAcceptFileMessage) {
                 List<StickyRecord> stickyRecords =
@@ -738,13 +768,13 @@ public class PoolV4
                 transfer =
                     new PoolIOWriteTransfer(id, initiator, message.isPool2Pool(), queueName,
                             new CellStub(getCellEndpoint(), source),
-                            attributes, pi, subject, mover, _repository,
+                            attributes, pi, subject, mover, moverExecutorService, postExecutorService, _repository,
                             _checksumModule, targetState, stickyRecords);
             } else {
                 transfer =
                     new PoolIOReadTransfer(id, initiator, message.isPool2Pool(), queueName,
                             new CellStub(getCellEndpoint(), source),
-                            attributes, pi, subject, mover, openFlags, _repository);
+                            attributes, pi, subject, mover, moverExecutorService,  postExecutorService, openFlags, _repository);
             }
             try {
                 message.setMoverId(queueIoRequest(message, transfer));
@@ -934,8 +964,7 @@ public class PoolV4
     private MoverProtocol getProtocolHandler(ProtocolInfo info)
     {
         Class<?>[] argsClass = { CellEndpoint.class };
-        String moverClassName = info.getProtocol() + "-"
-            + info.getMajorVersion();
+        String moverClassName = protocolNameOf(info);
         Class<? extends MoverProtocol> mover = _moverHash.get(moverClassName);
 
         try {
@@ -958,6 +987,12 @@ public class PoolV4
             _log.error("Could not create mover for " + moverClassName, e);
             return null;
         }
+    }
+
+    private String protocolNameOf(ProtocolInfo info)
+    {
+        return info.getProtocol() + "-"
+            + info.getMajorVersion();
     }
 
 
