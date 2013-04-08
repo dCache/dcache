@@ -20,6 +20,7 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.ChecksumMover;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverProtocol;
@@ -46,7 +47,9 @@ public class PoolIOWriteTransfer
     private final File _file;
     private final ChecksumModule _checksumModule;
 
-    public PoolIOWriteTransfer(FileAttributes fileAttributes,
+    public PoolIOWriteTransfer(long id, String initiator, boolean isPoolToPoolTransfer,
+                               String queue, CellStub door,
+                               FileAttributes fileAttributes,
                                ProtocolInfo protocolInfo,
                                Subject subject,
                                MoverProtocol mover,
@@ -56,7 +59,7 @@ public class PoolIOWriteTransfer
                                List<StickyRecord> stickyRecords)
         throws FileInCacheException, IOException
     {
-        super(fileAttributes, protocolInfo, subject, mover);
+        super(id, initiator, isPoolToPoolTransfer, queue, door, fileAttributes, protocolInfo, subject, mover);
 
         _checksumModule = checksumModule;
         _handle = repository.createEntry(fileAttributes,

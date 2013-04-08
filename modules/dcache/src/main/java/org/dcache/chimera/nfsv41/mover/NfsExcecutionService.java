@@ -17,7 +17,6 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.MoverExecutorService;
-import org.dcache.pool.classic.PoolIORequest;
 import org.dcache.pool.classic.PoolIOTransfer;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.ManualMover;
@@ -58,10 +57,9 @@ public class NfsExcecutionService extends AbstractCellComponent implements Mover
     }
 
     @Override
-    public Cancellable execute(PoolIORequest request, final CompletionHandler<Void,Void> completionHandler) {
+    public Cancellable execute(PoolIOTransfer transfer, final CompletionHandler<Void,Void> completionHandler) {
         try {
-            NFS4ProtocolInfo nfs4ProtocolInfo = (NFS4ProtocolInfo) request.getTransfer().getProtocolInfo();
-            PoolIOTransfer transfer = request.getTransfer();
+            NFS4ProtocolInfo nfs4ProtocolInfo = (NFS4ProtocolInfo) transfer.getProtocolInfo();
 
             stateid4 stateid = nfs4ProtocolInfo.stateId();
             ReplicaDescriptor descriptor = transfer.getIoHandle();
@@ -69,11 +67,10 @@ public class NfsExcecutionService extends AbstractCellComponent implements Mover
             final RepositoryChannel repositoryChannel = new FileRepositoryChannel(descriptor.getFile(), openMode);
 
             final MoverBridge moverBridge = new MoverBridge((ManualMover) transfer.getMover(),
-                    request.getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), descriptor);
+                    transfer.getFileAttributes().getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), descriptor);
             _nfsIO.addHandler(moverBridge);
 
-            request.sendToDoor(new PoolPassiveIoFileMessage<>(
-                    request.getPoolAddress().getCellName(), _localSocketAddresses, stateid));
+            transfer.sendToDoor(new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, stateid));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).

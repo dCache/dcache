@@ -10,6 +10,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.FileRepositoryChannel;
@@ -29,7 +30,9 @@ public class PoolIOReadTransfer
     private final ReplicaDescriptor _handle;
     private final long _size;
 
-    public PoolIOReadTransfer(FileAttributes fileAttributes,
+    public PoolIOReadTransfer(long id, String initiator, boolean isPoolToPoolTransfer,
+                              String queue, CellStub door,
+                              FileAttributes fileAttributes,
                               ProtocolInfo protocolInfo,
                               Subject subject,
                               MoverProtocol mover,
@@ -37,7 +40,7 @@ public class PoolIOReadTransfer
                               Repository repository)
         throws CacheException, InterruptedException
     {
-        super(fileAttributes, protocolInfo, subject, mover);
+        super(id, initiator, isPoolToPoolTransfer, queue,  door, fileAttributes, protocolInfo, subject, mover);
         _handle = repository.openEntry(fileAttributes.getPnfsId(), openFlags);
         _size = _handle.getFile().length();
     }
@@ -49,8 +52,6 @@ public class PoolIOReadTransfer
         File file = _handle.getFile();
 
         try {
-            //                 say("Trying to open " + file);
-
             try (RepositoryChannel fileIoChannel = new FileRepositoryChannel(file, "r")) {
                 _mover.runIO(_fileAttributes,
                         fileIoChannel,
@@ -62,10 +63,6 @@ public class PoolIOReadTransfer
             if (_mover.wasChanged()) {
                 throw new RuntimeException("Bug: Mover changed read-only file");
             }
-
-            //                 say(_pnfsId.toString() + ";length=" + fileSize + ";timer="
-            //                     + sysTimer.getDifference().toString());
-
         } catch (FileNotFoundException e) {
             throw new DiskErrorCacheException(
                                      "File could not be opened  [" +

@@ -75,15 +75,15 @@ public class IoQueueManager {
         return _queues.get(pos);
     }
 
-    public int add(String queueName, PoolIORequest request, IoPriority priority)
+    public int add(String queueName, PoolIOTransfer transfer, IoPriority priority)
     {
         IoScheduler js = (queueName == null) ? null : _queuesByName.get(queueName);
-        return (js == null) ? add(request, priority) : js.add(request, priority);
+        return (js == null) ? add(transfer, priority) : js.add(transfer, priority);
     }
 
-    public int add(PoolIORequest request, IoPriority priority)
+    public int add(PoolIOTransfer transfer, IoPriority priority)
     {
-        return getDefaultQueue().add(request, priority);
+        return getDefaultQueue().add(transfer, priority);
     }
 
     public void cancel(int jobId) throws NoSuchElementException {

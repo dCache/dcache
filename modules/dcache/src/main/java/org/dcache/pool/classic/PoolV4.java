@@ -656,16 +656,16 @@ public class PoolV4
     //
 
     private int queueIoRequest(PoolIoFileMessage message,
-                               PoolIORequest request)
+                               PoolIOTransfer transfer)
     {
         String queueName = message.getIoQueueName();
 
         if (message instanceof PoolAcceptFileMessage) {
-            return _ioQueue.add(queueName, request, IoPriority.HIGH);
+            return _ioQueue.add(queueName, transfer, IoPriority.HIGH);
         } else if (message.isPool2Pool()) {
-            return _ioQueue.add(P2P_QUEUE_NAME, request, IoPriority.HIGH);
+            return _ioQueue.add(P2P_QUEUE_NAME, transfer, IoPriority.HIGH);
         } else {
-            return _ioQueue.add(queueName, request, IoPriority.REGULAR);
+            return _ioQueue.add(queueName, transfer, IoPriority.REGULAR);
         }
     }
 
@@ -727,6 +727,8 @@ public class PoolV4
                                 pi);
             }
 
+            source.revert();
+
             PoolIOTransfer transfer;
             if (message instanceof PoolAcceptFileMessage) {
                 List<StickyRecord> stickyRecords =
@@ -734,20 +736,18 @@ public class PoolV4
                 EntryState targetState =
                     _replicaStatePolicy.getTargetState(attributes);
                 transfer =
-                    new PoolIOWriteTransfer(attributes, pi, subject, mover, _repository,
-                                            _checksumModule,
-                                            targetState, stickyRecords);
+                    new PoolIOWriteTransfer(id, initiator, message.isPool2Pool(), queueName,
+                            new CellStub(getCellEndpoint(), source),
+                            attributes, pi, subject, mover, _repository,
+                            _checksumModule, targetState, stickyRecords);
             } else {
                 transfer =
-                    new PoolIOReadTransfer(attributes, pi, subject, mover, openFlags, _repository);
+                    new PoolIOReadTransfer(id, initiator, message.isPool2Pool(), queueName,
+                            new CellStub(getCellEndpoint(), source),
+                            attributes, pi, subject, mover, openFlags, _repository);
             }
             try {
-                source.revert();
-                PoolIORequest request =
-                    new PoolIORequest(transfer, id, initiator,
-                            message.isPool2Pool(), queueName,
-                            new CellStub(getCellEndpoint(), source), getCellAddress());
-                message.setMoverId(queueIoRequest(message, request));
+                message.setMoverId(queueIoRequest(message, transfer));
                 transfer = null;
             } finally {
                 if (transfer != null) {

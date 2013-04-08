@@ -3,18 +3,22 @@ package org.dcache.pool.classic;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.NoRouteToCellException;
+
+import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * Abstract bridge between repository and movers. PoolIOTransfer
- * exposes essential parameters of a mover, and encapsulates
+ * Abstract representation of the pool side of a file tranafer.
+ * PoolIOTransfer exposes essential parameters of a mover, and encapsulates
  * information needed to complete a transfer.
  *
  * A transfer is divided into two phases: the data moving phase and a
@@ -29,16 +33,62 @@ import org.dcache.vehicles.FileAttributes;
  */
 public abstract class PoolIOTransfer
 {
+    /** client id */
+    protected final long _id;
+
+    /** scheduling queue */
+    protected final String _queue;
+
+    /** identification of who requested the transfer */
+    protected final String _initiator;
+
+    /** true if transfer is between two pools */
+    protected final boolean _isPoolToPoolTransfer;
+
+    /** transfer status error code */
+    protected volatile int _errorCode;
+
+    /** transfer status error message */
+    protected volatile String _errorMessage = "";
+
+    /** stub to talk to the door of this transfer */
+    protected final CellStub _door;
+
+    /** mover implementation suitable for this transfer */
     protected final MoverProtocol _mover;
+
+    /** attributes of the file being transferred */
     protected final FileAttributes _fileAttributes;
+
+    /** protocol specific infomation provided by the door */
     protected final ProtocolInfo _protocolInfo;
+
+    /** identify of the entity requesting the transfer */
     protected final Subject _subject;
 
-    public PoolIOTransfer(FileAttributes fileAttributes,
+    /**
+     * @param id the client id of the request
+     * @param initiator the initiator string identifying who requested the transfer
+     * @param isPoolToPoolTransfer true if the transfer is between to pools
+     * @param queue the name of the queue used for the request
+     * @param door communication stub to the door that generated the request
+     * @param fileAttributes attributes of the file being transferred
+     * @param protocolInfo transfer protocol specific attributes
+     * @param subject identify of the entity requesting the transfer
+     * @param mover the mover
+     */
+    public PoolIOTransfer(long id, String initiator, boolean isPoolToPoolTransfer,
+                          String queue, CellStub door,
+                          FileAttributes fileAttributes,
                           ProtocolInfo protocolInfo,
                           Subject subject,
                           MoverProtocol mover)
     {
+        _id = id;
+        _initiator = initiator;
+        _isPoolToPoolTransfer = isPoolToPoolTransfer;
+        _queue = queue;
+        _door = door;
         _fileAttributes = fileAttributes;
         _protocolInfo = protocolInfo;
         _subject = subject;
@@ -65,16 +115,61 @@ public abstract class PoolIOTransfer
         return _mover.getBytesTransferred();
     }
 
-    public double getTransferRate()
-    {
-        double bt = _mover.getBytesTransferred();
-        long tm = _mover.getTransferTime();
-        return tm == 0L ? 0.0 : bt / tm;
-    }
-
     public long getLastTransferred()
     {
         return _mover.getLastTransferred();
+    }
+
+    public String getClient() {
+        return _door.getDestinationPath().getDestinationAddress().toString();
+    }
+
+    public long getClientId() {
+        return _id;
+    }
+
+    public void sendToDoor(Serializable msg) throws NoRouteToCellException
+    {
+        _door.send(msg);
+    }
+
+    /**
+     * Set transfer status.
+     *
+     * The provided status and error message will be sent to billing and to
+     * the door. Only the first error status set is kept. Any subsequent
+     * errors are suppressed.
+     */
+    public void setTransferStatus(int errorCode, String errorMessage) {
+        if (_errorCode == 0) {
+            _errorCode = errorCode;
+            _errorMessage = errorMessage;
+        }
+    }
+
+    public String getQueue()
+    {
+        return _queue;
+    }
+
+    public int getErrorCode()
+    {
+        return _errorCode;
+    }
+
+    public String getErrorMessage()
+    {
+        return _errorMessage;
+    }
+
+    public String getInitiator()
+    {
+        return _initiator;
+    }
+
+    public boolean isPoolToPoolTransfer()
+    {
+        return _isPoolToPoolTransfer;
     }
 
     public MoverProtocol getMover() {
@@ -118,6 +213,7 @@ public abstract class PoolIOTransfer
     {
         return _subject;
     }
+
     /**
      * Returns the size of the replica that was transferred. Must not
      * be called before <code>close</code>.

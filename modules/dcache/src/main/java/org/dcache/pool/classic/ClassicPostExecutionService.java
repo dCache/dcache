@@ -5,12 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 
@@ -56,7 +58,7 @@ public class ClassicPostExecutionService extends AbstractCellComponent implement
     }
 
     @Override
-    public void execute(final PoolIORequest request, final CompletionHandler<Void,Void> completionHandler)
+    public void execute(final PoolIOTransfer transfer, final CompletionHandler<Void,Void> completionHandler)
     {
         _executor.execute(new Runnable()
         {
@@ -65,28 +67,34 @@ public class ClassicPostExecutionService extends AbstractCellComponent implement
             {
                 try {
                     try {
-                        request.close();
-                    } catch (InterruptedException | InterruptedIOException e) {
-                        request.setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
-                                "Transfer was killed");
+                        transfer.close();
+                    } catch (InterruptedIOException | InterruptedException e) {
+                        LOGGER.warn("Transfer was forcefully killed during post-processing");
+                        transfer.setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
+                                "Transfer was forcefully killed");
+                    } catch (DiskErrorCacheException e) {
+                        LOGGER.warn("Transfer failed in post-processing due to disk error: {}", e.toString());
+                        _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, e.getMessage(), e));
+                        transfer.setTransferStatus(e.getRc(), e.getMessage());
                     } catch (CacheException e) {
-                        int rc = e.getRc();
-                        String msg = e.getMessage();
-                        if (rc == CacheException.ERROR_IO_DISK) {
-                            _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, msg, e));
-                        }
-                        request.setTransferStatus(rc, msg);
-                    } catch (Exception e) {
-                        request.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                        LOGGER.warn("Transfer failed in post-processing: {}", e.getMessage());
+                        transfer.setTransferStatus(e.getRc(), e.getMessage());
+                    } catch (IOException e) {
+                        LOGGER.warn("Transfer failed in post-processing: {}", e.toString());
+                        transfer.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                "Transfer failed in post-processing: " + e.getMessage());
+                    } catch (RuntimeException e) {
+                        LOGGER.error("Transfer failed in post-processing due to unexpected exception", e);
+                        transfer.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                 "Transfer failed due to unexpected exception: " + e.getMessage());
                     } catch (Throwable e) {
                         Thread t = Thread.currentThread();
                         t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                        request.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                        transfer.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                 "Transfer failed due to unexpected exception: " + e.getMessage());
                     }
-                    sendBillingMessage(request);
-                    sendFinished(request);
+                    sendBillingMessage(transfer);
+                    sendFinished(transfer);
                 } finally {
                     completionHandler.completed(null, null);
                 }
@@ -94,18 +102,17 @@ public class ClassicPostExecutionService extends AbstractCellComponent implement
         });
     }
 
-    public void sendBillingMessage(PoolIORequest request) {
-        PoolIOTransfer transfer = request.getTransfer();
+    public void sendBillingMessage(PoolIOTransfer transfer) {
         FileAttributes fileAttributes = transfer.getFileAttributes();
 
         MoverInfoMessage info = new MoverInfoMessage(getCellName(), fileAttributes.getPnfsId());
         info.setSubject(transfer.getSubject());
-        info.setInitiator(request.getInitiator());
+        info.setInitiator(transfer.getInitiator());
         info.setFileCreated(transfer instanceof PoolIOWriteTransfer);
         info.setStorageInfo(fileAttributes.getStorageInfo());
-        info.setP2P(request.isPoolToPoolTransfer());
+        info.setP2P(transfer.isPoolToPoolTransfer());
         info.setFileSize(transfer.getFileSize());
-        info.setResult(request.getErrorCode(), request.getErrorMessage());
+        info.setResult(transfer.getErrorCode(), transfer.getErrorMessage());
         info.setTransferAttributes(transfer.getBytesTransferred(),
                 transfer.getTransferTime(),
                 transfer.getProtocolInfo());
@@ -117,23 +124,22 @@ public class ClassicPostExecutionService extends AbstractCellComponent implement
         }
     }
 
-    public void sendFinished(PoolIORequest request) {
-        PoolIOTransfer transfer = request.getTransfer();
+    public void sendFinished(PoolIOTransfer transfer) {
         DoorTransferFinishedMessage finished =
-                new DoorTransferFinishedMessage(request.getClientId(),
+                new DoorTransferFinishedMessage(transfer.getClientId(),
                         transfer.getFileAttributes().getPnfsId(),
                         transfer.getProtocolInfo(),
                         transfer.getFileAttributes(),
                         _poolName,
-                        request.getQueue());
-        if (request.getErrorCode() == 0) {
+                        transfer.getQueue());
+        if (transfer.getErrorCode() == 0) {
             finished.setSucceeded();
         } else {
-            finished.setReply(request.getErrorCode(), request.getErrorMessage());
+            finished.setReply(transfer.getErrorCode(), transfer.getErrorMessage());
         }
 
         try {
-            request.sendToDoor(finished);
+            transfer.sendToDoor(finished);
         } catch (NoRouteToCellException e) {
             LOGGER.error("Failed to notify door about transfer termination: {}", e.getMessage());
         }

@@ -14,9 +14,9 @@ public interface PostTransferExecutionService {
      * returns a ListenableFuture representing that task. The ListenableFuture's get method
      * will return null upon successful completion.
      *
-     * @param request transfer request to submit for post processing
+     * @param transfer transfer request to submit for post processing
      * @param completionHandler completion is signalled to completionHandler
      * @return a ListenableFuture representing pending completion of the task
      */
-    void execute(PoolIORequest request, CompletionHandler<Void,Void> completionHandler);
+    void execute(PoolIOTransfer transfer, CompletionHandler<Void,Void> completionHandler);
 }

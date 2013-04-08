@@ -116,12 +116,12 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
      * and internal counter:
      *   | 31- queue id -24|23- job id -0|
      *
-     * @param request
+     * @param transfer
      * @param priority
      * @return mover id
      */
     @Override
-    public synchronized int add(PoolIORequest request, IoPriority priority) {
+    public synchronized int add(PoolIOTransfer transfer, IoPriority priority) {
         checkState(!_shutdown);
 
         int id = _queueId << 24 | nextId();
@@ -130,9 +130,9 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             _log.warn("A task was added to queue '{}', however the queue is not configured to execute any tasks.", _name);
         }
 
-        PrioritizedRequest wrapper = new PrioritizedRequest(id, request, priority);
-        _queue.add(wrapper);
-        _jobs.put(id, wrapper);
+        PrioritizedRequest request = new PrioritizedRequest(id, transfer, priority);
+        _queue.add(request);
+        _jobs.put(id, request);
 
         return id;
     }
@@ -153,11 +153,11 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     @Override
     public JobInfo getJobInfo(int id) {
-        PrioritizedRequest pRequest = _jobs.get(id);
-        if(pRequest == null) {
+        PrioritizedRequest request = _jobs.get(id);
+        if(request == null) {
             throw new NoSuchElementException("Job not found : Job-" + id);
         }
-        return pRequest.toJobInfo();
+        return request.toJobInfo();
     }
 
     @Override
@@ -213,9 +213,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
              * the transfer and to notify billing and door.
              */
             request.kill();
-
-            String protocolName = protocolNameOf(request.getRequest());
-            _executorServices.getPostExecutorService(protocolName).execute(request.getRequest(),
+            String protocolName = protocolNameOf(request.getTransfer());
+            _executorServices.getPostExecutorService(protocolName).execute(request.getTransfer(),
                     new CompletionHandler<Void,Void>()
                     {
                         @Override
@@ -274,7 +273,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                             @Override
                             public String apply(PrioritizedRequest input)
                             {
-                                return input.getRequest().getProtocolInfo().getVersionString();
+                                return input.getTransfer().getProtocolInfo().getVersionString();
                             }
                         })));
             }
@@ -288,7 +287,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                 _semaphore.acquire();
                 try {
                     final PrioritizedRequest request = _queue.take();
-                    final String protocolName = protocolNameOf(request.getRequest());
+                    final PoolIOTransfer transfer = request.getTransfer();
+                    final String protocolName = protocolNameOf(transfer);
                     request.getCdc().restore();
                     request.transfer(_executorServices.getExecutorService(protocolName),
                             new CompletionHandler<Void,Void>()
@@ -303,8 +303,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                                 public void failed(Throwable exc, Void attachment)
                                 {
                                     if (exc instanceof InterruptedException || exc instanceof InterruptedIOException) {
-                                        request.getRequest()
-                                                .setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer was killed");
+                                        transfer.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer was killed");
                                     }
                                     postprocess();
                                 }
@@ -313,7 +312,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                                 {
                                     _executorServices
                                             .getPostExecutorService(protocolName)
-                                            .execute(request.getRequest(),
+                                            .execute(request.getTransfer(),
                                                     new CompletionHandler<Void, Void>()
                                                     {
                                                         @Override
@@ -351,13 +350,13 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         }
     }
 
-    private String protocolNameOf(PoolIORequest request) {
+    private String protocolNameOf(PoolIOTransfer request) {
         return request.getProtocolInfo().getProtocol() + "-"
                         + request.getProtocolInfo().getMajorVersion();
     }
 
-    private static class PrioritizedRequest implements IoPrioritizable {
-        private final PoolIORequest _request;
+    private static class PrioritizedRequest implements IoPrioritizable  {
+        private final PoolIOTransfer _transfer;
         private final IoPriority _priority;
         private final long _ctime;
         private final int _id;
@@ -376,9 +375,9 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         private Cancellable _mover;
 
 
-        PrioritizedRequest(int id, PoolIORequest o, IoPriority p) {
+        PrioritizedRequest(int id, PoolIOTransfer o, IoPriority p) {
             _id = id;
-            _request = o;
+            _transfer = o;
             _priority = p;
             _ctime = System.nanoTime();
             _submitTime = System.currentTimeMillis();
@@ -386,8 +385,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             _cdc = new CDC();
         }
 
-        public PoolIORequest getRequest() {
-            return _request;
+        public PoolIOTransfer getTransfer() {
+            return _transfer;
         }
 
         public CDC getCdc() {
@@ -425,11 +424,11 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
         @Override
         public synchronized String toString() {
-            return _state + " : " + _request.toString();
+            return _state + " : " + _transfer.toString();
         }
 
         public synchronized JobInfo toJobInfo() {
-            return new IoJobInfo(_submitTime, _startTime, _state, _id, _request);
+            return new IoJobInfo(_submitTime, _startTime, _state, _id, _transfer);
         }
 
         public synchronized void transfer(MoverExecutorService service, CompletionHandler<Void,Void> completionHandler) {
@@ -439,7 +438,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                 }
                 _state = RUNNING;
                 _startTime = System.currentTimeMillis();
-                _mover = service.execute(_request, completionHandler);
+                _mover = service.execute(_transfer, completionHandler);
             } catch (RuntimeException e) {
                 completionHandler.failed(e, null);
             }
@@ -450,7 +449,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             if (_mover != null) {
                 _mover.cancel();
             } else {
-                _request.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer cancelled");
+                _transfer.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer cancelled");
             }
             _state = CANCELED;
         }
