@@ -12,9 +12,7 @@ import java.util.List;
 
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
-import dmg.cells.nucleus.CellEndpoint;
-
-import org.dcache.cells.CellMessageSender;
+import org.dcache.cells.AbstractCellComponent;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.Cancellable;
@@ -33,11 +31,10 @@ import org.dcache.util.PortRange;
  *
  * @since 1.9.11
  */
-public class NfsExcecutionService implements MoverExecutorService, CellMessageSender {
+public class NfsExcecutionService extends AbstractCellComponent implements MoverExecutorService {
 
     private static final Logger _log = LoggerFactory.getLogger(NfsExcecutionService.class);
     private NFSv4MoverHandler _nfsIO;
-    private CellEndpoint _cellEndpoint;
     private boolean _withGss;
     private InetSocketAddress[] _localSocketAddresses;
 
@@ -51,8 +48,7 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
             portRange = new PortRange(0);
         }
 
-        _nfsIO = new NFSv4MoverHandler(portRange, _withGss,
-                _cellEndpoint.getCellInfo().getCellName());
+        _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName());
         _localSocketAddresses =
                 localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
     }
@@ -102,11 +98,6 @@ public class NfsExcecutionService implements MoverExecutorService, CellMessageSe
 
     public void setEnableGss(boolean withGss) {
         _withGss = withGss;
-    }
-
-    @Override
-    public void setCellEndpoint(CellEndpoint endpoint) {
-        _cellEndpoint = endpoint;
     }
 
     private InetSocketAddress[] localSocketAddresses(List<InetAddress> addresses, int port) {
