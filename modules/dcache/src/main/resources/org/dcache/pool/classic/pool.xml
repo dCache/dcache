@@ -328,7 +328,9 @@
   </bean>
 
   <bean id="legacy-execution-service" class="org.dcache.pool.classic.LegacyMoverExecutorService"
-          destroy-method="shutdown" depends-on="rep"/>
+          destroy-method="shutdown" depends-on="rep">
+      <property name="faultListener" ref="pool"/>
+  </bean>
 
   <bean id="nfs-execution-service" class="org.dcache.chimera.nfsv41.mover.NfsExcecutionService"
         init-method="init" destroy-method="shutdown" depends-on="rep">

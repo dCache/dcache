@@ -16,9 +16,6 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
-import org.dcache.pool.FaultAction;
-import org.dcache.pool.FaultEvent;
-import org.dcache.pool.FaultListener;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -39,7 +36,6 @@ public class PoolIORequest implements IoProcessable {
     private final String _initiator;
     private final boolean _isPoolToPoolTransfer;
     private final static Logger _log = LoggerFactory.getLogger(PoolIORequest.class);
-    private final FaultListener _faultListener;
 
     /** transfer status error code */
     private volatile int _errorCode;
@@ -58,18 +54,16 @@ public class PoolIORequest implements IoProcessable {
      * @param queue the name of the queue used for the request
      * @param door communication stub to the door that generated the request
      * @param pool the cell address of this pool
-     * @param faultListener listener to notify in case of faults
      */
     public PoolIORequest(PoolIOTransfer transfer, long id, String initiator,
             boolean isPoolToPoolTranfer, String queue, CellStub door,
-            CellAddressCore pool, FaultListener faultListener) {
+            CellAddressCore pool) {
         _transfer = transfer;
         _id = id;
         _initiator = initiator;
         _queue = queue;
         _door = door;
         _pool = pool;
-        _faultListener = faultListener;
         _isPoolToPoolTransfer = isPoolToPoolTranfer;
     }
 
@@ -126,36 +120,7 @@ public class PoolIORequest implements IoProcessable {
     }
 
     synchronized Cancellable transfer(MoverExecutorService moverExecutorService, final CompletionHandler<Void,Void> completionHandler) {
-        return moverExecutorService.execute(this, new CompletionHandler<Void,Void>()
-        {
-            @Override
-            public void completed(Void result, Void attachment)
-            {
-                completionHandler.completed(result, attachment);
-            }
-
-            @Override
-            public void failed(Throwable exc, Void attachment)
-            {
-                int rc;
-                String msg;
-                if (exc instanceof InterruptedException || exc instanceof InterruptedIOException) {
-                    rc = CacheException.DEFAULT_ERROR_CODE;
-                    msg = "Transfer was killed";
-                } else if (exc instanceof CacheException) {
-                    rc = ((CacheException) exc).getRc();
-                    msg = exc.getMessage();
-                    if (rc == CacheException.ERROR_IO_DISK) {
-                        getFaultListener().faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, msg, exc));
-                    }
-                } else {
-                    rc = CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
-                    msg = "Transfer failed due to unexpected exception: " + exc;
-                }
-                setTransferStatus(rc, msg);
-                completionHandler.failed(exc, attachment);
-            }
-        });
+        return moverExecutorService.execute(this, completionHandler);
     }
 
     void close()
@@ -185,10 +150,6 @@ public class PoolIORequest implements IoProcessable {
     public CellAddressCore getPoolAddress()
     {
         return _pool;
-    }
-
-    public FaultListener getFaultListener() {
-        return _faultListener;
     }
 
     /**
