@@ -337,7 +337,11 @@
   </bean>
 
   <bean id="classic-post-execution-service" class="org.dcache.pool.classic.ClassicPostExecutionService"
-        destroy-method="shutdown"/>
+        destroy-method="shutdown">
+      <property name="billingStub" ref="billing-stub"/>
+      <property name="poolName" value="${poolname}"/>
+      <property name="faultListener" ref="pool"/>
+  </bean>
 
   <bean id="mover-execution-service" class="org.dcache.pool.classic.MoverExecutorServices" >
       <description>Request execution service container</description>
