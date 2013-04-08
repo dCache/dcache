@@ -4,6 +4,7 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.pool.classic.IoRequestState;
 import org.dcache.pool.classic.PoolIORequest;
 
 public class IoJobInfo extends JobInfo  {
@@ -15,14 +16,9 @@ public class IoJobInfo extends JobInfo  {
 
    private static final long serialVersionUID = -7987228538353684951L;
 
-   public IoJobInfo(final PoolIORequest request, int id){
-      super( request.getCreationTime(),
-              request.getStartTime(),
-              request.getState().toString(),
-              id, request.getClient(),
-              request.getClientId()) ;
-
-      _pnfsId           = request.getPnfsId();
+   public IoJobInfo(long submitTime, long startTime, IoRequestState state, int id, PoolIORequest request) {
+      super(submitTime, startTime, state.toString(), id, request.getClient(), request.getClientId());
+      _pnfsId           = request.getTransfer().getFileAttributes().getPnfsId();
       _bytesTransferred = request.getBytesTransferred() ;
       _transferTime     = request.getTransferTime();
       _lastTransferred  = request.getLastTransferred() ;

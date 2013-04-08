@@ -23,8 +23,6 @@ import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.pool.classic.IoRequestState.*;
-
 /**
  * PoolIORequest encapsulates queuing, execution and notification
  * of a file transfer.
@@ -44,19 +42,6 @@ public class PoolIORequest implements IoProcessable {
     private final String _initiator;
     private final static Logger _log = LoggerFactory.getLogger(PoolIORequest.class);
     private final FaultListener _faultListener;
-
-    private Cancellable _mover;
-    /**
-     * Request creation time.
-     */
-    private final long _ctime = System.currentTimeMillis();
-
-    /**
-     * Transfer start time.
-     */
-    private volatile long _startTime;
-
-    private volatile IoRequestState _state = CREATED;
 
     /** transfer status error code */
     private volatile int _errorCode;
@@ -177,31 +162,17 @@ public class PoolIORequest implements IoProcessable {
         return _id;
     }
 
-    @Override
-    public synchronized void kill() {
-        _state = CANCELED;
-        if (_mover != null) {
-            _mover.cancel();
-        }
-    }
-
-    synchronized Cancellable transfer(MoverExecutorService moverExecutorService, final CompletionHandler completionHandler) {
-        if (_state != QUEUED) {
-            completionHandler.failed(new InterruptedException("Mover canceled"), null);
-        }
-
-        _state = RUNNING;
-        _startTime = System.currentTimeMillis();
-        _mover = moverExecutorService.execute(this, new CompletionHandler()
+    synchronized Cancellable transfer(MoverExecutorService moverExecutorService, final CompletionHandler<Void,Void> completionHandler) {
+        return moverExecutorService.execute(this, new CompletionHandler<Void,Void>()
         {
             @Override
-            public void completed(Object result, Object attachment)
+            public void completed(Void result, Void attachment)
             {
                 completionHandler.completed(result, attachment);
             }
 
             @Override
-            public void failed(Throwable exc, Object attachment)
+            public void failed(Throwable exc, Void attachment)
             {
                 int rc;
                 String msg;
@@ -222,7 +193,6 @@ public class PoolIORequest implements IoProcessable {
                 completionHandler.failed(exc, attachment);
             }
         });
-        return _mover;
     }
 
     void close()
@@ -254,22 +224,6 @@ public class PoolIORequest implements IoProcessable {
         return _pool;
     }
 
-    public void setState( IoRequestState state) {
-        _state = state;
-    }
-
-    public IoRequestState getState() {
-        return _state;
-    }
-
-    public long getCreationTime() {
-        return _ctime;
-    }
-
-    public long getStartTime() {
-        return _startTime;
-    }
-
     public FaultListener getFaultListener() {
         return _faultListener;
     }
@@ -288,6 +242,6 @@ public class PoolIORequest implements IoProcessable {
 
     @Override
     public String toString() {
-        return _state + " : " + _transfer.toString();
+        return _transfer.toString();
     }
 }
