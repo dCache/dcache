@@ -119,16 +119,17 @@ public class NFSv41Door extends AbstractCellComponent implements
     private final Map<stateid4, NfsTransfer> _ioMessages = new ConcurrentHashMap<>();
 
     /**
-     * The usual timeout for NFS ops. is 30s.
-     * We will use a bit shorter (27s) one to avoid retries.
+     * The usual timeout for NFS operations is 30s. Nevertheless, as client
+     * will block, we try to block as short as we can. The rule for interactive users:
+     * never block longer than 10s.
      */
-    private final static long NFS_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(27);
+    private final static long NFS_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
 
     /**
      * Given that the timeout is pretty short, the retry period has to
      * be rather small too.
      */
-    private final static long NFS_RETRY_PERIOD = TimeUnit.SECONDS.toMillis(1);
+    private final static long NFS_RETRY_PERIOD = 500; // In millis
 
     /**
      * Cell communication helper.
