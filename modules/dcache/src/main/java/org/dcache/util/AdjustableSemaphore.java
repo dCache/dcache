@@ -1,7 +1,11 @@
 package org.dcache.util;
 
+import com.google.common.base.Preconditions;
+
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.*;
 
 /**
  * A simple implementation of an adjustable semaphore.
@@ -44,10 +48,7 @@ final public class AdjustableSemaphore {
      * @param newMax
      */
     public synchronized void setMaxPermits(int newMax) {
-        if (newMax < 1) {
-            throw new IllegalArgumentException("Semaphore size must be at least 1,"
-                    + " was " + newMax);
-        }
+        checkArgument(newMax >= 0);
 
         int delta = newMax - this.maxPermits;
 
