@@ -85,6 +85,7 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
+import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.AbstractStateChangeListener;
@@ -680,17 +681,16 @@ public class PoolV4
     //
     //
 
-    private int queueIoRequest(PoolIoFileMessage message,
-                               PoolIOTransfer transfer)
+    private int queueIoRequest(PoolIoFileMessage message, Mover<?> mover)
     {
         String queueName = message.getIoQueueName();
 
         if (message instanceof PoolAcceptFileMessage) {
-            return _ioQueue.add(queueName, transfer, IoPriority.HIGH);
+            return _ioQueue.add(queueName, mover, IoPriority.HIGH);
         } else if (message.isPool2Pool()) {
-            return _ioQueue.add(P2P_QUEUE_NAME, transfer, IoPriority.HIGH);
+            return _ioQueue.add(P2P_QUEUE_NAME, mover, IoPriority.HIGH);
         } else {
-            return _ioQueue.add(queueName, transfer, IoPriority.REGULAR);
+            return _ioQueue.add(queueName, mover, IoPriority.REGULAR);
         }
     }
 
@@ -742,8 +742,8 @@ public class PoolV4
 
             /* Queue new request.
              */
-            MoverProtocol mover = getProtocolHandler(pi);
-            if (mover == null) {
+            MoverProtocol moverProtocol = getProtocolHandler(pi);
+            if (moverProtocol == null) {
                 throw new CacheException(27,
                         "PANIC : Could not get handler for " +
                                 pi);
@@ -754,34 +754,34 @@ public class PoolV4
             PostTransferExecutionService postExecutorService =
                     _moverExecutorServices.getPostExecutorService(protocolName);
 
-            PoolIOTransfer transfer;
+            Mover<?> mover;
             if (message instanceof PoolAcceptFileMessage) {
                 List<StickyRecord> stickyRecords =
                     _replicaStatePolicy.getStickyRecords(attributes);
                 EntryState targetState =
                     _replicaStatePolicy.getTargetState(attributes);
-                transfer =
+                mover =
                     new PoolIOWriteTransfer(id, initiator, message.isPool2Pool(), queueName,
                             new CellStub(getCellEndpoint(), source),
-                            attributes, pi, subject, mover, moverExecutorService, postExecutorService, _repository,
+                            attributes, pi, subject, moverProtocol, moverExecutorService, postExecutorService, _repository,
                             _checksumModule, targetState, stickyRecords);
             } else {
-                transfer =
+                mover =
                     new PoolIOReadTransfer(id, initiator, message.isPool2Pool(), queueName,
                             new CellStub(getCellEndpoint(), source),
-                            attributes, pi, subject, mover, moverExecutorService,  postExecutorService, openFlags, _repository);
+                            attributes, pi, subject, moverProtocol, moverExecutorService,  postExecutorService, openFlags, _repository);
             }
             try {
-                message.setMoverId(queueIoRequest(message, transfer));
-                transfer = null;
+                message.setMoverId(queueIoRequest(message, mover));
+                mover = null;
             } finally {
-                if (transfer != null) {
+                if (mover != null) {
                     /* This is only executed if enqueuing the request
                      * failed. Therefore we only log failures and
                      * propagate the original error to the client.
                      */
                     try {
-                        transfer.close();
+                        mover.close();
                     } catch (IOException e) {
                         _log.error("IO error while closing entry: "
                                    + e.getMessage());

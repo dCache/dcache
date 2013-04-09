@@ -24,6 +24,7 @@ import diskCacheV111.vehicles.JobInfo;
 
 import dmg.cells.nucleus.CDC;
 
+import org.dcache.pool.movers.Mover;
 import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.FifoPriorityComparator;
 import org.dcache.util.IoPrioritizable;
@@ -111,12 +112,12 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
      * and internal counter:
      *   | 31- queue id -24|23- job id -0|
      *
-     * @param transfer
+     * @param mover
      * @param priority
      * @return mover id
      */
     @Override
-    public synchronized int add(PoolIOTransfer transfer, IoPriority priority) {
+    public synchronized int add(Mover<?> mover, IoPriority priority) {
         checkState(!_shutdown);
 
         int id = _queueId << 24 | nextId();
@@ -125,9 +126,9 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             _log.warn("A task was added to queue '{}', however the queue is not configured to execute any tasks.", _name);
         }
 
-        PrioritizedRequest request = new PrioritizedRequest(id, transfer, priority);
-        _queue.add(request);
-        _jobs.put(id, request);
+        PrioritizedRequest wrapper = new PrioritizedRequest(id, mover, priority);
+        _queue.add(wrapper);
+        _jobs.put(id, wrapper);
 
         return id;
     }
@@ -208,7 +209,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
              * the transfer and to notify billing and door.
              */
             request.kill();
-            request.getTransfer().postprocess(
+            request.getMover().postprocess(
                     new CompletionHandler<Void,Void>()
                     {
                         @Override
@@ -267,7 +268,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                             @Override
                             public String apply(PrioritizedRequest input)
                             {
-                                return input.getTransfer().getProtocolInfo().getVersionString();
+                                return input.getMover().getProtocolInfo().getVersionString();
                             }
                         })));
             }
@@ -281,7 +282,6 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                 _semaphore.acquire();
                 try {
                     final PrioritizedRequest request = _queue.take();
-                    final PoolIOTransfer transfer = request.getTransfer();
                     request.getCdc().restore();
                     request.transfer(
                             new CompletionHandler<Void,Void>()
@@ -296,14 +296,14 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                                 public void failed(Throwable exc, Void attachment)
                                 {
                                     if (exc instanceof InterruptedException || exc instanceof InterruptedIOException) {
-                                        transfer.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer was killed");
+                                        request.getMover().setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer was killed");
                                     }
                                     postprocess();
                                 }
 
                                 private void postprocess()
                                 {
-                                    transfer.postprocess(
+                                    request.getMover().postprocess(
                                             new CompletionHandler<Void, Void>()
                                             {
                                                 @Override
@@ -342,7 +342,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     }
 
     private static class PrioritizedRequest implements IoPrioritizable  {
-        private final PoolIOTransfer _transfer;
+        private final Mover<?> _mover;
         private final IoPriority _priority;
         private final long _ctime;
         private final int _id;
@@ -358,12 +358,11 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
          * Transfer start time.
          */
         private long _startTime;
-        private Cancellable _mover;
+        private Cancellable _cancellable;
 
-
-        PrioritizedRequest(int id, PoolIOTransfer o, IoPriority p) {
+        PrioritizedRequest(int id, Mover<?> mover, IoPriority p) {
             _id = id;
-            _transfer = o;
+            _mover = mover;
             _priority = p;
             _ctime = System.nanoTime();
             _submitTime = System.currentTimeMillis();
@@ -371,8 +370,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             _cdc = new CDC();
         }
 
-        public PoolIOTransfer getTransfer() {
-            return _transfer;
+        public Mover<?> getMover() {
+            return _mover;
         }
 
         public CDC getCdc() {
@@ -410,11 +409,11 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
         @Override
         public synchronized String toString() {
-            return _state + " : " + _transfer.toString();
+            return _state + " : " + _mover.toString();
         }
 
         public synchronized JobInfo toJobInfo() {
-            return new IoJobInfo(_submitTime, _startTime, _state, _id, _transfer);
+            return new IoJobInfo(_submitTime, _startTime, _state, _id, _mover);
         }
 
         public synchronized void transfer(CompletionHandler<Void,Void> completionHandler) {
@@ -424,7 +423,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                 }
                 _state = RUNNING;
                 _startTime = System.currentTimeMillis();
-                _mover = _transfer.execute(completionHandler);
+                _cancellable = _mover.execute(completionHandler);
             } catch (RuntimeException e) {
                 completionHandler.failed(e, null);
             }
@@ -432,10 +431,10 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
         public synchronized void kill()
         {
-            if (_mover != null) {
-                _mover.cancel();
+            if (_cancellable != null) {
+                _cancellable.cancel();
             } else {
-                _transfer.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer cancelled");
+                _mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer cancelled");
             }
             _state = CANCELED;
         }

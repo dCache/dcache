@@ -2,19 +2,17 @@ package org.dcache.pool.classic;
 
 import javax.security.auth.Subject;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.nio.channels.CompletionHandler;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
-import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverProtocol;
-import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -32,7 +30,7 @@ import org.dcache.vehicles.FileAttributes;
  * PoolIOTransfer does not depent on the repository, but its
  * subclasses do.
  */
-public abstract class PoolIOTransfer
+public abstract class PoolIOTransfer implements Mover<ProtocolInfo>
 {
     /** client id */
     protected final long _id;
@@ -106,35 +104,42 @@ public abstract class PoolIOTransfer
         _postTransferExecutionService = postTransferExecutionService;
     }
 
+    @Override
     public FileAttributes getFileAttributes()
     {
         return _fileAttributes;
     }
 
+    @Override
     public ProtocolInfo getProtocolInfo()
     {
         return _protocolInfo;
     }
 
+    @Override
     public long getTransferTime()
     {
         return _mover.getTransferTime();
     }
 
+    @Override
     public long getBytesTransferred()
     {
         return _mover.getBytesTransferred();
     }
 
+    @Override
     public long getLastTransferred()
     {
         return _mover.getLastTransferred();
     }
 
-    public String getClient() {
-        return _door.getDestinationPath().getDestinationAddress().toString();
+    @Override
+    public CellPath getPathToDoor() {
+        return _door.getDestinationPath();
     }
 
+    @Override
     public long getClientId() {
         return _id;
     }
@@ -158,21 +163,25 @@ public abstract class PoolIOTransfer
         }
     }
 
-    public String getQueue()
+    @Override
+    public String getQueueName()
     {
         return _queue;
     }
 
+    @Override
     public int getErrorCode()
     {
         return _errorCode;
     }
 
+    @Override
     public String getErrorMessage()
     {
         return _errorMessage;
     }
 
+    @Override
     public String getInitiator()
     {
         return _initiator;
@@ -207,10 +216,12 @@ public abstract class PoolIOTransfer
         return sb.toString();
     }
 
+    @Override
     public Cancellable execute(CompletionHandler<Void, Void> completionHandler) {
         return _moverExecutorService.execute(this, completionHandler);
     }
 
+    @Override
     public void postprocess(CompletionHandler<Void, Void> completionHandler) {
         _postTransferExecutionService.execute(this, completionHandler);
     }
@@ -219,14 +230,6 @@ public abstract class PoolIOTransfer
      * Implements the data movement phase.
      */
     public abstract void transfer() throws Exception;
-
-    /**
-     * Implements the cleanup phase. Has to be called even when
-     * <code>transfer</code> failed or was not invoked.
-     */
-    public abstract void close()
-        throws CacheException, InterruptedException,
-               IOException;
 
     public Subject getSubject()
     {
@@ -238,8 +241,4 @@ public abstract class PoolIOTransfer
      * be called before <code>close</code>.
      */
     public abstract long getFileSize();
-
-    public abstract ReplicaDescriptor getIoHandle();
-
-    public abstract IoMode getIoMode();
 }

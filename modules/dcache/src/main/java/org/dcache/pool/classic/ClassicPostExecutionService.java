@@ -131,7 +131,7 @@ public class ClassicPostExecutionService extends AbstractCellComponent implement
                         transfer.getProtocolInfo(),
                         transfer.getFileAttributes(),
                         _poolName,
-                        transfer.getQueue());
+                        transfer.getQueueName());
         if (transfer.getErrorCode() == 0) {
             finished.setSucceeded();
         } else {

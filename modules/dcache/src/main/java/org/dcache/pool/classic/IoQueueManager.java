@@ -15,6 +15,7 @@ import java.util.NoSuchElementException;
 
 import diskCacheV111.vehicles.JobInfo;
 
+import org.dcache.pool.movers.Mover;
 import org.dcache.util.IoPriority;
 
 import static com.google.common.collect.Iterables.concat;
@@ -74,13 +75,13 @@ public class IoQueueManager {
         return _queues.get(pos);
     }
 
-    public int add(String queueName, PoolIOTransfer transfer, IoPriority priority)
+    public int add(String queueName, Mover<?> transfer, IoPriority priority)
     {
         IoScheduler js = (queueName == null) ? null : _queuesByName.get(queueName);
         return (js == null) ? add(transfer, priority) : js.add(transfer, priority);
     }
 
-    public int add(PoolIOTransfer transfer, IoPriority priority)
+    public int add(Mover<?> transfer, IoPriority priority)
     {
         return getDefaultQueue().add(transfer, priority);
     }
