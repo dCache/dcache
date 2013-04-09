@@ -73,7 +73,7 @@ public class ClassicPartition extends Partition
      */
     private final static Map<String,String> DEFAULTS =
         ImmutableMap.<String,String>builder()
-        .put("max-copies", "500")
+        .put("max-copies", "3")
         .put("p2p", "0.0")
         .put("alert", "0.0")
         .put("halt", "0.0")
