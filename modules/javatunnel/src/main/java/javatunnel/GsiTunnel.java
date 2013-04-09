@@ -28,6 +28,8 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 
+import org.dcache.util.Crypto;
+
 import static org.dcache.util.Files.checkFile;
 import static org.dcache.util.Files.checkDirectory;
 
@@ -74,7 +76,7 @@ class GsiTunnel extends GssTunnel  {
             _e_context = (ExtendedGSSContext) manager.createContext(cred);
             _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
             _e_context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
-
+            _e_context.setBannedCiphers(Crypto.BANNED_CIPHERS);
             _context = _e_context;
             // do not use channel binding with GSIGSS
             super.useChannelBinding(false);
