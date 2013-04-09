@@ -15,19 +15,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.pool.classic;
+package org.dcache.pool.movers;
 
-import java.nio.channels.CompletionHandler;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.PoolIoFileMessage;
 
-import org.dcache.pool.movers.Mover;
+import dmg.cells.nucleus.CellPath;
+
+import org.dcache.pool.repository.ReplicaDescriptor;
 
 /**
- * Transfer service interface.
- *
- * Implementations of this interface have the ability to execute the transfer
- * described by a mover.
+ * Mover factories provide means for creating movers for transfer requests.
  */
-public interface TransferService<M extends Mover<?>>
+public interface MoverFactory
 {
-    Cancellable execute(M mover, CompletionHandler<Void, Void> completionHandler) throws Exception;
+    Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException;
 }

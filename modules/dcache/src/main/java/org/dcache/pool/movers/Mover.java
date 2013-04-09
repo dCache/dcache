@@ -19,16 +19,16 @@ package org.dcache.pool.movers;
 
 import javax.security.auth.Subject;
 
-import java.io.IOException;
 import java.nio.channels.CompletionHandler;
+import java.util.Set;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -69,8 +69,11 @@ public interface Mover<T extends ProtocolInfo>
     long getClientId();
 
     /**
-     * Set transfer status. The provided status and error message will be send to
-     * billing and to the corresponding door.
+     * Set transfer status.
+     *
+     * The provided status and error message will be sent to billing and to
+     * the door. Only the first error status set is kept. Any subsequent
+     * errors are suppressed.
      */
     void setTransferStatus(int errorCode, String errorMessage);
 
@@ -95,6 +98,11 @@ public interface Mover<T extends ProtocolInfo>
     String getInitiator();
 
     /**
+     * Returns true if this is a transfer between two pools.
+     */
+    boolean isPoolToPoolTransfer();
+
+    /**
      * Provides the identity of the entity that submitted the transfer.
      */
     Subject getSubject();
@@ -115,6 +123,16 @@ public interface Mover<T extends ProtocolInfo>
     CellPath getPathToDoor();
 
     /**
+     * Returns any checksums computed during the transfer.
+     */
+    Set<Checksum> getActualChecksums();
+
+    /**
+     * Returns any known-good checksums obtained from the client.
+     */
+    Set<Checksum> getExpectedChecksums();
+
+    /**
      * Initiates the actual transfer phase. The operation is asynchronous.
      */
     Cancellable execute(CompletionHandler<Void, Void> completionHandler);
@@ -124,10 +142,4 @@ public interface Mover<T extends ProtocolInfo>
      * will be closed. The operation is asynchronous.
      */
     void postprocess(CompletionHandler<Void, Void> completionHandler);
-
-    /**
-     * Implements the cleanup phase. Has to be called even when
-     * <code>transfer</code> failed or was not invoked.
-     */
-    void close() throws CacheException, InterruptedException, IOException;
 }

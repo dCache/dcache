@@ -329,31 +329,35 @@
 
   <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverProtocolTransferService"
           destroy-method="shutdown" depends-on="rep">
-      <description>Default transfer service</description>
+      <description>Generic transfer service</description>
       <property name="faultListener" ref="pool"/>
+      <property name="checksumModule" ref="csm"/>
+      <property name="postTransferService" ref="post-transfer-service"/>
   </bean>
 
   <bean id="nfs-transfer-service" class="org.dcache.chimera.nfsv41.mover.NfsTransferService"
         init-method="init" destroy-method="shutdown" depends-on="rep">
       <description>NFSv4.1 transfer service</description>
       <property name="enableGss" value="${nfs.rpcsec_gss}" />
+      <property name="postTransferService" ref="post-transfer-service"/>
   </bean>
 
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
-        destroy-method="shutdown">
+        init-method="init" destroy-method="shutdown">
+      <description>Post processing execution service</description>
       <property name="billingStub" ref="billing-stub"/>
       <property name="poolName" value="${poolname}"/>
       <property name="faultListener" ref="pool"/>
+      <property name="checksumModule" ref="csm"/>
   </bean>
 
   <bean id="transfer-services" class="org.dcache.pool.classic.TransferServices">
       <description>Collection of transfer services</description>
-      <property name="defaultTransferService" ref="default-transfer-service"/>
-      <property name="transferServices">
+      <property name="defaultFactory" ref="default-transfer-service"/>
+      <property name="factories">
         <map>
             <entry key="NFS4-4" value-ref="nfs-transfer-service" />
         </map>
       </property>
-      <property name="postTransferService" ref="post-transfer-service"/>
   </bean>
 </beans>

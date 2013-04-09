@@ -23,36 +23,28 @@ import java.util.Map;
 
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import org.dcache.pool.movers.MoverFactory;
+
 public class TransferServices
 {
-    private TransferService<?> _defaultTransferService;
-    private Map<String, TransferService<?>> _transferServices;
-    private PostTransferService _postTransferService;
+    private MoverFactory _defaultMoverFactory;
+    private Map<String, MoverFactory> _transferServices;
 
     @Required
-    public void setDefaultTransferService(TransferService<?> defaultTransferService) {
-        _defaultTransferService = defaultTransferService;
+    public void setDefaultFactory(MoverFactory defaultMoverFactory) {
+        _defaultMoverFactory = defaultMoverFactory;
     }
 
     @Required
-    public void setTransferServices(Map<String, TransferService<?>> transferServices) {
+    public void setFactories(Map<String, MoverFactory> transferServices) {
         _transferServices = transferServices;
     }
 
-    @Required
-    public void setPostTransferService(PostTransferService postTransferService) {
-        _postTransferService = postTransferService;
-    }
-
-    public PostTransferService getPostTransferService(ProtocolInfo info) {
-        return _postTransferService;
-    }
-
-    public TransferService getTransferService(ProtocolInfo info) {
-        TransferService service = _transferServices.get(info.getProtocol() + "-" + info.getMajorVersion());
-        if (service != null) {
-            return service;
+    public MoverFactory getMoverFactory(ProtocolInfo info) {
+        MoverFactory factory = _transferServices.get(info.getProtocol() + "-" + info.getMajorVersion());
+        if (factory != null) {
+            return factory;
         }
-        return _defaultTransferService;
+        return _defaultMoverFactory;
     }
 }

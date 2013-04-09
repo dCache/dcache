@@ -3,6 +3,7 @@ package org.dcache.chimera.nfsv41.mover;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -10,33 +11,42 @@ import java.net.InetSocketAddress;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellStub;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.Cancellable;
+import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
-import org.dcache.pool.classic.PoolIOTransfer;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.ManualMover;
-import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.movers.Mover;
+import org.dcache.pool.movers.MoverFactory;
+import org.dcache.pool.movers.MoverProtocolMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 
 /**
+ * Factory and transfer service for NFS movers.
  *
  * @since 1.9.11
  */
-public class NfsTransferService extends AbstractCellComponent implements TransferService<PoolIOTransfer>
+public class NfsTransferService extends AbstractCellComponent
+        implements MoverFactory, TransferService<MoverProtocolMover>
 {
-
     private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
     private NFSv4MoverHandler _nfsIO;
     private boolean _withGss;
     private InetSocketAddress[] _localSocketAddresses;
+    private CellStub _door;
+    private PostTransferService _postTransferService;
 
     public void init() throws ChimeraFsException, IOException, GSSException {
 
@@ -51,6 +61,13 @@ public class NfsTransferService extends AbstractCellComponent implements Transfe
         _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName());
         _localSocketAddresses =
                 localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
+
+        _door = new CellStub(getCellEndpoint());
+    }
+
+    @Required
+    public void setPostTransferService(PostTransferService postTransferService) {
+        _postTransferService = postTransferService;
     }
 
     public void shutdown() throws IOException {
@@ -58,20 +75,25 @@ public class NfsTransferService extends AbstractCellComponent implements Transfe
     }
 
     @Override
-    public Cancellable execute(PoolIOTransfer transfer, final CompletionHandler<Void,Void> completionHandler) {
+    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
+    {
+        return new MoverProtocolMover(handle, message, pathToDoor, this, _postTransferService,
+                new NFSv41ProtocolMover(getCellEndpoint()));
+    }
+
+    @Override
+    public Cancellable execute(MoverProtocolMover transfer, final CompletionHandler<Void,Void> completionHandler) {
         try {
             NFS4ProtocolInfo nfs4ProtocolInfo = (NFS4ProtocolInfo) transfer.getProtocolInfo();
 
             stateid4 stateid = nfs4ProtocolInfo.stateId();
-            ReplicaDescriptor descriptor = transfer.getIoHandle();
-            String openMode = transfer.getIoMode() == IoMode.WRITE ? "rw" : "r";
-            final RepositoryChannel repositoryChannel = new FileRepositoryChannel(descriptor.getFile(), openMode);
-
+            final RepositoryChannel repositoryChannel = transfer.openChannel();
             final MoverBridge moverBridge = new MoverBridge((ManualMover) transfer.getMover(),
-                    transfer.getFileAttributes().getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), descriptor);
+                    transfer.getFileAttributes().getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), transfer.getIoHandle());
             _nfsIO.addHandler(moverBridge);
 
-            transfer.sendToDoor(new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, stateid));
+            CellPath directDoorPath = new CellPath(transfer.getPathToDoor().getDestinationAddress());
+            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, stateid));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).

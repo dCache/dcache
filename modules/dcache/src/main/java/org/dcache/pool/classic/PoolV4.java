@@ -2,15 +2,13 @@
 
 package org.dcache.pool.classic;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.security.auth.Subject;
-
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -18,14 +16,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,7 +66,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
-import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -86,7 +82,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
-import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.Account;
@@ -94,6 +90,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -129,9 +126,6 @@ public class PoolV4
     private final static Logger _log = LoggerFactory.getLogger(PoolV4.class);
 
     private final String _poolName;
-
-    private final Map<String, Class<? extends MoverProtocol>> _moverHash =
-        new ConcurrentHashMap<>();
 
     /**
      * pool start time identifier.
@@ -413,10 +407,10 @@ public class PoolV4
     }
 
     @Required
-    public void setTransferServices(TransferServices moverExecutionServices)
+    public void setTransferServices(TransferServices transferServices)
     {
         assertNotRunning("Cannot set transfer services after initialization");
-        _transferServices = moverExecutionServices;
+        _transferServices = transferServices;
     }
 
     /**
@@ -634,7 +628,7 @@ public class PoolV4
     {
         pw.println("Base directory    : " + _baseDir);
         pw.println("Version           : " + VERSION + " (Sub="
-                   + _version + ")");
+                + _version + ")");
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));
         pw.println("Pool Mode         : " + _poolMode);
@@ -681,6 +675,77 @@ public class PoolV4
     //
     //
 
+    private boolean isDuplicateIoRequest(CellPath pathFromSource, PoolIoFileMessage message)
+    {
+        if (!(message instanceof PoolAcceptFileMessage)
+                && !message.isPool2Pool()) {
+            long id = message.getId();
+            String door = pathFromSource.getSourceAddress().toString();
+            JobInfo job = _ioQueue.findJob(door, id);
+            if (job != null) {
+                switch (_dupRequest) {
+                case DUP_REQ_NONE:
+                    _log.info("Dup Request : none <" + door + ":" + id + ">");
+                    break;
+                case DUP_REQ_IGNORE:
+                    _log.info("Dup Request : ignoring <" + door + ":" + id + ">");
+                    return true;
+                case DUP_REQ_REFRESH:
+                    long jobId = job.getJobId();
+                    _log.info("Dup Request : refreshing <" + door + ":"
+                            + id + "> old = " + jobId);
+                    _ioQueue.cancel((int)jobId);
+                    break;
+                default:
+                    throw new RuntimeException("Dup Request : PANIC (code corrupted) <"
+                            + door + ":" + id + ">");
+                }
+            }
+        }
+        return false;
+    }
+
+    private Mover<?> createMover(CellPath source, PoolIoFileMessage message) throws CacheException
+    {
+        FileAttributes attributes = message.getFileAttributes();
+        PnfsId pnfsId = attributes.getPnfsId();
+        ProtocolInfo pi = message.getProtocolInfo();
+
+        MoverFactory moverFactory = _transferServices.getMoverFactory(pi);
+        ReplicaDescriptor handle;
+        try {
+            if (message instanceof PoolAcceptFileMessage) {
+                List<StickyRecord> stickyRecords =
+                        _replicaStatePolicy.getStickyRecords(attributes);
+                EntryState targetState =
+                        _replicaStatePolicy.getTargetState(attributes);
+                handle = _repository.createEntry(attributes,
+                        EntryState.FROM_CLIENT,
+                        targetState,
+                        stickyRecords,
+                        EnumSet.of(Repository.OpenFlags.CREATEFILE));
+            } else {
+                Set<Repository.OpenFlags> openFlags =
+                        message.isPool2Pool()
+                                ? EnumSet.noneOf(Repository.OpenFlags.class)
+                                : EnumSet.of(Repository.OpenFlags.NOATIME);
+                handle = _repository.openEntry(pnfsId, openFlags);
+            }
+        } catch (FileNotInCacheException e) {
+            throw new FileNotInCacheException("File " + pnfsId + " does not exist in " + _poolName, e);
+        } catch (FileInCacheException e) {
+            throw new FileInCacheException("File " + pnfsId + " already exists in " + _poolName, e);
+        } catch (InterruptedException e) {
+            throw new CacheException("Pool is shutting down", e);
+        }
+        try {
+            return moverFactory.createMover(handle, message, source);
+        } catch (Throwable t) {
+            handle.close();
+            throw Throwables.propagate(t);
+        }
+    }
+
     private int queueIoRequest(PoolIoFileMessage message, Mover<?> mover)
     {
         String queueName = message.getIoQueueName();
@@ -696,116 +761,26 @@ public class PoolV4
 
     private void ioFile(CellMessage envelope, PoolIoFileMessage message)
     {
-        FileAttributes attributes = message.getFileAttributes();
-        PnfsId pnfsId = attributes.getPnfsId();
         try {
-            long id = message.getId();
-            ProtocolInfo pi = message.getProtocolInfo();
-            Subject subject = message.getSubject();
-            StorageInfo si = attributes.getStorageInfo();
-            String initiator = message.getInitiator();
-            String pool = message.getPoolName();
-            String queueName = message.getIoQueueName();
-            CellPath source = envelope.getSourcePath().revert();
-            Set<Repository.OpenFlags> openFlags =
-                    (Set<Repository.OpenFlags>) (
-                        message.isPool2Pool() ? Collections.emptySet() :
-                            Collections.singleton(Repository.OpenFlags.NOATIME)
-                    );
-
-            /* Eliminate duplicate requests.
-             */
-            if (!(message instanceof PoolAcceptFileMessage)
-                && !message.isPool2Pool()) {
-                String door = source.getDestinationAddress().toString();
-                JobInfo job = _ioQueue.findJob(door, id);
-                if (job != null) {
-                    switch (_dupRequest) {
-                    case DUP_REQ_NONE:
-                        _log.info("Dup Request : none <" + door + ":" + id + ">");
-                        break;
-                    case DUP_REQ_IGNORE:
-                        _log.info("Dup Request : ignoring <" + door + ":" + id + ">");
-                        return;
-                    case DUP_REQ_REFRESH:
-                        long jobId = job.getJobId();
-                        _log.info("Dup Request : refresing <" + door + ":"
-                            + id + "> old = " + jobId);
-                        _ioQueue.cancel((int)jobId);
-                        break;
-                    default:
-                        throw new RuntimeException("Dup Request : PANIC (code corrupted) <"
-                                                   + door + ":" + id + ">");
-                    }
-                }
+            if (isDuplicateIoRequest(envelope.getSourcePath(), message)) {
+                return;
             }
-
-            /* Queue new request.
-             */
-            MoverProtocol moverProtocol = getProtocolHandler(pi);
-            if (moverProtocol == null) {
-                throw new CacheException(27,
-                        "PANIC : Could not get handler for " +
-                                pi);
-            }
-
-            TransferService transferService = _transferServices.getTransferService(pi);
-            PostTransferService postTransferService =
-                    _transferServices.getPostTransferService(pi);
-
-            Mover<?> mover;
-            if (message instanceof PoolAcceptFileMessage) {
-                List<StickyRecord> stickyRecords =
-                    _replicaStatePolicy.getStickyRecords(attributes);
-                EntryState targetState =
-                    _replicaStatePolicy.getTargetState(attributes);
-                mover =
-                    new PoolIOWriteTransfer(id, initiator, message.isPool2Pool(), queueName,
-                            new CellStub(getCellEndpoint(), source),
-                            attributes, pi, subject, moverProtocol, transferService, postTransferService, _repository,
-                            _checksumModule, targetState, stickyRecords);
-            } else {
-                mover =
-                    new PoolIOReadTransfer(id, initiator, message.isPool2Pool(), queueName,
-                            new CellStub(getCellEndpoint(), source),
-                            attributes, pi, subject, moverProtocol, transferService,  postTransferService, openFlags, _repository);
-            }
+            Mover<?> mover = createMover(envelope.getSourcePath().revert(), message);
             try {
                 message.setMoverId(queueIoRequest(message, mover));
-                mover = null;
-            } finally {
-                if (mover != null) {
-                    /* This is only executed if enqueuing the request
-                     * failed. Therefore we only log failures and
-                     * propagate the original error to the client.
-                     */
-                    try {
-                        mover.close();
-                    } catch (IOException e) {
-                        _log.error("IO error while closing entry: "
-                                   + e.getMessage());
-                    } catch (InterruptedException e) {
-                        _log.error("Interrupted while closing entry: "
-                                   + e.getMessage());
-                    }
-                }
+            } catch (Throwable t) {
+                mover.postprocess(new NopCompletionHandler<Void, Void>());
+                throw Throwables.propagate(t);
             }
             message.setSucceeded();
-        } catch (FileInCacheException e) {
-            _log.warn("Pool already contains replica");
-            message.setFailed(e.getRc(), "Pool already contains " + pnfsId);
-        } catch (FileNotInCacheException e) {
-            _log.warn("Pool does not contain replica");
-            message.setFailed(e.getRc(), "Pool does not contain " + pnfsId);
         } catch (CacheException e) {
             _log.error(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
-        } catch (Throwable e) {
+        } catch (RuntimeException e) {
             _log.error("Possible bug found: " + e.getMessage(), e);
             message.setFailed(CacheException.DEFAULT_ERROR_CODE,
                               "Failed to enqueue mover: " + e.getMessage());
         }
-
         try {
             envelope.revertDirection();
             sendMessage(envelope);
@@ -945,48 +920,6 @@ public class PoolV4
             req.setReplyRequired(false);
             sendMessage(new CellMessage(_replicationManager, req));
         }
-    }
-
-    // ///////////////////////////////////////////////////////////
-    //
-    // The mover class loader
-    //
-    //
-    private Map<String, Class<? extends MoverProtocol>> _handlerClasses =
-        new Hashtable<>();
-
-    private MoverProtocol getProtocolHandler(ProtocolInfo info)
-    {
-        Class<?>[] argsClass = { CellEndpoint.class };
-        String moverClassName = protocolNameOf(info);
-        Class<? extends MoverProtocol> mover = _moverHash.get(moverClassName);
-
-        try {
-            if (mover == null) {
-                moverClassName = "org.dcache.pool.movers." + info.getProtocol()
-                    + "Protocol_" + info.getMajorVersion();
-
-                mover = _handlerClasses.get(moverClassName);
-
-                if (mover == null) {
-                    mover = Class.forName(moverClassName).asSubclass(MoverProtocol.class);
-                    _handlerClasses.put(moverClassName, mover);
-                }
-
-            }
-            Constructor<? extends MoverProtocol> moverCon = mover.getConstructor(argsClass);
-            Object[] args = { getCellEndpoint() };
-            return moverCon.newInstance(args);
-        } catch (Exception e) {
-            _log.error("Could not create mover for " + moverClassName, e);
-            return null;
-        }
-    }
-
-    private String protocolNameOf(ProtocolInfo info)
-    {
-        return info.getProtocol() + "-"
-            + info.getMajorVersion();
     }
 
 
@@ -1789,31 +1722,6 @@ public class PoolV4
 
         return "hsm load suppression swithed : "
             + (_suppressHsmLoad ? "on" : "off");
-    }
-
-    public static final String hh_movermap_define = "<protocol>-<major> <moverClassName>";
-    public String ac_movermap_define_$_2(Args args) throws Exception
-    {
-        _moverHash.put(args.argv(0), Class.forName(args.argv(1)).asSubclass(MoverProtocol.class));
-        return "";
-    }
-
-    public static final String hh_movermap_undefine = "<protocol>-<major>";
-    public String ac_movermap_undefine_$_1(Args args)
-    {
-        _moverHash.remove(args.argv(0));
-        return "";
-    }
-
-    public static final String hh_movermap_ls = "";
-    public String ac_movermap_ls(Args args)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        for (Map.Entry<String, Class<? extends MoverProtocol>> entry: _moverHash.entrySet()) {
-            sb.append(entry.getKey()).append(" -> ").append(entry.getValue().getName()).append("\n");
-        }
-        return sb.toString();
     }
 
     public static final String hh_set_duplicate_request = "none|ignore|refresh";
