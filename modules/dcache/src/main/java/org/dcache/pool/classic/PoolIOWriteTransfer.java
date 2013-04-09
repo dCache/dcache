@@ -53,8 +53,8 @@ public class PoolIOWriteTransfer
                                ProtocolInfo protocolInfo,
                                Subject subject,
                                MoverProtocol mover,
-                               MoverExecutorService moverExecutorService,
-                               PostTransferExecutionService postTransferExecutorSevice,
+                               TransferService transferService,
+                               PostTransferService postTransferService,
                                Repository repository,
                                ChecksumModule checksumModule,
                                EntryState targetState,
@@ -62,7 +62,7 @@ public class PoolIOWriteTransfer
         throws FileInCacheException, IOException
     {
         super(id, initiator, isPoolToPoolTransfer, queue, door, fileAttributes,
-                protocolInfo, subject, mover, moverExecutorService, postTransferExecutorSevice);
+                protocolInfo, subject, mover, transferService, postTransferService);
 
         _checksumModule = checksumModule;
         _handle = repository.createEntry(fileAttributes,

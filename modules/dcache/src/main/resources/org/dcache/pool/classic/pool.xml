@@ -91,7 +91,7 @@
               value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
     <property name="hasTapeBackend"
               value="#{ '${lfs}' == 'none' }"/>
-    <property name="moverExecutionServices" ref="mover-execution-services" />
+    <property name="transferServices" ref="transfer-services" />
     <property name="ioQueueManager" ref="io-queue-manager" />
     <property name="poolMode" ref="pool-mode"/>
     <property name="billingStub" ref="billing-stub"/>
@@ -327,32 +327,33 @@
     <constructor-arg value="p2p,${poolIoQueue}" />
   </bean>
 
-  <bean id="legacy-execution-service" class="org.dcache.pool.classic.LegacyMoverExecutorService"
+  <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverProtocolTransferService"
           destroy-method="shutdown" depends-on="rep">
+      <description>Default transfer service</description>
       <property name="faultListener" ref="pool"/>
   </bean>
 
-  <bean id="nfs-execution-service" class="org.dcache.chimera.nfsv41.mover.NfsExcecutionService"
+  <bean id="nfs-transfer-service" class="org.dcache.chimera.nfsv41.mover.NfsTransferService"
         init-method="init" destroy-method="shutdown" depends-on="rep">
-      <description>NFSv4.1 request execution service</description>
+      <description>NFSv4.1 transfer service</description>
       <property name="enableGss" value="${nfs.rpcsec_gss}" />
   </bean>
 
-  <bean id="classic-post-execution-service" class="org.dcache.pool.classic.ClassicPostExecutionService"
+  <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
         destroy-method="shutdown">
       <property name="billingStub" ref="billing-stub"/>
       <property name="poolName" value="${poolname}"/>
       <property name="faultListener" ref="pool"/>
   </bean>
 
-  <bean id="mover-execution-services" class="org.dcache.pool.classic.MoverExecutorServices" >
-      <description>Request execution service container</description>
-      <constructor-arg ref="legacy-execution-service"/>
-      <constructor-arg>
+  <bean id="transfer-services" class="org.dcache.pool.classic.TransferServices">
+      <description>Collection of transfer services</description>
+      <property name="defaultTransferService" ref="default-transfer-service"/>
+      <property name="transferServices">
         <map>
-            <entry key="NFS4-4" value-ref="nfs-execution-service" />
+            <entry key="NFS4-4" value-ref="nfs-transfer-service" />
         </map>
-      </constructor-arg>
-      <constructor-arg ref="classic-post-execution-service"/>
+      </property>
+      <property name="postTransferService" ref="post-transfer-service"/>
   </bean>
 </beans>

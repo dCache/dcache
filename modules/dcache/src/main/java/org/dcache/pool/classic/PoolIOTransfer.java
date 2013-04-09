@@ -65,11 +65,11 @@ public abstract class PoolIOTransfer implements Mover<ProtocolInfo>
     /** identify of the entity requesting the transfer */
     protected final Subject _subject;
 
-    /** mover executor service to be used with this transfer */
-    private final MoverExecutorService _moverExecutorService;
+    /** transfer service to be used with this transfer */
+    private final TransferService<PoolIOTransfer> _transferService;
 
-    /** post transfer execution service to be used with this transfer */
-    private final PostTransferExecutionService _postTransferExecutionService;
+    /** post transfer service to be used with this transfer */
+    private final PostTransferService _postTransferService;
 
     /**
      * @param id the client id of the request
@@ -88,8 +88,8 @@ public abstract class PoolIOTransfer implements Mover<ProtocolInfo>
                           ProtocolInfo protocolInfo,
                           Subject subject,
                           MoverProtocol mover,
-                          MoverExecutorService moverExecutorService,
-                          PostTransferExecutionService postTransferExecutionService)
+                          TransferService<PoolIOTransfer> transferService,
+                          PostTransferService postTransferService)
     {
         _id = id;
         _initiator = initiator;
@@ -100,8 +100,8 @@ public abstract class PoolIOTransfer implements Mover<ProtocolInfo>
         _protocolInfo = protocolInfo;
         _subject = subject;
         _mover = mover;
-        _moverExecutorService = moverExecutorService;
-        _postTransferExecutionService = postTransferExecutionService;
+        _transferService = transferService;
+        _postTransferService = postTransferService;
     }
 
     @Override
@@ -218,12 +218,12 @@ public abstract class PoolIOTransfer implements Mover<ProtocolInfo>
 
     @Override
     public Cancellable execute(CompletionHandler<Void, Void> completionHandler) {
-        return _moverExecutorService.execute(this, completionHandler);
+        return _transferService.execute(this, completionHandler);
     }
 
     @Override
     public void postprocess(CompletionHandler<Void, Void> completionHandler) {
-        _postTransferExecutionService.execute(this, completionHandler);
+        _postTransferService.execute(this, completionHandler);
     }
 
     /**

@@ -16,7 +16,7 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.classic.MoverExecutorService;
+import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.classic.PoolIOTransfer;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.ManualMover;
@@ -30,9 +30,10 @@ import org.dcache.util.PortRange;
  *
  * @since 1.9.11
  */
-public class NfsExcecutionService extends AbstractCellComponent implements MoverExecutorService {
+public class NfsTransferService extends AbstractCellComponent implements TransferService<PoolIOTransfer>
+{
 
-    private static final Logger _log = LoggerFactory.getLogger(NfsExcecutionService.class);
+    private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
     private NFSv4MoverHandler _nfsIO;
     private boolean _withGss;
     private InetSocketAddress[] _localSocketAddresses;

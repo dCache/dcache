@@ -36,14 +36,14 @@ public class PoolIOReadTransfer
                               ProtocolInfo protocolInfo,
                               Subject subject,
                               MoverProtocol mover,
-                              MoverExecutorService moverExecutorService,
-                              PostTransferExecutionService postTransferExecutorSevice,
+                              TransferService transferService,
+                              PostTransferService postTransferService,
                               Set<OpenFlags> openFlags,
                               Repository repository)
         throws CacheException, InterruptedException
     {
         super(id, initiator, isPoolToPoolTransfer, queue,  door, fileAttributes,
-                protocolInfo, subject, mover, moverExecutorService,  postTransferExecutorSevice);
+                protocolInfo, subject, mover, transferService, postTransferService);
         _handle = repository.openEntry(fileAttributes.getPnfsId(), openFlags);
         _size = _handle.getFile().length();
     }

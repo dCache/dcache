@@ -188,7 +188,7 @@ public class PoolV4
     private boolean _running;
     private double _breakEven = 0.7;
     private double _moverCostFactor = 0.5;
-    private MoverExecutorServices _moverExecutorServices;
+    private TransferServices _transferServices;
 
     public PoolV4(String poolName, String args)
     {
@@ -413,10 +413,10 @@ public class PoolV4
     }
 
     @Required
-    public void setMoverExecutionServices(MoverExecutorServices moverExecutionServices)
+    public void setTransferServices(TransferServices moverExecutionServices)
     {
-        assertNotRunning("Cannot set Imover execution services after initialization");
-        _moverExecutorServices = moverExecutionServices;
+        assertNotRunning("Cannot set transfer services after initialization");
+        _transferServices = moverExecutionServices;
     }
 
     /**
@@ -749,10 +749,9 @@ public class PoolV4
                                 pi);
             }
 
-            String protocolName = protocolNameOf(pi);
-            MoverExecutorService moverExecutorService = _moverExecutorServices.getExecutorService(protocolName);
-            PostTransferExecutionService postExecutorService =
-                    _moverExecutorServices.getPostExecutorService(protocolName);
+            TransferService transferService = _transferServices.getTransferService(pi);
+            PostTransferService postTransferService =
+                    _transferServices.getPostTransferService(pi);
 
             Mover<?> mover;
             if (message instanceof PoolAcceptFileMessage) {
@@ -763,13 +762,13 @@ public class PoolV4
                 mover =
                     new PoolIOWriteTransfer(id, initiator, message.isPool2Pool(), queueName,
                             new CellStub(getCellEndpoint(), source),
-                            attributes, pi, subject, moverProtocol, moverExecutorService, postExecutorService, _repository,
+                            attributes, pi, subject, moverProtocol, transferService, postTransferService, _repository,
                             _checksumModule, targetState, stickyRecords);
             } else {
                 mover =
                     new PoolIOReadTransfer(id, initiator, message.isPool2Pool(), queueName,
                             new CellStub(getCellEndpoint(), source),
-                            attributes, pi, subject, moverProtocol, moverExecutorService,  postExecutorService, openFlags, _repository);
+                            attributes, pi, subject, moverProtocol, transferService,  postTransferService, openFlags, _repository);
             }
             try {
                 message.setMoverId(queueIoRequest(message, mover));

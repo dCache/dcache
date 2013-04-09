@@ -30,9 +30,9 @@ import org.dcache.vehicles.FileAttributes;
  *
  * @since 1.9.11
  */
-public class ClassicPostExecutionService extends AbstractCellComponent implements PostTransferExecutionService
+public class DefaultPostTransferService extends AbstractCellComponent implements PostTransferService<PoolIOTransfer>
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClassicPostExecutionService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPostTransferService.class);
 
     private final ExecutorService _executor =
             new CDCExecutorServiceDecorator(

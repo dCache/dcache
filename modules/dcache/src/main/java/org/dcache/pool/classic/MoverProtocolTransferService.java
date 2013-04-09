@@ -18,12 +18,12 @@ import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.util.CDCExecutorServiceDecorator;
 
-public class LegacyMoverExecutorService implements MoverExecutorService
+public class MoverProtocolTransferService implements TransferService<PoolIOTransfer>
 {
     private final static Logger _log =
-        LoggerFactory.getLogger(LegacyMoverExecutorService.class);
+        LoggerFactory.getLogger(MoverProtocolTransferService.class);
     private final static String _name =
-        LegacyMoverExecutorService.class.getSimpleName();
+        MoverProtocolTransferService.class.getSimpleName();
 
     private final ExecutorService _executor =
             new CDCExecutorServiceDecorator(
