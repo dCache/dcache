@@ -74,6 +74,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -155,6 +156,7 @@ import diskCacheV111.vehicles.PnfsCancelUpload;
 import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
+import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
@@ -288,6 +290,8 @@ public final class Storage
     private boolean _isOnlinePinningEnabled = true;
     private boolean _isSpaceManagerEnabled;
 
+    private boolean _isVerificationRequired;
+
     private Supplier<Multimap<String,LoginBrokerInfo>> loginBrokerInfo;
     private final Random rand = new Random();
     private int numDoorInRanSelection = 3;
@@ -332,6 +336,7 @@ public final class Storage
                                                     future.set(Optional.fromNullable(message.getSpaces()[0]));
                                                 }
 
+                                                @Override
                                                 public void failure(int rc, Object error)
                                                 {
                                                     CacheException exception = CacheExceptionFactory.exceptionOf(
@@ -492,6 +497,16 @@ public final class Storage
     public void setCredentialStore(CredentialStore store)
     {
         _credentialStore = store;
+    }
+
+    public void setVerificationRequired(boolean required)
+    {
+        _isVerificationRequired = required;
+    }
+
+    public boolean isVerificationRequired()
+    {
+        return _isVerificationRequired;
     }
 
     public void messageArrived(final TransferManagerMessage msg)
@@ -1733,13 +1748,14 @@ public final class Storage
                                     String fileId,
                                     SRMUser remoteUser,
                                     Long remoteCredentialId,
+                                    Map<String,String> extraInfo,
                                     CopyCallbacks callbacks)
         throws SRMException
     {
         FsPath path = new FsPath(fileId);
         _log.debug("getFromRemoteTURL from {} to {}", remoteTURL, path);
         return performRemoteTransfer(user,remoteTURL,path,true,
-                remoteUser,
+                extraInfo,
                 remoteCredentialId,
                 callbacks);
 
@@ -1761,13 +1777,14 @@ public final class Storage
                                   URI remoteTURL,
                                   SRMUser remoteUser,
                                   Long remoteCredentialId,
+                                  Map<String,String> extraInfo,
                                   CopyCallbacks callbacks)
         throws SRMException
     {
         FsPath path = getPath(surl);
         _log.debug(" putToRemoteTURL from "+path+" to " +surl);
         return performRemoteTransfer(user,remoteTURL,path,false,
-                remoteUser,
+                extraInfo,
                 remoteCredentialId,
                 callbacks);
 
@@ -1823,7 +1840,7 @@ public final class Storage
                                          URI remoteTURL,
                                          FsPath actualFilePath,
                                          boolean store,
-                                         SRMUser remoteUser,
+                                         Map<String,String> extraInfo,
                                          Long remoteCredentialId,
                                          CopyCallbacks callbacks)
         throws SRMException
@@ -1838,49 +1855,69 @@ public final class Storage
 
         IpProtocolInfo protocolInfo;
 
-        int port = portFor(remoteTURL);
+        InetSocketAddress remoteAddr =
+                new InetSocketAddress(remoteTURL.getHost(), portFor(remoteTURL));
 
-        if (remoteTURL.getScheme().equals("gsiftp")) {
-            RequestCredential credential =
-                RequestCredential.getRequestCredential(remoteCredentialId);
-            if (credential == null) {
-                throw new SRMAuthorizationException("Cannot authenticate with remote gsiftp service; credential delegation required.");
-            }
-            GSSCredential delegatedCredential =
-                credential.getDelegatedCredential();
 
-            if (!(delegatedCredential instanceof GlobusGSSCredentialImpl)) {
+        GSSCredential credential = null;
+        RequestCredential result = RequestCredential.getRequestCredential(remoteCredentialId);
+        if (result != null) {
+            credential = result.getDelegatedCredential();
+
+            if (credential != null && !(credential instanceof GlobusGSSCredentialImpl)) {
                 throw new SRMException("Delegated credential is not compatible with Globus");
+            }
+        }
+
+        switch(remoteTURL.getScheme().toLowerCase()) {
+        case "gsiftp":
+            if (credential == null) {
+                throw new SRMAuthorizationException("Cannot authenticate " +
+                        "with remote gsiftp service; credential " +
+                        "delegation required.");
             }
 
             try {
                 RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
                         new RemoteGsiftpTransferProtocolInfo(
                                 "RemoteGsiftpTransfer",
-                1, 1,
-                                new InetSocketAddress(remoteTURL.getHost(), port),
-                remoteTURL.toString(),
-                getCellName(),
+				1, 1, remoteAddr,
+				remoteTURL.toString(),
+				getCellName(),
                                 getCellDomainName(),
                                 config.getBuffer_size(),
                                 config.getTcp_buffer_size(),
-                                (GlobusGSSCredentialImpl) delegatedCredential);
+                                (GlobusGSSCredentialImpl) credential);
                 gsiftpProtocolInfo.setEmode(true);
                 gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());
                 protocolInfo = gsiftpProtocolInfo;
             } catch (GSSException e) {
                 throw new SRMException("Credential failure: " + e.getMessage(), e);
             }
-        } else if (remoteTURL.getScheme().equals("http")) {
+            break;
 
-            protocolInfo =
-                new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
-                                                       1, 1,
-                                                       new InetSocketAddress(remoteTURL.getHost(), port),
-                                                       config.getBuffer_size(),
-                                                       remoteTURL.toString());
-        } else {
-            throw new SRMException("not implemented");
+        case "https":
+            try {
+                protocolInfo = new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
+                        1, 1, remoteAddr, config.getBuffer_size(),
+                        remoteTURL.toString(), isVerifyRequired(extraInfo),
+                        httpHeaders(extraInfo),
+                        (GlobusGSSCredentialImpl) credential);
+            } catch (GSSException e) {
+                throw new SRMException("Failed to process credential: " + e.getMessage(), e);
+            }
+            break;
+
+        case "http":
+            protocolInfo = new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
+                    1, 1, remoteAddr, config.getBuffer_size(),
+                    remoteTURL.toString(), isVerifyRequired(extraInfo),
+                    httpHeaders(extraInfo));
+            break;
+
+        default:
+            throw new SRMException("protocol " + remoteTURL.getScheme() +
+                    " is not supported");
         }
 
         RemoteTransferManagerMessage request =
@@ -1910,6 +1947,41 @@ public final class Storage
         } catch (InterruptedException e) {
             throw new SRMException("Request to transfer manager got interruptd", e);
         }
+    }
+
+    /**
+     * A dCache-specific extension: if tExtraInfo has the 'verify'
+     * key then the value controls whether the remote endpoint must
+     * support RFC-3230.
+     */
+    private boolean isVerifyRequired(Map<String,String> extraInfo)
+    {
+        boolean isRequired = _isVerificationRequired;
+        String verify = extraInfo.get("verify");
+        if (verify != null) {
+            _log.debug("Setting checksum-verification-require to {}",
+                    verify);
+            isRequired = Boolean.valueOf(verify);
+        }
+        return isRequired;
+    }
+
+    /**
+     * Another dCache-specific extension: any tExtraInfo field with
+     * a key that starts "header-" has this stripped and taken as an
+     * HTTP header that is used when making a request.
+     */
+    ImmutableMap<String,String> httpHeaders(Map<String,String> extraInfo)
+    {
+        ImmutableMap.Builder<String,String> headers = ImmutableMap.builder();
+        for (Map.Entry<String,String> entry : extraInfo.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (key.startsWith("header-") && key.length() > 7 && !value.isEmpty()) {
+                headers.put(key.substring(7), entry.getValue());
+            }
+        }
+        return headers.build();
     }
 
     private final Map<Long,TransferInfo> callerIdToHandler =

@@ -60,6 +60,12 @@ public abstract class ChecksumFactory
         return getFactory(defaultType);
     }
 
+    public static ChecksumFactory getFactoryFor(Checksum checksum)
+            throws NoSuchAlgorithmException
+    {
+        return getFactory(checksum.getType());
+    }
+
     public static void main( String [] args ) throws Exception {
        System.out.println("Getting MD4 first time");
        ChecksumFactory.getFactory(ChecksumType.MD4_TYPE);

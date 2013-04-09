@@ -75,6 +75,7 @@ package org.dcache.srm;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
@@ -599,7 +600,8 @@ public class SRM {
                     null,
                     null, null,
                     client_host,
-                    null);
+                    null,
+                    ImmutableMap.<String,String>of());
             logger.debug(" Copy Request = " + r);
             schedulers.schedule(r);
 

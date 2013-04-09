@@ -1,5 +1,6 @@
 package org.dcache.srm.handler;
 
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +101,8 @@ public class SrmCopy
 
         TOverwriteMode overwriteMode = getOverwriteMode(request);
 
+        ImmutableMap<String,String> extraInfo = getExtraInfo(request);
+        credential.acceptAlternative(extraInfo.get("credential"));
         CopyRequest r = new CopyRequest(
                 user,
                 credential.getId(),
@@ -115,9 +118,10 @@ public class SrmCopy
                 targetAccessLatency,
                 request.getUserRequestDescription(),
                 clientHost,
-                overwriteMode);
+                overwriteMode,
+                extraInfo);
         try (JDC ignored = r.applyJdc()) {
-            String priority = getExtraInfo(request, "priority");
+            String priority = extraInfo.get("priority");
             if (priority != null) {
                 try {
                     r.setPriority(Integer.parseInt(priority));
@@ -134,22 +138,23 @@ public class SrmCopy
         }
     }
 
-    private static String getExtraInfo(SrmCopyRequest request, String key)
+    private static ImmutableMap<String,String> getExtraInfo(SrmCopyRequest request)
     {
         ArrayOfTExtraInfo sourceStorageSystemInfo = request.getSourceStorageSystemInfo();
         if (sourceStorageSystemInfo == null) {
-            return null;
+            return ImmutableMap.of();
         }
+
         TExtraInfo[] extraInfoArray = sourceStorageSystemInfo.getExtraInfoArray();
         if (extraInfoArray == null || extraInfoArray.length <= 0) {
-            return null;
+            return ImmutableMap.of();
         }
+
+        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
         for (TExtraInfo extraInfo : extraInfoArray) {
-            if (extraInfo.getKey().equals(key)) {
-                return extraInfo.getValue();
-            }
+            builder.put(extraInfo.getKey(), extraInfo.getValue());
         }
-        return null;
+        return builder.build();
     }
 
     private static TOverwriteMode getOverwriteMode(SrmCopyRequest request) throws SRMNotSupportedException

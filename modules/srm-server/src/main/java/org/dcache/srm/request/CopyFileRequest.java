@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.CheckedFuture;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.util.GlobusURL;
@@ -91,6 +92,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Map;
 import java.util.Objects;
 
 import diskCacheV111.srm.RequestFileStatus;
@@ -133,6 +135,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
     //these are used if the transfer is performed in the pull mode for
     // storage of the space reservation related info
     private final String spaceReservationId;
+    private final ImmutableMap<String,String> extraInfo;
 
     public CopyFileRequest(long requestId,
                            Long requestCredentalId,
@@ -140,13 +143,15 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                            URI destinationSurl,
                            String spaceToken,
                            long lifetime,
-                           int maxNumberOfRetries)
+                           int maxNumberOfRetries,
+                           ImmutableMap<String,String> extraInfo)
     {
         super(requestId, requestCredentalId, lifetime, maxNumberOfRetries);
         LOG.debug("CopyFileRequest");
         this.sourceSurl = sourceSurl;
         this.destinationSurl = destinationSurl;
         this.spaceReservationId = spaceToken;
+        this.extraInfo = extraInfo;
         LOG.debug("constructor from={} to={}", sourceSurl, destinationSurl);
     }
 
@@ -182,7 +187,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             String remoteRequestId,
             String remoteFileId,
             String spaceReservationId,
-            String transferId)
+            String transferId,
+            ImmutableMap<String,String> extraInfo)
     {
         super(id, nextJobId, creationTime, lifetime, stateId, errorMessage,
               scheduelerId, schedulerTimeStamp, numberOfRetries,
@@ -208,6 +214,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
         }
         this.spaceReservationId = spaceReservationId;
         this.transferId = transferId;
+        this.extraInfo = extraInfo;
     }
 
     public void done()
@@ -218,6 +225,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
     public void error()
     {
         done();
+    }
+
+    public ImmutableMap<String,String> getExtraInfo()
+    {
+        return extraInfo;
     }
 
     @Override
@@ -583,7 +595,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                     }
                 }
             };
-            setTransferId(getStorage().getFromRemoteTURL(getUser(), getSourceTurl(), getDestinationFileId(), getUser(), credential.getId(), copycallbacks));
+            setTransferId(getStorage().getFromRemoteTURL(getUser(), getSourceTurl(), getDestinationFileId(), getUser(), credential.getId(), extraInfo, copycallbacks));
             saveJob();
         } else {
             // transfer id is not null and we are scheduled
@@ -630,7 +642,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             LOG.debug("copying using storage.putToRemoteTURL");
             RequestCredential credential = getCredential();
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
-            setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), copycallbacks));
+            setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), extraInfo, copycallbacks));
             setState(State.RUNNINGWITHOUTTHREAD, "Transferring file.");
             saveJob();
         } else {

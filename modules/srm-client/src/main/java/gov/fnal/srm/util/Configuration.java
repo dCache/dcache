@@ -71,6 +71,7 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import com.google.common.base.Splitter;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -89,6 +90,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -1984,6 +1986,7 @@ public class Configuration {
                     "cksm_value",
                     "first_byte_timeout",
                     "next_byte_timeout")+
+            "    [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"+
             "the following return codes are supported:\n"+
             "\t\t 0 - success\n"+
             "\t\t 1 - general error\n"+
@@ -2447,6 +2450,18 @@ public class Configuration {
                 throw new IOException("specified configuratioin file \""+config_file+"\" does not exist or can not be read");
             }
         }
+
+        for (String value : args.getOptions("extraInfo")) {
+            List<String> elements = Splitter.on(':').limit(2).splitToList(value);
+            if (elements.size() != 2 || elements.get(0).isEmpty() ||
+                    elements.get(1).isEmpty()) {
+                throw new IllegalArgumentException("Illegal -extraInfo option.  Value must have the form <key>:<value>");
+            }
+            extraParameters.put(elements.get(0), elements.get(1));
+        }
+
+        args = args.removeOptions("extraInfo");
+
         //
         // Now parse only specified options, so we achieve a situation where
         // class fields are set to defaults, then possibly overriden by

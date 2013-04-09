@@ -750,6 +750,7 @@ public class Storage
         final String localTransferPath,
         final SRMUser remoteUser,
         final Long remoteCredentialId,
+        final Map<String,String> extraInfo,
         final CopyCallbacks callbacks) throws SRMException{
         Thread t = new Thread(){
 
@@ -785,8 +786,10 @@ public class Storage
      * @return transfer id
      */
     @Override
-    public String putToRemoteTURL(final SRMUser user, final URI surl,final URI remoteTURL, final SRMUser remoteUser, final Long remoteCredentialId, final CopyCallbacks callbacks)
-    throws SRMException {
+    public String putToRemoteTURL(final SRMUser user, final URI surl,
+            final URI remoteTURL, final SRMUser remoteUser,
+            final Long remoteCredentialId, final Map<String,String> extraInfo,
+            final CopyCallbacks callbacks) throws SRMException {
 
        Thread t = new Thread(){
 

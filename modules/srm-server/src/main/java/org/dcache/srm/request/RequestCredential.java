@@ -84,6 +84,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 
 public class RequestCredential
@@ -205,19 +206,26 @@ public class RequestCredential
         return delegatedCredential;
     }
 
-    public synchronized void keepBestDelegatedCredential(GSSCredential delegatedCredential)
+    public synchronized void keepBestDelegatedCredential(GSSCredential credential)
             throws GSSException
     {
-        if (delegatedCredential != null) {
-            long newCredentialExpiration = System.currentTimeMillis() +
-                    delegatedCredential.getRemainingLifetime() * 1000L;
-            if (this.delegatedCredential == null ||
-                    newCredentialExpiration > this.delegatedCredentialExpiration) {
-                this.delegatedCredential = delegatedCredential;
-                this.delegatedCredentialExpiration = newCredentialExpiration;
-                this.saved = false;
-            }
+        if (credential != null && this.delegatedCredential == null ||
+                expiryDateFor(credential) > this.delegatedCredentialExpiration) {
+            updateCredential(credential);
         }
+    }
+
+    private static long expiryDateFor(GSSCredential credential) throws GSSException
+    {
+        return System.currentTimeMillis() +
+                credential.getRemainingLifetime() * 1000L;
+    }
+
+    private void updateCredential(GSSCredential credential) throws GSSException
+    {
+        this.delegatedCredential = credential;
+        this.delegatedCredentialExpiration = expiryDateFor(credential);
+        this.saved = false;
     }
 
     /**
@@ -292,5 +300,49 @@ public class RequestCredential
     {
         long lifetime = delegatedCredentialExpiration - System.currentTimeMillis();
         return Math.max(0, lifetime);
+    }
+
+    /**
+     * Allow a user to specify an alternative credential to use.
+     */
+    public synchronized void acceptAlternative(String description) throws SRMInvalidRequestException
+    {
+        if (description == null) {
+            return;
+        }
+
+        if (!description.startsWith("gridsite:")) {
+            throw new SRMInvalidRequestException("Unknown credential type: " +
+                    description);
+        }
+
+        String idLabel = description.substring(9);
+
+        try {
+            long id = Long.parseLong(idLabel);
+            RequestCredential credential = storage.getRequestCredential(id);
+
+            if (credential == null || !credential.credentialName.equals(this.credentialName)) {
+                // when the credential belongs to someone else, throw the same
+                // error as if no credential was found.  This prevents
+                // discovering which other credentials exist.
+                throw new IllegalArgumentException("Unknown credential: " +
+                        credentialName);
+            }
+
+            if (credential.getDelegatedCredentialRemainingLifetime() == 0) {
+                throw new IllegalArgumentException("Credential " + description +
+                        " has expired");
+            }
+
+            try {
+                updateCredential(credential.delegatedCredential);
+            } catch (GSSException e) {
+                throw new RuntimeException("Problem getting credential: " +
+                        e.getMessage(), e);
+            }
+        } catch (NumberFormatException e) {
+            throw new SRMInvalidRequestException("Badly formatted credential id: " + idLabel);
+        }
     }
 }

@@ -11,8 +11,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 
 import dmg.cells.nucleus.EnvironmentAware;
-import dmg.util.Formats;
-import dmg.util.Replaceable;
+import dmg.cells.nucleus.Environments;
 
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.plugins.ChannelHandlerProvider;
@@ -42,7 +41,7 @@ public class ChannelHandlerFactoryFactoryBean
     @Override
     public void setEnvironment(Map<String,Object> environment)
     {
-        _properties = toProperties(environment);
+        _properties = Environments.toProperties(environment);
     }
 
     @Override
@@ -79,26 +78,5 @@ public class ChannelHandlerFactoryFactoryBean
             }
         }
         throw new IllegalArgumentException("Channel handler plugin not found: " + plugin);
-    }
-
-    private static Properties toProperties(final Map<String,Object> env)
-    {
-        Replaceable replaceable = new Replaceable() {
-            @Override
-            public String getReplacement(String name)
-            {
-                Object value =  env.get(name);
-                return (value == null) ? null : value.toString().trim();
-            }
-        };
-
-        Properties properties = new Properties();
-        for (Map.Entry<String,Object> e: env.entrySet()) {
-            String key = e.getKey();
-            String value = String.valueOf(e.getValue());
-            properties.put(key, Formats.replaceKeywords(value, replaceable));
-        }
-
-        return properties;
     }
 }

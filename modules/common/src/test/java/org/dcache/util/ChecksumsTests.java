@@ -97,7 +97,7 @@ public class ChecksumsTests
     @Test
     public void shouldReturnEmptySetDecodingNull()
     {
-        Set<Checksum> result = Checksums.rfc3230Decode(null);
+        Set<Checksum> result = Checksums.decodeRfc3230(null);
 
         assertThat(result, empty());
     }
@@ -105,7 +105,7 @@ public class ChecksumsTests
     @Test
     public void shouldReturnEmptySetDecodingEmptyString()
     {
-        Set<Checksum> result = Checksums.rfc3230Decode("");
+        Set<Checksum> result = Checksums.decodeRfc3230("");
 
         assertThat(result, empty());
     }
@@ -113,7 +113,7 @@ public class ChecksumsTests
     @Test
     public void shouldReturnSingleChecksumForAdler32String()
     {
-        Set<Checksum> result = Checksums.rfc3230Decode("adler32=03da0195");
+        Set<Checksum> result = Checksums.decodeRfc3230("adler32=03da0195");
 
         Set<Checksum> expected = Collections.singleton(new Checksum(ChecksumType.ADLER32, "03da0195"));
 
@@ -123,7 +123,7 @@ public class ChecksumsTests
     @Test
     public void shouldReturnSingleChecksumForAdler32StringWithWhiteSpace()
     {
-        Set<Checksum> result = Checksums.rfc3230Decode(" adler32=03da0195 ");
+        Set<Checksum> result = Checksums.decodeRfc3230(" adler32=03da0195 ");
 
         Set<Checksum> expected = Collections.singleton(new Checksum(ChecksumType.ADLER32, "03da0195"));
 
@@ -133,7 +133,7 @@ public class ChecksumsTests
     @Test
     public void shouldReturnSingleChecksumForCapitalAdler32String()
     {
-        Set<Checksum> result = Checksums.rfc3230Decode("ADLER32=03DA0195");
+        Set<Checksum> result = Checksums.decodeRfc3230("ADLER32=03DA0195");
 
         Set<Checksum> expected = Collections.singleton(new Checksum(ChecksumType.ADLER32, "03DA0195"));
 
@@ -144,7 +144,7 @@ public class ChecksumsTests
     public void shouldReturnSingleChecksumForMd5String()
     {
         Set<Checksum> result =
-                Checksums.rfc3230Decode("md5=HUXZLQLMuI/KZ5KDcJPcOA==");
+                Checksums.decodeRfc3230("md5=HUXZLQLMuI/KZ5KDcJPcOA==");
 
         Set<Checksum> expected = Collections.singleton(
                 new Checksum(ChecksumType.MD5_TYPE,
@@ -157,7 +157,7 @@ public class ChecksumsTests
     public void shouldReturnEmptySetForMalformedMd5String()
     {
         Set<Checksum> result =
-                Checksums.rfc3230Decode("md5=THIS-IS-NOT-VALID-DIGEST");
+                Checksums.decodeRfc3230("md5=THIS-IS-NOT-VALID-DIGEST");
 
         assertThat(result, empty());
     }
@@ -166,7 +166,7 @@ public class ChecksumsTests
     public void shouldReturnSingleChecksumForMd5StringWithSpace()
     {
         Set<Checksum> result =
-                Checksums.rfc3230Decode(" md5=HUXZLQLMuI/KZ5KDcJPcOA== ");
+                Checksums.decodeRfc3230(" md5=HUXZLQLMuI/KZ5KDcJPcOA== ");
 
         Set<Checksum> expected = Collections.singleton(
                 new Checksum(ChecksumType.MD5_TYPE,
@@ -179,7 +179,7 @@ public class ChecksumsTests
     public void shouldReturnSingleChecksumForCapitalMd5String()
     {
         Set<Checksum> result =
-                Checksums.rfc3230Decode("MD5=HUXZLQLMuI/KZ5KDcJPcOA==");
+                Checksums.decodeRfc3230("MD5=HUXZLQLMuI/KZ5KDcJPcOA==");
 
         Set<Checksum> expected = Collections.singleton(
                 new Checksum(ChecksumType.MD5_TYPE,
@@ -192,7 +192,7 @@ public class ChecksumsTests
     public void shouldReturnBothForMd5AndAdler32()
     {
         Set<Checksum> result =
-                Checksums.rfc3230Decode("adler32=03da0195,md5=HUXZLQLMuI/KZ5KDcJPcOA==");
+                Checksums.decodeRfc3230("adler32=03da0195,md5=HUXZLQLMuI/KZ5KDcJPcOA==");
 
         Set<Checksum> expected = Sets.newHashSet(newAdler32Checksum("03da0195"),
                 newMd5Checksum("1d45d92d02ccb88fca6792837093dc38"));
@@ -204,7 +204,7 @@ public class ChecksumsTests
     public void shouldReturnBothForAdler32AndMd5()
     {
         Set<Checksum> result =
-                Checksums.rfc3230Decode("md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195");
+                Checksums.decodeRfc3230("md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195");
 
         Set<Checksum> expected = Sets.newHashSet(newAdler32Checksum("03da0195"),
                 newMd5Checksum("1d45d92d02ccb88fca6792837093dc38"));
@@ -216,7 +216,7 @@ public class ChecksumsTests
     public void shouldReturnBothForAdler32AndMd5WithSpaces()
     {
         Set<Checksum> result =
-                Checksums.rfc3230Decode("  md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195  ");
+                Checksums.decodeRfc3230("  md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195  ");
 
         Set<Checksum> expected = Sets.newHashSet(newAdler32Checksum("03da0195"),
                 newMd5Checksum("1d45d92d02ccb88fca6792837093dc38"));
@@ -228,7 +228,7 @@ public class ChecksumsTests
     public void shouldReturnBothForAdler32AndMd5AndUnknown()
     {
         Set<Checksum> result =
-                Checksums.rfc3230Decode("md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195,unknown=UNKNOWN-VALUE");
+                Checksums.decodeRfc3230("md5=HUXZLQLMuI/KZ5KDcJPcOA==,adler32=03da0195,unknown=UNKNOWN-VALUE");
 
         Set<Checksum> expected = Sets.newHashSet(newAdler32Checksum("03da0195"),
                 newMd5Checksum("1d45d92d02ccb88fca6792837093dc38"));

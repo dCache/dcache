@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +22,14 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -41,7 +43,7 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.CDCExecutorServiceDecorator;
 
 public class MoverProtocolTransferService extends AbstractCellComponent
-        implements TransferService<MoverProtocolMover>, MoverFactory, CellCommandListener
+        implements TransferService<MoverProtocolMover>, MoverFactory, CellCommandListener, EnvironmentAware
 {
     private final static Logger LOGGER =
         LoggerFactory.getLogger(MoverProtocolTransferService.class);
@@ -56,6 +58,13 @@ public class MoverProtocolTransferService extends AbstractCellComponent
     private FaultListener _faultListener;
     private ChecksumModule _checksumModule;
     private PostTransferService _postTransferService;
+    private Map<String,Object> _environment;
+
+    @Override
+    public void setEnvironment(Map<String,Object> environment)
+    {
+        _environment = ImmutableMap.copyOf(environment);
+    }
 
     @Required
     public void setFaultListener(FaultListener faultListener)
@@ -117,7 +126,11 @@ public class MoverProtocolTransferService extends AbstractCellComponent
         Class<?>[] argsClass = {CellEndpoint.class};
         Constructor<? extends MoverProtocol> moverCon = moverClass.getConstructor(argsClass);
         Object[] args = {getCellEndpoint()};
-        return moverCon.newInstance(args);
+        MoverProtocol mover = moverCon.newInstance(args);
+        if (mover instanceof EnvironmentAware) {
+            ((EnvironmentAware)mover).setEnvironment(_environment);
+        }
+        return mover;
     }
 
 

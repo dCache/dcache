@@ -67,6 +67,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -181,7 +182,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             TAccessLatency targetAccessLatency,
             String description,
             String clientHost,
-            TOverwriteMode overwriteMode)
+            TOverwriteMode overwriteMode,
+            ImmutableMap<String,String> extraInfo)
     {
         super(user, requestCredentialId, maxNumberOfRetries, maxUpdatePeriod,
                 lifetime, description, clientHost);
@@ -211,7 +213,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         for (int i = 0; i < requestCount; ++i) {
             CopyFileRequest request = new CopyFileRequest(getId(),
                     requestCredentialId, sourceUrl[i], destinationUrl[i], spaceToken,
-                    lifetime, maxNumberOfRetries);
+                    lifetime, maxNumberOfRetries, extraInfo);
             requests.add(request);
         }
         setFileRequests(requests);
@@ -286,7 +288,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         this.targetRetentionPolicy = targetRetentionPolicy;
         this.overwriteMode = null;
      }
-
 
     public void proccessRequest() throws DataAccessException, IOException,
             SRMException, InterruptedException, IllegalStateTransition,

@@ -210,6 +210,7 @@
     <property name="srmGetNotSupportedProtocols" value="${srm.protocols.disallowed.get}"/>
     <property name="srmPreferredProtocols" value="${srm.protocols.preferred}"/>
     <property name="credentialStore" ref="gridsite-credential-store"/>
+    <property name="verificationRequired" value="${srm.enable.third-party.requiring-verification-by-default}"/>
   </bean>
 
   <bean id="config" class="org.dcache.srm.util.Configuration">

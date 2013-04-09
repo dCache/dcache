@@ -73,6 +73,7 @@ import javax.annotation.Nullable;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import org.dcache.srm.v2_2.TMetaDataSpace;
 
@@ -237,6 +238,7 @@ public interface AbstractStorageElement {
      * @param remoteTURL Transfer URL
      * @param fileId File ID as provided by prepareToPut
      * @param remoteUser
+     * @param extraInfo user-supplied additional information
      * @param callbacks
      * @throws SRMException
      * @return transfer id
@@ -248,6 +250,7 @@ public interface AbstractStorageElement {
             String fileId,
             SRMUser remoteUser,
             Long requestCredentialId,
+            Map<String,String> extraInfo,
             CopyCallbacks callbacks)
             throws SRMException;
 
@@ -260,6 +263,7 @@ public interface AbstractStorageElement {
      * @param surl
      * @param remoteTURL
      * @param remoteUser
+     * @param extraInfo
      * @param callbacks
      * @param remoteCredetial
      * @throws SRMException
@@ -271,6 +275,7 @@ public interface AbstractStorageElement {
             URI remoteTURL,
             SRMUser remoteUser,
             Long requestCredentialId,
+            Map<String,String> extraInfo,
             CopyCallbacks callbacks)
             throws SRMException;
 

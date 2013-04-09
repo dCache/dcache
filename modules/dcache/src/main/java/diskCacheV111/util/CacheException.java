@@ -120,7 +120,6 @@ public class CacheException extends Exception
     /** Transfer between pool and remote site failed. */
     public final static int THIRD_PARTY_TRANSFER_FAILED = 10027;
 
-
     /**
      * default error code. <b>It's recommended to use more specific error
      * codes</b>

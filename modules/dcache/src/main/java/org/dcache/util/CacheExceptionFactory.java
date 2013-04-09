@@ -19,6 +19,7 @@ import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.ServiceUnavailableException;
+import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
 
@@ -77,6 +78,8 @@ public class CacheExceptionFactory {
                  return new ServiceUnavailableException(message, cause);
             case INVALID_ARGS:
                  return new InvalidMessageCacheException(message, cause);
+            case THIRD_PARTY_TRANSFER_FAILED:
+                 return new ThirdPartyTransferFailedCacheException(message, cause);
 
             /*
              * these do not have exception classes

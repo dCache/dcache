@@ -79,11 +79,6 @@ public class Checksums
                             });
 
 
-    private Checksums()
-    {
-        // prevent instantiation
-    }
-
     /**
      * This Function maps an instance of Checksum to the corresponding
      * fragment of an RFC 3230 response.
@@ -125,6 +120,10 @@ public class Checksums
         }
     };
 
+    private Checksums()
+    {
+        // prevent instantiation
+    }
 
     /**
      * Parse the RFC-3230 Digest response header value.  If there is no
@@ -133,7 +132,7 @@ public class Checksums
      * @param digest The Digest header value
      * @return the decoded checksum values
      */
-    public static Set<Checksum> rfc3230Decode(String digest)
+    public static Set<Checksum> decodeRfc3230(String digest)
     {
         Map<String,String> parts = RFC3230_SPLITTER.split(nullToEmpty(digest));
 

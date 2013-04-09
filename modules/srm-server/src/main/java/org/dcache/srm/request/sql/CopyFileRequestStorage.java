@@ -11,12 +11,22 @@
 
 package org.dcache.srm.request.sql;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.common.escape.CharEscaperBuilder;
+import com.google.common.escape.Escaper;
 import org.springframework.dao.DataAccessException;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.request.CopyFileRequest;
@@ -29,7 +39,8 @@ import org.dcache.srm.util.Configuration;
  */
 public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileRequest> {
     public static final String TABLE_NAME="copyfilerequests";
-    private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
+
+    private static final String UPDATE_REQUEST_SQL = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
         "CREATIONTIME=?,  " +
         "LIFETIME=?, " +
@@ -39,9 +50,61 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
         "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=?, " + //10
+        "REQUESTID=?, "+
+        "CREDENTIALID=?, "+
+        "STATUSCODE=?, "+
+        "FROMURL=? ,"+
+        "TOURL =?,"+ // 15
+        "FROMTURL=? ,"+
+        "TOTURL=? ,"+
+        "FROMLOCALPATH=? ,"+
+        "TOLOCALPATH=? ,"+
+        "SIZE=? ,"+  // 20
+        "FROMFILEID=? ,"+
+        "TOFILEID=? ,"+
+        "REMOTEREQUESTID=? ,"+
+        "REMOTEFILEID=? , "+
+        "SPACERESERVATIONID=? , "+ // 25
+        "TRANSFERID=?, "+
+        "EXTRAINFO=? " + // 27
+        "WHERE ID=? ";
 
-    public PreparedStatement getStatement(Connection connection,
+    private final static int ADDITIONAL_FIELDS = 14;
+
+    private static final Escaper AS_PERCENT_VALUE = new CharEscaperBuilder().
+            addEscape('%', "%25").
+            addEscape(',', "%2C").
+            addEscape('=', "%3D").
+            toEscaper();
+
+    private static String serialiseMap(Map<String,String> map)
+    {
+        Map<String,String> transformed = Maps.newHashMapWithExpectedSize(map.size());
+        for (Map.Entry<String,String> e : map.entrySet()) {
+            transformed.put(AS_PERCENT_VALUE.escape(e.getKey()),
+                    AS_PERCENT_VALUE.escape(e.getValue()));
+        }
+        return Joiner.on(',').withKeyValueSeparator("=").join(transformed);
+    }
+
+    private static ImmutableMap<String,String> deserialiseMap(String serialised)
+    {
+        ImmutableMap.Builder builder = new ImmutableMap.Builder<>();
+        for (Map.Entry<String,String> entry : Splitter.on(',').
+                withKeyValueSeparator('=').split(serialised).entrySet()) {
+            try {
+                builder.put(URLDecoder.decode(entry.getKey(), "UTF-8"),
+                        URLDecoder.decode(entry.getValue(), "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                Throwables.propagate(e);
+            }
+        }
+        return builder.build();
+    }
+
+
+    private PreparedStatement getStatement(Connection connection,
                                           String query,
                                           Job job) throws SQLException {
         CopyFileRequest request = (CopyFileRequest)job;
@@ -73,27 +136,11 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                   request.getRemoteFileId(),
                                   request.getSpaceReservationId(),
                                   request.getTransferId(),
+                                  serialiseMap(request.getExtraInfo()),
                                   request.getId());
         return stmt;
     }
 
-    private static final String UPDATE_REQUEST_SQL = UPDATE_PREFIX + ", REQUESTID=?, "+
-            "CREDENTIALID=?, "+
-            "STATUSCODE=?, "+
-            "FROMURL=? ,"+
-            "TOURL =?,"+
-            "FROMTURL=? ,"+
-            "TOTURL=? ,"+
-            "FROMLOCALPATH=? ,"+
-            "TOLOCALPATH=? ,"+
-            "SIZE=? ,"+  //20
-            "FROMFILEID=? ,"+
-            "TOFILEID=? ,"+
-            "REMOTEREQUESTID=? ,"+
-            "REMOTEFILEID=? , "+
-            "SPACERESERVATIONID=? , "+
-            "TRANSFERID=?   "+
-            "WHERE ID=? ";//27
 
     @Override
     public PreparedStatement getUpdateStatement(Connection connection,
@@ -133,10 +180,11 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
             "REMOTEREQUESTID ,"+
             "REMOTEFILEID , "+ //25
             "SPACERESERVATIONID , "+
-            "TRANSFERID )  "+
+            "TRANSFERID, " +
+            "EXTRAINFO) " + // 28
             "VALUES (?,?,?,?,?,?,?,?,?,?," +
                     "?,?,?,?,?,?,?,?,?,?," +
-                    "?,?,?,?,?,?,?)";
+                    "?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection,
@@ -174,7 +222,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                   request.getRemoteRequestId(),
                                   request.getRemoteFileId(),
                                   request.getSpaceReservationId(),
-                                  request.getTransferId());
+                                  request.getTransferId(),
+                                  serialiseMap(request.getExtraInfo()));
         return stmt;
     }
 
@@ -218,9 +267,9 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
         String REMOTEREQUESTID = set.getString(next_index++);
         String REMOTEFILEID = set.getString(next_index++);
         String SPACERESERVATIONID = set.getString(next_index++);
-        String TRANSFERID = set.getString(next_index);
-        Job.JobHistory[] jobHistoryArray =
-        getJobHistory(ID,_con);
+        String TRANSFERID = set.getString(next_index++);
+        ImmutableMap<String,String> extraInfo = deserialiseMap(set.getString(next_index));
+        Job.JobHistory[] jobHistoryArray = getJobHistory(ID,_con);
 
 
            return new CopyFileRequest(
@@ -252,7 +301,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
              REMOTEREQUESTID,
              REMOTEFILEID,
              SPACERESERVATIONID,
-             TRANSFERID);
+             TRANSFERID,
+             extraInfo);
     }
 
     @Override
@@ -283,9 +333,11 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
          ","+
         "SPACERESERVATIONID "+  stringType+
         ","+
-        "TRANSFERID "+ stringType;
+        "TRANSFERID "+ stringType+
+        ","+
+        "EXTRAINFO "+ stringType;
   }
-    private static int ADDITIONAL_FIELDS = 13;
+
     @Override
     public String getTableName() {
         return TABLE_NAME;
@@ -379,6 +431,10 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
         {
             verifyStringType("TRANSFERID",columnIndex,tableName, columnName, columnType);
         }
+       else if(columnIndex == nextIndex+13)
+        {
+            verifyStringType("EXTRAINFO",columnIndex,tableName, columnName, columnType);
+        }
         else {
             throw new SQLException("database table schema changed:"+
                     "table named "+tableName+
@@ -392,5 +448,4 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
      protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }
-
 }

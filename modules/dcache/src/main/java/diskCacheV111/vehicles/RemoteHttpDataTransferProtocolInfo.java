@@ -1,6 +1,12 @@
 package diskCacheV111.vehicles;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import diskCacheV111.util.CacheException;
 
 /**
  * @author Patrick F.
@@ -9,82 +15,79 @@ import java.net.InetSocketAddress;
  */
 public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
 {
-  private String name  = "Unkown" ;
-  private int    minor;
-  private int    major;
-  private InetSocketAddress addr;
-  private int bufferSize;
-  private String sourceHttpUrl;
-  private long   transferTime;
-  private long   bytesTransferred;
-  private int    sessionId;
+    private final String name;
+    private final int    minor;
+    private final int    major;
+    private final InetSocketAddress addr;
+    private final int bufferSize;  // for compatibility with earlier pools; remove after 2.10 is released
+    private final String sourceHttpUrl;
+    private final boolean isVerificationRequired;
+    private final ImmutableMap<String,String> headers;
 
-  private static final long serialVersionUID = 4482469147378465931L;
+    private static final long serialVersionUID = 4482469147378465931L;
 
-  public RemoteHttpDataTransferProtocolInfo(String protocol, int major, int minor, InetSocketAddress addr, int buf_size, String sourceHttpUrl)
-  {
-    this.name  = protocol ;
-    this.minor = minor ;
-    this.major = major ;
-    this.addr = addr ;
-    this.sourceHttpUrl = sourceHttpUrl;
-    this.bufferSize =buf_size;
-  }
+    public RemoteHttpDataTransferProtocolInfo(String protocol, int major,
+            int minor, InetSocketAddress addr, int buf_size, String url,
+            boolean isVerificationRequired, ImmutableMap<String,String> headers)
+    {
+        this.name  = protocol ;
+        this.minor = minor ;
+        this.major = major ;
+        this.addr = addr ;
+        this.sourceHttpUrl = url;
+        this.bufferSize = buf_size;
+        this.isVerificationRequired = isVerificationRequired;
+        this.headers = headers;
+    }
 
-  public String getSourceHttpUrl()
-  {
-      return sourceHttpUrl;
-  }
-  public int getBufferSize()
-  {
-      return bufferSize;
-  }
-   //
-  //  the ProtocolInfo interface
-  //
-  @Override
-  public String getProtocol()
-  {
-      return name ;
-  }
-
-  @Override
-  public int    getMinorVersion()
-  {
-    return minor ;
-  }
-
-  @Override
-  public int    getMajorVersion()
-  {
-    return major ;
-  }
-
-  @Override
-  public String getVersionString()
-  {
-    return name+"-"+major+"."+minor ;
-  }
-
-  //
-  // and the private stuff
-  //
-
-  public String toString()
-  {
-    StringBuilder sb = new StringBuilder() ;
-    sb.append(getVersionString()) ;
-    sb.append(addr.getAddress().getHostAddress());
-    sb.append(':').append(addr.getPort()) ;
-
-    return sb.toString() ;
-  }
+    public URI getUri()
+    {
+        return URI.create(sourceHttpUrl);
+    }
 
     @Override
-    public InetSocketAddress getSocketAddress() {
+    public String getProtocol()
+    {
+        return name ;
+    }
+
+    @Override
+    public int getMinorVersion()
+    {
+        return minor ;
+    }
+
+    @Override
+    public int getMajorVersion()
+    {
+        return major ;
+    }
+
+    @Override
+    public String getVersionString()
+    {
+        return name+"-"+major+"."+minor ;
+    }
+
+    public boolean isVerificationRequired()
+    {
+        return isVerificationRequired;
+    }
+
+    public ImmutableMap<String,String> getHeaders()
+    {
+        return headers;
+    }
+
+    @Override
+    public String toString()
+    {
+        return getVersionString() + ':' + sourceHttpUrl;
+    }
+
+    @Override
+    public InetSocketAddress getSocketAddress()
+    {
         return addr;
     }
 }
-
-
-
