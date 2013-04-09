@@ -1,9 +1,11 @@
 package dmg.cells.services.login;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -89,19 +91,23 @@ public class LoginBrokerHandler
         return "";
     }
 
+    protected LoginBrokerInfo newInfo(String cell, String domain,
+            String protocolFamily, String protocolVersion,
+            String protocolEngine, String root)
+    {
+        return new LoginBrokerInfo(cell, domain, protocolFamily, protocolVersion,
+                protocolEngine, root);
+
+    }
+
     private synchronized void sendUpdate()
     {
         if (_loginBrokers == null || _hosts == null) {
             return;
         }
 
-        LoginBrokerInfo info =
-            new LoginBrokerInfo(getCellName(),
-                                getCellDomainName(),
-                                _protocolFamily,
-                                _protocolVersion,
-                                _protocolEngine,
-                                _root);
+        LoginBrokerInfo info = newInfo(getCellName(), getCellDomainName(),
+                _protocolFamily, _protocolVersion, _protocolEngine, _root);
         info.setUpdateTime(_brokerUpdateTimeUnit.toMillis(_brokerUpdateTime));
         info.setHosts(_hosts);
         info.setPort(_port);
@@ -322,7 +328,14 @@ public class LoginBrokerHandler
                 @Override
                 public void run()
                 {
-                    sendUpdate();
+                    try {
+                        sendUpdate();
+                    } catch (Throwable e) {
+                        Thread thisThread = Thread.currentThread();
+                        UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                        ueh.uncaughtException(thisThread, e);
+                        Throwables.propagateIfPossible(e);
+                    }
                 }
             };
         switch (_currentUpdateMode) {

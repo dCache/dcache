@@ -17,13 +17,18 @@
  */
 package org.dcache.gridsite;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
+import org.dcache.auth.util.GSSUtils;
 import org.dcache.delegation.gridsite2.DelegationException;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -119,5 +124,63 @@ public class InMemoryCredentialStore implements CredentialStore
     private static boolean hasExpired(GSSCredential credential)
     {
         return remainingLifetimeOf(credential) == 0;
+    }
+
+    @Override
+    public GSSCredential search(final String targetDn)
+    {
+        return bestCredentialMatching(new DnFqanMatcher() {
+            @Override
+            public boolean matches(String dn, String fqan)
+            {
+                return targetDn.equals(dn);
+            }
+        });
+    }
+
+    @Override
+    public GSSCredential search(final String targetDn, final String targetFqan)
+    {
+        return bestCredentialMatching(new DnFqanMatcher() {
+            @Override
+            public boolean matches(String dn, String fqan)
+            {
+                return targetDn.equals(dn) && Objects.equals(targetFqan, fqan);
+            }
+        });
+    }
+
+    private interface DnFqanMatcher
+    {
+        public boolean matches(String dn, String fqan);
+    }
+
+    private GSSCredential bestCredentialMatching(DnFqanMatcher predicate)
+    {
+        GSSCredential bestCredential = null;
+        long bestRemainingLifetime = 0;
+
+        for (Map.Entry<DelegationIdentity,GSSCredential> entry : _storage.entrySet()) {
+            try {
+                GSSCredential credential = entry.getValue();
+                Iterable<String> fqans = GSSUtils.getFQANsFromGSSCredential(credential);
+                String primaryFqan = Iterables.getFirst(fqans, null);
+
+                if (!predicate.matches(entry.getKey().getDn(), primaryFqan)) {
+                    continue;
+                }
+
+                long remainingLifetime = credential.getRemainingLifetime();
+
+                if (remainingLifetime > bestRemainingLifetime) {
+                    bestRemainingLifetime = remainingLifetime;
+                    bestCredential = credential;
+                }
+            } catch (GSSException | AuthorizationException ignored) {
+                // Treat problematic credentials as having expired
+            }
+        }
+
+        return bestCredential;
     }
 }

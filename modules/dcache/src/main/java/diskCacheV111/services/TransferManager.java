@@ -40,9 +40,12 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
+import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.Reply;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
@@ -52,8 +55,8 @@ import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
+
 
 /**
  * Base class for services that transfer files on behalf of SRM. Used to
@@ -427,11 +430,10 @@ public abstract class TransferManager extends AbstractCell
         long id = Long.parseLong(args.argv(0));
         TransferManagerHandler handler = _activeTransfers.get(id);
         if (handler == null) {
-            return "ID not found : " + id;
+            return "transfer not found: " + id;
         }
-        handler.cancel(null);
-        return "this will kill the running mover or the mover queued on the pool!!!\n"
-                + "killing the Transfer:\n" + handler.toString(true);
+        handler.cancel("triggered by admin");
+        return "request sent to kill the mover on pool\n";
     }
 
     public final static String hh_killall = " [-p pool] pattern [pool] \n"
@@ -467,7 +469,7 @@ public abstract class TransferManager extends AbstractCell
             }
             StringBuilder sb = new StringBuilder("Killing these transfers: \n");
             for (TransferManagerHandler handler : handlersToKill) {
-                handler.cancel();
+                handler.cancel("triggered by admin");
                 sb.append(handler.toString(true)).append('\n');
             }
             return sb.toString();
@@ -497,7 +499,7 @@ public abstract class TransferManager extends AbstractCell
         if (h != null) {
             h.poolDoorMessageArrived(message);
         } else {
-            log.error("can not find handler with id={}", id);
+            log.error("cannot find handler with id={} for DoorTransferFinishedMessage", id);
         }
     }
 
@@ -506,9 +508,11 @@ public abstract class TransferManager extends AbstractCell
         long id = message.getId();
         TransferManagerHandler h = getHandler(id);
         if (h != null) {
-            h.cancel(message);
+            String explanation = message.getExplanation();
+            h.cancel(explanation != null ? explanation : "at the request of door");
         } else {
-            log.error("can not find handler with id={}", id);
+            // FIXME: shouldn't this throw an exception?
+            log.error("cannot find handler with id={} for CancelTransferMessage", id);
         }
         return message;
     }
@@ -521,6 +525,18 @@ public abstract class TransferManager extends AbstractCell
         }
         new TransferManagerHandler(this, message, envelope.getSourcePath().revert(), executor).handle();
         return message;
+    }
+
+    public Object messageArrived(CellMessage envelope, TransferStatusQueryMessage message)
+    {
+        TransferManagerHandler handler = getHandler(message.getId());
+
+        if (handler == null) {
+            message.setState(TransferManagerHandler.UNKNOWN_ID);
+            return message;
+        }
+
+        return handler.appendInfo(message);
     }
 
     public int getMaxTransfers()

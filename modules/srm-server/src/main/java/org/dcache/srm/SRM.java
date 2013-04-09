@@ -79,6 +79,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 
 import java.io.File;
@@ -118,7 +119,6 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.request.sql.DatabaseJobStorageFactory;
-import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
@@ -143,7 +143,7 @@ public class SRM {
     private static final Logger logger = LoggerFactory.getLogger(SRM.class);
     private final InetAddress host;
     private final Configuration configuration;
-    private final RequestCredentialStorage requestCredentialStorage;
+    private RequestCredentialStorage requestCredentialStorage;
     private AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerV2Counters;
     private final RequestCounters<String> srmServerV1Counters;
@@ -255,9 +255,6 @@ public class SRM {
             //already initialized
         }
 
-        requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
-        RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
-
         host = InetAddress.getLocalHost();
 
         configuration.addSrmHost(host.getCanonicalHostName());
@@ -267,6 +264,13 @@ public class SRM {
     public void setSchedulers(SchedulerContainer schedulers)
     {
         this.schedulers = checkNotNull(schedulers);
+    }
+
+    @Required
+    public void setRequestCredentialStorage(RequestCredentialStorage store)
+    {
+        RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
+        requestCredentialStorage = store;
     }
 
     public static final synchronized void setSRM(SRM srm)

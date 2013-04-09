@@ -62,4 +62,20 @@ public interface CredentialStore
      * stored against this identity or if the credential never expires.
      */
     public Calendar getExpiry(DelegationIdentity id) throws DelegationException;
+
+    /**
+     * Find the credential with the longest remaining lifetime that has the
+     * supplied DN.  The credential FQANs, if any, are ignored.
+     * @return a valid credential for this DN, or null if none are available.
+     */
+    public GSSCredential search(String dn);
+
+    /**
+     * Find the credential with the longest remaining lifetime that has the
+     * supplied DN and primary FQAN.  If the fqan is null then only
+     * credentials without any FQANs are selected.
+     * @return a valid credential for this DN, or null if none are available.
+     */
+    public GSSCredential search(String dn, String fqan);
+
 }

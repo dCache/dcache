@@ -121,7 +121,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -171,10 +170,12 @@ import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
+import org.dcache.auth.FQAN;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
+import org.dcache.gridsite.CredentialStore;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.CreateOption;
@@ -191,7 +192,6 @@ import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.RemoveFileCallback;
-import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
@@ -207,6 +207,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmReleaseSpaceCallback;
 import org.dcache.srm.SrmReserveSpaceCallback;
 import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.util.Tools;
@@ -276,6 +277,8 @@ public final class Storage
     private Executor _executor;
 
     private PoolMonitor _poolMonitor;
+
+    private CredentialStore _credentialStore;
 
     private Configuration config;
     private boolean customGetHostByAddr; //falseByDefault
@@ -485,6 +488,12 @@ public final class Storage
         _listSource = source;
     }
 
+    @Required
+    public void setCredentialStore(CredentialStore store)
+    {
+        _credentialStore = store;
+    }
+
     public void messageArrived(final TransferManagerMessage msg)
     {
         Long callerId = msg.getId();
@@ -562,6 +571,31 @@ public final class Storage
         } catch (NoRouteToCellException e) {
             _log.error("Failed to release {}: No route to {}.", msg.getSpaceToken(), _spaceManagerStub.getDestinationPath());
         }
+    }
+
+    public SrmRequestCredentialMessage messageArrived(SrmRequestCredentialMessage message)
+    {
+        String dn = message.getDn();
+        FQAN fqan = message.getPrimaryFqan();
+
+        GSSCredential genericCredential =
+                _credentialStore.search(dn, fqan != null ? fqan.toString() : null);
+
+        if (genericCredential != null) {
+            if (!(genericCredential instanceof GlobusGSSCredentialImpl)) {
+                throw new RuntimeException("Unable to work with unknown GSSCredential instance: " +
+                        genericCredential.getClass().getCanonicalName());
+            }
+            GlobusGSSCredentialImpl credential = (GlobusGSSCredentialImpl) genericCredential;
+            try {
+                message.setPrivateKey(credential.getPrivateKey());
+                message.setCertificateChain(credential.getCertificateChain());
+            } catch (GSSException ex) {
+                _log.warn("Unable to extract private key: {}", ex);
+            }
+        }
+
+        return message;
     }
 
     @Override

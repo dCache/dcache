@@ -63,7 +63,7 @@ import static java.util.Arrays.asList;
 public class SecurityFilter implements Filter
 {
     private final Logger _log = LoggerFactory.getLogger(SecurityFilter.class);
-    private static final String X509_CERTIFICATE_ATTRIBUTE =
+    public static final String X509_CERTIFICATE_ATTRIBUTE =
         "javax.servlet.request.X509Certificate";
     public static final String DCACHE_SUBJECT_ATTRIBUTE =
             "org.dcache.subject";

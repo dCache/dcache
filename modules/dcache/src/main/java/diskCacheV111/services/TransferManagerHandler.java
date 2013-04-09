@@ -1,5 +1,10 @@
 package diskCacheV111.services;
 
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +15,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.EnumSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.FTPTransactionLog;
@@ -18,6 +24,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
@@ -30,20 +37,22 @@ import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
-import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
+import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageReply;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.FileAttribute;
@@ -88,6 +97,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public static final int RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE = 16;
     public static final int SENT_ERROR_REPLY_STATE = -1;
     public static final int SENT_SUCCESS_REPLY_STATE = -2;
+    public static final int UNKNOWN_ID = -3;
     public int state = INITIAL_STATE;
     private long id;
     private Integer moverId;
@@ -637,15 +647,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         }
     }
 
-    public void cancel()
-    {
-        log.warn("the transfer is canceled by admin command, killing mover");
-        if (moverId != null) {
-            killMover(moverId);
-        }
-        sendErrorReply(24, new IOException("canceled"));
-    }
-
     public void timeout()
     {
         log.error(" transfer timed out");
@@ -655,13 +656,20 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         sendErrorReply(24, new IOException("timed out while waiting for mover reply"), false);
     }
 
-    public void cancel(CancelTransferMessage cancel)
+    public void cancel(String explanation)
     {
-        log.warn("the transfer is canceled by " + cancel + ", killing mover");
+        log.debug("transfer cancelled: {}", explanation);
+
         if (moverId != null) {
             killMover(moverId);
         }
-        sendErrorReply(24, new IOException("canceled"));
+
+        // FIXME: sending the reply here removes the TransferManagerHandler
+        // from the set of active transfers.  This triggers an error
+        // when the pool's DoorTransferFinishedMessage is received since
+        // TransferManager now cannot find the corresponding
+        // TransferManagerHandler message.
+        sendErrorReply(24, new IOException("transfer cancelled: " + explanation));
     }
 
     public synchronized String toString(boolean long_format)
@@ -699,6 +707,51 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         return sb.toString();
     }
 
+    public boolean isMoverActive()
+    {
+        return state == RECEIVED_FIRST_POOL_REPLY_STATE;
+    }
+
+    public Object appendInfo(final TransferStatusQueryMessage message)
+    {
+        message.setState(state);
+
+        if (!isMoverActive()) {
+            return message;
+        }
+
+        final MessageReply<TransferStatusQueryMessage> reply = new MessageReply<>();
+
+        final ListenableFuture<IoJobInfo> future = manager.getPoolStub().
+                send(new CellPath(poolAddress), "mover ls -binary " + moverId,
+                IoJobInfo.class, 30_000);
+        Futures.addCallback(future, new FutureCallback<IoJobInfo>()
+        {
+            @Override
+            public void onSuccess(IoJobInfo info)
+            {
+                message.setMoverInfo(info);
+                reply.reply(message);
+            }
+
+            @Override
+            public void onFailure(Throwable e)
+            {
+                if (e instanceof Exception) {
+                    reply.fail(message, (Exception)e);
+                } else {
+                    // I don't think this should happen as the pool shouldn't
+                    // send an Error.
+                    reply.fail(message, CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                            e.toString());
+                }
+
+            }
+        }, MoreExecutors.sameThreadExecutor());
+
+        return reply;
+    }
+
     @Override
     public String toString()
     {
@@ -722,13 +775,14 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void killMover(int moverId)
     {
-        log.warn("sending mover kill to pool {} for moverId={}", pool, moverId);
+        log.debug("sending mover kill to pool {} for moverId={}", pool, moverId);
         PoolMoverKillMessage killMessage = new PoolMoverKillMessage(pool, moverId);
         killMessage.setReplyRequired(false);
         try {
             manager.getPoolStub().notify(new CellPath(poolAddress), killMessage);
         } catch (NoRouteToCellException e) {
-            log.error(e.toString());
+            log.error("failed to kill mover {} on pool={}: {}", moverId, pool,
+                    e.toString());
         }
     }
 

@@ -74,6 +74,8 @@ package org.dcache.srm.request;
 
 import java.io.IOException;
 
+import org.dcache.util.Glob;
+
 
 /**
  *
@@ -83,7 +85,21 @@ import java.io.IOException;
 public interface RequestCredentialStorage {
     public RequestCredential getRequestCredential(Long requestCredentialId);
     public void saveRequestCredential(RequestCredential requestCredential);
-    public RequestCredential getRequestCredential (String credentialName,String role);
+
+    /**
+     * Return the credential with the longest remaining lifetime that
+     * matches the given name and fqan exactly.  If role is null then only
+     * credentials that have no primary FQAN match.
+     */
+    public RequestCredential getRequestCredential(String name, String role);
+
+    /**
+     * Search for the credential with the longest remaining lifetime that matches
+     * the name and role Globs.  If role is null then only a credential with
+     * no primary FQAN is returned.  If role is specified then only a credential
+     * with a matching primary FQAN is returned.
+     */
+    public RequestCredential searchRequestCredential(Glob name, Glob role);
 
     /**
      * Check where there is any stored credential for this user.  If role is

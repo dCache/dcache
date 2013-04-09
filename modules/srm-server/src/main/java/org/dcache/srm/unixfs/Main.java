@@ -25,6 +25,7 @@ import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
+import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.util.Args;
@@ -86,6 +87,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                         ReserveSpaceRequest.class, "ReserveSpace"),
                 // COPY must be the last in the list
                 buildRunningScheduler("copy_" + name, Job.class, "Copy")));
+        srm.setRequestCredentialStorage(new DatabaseRequestCredentialStorage(config));
         srm.start();
 
         new Thread(this).start();

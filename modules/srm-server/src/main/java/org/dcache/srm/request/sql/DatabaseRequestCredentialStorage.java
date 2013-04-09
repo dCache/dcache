@@ -99,6 +99,7 @@ import java.util.List;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Configuration;
+import org.dcache.util.Glob;
 
 import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
@@ -229,11 +230,11 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         return getRequestCredentialByCondition(SELECT_BY_ID, requestCredentialId);
     }
 
-    public static final String SELECT_BY_NAME = "SELECT * FROM "+requestCredentialTableName +
-        " WHERE credentialname=? and role is null";
+    public static final String SELECT_BY_NAME = "SELECT * FROM " + requestCredentialTableName +
+        " WHERE credentialname=? AND role IS null ORDER BY credentialexpiration DESC";
 
-    public static final String SELECT_BY_NAME_AND_ROLE = "SELECT * FROM "+requestCredentialTableName +
-        " WHERE credentialname=? and role=?";
+    public static final String SELECT_BY_NAME_AND_ROLE = "SELECT * FROM " + requestCredentialTableName +
+        " WHERE credentialname=? AND role=? ORDER BY credentialexpiration DESC";
 
 
    @Override
@@ -412,6 +413,24 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             return jdbcTemplate.queryForList("SELECT id FROM " +
                     requestCredentialTableName + " WHERE credentialname=?",
                     Long.class, name);
+        }
+    }
+
+    private static final String SEARCH_BY_NAME = "SELECT * FROM " + requestCredentialTableName +
+        " WHERE credentialname LIKE ? AND role IS NULL ORDER BY credentialexpiration DESC";
+
+    private static final String SEARCH_BY_NAME_AND_ROLE = "SELECT * FROM " + requestCredentialTableName +
+        " WHERE credentialname LIKE ? AND role LIKE ? ORDER BY credentialexpiration DESC";
+
+    @Override
+    public RequestCredential searchRequestCredential(Glob nameGlob, Glob roleGlob)
+    {
+        String name = nameGlob.toSql();
+
+        if (roleGlob != null) {
+            return getRequestCredentialByCondition(SEARCH_BY_NAME_AND_ROLE, name, roleGlob.toSql());
+        } else {
+            return getRequestCredentialByCondition(SEARCH_BY_NAME, name);
         }
     }
 }

@@ -71,6 +71,9 @@ import com.google.common.collect.Iterables;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+
+import org.dcache.util.Glob;
 
 /**
  * A simple in-memory credential store.
@@ -79,6 +82,33 @@ public class HashtableRequestCredentialStorage
         implements RequestCredentialStorage
 {
     private final Map<Long, RequestCredential> store = new ConcurrentHashMap<>();
+
+    @Override
+    public RequestCredential searchRequestCredential(Glob nameGlob, Glob roleGlob)
+    {
+        Pattern name = nameGlob.toPattern();
+        Pattern role = roleGlob != null ? roleGlob.toPattern() : null;
+        long bestRemainingLifetime = 0;
+        RequestCredential bestCredential = null;
+
+        for (RequestCredential credential : store.values()) {
+            if (!name.matcher(credential.getCredentialName()).matches() ||
+                    (role == null && credential.getRole() != null) ||
+                    (role != null && !role.matcher(credential.getRole()).matches())) {
+                continue;
+            }
+
+            long remainingLifetime =
+                    credential.getDelegatedCredentialRemainingLifetime();
+
+            if (remainingLifetime > bestRemainingLifetime) {
+                bestCredential = credential;
+                bestRemainingLifetime = remainingLifetime;
+            }
+        }
+
+        return bestCredential;
+    }
 
     /**
      * Predicate for matching a specified name and role.

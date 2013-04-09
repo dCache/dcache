@@ -135,6 +135,8 @@
     <property name="loginBrokers" value="${srm.service.loginbroker}"/>
     <property name="root" value="${srm.root}"/>
     <property name="srm" ref="srm"/>
+    <property name="httpsPort" value="${srm.net.ssl-port}"/>
+    <property name="host" value="${srm.net.host}"/>
   </bean>
 
   <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
@@ -207,6 +209,7 @@
     <property name="srmPutNotSupportedProtocols" value="${srm.protocols.disallowed.put}"/>
     <property name="srmGetNotSupportedProtocols" value="${srm.protocols.disallowed.get}"/>
     <property name="srmPreferredProtocols" value="${srm.protocols.preferred}"/>
+    <property name="credentialStore" ref="gridsite-credential-store"/>
   </bean>
 
   <bean id="config" class="org.dcache.srm.util.Configuration">
@@ -591,6 +594,7 @@
     <constructor-arg ref="config"/>
     <constructor-arg ref="storage"/>
     <property name="schedulers" ref="schedulers"/>
+    <property name="requestCredentialStorage" ref="srm-credential-store"/>
   </bean>
 
   <bean id="srm-cli" class="diskCacheV111.srm.dcache.SrmCommandLineInterface">
@@ -617,6 +621,12 @@
     <constructor-arg value="${srm.authn.ciphers}"/>
   </bean>
 
+  <bean id="srm-credential-store"
+        class="org.dcache.srm.request.sql.DatabaseRequestCredentialStorage">
+      <description>SRM credential store</description>
+
+      <constructor-arg ref="config"/>
+  </bean>
 
   <bean id="gridsite-credential-delegation-store"
 	class="org.dcache.gridsite.InMemoryCredentialDelegationStore"
@@ -629,13 +639,12 @@
 		value="10000"/>
   </bean>
 
-
   <bean id="gridsite-credential-store"
 	class="org.dcache.gridsite.SrmCredentialStore">
       <description>Bridge between GridSite- and SRM- credential storage</description>
 
       <property name="requestCredentialStorage"
-		value="#{srm.requestCredentialStorage}"/>
+              ref="srm-credential-store"/>
   </bean>
 
   <bean id="gridsite-credential-delegation-factory"
@@ -653,6 +662,8 @@
   </bean>
 
   <util:map id="gridsite-service-metadata">
+      <description>Static key-value pairs provided through GridSite interface</description>
+
       <entry key="implementation" value="dCache"/>
   </util:map>
 

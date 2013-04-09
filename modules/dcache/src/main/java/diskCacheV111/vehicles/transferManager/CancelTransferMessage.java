@@ -10,6 +10,7 @@ public  class CancelTransferMessage extends Message
 {
   private static final long serialVersionUID = -4445578968029755510L;
   long callerUniqueId;
+  private String explanation;
 
   public CancelTransferMessage(long id,long callerUniqueId)
   {
@@ -17,16 +18,22 @@ public  class CancelTransferMessage extends Message
     setId(id);
     this.callerUniqueId = callerUniqueId;
     setReplyRequired(false);
-
   }
-
 
   public long getCallerUniqueId()
   {
       return callerUniqueId;
   }
 
+  public void setExplanation(String explanation)
+  {
+      this.explanation = explanation;
+  }
 
+  public String getExplanation()
+  {
+      return explanation;
+  }
 }
 
 

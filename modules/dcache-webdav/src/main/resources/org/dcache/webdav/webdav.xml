@@ -2,10 +2,13 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context
-           http://www.springframework.org/schema/context/spring-context.xsd">
+           http://www.springframework.org/schema/context/spring-context.xsd
+	   http://www.springframework.org/schema/aop
+	   http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
 
   <context:property-placeholder/>
   <context:annotation-config/>
@@ -28,6 +31,32 @@
       <property name="destination" value="${webdav.service.pnfsmanager}"/>
       <property name="timeout" value="${webdav.service.pnfsmanager.timeout}"/>
       <property name="timeoutUnit" value="${webdav.service.pnfsmanager.timeout.unit}"/>
+  </bean>
+
+
+  <bean id="login-broker-stub" class="org.dcache.cells.CellStub">
+      <description>LoginBroker communication stub</description>
+
+      <property name="destination" value="${webdav.srm-discovery.loginbroker}"/>
+      <property name="timeout" value="${webdav.srm-discovery.loginbroker.timeout}"/>
+      <property name="timeoutUnit" value="${webdav.srm-discovery.loginbroker.timeout.unit}"/>
+  </bean>
+
+
+  <bean id="transfer-manager-stub" class="org.dcache.cells.CellStub">
+      <description>TransferManager communication stub</description>
+
+      <property name="destination" value="${webdav.service.transfermanager}"/>
+      <property name="timeout" value="${webdav.service.transfermanager.timeout}"/>
+      <property name="timeoutUnit" value="${webdav.service.transfermanager.timeout.unit}"/>
+  </bean>
+
+
+  <bean id="srm-stub" class="org.dcache.cells.CellStub">
+      <description>SRM communication stub</description>
+
+      <property name="timeout" value="${webdav.service.srm.timeout}"/>
+      <property name="timeoutUnit" value="${webdav.service.srm.timeout.unit}"/>
   </bean>
 
 
@@ -99,6 +128,39 @@
       <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
   </bean>
 
+  <bean id="srm-handler" class="org.dcache.webdav.transfer.SrmHandler"
+        init-method="start" destroy-method="stop">
+      <description>Handles communication with SRM</description>
+
+      <property name="loginBrokerStub" ref="login-broker-stub"/>
+      <property name="srmStub" ref="srm-stub"/>
+      <property name="executor">
+          <bean class="java.util.concurrent.Executors"
+                  factory-method="newSingleThreadScheduledExecutor"
+                  destroy-method="shutdown"/>
+      </property>
+  </bean>
+
+  <bean id="remote-transfer-handler" class="org.dcache.webdav.transfer.RemoteTransferHandler">
+      <description>Coordinate transfers</description>
+
+      <property name="transferManagerStub" ref="transfer-manager-stub"/>
+      <property name="performanceMarkerPeroid"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${webdav.third-party-transfers.performance-marker-period},
+                     '${webdav.third-party-transfers.performance-marker-period.unit}')}" />
+  </bean>
+
+  <bean id="3rd-party-copy-filter" class="org.dcache.webdav.transfer.CopyFilter">
+      <description>Handles requests for 3rd-party copies</description>
+
+      <property name="srmHandler" ref="srm-handler"/>
+      <property name="pnfsStub" ref="pnfs-stub"/>
+      <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
+      <property name="rootPath" value="${webdavRootPath}"/>
+  </bean>
+
+
   <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">
       <description>Logs all requests</description>
   </bean>
@@ -142,6 +204,7 @@
             <list>
                 <ref bean="logging-filter"/>
                 <ref bean="security-filter"/>
+                <ref bean="3rd-party-copy-filter"/>
             </list>
         </property>
         <property name="defaultStandardFilter" ref="dispatch-filter"/>
