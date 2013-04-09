@@ -33,6 +33,7 @@ import dmg.util.Args;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.util.GSSUtils;
+import org.dcache.util.Crypto;
 
 import static org.dcache.util.Files.checkDirectory;
 import static org.dcache.util.Files.checkFile;
@@ -98,6 +99,7 @@ class GsiTunnel extends GssTunnel  {
             GSSManager manager = ExtendedGSSManager.getInstance();
             _e_context = (ExtendedGSSContext) manager.createContext(cred);
             _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
+            _e_context.setBannedCiphers(Crypto.BANNED_CIPHERS);
             _context = _e_context;
             // do not use channel binding with GSIGSS
             super.useChannelBinding(false);
