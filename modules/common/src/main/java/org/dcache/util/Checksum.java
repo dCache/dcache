@@ -168,7 +168,7 @@ public class Checksum  implements Serializable
 
         int del = digest.indexOf(DELIMITER);
         if (del < 1) {
-            throw new IllegalArgumentException("Not a dCache checksum");
+            throw new IllegalArgumentException("Not a dCache checksum: " + digest);
         }
 
         String type = digest.substring(0, del);
