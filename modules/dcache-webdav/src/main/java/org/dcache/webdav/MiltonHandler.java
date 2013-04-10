@@ -52,9 +52,8 @@ public class MiltonHandler
                        HttpServletRequest request,HttpServletResponse response)
         throws IOException, ServletException
     {
-        CDC cdc = CDC.reset(_cellName, _domainName);
-        Transfer.initSession();
-        try {
+        try (CDC ignored = CDC.reset(_cellName, _domainName)) {
+            Transfer.initSession();
             ServletContext context = ContextHandler.getCurrentContext();
             ServletRequest req = new DcacheServletRequest(request, context);
             ServletResponse resp = new DcacheServletResponse(response);
@@ -62,8 +61,6 @@ public class MiltonHandler
             _httpManager.process(req, resp);
             response.getOutputStream().flush();
             response.flushBuffer();
-        } finally {
-            cdc.restore();
         }
     }
 

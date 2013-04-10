@@ -116,10 +116,8 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
 
             String socketThreads = args.getOpt("http-mover-socket-threads");
 
-            CDC cdc = new CDC();
-            try {
-                // The server is shared among all pools, thus we cannot bind a single cell name to it
-                CDC.reset(null, CDC.getDomainName());
+            // The server is shared among all pools, thus we cannot bind a single cell name to it
+            try (CDC ignored = CDC.reset(null, CDC.getDomainName())) {
                 if (socketThreads == null || socketThreads.isEmpty()) {
                     _server = new HttpPoolNettyServer(threads,
                             perChannelLimit,
@@ -134,8 +132,6 @@ public class HttpProtocol_2 implements MoverProtocol, ChecksumMover
                             clientIdleTimeout,
                             Integer.parseInt(socketThreads));
                 }
-            } finally {
-                cdc.restore();
             }
         }
     }

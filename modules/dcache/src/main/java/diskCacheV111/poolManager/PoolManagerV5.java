@@ -713,8 +713,7 @@ public class PoolManagerV5
         public void run()
         {
             long started = System.currentTimeMillis();
-            _cdc.restore();
-            try {
+            try (CDC ignored = _cdc.restore()) {
                 _log.info("Select link group handler started");
 
                 _message.setLinkGroups(selectLinkGroups());
@@ -732,8 +731,6 @@ public class PoolManagerV5
                     _log.error("Failed to send reply: " + e.getMessage());
                 } catch (InterruptedException e) {
                     _log.warn("Link group selection handler was interrupted");
-                } finally {
-                    CDC.clear();
                 }
             }
         }

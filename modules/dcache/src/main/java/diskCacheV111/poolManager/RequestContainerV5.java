@@ -1184,11 +1184,9 @@ public class RequestContainerV5
         public class RunEngine implements ExtendedRunnable {
            @Override
            public void run(){
-               _cdc.restore();
-              try{
+              try (CDC ignored = _cdc.restore()) {
                  stateLoop() ;
               }finally{
-                 CDC.clear();
                  synchronized( _fifo ){
                    _stateEngineActive = false ;
                  }

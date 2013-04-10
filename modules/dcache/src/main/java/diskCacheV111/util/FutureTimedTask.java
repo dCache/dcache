@@ -93,22 +93,16 @@ import dmg.cells.nucleus.CDC;
       @Override
       public void run()
       {
-          cdc.restore();
-          try {
+          try (CDC ignored = cdc.restore()) {
               super.run();
-          } finally {
-              CDC.clear();
           }
       }
 
       @Override
       protected boolean runAndReset()
       {
-          cdc.restore();
-          try {
+          try (CDC ignored = cdc.restore()) {
               return super.runAndReset();
-          } finally {
-              CDC.clear();
           }
       }
   }

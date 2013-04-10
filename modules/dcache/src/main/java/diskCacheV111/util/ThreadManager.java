@@ -83,7 +83,6 @@ import java.util.concurrent.TimeUnit;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
 import org.dcache.util.FireAndForgetTask;
@@ -201,11 +200,8 @@ import org.dcache.util.FireAndForgetTask;
                   @Override
                   public void run()
                   {
-                      cdc.restore();
-                      try {
+                      try (CDC ignored = cdc.restore()) {
                           runnable.run();
-                      } finally {
-                          CDC.clear();
                       }
                   }
               };

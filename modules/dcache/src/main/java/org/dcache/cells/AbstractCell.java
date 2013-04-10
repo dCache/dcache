@@ -359,13 +359,8 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
                 @Override
                 public void run()
                 {
-                    try {
-                        cdc.restore();
-                        try {
-                            getNucleus().updateWaitQueue();
-                        } finally {
-                            cdc.clear();
-                        }
+                    try (CDC ignored = cdc.restore()) {
+                        getNucleus().updateWaitQueue();
                     } catch (Throwable e) {
                         Thread t = Thread.currentThread();
                         t.getUncaughtExceptionHandler().uncaughtException(t, e);

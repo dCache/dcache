@@ -54,9 +54,8 @@ public class LegacyMoverExecutorService implements MoverExecutorService
 
         @Override
         public void run() {
-            try {
+            try (CDC ignored = _cdc.restore()) {
                 setThread();
-                _cdc.restore();
                 try {
                     _request.getTransfer().transfer();
                 } catch (Throwable t) {
@@ -74,7 +73,6 @@ public class LegacyMoverExecutorService implements MoverExecutorService
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
             } finally {
                 cleanThread();
-                CDC.clear();
             }
         }
 

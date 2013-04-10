@@ -3386,15 +3386,11 @@ public abstract class AbstractFtpDoorV1
         @Override
         public synchronized void run()
         {
-            CDC old = new CDC();
-            try {
-                _cdc.restore();
+            try (CDC ignored = _cdc.restore()) {
                 CellMessage msg =
                         new CellMessage(new CellPath(_pool),
                                 "mover ls -binary " + _moverId);
                 sendMessage(msg, this, _timeout);
-            } finally {
-                old.restore();
             }
         }
 
@@ -3498,9 +3494,7 @@ public abstract class AbstractFtpDoorV1
                     _executor.submit(new FireAndForgetTask(new Runnable() {
                             @Override
                             public void run() {
-                                CDC old = new CDC();
-                                try {
-                                    cdc.restore();
+                                try (CDC ignored = cdc.restore()) {
                                     String command = getOrDone();
                                     while (command != null) {
                                         try {
@@ -3510,8 +3504,6 @@ public abstract class AbstractFtpDoorV1
                                         }
                                         command = getOrDone();
                                     }
-                                } finally {
-                                    old.restore();
                                 }
                             }
                         }));

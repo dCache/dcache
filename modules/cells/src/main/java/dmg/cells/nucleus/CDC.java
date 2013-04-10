@@ -23,12 +23,24 @@ import org.dcache.commons.util.NDC;
  *   and NDC.
  *
  * - CDC instances capture the Cells related MDC values and the NDC.
- *   These can be apply to other threads. This is useful when using
+ *   These can be applied to other threads. This is useful when using
  *   worker threads that should inherit the context of the task
  *   creation point.
  *
+ *   CDC implements AutoCloseable and will restore the captured values
+ *   when closed(). This allows the following useful patterns:
+ *
+ *     try (CDC ignored = new CDC()) {
+ *       // temporarily modify the CDC - it will auto restore
+ *     }
+ *
+ *   and
+ *
+ *     try (CDC ignored = cdc.restore()) {
+ *         // temporarily use a previously captured cdc
+ *     }
  */
-public class CDC
+public class CDC implements AutoCloseable
 {
     public final static String MDC_DOMAIN = "cells.domain";
     public final static String MDC_CELL = "cells.cell";
@@ -67,10 +79,7 @@ public class CDC
         }
     }
 
-    /**
-     * Restore the cells diagnostic context to the calling thread.
-     */
-    public void restore()
+    private void apply()
     {
         setMdc(MDC_DOMAIN, _domain);
         setMdc(MDC_CELL, _cell);
@@ -80,6 +89,23 @@ public class CDC
         } else {
             NDC.set(_ndc);
         }
+    }
+
+    @Override
+    public void close()
+    {
+        apply();
+    }
+
+    /**
+     * Restore the cells diagnostic context to the calling thread. The old
+     * diagnostic context is captured and returned.
+     */
+    public CDC restore()
+    {
+        CDC cdc = new CDC();
+        apply();
+        return cdc;
     }
 
     /**

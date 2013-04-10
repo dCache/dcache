@@ -76,11 +76,8 @@ public class ThreadPoolNG implements ThreadPool {
                 @Override
                 public void run()
                 {
-                    cdc.restore();
-                    try {
+                    try (CDC ignored = cdc.restore()) {
                         runner.run();
-                    } finally {
-                        CDC.clear();
                     }
                 }
             };
