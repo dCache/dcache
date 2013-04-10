@@ -431,7 +431,8 @@ public class CacheRepositoryV5
     public ReplicaDescriptor createEntry(FileAttributes fileAttributes,
                                    EntryState transferState,
                                    EntryState targetState,
-                                   List<StickyRecord> stickyRecords)
+                                   List<StickyRecord> stickyRecords,
+                                   Set<OpenFlags> flags)
         throws FileInCacheException
     {
         try {
@@ -468,7 +469,7 @@ public class CacheRepositoryV5
                 setState(entry, transferState);
 
                 return new WriteHandleImpl(
-                        this, _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords);
+                        this, _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords, flags);
             }
         } catch (DuplicateEntryException e) {
             throw new FileInCacheException("Entry already exists: " + fileAttributes.getPnfsId());

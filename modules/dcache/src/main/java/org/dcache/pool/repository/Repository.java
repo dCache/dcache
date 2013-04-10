@@ -20,7 +20,11 @@ public interface Repository
         /* Do not update the file last access time when the file is
          * read.
          */
-        NOATIME
+        NOATIME,
+
+        /* Create the data file when creating an entry.
+         */
+        CREATEFILE
     }
 
     /**
@@ -63,14 +67,16 @@ public interface Repository
      * @param transferState the transfer state
      * @param targetState the target state
      * @param sticky sticky record to apply to entry; can be null
+     * @param flags options that influence how the entry is created
      * @return A write handle for the entry.
      * @throws FileInCacheException if an entry with the same ID
      * already exists.
      */
     ReplicaDescriptor createEntry(FileAttributes fileAttributes,
-                            EntryState transferState,
-                            EntryState targetState,
-                            List<StickyRecord> sticky)
+                                  EntryState transferState,
+                                  EntryState targetState,
+                                  List<StickyRecord> sticky,
+                                  Set<OpenFlags> flags)
         throws FileInCacheException;
 
     /**
@@ -87,7 +93,7 @@ public interface Repository
      * the case for broken or incomplet files.
      *
      * @param id the PNFS ID of the entry to open
-     * @param flags options that influence how the file is opened
+     * @param flags options that influence how the entry is opened
      * @return IO descriptor
      * @throws InterruptedException if thread was interrupted
      * @throws FileNotInCacheException if file not found or in a state

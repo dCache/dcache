@@ -445,10 +445,12 @@ public class HsmStorageHandler2
 //             }
 
             List<StickyRecord> stickyRecords = Collections.emptyList();
-            _handle = _repository.createEntry(fileAttributes,
-                                              EntryState.FROM_STORE,
-                                              EntryState.CACHED,
-                                              stickyRecords);
+            _handle = _repository.createEntry(
+                    fileAttributes,
+                    EntryState.FROM_STORE,
+                    EntryState.CACHED,
+                    stickyRecords,
+                    EnumSet.noneOf(OpenFlags.class));
         }
 
         @Override

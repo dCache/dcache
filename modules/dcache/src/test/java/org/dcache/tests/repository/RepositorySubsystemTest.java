@@ -126,10 +126,11 @@ public class RepositorySubsystemTest
                 throws CacheException, IOException, InterruptedException
             {
                 ReplicaDescriptor handle =
-                    repository.createEntry(attributes,
-                                           EntryState.FROM_CLIENT,
-                                           state,
-                                           sticky);
+                        repository.createEntry(attributes,
+                                EntryState.FROM_CLIENT,
+                                state,
+                                sticky,
+                                EnumSet.noneOf(OpenFlags.class));
                 try {
                     handle.allocate(attributes.getSize());
                     createFile(handle.getFile(), attributes.getSize());
@@ -365,7 +366,7 @@ public class RepositorySubsystemTest
         FileAttributes attributes = new FileAttributes();
         attributes.setPnfsId(id1);
         attributes.setStorageInfo(info1);
-        repository.createEntry(attributes, FROM_CLIENT, PRECIOUS, stickyRecords);
+        repository.createEntry(attributes, FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class));
     }
 
     @Test(expected=IllegalStateException.class)
@@ -481,7 +482,8 @@ public class RepositorySubsystemTest
             protected void run()
                     throws CacheException, InterruptedException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
-                ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED, stickyRecords);
+                ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED, stickyRecords,
+                        EnumSet.noneOf(OpenFlags.class));
                 try {
                     handle.allocate(attributes5.getSize());
                     createFile(handle.getFile(), attributes5.getSize());
@@ -732,7 +734,7 @@ public class RepositorySubsystemTest
         stateChangeEvents.clear();
 
         List<StickyRecord> stickyRecords = Collections.emptyList();
-        repository.createEntry(attributes1, FROM_CLIENT, PRECIOUS, stickyRecords);
+        repository.createEntry(attributes1, FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class));
     }
 
     /* Helper method for creating a fourth entry in the repository.
@@ -795,7 +797,7 @@ public class RepositorySubsystemTest
                 List<StickyRecord> stickyRecords = Collections.emptyList();
                 ReplicaDescriptor handle =
                     repository.createEntry(attributes4, transferState,
-                                           finalState, stickyRecords);
+                                           finalState, stickyRecords, EnumSet.noneOf(OpenFlags.class));
                 try {
                     handle.allocate(size4 + overallocation);
                     assertStep("No clear after this point", 2);
@@ -897,7 +899,7 @@ public class RepositorySubsystemTest
         stateChangeEvents.clear();
 
         ReplicaDescriptor handle =
-            repository.createEntry(attributes4, FROM_CLIENT, PRECIOUS, null);
+            repository.createEntry(attributes4, FROM_CLIENT, PRECIOUS, null, EnumSet.noneOf(OpenFlags.class));
         handle.allocate(-1);
     }
 

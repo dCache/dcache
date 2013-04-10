@@ -309,10 +309,12 @@ class Companion
     private ReplicaDescriptor createReplicaEntry()
         throws FileInCacheException
     {
-        return _repository.createEntry(_fileAttributes,
-                                       EntryState.FROM_POOL,
-                                       _targetState,
-                                       _stickyRecords);
+        return _repository.createEntry(
+                _fileAttributes,
+                EntryState.FROM_POOL,
+                _targetState,
+                _stickyRecords,
+                EnumSet.of(Repository.OpenFlags.CREATEFILE));
     }
 
     private HttpURLConnection createConnection(String uri)

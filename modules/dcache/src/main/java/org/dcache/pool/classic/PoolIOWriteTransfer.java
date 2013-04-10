@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.SyncFailedException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
@@ -59,11 +60,11 @@ public class PoolIOWriteTransfer
 
         _checksumModule = checksumModule;
         _handle = repository.createEntry(fileAttributes,
-                                         EntryState.FROM_CLIENT,
-                                         targetState,
-                                         stickyRecords);
+                EntryState.FROM_CLIENT,
+                targetState,
+                stickyRecords,
+                EnumSet.of(Repository.OpenFlags.CREATEFILE));
         _file = _handle.getFile();
-        _file.createNewFile();
     }
 
     private void runMover(RepositoryChannel fileIoChannel)
