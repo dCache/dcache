@@ -54,6 +54,7 @@ import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellMessage;
@@ -503,7 +504,7 @@ public class PnfsManagerV3
                         EnumSet.of(FileAttribute.STORAGEINFO, FileAttribute.ACCESS_LATENCY,
                                 FileAttribute.RETENTION_POLICY,  FileAttribute.SIZE));
 
-            StorageInfo info = attributes.getStorageInfo();
+            StorageInfo info = StorageInfos.extractFrom(attributes);
             if(v) {
                 sb.append(" Storage Info : ").append(info).append("\n") ;
             }else{
