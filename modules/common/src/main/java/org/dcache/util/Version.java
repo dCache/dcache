@@ -81,6 +81,6 @@ public class Version
 
     public static void main(String[] args) throws IOException
     {
-        System.out.println(Version.of(Version.class));
+        System.out.println(Version.of(Version.class).getVersion());
     }
 }
