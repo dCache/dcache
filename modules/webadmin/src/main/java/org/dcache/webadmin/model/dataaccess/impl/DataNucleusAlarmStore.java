@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,9 +69,8 @@ import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Transaction;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -99,49 +99,73 @@ import static com.google.common.base.Preconditions.checkArgument;
  * @author arossi
  */
 public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
-    private static final long WAIT_FOR_FILE = TimeUnit.SECONDS.toMillis(30);
+    private static final Logger logger
+        = LoggerFactory.getLogger(DataNucleusAlarmStore.class);
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private PersistenceManagerFactory pmf;
+    private final Properties properties;
+    private final File xml;
+    private final boolean usesXml;
 
     /**
-     * how long (in milliseconds) the alarm cleaner should sleep
-     * before running.
+     * how long (in milliseconds) the alarm cleaner should sleep before running.
      */
     private final long cleanerSleepInterval;
 
     /**
-     * timestamp to use in query for deletion of closed alarms.
-     * represents time (in milliseconds) before time at which alarm
-     * thread is awakened.
+     * timestamp to use in query for deletion of closed alarms. represents time
+     * (in milliseconds) before time at which alarm thread is awakened.
      */
-    private long cleanerDeleteThreshold;
+    private final long cleanerDeleteThreshold;
 
-    public DataNucleusAlarmStore(String xmlPath,
-                    Properties properties,
-                    boolean enableCleaner,
-                    int cleanerSleepInterval,
-                    int cleanerDeleteThreshold)
-                                    throws DAOException {
-        this.cleanerSleepInterval
-            = TimeUnit.HOURS.toMillis(cleanerSleepInterval);
-        this.cleanerDeleteThreshold
-            = TimeUnit.HOURS.toMillis(cleanerDeleteThreshold);
-        initialize(xmlPath, properties, enableCleaner);
+    private PersistenceManagerFactory pmf;
+    private Thread cleanerThread;
+
+    private static void rollbackIfActive(Transaction tx) {
+        if (tx.isActive()) {
+            tx.rollback();
+        }
+    }
+
+    public DataNucleusAlarmStore(String xmlPath, Properties properties,
+                    boolean enableCleaner, int cleanerSleepInterval,
+                    int cleanerDeleteThreshold) {
+        this.cleanerSleepInterval = TimeUnit.HOURS.toMillis(cleanerSleepInterval);
+        this.cleanerDeleteThreshold = TimeUnit.HOURS.toMillis(cleanerDeleteThreshold);
+
+        this.properties = properties;
+        properties.put("javax.jdo.PersistenceManagerFactoryClass",
+                        "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+
+        this.usesXml = properties.getProperty("datanucleus.ConnectionURL")
+                                 .startsWith("xml:");
+
+        xml = Strings.isNullOrEmpty(xmlPath) ? null : new File(xmlPath);
+
+        checkArgument(!(usesXml && xml == null));
+
+        if (enableCleaner) {
+            checkArgument(cleanerSleepInterval > 0);
+            checkArgument(cleanerDeleteThreshold > 0);
+            cleanerThread = new Thread(this, "alarm-cleanup-daemon");
+        }
     }
 
     @Override
-    public Collection<LogEntry> get(Date after, Date before,
-                    Severity severity, String type, Boolean isAlarm)
-                                    throws DAOException {
-        PersistenceManager readManager = pmf.getPersistenceManager();
+    public Collection<LogEntry> get(Date after, Date before, Severity severity,
+                    String type, Boolean isAlarm) throws DAOException {
+        PersistenceManager readManager = getManager();
+        if (readManager == null) {
+            return Collections.emptyList();
+        }
+
         Transaction tx = readManager.currentTransaction();
-        AlarmDAOFilter filter = AlarmJDOUtils.getFilter(after, before,
-                        severity, type, isAlarm);
+        AlarmDAOFilter filter
+            = AlarmJDOUtils.getFilter(after, before, severity, type, isAlarm);
+
         try {
             tx.begin();
-            Collection<LogEntry> result = AlarmJDOUtils.execute(
-                            readManager, filter);
+            Collection<LogEntry> result = AlarmJDOUtils.execute(readManager,
+                            filter);
 
             logger.debug("got collection {}", result);
             Collection<LogEntry> detached = readManager.detachCopyAll(result);
@@ -149,11 +173,12 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             tx.commit();
             logger.debug("successfully executed get for filter {}", filter);
             return detached;
-        } catch (Throwable t) {
-            rollbackIfActive(tx);
-            String message = "get, filter = " + filter;
+        } catch (Exception t) {
+            String message = "get, filter = " + filter + ": "
+                            + t.getLocalizedMessage();
             throw new DAOException(message, t);
         } finally {
+            rollbackIfActive(tx);
             /*
              * closing is necessary in order to avoid memory leaks
              */
@@ -161,47 +186,46 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
         }
     }
 
-    @Override
-    public void run() {
-        while(Thread.currentThread().isAlive()) {
-            Long currentThreshold
-                = System.currentTimeMillis() - cleanerDeleteThreshold;
+    public void initialize() {
+        if (cleanerThread != null && !cleanerThread.isAlive()) {
+            cleanerThread.start();
+        }
+    }
 
-            try {
-                long count = remove(currentThreshold);
-                logger.info("removed {} closed alarms with timestamp prior to {}",
-                                count, new Date(currentThreshold));
-            } catch (DAOException e) {
-                logger.error("error in alarm cleanup", e);
-            }
-
-            try {
-                Thread.sleep(cleanerSleepInterval);
-            } catch (InterruptedException ignored) {
-            }
+    public boolean isConnected() {
+        try {
+            return (getManager() != null);
+        } catch (DAOException t) {
+            return false;
         }
     }
 
     @Override
-    public long remove(Collection<LogEntry> selected)
-                    throws DAOException {
+    public long remove(Collection<LogEntry> selected) throws DAOException {
         if (selected.isEmpty()) {
             return 0;
         }
-        PersistenceManager deleteManager = pmf.getPersistenceManager();
+
+        PersistenceManager deleteManager = getManager();
+        if (deleteManager == null) {
+            return 0;
+        }
+
         Transaction tx = deleteManager.currentTransaction();
         AlarmDAOFilter filter = AlarmJDOUtils.getIdFilter(selected);
+
         try {
             tx.begin();
             long removed = AlarmJDOUtils.delete(deleteManager, filter);
             tx.commit();
             logger.debug("successfully removed {} entries", removed);
             return removed;
-        } catch (Throwable t) {
-            rollbackIfActive(tx);
-            String message = "remove: " + filter;
+        } catch (Exception t) {
+            String message = "remove: " + filter + ": "
+                            + t.getLocalizedMessage();
             throw new DAOException(message, t);
         } finally {
+            rollbackIfActive(tx);
             /*
              * closing is necessary in order to avoid memory leak in the
              * persistence manager factory
@@ -211,18 +235,52 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     @Override
-    public long update(Collection<LogEntry> selected)
-                    throws DAOException {
+    public void run() {
+        while (isRunning()) {
+            Long currentThreshold
+                = System.currentTimeMillis() - cleanerDeleteThreshold;
+
+            try {
+                long count = remove(currentThreshold);
+                logger.debug("removed {} closed alarms with timestamp prior to {}",
+                                count, new Date(currentThreshold));
+            } catch (DAOException e) {
+                logger.error("error in alarm cleanup: {}", e.getLocalizedMessage());
+            }
+
+            try {
+                Thread.sleep(cleanerSleepInterval);
+            } catch (InterruptedException ignored) {
+                logger.trace("cleaner thread interrupted ... exiting");
+                break;
+            }
+        }
+    }
+
+    public synchronized void shutDown() {
+        if (cleanerThread != null ) {
+            cleanerThread.interrupt();
+        }
+    }
+
+    @Override
+    public long update(Collection<LogEntry> selected) throws DAOException {
         if (selected.isEmpty()) {
             return 0;
         }
-        PersistenceManager updateManager = pmf.getPersistenceManager();
+
+        PersistenceManager updateManager = getManager();
+        if (updateManager == null) {
+            return 0;
+        }
+
         Transaction tx = updateManager.currentTransaction();
         AlarmDAOFilter filter = AlarmJDOUtils.getIdFilter(selected);
+
         try {
             tx.begin();
-            Collection<LogEntry> result = AlarmJDOUtils.execute(
-                            updateManager, filter);
+            Collection<LogEntry> result = AlarmJDOUtils.execute(updateManager,
+                            filter);
             logger.debug("got matching entries {}", result);
             long updated = result.size();
 
@@ -242,11 +300,12 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             logger.debug("successfully updated {} entries", updated);
 
             return updated;
-        } catch (Throwable t) {
-            rollbackIfActive(tx);
-            String message = "update: " + filter;
+        } catch (Exception t) {
+            String message = "update: " + filter + ": "
+                            + t.getLocalizedMessage();
             throw new DAOException(message, t);
         } finally {
+            rollbackIfActive(tx);
             /*
              * closing is necessary in order to avoid memory leak in the
              * persistence manager factory
@@ -255,37 +314,37 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
         }
     }
 
-    private void initialize(String xmlPath, Properties properties,
-                    boolean enableCleaner) throws DAOException {
-        try {
-            if (properties.getProperty("datanucleus.ConnectionURL")
-                            .startsWith("xml:")) {
-                waitForXmlFile(xmlPath);
+    private PersistenceManager getManager() throws DAOException {
+        if (usesXml) {
+            if (!xml.exists() || !xml.isFile()) {
+                if (pmf != null) {
+                    pmf.close();
+                    pmf = null;
+                }
+                return null;
             }
-            properties.put("javax.jdo.PersistenceManagerFactoryClass",
-                            "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-            pmf = JDOHelper.getPersistenceManagerFactory(properties);
-        } catch (IOException t) {
-            throw new DAOException(t);
         }
 
-        if (enableCleaner) {
-            try {
-                checkArgument(cleanerSleepInterval > 0);
-                checkArgument(cleanerDeleteThreshold > 0);
-                new Thread(this, "alarm-cleanup-daemon").start();
-            } catch (IllegalArgumentException iae) {
-                pmf.close();
-                throw new DAOException(iae);
-            }
+        if (pmf == null) {
+            pmf = JDOHelper.getPersistenceManagerFactory(properties);
         }
+
+        return pmf.getPersistenceManager();
+    }
+
+    private synchronized boolean isRunning() {
+        return cleanerThread != null && !cleanerThread.isInterrupted();
     }
 
     /**
      * Used only internally by the cleaner daemon (run()).
      */
     private long remove(Long threshold) throws DAOException {
-        PersistenceManager deleteManager = pmf.getPersistenceManager();
+        PersistenceManager deleteManager = getManager();
+        if (deleteManager == null) {
+            return 0;
+        }
+
         Transaction tx = deleteManager.currentTransaction();
         AlarmDAOFilter filter = AlarmJDOUtils.getDeleteBeforeFilter(threshold);
         try {
@@ -294,44 +353,17 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             tx.commit();
             logger.debug("successfully removed {} entries", removed);
             return removed;
-        } catch (Throwable t) {
-            rollbackIfActive(tx);
-            String message = "remove: " + filter;
+        } catch (Exception t) {
+            String message = "remove: " + filter + ": "
+                            + t.getLocalizedMessage();
             throw new DAOException(message, t);
         } finally {
+            rollbackIfActive(tx);
             /*
              * closing is necessary in order to avoid memory leak in the
              * persistence manager factory
              */
             deleteManager.close();
-        }
-    }
-
-    /**
-     * Checks for the existence of the file; waits if it is not there. The
-     * assumption is that the file is generated by whatever component is
-     * intercepting and storing alarms. Throws exception if wait limit is
-     * reached.
-     */
-    private void waitForXmlFile(String xmlPath) throws IOException {
-        final File file = new File(xmlPath);
-        long start = System.currentTimeMillis();
-        long elapsed = 0;
-        while (!file.exists() && elapsed < WAIT_FOR_FILE) {
-            try {
-                Thread.sleep(WAIT_FOR_FILE);
-            } catch (InterruptedException e) {
-            }
-            elapsed = System.currentTimeMillis() - start;
-        }
-        if (!file.exists()) {
-            throw new FileNotFoundException(file.getAbsolutePath());
-        }
-    }
-
-    private static void rollbackIfActive(Transaction tx) {
-        if (tx.isActive()) {
-            tx.rollback();
         }
     }
 }

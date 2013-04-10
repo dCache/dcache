@@ -78,4 +78,6 @@ public interface IAlarmDisplayService extends Serializable {
     boolean isConnected();
 
     void refresh();
+
+    void shutDown();
 }

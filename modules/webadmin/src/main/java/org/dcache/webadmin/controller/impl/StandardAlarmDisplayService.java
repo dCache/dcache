@@ -59,11 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.impl;
 
+import com.google.common.base.Strings;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,8 +81,9 @@ import org.dcache.webadmin.controller.IAlarmDisplayService;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
-import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl.NOPLogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Provider does in-memory filtering and sorts on sortable fields; service
@@ -102,7 +103,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
     private String definitions;
 
     public StandardAlarmDisplayService(DAOFactory factory) {
-        access = factory.getLogEntryDAO();
+        access = checkNotNull(factory.getLogEntryDAO());
     }
 
     @Override
@@ -114,7 +115,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
     public List<String> getPredefinedAlarmTypes() {
         List<String> types = new ArrayList<>();
         types.add(AlarmDefinition.getMarker(null).toString());
-        if (definitions != null && definitions.length() > 0) {
+        if (!Strings.isNullOrEmpty(definitions)) {
             File xmlFile = new File(definitions);
             if (xmlFile.exists()) {
                 loadDefinitions(xmlFile, types);
@@ -124,7 +125,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
     }
 
     public boolean isConnected() {
-        return !(access instanceof NOPLogEntryDAO);
+        return access.isConnected();
     }
 
     /**
@@ -157,6 +158,10 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
 
     public void setDefinitions(String definitions) {
         this.definitions = definitions;
+    }
+
+    public void shutDown() {
+        access.shutDown();
     }
 
     private void delete() {
