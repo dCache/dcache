@@ -110,4 +110,12 @@ public interface ILogEntryDAO {
      * @return number of entries updated
      */
     long update(Collection<LogEntry> selected) throws DAOException;
+
+    /**
+     * Indicate whether the DAO layer is actually "live" (that is, connected
+     * to a real data store).
+     */
+    boolean isConnected();
+
+    void shutDown();
 }

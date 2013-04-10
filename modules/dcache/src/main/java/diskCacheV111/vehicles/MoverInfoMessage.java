@@ -13,7 +13,7 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    private ProtocolInfo _protocolInfo;
    private boolean      _fileCreated;
    private String _initiator = "<undefined>";
-   private String _client = "unknown";
+   private boolean _isP2p;
 
    private static final long serialVersionUID = -7013160118909496211L;
 
@@ -34,6 +34,9 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    public void setInitiator(String transaction) {
        _initiator = transaction;
    }
+   public void setP2P(boolean isP2p) {
+       _isP2p = isP2p;
+   }
    public String getInitiator() {
        return _initiator;
    }
@@ -41,6 +44,7 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    public long getDataTransferred(){ return _dataTransferred ; }
    public long getConnectionTime(){ return _connectionTime ; }
    public boolean isFileCreated(){ return _fileCreated ; }
+   public boolean isP2P(){ return _isP2p ; }
    public ProtocolInfo getProtocolInfo(){ return _protocolInfo ; }
 
     public String getAdditionalInfo() {
@@ -66,5 +70,6 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
         template.add("created", _fileCreated);
         template.add("protocol", _protocolInfo);
         template.add("initiator", _initiator);
+        template.add("p2p", _isP2p);
     }
 }

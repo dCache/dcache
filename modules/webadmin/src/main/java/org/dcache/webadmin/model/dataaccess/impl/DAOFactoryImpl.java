@@ -8,13 +8,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.Properties;
 
-import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
@@ -24,7 +19,6 @@ import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
-import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
  * Factory class for the DAOs. The whole design with an factory is mainly
@@ -33,29 +27,6 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  * @author jans
  */
 public class DAOFactoryImpl implements DAOFactory {
-    /**
-     * Placeholder implementation which allows the page construction in case
-     * initialization of the DAO fails.  This could occur, for instance, if
-     * there is no alarm server and the default XML implementation is used.
-     */
-    public static class NOPLogEntryDAO implements ILogEntryDAO {
-        public Collection<LogEntry> get(Date after, Date before,
-                        Severity severity, String type, Boolean isAlarm)
-                        throws DAOException {
-            return new ArrayList<LogEntry>();
-        }
-
-        public long remove(Collection<LogEntry> selected) throws DAOException {
-            return 0;
-        }
-
-        public long update(Collection<LogEntry> selected) throws DAOException {
-            return 0;
-        }
-    };
-
-    private static final ILogEntryDAO NOP_LOGENTRYDAO = new NOPLogEntryDAO();
-
     private Logger _log = LoggerFactory.getLogger(DAOFactory.class);
     private CommandSenderFactory _defaultCommandSenderFactory;
     private PageInfoCache _pageCache;
@@ -74,15 +45,17 @@ public class DAOFactoryImpl implements DAOFactory {
     public synchronized ILogEntryDAO getLogEntryDAO() {
         if (_logEntryDAO == null) {
             try {
-                _logEntryDAO = new DataNucleusAlarmStore(_alarmsXMLPath,
-                                                      getAlarmsProperties(),
-                                                      _alarmCleanerEnabled,
-                                                      _alarmCleanerSleepInterval,
-                                                      _alarmCleanerDeleteThreshold);
-            } catch (DAOException t) {
+                DataNucleusAlarmStore store = new DataNucleusAlarmStore(
+                                                  _alarmsXMLPath,
+                                                  getAlarmsProperties(),
+                                                  _alarmCleanerEnabled,
+                                                  _alarmCleanerSleepInterval,
+                                                  _alarmCleanerDeleteThreshold);
+                store.initialize();
+                _logEntryDAO = store;
+            } catch (IOException t) {
                 _log.error("NOP logging store DAO: {}; cause: {}",
                                 t.getMessage(), t.getCause());
-                _logEntryDAO = NOP_LOGENTRYDAO;
             }
         }
         return _logEntryDAO;
@@ -191,28 +164,24 @@ public class DAOFactoryImpl implements DAOFactory {
         }
     }
 
-    private Properties getAlarmsProperties() throws DAOException {
+    private Properties getAlarmsProperties() throws IOException {
         Properties properties = new Properties();
         properties.setProperty("datanucleus.ConnectionDriverName",
                         _alarmsDbDriver);
         properties.setProperty("datanucleus.ConnectionPassword", _alarmsDbPass);
         properties.setProperty("datanucleus.ConnectionURL", _alarmsDbUrl);
         properties.setProperty("datanucleus.ConnectionUserName", _alarmsDbUser);
-        try {
-            if (_alarmsPropertiesPath != null
-                            && _alarmsPropertiesPath.trim().length() > 0) {
-                File file = new File(_alarmsPropertiesPath);
-                if (!file.exists()) {
-                    throw new FileNotFoundException(
-                                    "Cannot find properties file: " + file);
-                }
-                try (InputStream stream = new FileInputStream(file)) {
-                    properties.load(stream);
-                }
+        if (_alarmsPropertiesPath != null
+                        && !_alarmsPropertiesPath.trim().isEmpty()) {
+            File file = new File(_alarmsPropertiesPath);
+            if (!file.exists()) {
+                throw new FileNotFoundException("Cannot find properties file: "
+                                + file);
             }
-            return properties;
-        } catch (IOException e) {
-            throw new DAOException(e);
+            try (InputStream stream = new FileInputStream(file)) {
+                properties.load(stream);
+            }
         }
+        return properties;
     }
 }

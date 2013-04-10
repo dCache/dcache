@@ -99,7 +99,14 @@ public class StandardAlarmDisplayServiceTest {
     public void setup() throws Exception {
         helper = new DAOFactoryImplHelper();
         mocked = helper.getLogEntryDAO();
-        service = new StandardAlarmDisplayService(helper);
+        service = new StandardAlarmDisplayService(helper){
+            private static final long serialVersionUID = -260651971282691608L;
+
+            @Override
+            public boolean isConnected() {
+                return true;
+            }
+        };
         provider = service.getDataProvider();
     }
 
