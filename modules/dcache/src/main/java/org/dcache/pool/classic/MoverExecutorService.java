@@ -1,11 +1,11 @@
 package org.dcache.pool.classic;
 
-import java.nio.channels.CompletionHandler;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  *
  * @since 1.9.11
  */
 public interface MoverExecutorService {
-    Cancellable execute(PoolIORequest transfer, CompletionHandler<Void,Void> completionHandler);
+    ListenableFuture<Void> execute(PoolIORequest transfer);
 }

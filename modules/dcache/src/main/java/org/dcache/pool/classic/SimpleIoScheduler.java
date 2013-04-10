@@ -2,10 +2,10 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -226,19 +226,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
              * go through the standard procedure to update billing and notify door.
              */
             String protocolName = protocolNameOf(request);
-            _executorServices.getPostExecutorService(protocolName).execute(request,
-                    new CompletionHandler()
-                    {
-                        @Override
-                        public void completed(Object result, Object attachment)
-                        {
-                        }
-
-                        @Override
-                        public void failed(Throwable exc, Object attachment)
-                        {
-                        }
-                    });
+            _executorServices.getPostExecutorService(protocolName).execute(request);
         } else {
             wrapper.getRequest().kill();
         }
@@ -295,51 +283,28 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                     final PoolIORequest request = wrapp.getRequest();
                     final String protocolName = protocolNameOf(request);
 
-                    request.transfer(_executorServices.getExecutorService(protocolName),
-                            new CompletionHandler()
-                            {
-                                @Override
-                                public void completed(Object result, Object attachment)
-                                {
-                                    postprocess();
-                                }
-
-                                @Override
-                                public void failed(Throwable exc, Object attachment)
-                                {
-                                    postprocess();
-                                }
-
-                                private void postprocess()
-                                {
-                                    _executorServices
-                                            .getPostExecutorService(protocolName)
-                                            .execute(request,
-                                                    new CompletionHandler()
+                    request.transfer(_executorServices.getExecutorService(protocolName))
+                            .addListener(
+                                    new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            _executorServices
+                                                    .getPostExecutorService(protocolName)
+                                                    .execute(request)
+                                                    .addListener(new Runnable()
                                                     {
                                                         @Override
-                                                        public void completed(Object result,
-                                                                              Object attachment)
-                                                        {
-                                                            release();
-                                                        }
-
-                                                        @Override
-                                                        public void failed(Throwable exc,
-                                                                           Object attachment)
-                                                        {
-                                                            release();
-                                                        }
-
-                                                        private void release()
+                                                        public void run()
                                                         {
                                                             request.setState(IoRequestState.DONE);
                                                             _jobs.remove(wrapp.getId());
                                                             _semaphore.release();
                                                         }
-                                                    });
-                                }
-                            });
+                                                    }, MoreExecutors.sameThreadExecutor());
+                                        }
+                                    }, MoreExecutors.sameThreadExecutor());
                 } catch (RuntimeException | Error | InterruptedException e) {
                     _semaphore.release();
                     throw e;

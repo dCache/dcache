@@ -1,6 +1,6 @@
 package org.dcache.pool.classic;
 
-import java.nio.channels.CompletionHandler;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * A PostTransferExecutionService is invoked after a file was transferred
@@ -15,8 +15,7 @@ public interface PostTransferExecutionService {
      * will return null upon successful completion.
      *
      * @param request transfer request to submit for post processing
-     * @param completionHandler completion is signalled to completionHandler
      * @return a ListenableFuture representing pending completion of the task
      */
-    void execute(PoolIORequest request, CompletionHandler<Void,Void> completionHandler);
+    ListenableFuture<?> execute(PoolIORequest request);
 }
