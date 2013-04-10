@@ -523,36 +523,34 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     protected void doOnChunk(ChannelHandlerContext context, MessageEvent event,
                              HttpChunk chunk)
     {
-        Exception exception = null;
-        ChannelFuture future = null;
-        try {
-            if (_writeChannel == null) {
-                throw new HttpException(NOT_IMPLEMENTED.getCode(),
-                        "Chunked encoding is not supported for this HTTP method");
-            }
-            write(_writeChannel, chunk.getContent());
-            if (chunk.isLast()) {
-                if (chunk instanceof HttpChunkTrailer) {
-                    checkContentHeader(((HttpChunkTrailer) chunk).getHeaderNames(),
-                            asList(CONTENT_LENGTH));
+        if (_writeChannel != null) {
+            Exception exception = null;
+            ChannelFuture future = null;
+            try {
+                write(_writeChannel, chunk.getContent());
+                if (chunk.isLast()) {
+                    if (chunk instanceof HttpChunkTrailer) {
+                        checkContentHeader(((HttpChunkTrailer) chunk).getHeaderNames(),
+                                asList(CONTENT_LENGTH));
+                    }
+                    future = sendPutResponse(context, _writeChannel);
                 }
-                future = sendPutResponse(context, _writeChannel);
-            }
-        } catch (IOException e) {
-            exception = e;
-            future = conditionalSendError(context, HttpMethod.PUT,
-                    future, INTERNAL_SERVER_ERROR, e.getMessage());
-        } catch (HttpException e) {
-            exception = e;
-            future = conditionalSendError(context, HttpMethod.PUT,
-                    future, HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage());
-        } finally {
-            if (chunk.isLast() || exception != null) {
-                close(_writeChannel, exception);
-                _writeChannel = null;
-            }
-            if (future != null && (!isKeepAlive() || !chunk.isLast())) {
-                future.addListener(ChannelFutureListener.CLOSE);
+            } catch (IOException e) {
+                exception = e;
+                future = conditionalSendError(context, HttpMethod.PUT,
+                        future, INTERNAL_SERVER_ERROR, e.getMessage());
+            } catch (HttpException e) {
+                exception = e;
+                future = conditionalSendError(context, HttpMethod.PUT,
+                        future, HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage());
+            } finally {
+                if (chunk.isLast() || exception != null) {
+                    close(_writeChannel, exception);
+                    _writeChannel = null;
+                }
+                if (future != null && (!isKeepAlive() || !chunk.isLast())) {
+                    future.addListener(ChannelFutureListener.CLOSE);
+                }
             }
         }
     }
