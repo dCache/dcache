@@ -204,35 +204,37 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     private void cancel(final PrioritizedRequest request)
     {
-        if (_queue.remove(request)) {
-            /* The request was still in the queue. Post processing is still applied to close
+        try (CDC ignored = request.getCdc().restore()) {
+            if (_queue.remove(request)) {
+                /* The request was still in the queue. Post processing is still applied to close
              * the transfer and to notify billing and door.
              */
-            request.kill();
-            request.getMover().postprocess(
-                    new CompletionHandler<Void,Void>()
-                    {
-                        @Override
-                        public void completed(Void result, Void attachment)
+                request.kill();
+                request.getMover().postprocess(
+                        new CompletionHandler<Void,Void>()
                         {
-                            release();
-                        }
+                            @Override
+                            public void completed(Void result, Void attachment)
+                            {
+                                release();
+                            }
 
-                        @Override
-                        public void failed(Throwable exc, Void attachment)
-                        {
-                            release();
-                        }
+                            @Override
+                            public void failed(Throwable exc, Void attachment)
+                            {
+                                release();
+                            }
 
-                        private void release()
-                        {
-                            request.done();
-                            _jobs.remove(request.getId());
-                        }
+                            private void release()
+                            {
+                                request.done();
+                                _jobs.remove(request.getId());
+                            }
 
-                    });
-        } else {
-            request.kill();
+                        });
+            } else {
+                request.kill();
+            }
         }
     }
 
