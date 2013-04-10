@@ -744,7 +744,8 @@ public class PoolV4
             try {
                 source.revert();
                 PoolIORequest request =
-                    new PoolIORequest(transfer, id, initiator, pool, queueName, _billingStub,
+                    new PoolIORequest(transfer, id, initiator,
+                            message.isPool2Pool(), pool, queueName, _billingStub,
                             new CellStub(getCellEndpoint(), source), getCellAddress(), this);
                 message.setMoverId(queueIoRequest(message, request));
                 transfer = null;

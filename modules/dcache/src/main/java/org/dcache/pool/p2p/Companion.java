@@ -469,7 +469,8 @@ class Companion
 
     private String getInitiator()
     {
-        return _destinationPoolCellname + "@" + _destinationPoolCellDomainName;
+        return "pool:"  + _destinationPoolCellname + "@"
+                        + _destinationPoolCellDomainName;
     }
 
     synchronized void setMoverId(int moverId)

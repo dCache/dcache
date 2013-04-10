@@ -42,6 +42,7 @@ public class PoolIORequest implements IoProcessable {
     private final String _queue;
     private final String _poolName;
     private final String _initiator;
+    private final boolean _p2p;
     private final static Logger _log = LoggerFactory.getLogger(PoolIORequest.class);
     private final FaultListener _faultListener;
 
@@ -80,6 +81,7 @@ public class PoolIORequest implements IoProcessable {
      * @param poolName faultListener listener to notify in case of faults
      */
     public PoolIORequest(PoolIOTransfer transfer, long id, String initiator,
+            boolean p2p,
             String poolName, String queue, CellStub billing, CellStub door,
             CellAddressCore pool, FaultListener faultListener) {
         _transfer = transfer;
@@ -91,6 +93,7 @@ public class PoolIORequest implements IoProcessable {
         _door = door;
         _pool = pool;
         _faultListener = faultListener;
+        _p2p = p2p;
     }
 
     void sendBillingMessage() {
@@ -101,6 +104,7 @@ public class PoolIORequest implements IoProcessable {
         info.setInitiator(_initiator);
         info.setFileCreated(_transfer instanceof PoolIOWriteTransfer);
         info.setStorageInfo(getFileAttributes().getStorageInfo());
+        info.setP2P(_p2p);
         info.setFileSize(_transfer.getFileSize());
         info.setResult(_errorCode, _errorMessage);
         info.setTransferAttributes(getBytesTransferred(),
