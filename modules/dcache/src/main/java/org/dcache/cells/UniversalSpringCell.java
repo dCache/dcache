@@ -598,13 +598,15 @@ public class UniversalSpringCell
         s.format(format, "Bean", "Description");
         s.format(format, "----", "-----------");
         for (String name : getBeanNames()) {
-            try {
-                BeanDefinition definition = factory.getBeanDefinition(name);
-                String description = definition.getDescription();
-                s.format(format, name,
-                         (description != null ? description : "-"));
-            } catch (NoSuchBeanDefinitionException e) {
-                error("Failed to query bean definition for " + name);
+            if (!name.startsWith("org.springframework.")) {
+                try {
+                    BeanDefinition definition = factory.getBeanDefinition(name);
+                    String description = definition.getDescription();
+                    s.format(format, name,
+                            (description != null ? description : "-"));
+                } catch (NoSuchBeanDefinitionException e) {
+                    debug("Failed to query bean definition for " + name);
+                }
             }
         }
         return s.toString();
