@@ -26,13 +26,11 @@ import javax.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.CompletionHandler;
 import java.security.NoSuchAlgorithmException;
-import java.util.Enumeration;
 import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
@@ -279,54 +277,18 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
     private URI getUri(HttpProtocolInfo protocolInfo, int port, UUID uuid)
             throws SocketException, CacheException, URISyntaxException
     {
-        URI targetURI = null;
         String path = protocolInfo.getPath();
         if (!path.startsWith("/")) {
             path = "/" + path;
         }
-        // try to pick the ip address with corresponds to the
-        // hostname (which is hopefully visible to the world)
         InetAddress localIP =
                 NetworkUtils.getLocalAddress(protocolInfo.getSocketAddress().getAddress());
-
-        if (localIP != null && !localIP.isLoopbackAddress()) {
-            // the ip we got from the hostname is at least not
-            // 127.0.01 and from the IP4-family
-            targetURI = new URI(PROTOCOL_HTTP,
-                    null,
-                    localIP.getCanonicalHostName(),
-                    port,
-                    path,
-                    UUID_QUERY_PARAM + QUERY_PARAM_ASSIGN + uuid.toString(),
-                    null);
-        } else {
-            // let's loop through the network interfaces
-            Enumeration<NetworkInterface> ifList = NetworkInterface.getNetworkInterfaces();
-            while (ifList.hasMoreElements()) {
-                NetworkInterface netif = ifList.nextElement();
-                Enumeration<InetAddress> ips = netif.getInetAddresses();
-                while (ips.hasMoreElements()) {
-                    InetAddress addr = ips.nextElement();
-                    // check again each ip from each interface.
-                    // WARNING: multiple ip addresses in case of
-                    // multiple ifs could be selected, we can't
-                    // determine the "correct" one
-                    if (!addr.isLoopbackAddress()) {
-                        targetURI = new URI(PROTOCOL_HTTP,
-                                null,
-                                localIP.getCanonicalHostName(),
-                                port,
-                                path,
-                                UUID_QUERY_PARAM + QUERY_PARAM_ASSIGN + uuid.toString(),
-                                null);
-                    }
-                }
-            }
-            if (targetURI == null) {
-                throw new CacheException("Error: Cannot determine my ip " +
-                        "address. Aborting transfer");
-            }
-        }
-        return targetURI;
+        return new URI(PROTOCOL_HTTP,
+                null,
+                localIP.getCanonicalHostName(),
+                port,
+                path,
+                UUID_QUERY_PARAM + QUERY_PARAM_ASSIGN + uuid.toString(),
+                null);
     }
 }
