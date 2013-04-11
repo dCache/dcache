@@ -139,9 +139,23 @@ public abstract class NetworkUtils {
 
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.connect(intendedDestination, RANDOM_PORT);
-            return socket.getLocalAddress();
+            InetAddress localAddress = socket.getLocalAddress();
+            /* The following is a workaround for Java bugs on Mac OS X and
+             * Windows XP, see eg http://goo.gl/ENXkD
+             */
+            if (localAddress.isAnyLocalAddress()) {
+                if (intendedDestination.isLoopbackAddress()) {
+                    localAddress = InetAddress.getLoopbackAddress();
+                } else {
+                    try {
+                        localAddress = InetAddress.getLocalHost();
+                    } catch (UnknownHostException e) {
+                        localAddress = getLocalAddresses().get(0);
+                    }
+                }
+            }
+            return localAddress;
         }
-
     }
 
     /**
