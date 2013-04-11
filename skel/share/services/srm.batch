@@ -7,7 +7,6 @@ check -strong port
 check listen
 check -strong hostCertificateRefreshPeriod
 check -strong trustAnchorRefreshPeriod
-check -strong srmJettyConnectorType
 check -strong srmClientTransport
 check -strong srmHost
 check -strong localSrmHosts
@@ -182,7 +181,6 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/srm.xml \
-        -profiles=connector-${srmJettyConnectorType} \
         -export \
         -srmName=${cell.name} \
         -srmPort=${port} \

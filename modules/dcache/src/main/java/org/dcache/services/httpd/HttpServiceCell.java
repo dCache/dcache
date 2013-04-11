@@ -1,7 +1,6 @@
 package org.dcache.services.httpd;
 
 import com.google.common.collect.Maps;
-import org.eclipse.jetty.http.ssl.SslContextFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -10,6 +9,7 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -251,7 +251,7 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         connector.setPort(httpsPort);
         connector.setHost(IPV4_INETADDR_ANY);
         final SslContextFactory factory = connector.getSslContextFactory();
-        factory.setKeyStore(keystore);
+        factory.setKeyStorePath(keystore);
         factory.setKeyStoreType(keystoreType);
         factory.setKeyStorePassword(keystorePassword);
         factory.setTrustStore(truststore);

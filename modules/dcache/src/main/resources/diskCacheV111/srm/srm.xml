@@ -402,108 +402,54 @@
     </property>
   </bean>
 
-
-  <beans profile="connector-async">
     <bean id="gsi-connector"
-	  class="org.dcache.util.JettyAsyncGSIConnector">
-      <description>asynchronous GSI connector</description>
-      <property name="port" value="${srmPort}"/>
-      <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
+          class="org.dcache.util.JettyGSIConnector">
+        <description>synchronous GSI connector</description>
+        <property name="port" value="${srmPort}"/>
+        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
 
-      <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
-      <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
-      <property name="lowResourceMaxIdleTime"
-		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
-      <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
+        <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
+        <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+        <property name="lowResourceMaxIdleTime"
+                  value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
+        <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 
-      <property name="hostCertificatePath" value="${service-cert}"/>
-      <property name="hostKeyPath" value="${service-key}"/>
-      <property name="caCertificatePath" value="${service-trusted-certs}"/>
-      <property name="autoFlush" value="true"/>
-      <property name="encrypt" value="true"/>
-      <property name="requireClientAuth" value="true"/>
-      <property name="acceptNoClientCerts" value="false"/>
-      <property name="gssMode" value="gsi"/>
-      <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
-      <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+        <property name="hostCertificatePath" value="${service-cert}"/>
+        <property name="hostKeyPath" value="${service-key}"/>
+        <property name="caCertificatePath" value="${service-trusted-certs}"/>
+        <property name="autoFlush" value="true"/>
+        <property name="encrypt" value="true"/>
+        <property name="requireClientAuth" value="true"/>
+        <property name="acceptNoClientCerts" value="false"/>
+        <property name="gssMode" value="gsi"/>
+        <property name="handshakeTimeout" value="10000" />
+        <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
+        <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
     </bean>
 
     <bean id="ssl-connector"
-	  class="org.dcache.util.JettyAsyncGSIConnector">
-      <description>asynchronous SSL connector</description>
-      <property name="port" value="${srmSslPort}"/>
-      <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
+          class="org.dcache.util.JettyGSIConnector">
+        <description>synchronous SSL connector</description>
+        <property name="port" value="${srmSslPort}"/>
+        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
 
-      <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
-      <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
-      <property name="lowResourceMaxIdleTime"
-		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
-      <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
+        <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
+        <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+        <property name="lowResourceMaxIdleTime"
+                  value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
+        <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 
-      <property name="hostCertificatePath" value="${service-cert}"/>
-      <property name="hostKeyPath" value="${service-key}"/>
-      <property name="caCertificatePath" value="${service-trusted-certs}"/>
-      <property name="autoFlush" value="true"/>
-      <property name="encrypt" value="true"/>
-      <property name="requireClientAuth" value="true"/>
-      <property name="acceptNoClientCerts" value="false"/>
-      <property name="gssMode" value="ssl"/>
-      <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
-      <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+        <property name="hostCertificatePath" value="${service-cert}"/>
+        <property name="hostKeyPath" value="${service-key}"/>
+        <property name="caCertificatePath" value="${service-trusted-certs}"/>
+        <property name="autoFlush" value="true"/>
+        <property name="encrypt" value="true"/>
+        <property name="requireClientAuth" value="true"/>
+        <property name="acceptNoClientCerts" value="false"/>
+        <property name="gssMode" value="ssl"/>
+        <property name="handshakeTimeout" value="10000" />
+        <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
+        <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
     </bean>
-  </beans>
-
-
-  <beans profile="connector-sync">
-    <bean id="gsi-connector"
-	  class="org.dcache.util.JettyGSIConnector">
-      <description>synchronous GSI connector</description>
-      <property name="port" value="${srmPort}"/>
-      <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
-
-      <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
-      <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
-      <property name="lowResourceMaxIdleTime"
-		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
-      <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
-
-      <property name="hostCertificatePath" value="${service-cert}"/>
-      <property name="hostKeyPath" value="${service-key}"/>
-      <property name="caCertificatePath" value="${service-trusted-certs}"/>
-      <property name="autoFlush" value="true"/>
-      <property name="encrypt" value="true"/>
-      <property name="requireClientAuth" value="true"/>
-      <property name="acceptNoClientCerts" value="false"/>
-      <property name="gssMode" value="gsi"/>
-      <property name="handshakeTimeout" value="10000" />
-      <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
-      <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
-    </bean>
-
-    <bean id="ssl-connector"
-	  class="org.dcache.util.JettyGSIConnector">
-      <description>synchronous SSL connector</description>
-      <property name="port" value="${srmSslPort}"/>
-      <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
-
-      <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
-      <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
-      <property name="lowResourceMaxIdleTime"
-		value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
-      <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
-
-      <property name="hostCertificatePath" value="${service-cert}"/>
-      <property name="hostKeyPath" value="${service-key}"/>
-      <property name="caCertificatePath" value="${service-trusted-certs}"/>
-      <property name="autoFlush" value="true"/>
-      <property name="encrypt" value="true"/>
-      <property name="requireClientAuth" value="true"/>
-      <property name="acceptNoClientCerts" value="false"/>
-      <property name="gssMode" value="ssl"/>
-      <property name="handshakeTimeout" value="10000" />
-      <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
-      <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
-    </bean>
-  </beans>
 
 </beans>
