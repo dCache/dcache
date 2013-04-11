@@ -101,7 +101,7 @@ public class XrootdPoolNettyServer
      * Only shutdown the server if no client connection left.
      */
     @Override
-    protected synchronized void conditionallyStopServer() throws IOException {
+    protected synchronized void conditionallyStopServer() {
         if (_numberClientConnections == 0) {
             super.conditionallyStopServer();
         }
@@ -112,7 +112,7 @@ public class XrootdPoolNettyServer
         _numberClientConnections++;
     }
 
-    public synchronized void clientDisconnected() throws IOException {
+    public synchronized void clientDisconnected() {
         _numberClientConnections--;
         conditionallyStopServer();
     }

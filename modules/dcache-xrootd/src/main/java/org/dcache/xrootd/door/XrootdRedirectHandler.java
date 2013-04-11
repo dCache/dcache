@@ -204,18 +204,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             InetSocketAddress address = transfer.getRedirect();
             _log.info("Redirecting to {}", address);
 
-            // new pool, send UUID in opaque part of redirect
-            if (transfer.isUUIDSupported()) {
-                return new RedirectResponse(req,
-                                            address.getHostName(),
-                                            address.getPort(),
-                                            opaque,
-                                            "");
-            } else { // old pool, don't include UUID to make checksums match
-                return new RedirectResponse(req,
-                                            address.getHostName(),
-                                            address.getPort());
-            }
+            return new RedirectResponse(req, address.getHostString(), address.getPort(), opaque, "");
         } catch (FileNotFoundCacheException e) {
             throw new XrootdException(kXR_FileNotOpen, "No such file");
         } catch (FileExistsCacheException e) {

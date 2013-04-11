@@ -699,29 +699,10 @@ public class XrootdDoor
 
     public void messageArrived(XrootdDoorAdressInfoMessage msg)
     {
-        _log.debug("Received redirect msg from mover");
-
+        _log.trace("Received redirect msg from mover");
         XrootdTransfer transfer = _transfers.get(msg.getXrootdFileHandle());
-
         if (transfer != null) {
-            transfer.setUUIDSupported(msg.isUUIDEnabledPool());
-            // REVISIT: pick the first IPv4 address from the
-            // collection at this point, we can't determine, which of
-            // the pool IP-addresses is the right one, so we select
-            // the first
-            Collection<NetIFContainer> interfaces =
-                Collections.checkedCollection(msg.getNetworkInterfaces(),
-                                              NetIFContainer.class);
-            Inet4Address ip = getFirstIpv4(interfaces);
-
-            if (ip != null) {
-                InetSocketAddress address =
-                    new InetSocketAddress(ip, msg.getServerPort());
-                transfer.redirect(address);
-            } else {
-                _log.warn("No valid IP-address received from pool. Redirection not possible");
-                transfer.redirect(null);
-            }
+            transfer.redirect(msg.getSocketAddress());
         }
     }
 

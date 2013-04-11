@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:annotation-config/>
 
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -342,6 +347,36 @@
       <property name="postTransferService" ref="post-transfer-service"/>
   </bean>
 
+  <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService">
+      <description>Xrootd transfer service</description>
+      <property name="postTransferService" ref="post-transfer-service"/>
+      <property name="faultListener" ref="pool"/>
+      <property name="diskThreads" value="${xrootd-mover-disk-threads}"/>
+      <property name="maxMemoryPerConnection" value="${xrootd-mover-max-memory-per-connection}"/>
+      <property name="maxMemory" value="${xrootd-mover-max-memory}"/>
+      <property name="clientIdleTimeout" value="${xrootd-mover-idle-client-timeout}"/>
+      <property name="socketThreads" value="${xrootd-mover-socket-threads}"/>
+      <property name="plugins">
+          <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
+              <property name="plugins" value="${xrootd-plugins}"/>
+          </bean>
+      </property>
+  </bean>
+
+  <bean id="http-transfer-service" class="org.dcache.http.HttpTransferService">
+      <description>HTTP transfer service</description>
+      <property name="postTransferService" ref="post-transfer-service"/>
+      <property name="checksumModule" ref="csm"/>
+      <property name="faultListener" ref="pool"/>
+      <property name="diskThreads" value="${http-mover-disk-threads}"/>
+      <property name="maxMemoryPerConnection" value="${http-mover-max-memory-per-connection}"/>
+      <property name="maxMemory" value="${http-mover-max-memory}"/>
+      <property name="chunkSize" value="${http-mover-chunk-size}"/>
+      <property name="clientIdleTimeout" value="#{1000 * ${http-mover-client-idle-timeout}}"/>
+      <property name="socketThreads" value="${http-mover-socket-threads}"/>
+      <property name="connectTimeout" value="#{1000 * ${http-mover-connect-timeout}}"/>
+  </bean>
+
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
         init-method="init" destroy-method="shutdown">
       <description>Post processing execution service</description>
@@ -357,6 +392,8 @@
       <property name="factories">
         <map>
             <entry key="NFS4-4" value-ref="nfs-transfer-service" />
+            <entry key="Xrootd-2" value-ref="xrootd-transfer-service"/>
+            <entry key="Http-1" value-ref="http-transfer-service"/>
         </map>
       </property>
   </bean>

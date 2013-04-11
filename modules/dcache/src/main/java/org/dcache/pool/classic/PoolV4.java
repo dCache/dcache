@@ -250,7 +250,6 @@ public class PoolV4
         return _hasTapeBackend;
     }
 
-    @Required
     public void setP2PMode(String mode)
     {
         if (mode == null) {
@@ -264,7 +263,6 @@ public class PoolV4
         }
     }
 
-    @Required
     public void setDuplicateRequestMode(String mode)
     {
         if (mode == null || mode.equals("none")) {

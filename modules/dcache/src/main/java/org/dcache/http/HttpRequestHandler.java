@@ -181,7 +181,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         }
 
         if (t instanceof ClosedChannelException) {
-            _logger.info("Connection unexpectedly closed"); // TODO: Log remote address
+            _logger.trace("ClosedChannelException for HTTP channel to {}", ctx.getChannel().getRemoteAddress());
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);

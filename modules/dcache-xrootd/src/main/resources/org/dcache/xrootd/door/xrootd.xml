@@ -104,7 +104,7 @@
   </bean>
 
   <bean id="channelhandler-factories"
-        class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
+        class="org.dcache.xrootd.spring.GplazmaAwareChannelHandlerFactoryFactoryBean">
       <description>Factory for channel handlers</description>
       <property name="plugins" value="${xrootdPlugins}"/>
       <property name="loginStrategy" ref="loginstrategy"/>

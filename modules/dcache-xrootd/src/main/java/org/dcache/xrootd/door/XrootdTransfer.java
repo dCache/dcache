@@ -19,7 +19,6 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     private UUID _uuid;
     private InetSocketAddress _doorAddress;
     private int _fileHandle;
-    private boolean _uuidSupported;
 
     public XrootdTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
         super(pnfs, subject, path);
@@ -39,14 +38,6 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
 
     public synchronized void setDoorAddress(InetSocketAddress doorAddress) {
         _doorAddress = doorAddress;
-    }
-
-    public synchronized void setUUIDSupported(boolean uuidSupported) {
-        _uuidSupported = uuidSupported;
-    }
-
-    public boolean isUUIDSupported() {
-        return _uuidSupported;
     }
 
     protected synchronized ProtocolInfo createProtocolInfo() {

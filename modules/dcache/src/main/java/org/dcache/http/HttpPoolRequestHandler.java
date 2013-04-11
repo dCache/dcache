@@ -333,10 +333,16 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     }
 
     @Override
+    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+    {
+        _logger.debug("HTTP connection from {} established", ctx.getChannel().getRemoteAddress());
+    }
+
+    @Override
     public void channelClosed(ChannelHandlerContext ctx,
                               ChannelStateEvent event)
     {
-        _logger.debug("Called channelClosed.");
+        _logger.debug("HTTP connection from {} closed", ctx.getChannel().getRemoteAddress());
         for (MoverChannel<HttpProtocolInfo> file: _files) {
             _server.close(file);
         }
@@ -351,8 +357,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             if (_logger.isInfoEnabled()) {
                 long idleTime = System.currentTimeMillis() -
                     event.getLastActivityTimeMillis();
-                _logger.info("Closing idling connection without opened files." +
-                          " Connection has been idle for {} ms.", idleTime);
+                _logger.info("Connection from {} has been idle for {} ms; disconnecting.",
+                        ctx.getChannel().getRemoteAddress(), idleTime);
             }
 
             ctx.getChannel().close();
@@ -575,7 +581,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             new QueryStringDecoder(request.getUri());
 
         Map<String, List<String>> params = queryStringDecoder.getParameters();
-        if (!params.containsKey(HttpProtocol_2.UUID_QUERY_PARAM)) {
+        if (!params.containsKey(HttpTransferService.UUID_QUERY_PARAM)) {
             if(!request.getUri().equals("/favicon.ico")) {
                 _logger.error("Received request without UUID in the query " +
                         "string. Request-URI was {}", request.getUri());
@@ -584,7 +590,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             throw new IllegalArgumentException("Query string does not include any UUID.");
         }
 
-        List<String> uuidList = params.get(HttpProtocol_2.UUID_QUERY_PARAM);
+        List<String> uuidList = params.get(HttpTransferService.UUID_QUERY_PARAM);
         if (uuidList.isEmpty()) {
             throw new IllegalArgumentException("UUID parameter does not include any value.");
         }

@@ -94,19 +94,8 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     }
 
     @Override
-    public String toString()
+    protected String getStatus()
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getFileAttributes().getPnfsId());
-        sb.append(" h={").append(_moverProtocol.toString()).append("} bytes=").append(getBytesTransferred()).append(
-            " time/sec=").append(getTransferTime() / 1000L).append(" LM=");
-
-        long lastTransferTime = getLastTransferred();
-        if (lastTransferTime == 0L) {
-            sb.append(0);
-        } else {
-            sb.append((System.currentTimeMillis() - lastTransferTime) / 1000L);
-        }
-        return sb.toString();
+        return _moverProtocol.toString();
     }
 }

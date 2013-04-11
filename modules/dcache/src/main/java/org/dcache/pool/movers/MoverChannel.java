@@ -84,6 +84,11 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
      */
     private long _reserved;
 
+    public MoverChannel(Mover<T> mover, RepositoryChannel channel)
+    {
+        this(mover.getIoMode(), mover.getFileAttributes(), mover.getProtocolInfo(), channel, mover.getIoHandle());
+    }
+
     public MoverChannel(IoMode mode, FileAttributes attributes, T protocolInfo,
             RepositoryChannel channel, Allocator allocator)
     {
@@ -296,6 +301,10 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
         return _lastTransferred.get();
     }
 
+    public synchronized long getAllocated() {
+        return _reserved;
+    }
+
     private synchronized void preallocate(long pos)
         throws IOException
     {
@@ -304,7 +313,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
 
             if (pos > _reserved) {
                 long delta = Math.max(pos - _reserved, SPACE_INC);
-                _logSpaceAllocation.debug("ALLOC: " + delta);
+                _logSpaceAllocation.trace("preallocate: {}", delta);
                 _allocator.allocate(delta);
                 _reserved += delta;
             }

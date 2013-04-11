@@ -113,8 +113,7 @@ public class HttpPoolNettyServer
             pipeline.addLast("encoder", new HttpResponseEncoder());
 
             if (_logger.isDebugEnabled()) {
-                pipeline.addLast("logger",
-                                 new LoggingHandler(HttpProtocol_2.class));
+                pipeline.addLast("logger", new LoggingHandler(HttpPoolNettyServer.class));
             }
             pipeline.addLast("executor",
                              new ExecutionHandler(getDiskExecutor()));

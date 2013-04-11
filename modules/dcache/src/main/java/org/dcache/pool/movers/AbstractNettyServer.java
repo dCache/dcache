@@ -14,12 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
+import java.nio.channels.CompletionHandler;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.TimeoutCacheException;
@@ -27,6 +29,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
 
+import org.dcache.pool.classic.Cancellable;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
 
@@ -37,8 +40,11 @@ import org.dcache.util.PortRange;
  * their own channel-pipelines, their port-range and the logic used
  * for starting/stopping the server.
  *
- * @author tzangerl
+ * TODO: Cancellation currently doesn't close the netty channel. We rely
+ * on the mover closing the MoverChannel, thus as a side effect causing
+ * the Netty channel to close.
  *
+ * @author tzangerl
  */
 public abstract class AbstractNettyServer<T extends ProtocolInfo>
 {
@@ -61,9 +67,21 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     private final Executor _diskExecutor;
 
     /**
+     * Manages connection timeouts.
+     */
+    private static final ScheduledExecutorService _timeoutScheduler =
+            Executors.newSingleThreadScheduledExecutor(
+                    new ThreadFactoryBuilder().setNameFormat("netty-mover-connect-timeout").setDaemon(true).build());
+
+    /**
      * Shared Netty server channel
      */
     private Channel _serverChannel;
+
+    /**
+     * Socket address of the last server channel created.
+     */
+    private InetSocketAddress _lastServerAddress;
 
     /**
      * Shared Netty channel factory.
@@ -72,9 +90,9 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
 
     private PortRange _portRange = new PortRange(0);
 
-    private final ConcurrentMap<UUID,Entry<T>> _uuids =
+    private final ConcurrentMap<UUID,Entry> _uuids =
         Maps.newConcurrentMap();
-    private final ConcurrentMap<MoverChannel<T>,Entry<T>> _channels =
+    private final ConcurrentMap<MoverChannel<T>,Entry> _channels =
         Maps.newConcurrentMap();
 
     /**
@@ -124,13 +142,14 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      */
     protected synchronized void startServer() throws IOException {
         if (_serverChannel == null) {
-            _logger.debug("Starting server.");
             ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
             bootstrap.setOption("child.tcpNoDelay", false);
             bootstrap.setOption("child.keepAlive", true);
             bootstrap.setPipelineFactory(newPipelineFactory());
 
             _serverChannel = _portRange.bind(bootstrap);
+            _lastServerAddress = (InetSocketAddress) _serverChannel.getLocalAddress();
+            _logger.debug("Started {} on {}", getClass().getSimpleName(), _lastServerAddress);
         }
     }
 
@@ -140,7 +159,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     protected synchronized void stopServer()
     {
         if (_serverChannel != null) {
-            _logger.debug("Stopping server.");
+            _logger.debug("Stopping {} on {}", getClass().getSimpleName(), _lastServerAddress);
             _serverChannel.close();
             _serverChannel = null;
         }
@@ -158,46 +177,24 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     /**
      * Stop server if there are no channels.
      */
-    protected synchronized void conditionallyStopServer() throws IOException {
+    protected synchronized void conditionallyStopServer() {
         if (_uuids.isEmpty()) {
             stopServer();
         }
     }
 
     /**
-     * @return The address to which the current server channel is bound
-     * @throws IOException server is not running
+     * @return The address to which the server channel was last bound.
      */
-    public synchronized InetSocketAddress getServerAddress() throws IOException {
-        if (!isRunning()) {
-            throw new IOException("Cannot get server address as server " +
-                                  "channel is not bound!");
-        }
-
-        return (InetSocketAddress) _serverChannel.getLocalAddress();
+    public synchronized InetSocketAddress getServerAddress() {
+        return _lastServerAddress;
     }
 
-    /**
-     * The server is running if there is a server channel that is bound and
-     * open
-     * @return true, if above condition holds, false otherwise
-     */
-    protected synchronized boolean isRunning() {
-        return (_serverChannel != null &&
-                _serverChannel.isBound() &&
-                _serverChannel.isOpen());
-    }
-
-    public UUID register(MoverChannel<T> channel)
+    public synchronized Cancellable register(
+            MoverChannel<T> channel, UUID uuid, long connectTimeout, CompletionHandler<Void, Void> completionHandler)
         throws IOException
     {
-        return register(channel, UUID.randomUUID());
-    }
-
-    public UUID register(MoverChannel<T> channel, UUID uuid)
-        throws IOException
-    {
-        Entry<T> entry = new Entry<>(channel, uuid);
+        Entry entry = new Entry(channel, uuid, connectTimeout, completionHandler);
 
         if (_uuids.putIfAbsent(uuid, entry) != null) {
             throw new IllegalStateException("UUID conflict");
@@ -208,40 +205,26 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         }
 
         conditionallyStartServer();
-        return uuid;
+        return entry;
     }
 
-    public void unregister(MoverChannel<T> channel)
-        throws IOException
+    private synchronized void unregister(Entry entry)
     {
-        Entry<T> entry = _channels.remove(channel);
-        if (entry != null) {
-            _uuids.remove(entry.getUUID());
-        }
-
+        _channels.remove(entry._channel);
+        _uuids.remove(entry._uuid);
         conditionallyStopServer();
     }
 
-    public void await(MoverChannel<T> channel, long timeout)
-            throws TimeoutCacheException, InterruptedException,
-                   InvocationTargetException
-    {
-        Entry<T> entry = _channels.get(channel);
-        if (entry == null) {
-            throw new IllegalStateException("");
-        }
-        entry.await(timeout);
-    }
 
     public MoverChannel<T> open(UUID uuid, boolean exclusive)
     {
-        Entry<T> entry = _uuids.get(uuid);
+        Entry entry = _uuids.get(uuid);
         return (entry == null) ? null : entry.open(exclusive);
     }
 
     public void close(MoverChannel<T> channel)
     {
-        Entry<T> entry = _channels.get(channel);
+        Entry entry = _channels.get(channel);
         if (entry != null) {
             entry.close();
         }
@@ -249,77 +232,110 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
 
     public void close(MoverChannel<T> channel, Exception exception)
     {
-        Entry<T> entry = _channels.get(channel);
+        Entry entry = _channels.get(channel);
         if (entry != null) {
             entry.close(exception);
         }
     }
 
-    private static class Entry<T extends ProtocolInfo>
+    private class Entry implements Cancellable
     {
+        private final Sync _sync = new Sync();
         private final MoverChannel<T> _channel;
         private final UUID _uuid;
-        private int _open;
-        private boolean _isExclusive;
-        private boolean _isClosed;
-        private Exception _exception;
+        private final Future<?> _timeout;
+        private final CompletionHandler<Void, Void> _completionHandler;
+        private final CDC _cdc = new CDC();
 
-        Entry(MoverChannel<T> channel, UUID uuid) {
+        Entry(MoverChannel<T> channel, UUID uuid, final long connectTimeout, CompletionHandler<Void, Void> completionHandler) {
             _channel = channel;
             _uuid = uuid;
+            _completionHandler = completionHandler;
+            _timeout = _timeoutScheduler.schedule(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    if (_sync.timeout()) {
+                        try (CDC ignored = _cdc.restore()) {
+                            _completionHandler.failed(new TimeoutCacheException("No connection from client after " +
+                                    TimeUnit.MILLISECONDS.toSeconds(connectTimeout) + " seconds. Giving up."), null);
+                        }
+                    }
+                }
+            }, connectTimeout, TimeUnit.MILLISECONDS);
         }
 
-        UUID getUUID() {
-            return _uuid;
+        MoverChannel<T> open(boolean exclusive) {
+            return _sync.open(exclusive);
         }
 
-        synchronized MoverChannel<T> open(boolean exclusive) {
-            if (_isExclusive || _isClosed) {
-                return null;
-            }
-            _isExclusive = exclusive;
-            _open++;
-            return _channel;
-        }
-
-        synchronized void close() {
+        void close() {
             close(null);
         }
 
-        synchronized void close(Exception exception) {
-            _open--;
-            if (exception != null) {
-                _exception = exception;
-                _isClosed = true;
-            } else if (_open <= 0) {
-                _isClosed = true;
+        void close(Exception exception) {
+            if (_sync.close(exception)) {
+                try (CDC ignored = _cdc.restore()) {
+                    if (exception != null) {
+                        _completionHandler.failed(exception, null);
+                    } else {
+                        _completionHandler.completed(null, null);
+                    }
+                }
             }
-            notifyAll();
         }
 
-        synchronized void await(long timeout)
-                throws InvocationTargetException, InterruptedException,
-                       TimeoutCacheException
+        @Override
+        public void cancel()
         {
-            try {
-                long deadline = System.currentTimeMillis() + timeout;
-                while (System.currentTimeMillis() < deadline &&
-                       _open == 0 && !_isClosed) {
-                    wait(deadline - System.currentTimeMillis());
+            if (_sync.cancel()) {
+                try (CDC ignored = _cdc.restore()) {
+                    _completionHandler.failed(new InterruptedException("Transfer was interrupted"), null);
                 }
-                if (_open == 0 && !_isClosed) {
-                    throw new TimeoutCacheException("No connection from client after " +
-                                                    TimeUnit.MILLISECONDS.toSeconds(timeout) +
-                                                    " seconds. Giving up.");
+            }
+        }
+
+        private class Sync
+        {
+            private int _open;
+            private boolean _isExclusive;
+            private boolean _isClosed;
+
+            synchronized MoverChannel<T> open(boolean exclusive) {
+                if (_isExclusive || _isClosed) {
+                    return null;
                 }
-                while (!_isClosed) {
-                    wait();
+                _isExclusive = exclusive;
+                _open++;
+                _timeout.cancel(false);
+                return _channel;
+            }
+
+            synchronized boolean close(Exception exception) {
+                _open--;
+                return (exception != null || _open <= 0) && close();
+            }
+
+            synchronized boolean cancel()
+            {
+                return close();
+            }
+
+            synchronized boolean timeout()
+            {
+                return (_open == 0) && close();
+            }
+
+            private boolean close()
+            {
+                if (!_isClosed) {
+                    _isClosed = true;
+                    _timeout.cancel(false);
+                    unregister(Entry.this);
+                    return true;
                 }
-                if (_exception != null) {
-                    throw new InvocationTargetException(_exception);
-                }
-            } finally {
-                _isClosed = true;
+                return false;
             }
         }
     }

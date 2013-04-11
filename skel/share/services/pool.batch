@@ -54,9 +54,6 @@ define context PoolDefaults endDefine
    movermap define DCap-3  org.dcache.pool.movers.DCapProtocol_3_nio
    movermap define GFtp-1  org.dcache.pool.movers.GFtpProtocol_2_nio
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
-   movermap define NFS4-4  org.dcache.chimera.nfsv41.mover.NFSv41ProtocolMover
-   movermap define Xrootd-2  org.dcache.xrootd.pool.XrootdProtocol_3
-   movermap define Http-1  org.dcache.http.HttpProtocol_2
 endDefine
 
 create org.dcache.cells.UniversalSpringCell "${cell.name}" \
@@ -81,6 +78,7 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -xrootd-mover-max-memory=\"${xrootdMoverMaxMemory}\" \
     -xrootd-mover-max-frame-size=\"${xrootdMoverMaxFrameSize}\" \
     -xrootd-mover-idle-client-timeout=\"${xrootd.mover.timeout.idle}\" \
+    -xrootd-plugins=\"${xrootdPlugins}\" \
     -http-mover-disk-threads=\"${httpMoverDiskThreads}\" \
     -http-mover-socket-threads=\"${httpMoverSocketThreads}\" \
     -http-mover-max-memory-per-connection=\"${httpMoverConnectionMaxMemory}\" \

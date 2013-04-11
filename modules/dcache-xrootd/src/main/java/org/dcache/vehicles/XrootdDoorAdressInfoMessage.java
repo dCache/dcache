@@ -1,49 +1,52 @@
 package org.dcache.vehicles;
 
+import com.google.common.collect.Iterables;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.vehicles.Message;
 
-public class XrootdDoorAdressInfoMessage extends Message {
+import static com.google.common.base.Preconditions.checkNotNull;
 
-	private static final long serialVersionUID = -5306759219838126273L;
+public class XrootdDoorAdressInfoMessage extends Message
+{
+    private static final long serialVersionUID = -5306759219838126273L;
 
-	private int xrootdFileHandle;
-	private Collection<NetIFContainer> networkInterfaces;
-	private int serverPort;
-	private final boolean uuidEnabledPool;
+    private final int xrootdFileHandle;
+    @Deprecated // Remove in 2.7
+    private Collection<NetIFContainer> networkInterfaces;
+    @Deprecated // Remove in 2.7
+    private int serverPort;
 
-	public XrootdDoorAdressInfoMessage(int xrootdFileHandle, int serverPort, Collection<NetIFContainer> networkInterfaces) {
+    private InetSocketAddress socketAddress;
 
-		this(xrootdFileHandle, serverPort, networkInterfaces, false);
-	}
+    public XrootdDoorAdressInfoMessage(int xrootdFileHandle, InetSocketAddress socketAddress)
+    {
+        this.xrootdFileHandle = xrootdFileHandle;
+        this.socketAddress = checkNotNull(socketAddress);
+    }
 
-	public XrootdDoorAdressInfoMessage(int xrootdFileHandle,
-	                                   int serverPort,
-	                                   Collection<NetIFContainer> networkInterfaces,
-	                                   boolean uuidEnabled) {
-		this.xrootdFileHandle = xrootdFileHandle;
-		this.serverPort = serverPort;
+    public int getXrootdFileHandle()
+    {
+        return xrootdFileHandle;
+    }
 
-		this.networkInterfaces = networkInterfaces;
-		this.uuidEnabledPool = uuidEnabled;
-	}
+    public InetSocketAddress getSocketAddress()
+    {
+        return socketAddress;
+    }
 
-	public Collection<NetIFContainer> getNetworkInterfaces() {
-		return networkInterfaces;
-	}
-
-	public int getXrootdFileHandle() {
-		return xrootdFileHandle;
-	}
-
-	public int getServerPort() {
-		return serverPort;
-	}
-
-	public boolean isUUIDEnabledPool() {
-		return uuidEnabledPool;
-	}
-
+    private void readObject(ObjectInputStream in)
+            throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+        if (socketAddress == null) {
+            socketAddress = new InetSocketAddress(Iterables
+                    .get(Iterables.get(networkInterfaces, 0).getInetAddresses(), 0), serverPort);
+        }
+    }
 }
