@@ -20,6 +20,7 @@ package org.dcache.chimera.nfs.v4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.PUTFH4res;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
@@ -43,6 +44,8 @@ public class OperationPUTFH extends AbstractNFSv4Operation {
             _log.debug("NFS Request  PUTFH4 current: {}", context.currentInode());
             res.status = nfsstat.NFS_OK;
         } catch (IllegalArgumentException iae) {
+            res.status = nfsstat.NFSERR_BADHANDLE;
+        } catch (FileNotFoundHimeraFsException e) {
             res.status = nfsstat.NFSERR_BADHANDLE;
         } catch (Exception e) {
             _log.error("PUTFH4:", e);

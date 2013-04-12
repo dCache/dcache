@@ -1041,13 +1041,17 @@ public class JdbcFs implements FileSystemProvider {
                 if (cmd.length < 3) {
                     throw new FileNotFoundHimeraFsException(name);
                 }
-                String[] args = new String[cmd.length - 2];
-                System.arraycopy(cmd, 2, args, 0, args.length);
-                FsInode pgetInode = new FsInode_PGET(this, parent.toString(), args);
-                if (!pgetInode.exists()) {
+
+                /*
+                 * pass in the name too (args 1 to n)
+                 */
+                String[] args = new String[cmd.length - 1];
+                System.arraycopy(cmd, 1, args, 0, args.length);
+                inode = getPGET(parent, args);
+                if (!inode.exists()) {
                     throw new FileNotFoundHimeraFsException(name);
                 }
-                return pgetInode;
+                return inode;
             }
 
             if (name.equals(".(config)")) {
@@ -2722,7 +2726,7 @@ public class JdbcFs implements FileSystemProvider {
                     for (int i = 0; i < argc; i++) {
                         args[i] = st.nextToken();
                     }
-                    inode = new FsInode_PGET(this, id, args);
+                    inode = getPGET(id, args);
                     break;
 
             }
@@ -2737,5 +2741,21 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public byte[] inodeToBytes(FsInode inode) throws ChimeraFsException {
         return inode.toFullString().getBytes();
+    }
+
+    /**
+     * So that subclasses can do something different (like caching).
+     */
+    protected FsInode_PGET getPGET(String id, String[] args)
+                    throws ChimeraFsException {
+        return new FsInode_PGET(this, id, args);
+    }
+
+    /**
+     * So that subclasses can do something different (like caching).
+     */
+    protected FsInode_PGET getPGET(FsInode parent, String[] args)
+                    throws ChimeraFsException {
+        return new FsInode_PGET(this, parent.toString(), args);
     }
 }

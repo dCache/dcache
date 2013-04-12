@@ -49,10 +49,12 @@
         <property name="releaseHelperThreads" value="3"/>
     </bean>
 
-    <bean id="fileSystem" class="org.dcache.chimera.JdbcFs">
+    <bean id="fileSystem" class="org.dcache.chimera.DCacheAwareJdbcFs">
         <description>Chimera Filesystem</description>
         <constructor-arg ref="dataSource" />
         <constructor-arg value="${chimera.db.dialect}" />
+        <property name="pnfsHandler" ref="pnfs"/>
+        <property name="poolManagerStub" ref="poolManagerStub"/>
     </bean>
 
     <bean id="export" class="org.dcache.chimera.nfs.ExportFile">
