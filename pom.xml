@@ -69,7 +69,8 @@
         <connection>scm:git:https://github.com/dCache/dcache.git</connection>
         <developerConnection>scm:git:git@github.com:dCache/dcache.git</developerConnection>
         <url>https://github.com/dCache/dcache.git</url>
-    </scm>
+      <tag>2.6</tag>
+  </scm>
 
     <repositories>
         <repository>
