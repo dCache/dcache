@@ -5,26 +5,17 @@ import java.nio.ByteBuffer;
 
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 
 /**
  * Encapsulates an open file for writing in the xrootd data server.
  */
-public class WriteDescriptor implements FileDescriptor
+public class WriteDescriptor extends ReadDescriptor
 {
-    private MoverChannel<XrootdProtocolInfo> _channel;
-
     public WriteDescriptor(MoverChannel<XrootdProtocolInfo> channel)
     {
-        _channel = channel;
-    }
-
-    @Override
-    public Reader read(ReadRequest msg)
-    {
-        return new RegularReader(msg, this);
+        super(channel);
     }
 
     @Override
@@ -44,11 +35,5 @@ public class WriteDescriptor implements FileDescriptor
                 position += _channel.write(buffer, position);
             }
         }
-    }
-
-    @Override
-    public MoverChannel<XrootdProtocolInfo> getChannel()
-    {
-        return _channel;
     }
 }

@@ -1,11 +1,11 @@
 package org.dcache.xrootd.pool;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 
@@ -15,11 +15,13 @@ import org.dcache.xrootd.protocol.messages.WriteRequest;
 public interface FileDescriptor
 {
     /**
-     * Returns a reader object for a given read request. The reader
-     * provides read access to the file and can generate response
-     * objects for the request.
+     * Reads data from the file. Reads until the buffer is full or the
+     * end of file has been reached.
+     *
+     * @throws ClosedChannelException if the descriptor is closed.
+     * @throws IOException if the operation failed.
      */
-    Reader read(ReadRequest msg);
+    void read(ByteBuffer buffer, long position) throws IOException;
 
     /**
      * Forces unwritten data to disk.

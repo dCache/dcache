@@ -1,10 +1,10 @@
 package org.dcache.xrootd.pool;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 
@@ -16,7 +16,7 @@ public class ReadDescriptor implements FileDescriptor
     /**
      * Update mover meta-information
      */
-    private MoverChannel<XrootdProtocolInfo> _channel;
+    protected MoverChannel<XrootdProtocolInfo> _channel;
 
     public ReadDescriptor(MoverChannel<XrootdProtocolInfo> channel)
     {
@@ -24,13 +24,20 @@ public class ReadDescriptor implements FileDescriptor
     }
 
     @Override
-    public Reader read(ReadRequest msg)
+    public void read(ByteBuffer buffer, long position) throws IOException
     {
-        return new RegularReader(msg, this);
+        while (buffer.hasRemaining()) {
+            /* use position independent thread safe call */
+            int bytes = _channel.read(buffer, position);
+            if (bytes < 0) {
+                break;
+            }
+            position += bytes;
+        }
     }
 
     @Override
-    public void sync(SyncRequest msg)
+    public void sync(SyncRequest msg) throws IOException
     {
         /* As this is a read only file, there is no reason to sync
          * anything.

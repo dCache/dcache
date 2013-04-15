@@ -22,6 +22,7 @@ import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
@@ -140,6 +141,7 @@ public class XrootdPoolNettyServer
                                                              0,
                                                              _clientIdleTimeout,
                                                              TimeUnit.MILLISECONDS));
+            pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
             pipeline.addLast("transfer",
                              new XrootdPoolRequestHandler(XrootdPoolNettyServer.this));
             return pipeline;

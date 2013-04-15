@@ -1,7 +1,5 @@
 package org.dcache.xrootd.pool;
 
-import com.google.common.collect.Lists;
-import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -14,15 +12,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
 
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdRequestHandler;
@@ -31,7 +28,6 @@ import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.AuthenticationRequest;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
-import org.dcache.xrootd.protocol.messages.ErrorResponse;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
 import org.dcache.xrootd.protocol.messages.MkDirRequest;
@@ -88,13 +84,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
      */
     private final List<FileDescriptor> _descriptors =
         new ArrayList<>();
-
-    /** Used for reading pool information, passing it on to the client */
-    private final Queue<Reader> _readers = new ArrayDeque<>();
-
-    /** Simplistic read ahead buffer.
-     */
-    private AbstractResponseMessage _block;
 
     /**
      * Use for timeout handling - a handler is always newly instantiated in
@@ -164,7 +153,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         }
 
         _server.clientDisconnected();
-        _readers.clear();
     }
 
     @Override
@@ -182,14 +170,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         }
         // TODO: If not already closed, we should probably close the
         // channel.
-    }
-
-    @Override
-    public void channelInterestChanged(ChannelHandlerContext ctx,
-                                       ChannelStateEvent e)
-    {
-        /* push out the next block */
-       sendToClient(e.getChannel());
     }
 
     @Override
@@ -297,7 +277,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
      * @param msg The actual request
      */
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnStat(ChannelHandlerContext ctx, MessageEvent event, StatRequest msg)
         throws XrootdException
     {
@@ -305,7 +285,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnDirList(ChannelHandlerContext ctx, MessageEvent event, DirListRequest msg)
         throws XrootdException
     {
@@ -313,7 +293,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnMv(ChannelHandlerContext ctx, MessageEvent event, MvRequest msg)
         throws XrootdException
     {
@@ -321,7 +301,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnRm(ChannelHandlerContext ctx, MessageEvent event, RmRequest msg)
         throws XrootdException
     {
@@ -329,7 +309,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnRmDir(ChannelHandlerContext ctx, MessageEvent event, RmDirRequest msg)
         throws XrootdException
     {
@@ -337,7 +317,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnMkDir(ChannelHandlerContext ctx, MessageEvent event, MkDirRequest msg)
         throws XrootdException
     {
@@ -345,14 +325,14 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnStatx(ChannelHandlerContext ctx, MessageEvent event, StatxRequest msg)
         throws XrootdException
     {
         return redirectToDoor(ctx, event, msg);
     }
 
-    private AbstractResponseMessage
+    private Object
         redirectToDoor(ChannelHandlerContext ctx, MessageEvent event,
                        XrootdRequest msg)
         throws XrootdException
@@ -377,7 +357,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
      * @param msg The actual request
      */
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnRead(ChannelHandlerContext ctx, MessageEvent event, ReadRequest msg)
         throws XrootdException
     {
@@ -390,19 +370,11 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                                       "file.");
         }
 
-        ReadDescriptor descriptor = (ReadDescriptor) _descriptors.get(fd);
-
-        try {
-            _readers.add(descriptor.read(msg));
-        } catch (IllegalStateException e) {
-            _log.error("File with file descriptor {}: Could not be read", fd);
-            throw new XrootdException(kXR_ServerError,
-                                      "Descriptor error. File reported not open, even " +
-                                      "though it should be.");
+        if (msg.bytesToRead() == 0) {
+            return withOk(msg);
+        } else {
+            return new ChunkedFileDescriptorReadResponse(msg, MAX_FRAME_SIZE, _descriptors.get(fd));
         }
-
-        sendToClient(event.getChannel());
-        return null;
     }
 
     /**
@@ -416,7 +388,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
      * @param msg The actual request.
      */
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnReadV(ChannelHandlerContext ctx, MessageEvent event, ReadVRequest msg)
         throws XrootdException
     {
@@ -447,9 +419,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             }
         }
 
-        _readers.add(new VectorReader(msg, Lists.newArrayList(_descriptors)));
-        sendToClient(event.getChannel());
-        return null;
+        return new ChunkedFileDescriptorReadvResponse(msg, MAX_FRAME_SIZE, new ArrayList<>(_descriptors));
     }
 
     /**
@@ -475,10 +445,9 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         }
 
         FileDescriptor descriptor = _descriptors.get(fd);
-
         if (!(descriptor instanceof WriteDescriptor)) {
             _log.info("File descriptor for handle {} is read-only, user " +
-                      "to write.", fd);
+                      "tried to write.", fd);
             throw new XrootdException(kXR_IOError,
                                       "Tried to write on read only file.");
         }
@@ -562,59 +531,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     /**
-     * Reads a full response message from the Reader returned by
-     * invoking read or readV on the descriptor.
-     *
-     * @return Response to read request
-     */
-    private AbstractResponseMessage readBlock(Channel channel)
-    {
-        try {
-            while (_readers.peek() != null) {
-                Reader reader = _readers.element();
-                AbstractResponseMessage block =
-                    reader.read(MAX_FRAME_SIZE);
-                if (block != null) {
-                    return block;
-                }
-                _readers.remove();
-            }
-            return null;
-        } catch (ClosedChannelException e) {
-            Reader reader = _readers.remove();
-            return new ErrorResponse(
-                    reader.getRequest(),
-                    kXR_FileNotOpen,
-                    "File was forcefully closed by the server");
-        } catch (IOException e) {
-            Reader reader = _readers.remove();
-            return new ErrorResponse(reader.getRequest(),
-                                     kXR_IOError,
-                                     (e.getMessage() == null)
-                                     ? e.toString()
-                                     : e.getMessage());
-        }
-    }
-
-    /**
-     * Sends the next read-ahead response message to the client, or
-     * reads the next response message.
-     *
-     * @param channel Channel to the client.
-     */
-    private void sendToClient(Channel channel)
-    {
-        if (_block == null) {
-            _block = readBlock(channel);
-        }
-
-        while (_block != null && channel.isWritable()) {
-            channel.write(_block);
-            _block =  readBlock(channel);
-        }
-    }
-
-    /**
      * Gets the number of an unused file descriptor.
      * @return Number of an unused file descriptor.
      */
@@ -643,7 +559,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             _descriptors.get(fd) != null;
     }
 
-    private FileStatus stat(MoverChannel<XrootdProtocolInfo> file)
+    private FileStatus stat(RepositoryChannel file)
         throws IOException
     {
         return new FileStatus(DEFAULT_FILESTATUS_ID,
