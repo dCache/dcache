@@ -74,6 +74,11 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
                     new ThreadFactoryBuilder().setNameFormat("netty-mover-connect-timeout").setDaemon(true).build());
 
     /**
+     * Number of threads accepting connections.
+     */
+    private final int _socketThreads;
+
+    /**
      * Shared Netty server channel
      */
     private Channel _serverChannel;
@@ -84,9 +89,9 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     private InetSocketAddress _lastServerAddress;
 
     /**
-     * Shared Netty channel factory.
+     * Netty channel factory.
      */
-    private final ChannelFactory _channelFactory;
+    private ChannelFactory _channelFactory;
 
     private PortRange _portRange = new PortRange(0);
 
@@ -122,17 +127,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
                 Executors.newCachedThreadPool(new ThreadFactoryBuilder().setDaemon(true).setNameFormat(name + "-listen-%d").setThreadFactory(factory).build());
         _socketExecutor =
                 Executors.newCachedThreadPool(new ThreadFactoryBuilder().setDaemon(true).setNameFormat(name + "-net-%d").setThreadFactory(factory).build());
-
-        if (socketThreads == -1) {
-            _channelFactory =
-                new NioServerSocketChannelFactory(_acceptExecutor,
-                                                  _socketExecutor);
-        } else {
-            _channelFactory =
-                new NioServerSocketChannelFactory(_acceptExecutor,
-                                                  _socketExecutor,
-                                                  socketThreads);
-        }
+        _socketThreads = socketThreads;
     }
 
     /**
@@ -142,6 +137,19 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      */
     protected synchronized void startServer() throws IOException {
         if (_serverChannel == null) {
+            if (_channelFactory == null) {
+                if (_socketThreads == -1) {
+                    _channelFactory =
+                            new NioServerSocketChannelFactory(_acceptExecutor,
+                                    _socketExecutor);
+                } else {
+                    _channelFactory =
+                            new NioServerSocketChannelFactory(_acceptExecutor,
+                                    _socketExecutor,
+                                    _socketThreads);
+                }
+            }
+
             ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
             bootstrap.setOption("child.tcpNoDelay", false);
             bootstrap.setOption("child.keepAlive", true);
