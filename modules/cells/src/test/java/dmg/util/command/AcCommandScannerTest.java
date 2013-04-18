@@ -11,6 +11,7 @@ import dmg.util.CommandInterpreter;
 import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
 
+import static dmg.util.command.HelpFormat.PLAIN;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
@@ -59,7 +60,7 @@ public class AcCommandScannerTest
                     public static final String hh_test = "help";
                 });
 
-        assertThat(commands.get(asList("test")).getHelpHint(), is("help"));
+        assertThat(commands.get(asList("test")).getHelpHint(PLAIN), is("help"));
     }
 
     @Test
@@ -70,7 +71,7 @@ public class AcCommandScannerTest
                     public static final String fh_test = "long help";
                 });
 
-        assertThat(commands.get(asList("test")).getFullHelp(), is("long help"));
+        assertThat((String) commands.get(asList("test")).getFullHelp(PLAIN), is("long help"));
     }
 
     @Test
@@ -78,10 +79,10 @@ public class AcCommandScannerTest
     {
         Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new Object() {
-                    public final static String fh_test = "long help";
+                    public static final String fh_test = "long help";
                 });
 
-        assertThat(commands.get(asList("test")).getFullHelp(), is("long help"));
+        assertThat((String) commands.get(asList("test")).getFullHelp(PLAIN), is("long help"));
     }
 
     @Test

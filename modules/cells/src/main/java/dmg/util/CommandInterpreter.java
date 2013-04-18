@@ -1,6 +1,7 @@
 package dmg.util;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSortedMap;
 
 import java.io.Serializable;
@@ -12,6 +13,7 @@ import dmg.util.command.AcCommandScanner;
 import dmg.util.command.AnnotatedCommandScanner;
 import dmg.util.command.CommandExecutor;
 import dmg.util.command.CommandScanner;
+import dmg.util.command.HelpFormat;
 
 /**
  *
@@ -108,7 +110,7 @@ public class CommandInterpreter implements Interpretable
         }
     }
 
-    private String runHelp(Args args) {
+    private Serializable runHelp(Args args) {
         CommandEntry entry = _rootEntry;
         StringBuilder path = new StringBuilder();
         while (args.argc() > 0) {
@@ -121,13 +123,19 @@ public class CommandInterpreter implements Interpretable
             entry = ce;
         }
 
-        String help = entry.getFullHelp();
+        HelpFormat format = getHelpFormat(args.getOption("format"));
+        Serializable help = entry.getFullHelp(format);
         if (help == null) {
             StringBuilder sb = new StringBuilder();
-            entry.dumpHelpHint(path.toString(), sb);
+            entry.dumpHelpHint(path.toString(), sb, format);
             help = sb.toString();
         }
         return help;
+    }
+
+    private HelpFormat getHelpFormat(String format)
+    {
+        return Strings.isNullOrEmpty(format) ? HelpFormat.PLAIN : HelpFormat.valueOf(format.toUpperCase());
     }
 
     /**
@@ -274,7 +282,7 @@ public class CommandInterpreter implements Interpretable
         } catch (CommandSyntaxException e) {
             if (methodType == ASCII && e.getHelpText() == null) {
                 StringBuilder sb = new StringBuilder();
-                entry.dumpHelpHint(path.toString(), sb);
+                entry.dumpHelpHint(path.toString(), sb, HelpFormat.PLAIN);
                 e.setHelpText(sb.toString());
             }
             throw e;
@@ -354,16 +362,16 @@ public class CommandInterpreter implements Interpretable
             return (_commandExecutor != null) && _commandExecutor.hasACLs();
         }
 
-        public void dumpHelpHint(String top, StringBuilder sb)
+        public void dumpHelpHint(String top, StringBuilder sb, HelpFormat format)
         {
             if (_commandExecutor != null) {
-                String hint = _commandExecutor.getHelpHint();
+                String hint = _commandExecutor.getHelpHint(format);
                 if (hint != null) {
                     sb.append(top).append(hint).append("\n");
                 }
             }
             for (CommandEntry ce: _suffixes.values()) {
-                ce.dumpHelpHint(top + ce.getName() + " ", sb);
+                ce.dumpHelpHint(top + ce.getName() + " ", sb, format);
             }
         }
 
@@ -377,9 +385,9 @@ public class CommandInterpreter implements Interpretable
             return _commandExecutor.execute(arguments, methodType);
         }
 
-        public String getFullHelp()
+        public Serializable getFullHelp(HelpFormat format)
         {
-            return (_commandExecutor == null) ? null : _commandExecutor.getFullHelp();
+            return (_commandExecutor == null) ? null : _commandExecutor.getFullHelp(format);
         }
 
         public String[] getACLs()

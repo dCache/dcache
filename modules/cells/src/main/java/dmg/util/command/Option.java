@@ -35,6 +35,15 @@ public @interface Option
     /**
      * Used on the usage screen to describe the syntax of the value
      * of the option.
+     *
+     * Use the following syntax:
+     *
+     *    []         optional
+     *    |          alternation
+     *    ...        repetition
+     *    UPPERCASE  value
+     *
+     * Any other symbol is considered a literal.
      */
     String valueSpec() default "";
 

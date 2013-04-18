@@ -5,6 +5,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 
@@ -33,7 +34,7 @@ import static java.util.Arrays.asList;
  */
 public class AnnotatedCommandExecutor implements CommandExecutor
 {
-    private final static Function<Handler, Integer> GET_MAX_ARGS =
+    private static final Function<Handler, Integer> GET_MAX_ARGS =
             new Function<Handler,Integer>() {
                 @Override
                 public Integer apply(Handler handler)
@@ -41,6 +42,12 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                     return handler.getMaxArguments();
                 }
             };
+
+    private static final ImmutableMap<HelpFormat, AnnotatedCommandHelpPrinter> HELP_PRINTERS =
+            ImmutableMap.<HelpFormat, AnnotatedCommandHelpPrinter>builder()
+                    .put(HelpFormat.PLAIN, new PlainHelpPrinter())
+                    .put(HelpFormat.ANSI, new AnsiHelpPrinter())
+                    .build();
 
     private final Object _parent;
     private final Command _command;
@@ -68,18 +75,25 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         return _command.acl();
     }
 
-    @Override
-    public String getHelpHint()
+    private AnnotatedCommandHelpPrinter getHelpPrinter(HelpFormat format)
     {
-        return HelpPrinter.getHelpHint(
-                _command, _constructor.getDeclaringClass());
+        AnnotatedCommandHelpPrinter printer = HELP_PRINTERS.get(format);
+        if (printer == null) {
+            printer = HELP_PRINTERS.get(HelpFormat.PLAIN);
+        }
+        return printer;
     }
 
     @Override
-    public String getFullHelp()
+    public String getHelpHint(HelpFormat format)
     {
-        return HelpPrinter.getHelp(
-                _command, _constructor.getDeclaringClass());
+        return getHelpPrinter(format).getHelpHint(_command, _constructor.getDeclaringClass());
+    }
+
+    @Override
+    public Serializable getFullHelp(HelpFormat format)
+    {
+        return getHelpPrinter(format).getHelp(_command, _constructor.getDeclaringClass());
     }
 
     @Override

@@ -31,6 +31,7 @@ import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.RequestTimeOutException;
+import dmg.util.command.HelpFormat;
 
 /**
  * This class implements the Command Interface, which is part of the sshd-core
@@ -170,6 +171,14 @@ public class ConsoleReaderCommand implements Command, Runnable {
             try {
                 if (str == null) {
                     throw new CommandExitException();
+                }
+                if (_useColors) {
+                    String trimmed = str.trim();
+                    if (trimmed.startsWith("help ")) {
+                        str = "help -format=" + HelpFormat.ANSI + trimmed.substring(4);
+                    } else if (trimmed.equals("help")) {
+                        str = "help -format=" + HelpFormat.ANSI;
+                    }
                 }
                 result = _userAdminShell.executeCommand(str);
             } catch (CommandSyntaxException e) {

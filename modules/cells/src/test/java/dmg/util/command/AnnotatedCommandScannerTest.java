@@ -152,7 +152,7 @@ public class AnnotatedCommandScannerTest
         Map<List<String>,? extends CommandExecutor> commands =
                 _scanner.scan(new SUT());
 
-        assertThat(commands.get(asList("test")).getHelpHint(), is("# hint"));
+        assertThat(commands.get(asList("test")).getHelpHint(HelpFormat.PLAIN), is("# hint"));
     }
 
     @Test

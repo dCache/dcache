@@ -22,14 +22,22 @@ public interface CommandExecutor
     String[] getACLs();
 
     /**
-     * Returns the full help text of the command.
+     * Returns the full help information of the command.
+     *
+     * If the format is not supported, the help is returned in some other format.
+     *
+     * @param format The format to return the help in.
      */
-    String getFullHelp();
+    Serializable getFullHelp(HelpFormat format);
 
     /**
      * Returns a one-line signature and an optional description of the command.
+     *
+     * If the format is not supported, the help is returned in some other format.
+     *
+     * @param format The format to return the help in.
      */
-    String getHelpHint();
+    String getHelpHint(HelpFormat format);
 
     /**
      * Executes the command on the specified arguments.

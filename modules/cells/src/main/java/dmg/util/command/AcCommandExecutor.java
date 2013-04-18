@@ -80,7 +80,7 @@ class AcCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public String getFullHelp()
+    public String getFullHelp(HelpFormat format)
     {
         try {
             if (_fullHelp != null) {
@@ -96,7 +96,7 @@ class AcCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public String getHelpHint()
+    public String getHelpHint(HelpFormat format)
     {
         try {
             if (_helpHint != null) {
