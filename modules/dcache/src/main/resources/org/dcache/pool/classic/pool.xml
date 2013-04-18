@@ -177,7 +177,6 @@
   <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">
     <description>HSM flush queue manager</description>
     <constructor-arg ref="rep"/>
-    <constructor-arg value="${poolname}"/>
   </bean>
 
   <bean id="hsmset" class="diskCacheV111.util.HsmSet">
