@@ -2,6 +2,8 @@
 
 package org.dcache.pool.classic;
 
+import com.google.common.base.Function;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
@@ -21,6 +24,9 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
+
+import static com.google.common.collect.Iterables.toArray;
+import static com.google.common.collect.Iterables.transform;
 
 public class StorageClassContainer
     extends AbstractCellComponent
@@ -44,6 +50,20 @@ public class StorageClassContainer
     public synchronized Collection<StorageClassInfo> getStorageClassInfos()
     {
         return new ArrayList<>(_storageClasses.values());
+    }
+
+    public synchronized StorageClassFlushInfo[] getFlushInfos()
+    {
+        return toArray(transform(
+                _storageClasses.values(),
+                new Function<StorageClassInfo, StorageClassFlushInfo>()
+                {
+                    @Override
+                    public StorageClassFlushInfo apply(StorageClassInfo storageClassInfo)
+                    {
+                        return storageClassInfo.getFlushInfo();
+                    }
+                }), StorageClassFlushInfo.class);
     }
 
     public synchronized boolean poolStatusChanged()

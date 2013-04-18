@@ -453,6 +453,7 @@ public class PoolV4
     @Override
     public void beforeStop()
     {
+        _flushingThread.stop();
         _pingThread.stop();
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                 666, "Shutdown");
@@ -1873,25 +1874,6 @@ public class PoolV4
         _cleaningInterval = Integer.parseInt(args.argv(0));
         _log.info("set cleaning interval to " + _cleaningInterval);
         return "";
-    }
-
-    public static final String hh_flush_class = "<hsm> <storageClass> [-count=<count>]";
-    public String ac_flush_class_$_2(Args args)
-    {
-        String tmp = args.getOpt("count");
-        int count = ((tmp == null) || tmp.equals("")) ? 0 : Integer
-            .parseInt(tmp);
-        long id = _flushingThread.flushStorageClass(args.argv(0), args.argv(1),
-                                                    count);
-        return "Flush Initiated (id=" + id + ")";
-    }
-
-    public static final String hh_flush_pnfsid = "<pnfsid> # flushs a single pnfsid";
-    public String ac_flush_pnfsid_$_1(Args args)
-        throws CacheException, InterruptedException
-    {
-        _storageHandler.store(new PnfsId(args.argv(0)), null);
-        return "Flush Initiated";
     }
 
     public static final String hh_mover_set_max_active = "<maxActiveIoMovers> -queue=<queueName>";
