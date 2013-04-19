@@ -99,6 +99,7 @@ import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.util.IoPriority;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -516,14 +517,9 @@ public class PoolV4
 
         @Override
         public void accessTimeChanged(EntryChangeEvent event) {
-            PnfsId id = event.getPnfsId();
-            try {
-                FileAttributes fileAttributes = new FileAttributes();
-                fileAttributes.setAccessTime(System.currentTimeMillis());
-                _pnfs.setFileAttributes(id, fileAttributes);
-            } catch (CacheException e) {
-                _log.warn("Failed to update ATime: {}", e.getMessage());
-            }
+            FileAttributes fileAttributes = new FileAttributes();
+            fileAttributes.setAccessTime(System.currentTimeMillis());
+            _pnfs.notify(new PnfsSetFileAttributes(event.getPnfsId(), fileAttributes));
         }
     }
 
