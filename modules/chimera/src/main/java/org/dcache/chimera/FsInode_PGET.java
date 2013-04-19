@@ -102,6 +102,8 @@ public class FsInode_PGET extends FsInode {
         Stat ret = super.stat();
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
         ret.setSize(metadata().length());
+        // invalidate NFS cache
+        ret.setMTime(System.currentTimeMillis());
         return ret;
     }
 
