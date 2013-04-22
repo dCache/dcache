@@ -3636,8 +3636,7 @@ public final class Manager
                         spaceMessage.setFailed(-1,e);
                 }
                 catch(Throwable t) {
-                        logger.error("an operation failed: {}", t.getMessage(),
-                                t);
+                        logger.error("an operation failed:", t);
                         spaceMessage.setFailed(-1,t);
                 }
                 if (replyRequired) {
@@ -4625,7 +4624,7 @@ public final class Manager
                 List<String> linkGroupNames = new ArrayList<>(linkGroupNameVoInfoMap.keySet());
                 logger.debug("Found {} linkgroups protocolInfo={}, " +
                         "storageInfo={}, pnfsId={}", linkGroups.size(),
-                        protocolInfo, fileAttributes.getStorageInfo(), pnfsId);
+                        protocolInfo, fileAttributes, pnfsId);
                 if (linkGroupNameVoInfoMap.size()>1 &&
                     protocolInfo != null &&
                     fileAttributes != null) {
