@@ -577,6 +577,7 @@ public class HsmStorageHandler2
                     Thread.interrupted();
                 }
                 _handle.commit(null);
+                _log.info("File successfully restored from tape");
             } catch (CacheException e) {
                 _log.error(e.toString());
                 returnCode = 1;
@@ -620,8 +621,6 @@ public class HsmStorageHandler2
                 }
                 _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
                 sendBillingInfo();
-
-                _log.info("File successfully restored from tape");
             }
         }
 
