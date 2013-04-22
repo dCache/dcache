@@ -1,18 +1,24 @@
 package diskCacheV111.util ;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Maps;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 import dmg.util.Args;
-import dmg.util.CollectionFactory;
 import dmg.util.Formats;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;
+
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.unmodifiableIterable;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * An HsmSet encapsulates information about attached HSMs. The HsmSet
@@ -35,15 +41,15 @@ public class HsmSet
     implements CellCommandListener,
                CellSetupProvider
 {
-    private final Map<String,HsmInfo> _hsm = CollectionFactory.newHashMap();
+    private final ConcurrentMap<String, HsmInfo> _hsm = Maps.newConcurrentMap();
 
     /**
      * Information about a particular HSM instance.
      */
     public class HsmInfo
     {
-        private final String    _type;
-        private final String    _instance;
+        private final String _type;
+        private final String _instance;
         private final Map<String,String> _attr = new HashMap<>();
 
         /**
@@ -80,7 +86,7 @@ public class HsmSet
          *
          * @param attribute An attribute name
          */
-        public String getAttribute(String attribute)
+        public synchronized String getAttribute(String attribute)
         {
            return _attr.get(attribute);
         }
@@ -90,7 +96,7 @@ public class HsmSet
          *
          * @param attribute An attribute name
          */
-        public void unsetAttribute(String attribute)
+        public synchronized void unsetAttribute(String attribute)
         {
            _attr.remove(attribute);
         }
@@ -101,7 +107,7 @@ public class HsmSet
          * @param attribute An attribute name
          * @param value     A value string
          */
-        public void setAttribute(String attribute, String value)
+        public synchronized void setAttribute(String attribute, String value)
         {
            _attr.put(attribute, value);
         }
@@ -109,9 +115,9 @@ public class HsmSet
         /**
          * Returns the set of attributes.
          */
-        public Set<Map.Entry<String, String>> attributes()
+        public synchronized Iterable<Map.Entry<String, String>> attributes()
         {
-            return _attr.entrySet();
+            return new ArrayList<>(_attr.entrySet());
         }
     }
 
@@ -122,7 +128,7 @@ public class HsmSet
      */
     public Set<String> getHsmInstances()
     {
-        return _hsm.keySet();
+        return unmodifiableSet(_hsm.keySet());
     }
 
     /**
@@ -142,15 +148,17 @@ public class HsmSet
      *
      * @param type An HSM type name.
      */
-    public List<HsmInfo> getHsmInfoByType(String type)
+    public Iterable<HsmInfo> getHsmInfoByType(final String type)
     {
-        List<HsmInfo> result = new ArrayList<>(_hsm.size());
-        for (HsmInfo hsm : _hsm.values()) {
-            if (hsm.getType().equals(type)) {
-                result.add(hsm);
-            }
-        }
-        return result;
+        return unmodifiableIterable(filter(_hsm.values(),
+                new Predicate<HsmInfo>()
+                {
+                    @Override
+                    public boolean apply(HsmInfo hsm)
+                    {
+                        return hsm.getType().equals(type);
+                    }
+                }));
     }
 
     /**
@@ -172,11 +180,9 @@ public class HsmSet
      */
     public HsmInfo createInfo(String instance, String type)
     {
-       HsmInfo info = _hsm.get(instance);
-       if (info == null) {
-           _hsm.put(instance, info = new HsmInfo(instance, type));
-       }
-       return info;
+        HsmInfo newInfo = new HsmInfo(instance, type);
+        HsmInfo oldInfo = _hsm.putIfAbsent(instance, newInfo);
+        return (oldInfo != null) ? oldInfo : newInfo;
     }
 
     /**

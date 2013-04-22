@@ -79,6 +79,7 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.getFirst;
 
 public class HsmStorageHandler2
     extends AbstractCellComponent implements CellCommandListener
@@ -581,17 +582,14 @@ public class HsmStorageHandler2
         String hsmType = storageInfo.getHsm();
         LOGGER.trace("getStoreCommand for pnfsid={};hsm={};si={}",
                 fileAttributes.getPnfsId(), hsmType, storageInfo);
-        List<HsmSet.HsmInfo> hsms = _hsmSet.getHsmInfoByType(hsmType);
-        if (hsms.isEmpty()) {
-            throw new
-                IllegalArgumentException("Info not found for : " + hsmType);
-        }
 
         // If multiple HSMs are defined for the given type, then we
         // currently pick the first. We may consider randomizing this
         // choice.
-        HsmSet.HsmInfo hsm = hsms.get(0);
-
+        HsmSet.HsmInfo hsm = getFirst(_hsmSet.getHsmInfoByType(hsmType), null);
+        if (hsm == null) {
+            throw new IllegalArgumentException("Info not found for : " + hsmType);
+        }
         return getSystemCommand(file, fileAttributes, hsm, "put");
     }
 
