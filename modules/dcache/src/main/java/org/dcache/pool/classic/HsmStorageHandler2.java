@@ -37,7 +37,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.Batchable;
+import diskCacheV111.util.Queable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -354,7 +354,7 @@ public class HsmStorageHandler2
         return getSystemCommand(file, fileAttributes, hsm, "get");
     }
 
-    private class FetchThread extends Info implements Batchable
+    private class FetchThread extends Info implements Queable
     {
         private final ReplicaDescriptor _handle;
         private final StorageInfoMessage _infoMsg;
@@ -380,18 +380,6 @@ public class HsmStorageHandler2
         public String toString()
         {
             return getPnfsId().toString();
-        }
-
-        @Override
-        public String getClient()
-        {
-            return "[Unknown]";
-        }
-
-        @Override
-        public long getClientId()
-        {
-            return 0;
         }
 
         @Override
@@ -674,7 +662,7 @@ public class HsmStorageHandler2
         _storePnfsidList.remove(id);
     }
 
-    private class StoreThread extends Info implements Batchable
+    private class StoreThread extends Info implements Queable
     {
         private final StorageInfoMessage _infoMsg;
         private long _timestamp;
@@ -690,18 +678,6 @@ public class HsmStorageHandler2
         public String toString()
         {
             return getPnfsId().toString();
-        }
-
-        @Override
-        public String getClient()
-        {
-            return "[Unknown]";
-        }
-
-        @Override
-        public long getClientId()
-        {
-            return 0;
         }
 
         protected synchronized void setThread(Thread thread)
@@ -1012,7 +988,7 @@ public class HsmStorageHandler2
         @Override
         public String call()
         {
-            return _fetchQueue.printJobQueue(null).toString();
+            return _fetchQueue.printJobQueue();
         }
     }
 
@@ -1123,7 +1099,7 @@ public class HsmStorageHandler2
         @Override
         public String call()
         {
-            return _storeQueue.printJobQueue(null).toString();
+            return _storeQueue.printJobQueue();
         }
     }
 

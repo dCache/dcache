@@ -9,13 +9,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import diskCacheV111.util.JobScheduler;
+import diskCacheV111.util.Queable;
 import diskCacheV111.util.SimpleJobScheduler;
 
 import static org.junit.Assert.assertTrue;
 
 public class JobSchedulerTest {
 
-    public static class ExampleJob implements Runnable {
+    public static class ExampleJob implements Queable {
 
         private final CountDownLatch _doneCounter;
         private final CountDownLatch _startCounter;
@@ -53,6 +54,22 @@ public class JobSchedulerTest {
         @Override
         public String toString() {
             return _name;
+        }
+
+        @Override
+        public void queued(int id)
+        {
+        }
+
+        @Override
+        public void unqueued()
+        {
+        }
+
+        @Override
+        public boolean kill()
+        {
+            return false;
         }
     }
     private JobScheduler _jobScheduler;
