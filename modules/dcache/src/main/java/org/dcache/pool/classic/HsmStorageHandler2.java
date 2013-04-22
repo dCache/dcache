@@ -172,6 +172,12 @@ public class HsmStorageHandler2
                 _thread.interrupt();
             }
         }
+
+        @Override
+        public String toString()
+        {
+            return _pnfsId.toString() + "  " + getListenerCount() + " " + new Date(getStartTime());
+        }
     }
 
     public HsmStorageHandler2()
@@ -393,12 +399,6 @@ public class HsmStorageHandler2
                     EntryState.CACHED,
                     Collections.<StickyRecord>emptyList(),
                     EnumSet.noneOf(OpenFlags.class));
-        }
-
-        @Override
-        public String toString()
-        {
-            return getPnfsId().toString();
         }
 
         @Override
@@ -652,12 +652,6 @@ public class HsmStorageHandler2
 	    super(pnfsId);
             _infoMsg = new StorageInfoMessage(getCellAddress().toString(), pnfsId, false);
 	}
-
-        @Override
-        public String toString()
-        {
-            return getPnfsId().toString();
-        }
 
         @Override
         public void queued(int id)
@@ -919,20 +913,6 @@ public class HsmStorageHandler2
         }
     }
 
-    @Command(name = "rh jobs ls",
-            hint = "list restore queue",
-            usage = "List the HSM requests on the restore queue. Similar to rh ls, but " +
-                    "shows the queuing state and job ID for each request."
-    )
-    class RestoreJobsListCommand implements Callable<String>
-    {
-        @Override
-        public String call()
-        {
-            return _fetchQueue.printJobQueue();
-        }
-    }
-
     @Command(name = "rh kill",
             hint = "kill restore request",
             usage = "Remove an HSM restore request.")
@@ -954,23 +934,15 @@ public class HsmStorageHandler2
 
     @Command(name = "rh ls",
             hint = "list restore queue",
-            usage = "List the HSM requests on the restore queue. Similar to rh jobs ls, but " +
-                    "shows the number of stage requests issues for each file as well " +
-                    "as the time the restore request was created.")
+            usage = "List the HSM requests on the restore queue.\n\n" +
+                    "The columns in the output show: job id, job status, pnfs id, request counter, " +
+                    "and request submission time.")
     class RestoreListCommand implements Callable<String>
     {
         @Override
         public String call()
         {
-            StringBuilder sb = new StringBuilder();
-            synchronized (HsmStorageHandler2.this) {
-                for (Map.Entry<PnfsId, FetchThread> entry : _restorePnfsidList.entrySet()) {
-                    sb.append(entry.getKey()).append("  ")
-                            .append(entry.getValue().getListenerCount()).append("   ")
-                            .append(new Date(entry.getValue().getStartTime())).append("\n");
-                }
-            }
-            return sb.toString();
+            return _fetchQueue.printJobQueue();
         }
     }
 
@@ -1011,19 +983,6 @@ public class HsmStorageHandler2
         }
     }
 
-    @Command(name = "st jobs ls",
-            hint = "list store queue",
-            usage = "List the HSM requests on the store queue. Similar to st ls, but " +
-                    "shows the queuing state and job ID for each request.")
-    class StoreJobsListCommand implements Callable<String>
-    {
-        @Override
-        public String call()
-        {
-            return _storeQueue.printJobQueue();
-        }
-    }
-
     @Command(name = "st kill",
             hint = "kill store request",
             usage = "Remove an HSM store request.")
@@ -1045,24 +1004,15 @@ public class HsmStorageHandler2
 
     @Command(name = "st ls",
             hint = "list store queue",
-            usage = "List the HSM requests on the store queue. Similar to st jobs ls, but " +
-                    "shows the number of store requests issues for each file as well " +
-                    "as the time the store request was created.")
+            usage = "List the HSM requests on the store queue.\n\n" +
+                    "The columns in the output show: job id, job status, pnfs id, request counter, " +
+                    "and request submission time.")
     class StoreListCommand implements Callable<String>
     {
         @Override
         public String call()
         {
-            StringBuilder sb = new StringBuilder();
-            synchronized (HsmStorageHandler2.this) {
-                for (Map.Entry<PnfsId, StoreThread> entry : _storePnfsidList.entrySet()) {
-                    sb.append(entry.getKey()).append("  ")
-                            .append(entry.getValue().getListenerCount()).append("   ")
-                            .append(new Date(entry.getValue().getStartTime())).append("\n");
-                }
-
-            }
-            return sb.toString();
+            return _storeQueue.printJobQueue();
         }
     }
 

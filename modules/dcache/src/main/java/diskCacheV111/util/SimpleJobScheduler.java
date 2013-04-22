@@ -1,5 +1,6 @@
 package diskCacheV111.util;
 
+import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,13 +170,9 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
     @Override
     public String printJobQueue() {
-        StringBuffer sb = new StringBuffer(1024);
         synchronized (_lock) {
-            for (Job job : _jobs.values()) {
-                sb.append(job.toString()).append("\n");
-            }
+            return Joiner.on('\n').join(_jobs.values());
         }
-        return sb.toString();
     }
 
     @Override
