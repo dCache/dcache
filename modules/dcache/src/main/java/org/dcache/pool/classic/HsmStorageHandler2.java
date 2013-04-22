@@ -91,6 +91,7 @@ public class HsmStorageHandler2
 
     private final Map<PnfsId, StoreThread> _storePnfsidList = new HashMap<>();
     private final Map<PnfsId, FetchThread> _restorePnfsidList = new HashMap<>();
+
     private final JobScheduler _fetchQueue;
     private final JobScheduler _storeQueue;
     private final Executor _hsmRemoveExecutor =
@@ -110,7 +111,7 @@ public class HsmStorageHandler2
     private String _flushMessageTarget;
     private CellStub _billingStub;
 
-    public abstract class Info implements Queable
+    private abstract class Info implements Queable
     {
         private final List<CacheFileAvailable> _callbacks = new ArrayList<>();
         private final PnfsId _pnfsId;
@@ -304,13 +305,19 @@ public class HsmStorageHandler2
         return completeCommand;
     }
 
-    //////////////////////////////////////////////////////////////////////
-    //
-    //   the fetch part
-    //
-    public JobScheduler getFetchScheduler()
+    public int getMaxActiveFetchJobs()
     {
-        return _fetchQueue;
+        return _fetchQueue.getMaxActiveJobs();
+    }
+
+    public int getActiveFetchJobs()
+    {
+        return _fetchQueue.getActiveJobs();
+    }
+
+    public int getFetchQueueSize()
+    {
+        return _fetchQueue.getQueueSize();
     }
 
     public synchronized void fetch(FileAttributes fileAttributes,
@@ -343,44 +350,6 @@ public class HsmStorageHandler2
         _restorePnfsidList.remove(id);
     }
 
-    /**
-     * Returns the name of an HSM accessible for this pool and which
-     * contains the given file. Returns null if no such HSM exists.
-     */
-    private synchronized String findAccessibleLocation(FileAttributes fileAttributes)
-    {
-        StorageInfo file = fileAttributes.getStorageInfo();
-        if (file.locations().isEmpty()
-            && _hsmSet.getHsmInstances().contains(file.getHsm())) {
-            // This is for backwards compatibility until all info
-            // extractors support URIs.
-            return file.getHsm();
-        } else {
-            for (URI location : file.locations()) {
-                if (_hsmSet.getHsmInstances().contains(location.getAuthority())) {
-                    return location.getAuthority();
-                }
-            }
-        }
-        return null;
-    }
-
-    private synchronized String
-        getFetchCommand(File file, FileAttributes fileAttributes)
-    {
-        String instance = findAccessibleLocation(fileAttributes);
-        if (instance == null) {
-            throw new
-                IllegalArgumentException("HSM not defined on this pool: " +
-                                         fileAttributes.getStorageInfo().locations());
-        }
-        HsmSet.HsmInfo hsm = _hsmSet.getHsmInfoByName(instance);
-
-        LOGGER.trace("getFetchCommand for {} on HSM {}", fileAttributes, instance);
-
-        return getSystemCommand(file, fileAttributes, hsm, "get");
-    }
-
     private class FetchThread extends Info
     {
         private final ReplicaDescriptor _handle;
@@ -400,6 +369,40 @@ public class HsmStorageHandler2
                     EntryState.CACHED,
                     Collections.<StickyRecord>emptyList(),
                     EnumSet.noneOf(OpenFlags.class));
+        }
+
+        /**
+         * Returns the name of an HSM accessible for this pool and which
+         * contains the given file. Returns null if no such HSM exists.
+         */
+        private String findAccessibleLocation(FileAttributes fileAttributes)
+        {
+            StorageInfo file = fileAttributes.getStorageInfo();
+            if (file.locations().isEmpty()
+                    && _hsmSet.getHsmInstances().contains(file.getHsm())) {
+                // This is for backwards compatibility until all info
+                // extractors support URIs.
+                return file.getHsm();
+            } else {
+                for (URI location : file.locations()) {
+                    if (_hsmSet.getHsmInstances().contains(location.getAuthority())) {
+                        return location.getAuthority();
+                    }
+                }
+            }
+            return null;
+        }
+
+        private String getFetchCommand(File file, FileAttributes fileAttributes)
+        {
+            String instance = findAccessibleLocation(fileAttributes);
+            if (instance == null) {
+                throw new IllegalArgumentException("HSM not defined on this pool: " +
+                        fileAttributes.getStorageInfo().locations());
+            }
+            HsmSet.HsmInfo hsm = _hsmSet.getHsmInfoByName(instance);
+            LOGGER.trace("getFetchCommand for {} on HSM {}", fileAttributes, instance);
+            return getSystemCommand(file, fileAttributes, hsm, "get");
         }
 
         @Override
@@ -551,10 +554,6 @@ public class HsmStorageHandler2
         }
     }
 
-    //////////////////////////////////////////////////////////////////////
-    //
-    //   the remove part
-    //
     public synchronized int getMaxRemoveJobs()
     {
         return _hsmRemoveTaskExecutor.getMaximumPoolSize();
@@ -571,31 +570,19 @@ public class HsmStorageHandler2
         _hsmRemoveExecutor.execute(new FireAndForgetTask(task));
     }
 
-    //////////////////////////////////////////////////////////////////////
-    //
-    //   the store part
-    //
-    private synchronized String
-        getStoreCommand(File file, FileAttributes fileAttributes)
+    public int getMaxActiveStoreJobs()
     {
-        StorageInfo storageInfo = fileAttributes.getStorageInfo();
-        String hsmType = storageInfo.getHsm();
-        LOGGER.trace("getStoreCommand for pnfsid={};hsm={};si={}",
-                fileAttributes.getPnfsId(), hsmType, storageInfo);
-
-        // If multiple HSMs are defined for the given type, then we
-        // currently pick the first. We may consider randomizing this
-        // choice.
-        HsmSet.HsmInfo hsm = getFirst(_hsmSet.getHsmInfoByType(hsmType), null);
-        if (hsm == null) {
-            throw new IllegalArgumentException("Info not found for : " + hsmType);
-        }
-        return getSystemCommand(file, fileAttributes, hsm, "put");
+        return _storeQueue.getMaxActiveJobs();
     }
 
-    public JobScheduler getStoreScheduler()
+    public int getActiveStoreJobs()
     {
-        return _storeQueue;
+        return _storeQueue.getActiveJobs();
+    }
+
+    public int getStoreQueueSize()
+    {
+        return _storeQueue.getQueueSize();
     }
 
     public synchronized boolean store(PnfsId pnfsId, CacheFileAvailable callback)
@@ -640,7 +627,7 @@ public class HsmStorageHandler2
         _storePnfsidList.remove(id);
     }
 
-    private class StoreThread extends Info implements Queable
+    private class StoreThread extends Info
     {
         private final StorageInfoMessage _infoMsg;
         private long _timestamp;
@@ -650,6 +637,23 @@ public class HsmStorageHandler2
 	    super(pnfsId);
             _infoMsg = new StorageInfoMessage(getCellAddress().toString(), pnfsId, false);
 	}
+
+        private String getStoreCommand(File file, FileAttributes fileAttributes)
+        {
+            StorageInfo storageInfo = fileAttributes.getStorageInfo();
+            String hsmType = storageInfo.getHsm();
+            LOGGER.trace("getStoreCommand for pnfsid={};hsm={};si={}",
+                    fileAttributes.getPnfsId(), hsmType, storageInfo);
+
+            // If multiple HSMs are defined for the given type, then we
+            // currently pick the first. We may consider randomizing this
+            // choice.
+            HsmSet.HsmInfo hsm = getFirst(_hsmSet.getHsmInfoByType(hsmType), null);
+            if (hsm == null) {
+                throw new IllegalArgumentException("Info not found for : " + hsmType);
+            }
+            return getSystemCommand(file, fileAttributes, hsm, "put");
+        }
 
         @Override
         public void queued(int id)

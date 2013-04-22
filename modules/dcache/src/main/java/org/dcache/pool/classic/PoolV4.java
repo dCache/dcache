@@ -1515,12 +1515,12 @@ public class PoolV4
         info.setQueueSizes(_ioQueue.getActiveJobs() - p2pQueue.getActiveJobs(),
                            _ioQueue.getMaxActiveJobs() - p2pQueue.getMaxActiveJobs(),
                            _ioQueue.getQueueSize() - p2pQueue.getQueueSize(),
-                           _storageHandler.getFetchScheduler().getActiveJobs(),
-                           _suppressHsmLoad ? 0 : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
-                           _storageHandler.getFetchScheduler().getQueueSize(),
-                           _storageHandler.getStoreScheduler().getActiveJobs(),
-                           _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler().getMaxActiveJobs(),
-                           _storageHandler.getStoreScheduler().getQueueSize());
+                           _storageHandler.getActiveFetchJobs(),
+                           _suppressHsmLoad ? 0 : _storageHandler.getMaxActiveFetchJobs(),
+                           _storageHandler.getFetchQueueSize(),
+                           _storageHandler.getActiveStoreJobs(),
+                           _suppressHsmLoad ? 0 : _storageHandler.getMaxActiveStoreJobs(),
+                           _storageHandler.getStoreQueueSize());
         return info;
     }
 
