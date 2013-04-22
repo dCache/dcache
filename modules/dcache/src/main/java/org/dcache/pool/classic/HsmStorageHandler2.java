@@ -1,6 +1,7 @@
 package org.dcache.pool.classic;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.io.Files;
@@ -10,13 +11,11 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PreDestroy;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,19 +36,20 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.Queable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.HsmLocationExtractorFactory;
+import diskCacheV111.util.HsmRunSystem;
 import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RunSystem;
+import diskCacheV111.util.Queable;
 import diskCacheV111.util.SimpleJobScheduler;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -109,11 +109,13 @@ public class HsmStorageHandler2
     private String _flushMessageTarget;
     private CellStub _billingStub;
 
-    public class Info
+    public abstract class Info implements Queable
     {
         private final List<CacheFileAvailable> _callbacks = new ArrayList<>();
         private final PnfsId _pnfsId;
         private long _startTime = System.currentTimeMillis();
+        protected Thread _thread;
+        private boolean _killed;
 
         private Info(PnfsId pnfsId)
         {
@@ -150,6 +152,24 @@ public class HsmStorageHandler2
                     LOGGER.error("Exception in callback to " + callback.getClass().getName() +
                             ". Please report to support@dcache.org.", e);
                 }
+            }
+        }
+
+        protected synchronized void setThread(Thread thread)
+                throws InterruptedException
+        {
+            if (_killed) {
+                throw new InterruptedException("Killed before script could start");
+            }
+            _thread = thread;
+        }
+
+        @Override
+        public synchronized void kill()
+        {
+            _killed = true;
+            if (_thread != null) {
+                _thread.interrupt();
             }
         }
     }
@@ -354,12 +374,11 @@ public class HsmStorageHandler2
         return getSystemCommand(file, fileAttributes, hsm, "get");
     }
 
-    private class FetchThread extends Info implements Queable
+    private class FetchThread extends Info
     {
         private final ReplicaDescriptor _handle;
         private final StorageInfoMessage _infoMsg;
         private long _timestamp;
-        private Thread _thread;
 
         public FetchThread(FileAttributes fileAttributes)
             throws CacheException, FileInCacheException
@@ -386,22 +405,6 @@ public class HsmStorageHandler2
         public void queued(int id)
         {
             _timestamp = System.currentTimeMillis();
-        }
-
-        protected synchronized void setThread(Thread thread)
-        {
-            _thread = thread;
-        }
-
-        @Override
-        public synchronized boolean kill()
-        {
-            if (_thread == null) {
-                return false;
-            }
-
-            _thread.interrupt();
-            return true;
         }
 
         private void sendBillingInfo()
@@ -438,7 +441,6 @@ public class HsmStorageHandler2
         @Override
         public void run()
         {
-            int returnCode;
             Exception excep = null;
             PnfsId pnfsId = getPnfsId();
             FileAttributes attributes = _handle.getFileAttributes();
@@ -460,23 +462,7 @@ public class HsmStorageHandler2
                     _handle.allocate(fileSize);
                     LOGGER.debug("Got Space ({} bytes)", fileSize);
 
-                    RunSystem run =
-                        new RunSystem(fetchCommand, MAX_LINES, _maxRestoreRun);
-                    run.go();
-                    returnCode = run.getExitValue();
-                    if (returnCode != 0) {
-                        /*
-                         * while shell do not return error code bigger than 255,
-                         * do a trick here
-                         */
-                        if (returnCode == 71 ) {
-                            returnCode = CacheException.HSM_DELAY_ERROR;
-                        }
-
-                        throw new CacheException(returnCode,
-                                                 "HSM script failed: " +
-                                                 run.getErrorString());
-                    }
+                    new HsmRunSystem(fetchCommand, MAX_LINES, _maxRestoreRun).execute();
 
                     doChecksum(_handle);
                 } finally {
@@ -489,27 +475,21 @@ public class HsmStorageHandler2
                 LOGGER.info("File successfully restored from tape");
             } catch (CacheException e) {
                 LOGGER.error(e.toString());
-                returnCode = 1;
                 excep = e;
             } catch (InterruptedException e) {
                 LOGGER.error("Process interrupted (timed out)");
-                returnCode = 1;
-                excep = e;
+                excep = new TimeoutCacheException("HSM script was killed (" + e.getMessage() + ")", e);
             } catch (IOException e) {
                 LOGGER.error("Process got an I/O error: {}", e.toString());
-                returnCode = 2;
                 excep = e;
             } catch (IllegalThreadStateException  e) {
                 LOGGER.error("Cannot stop process: {}", e.toString());
-                returnCode = 3;
                 excep = e;
             } catch (IllegalArgumentException e) {
                 LOGGER.error("Cannot determine 'hsmInfo': {}", e.getMessage());
-                returnCode = 4;
                 excep = e;
             } catch (RuntimeException e) {
                 LOGGER.error(e.toString(), e);
-                returnCode = 5;
                 excep = e;
             } finally {
                 _handle.close();
@@ -666,7 +646,6 @@ public class HsmStorageHandler2
     {
         private final StorageInfoMessage _infoMsg;
         private long _timestamp;
-        private Thread _thread;
 
 	public StoreThread(PnfsId pnfsId)
         {
@@ -678,22 +657,6 @@ public class HsmStorageHandler2
         public String toString()
         {
             return getPnfsId().toString();
-        }
-
-        protected synchronized void setThread(Thread thread)
-        {
-            _thread = thread;
-        }
-
-        @Override
-        public synchronized boolean kill()
-        {
-            if (_thread == null) {
-                return false;
-            }
-
-            _thread.interrupt();
-            return true;
         }
 
         @Override
@@ -729,7 +692,6 @@ public class HsmStorageHandler2
 	@Override
         public void run()
         {
-            int returnCode;
             PnfsId pnfsId = getPnfsId();
             Throwable excep = null;
 
@@ -780,43 +742,22 @@ public class HsmStorageHandler2
                     String storeCommand =
                         getStoreCommand(handle.getFile(), fileAttributes);
 
-                    RunSystem run =
-                        new RunSystem(storeCommand, MAX_LINES, _maxStoreRun);
-                    run.go();
-                    returnCode = run.getExitValue();
-                    if (returnCode != 0) {
-                        LOGGER.error("HSM script returned {}: {}", returnCode, run.getErrorString());
-                        throw new CacheException(returnCode, run.getErrorString());
-                    }
-
-                    String outputData = run.getOutputString();
-                    if (outputData != null && outputData.length() != 0) {
-                        BufferedReader in =
-                            new BufferedReader(new StringReader(outputData));
-                        String line = null;
+                    String output = new HsmRunSystem(storeCommand, MAX_LINES, _maxStoreRun).execute();
+                    for (String uri : Splitter.on("\n").trimResults().omitEmptyStrings().split(output)) {
                         try {
-                            while ((line = in.readLine()) != null) {
-
-                                String uri = line.trim();
-                                if(uri.isEmpty()) {
-                                    continue;
-                                }
-                                URI location = HsmLocationExtractorFactory.validate(new URI(uri));
-                                storageInfo.addLocation(location);
-                                storageInfo.isSetAddLocation(true);
-                                LOGGER.debug("{}: added HSM location {}", pnfsId, location);
-                            }
-                        } catch (URISyntaxException use) {
-                            LOGGER.error("HSM script produced BAD URI: {}", line);
-                            throw new CacheException(2, use.getMessage());
-                        } catch (IOException ie) {
-                            // never happens on strings
-                            throw new RuntimeException("Bug detected");
+                            URI location = HsmLocationExtractorFactory.validate(new URI(uri));
+                            storageInfo.addLocation(location);
+                            storageInfo.isSetAddLocation(true);
+                            LOGGER.debug("{}: added HSM location {}", pnfsId, location);
+                        } catch (IllegalArgumentException | URISyntaxException e) {
+                            LOGGER.error("HSM script produced BAD URI: {}", uri);
+                            throw new CacheException(2, e.getMessage(), e);
                         }
                     }
 
                     fileAttributesForNotification.setAccessLatency(fileAttributes.getAccessLatency());
-                    fileAttributesForNotification.setRetentionPolicy(fileAttributes.getRetentionPolicy());
+                    fileAttributesForNotification.setRetentionPolicy(fileAttributes
+                            .getRetentionPolicy());
                     fileAttributesForNotification.setStorageInfo(storageInfo);
                     fileAttributesForNotification.setSize(fileAttributes.getSize());
                 } finally {
@@ -992,39 +933,19 @@ public class HsmStorageHandler2
         }
     }
 
-    @Command(name = "rh jobs remove",
-            hint = "remove queued restore request",
-            usage = "Remove an HSM request from the restore queue. A request is only " +
-                    "removed as long as the request is waiting for execution. See also " +
-                    "rh jobs kill.")
-    class RestoreJobsRemoveCommand implements Callable<String>
-    {
-        @Argument
-        int jobId;
-
-        @Override
-        public String call() throws NoSuchElementException
-        {
-            _fetchQueue.remove(jobId);
-            return "Removed";
-        }
-    }
-
-    @Command(name = "rh jobs kill",
+    @Command(name = "rh kill",
             hint = "kill restore request",
-            usage = "Kill an HSM restore request. If the request is still queued, the effect is " +
-                    "identical to using rh jobs remove. If the restore script is running it " +
-                    "will be terminated.")
-    class RestoreJobsKillCommand implements Callable<String>
+            usage = "Remove an HSM restore request.")
+    class RestoreKillCommand implements Callable<String>
     {
         @Argument
         int jobId;
 
-        @Option(name = "force")
+        @Option(name = "force", usage = "Terminate the HSM script if it is running.")
         boolean force;
 
         @Override
-        public String call()
+        public String call() throws NoSuchElementException, IllegalStateException
         {
             _fetchQueue.kill(jobId, force);
             return "Kill initialized";
@@ -1103,39 +1024,19 @@ public class HsmStorageHandler2
         }
     }
 
-    @Command(name = "st jobs remove",
-            hint = "remove queued store request",
-            usage = "Remove an HSM request from the store queue. A request is only " +
-                    "removed as long as the request is waiting for execution. See also " +
-                    "st jobs kill.")
-    class StoreJobsRemoveCommand implements Callable<String>
-    {
-        @Argument
-        int jobId;
-
-        @Override
-        public String call()
-        {
-            _storeQueue.remove(jobId);
-            return "Removed";
-        }
-    }
-
-    @Command(name = "st jobs kill",
+    @Command(name = "st kill",
             hint = "kill store request",
-            usage = "Kill an HSM store request. If the request is still queued, the effect is " +
-                    "identical to using st jobs remove. If the restore script is running it " +
-                    "will be terminated.")
-    class StoreJobsKillCommand implements Callable<String>
+            usage = "Remove an HSM store request.")
+    class StoreKillCommand implements Callable<String>
     {
         @Argument
         int jobId;
 
-        @Option(name = "force")
+        @Option(name = "force", usage = "Terminate the HSM script if it is running.")
         boolean force;
 
         @Override
-        public String call()
+        public String call() throws NoSuchElementException, IllegalStateException
         {
             _storeQueue.kill(jobId, force);
             return "Kill initialized";

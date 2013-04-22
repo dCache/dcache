@@ -22,7 +22,7 @@ public class JobSchedulerTest {
         private final CountDownLatch _startCounter;
         private final String _name;
         private final long _waitTime;
-        private AtomicBoolean _isInterrupted = new AtomicBoolean(false);
+        private AtomicBoolean _isKilled = new AtomicBoolean(false);
 
         public ExampleJob(String name, CountDownLatch startCounter, CountDownLatch doneCounter, long waitTime) {
             _name = name;
@@ -38,8 +38,7 @@ public class JobSchedulerTest {
                     _startCounter.countDown();
                 }
                 Thread.sleep(_waitTime);
-            } catch (InterruptedException ie) {
-                _isInterrupted.set(true);
+            } catch (InterruptedException ignored) {
             } finally {
                 if (_doneCounter != null) {
                     _doneCounter.countDown();
@@ -47,8 +46,8 @@ public class JobSchedulerTest {
             }
         }
 
-        public boolean isInterrupted() {
-            return _isInterrupted.get();
+        public boolean isKilled() {
+            return _isKilled.get();
         }
 
         @Override
@@ -67,9 +66,9 @@ public class JobSchedulerTest {
         }
 
         @Override
-        public boolean kill()
+        public void kill()
         {
-            return false;
+            _isKilled.set(true);
         }
     }
     private JobScheduler _jobScheduler;
@@ -114,6 +113,6 @@ public class JobSchedulerTest {
 
         doneCounter.await();
 
-        assertTrue("Job is not interrupted", job.isInterrupted());
+        assertTrue("Job is not interrupted", job.isKilled());
     }
 }

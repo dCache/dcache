@@ -18,5 +18,5 @@ public interface Queable extends Runnable {
      *
      * @return true if successful, false otherwise
      */
-    public boolean kill();
+    public void kill();
 }

@@ -12,7 +12,6 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import dmg.cells.nucleus.CDC;
 
@@ -50,7 +49,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         private int _status = WAITING;
         private final Queable _runnable;
         private final int _id;
-        private Future<?> _future;
         private CDC _cdc;
 
         private SJob(Queable runnable, int id) {
@@ -84,25 +82,13 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
 
         public synchronized void start() {
-            _future = _jobExecutor.submit(new FireAndForgetTask(this));
+            _jobExecutor.submit(new FireAndForgetTask(this));
             _status = ACTIVE;
         }
 
-        public synchronized boolean kill(boolean force)
+        public synchronized void kill()
         {
-            if (_future == null) {
-                throw new IllegalStateException("Not running");
-            }
-
-            if (_runnable.kill()) {
-                return true;
-            }
-            if (!force) {
-                return false;
-            }
-
-            _future.cancel(true);
-            return true;
+            _runnable.kill();
         }
 
         @Override
@@ -160,7 +146,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     @Override
     public int add(Queable runnable) throws InvocationTargetException {
         synchronized (_lock) {
-
             int id = _nextId++;
 
             try {
@@ -195,47 +180,28 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
     @Override
     public void kill(int jobId, boolean force)
-        throws NoSuchElementException
+        throws IllegalStateException, NoSuchElementException
     {
         synchronized (_lock) {
             SJob job = _jobs.get(jobId);
             if (job == null) {
-                throw new NoSuchElementException("Job not found : Job-" + jobId);
+                throw new NoSuchElementException("Job "+ jobId + " not found");
             }
-
-            // System.out.println("Huch : "+job._id+" <-> "+jobId+" :
-            // "+job._runnable.toString()) ;
-
             switch (job._status) {
             case WAITING:
-                remove(jobId);
-                return;
+                _queue.remove(job);
+                _jobs.remove(job._id);
+                job._runnable.unqueued();
+                break;
             case ACTIVE:
-                job.kill(force);
-                return;
+                if (!force) {
+                    throw new IllegalStateException("Job is active. Use force to remove.");
+                }
+                job.kill();
+                break;
             default:
-                throw new NoSuchElementException("Job is "
-                                                 + job.getStatusString()
-                                                 + " : Job-" + jobId);
+                throw new IllegalStateException("Job is " + job.getStatusString());
             }
-        }
-    }
-
-    @Override
-    public void remove(int jobId) throws NoSuchElementException {
-        synchronized (_lock) {
-            SJob job = _jobs.get(jobId);
-            if (job == null) {
-                throw new NoSuchElementException("Job not found : Job-" + jobId);
-            }
-            if (job._status != WAITING) {
-                throw new NoSuchElementException("Job is "
-                        + job.getStatusString() + " : Job-" + jobId);
-            }
-
-            _queue.remove(job);
-            _jobs.remove(job._id);
-            job._runnable.unqueued();
         }
     }
 
@@ -295,7 +261,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
                     if (job._status == WAITING) {
                         job._runnable.unqueued();
                     } else if (job._status == ACTIVE) {
-                        job.kill(true);
+                        job.kill();
                     }
                     long start = System.currentTimeMillis();
                     while ((_activeJobs > 0)

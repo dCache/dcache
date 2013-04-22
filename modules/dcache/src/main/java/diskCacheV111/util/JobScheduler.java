@@ -22,9 +22,6 @@ public interface JobScheduler
     public void kill(int jobId, boolean force)
             throws NoSuchElementException;
 
-    public void remove(int jobId)
-            throws NoSuchElementException;
-
     public String printJobQueue();
 
     public int getMaxActiveJobs();
