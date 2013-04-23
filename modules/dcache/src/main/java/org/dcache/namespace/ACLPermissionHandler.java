@@ -99,6 +99,10 @@ public class ACLPermissionHandler implements PermissionHandler
                                    FileAttributes parentAttr,
                                    FileAttributes childAttr)
     {
+        if (parentAttr == null) {
+            return ACCESS_DENIED;
+        }
+
         Permission permissionParent = getPermission(subject, parentAttr);
         Permission permissionChild = getPermission(subject, childAttr);
         return AccessType.valueOf(AclNFSv4Matcher.isAllowed(permissionParent,
