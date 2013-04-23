@@ -1,5 +1,6 @@
 package org.dcache.gplazma;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
@@ -7,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
+import java.lang.reflect.Modifier;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -60,6 +62,7 @@ import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Collections2.filter;
 import static com.google.common.collect.Iterables.getFirst;
+import static com.google.common.collect.Iterables.removeIf;
 
 public class GPlazma
 {
@@ -68,6 +71,14 @@ public class GPlazma
 
     private static final LoginMonitor LOGGING_LOGIN_MONITOR =
             new LoggingLoginMonitor();
+    private static final Predicate<Object> IS_PUBLIC = new Predicate<Object>()
+    {
+        @Override
+        public boolean apply(Object o)
+        {
+            return Modifier.isPublic(o.getClass().getModifiers());
+        }
+    };
 
     private KnownFailedLogins _failedLogins = new KnownFailedLogins();
 
@@ -320,9 +331,10 @@ public class GPlazma
         Set<Object> attributes = doSessionPhase(sessionStrategy, monitor,
                 authorizedPrincipals);
 
+        removeIf(authorizedPrincipals, not(IS_PUBLIC));
+
         return buildReply(monitor, subject, authorizedPrincipals, attributes);
     }
-
 
     private Set<Principal> doAuthPhase(AuthenticationStrategy strategy,
             LoginMonitor monitor, Subject subject)
