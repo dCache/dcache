@@ -1,13 +1,14 @@
 package org.dcache.gplazma;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Collections2.filter;
-import static com.google.common.collect.Iterables.getFirst;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.base.Predicates.instanceOf;
-
+import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
+import java.lang.reflect.Modifier;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -16,20 +17,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-
 import java.util.concurrent.CopyOnWriteArraySet;
-import javax.security.auth.Subject;
 
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.commons.util.NDC;
-import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
 import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
+import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.loader.CachingPluginLoaderDecorator;
 import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.PluginLoadingException;
@@ -56,8 +55,13 @@ import org.dcache.gplazma.strategies.SessionStrategy;
 import org.dcache.gplazma.strategies.StrategyFactory;
 import org.dcache.gplazma.validation.ValidationStrategy;
 import org.dcache.gplazma.validation.ValidationStrategyFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.Collections2.filter;
+import static com.google.common.collect.Iterables.getFirst;
+import static com.google.common.collect.Iterables.removeIf;
 
 public class GPlazma
 {
@@ -66,6 +70,14 @@ public class GPlazma
 
     private static final LoginMonitor LOGGING_LOGIN_MONITOR =
             new LoggingLoginMonitor();
+    private static final Predicate<Object> IS_PUBLIC = new Predicate<Object>()
+    {
+        @Override
+        public boolean apply(Object o)
+        {
+            return Modifier.isPublic(o.getClass().getModifiers());
+        }
+    };
 
     private KnownFailedLogins _failedLogins = new KnownFailedLogins();
 
@@ -304,9 +316,10 @@ public class GPlazma
         Set<Object> attributes = doSessionPhase(sessionStrategy, monitor,
                 authorizedPrincipals);
 
+        removeIf(authorizedPrincipals, not(IS_PUBLIC));
+
         return buildReply(monitor, subject, authorizedPrincipals, attributes);
     }
-
 
     private Set<Principal> doAuthPhase(AuthenticationStrategy strategy,
             LoginMonitor monitor, Subject subject)
