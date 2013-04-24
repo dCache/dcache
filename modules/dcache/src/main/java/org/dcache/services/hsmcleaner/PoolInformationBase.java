@@ -137,7 +137,6 @@ public class PoolInformationBase implements CellMessageReceiver
     public final static String hh_pools_attached_to_hsm = "<hsm> # Lists pools attached to HSM <hsm>";
     synchronized public String ac_pools_attached_to_hsm_$_1(Args args)
     {
-
         String hsmName = args.argv(0);
         StringBuilder sb = new StringBuilder();
         Collection<PoolInformation> listPools = _hsmToPool.get(hsmName);
@@ -156,18 +155,22 @@ public class PoolInformationBase implements CellMessageReceiver
     public final static String hh_hsms_attached_to_pool = "<pool> # Lists HSMs attached to pool <pool>";
     synchronized public String ac_hsms_attached_to_pool_$_1(Args args)
     {
-
         String poolName = args.argv(0);
         StringBuilder sb = new StringBuilder();
-        Collection<String> listHSMs = this.getPool(poolName).getHsmInstances();
+        PoolInformation pool = this.getPool(poolName);
 
-        if (listHSMs == null || listHSMs.isEmpty()) {
-              sb.append("There are no HSMs attached to pool ").append(poolName);
+        if (pool == null) {
+            sb.append("No information available about pool " + poolName);
         } else {
-              sb.append("List of HSMs attached to pool ").append(poolName).append(" : \n");
-              for(String hsm : listHSMs) {
-                   sb.append("HSM:  ").append(hsm).append("\n");
-              }
+            Collection<String> listHSMs = pool.getHsmInstances();
+            if (listHSMs == null || listHSMs.isEmpty()) {
+                sb.append("There are no HSMs attached to pool ").append(poolName);
+            } else {
+                sb.append("List of HSMs attached to pool ").append(poolName).append(" : \n");
+                for(String hsm : listHSMs) {
+                    sb.append("HSM:  ").append(hsm).append("\n");
+                }
+            }
         }
         return sb.toString();
     }
