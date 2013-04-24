@@ -3,4 +3,8 @@
         <name>jaas</name>
         <class>org.dcache.gplazma.plugins.JaasPlugin</class>
     </plugin>
+    <plugin>
+        <name>mutator</name>
+        <class>org.dcache.gplazma.plugins.MutatorPlugin</class>
+    </plugin>
 </plugins>
