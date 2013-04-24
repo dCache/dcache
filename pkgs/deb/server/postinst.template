@@ -22,6 +22,7 @@ Please fix this and reinstall this package." >&2
 
     # ensure directory ownership
     chown dcache:dcache /var/lib/dcache
+    chown dcache:dcache /var/lib/dcache/alarms
     chown dcache:dcache /var/lib/dcache/config
     chown dcache:dcache /var/lib/dcache/billing
     chown dcache:dcache /var/lib/dcache/plots
