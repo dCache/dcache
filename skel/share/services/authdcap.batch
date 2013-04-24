@@ -9,6 +9,7 @@ check -strong dcapIoQueueOverwrite
 check -strong port
 check -strong pnfsmanager
 check -strong poolmanager
+check -strong gplazma
 check -strong srmSpaceManagerEnabled
 check -strong loginBroker
 check -strong truncate
@@ -54,6 +55,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -poolManager=${myPoolManager} \
              -poolProxy=${myPoolManager} \
              -pinManager=PinManager \
+             -gplazma=\"${gplazma}\" \
+             -billing=billing \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \
              -io-queue=${dcapIoQueue} \
              -io-queue-overwrite=${dcapIoQueueOverwrite} \

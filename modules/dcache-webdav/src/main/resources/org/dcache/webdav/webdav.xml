@@ -44,7 +44,7 @@
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
       <description>Billing communication stub</description>
-      <property name="destination" value="billing"/>
+      <property name="destination" value="${billing}"/>
   </bean>
 
 

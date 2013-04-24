@@ -70,6 +70,7 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -allowCleaningPreciousFiles=\"${allowCleaningPreciousFiles}\" \
     -poolupDestination=\"${poolupDestination}\" \
     -pnfsmanager=\"${pnfsmanager}\" \
+    -billing=billing \
     -flushMessageTarget=\"${flushMessageTarget}\" \
     -sweeper=\"${sweeper}\" \
     -xrootd-mover-disk-threads=\"${xrootdMoverDiskThreads}\" \

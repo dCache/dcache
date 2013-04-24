@@ -382,6 +382,16 @@ public abstract class AbstractFtpDoorV1
     )
     protected String _pnfsManager;
 
+    @Option(name = "gplazma",
+            description = "Cell path to gPlazma",
+            defaultValue = "gPlazma")
+    protected String _gPlazma;
+
+    @Option(name = "billing",
+            description = "Cell path to billing",
+            defaultValue = "billing")
+    protected String _billing;
+
     @Option(
         name = "clientDataPortRange"
     )
@@ -618,6 +628,7 @@ public abstract class AbstractFtpDoorV1
     protected CellStub _billingStub;
     protected CellStub _poolManagerStub;
     protected CellStub _poolStub;
+    protected CellStub _gPlazmaStub;
     protected TransferRetryPolicy _readRetryPolicy;
     protected TransferRetryPolicy _writeRetryPolicy;
 
@@ -1166,8 +1177,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_useLoginService) {
-            _loginStrategy =
-                new RemoteLoginStrategy(new CellStub(this, new CellPath("gPlazma"), 30000));
+            _loginStrategy = new RemoteLoginStrategy(_gPlazmaStub);
         } else {
             /* Use kpwd file if login service is not enabled.
              */
@@ -1202,12 +1212,15 @@ public abstract class AbstractFtpDoorV1
                              _engine.getInetAddress());
 
         _billingStub =
-            new CellStub(this, new CellPath("billing"));
+            new CellStub(this, new CellPath(_billing));
         _poolManagerStub =
             new CellStub(this, new CellPath(_poolManager),
                          _poolManagerTimeout * 1000);
         _poolStub =
             new CellStub(this, null, _poolTimeout * 1000);
+
+        _gPlazmaStub =
+                new CellStub(this, new CellPath(_gPlazma), 30000);
 
         _readRetryPolicy =
             new TransferRetryPolicy(_maxRetries, _retryWait * 1000,

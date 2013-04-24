@@ -135,6 +135,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -pnfsmanager=${pnfsmanager} \
     -poolmanager=${doorPoolManager} \
     -gplazma=${gplazma} \
+    -billing=billing \
     -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
     -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
     -loginBroker=${loginBroker} \

@@ -9,6 +9,7 @@ check -strong poolmanager
 check -strong pnfsmanager
 check -strong spacemanager
 check -strong loginBroker
+check -strong gplazma
 check -strong gsidcapIoQueueOverwrite
 check -strong gsidcapMaxLogin
 check -strong srmSpaceManagerEnabled
@@ -47,6 +48,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -poolManager=${doorPoolManager}  \
               -poolProxy=${doorPoolManager} \
               -pinManager=PinManager \
+              -gplazma=\"${gplazma}\" \
+              -billing=billing \
               -loginBroker=${loginBroker} \
               -brokerUpdateTime=120 \
               -protocolFamily=gsidcap \

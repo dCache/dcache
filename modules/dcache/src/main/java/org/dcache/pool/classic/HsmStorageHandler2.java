@@ -7,6 +7,7 @@ import com.google.common.base.Throwables;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,6 +57,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
@@ -93,6 +95,7 @@ public class HsmStorageHandler2
     private long _maxRemoveRun = _maxRuntime;
     private int _maxLines = 200;
     private String _flushMessageTarget;
+    private CellStub _billingStub;
 
     ////////////////////////////////////////////////////////////////////////////////
     //
@@ -222,6 +225,12 @@ public class HsmStorageHandler2
 	    throw new IllegalArgumentException("Illegal value of max active restores: " + e.getMessage(),
 					       e);
 	}
+    }
+
+    @Required
+    public void setBillingStub(CellStub billingStub)
+    {
+        _billingStub = billingStub;
     }
 
     @Override
@@ -503,7 +512,7 @@ public class HsmStorageHandler2
         private void sendBillingInfo()
         {
             try {
-                sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
+                _billingStub.send(_infoMsg);
             } catch (NoRouteToCellException e) {
                 _log.error("Failed to send message to billing: " + e.getMessage());
             }
@@ -834,7 +843,7 @@ public class HsmStorageHandler2
         private void sendBillingInfo()
         {
             try {
-                sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
+                _billingStub.send(_infoMsg);
             } catch (NoRouteToCellException e) {
                 _log.error("Failed to send message to billing: " + e.getMessage());
             }

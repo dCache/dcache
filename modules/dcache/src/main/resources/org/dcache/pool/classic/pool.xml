@@ -192,6 +192,7 @@
     <constructor-arg ref="hsmset"/>
     <constructor-arg ref="csm"/>
     <property name="flushMessageTarget" value="${flushMessageTarget}"/>
+    <property name="billingStub" ref="billing-stub"/>
   </bean>
 
   <bean id="storage-interpreter" class="org.dcache.pool.classic.HsmStorageInterpreter">
@@ -213,7 +214,7 @@
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
       <description>Billing communication stub</description>
-      <property name="destination" value="billing"/>
+      <property name="destination" value="${billing}"/>
   </bean>
 
   <bean id="pnfsStub" class="org.dcache.cells.CellStub">

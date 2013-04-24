@@ -22,7 +22,7 @@
 
     <bean id="billing-stub" class="org.dcache.cells.CellStub">
         <description>Billing communication stub</description>
-        <property name="destination" value="billing"/>
+        <property name="destination" value="${billing}"/>
     </bean>
 
     <bean id="scheduled-thread-pool"
@@ -77,7 +77,7 @@
 
     <bean id="login-stub" class="org.dcache.cells.CellStub">
         <description>Login cell communication stub</description>
-        <property name="destination" value="gPlazma"/>
+        <property name="destination" value="${gplazma}"/>
         <property name="timeout" value="3000"/>
     </bean>
 

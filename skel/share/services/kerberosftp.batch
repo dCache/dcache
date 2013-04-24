@@ -13,6 +13,7 @@ check -strong clientDataPortRange
 check -strong gsiftpMaxLogin
 check -strong loginBroker
 check -strong loginBrokerUpdateTime
+check -strong gplazma
 check -strong performanceMarkerPeriod
 check -strong gsiftpPoolManagerTimeout
 check -strong gsiftpPoolTimeout
@@ -73,6 +74,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -protocolFamily=gkftp \
              -protocolVersion=1.0.0 \
              -loginBroker=${loginBroker} \
+             -gplazma=\"${gplazma}\" \
+             -billing=billing \
              -perfMarkerPeriod=${performanceMarkerPeriod} \
              -poolManagerTimeout=${gsiftpPoolManagerTimeout} \
              -poolTimeout=${gsiftpPoolTimeout} \
