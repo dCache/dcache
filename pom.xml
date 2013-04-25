@@ -97,12 +97,12 @@
         <dependency>
             <groupId>org.globus</groupId>
             <artifactId>cog-jglobus</artifactId>
-            <version>1.8.0-dcache.1</version>
+            <version>1.8.0-dcache.2</version>
         </dependency>
         <dependency>
             <groupId>org.globus</groupId>
             <artifactId>cog-url</artifactId>
-            <version>1.8.0-dcache.1</version>
+            <version>1.8.0-dcache.2</version>
         </dependency>
         <dependency>
             <groupId>org.globus</groupId>
@@ -551,6 +551,12 @@
             <groupId>org.dcache</groupId>
             <artifactId>xrootd4j-gsi</artifactId>
             <version>1.0.4</version>
+            <exclusions>
+                 <exclusion>
+                     <groupId>org.dcache</groupId>
+                     <artifactId>cog-jglobus</artifactId>
+                 </exclusion>
+             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.dcache</groupId>
