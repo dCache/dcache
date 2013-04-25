@@ -122,6 +122,7 @@ define context billingHistory-db-yes.exe endDefine
    set alias billingHistory class org.dcache.services.billing.html.HttpBillingHistoryEngine "billingHistory \
      -plotsDir=${httpd.static-content.plots} \
      -subDir=${httpd.static-content.plots.subdir} \
+     -generatePlots=${generatePlots} \
      -plotsProperties=${billingPlotPropertiesFile} \
      -plotsTimeout=30 \
      -exportType=png \
