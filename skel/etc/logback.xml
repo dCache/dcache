@@ -169,11 +169,6 @@
     </threshold>
 
     <threshold>
-      <logger>liquibase</logger>
-      <level>warn</level>
-    </threshold>
-
-    <threshold>
       <appender>stdout</appender>
       <logger>root</logger>
       <level>warn</level>
