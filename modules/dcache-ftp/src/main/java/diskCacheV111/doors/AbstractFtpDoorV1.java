@@ -1176,6 +1176,17 @@ public abstract class AbstractFtpDoorV1
             _local_host = _engine.getLocalAddress().getHostAddress();
         }
 
+        _billingStub =
+                new CellStub(this, new CellPath(_billing));
+        _poolManagerStub =
+                new CellStub(this, new CellPath(_poolManager),
+                        _poolManagerTimeout * 1000);
+        _poolStub =
+                new CellStub(this, null, _poolTimeout * 1000);
+
+        _gPlazmaStub =
+                new CellStub(this, new CellPath(_gPlazma), 30000);
+
         if (_useLoginService) {
             _loginStrategy = new RemoteLoginStrategy(_gPlazmaStub);
         } else {
@@ -1210,17 +1221,6 @@ public abstract class AbstractFtpDoorV1
 
 	_origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                              _engine.getInetAddress());
-
-        _billingStub =
-            new CellStub(this, new CellPath(_billing));
-        _poolManagerStub =
-            new CellStub(this, new CellPath(_poolManager),
-                         _poolManagerTimeout * 1000);
-        _poolStub =
-            new CellStub(this, null, _poolTimeout * 1000);
-
-        _gPlazmaStub =
-                new CellStub(this, new CellPath(_gPlazma), 30000);
 
         _readRetryPolicy =
             new TransferRetryPolicy(_maxRetries, _retryWait * 1000,
