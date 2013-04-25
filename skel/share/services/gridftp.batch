@@ -73,8 +73,8 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -protocolFamily=gsiftp \
              -protocolVersion=1.0.0 \
              -loginBroker=${loginBroker} \
-             -gplazma=\"${gplazma}\" \
-             -billing=billing \
+             -gplazma=\"${gplazma}\" \
+             -billing=billing \
              -perfMarkerPeriod=${performanceMarkerPeriod} \
              -poolManagerTimeout=${gsiftpPoolManagerTimeout} \
              -poolTimeout=${gsiftpPoolTimeout} \
