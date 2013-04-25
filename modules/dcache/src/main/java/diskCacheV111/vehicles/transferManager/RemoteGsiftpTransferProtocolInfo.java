@@ -1,24 +1,24 @@
 package diskCacheV111.vehicles.transferManager;
 
 import com.google.common.base.Throwables;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.Security;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.util.Collections;
-
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
 
@@ -51,6 +51,12 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
 
     private PrivateKey key;
     private X509Certificate[] certChain;
+
+    static
+    {
+        // The getCredential method relies on the BC provider
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     public RemoteGsiftpTransferProtocolInfo(String protocol,
                                             int major,
