@@ -23,6 +23,7 @@ import org.ietf.jgss.GSSManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,6 +31,10 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
+
+import dmg.cells.nucleus.CDC;
+
+import org.dcache.commons.util.NDC;
 
 import static org.dcache.util.Files.checkDirectory;
 import static org.dcache.util.Files.checkFile;
@@ -540,27 +545,35 @@ public class JettyGSIConnector
         @Override
         public void run()
         {
-            try {
-                int handshakeTimeout = getHandshakeTimeout();
-                int oldTimeout = _socket.getSoTimeout();
-                if (handshakeTimeout > 0) {
-                    _socket.setSoTimeout(handshakeTimeout);
-                }
-
-                GsiSocket gsiSocket = (GsiSocket) _socket;
-                gsiSocket.startHandshake();
-
-                if (handshakeTimeout > 0) {
-                    _socket.setSoTimeout(oldTimeout);
-                }
-
-                super.run();
-            } catch (IOException e) {
-                _log.warn(e.toString());
+            try (CDC ignored = new CDC()) {
                 try {
-                    close();
-                } catch (IOException e2) {
-                    _log.warn(e2.toString());
+                    NDC.push(_socket.getInetAddress().getHostAddress() + ":" +
+                            _socket.getPort());
+                    int handshakeTimeout = getHandshakeTimeout();
+                    int oldTimeout = _socket.getSoTimeout();
+                    if (handshakeTimeout > 0) {
+                        _socket.setSoTimeout(handshakeTimeout);
+                    }
+
+                    GsiSocket gsiSocket = (GsiSocket) _socket;
+                    gsiSocket.startHandshake();
+
+                    if (handshakeTimeout > 0) {
+                        _socket.setSoTimeout(oldTimeout);
+                    }
+
+                    super.run();
+                } catch (EOFException ignoredException) {
+                    _log.debug("Client disconnected while establishing " +
+                            "secure connection");
+                } catch (IOException e) {
+                    _log.warn("Problem while establishing secure connection: {}",
+                            e.toString());
+                    try {
+                        close();
+                    } catch (IOException e2) {
+                        _log.warn("Failed to close local socket: {}", e2.toString());
+                    }
                 }
             }
         }
