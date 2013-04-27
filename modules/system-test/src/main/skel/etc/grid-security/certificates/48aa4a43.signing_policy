@@ -1,0 +1,3 @@
+access_id_CA    X509    '/DC=org/DC=dCache/CN=disposable-CA'
+pos_rights      globus  CA:sign
+cond_subjects   globus  '"/DC=org/DC=dCache/*"'
