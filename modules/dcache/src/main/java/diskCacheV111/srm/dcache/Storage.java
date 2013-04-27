@@ -232,6 +232,9 @@ public final class Storage
 
     private final static String INFINITY = "infinity";
 
+    private static final String SPACEMANAGER_DISABLED_MESSAGE =
+            "support for space reservations is disabled";
+
     /* these are the  protocols
      * that are not suitable for either put or get */
     private static final String[] SRM_PUT_NOT_SUPPORTED_PROTOCOLS
@@ -280,6 +283,7 @@ public final class Storage
     private DirectoryListSource _listSource;
 
     private boolean _isOnlinePinningEnabled = true;
+    private boolean _isSpaceManagerEnabled;
 
     @Required
     public void setLoginBrokerStub(CellStub loginBrokerStub)
@@ -293,10 +297,10 @@ public final class Storage
         _pnfsStub = pnfsStub;
     }
 
-    @Required
     public void setSpaceManagerStub(CellStub spaceManagerStub)
     {
         _spaceManagerStub = spaceManagerStub;
+        _isSpaceManagerEnabled = true;
     }
 
     @Required
@@ -1610,22 +1614,24 @@ public final class Storage
 
             /* Determine space tokens.
              */
-            try {
-                GetFileSpaceTokensMessage msg =
-                    new GetFileSpaceTokensMessage(attributes.getPnfsId());
-                msg = _spaceManagerStub.sendAndWait(msg);
+            if(_isSpaceManagerEnabled) {
+                try {
+                    GetFileSpaceTokensMessage msg =
+                        new GetFileSpaceTokensMessage(attributes.getPnfsId());
+                    msg = _spaceManagerStub.sendAndWait(msg);
 
-                if (msg.getSpaceTokens() != null) {
-                    fmd.spaceTokens = new long[msg.getSpaceTokens().length];
-                    System.arraycopy(msg.getSpaceTokens(), 0,
-                                     fmd.spaceTokens, 0,
-                                     msg.getSpaceTokens().length);
+                    if (msg.getSpaceTokens() != null) {
+                        fmd.spaceTokens = new long[msg.getSpaceTokens().length];
+                        System.arraycopy(msg.getSpaceTokens(), 0,
+                                         fmd.spaceTokens, 0,
+                                         msg.getSpaceTokens().length);
+                    }
+                } catch (TimeoutCacheException e) {
+                    /* SpaceManager is optional, so we don't clasify this
+                     * as an error.
+                     */
+                    _log.info(e.getMessage());
                 }
-            } catch (TimeoutCacheException e) {
-                /* SpaceManager is optional, so we don't clasify this
-                 * as an error.
-                 */
-                _log.info(e.getMessage());
             }
 
             return fmd;
@@ -2562,7 +2568,10 @@ public final class Storage
             DcacheFileMetaData fmd = super.toFmd(dir, entry);
             if (!fmd.isDirectory) {
                 lookupLocality(entry.getFileAttributes(), fmd);
-                lookupTokens(entry.getFileAttributes(), fmd);
+
+                if (_isSpaceManagerEnabled) {
+                    lookupTokens(entry.getFileAttributes(), fmd);
+                }
             }
             return fmd;
         }
@@ -2624,17 +2633,14 @@ public final class Storage
             String accessLatency,
             String description,
             SrmReserveSpaceCallbacks callbacks) {
-        AuthorizationRecord duser = (AuthorizationRecord) user;
 
-        SrmReserveSpaceCompanion.reserveSpace(
-                duser,
-                sizeInBytes,
-                spaceReservationLifetime,
-                retentionPolicy,
-                accessLatency,
-                description,
-                callbacks,
-                _spaceManagerStub);
+        if (_isSpaceManagerEnabled) {
+            SrmReserveSpaceCompanion.reserveSpace((AuthorizationRecord) user,
+                    sizeInBytes, spaceReservationLifetime, retentionPolicy,
+                    accessLatency, description, callbacks, _spaceManagerStub);
+        } else {
+            callbacks.ReserveSpaceFailed(SPACEMANAGER_DISABLED_MESSAGE);
+        }
     }
 
     @Override
@@ -2642,20 +2648,18 @@ public final class Storage
             String spaceToken,
             Long releaseSizeInBytes, // everything is null
             SrmReleaseSpaceCallbacks callbacks) {
-        long longSpaceToken;
-        try {
-            longSpaceToken = Long.parseLong(spaceToken);
-        } catch(Exception e){
-            callbacks.ReleaseSpaceFailed("invalid space token="+spaceToken);
-            return;
-        }
+        if (_isSpaceManagerEnabled) {
+            try {
+                long token = Long.parseLong(spaceToken);
 
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-        SrmReleaseSpaceCompanion.releaseSpace(duser,
-                longSpaceToken,
-                releaseSizeInBytes,
-                callbacks,
-                _spaceManagerStub);
+                SrmReleaseSpaceCompanion.releaseSpace((AuthorizationRecord) user,
+                    token, releaseSizeInBytes, callbacks, _spaceManagerStub);
+            } catch(NumberFormatException e){
+                callbacks.ReleaseSpaceFailed("invalid space token="+spaceToken);
+            }
+        } else {
+            callbacks.ReleaseSpaceFailed(SPACEMANAGER_DISABLED_MESSAGE);
+        }
     }
 
     @Override
@@ -2667,22 +2671,19 @@ public final class Storage
                                         boolean overwrite,
                                         SrmUseSpaceCallbacks callbacks)
     {
-        try {
-            long longSpaceToken = Long.parseLong(spaceToken);
-            AuthorizationRecord duser = (AuthorizationRecord) user;
-            FsPath fsPath = getPath(surl);
-            SrmMarkSpaceAsBeingUsedCompanion.markSpace(duser,
-                                                       longSpaceToken,
-                                                       fsPath.toString(),
-                                                       sizeInBytes,
-                                                       useLifetime,
-                                                       overwrite,
-                                                       callbacks,
-                                                       _spaceManagerStub);
-        } catch (SRMInvalidPathException e) {
-            callbacks.SrmUseSpaceFailed("Invalid path: " + e.getMessage());
-        } catch (NumberFormatException e){
-            callbacks.SrmUseSpaceFailed("invalid space token=" + spaceToken);
+        if (_isSpaceManagerEnabled) {
+            try {
+                SrmMarkSpaceAsBeingUsedCompanion.markSpace((AuthorizationRecord) user,
+                        Long.parseLong(spaceToken), getPath(surl).toString(),
+                        sizeInBytes, useLifetime, overwrite, callbacks,
+                        _spaceManagerStub);
+            } catch (SRMInvalidPathException e) {
+                callbacks.SrmUseSpaceFailed("Invalid path: " + e.getMessage());
+            } catch (NumberFormatException ignored){
+                callbacks.SrmUseSpaceFailed("invalid space token=" + spaceToken);
+            }
+        } else {
+            callbacks.SrmUseSpaceFailed(SPACEMANAGER_DISABLED_MESSAGE);
         }
     }
 
@@ -2692,19 +2693,25 @@ public final class Storage
                                           URI surl,
                                           SrmCancelUseOfSpaceCallbacks callbacks)
     {
-        try {
-            long longSpaceToken = Long.parseLong(spaceToken);
-            AuthorizationRecord duser = (AuthorizationRecord) user;
-            FsPath fsPath = getPath(surl);
-            SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(duser,
-                                                           longSpaceToken,
-                                                           fsPath.toString(),
-                                                           callbacks,
-                                                           _spaceManagerStub);
-        } catch (SRMInvalidPathException e) {
-            callbacks.CancelUseOfSpaceFailed("Invalid path: " + e.getMessage());
-        } catch (NumberFormatException e){
-            callbacks.CancelUseOfSpaceFailed("invalid space token="+spaceToken);
+        if (_isSpaceManagerEnabled) {
+            try {
+                SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace((AuthorizationRecord) user,
+                        Long.parseLong(spaceToken), getPath(surl).toString(),
+                        callbacks, _spaceManagerStub);
+            } catch (SRMInvalidPathException e) {
+                callbacks.CancelUseOfSpaceFailed("Invalid path: " + e.getMessage());
+            } catch (NumberFormatException ignored){
+                callbacks.CancelUseOfSpaceFailed("invalid space token="+spaceToken);
+            }
+        } else {
+            callbacks.CancelUseOfSpaceFailed(SPACEMANAGER_DISABLED_MESSAGE);
+        }
+    }
+
+    private void guardSpaceManagerEnabled() throws SRMException
+    {
+        if (!_isSpaceManagerEnabled) {
+            throw new SRMException(SPACEMANAGER_DISABLED_MESSAGE);
         }
     }
 
@@ -2720,6 +2727,7 @@ public final class Storage
         throws SRMException
     {
         _log.debug("srmGetSpaceMetaData");
+        guardSpaceManagerEnabled();
         if(spaceTokens == null) {
             throw new SRMException("null array of space tokens");
         }
@@ -2828,8 +2836,9 @@ public final class Storage
     public String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException
     {
-        AuthorizationRecord duser = (AuthorizationRecord) user;
         _log.debug("srmGetSpaceTokens ("+description+")");
+        guardSpaceManagerEnabled();
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         GetSpaceTokens getTokens =
             new GetSpaceTokens(duser,
                                description);
@@ -2950,6 +2959,7 @@ public final class Storage
                                              long newReservationLifetime)
         throws SRMException
     {
+        guardSpaceManagerEnabled();
         try {
             long longSpaceToken = Long.parseLong(spaceToken);
             ExtendLifetime extendLifetime =
