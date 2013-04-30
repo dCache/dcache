@@ -45,7 +45,6 @@ import javax.security.auth.Subject;
 import diskCacheV111.services.space.message.*;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import org.dcache.cells.CellStub;
 import dmg.util.Args;
 import dmg.cells.nucleus.ExceptionEvent;
@@ -280,11 +279,6 @@ public final class Manager
                 }
         }
 
-        @Override
-        public CellVersion getCellVersion(){
-                return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                                       "$Revision: 1.63 $");
-        }
 
         @Override
         public void getInfo(java.io.PrintWriter printWriter) {

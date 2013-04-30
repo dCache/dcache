@@ -925,19 +925,4 @@ public class AbstractCell extends CellAdapter
             sendReply(endpoint, envelope, result);
         }
     }
-
-    /**
-     * A static version of the getCellVersion method.  This method is called
-     * by reflection in
-     * {@link dmg.cells.services.login.LoginManager#getCellVersion}
-     * @return
-     */
-    public static CellVersion getStaticCellVersion(){
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision$" );
-    }
-
-    @Override
-    public  CellVersion getCellVersion(){
-        return getStaticCellVersion() ;
-    }
 }

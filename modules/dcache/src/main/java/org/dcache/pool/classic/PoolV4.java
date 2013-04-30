@@ -90,6 +90,7 @@ import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 import java.util.Arrays;
 import javax.security.auth.Subject;
+import org.dcache.util.Version;
 import org.dcache.util.IoPriority;
 
 public class PoolV4
@@ -125,6 +126,7 @@ public class PoolV4
      * used by PoolManager to recognize pool restarts
      */
     private final long _serialId = System.currentTimeMillis();
+    private static final CellVersion VERSION = new CellVersion(Version.of(PoolV4.class));
     private PoolV2Mode _poolMode;
     private boolean _reportOnRemovals = false;
     private boolean _suppressHsmLoad = false;
@@ -433,7 +435,7 @@ public class PoolV4
     {
         _pingThread.stop();
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
-                    666, "Shutdown");
+                666, "Shutdown");
     }
 
     public void cleanUp()
@@ -472,12 +474,6 @@ public class PoolV4
                         "Pool disabled: " + event.getMessage());
             break;
         }
-    }
-
-    public CellVersion getCellVersion()
-    {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision$");
     }
 
     /**
@@ -595,7 +591,7 @@ public class PoolV4
         poolinfo.setPoolCostInfo(getPoolCostInfo());
         poolinfo.setTagMap(_tags);
         poolinfo.setErrorStatus(_poolStatusCode, _poolStatusMessage);
-        poolinfo.setCellVersion(getCellVersion());
+        poolinfo.setCellVersion(VERSION);
         return poolinfo;
     }
 
@@ -603,8 +599,7 @@ public class PoolV4
     public void getInfo(PrintWriter pw)
     {
         pw.println("Base directory    : " + _baseDir);
-        pw.println("Revision          : [$Revision$]");
-        pw.println("Version           : " + getCellVersion() + " (Sub="
+        pw.println("Version           : " + VERSION + " (Sub="
                    + _version + ")");
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));

@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutionException;
 //cells
 import dmg.util.StreamEngine;
 import dmg.util.Args;
-import dmg.cells.nucleus.CellVersion;
 
 //jgss
 import org.ietf.jgss.GSSContext;
@@ -82,11 +81,6 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         _gssFlavor = "gsi";
 
         ftpDoorName="GSI FTP";
-    }
-
-    public static CellVersion getStaticCellVersion() {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision: 1.17 $");
     }
 
     @Override

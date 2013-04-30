@@ -1,6 +1,16 @@
 package org.dcache.chimera.namespace;
 
-import java.io.File;
+import com.jolbox.bonecp.BoneCPDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.TransientDataAccessResourceException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -9,52 +19,34 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
+import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
+import org.dcache.cells.AbstractCell;
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
+import org.dcache.cells.Option;
 import org.dcache.services.hsmcleaner.PoolInformationBase;
 import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.services.hsmcleaner.Sink;
-
-import diskCacheV111.vehicles.PoolRemoveFilesMessage;
-import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
-import org.dcache.cells.AbstractCell;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.Option;
 import org.dcache.util.BroadcastRegistrationTask;
-
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.TransientDataAccessResourceException;
-import org.springframework.dao.DataIntegrityViolationException;
-
-import javax.sql.DataSource;
-
-import com.jolbox.bonecp.BoneCPDataSource;
 
 /**
  * @author Irina Kozlova
@@ -795,13 +787,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     }
 
-    @Override
-    public CellVersion getCellVersion(){
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision: 1.23 $" );
-    }
-
-    @Override
     public void getInfo( PrintWriter pw ){
         pw.println("ChimeraCleaner $Revision: 1.23 $");
     }

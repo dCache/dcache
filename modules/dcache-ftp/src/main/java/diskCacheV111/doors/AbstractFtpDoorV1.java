@@ -111,7 +111,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.util.CommandExitException;
 import dmg.util.Args;
 import dmg.util.StreamEngine;
@@ -1128,12 +1127,6 @@ public abstract class AbstractFtpDoorV1
                 _methodDict.put(name.substring(3), method);
             }
         }
-    }
-
-    public static CellVersion getStaticCellVersion()
-    {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision$");
     }
 
     public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)

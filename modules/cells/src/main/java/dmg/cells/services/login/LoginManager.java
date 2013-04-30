@@ -2,21 +2,51 @@
 //
 package  dmg.cells.services.login ;
 
-import static com.google.common.collect.Maps.newHashMap;
-
-import java.lang.reflect.* ;
-import java.net.* ;
-import java.io.* ;
-import java.nio.channels.*;
-import java.util.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.cells.nucleus.*;
-import dmg.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.Vector;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEvent;
+import dmg.cells.nucleus.CellEventListener;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
+import dmg.util.KeepAliveListener;
+import dmg.util.StreamEngine;
+import dmg.util.UserValidatable;
 
 import org.dcache.auth.Subjects;
+import org.dcache.util.Version;
+
+import static com.google.common.collect.Maps.newHashMap;
 
 /**
  **
@@ -38,6 +68,7 @@ public class       LoginManager
   private int          _loginCounter = 0 , _loginFailures = 0 ;
   private boolean      _sending = false ;
   private Class<?>     _loginClass        = Object.class ;
+  private final CellVersion _version;
   private Constructor<?>_loginConstructor  = null ;
   private Constructor<?>_authConstructor   = null ;
   private Method       _loginPrintMethod  = null ;
@@ -129,6 +160,7 @@ public class       LoginManager
             _log.info( "Using login class : {}", _loginClass.getName() ) ;
             args.shift() ;
          }
+         _version = new CellVersion(Version.of(_loginClass));
          // get the authentication
          _authenticator = args.getOpt("authenticator") ;
          _authenticator = _authenticator == null ? "pam" : _authenticator ;
@@ -244,17 +276,10 @@ public class       LoginManager
     }
 
     @Override
-public CellVersion getCellVersion(){
-     try{
+    public CellVersion getCellVersion(){
+         return _version;
+    }
 
-       Method m = _loginClass.getMethod( "getStaticCellVersion" , (Class[])null ) ;
-
-       return (CellVersion)m.invoke( (Object)null , (Object[])null ) ;
-
-     }catch(Exception ee ){
-         return super.getCellVersion() ;
-     }
-  }
   public class LoginBrokerHandler implements Runnable {
 
      private static final long EAGER_UPDATE_TIME = 1000;
