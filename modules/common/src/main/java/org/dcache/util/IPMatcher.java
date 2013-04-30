@@ -20,11 +20,9 @@ package org.dcache.util;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.net.InetAddresses.forString;
 import static com.google.common.net.InetAddresses.getEmbeddedIPv4ClientAddress;
 import static com.google.common.primitives.Ints.fromByteArray;
@@ -42,40 +40,6 @@ public class IPMatcher {
     private static final int IPv6_HALF_MASK = 64;
 
     static NetworkReality networkReality = new NetworkReality();
-    /**
-     * Matches an IP with the string representation of a host name.
-     *
-     * This method is deprecated. Please use one of the following new methods:
-     * - matchHostGlob
-     * - matchCidrPattern
-     * They are also more powerful and support a wider range of ipv6 features.
-     *
-     * @param pattern String representation of a host, either as a hostname glob or an CIDR IP[/subnet] pattern.
-     * @param ip InetAddress to be checked for matching of the mask
-     * @return true if ip belongs into the fits mask, otherwise false.
-     */
-    @Deprecated
-    public static boolean match(String pattern, InetAddress ip)
-    {
-        try {
-            Matcher matcher;
-            if ((matcher = IPV4_PATTERN.matcher(pattern)).matches()) {
-                String netmaskGroup = matcher.group(MASK_BITS_GROUP_INDEX);
-                int netmask = isNullOrEmpty(netmaskGroup) ? 32 : convertIPv4MaskStringToCidr(netmaskGroup);
-                return match(InetAddress.getByName(matcher.group(HOST_IP_GROUP_INDEX)), ip, netmask);
-            } else if ((matcher = IPV6_PATTERN.matcher(pattern)).matches()) {
-                String netmaskGroup = matcher.group(MASK_BITS_GROUP_INDEX);
-                int netmask = isNullOrEmpty(netmaskGroup) ? 128 : Integer.parseInt(netmaskGroup);
-                return match(InetAddress.getByName(matcher.group(HOST_IP_GROUP_INDEX)), ip, netmask);
-            }
-
-            String hostname = networkReality.getHostNameFor(ip);
-            return new Glob(pattern).matches(hostname);
-
-        } catch (UnknownHostException unknownHostException) {
-            return false;
-        }
-    }
 
     public static int convertIPv4MaskStringToCidr(String maskString) {
         int mask;

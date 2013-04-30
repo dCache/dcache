@@ -19,15 +19,12 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     private static final int _minor = 1;
     private static final int _major = 4;
     private final stateid4 _stateId;
-    @Deprecated // Can be removed in 2.7
-    private final String[] _knownNames;
     private CellPath _door;
     private final InetSocketAddress _socketAddress;
 
     public NFS4ProtocolInfo(InetSocketAddress clientSocketAddress, stateid4 stateId) {
         _stateId = stateId;
         _socketAddress = clientSocketAddress;
-        _knownNames = new String[] { _socketAddress.getAddress().getHostAddress() };
     }
 
     //

@@ -18,12 +18,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
 	private int _major;
 
-        @Deprecated // Can be removed in 2.7
-        private final String[] _hosts;
-
-        @Deprecated // Can be removed in 2.7
-        private int _port;
-
         private InetSocketAddress _clientSocketAddress;
 
 	private CellPath _pathToDoor;
@@ -47,8 +41,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 		_minor = minor;
 		_major = major;
                 _clientSocketAddress = clientAddress;
-                _hosts = new String[] {_clientSocketAddress.getAddress().getHostAddress() };
-                _port = _clientSocketAddress.getPort();
 		_pathToDoor = pathToDoor;
 		_pnfsId = pnfsID;
 		_xrootdFileHandle = xrootdFileHandle;

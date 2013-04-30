@@ -345,62 +345,21 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
     }
 
-    /*
-     * Returns all PNFSIDs from the DB
-     *
-     * @deprecated
-     */
-    @Override
-    public Iterator<String> pnfsIds() {
-        try {
-            return new PnfsIdIterator();
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            _log.error(e.toString(), e);
-        }
-        return new HashSet<String>().iterator(); // Empty set
-    }
-
     /**
      * Returns all PNFSIDs from the DB
      */
-    public Iterator<String> getPnfsIds() {
-        try {
-            return new PnfsIdIterator();
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            _log.error(e.toString(), e);
-        }
-        return new HashSet<String>().iterator(); // Empty set
-    }
-
-    /*
-     * Returns all PNFSIDs for the given pool from the DB.
-     *
-     * @deprecated
-     */
     @Override
-    public Iterator<String> pnfsIds(String poolName) {
-        try {
-            return new PnfsIdIterator(poolName);
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            _log.error(e.toString(), e);
-        }
-        return new HashSet<String>().iterator(); // Empty set
+    public Iterator<String> getPnfsIds() throws SQLException
+    {
+        return new PnfsIdIterator();
     }
 
     /**
      * Returns all PNFSIDs for the given pool from the DB
      */
-    public Iterator<String> getPnfsIds(String poolName) {
-        try {
-            return new PnfsIdIterator(poolName);
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            _log.error(e.toString(), e);
-        }
-        return new HashSet<String>().iterator(); // Empty set
+    public Iterator<String> getPnfsIds(String poolName) throws SQLException
+    {
+        return new PnfsIdIterator(poolName);
     }
 
     /**
@@ -982,22 +941,6 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
     }
 
-    /*
-     * Return the list of PNFSIDs which are older than 'timestamp'
-     *
-     * @deprecated
-     */
-    @Override
-    public Iterator<String> pnfsIds(long timestamp) {
-        try {
-            return new PnfsIdIterator(timestamp);
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            _log.error(e.toString(), e);
-        }
-        return new HashSet<String>().iterator(); // Empty set
-    }
-
     /**
      * Return the list of PNFSIDs which are older than 'timestamp'
      */
@@ -1220,7 +1163,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     }
 
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws SQLException
     {
         System.out.println("Test ReplicaDbV1, cvsId=" + _cvsId);
 
@@ -1228,14 +1171,14 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         ReplicaDbV1 db = new ReplicaDbV1(null);
 
         System.out.println("List pnfsId's in all pools");
-        for (Iterator<String> i = db.pnfsIds(); i.hasNext();) {
+        for (Iterator<String> i = db.getPnfsIds(); i.hasNext();) {
             System.out.println(i.next());
         }
 
         for (Iterator<String> p = db.getPools(); p.hasNext();) {
             String pool = p.next();
             System.out.println("Pool : " + pool);
-            for (Iterator<String> j = db.pnfsIds(pool); j.hasNext();) {
+            for (Iterator<String> j = db.getPnfsIds(pool); j.hasNext();) {
                 System.out.println(j.next());
             }
         }

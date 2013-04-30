@@ -463,27 +463,6 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
         }
     }
 
-    /** @deprecated */
-    @Deprecated
-    public void say(String s)
-    {
-        info(s);
-    }
-
-    /** @deprecated */
-    @Deprecated
-    public void esay(String s)
-    {
-        error(s);
-    }
-
-    /** @deprecated */
-    @Deprecated
-    public void esay(Throwable t)
-    {
-        error(t);
-    }
-
     /**
      * Convert an instance to a specific type (kind of intelligent
      * casting).  Note: you can set primitive types as input

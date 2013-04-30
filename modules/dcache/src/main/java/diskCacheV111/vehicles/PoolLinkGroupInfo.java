@@ -66,12 +66,6 @@ public class PoolLinkGroupInfo implements Serializable {
         return _availableSpaceInBytes;
     }
 
-    @Deprecated
-    public Set<String> getAttribute(String attribute) {
-        return _attributes.get(attribute);
-    }
-
-
     /**
      *
      * @return true if LinkGroup allows custodial files

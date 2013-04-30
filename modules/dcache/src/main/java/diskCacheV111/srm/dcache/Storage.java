@@ -2168,7 +2168,6 @@ public final class Storage
                                 getCellDomainName(),
                                 config.getBuffer_size(),
                                 config.getTcp_buffer_size(),
-                                remoteCredentialId,
                                 (GlobusGSSCredentialImpl) delegatedCredential);
                 gsiftpProtocolInfo.setEmode(true);
                 gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());

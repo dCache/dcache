@@ -2,6 +2,7 @@
 
 package diskCacheV111.replicaManager ;
 
+import java.sql.SQLException;
 import java.util.Iterator;
 
 import diskCacheV111.util.PnfsId;
@@ -14,7 +15,7 @@ public interface ReplicaDb1 extends ReplicaDb {
     static final String OFFLINE_PREPARE = "offline-prepare";
     static final String DRAINOFF = "drainoff";
 
-    public Iterator<String> pnfsIds( String poolName ) ;
+    public Iterator<String> getPnfsIds(String poolName) throws SQLException;
     public Iterator<String> getPools( ) ;
     public Iterator<String> getPoolsReadable( ) ;
     public Iterator<String> getPoolsWritable( ) ;
@@ -33,7 +34,6 @@ public interface ReplicaDb1 extends ReplicaDb {
     public void addTransaction(PnfsId pnfsId, long timestamp, int count);
     public void removeTransaction(PnfsId pnfsId);
     public long getTimestamp(PnfsId pnfsId);
-    public Iterator<String> pnfsIds(long timestamp);
 
     public void removePool( String poolName ) ;
 

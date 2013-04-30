@@ -7,10 +7,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-@SuppressWarnings("deprecation")
 
 public class IPMatcherTest {
 
@@ -18,45 +14,6 @@ public class IPMatcherTest {
     @After
     public void TearDown() {
         IPMatcher.networkReality = new NetworkReality();
-    }
-
-    @Test
-    public void testHostWildcartByIp() throws UnknownHostException {
-        IPMatcher.networkReality = mock(NetworkReality.class);
-        InetAddress nairi = InetAddress.getByName("192.0.2.1");
-        when(IPMatcher.networkReality.getHostNameFor(nairi)).
-                thenReturn("nairi.desy.de");
-
-        boolean match = IPMatcher.match("*.desy.de", nairi);
-        assertTrue("failed to match host by domain", match);
-    }
-
-    @Test
-    public void testIpGlobMatchWithNetmask() throws UnknownHostException {
-        boolean match = IPMatcher.match("131.169.214.0/24", InetAddress.getByName("131.169.214.1"));
-
-        assertTrue(match);
-    }
-
-    @Test
-    public void testIpGlobMatch() throws UnknownHostException {
-        boolean match = IPMatcher.match("131.169.214.1", InetAddress.getByName("131.169.214.1"));
-
-        assertTrue(match);
-    }
-
-    @Test
-    public void testIPv6IpGlobMatchWithNetmask() throws UnknownHostException {
-        boolean match = IPMatcher.match("fe80::0:0:0:0/64", InetAddress.getByName("fe80::BAD:F00D:BAD:F00D"));
-
-        assertTrue(match);
-    }
-
-    @Test
-    public void testIPv6IpGlobMatch() throws UnknownHostException {
-        boolean match = IPMatcher.match("fe80::BAD:F00D:BAD:F00D", InetAddress.getByName("fe80::BAD:F00D:BAD:F00D"));
-
-        assertTrue(match);
     }
 
     @Test
@@ -131,19 +88,6 @@ public class IPMatcherTest {
                 96);
 
         assertFalse("Match should have failed.", match);
-    }
-
-    @Test
-    public void testMixed() throws UnknownHostException {
-
-        IPMatcher.networkReality = mock(NetworkReality.class);
-        InetAddress ip = InetAddress.getByName("127.0.0.1");
-        when(IPMatcher.networkReality.getHostNameFor(ip)).thenReturn("localhost");
-
-        boolean match = IPMatcher.match( "localhost" ,
-                InetAddress.getByName("127.0.0.1") );
-
-        assertTrue("Failed to match localhost.", match);
     }
 
     @Test

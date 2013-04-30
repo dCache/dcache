@@ -66,21 +66,12 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.vehicles ;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 
 public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
     private int    _minor;
     private int    _major;
-
-    @Deprecated // Can be removed in 2.7
-    private String _host;
-
-    @Deprecated // Can be removed in 2.7
-    private int    _port;
-
     private InetSocketAddress _addr;
     private long   _transferTime;
     private long   _bytesTransferred;
@@ -131,8 +122,6 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
         _minor = minor ;
         _major = major ;
         _addr  = addr ;
-        _host = addr.getHostString();
-        _port = addr.getPort();
         _parallelStart = start;
         _parallelMin = min;
         _parallelMax = max;
@@ -270,15 +259,5 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     @Override
     public InetSocketAddress getSocketAddress() {
         return _addr;
-    }
-
-    // For compatibility with pre 2.6
-    private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
-        stream.defaultReadObject();
-        if (_addr == null) {
-            _addr = new InetSocketAddress(_host, _port);
-        }
     }
 }

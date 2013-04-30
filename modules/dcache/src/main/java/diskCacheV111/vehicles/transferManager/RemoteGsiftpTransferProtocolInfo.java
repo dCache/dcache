@@ -5,8 +5,6 @@ import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.security.PrivateKey;
@@ -23,10 +21,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     private final String name;
     private final int minor;
     private final int major;
-    @Deprecated // Can be removed in 2.7
-    private final String [] hosts;
-    @Deprecated // Can be removed in 2.7
-    private final int port;
     private InetSocketAddress addr;
     private final String gsiftpUrl;
     private long transferTime;
@@ -37,8 +31,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     private int streams_num = 5;
     private int bufferSize;
     private int tcpBufferSize;
-    @Deprecated // for compatibility with pools before 1.9.14
-    private final Long requestCredentialId;
     private final String user;
 
     private PrivateKey key;
@@ -53,8 +45,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             String gsiftpTranferManagerDomain,
                                             int bufferSize,
                                             int tcpBufferSize,
-                                            @Deprecated
-                                            Long requestCredentialId,
                                             GlobusGSSCredentialImpl credential)
             throws GSSException
     {
@@ -67,7 +57,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
              gsiftpTranferManagerDomain,
              bufferSize,
              tcpBufferSize,
-             requestCredentialId,
              credential,
              null);
     }
@@ -81,8 +70,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             String gsiftpTranferManagerDomain,
                                             int bufferSize,
                                             int tcpBufferSize,
-                                            @Deprecated
-                                            Long requestCredentialId,
                                             GlobusGSSCredentialImpl credential,
                                             String user) throws GSSException
     {
@@ -92,15 +79,12 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         this.name = protocol;
         this.minor = minor;
         this.major = major;
-        this.hosts = new String[] { addr.getHostString() };
-        this.port = addr.getPort();
         this.addr = addr;
         this.gsiftpUrl = gsiftpUrl;
         this.gsiftpTranferManagerName = gsiftpTranferManagerName;
         this.gsiftpTranferManagerDomain = gsiftpTranferManagerDomain;
         this.bufferSize = bufferSize;
         this.tcpBufferSize = tcpBufferSize;
-        this.requestCredentialId = requestCredentialId;
         this.user = user;
         this.key = credential.getPrivateKey();
         this.certChain = credential.getCertificateChain();
@@ -210,11 +194,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
       this.tcpBufferSize = tcpBufferSize;
   }
 
-    @Deprecated
-    public Long getRequestCredentialId() {
-        return requestCredentialId;
-    }
-
     public String getUser() {
         return user;
     }
@@ -228,15 +207,5 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     {
         return new GlobusGSSCredentialImpl(new X509Credential(key, certChain),
                 GSSCredential.INITIATE_ONLY);
-    }
-
-    // For compatibility with pre 2.6
-    private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
-        stream.defaultReadObject();
-        if (addr == null && hosts.length > 0) {
-            addr = new InetSocketAddress(hosts[0], port);
-        }
     }
 }

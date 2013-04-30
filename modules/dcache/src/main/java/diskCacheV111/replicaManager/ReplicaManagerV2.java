@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
@@ -1947,7 +1948,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     //--------------------------------------------------------------------------
     public static final String hh_ls_unique = "<pool>               # check if pool drained off (has unique pndfsIds)";
-    public String ac_ls_unique_$_1(Args args) {
+    public String ac_ls_unique_$_1(Args args) throws SQLException {
       String poolName    = args.argv(0);
 
       _log.info("pool '" +poolName +"'");
@@ -1964,12 +1965,12 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     // helper function
-    private List<Object> findUniqueFiles(String poolName) {
+    private List<Object> findUniqueFiles(String poolName) throws SQLException {
       Collection<Object> inPoolSet;
       List<Object> missingList = new ArrayList<>();
       List<Object> inPoolList  = new ArrayList<>();
 
-      Iterator<String> inPool  = _dbrmv2.pnfsIds(poolName);
+      Iterator<String> inPool  = _dbrmv2.getPnfsIds(poolName);
       Iterator<String> missing = _dbrmv2.getMissing();
 
       while (missing.hasNext()) {
@@ -2004,11 +2005,10 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //--------------------------------------------------------------------------
 
     public static final String hh_ls_pnfsid = "[<pnfsId>]           # DEBUG: list pools for pnfsid[s], from DB";
-    public String ac_ls_pnfsid_$_0_1(Args args) {
-
+    public String ac_ls_pnfsid_$_0_1(Args args) throws SQLException {
         StringBuilder sb = new StringBuilder();
         if (args.argc() == 0) {
-            Iterator<String> it = _dbrmv2.pnfsIds();
+            Iterator<String> it = _dbrmv2.getPnfsIds();
             while (it.hasNext()) {
                 PnfsId pnfsId = new PnfsId(it.next());
                 sb.append(printCacheLocation(pnfsId)).append("\n");

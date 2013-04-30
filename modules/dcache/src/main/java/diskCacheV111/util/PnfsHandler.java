@@ -67,16 +67,6 @@ public class PnfsHandler
         return stub;
     }
 
-    @Deprecated
-    public PnfsHandler(CellEndpoint endpoint,
-                       CellPath pnfsManagerPath,
-                       String poolName)
-    {
-        this(pnfsManagerPath, poolName);
-        setCellEndpoint(endpoint);
-    }
-
-    @Deprecated
     public PnfsHandler(CellEndpoint endpoint,
                        CellPath pnfsManagerPath)
     {

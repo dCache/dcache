@@ -110,9 +110,6 @@ public class CacheException extends Exception
 
     private final int _rc;
 
-    @Deprecated // Drop in 2.7
-    private final String _message;
-
     private static String formatMessage(String message)
     {
         if (message == null) {
@@ -186,7 +183,6 @@ public class CacheException extends Exception
     public CacheException(int rc, String message, Throwable cause)
     {
         super(formatMessage(message), cause);
-        _message = getMessage();
         _rc = rc;
     }
 

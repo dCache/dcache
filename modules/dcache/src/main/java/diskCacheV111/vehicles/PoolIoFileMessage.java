@@ -1,7 +1,5 @@
 package diskCacheV111.vehicles;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.EnumSet;
 
 import diskCacheV111.util.PnfsId;
@@ -16,15 +14,7 @@ import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 public class PoolIoFileMessage extends PoolMessage {
 
     private FileAttributes _fileAttributes;
-
-    @Deprecated // Remove in 2.7
-    private StorageInfo  _storageInfo;
-
     private ProtocolInfo _protocolInfo;
-
-    @Deprecated // Remove in 2.7
-    private PnfsId       _pnfsId;
-
     private boolean      _isPool2Pool;
     private String       _ioQueueName;
     private int          _moverId;
@@ -43,9 +33,7 @@ public class PoolIoFileMessage extends PoolMessage {
                 EnumSet.of(STORAGEINFO, PNFSID)));
 
        _fileAttributes = fileAttributes;
-       _storageInfo  = StorageInfos.extractFrom(fileAttributes);
        _protocolInfo = protocolInfo ;
-       _pnfsId       = fileAttributes.getPnfsId();
     }
 
     public PoolIoFileMessage( String pool ,
@@ -53,7 +41,6 @@ public class PoolIoFileMessage extends PoolMessage {
                               ProtocolInfo protocolInfo  ){
        super( pool ) ;
        _protocolInfo = protocolInfo ;
-       _pnfsId       = pnfsId ;
         _fileAttributes = new FileAttributes();
         _fileAttributes.setPnfsId(pnfsId);
     }
@@ -97,19 +84,6 @@ public class PoolIoFileMessage extends PoolMessage {
     public FileAttributes getFileAttributes()
     {
         return _fileAttributes;
-    }
-
-    private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
-        stream.defaultReadObject();
-        if (_fileAttributes == null) {
-            _fileAttributes = new FileAttributes();
-            if (_storageInfo != null) {
-                StorageInfos.injectInto(_storageInfo, _fileAttributes);
-            }
-            _fileAttributes.setPnfsId(_pnfsId);
-        }
     }
 
     public void setForceSourceMode(boolean forceSourceMode)

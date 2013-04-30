@@ -2,8 +2,6 @@
 
 package diskCacheV111.vehicles;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.EnumSet;
 
 import diskCacheV111.util.PnfsId;
@@ -12,7 +10,8 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.SIZE;
 
 
 public class Pool2PoolTransferMsg extends PoolMessage {
@@ -22,12 +21,6 @@ public class Pool2PoolTransferMsg extends PoolMessage {
     public final static int   CACHED       = 2 ;
 
     private FileAttributes _fileAttributes;
-
-    @Deprecated // Remove in 2.7
-    private PnfsId      _pnfsId;
-
-    @Deprecated // Remove in 2.7
-    private StorageInfo _storageInfo;
 
     private String      _destinationPoolName;
     private int         _destinationFileStatus = UNDETERMINED ;
@@ -43,10 +36,6 @@ public class Pool2PoolTransferMsg extends PoolMessage {
         checkArgument(fileAttributes.isDefined(EnumSet.of(PNFSID, SIZE)));
 
         _fileAttributes = fileAttributes;
-        _pnfsId      = fileAttributes.getPnfsId();
-        if (fileAttributes.isDefined(STORAGEINFO)) {
-            _storageInfo = StorageInfos.extractFrom(fileAttributes);
-        }
         _destinationPoolName = destinationPoolName ;
         setReplyRequired(true);
     }
@@ -76,18 +65,5 @@ public class Pool2PoolTransferMsg extends PoolMessage {
              ( _destinationFileStatus==UNDETERMINED?
                 "Undetermined":
                 ( _destinationFileStatus==PRECIOUS?"Precious":"Cached" ));
-    }
-
-    private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
-        stream.defaultReadObject();
-        if (_fileAttributes == null) {
-            _fileAttributes = new FileAttributes();
-            if (_storageInfo != null) {
-                StorageInfos.injectInto(_storageInfo, _fileAttributes);
-            }
-            _fileAttributes.setPnfsId(_pnfsId);
-        }
     }
 }

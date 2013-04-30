@@ -1,7 +1,5 @@
 package org.dcache.acl.matcher;
 
-import org.dcache.acl.enums.AccessMask;
-
 /**
  * Component matches a access request and the access masks defMsk and allowMsk and returns true if
  * access is allowed.
@@ -16,26 +14,6 @@ public abstract class AclMatcher {
     protected static final String ALLOWED = "ALLOWED";
 
     protected static final String DENIED = "DENIED";
-
-    /**
-     * use instead method isAllowed(int, int, int)
-     *
-     * @param defMask
-     *            Defined bit mask
-     * @param allowMask
-     *            Allowed bit mask
-     * @param accessMask
-     *            AccessmMask object
-     * @return Returns null if there is no access right definition, true if access is allowed, and
-     *         false if access is denied
-     */
-    @Deprecated
-    protected static Boolean isAllowed(int defMask, int allowMask, AccessMask accessMask) {
-        if ( accessMask.matches(defMask) ) {
-            return accessMask.matches(allowMask);
-        }
-        return null;
-    }
 
     /**
      * @param defMask
