@@ -735,6 +735,11 @@
               <configuration>
                   <doCheck>false</doCheck>
                   <doUpdate>false</doUpdate>
+                  <format>{0,date,yyyy-MM-dd_HH-mm}_{1}</format>
+                  <items>
+                      <item>timestamp</item>
+                      <item>${user.name}</item>
+                  </items>
               </configuration>
           </plugin>
 
@@ -860,47 +865,6 @@
       </plugin>
     </plugins>
   </reporting>
-
-    <profiles>
-        <profile>
-            <!--
-            This profile is here for triggering when another scm than svn is
-            used (for example git). Instead of getting the version build number
-            from svn we will use the build date and the user name.
-            -->
-            <id>buildnumber-not-svn</id>
-            <activation>
-                <file>
-                    <missing>.svn</missing>
-                </file>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>buildnumber-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>create</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <doCheck>false</doCheck>
-                            <doUpdate>false</doUpdate>
-                            <format>{0,date,yyyy-MM-dd_HH-mm}_{1}</format>
-                            <items>
-                                <item>timestamp</item>
-                                <item>${user.name}</item>
-                            </items>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
     <modules>
     <module>modules/logback-test-config</module>
