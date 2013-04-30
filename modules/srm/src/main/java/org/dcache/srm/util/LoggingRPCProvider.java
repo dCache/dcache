@@ -42,13 +42,27 @@ public class LoggingRPCProvider extends RPCProvider
                                   Method method, Object obj,
                                   Object[] args) throws Exception
     {
-        _log.trace("Invoking {}#{} with args {}",
-                obj.getClass().getCanonicalName(), method.getName(), args);
+        String className = obj.getClass().getCanonicalName();
+        String methodName = method.getName();
+
+        _log.trace("Invoking {}#{} with {}", className, methodName, args);
         try {
             Object result = super.invokeMethod(msgContext, method, obj, args);
-            _log.trace("Invokation of {}#{} returned {} ({})",
-                    obj.getClass().getCanonicalName(), method.getName(),
-                    result.getClass().getCanonicalName(), result);
+
+
+            if (method.getReturnType().equals(Void.TYPE)) {
+                _log.trace("Invocation of {}#{} completed", className,
+                        methodName);
+            } else {
+                if (result == null) {
+                    _log.trace("Invocation of {}#{} returned null", className,
+                            methodName);
+                } else {
+                    _log.trace("Invocation of {}#{} returned {}: {}", className,
+                            methodName, result.getClass().getCanonicalName(),
+                            result);
+                }
+            }
             return result;
         } catch(InvocationTargetException e) {
             Throwable t = e.getCause();
@@ -58,21 +72,22 @@ public class LoggingRPCProvider extends RPCProvider
                 * All exceptions that are to be delivered as a SOAP Fault are
                 * subclasses of AxisFault.
                 */
-                _log.debug("Invocation produced AxisFault {}: code={}, reason={}, string={}",
+                _log.trace("Invocation produced AxisFault {}: code={}, " +
+                        "reason={}, string={}",
                         fault.getClass().getSimpleName(), fault.getFaultCode(),
                         fault.getFaultReason(), fault.getFaultString());
             } else if(t instanceof RuntimeException) {
-                _log.error("Bug detected, please report to support@dCache.org",
-                        t);
+                _log.error("Bug detected, please report this to " +
+                        "support@dCache.org", t);
             } else {
                 _log.error("Unexpected invocation exception", t);
             }
 
             throw e;
-        } catch(Exception e) {
-            _log.error("Unexpected exception", e);
+        } catch(RuntimeException e) {
+            _log.error("Bug detected, please report this to " +
+                    "support@dCache.org", e);
             throw e;
         }
     }
-
 }
