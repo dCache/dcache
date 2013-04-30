@@ -233,7 +233,7 @@ public final class Storage
     private final static String INFINITY = "infinity";
 
     private static final String SPACEMANAGER_DISABLED_MESSAGE =
-            "support for space reservations is disabled";
+            "space reservation is disabled";
 
     /* these are the  protocols
      * that are not suitable for either put or get */
@@ -297,10 +297,15 @@ public final class Storage
         _pnfsStub = pnfsStub;
     }
 
+    @Required
+    public void setIsSpaceManagerEnabled(boolean isEnabled)
+    {
+        _isSpaceManagerEnabled = isEnabled;
+    }
+
     public void setSpaceManagerStub(CellStub spaceManagerStub)
     {
         _spaceManagerStub = spaceManagerStub;
-        _isSpaceManagerEnabled = true;
     }
 
     @Required

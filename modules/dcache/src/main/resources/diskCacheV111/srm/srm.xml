@@ -57,6 +57,12 @@
     <property name="timeout" value="30000"/>
   </bean>
 
+  <bean id="space-manager-stub" class="org.dcache.cells.CellStub">
+    <description>Space manager communication stub</description>
+    <property name="destination" value="SrmSpaceManager"/>
+    <property name="timeout" value="#{ 3 * 60 * 1000 }"/>
+  </bean>
+
   <bean id="transfer-manager-stub" class="org.dcache.cells.CellStub">
     <description>Transfer manager communication stub</description>
     <property name="destination" value="RemoteTransferManager"/>
@@ -131,6 +137,36 @@
     <constructor-arg value="${srmDbPassword}"/>
   </bean>
 
+  <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
+         init-method="start" destroy-method="stop">
+    <description>dCache plugin for SRM</description>
+    <property name="directoryListSource" ref="list-handler"/>
+    <property name="loginBrokerHandler" ref="lb"/>
+    <property name="loginBrokerStub" ref="login-broker-stub"/>
+    <property name="pnfsStub" ref="pnfs-stub"/>
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="poolManagerStub" ref="pool-manager-stub"/>
+    <property name="spaceManagerStub" ref="space-manager-stub"/>
+    <property name="transferManagerStub" ref="transfer-manager-stub"/>
+    <property name="copyManagerStub" ref="copy-manager-stub"/>
+    <property name="pinManagerStub" ref="pin-manager-stub"/>
+    <property name="gplazmaStub" ref="gplazma-stub"/>
+    <property name="isSpaceManagerEnabled"
+              value="#{ '${spaceReservationStatus}' == 'enabled' }"/>
+    <property name="loginBrokerUpdatePeriod"
+              value="${srmLoginBrokerUpdatePeriod}"/>
+    <property name="numberOfDoorsInRandomSelection"
+              value="${srmNumberOfDoorsInRandomSelection}"/>
+    <property name="useCustomGetHostByAddress"
+              value="${srmCustomGetHostByAddr}"/>
+    <property name="ignoreClientProtocolOrder"
+              value="${srmIgnoreClientProtocolOrder}"/>
+    <property name="httpRootPath" value="${httpRootPath}"/>
+    <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
+    <property name="configuration" ref="config"/>
+    <property name="pinOnlineFiles" value="${srmPinOnlineFiles}"/>
+    <property name="srm" ref="srm"/>
+  </bean>
 
   <bean id="config" class="org.dcache.srm.util.Configuration" depends-on="storage">
     <description>SRM configuration</description>
@@ -451,74 +487,5 @@
         <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
         <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
     </bean>
-
-
-    <beans profile="space-manager-enabled">
-      <bean id="space-manager-stub" class="org.dcache.cells.CellStub">
-        <description>Space manager communication stub</description>
-        <property name="destination" value="SrmSpaceManager"/>
-        <property name="timeout" value="#{ 3 * 60 * 1000 }"/>
-      </bean>
-
-      <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
-            init-method="start" destroy-method="stop">
-          <description>dCache plugin for SRM</description>
-          <property name="directoryListSource" ref="list-handler"/>
-          <property name="loginBrokerHandler" ref="lb"/>
-          <property name="loginBrokerStub" ref="login-broker-stub"/>
-          <property name="pnfsStub" ref="pnfs-stub"/>
-          <property name="pnfsHandler" ref="pnfs"/>
-          <property name="poolManagerStub" ref="pool-manager-stub"/>
-          <property name="spaceManagerStub" ref="space-manager-stub"/>
-          <property name="transferManagerStub" ref="transfer-manager-stub"/>
-          <property name="copyManagerStub" ref="copy-manager-stub"/>
-          <property name="pinManagerStub" ref="pin-manager-stub"/>
-          <property name="gplazmaStub" ref="gplazma-stub"/>
-          <property name="loginBrokerUpdatePeriod"
-                    value="${srmLoginBrokerUpdatePeriod}"/>
-          <property name="numberOfDoorsInRandomSelection"
-                    value="${srmNumberOfDoorsInRandomSelection}"/>
-          <property name="useCustomGetHostByAddress"
-                    value="${srmCustomGetHostByAddr}"/>
-          <property name="ignoreClientProtocolOrder"
-                    value="${srmIgnoreClientProtocolOrder}"/>
-          <property name="httpRootPath" value="${httpRootPath}"/>
-          <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
-          <property name="configuration" ref="config"/>
-          <property name="pinOnlineFiles" value="${srmPinOnlineFiles}"/>
-          <property name="srm" ref="srm"/>
-      </bean>
-    </beans>
-
-
-    <beans profile="space-manager-disabled">
-      <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
-            init-method="start" destroy-method="stop">
-          <description>dCache plugin for SRM</description>
-          <property name="directoryListSource" ref="list-handler"/>
-          <property name="loginBrokerHandler" ref="lb"/>
-          <property name="loginBrokerStub" ref="login-broker-stub"/>
-          <property name="pnfsStub" ref="pnfs-stub"/>
-          <property name="pnfsHandler" ref="pnfs"/>
-          <property name="poolManagerStub" ref="pool-manager-stub"/>
-          <property name="transferManagerStub" ref="transfer-manager-stub"/>
-          <property name="copyManagerStub" ref="copy-manager-stub"/>
-          <property name="pinManagerStub" ref="pin-manager-stub"/>
-          <property name="gplazmaStub" ref="gplazma-stub"/>
-          <property name="loginBrokerUpdatePeriod"
-                    value="${srmLoginBrokerUpdatePeriod}"/>
-          <property name="numberOfDoorsInRandomSelection"
-                    value="${srmNumberOfDoorsInRandomSelection}"/>
-          <property name="useCustomGetHostByAddress"
-                    value="${srmCustomGetHostByAddr}"/>
-          <property name="ignoreClientProtocolOrder"
-                    value="${srmIgnoreClientProtocolOrder}"/>
-          <property name="httpRootPath" value="${httpRootPath}"/>
-          <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
-          <property name="configuration" ref="config"/>
-          <property name="pinOnlineFiles" value="${srmPinOnlineFiles}"/>
-          <property name="srm" ref="srm"/>
-      </bean>
-    </beans>
 
 </beans>

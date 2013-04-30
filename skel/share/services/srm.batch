@@ -340,5 +340,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -service-cert=${grid.hostcert.cert} \
         -service-trusted-certs=${grid.ca.path} \
         -gplazma=${gplazma} \
-        -profiles=space-manager-${spaceReservationStatus} \
+        -spaceReservationStatus=${spaceReservationStatus} \
 "
