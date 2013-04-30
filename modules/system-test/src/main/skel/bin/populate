@@ -95,19 +95,23 @@ missing=$(scan_missing_ca_files etc/grid-security/certificates/*)
 if [ ! -z "$missing" ]; then
     echo
     echo "**"
-    echo "**  ERROR"
+    echo "**  WARNING"
     echo "**"
-    echo "**  The following files are missing from your OpenSSL trust-store.  This will"
-    echo "**  result in secure clients being unable to use dCache doors as they will not"
-    echo "**  trust the certificate dCache presents.  To fix this, copy these files"
-    echo "**  into either the /etc/grid-security/certificates or"
-    echo "**  ~/.globus/certificates directory:"
+    echo "**  The following files are missing from your grid-security"
+    echo "**  trust-store.  This will likely result in secure clients"
+    echo "**  being unable to use system-test dCache instance as they"
+    echo "**  will not trust the certificate dCache presents."
+    echo "**"
+    echo "**  To fix this, copy these files into either the"
+    echo "**  /etc/grid-security/certificates or ~/.globus/certificates"
+    echo "**  directory.  Copying into one directory is enough; either"
+    echo "**  directory will work; if uncertain copy to"
+    echo "**  ~/.globus/certificates."
     echo "**"
     for file in $missing; do
         echo "**    $file"
         echo "**"
     done
     echo
-    exit 1
 fi
 
