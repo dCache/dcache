@@ -2,60 +2,45 @@
 
 package org.dcache.pool.classic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.dcache.pool.FaultListener;
-import org.dcache.pool.FaultEvent;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
-import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.SpaceRecord;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.AbstractStateChangeListener;
-import org.dcache.pool.repository.StateChangeEvent;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.Account;
-import org.dcache.pool.p2p.P2PClient;
-import org.dcache.pool.movers.MoverProtocol;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.vehicles.FileAttributes;
-import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCellInfo;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.Message;
@@ -80,20 +65,37 @@ import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.DelayedReply;
+
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
-import java.util.Arrays;
-import java.util.Set;
-import javax.security.auth.Subject;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.pool.FaultEvent;
+import org.dcache.pool.FaultListener;
+import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.p2p.P2PClient;
+import org.dcache.pool.repository.AbstractStateChangeListener;
+import org.dcache.pool.repository.Account;
+import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryChangeEvent;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.SpaceRecord;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.util.IoPriority;
+import org.dcache.util.Version;
+import org.dcache.vehicles.FileAttributes;
 
 public class PoolV4
     extends AbstractCellComponent
@@ -128,6 +130,7 @@ public class PoolV4
      * used by PoolManager to recognize pool restarts
      */
     private final long _serialId = System.currentTimeMillis();
+    private static final CellVersion VERSION = new CellVersion(Version.of(PoolV4.class));
     private PoolV2Mode _poolMode;
     private boolean _reportOnRemovals;
     private boolean _suppressHsmLoad;
@@ -438,7 +441,7 @@ public class PoolV4
     {
         _pingThread.stop();
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
-                    666, "Shutdown");
+                666, "Shutdown");
     }
 
     public void cleanUp()
@@ -477,12 +480,6 @@ public class PoolV4
                         "Pool disabled: " + event.getMessage());
             break;
         }
-    }
-
-    public CellVersion getCellVersion()
-    {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision$");
     }
 
     /**
@@ -614,7 +611,7 @@ public class PoolV4
         poolinfo.setPoolCostInfo(getPoolCostInfo());
         poolinfo.setTagMap(_tags);
         poolinfo.setErrorStatus(_poolStatusCode, _poolStatusMessage);
-        poolinfo.setCellVersion(getCellVersion());
+        poolinfo.setCellVersion(VERSION);
         return poolinfo;
     }
 
@@ -622,8 +619,7 @@ public class PoolV4
     public void getInfo(PrintWriter pw)
     {
         pw.println("Base directory    : " + _baseDir);
-        pw.println("Revision          : [$Revision$]");
-        pw.println("Version           : " + getCellVersion() + " (Sub="
+        pw.println("Version           : " + VERSION + " (Sub="
                    + _version + ")");
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));

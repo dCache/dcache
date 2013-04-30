@@ -1,33 +1,19 @@
 package diskCacheV111.doors;
 
-//cells
-import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.CellPath;
-import dmg.util.StreamEngine;
-import dmg.util.Args;
-
-//dcache
-import diskCacheV111.util.Base64;
-import org.dcache.cells.CellStub;
-
-//java
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.io.File;
-import java.nio.charset.Charset;
-import java.util.Iterator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import javax.security.auth.Subject;
-
-//jgss
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.ChannelBinding;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+
+import diskCacheV111.util.Base64;
+
+import dmg.util.Args;
+import dmg.util.StreamEngine;
 
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {
@@ -192,11 +178,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             ftpcommand(msg);
         }
 
-    }
-
-    public static CellVersion getStaticCellVersion() {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision: 1.18 $" );
     }
 
     @Override

@@ -29,6 +29,7 @@
 // $Author: litvinse $
 //______________________________________________________________________________
 package diskCacheV111.services.space;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
@@ -281,11 +282,6 @@ public final class Manager
                 }
         }
 
-        @Override
-        public CellVersion getCellVersion(){
-                return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                                       "$Revision: 1.63 $");
-        }
 
         @Override
         public void getInfo(java.io.PrintWriter printWriter) {

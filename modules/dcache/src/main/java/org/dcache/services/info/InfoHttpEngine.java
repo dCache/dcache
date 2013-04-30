@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -73,16 +72,6 @@ public class InfoHttpEngine implements HttpResponseEngine {
             }
             _endpoint = endpoint;
 	}
-
-	/**
-	 * Correctly report our version and revision information.
-	 * @return a CellVersion for this cell.
-	 */
-    public CellVersion getCellVersion() {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision: 9086 $");
-    }
-
 
 	/**
 	 * Handle a request for data.  This either returns the cached contents (if

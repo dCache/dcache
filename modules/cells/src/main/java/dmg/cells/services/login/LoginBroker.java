@@ -64,11 +64,7 @@ public class LoginBroker
         start();
     }
 
-  @Override
-  public CellVersion getCellVersion(){
-      return new CellVersion(super.getCellVersion().getRelease(),"$Revision: 1.6 $" );
-  }
-    public String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time] [-all]";
+    public static final String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time] [-all]";
     public Object ac_ls(Args args)
     {
         boolean   binary   = args.hasOption("binary");

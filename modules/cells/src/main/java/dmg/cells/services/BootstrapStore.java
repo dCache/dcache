@@ -1,15 +1,25 @@
 package dmg.cells.services ;
 
-import dmg.cells.nucleus.* ;
-import dmg.cells.network.* ;
-import dmg.util.* ;
-
-import java.net.* ;
-import java.io.* ;
-import java.util.* ;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.Serializable;
+import java.util.Vector;
+
+import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.ExceptionEvent;
+import dmg.cells.nucleus.KillEvent;
+import dmg.cells.nucleus.LastMessageEvent;
+import dmg.cells.nucleus.MessageEvent;
+import dmg.util.Args;
+import dmg.util.Gate;
+
+import org.dcache.util.Version;
 
 /**
   *
@@ -27,6 +37,7 @@ public class BootstrapStore implements Cell {
    private CellNucleus _nucleus  ;
    private int    _requests;
    private int    _answeredRequests;
+   private final Version version = Version.of(this);
 
    public BootstrapStore( String cellName , String arg ){
 
@@ -121,4 +132,9 @@ public class BootstrapStore implements Cell {
      _log.info( " exceptionArrived "+ce ) ;
    }
 
+   @Override
+   public CellVersion getCellVersion()
+   {
+       return new CellVersion(version);
+   }
 }

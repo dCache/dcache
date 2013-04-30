@@ -70,147 +70,144 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellCommandListener;
-import dmg.util.Args;
-import dmg.cells.services.login.LoginBrokerInfo;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.Version;
-import diskCacheV111.util.FileLocality;
-import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
-import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
-import diskCacheV111.poolManager.PoolMonitorV5;
-import diskCacheV111.poolManager.CostModule;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.services.login.RemoteLoginStrategy;
-import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
-import org.dcache.srm.SrmUseSpaceCallbacks;
-import org.dcache.srm.util.Configuration;
-import org.dcache.srm.util.Tools;
-import org.dcache.srm.security.SslGsiSocketFactory;
-import org.dcache.pinmanager.PinManagerExtendPinMessage;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.transferManager.
-    RemoteTransferManagerMessage;
-import diskCacheV111.vehicles.transferManager.
-    RemoteGsiftpTransferProtocolInfo;
-import diskCacheV111.vehicles.transferManager.
-    RemoteGsiftpDelegateUserCredentialsMessage;
-import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
-import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
-import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
-import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
-import diskCacheV111.vehicles.CopyManagerMessage;
-import diskCacheV111.services.space.message.ExtendLifetime;
-import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
-import diskCacheV111.pools.PoolCostInfo;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.sql.SQLException;
-import java.util.Random;
-import java.util.List;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.EnumSet;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.Semaphore;
-import static java.util.concurrent.TimeUnit.*;
-import org.dcache.namespace.PermissionHandler;
-import org.dcache.namespace.ChainedPermissionHandler;
-import org.dcache.namespace.PosixPermissionHandler;
-import org.dcache.namespace.ACLPermissionHandler;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMDuplicationException;
-import org.dcache.srm.SRMInternalErrorException;
-import org.dcache.srm.SRMInvalidPathException;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.FileMetaData;
-import org.dcache.srm.PrepareToPutCallbacks;
-import org.dcache.srm.PrepareToPutInSpaceCallbacks;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
-import diskCacheV111.srm.StorageElementInfo;
-import org.dcache.srm.AdvisoryDeleteCallbacks;
-import org.dcache.srm.RemoveFileCallbacks;
-import org.dcache.srm.PinCallbacks;
-import org.dcache.srm.UnpinCallbacks;
-import org.dcache.srm.util.Permissions;
-import org.dcache.srm.CopyCallbacks;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Ranges;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSException;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.SRM;
-import org.dcache.srm.v2_2.TMetaDataSpace;
-import org.dcache.srm.v2_2.TRetentionPolicyInfo;
-import org.dcache.srm.v2_2.TRetentionPolicy;
-import org.dcache.srm.v2_2.TAccessLatency;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.util.LoginBrokerHandler;
-import org.dcache.util.list.DirectoryListSource;
-import org.dcache.util.list.DirectoryListPrinter;
-import org.dcache.util.list.DirectoryEntry;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.services.space.message.GetSpaceMetaData;
-import diskCacheV111.services.space.message.GetSpaceTokens;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.util.NotInTrashCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.FileExistsCacheException;
-import org.dcache.auth.persistence.AuthRecordPersistenceManager;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
-import org.dcache.acl.enums.AccessType;
-import org.dcache.acl.enums.AccessMask;
 import org.ietf.jgss.GSSCredential;
-import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
-import javax.naming.NamingException;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+
 import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Ranges;
-import static com.google.common.net.InetAddresses.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
-import org.springframework.beans.factory.annotation.Required;
+import diskCacheV111.poolManager.CostModule;
+import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.services.space.message.ExtendLifetime;
+import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
+import diskCacheV111.services.space.message.GetSpaceMetaData;
+import diskCacheV111.services.space.message.GetSpaceTokens;
+import diskCacheV111.srm.StorageElementInfo;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.CopyManagerMessage;
+import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
+import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
+import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
+import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
+import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
+import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
+import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
+import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.util.Args;
+
+import org.dcache.acl.enums.AccessMask;
+import org.dcache.acl.enums.AccessType;
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.persistence.AuthRecordPersistenceManager;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
+import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.namespace.ChainedPermissionHandler;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.pinmanager.PinManagerExtendPinMessage;
+import org.dcache.services.login.RemoteLoginStrategy;
+import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.AdvisoryDeleteCallbacks;
+import org.dcache.srm.CopyCallbacks;
+import org.dcache.srm.FileMetaData;
+import org.dcache.srm.PinCallbacks;
+import org.dcache.srm.PrepareToPutCallbacks;
+import org.dcache.srm.PrepareToPutInSpaceCallbacks;
+import org.dcache.srm.RemoveFileCallbacks;
+import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMDuplicationException;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidPathException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
+import org.dcache.srm.SrmReleaseSpaceCallbacks;
+import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmUseSpaceCallbacks;
+import org.dcache.srm.UnpinCallbacks;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.security.SslGsiSocketFactory;
+import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.Permissions;
+import org.dcache.srm.util.Tools;
+import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TMetaDataSpace;
+import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TRetentionPolicyInfo;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.util.LoginBrokerHandler;
+import org.dcache.util.Version;
+import org.dcache.util.list.DirectoryEntry;
+import org.dcache.util.list.DirectoryListPrinter;
+import org.dcache.util.list.DirectoryListSource;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.net.InetAddresses.isInetAddress;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -248,6 +245,7 @@ public final class Storage
      */
     private final static long TRANSIENT_FAILURE_DELAY =
         MILLISECONDS.toMillis(10);
+    private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
@@ -531,14 +529,6 @@ public final class Storage
         } catch (SQLException e) {
             _log.error(e.toString());
         }
-    }
-
-    @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        info.setCellVersion(new CellVersion(Version.getVersion(),
-                                            "$Revision$"));
-        return info;
     }
 
     public final static String hh_set_switch_to_async_mode_delay_get =
@@ -3155,7 +3145,7 @@ public final class Storage
 
     @Override
     public String getStorageBackendVersion() {
-        return diskCacheV111.util.Version.getVersion();
+        return VERSION.getVersion();
     }
 
     @Override

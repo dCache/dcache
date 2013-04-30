@@ -39,7 +39,7 @@ import java.net.InetSocketAddress;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import diskCacheV111.util.Version;
+import org.dcache.util.Version;
 
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import static org.dcache.chimera.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_DOMAIN;
@@ -49,6 +49,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(OperationEXCHANGE_ID.class);
     private final int _flag;
+    private static final Version VERSION = Version.of(OperationEXCHANGE_ID.class);
     private static final int EXCHGID4_FLAG_MASK = (nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS
             | nfs4_prot.EXCHGID4_FLAG_USE_NON_PNFS
             | nfs4_prot.EXCHGID4_FLAG_USE_PNFS_MDS
@@ -219,8 +220,8 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             res.eir_resok4.eir_server_impl_id[0].nii_domain = new utf8str_cis( NFS4_IMPLEMENTATION_DOMAIN );
             res.eir_resok4.eir_server_impl_id[0].nii_name = new utf8str_cs(
                 NFS4_IMPLEMENTATION_ID
-                + " Version: " + Version.getVersion()
-                + " build-time: " + Version.getBuildTime() );
+                + " Version: " + VERSION.getVersion()
+                + " build-time: " + VERSION.getBuildTime() );
             nfstime4 releaseDate = new nfstime4();
             releaseDate.nseconds = new uint32_t(0);
             releaseDate.seconds = new int64_t (System.currentTimeMillis() / 1000 );
