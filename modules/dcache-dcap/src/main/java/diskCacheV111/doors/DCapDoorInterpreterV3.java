@@ -262,8 +262,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             UnionLoginStrategy.AccessLevel.READONLY;
         _log.debug("Anonymous access level : {}", _anonymousAccessLevel);
 
-        _loginStrategy = createLoginStrategy();
-
         _pnfsManagerName = _args.getOpt("pnfsManager");
         _poolManagerName = _args.getOpt("poolManager");
         _poolProxy = _args.getOpt("poolProxy");
@@ -345,6 +343,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _stageConfigurationFilePath = _args.getOpt("stageConfigurationFilePath");
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
         _log.debug("Check : {}", _checkStrict ? "Strict" : "Fuzzy");
+
+        _loginStrategy = createLoginStrategy();
     }
 
     private LoginStrategy createLoginStrategy()
