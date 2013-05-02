@@ -63,19 +63,18 @@ public class MutatorPlugin implements GPlazmaMappingPlugin {
 
     public static Class<? extends Principal> classOf(String type) {
 
-        switch (type) {
-            case "dn":
-                return GlobusPrincipal.class;
-            case "kerberos":
-                return KerberosPrincipal.class;
-            case "fqan":
-                return FQANPrincipal.class;
-            case "name":
-                return LoginNamePrincipal.class;
-            case "username":
-                return UserNamePrincipal.class;
-            default:
-                throw new IllegalArgumentException("unknown type: " + type);
+        if ("dn".equals(type)) {
+            return GlobusPrincipal.class;
+        } else if ("kerberos".equals(type)) {
+            return KerberosPrincipal.class;
+        } else if ("fqan".equals(type)) {
+            return FQANPrincipal.class;
+        } else if ("name".equals(type)) {
+            return LoginNamePrincipal.class;
+        } else if ("username".equals(type)) {
+            return UserNamePrincipal.class;
+        } else {
+            throw new IllegalArgumentException("unknown type: " + type);
         }
     }
 
