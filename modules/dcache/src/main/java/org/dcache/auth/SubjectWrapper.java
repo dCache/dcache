@@ -2,7 +2,10 @@ package org.dcache.auth;
 
 import javax.security.auth.Subject;
 
+import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * The class is a Wrapper for the Subject, used for StringTemplate
@@ -51,6 +54,10 @@ public class SubjectWrapper {
 
     public String getDisplayName() {
         return Subjects.getDisplayName(_subject);
+    }
+
+    public List<Principal> getPrincipals() {
+        return new ArrayList<>(_subject.getPrincipals());
     }
 
     @Override

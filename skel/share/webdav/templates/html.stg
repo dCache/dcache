@@ -11,25 +11,45 @@
  * point to the copy.
  */
 
+page(static,subject,path,files,base) ::= <<
+  $render(list(files))$
+>>
+
+errorpage(static,subject,path,errorcode,errormessage,base) ::= <<
+  $render(error(errorcode,errormessage))$
+>>
+
+list(files) ::= <<
+  <table class="table table-condensed sortable">
+    <thead>
+      <tr>
+        <th data-sorter="false"></th>
+        <th>Name</th>
+        <th>Size</th>
+        <th data-sorter="customtime">Last Modified</th>
+      </tr>
+    </thead>
+    <tbody>
+      $files: file()$
+    </tbody>
+  </table>
+>>
+
 /* Renders a directory entry.
  */
 file(f) ::= <<
-<tr>
+  <tr>
     $if(f.isDirectory)$
-    <td>
-        <div class="directoryicon">
-            <img class="scaled" src="$static$/images/directoryIcon.png" alt=""/>
-        </div>
+    <td class="text-muted text-center">
+        <span class="glyphicon glyphicon-folder-close"></span>
     </td>
     <td>
-        <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$/">$f.name.unencoded$/</a>
+        <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$/">$f.name.unencoded$</a>
     </td>
     <td></td>
     $else$
-    <td>
-        <div class="fileicon">
-            <img class="scaled" src="$static$/images/fileIcon.png" alt=""/>
-        </div>
+    <td class="text-muted text-center">
+        <span class="glyphicon glyphicon-file"></span>
     </td>
     <td>
         <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$">$f.name.unencoded$</a>
@@ -39,142 +59,88 @@ file(f) ::= <<
     <td>
         $f.mtime$
     </td>
-</tr>
+  </tr>
 >>
+
+error(errorcode,errormessage) ::= <<
+  <div class="alert alert-warning">
+     $errorcode$ $errormessage$
+  </div>
+>>
+
+render(body) ::= <<
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>dCache File System</title>
+
+        <link rel="stylesheet" href="$static$/bootstrap/css/bootstrap.min.css">
+        <link rel="stylesheet" href="$static$/css/tablesorter.custom.css">
+        <link rel="stylesheet" href="$static$/css/bootstrap.custom.css">
+
+        <script src="$static$/jquery/jquery.min.js"></script>
+        <script src="$static$/bootstrap/js/bootstrap.min.js"></script>
+        <script src="$static$/tablesorter/js/jquery.tablesorter.min.js"></script>
+        <script src="$static$/tablesorter/js/jquery.tablesorter.widgets.min.js"></script>
+        <script src="$static$/js/jquery.tablesorter.init.js"></script>
+
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+          <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+          <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <div class="navbar navbar-default navbar-fixed-top">
+          <div class="container">
+            <div class="navbar-header pull-left">
+              <a class="navbar-brand" href="#">dCache</a>
+            </div>
+            <div class="navbar-header pull-right">
+              <div class="dropdown">
+                  <a href="#" class="navbar-brand dropdown-toggle" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-user"></span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-right">
+                    $subject.principals:{p|<li><a href="#">$p$</a></li>}$
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="container">
+          <div id="navi">
+            <ol class="breadcrumb">
+              <li><a href="$url(base)$"><span class="glyphicon glyphicon-hdd"></span></a></li>
+              $breadcrumbs(base,path)$
+            </ol>
+          </div>
+          $body$
+        </div>
+
+        <div id="footer">
+          <div class="container">
+             <p class="text-muted text-center">Powered by <a href="http://www.dcache.org/">dCache</a></p>
+          </div>
+        </div>
+    </body>
+  </html>
+>>
+
+url(path) ::= <<$path:{item|$item.encoded$/}$>>
 
 /* Recursively renders the path as a breadcrumb trail.
  */
 breadcrumbs(base,path) ::= <<
-  <a href="$base:{item|$item.encoded$/}$">$last(base).unencoded$/</a>
   $if(path)$
+    <li><a href="$url([base,first(path)])$">$first(path).unencoded$</a>
     $breadcrumbs([base,first(path)],rest(path))$
+    </li>
   $endif$
->>
-
-/* Renders the complete HTML page.
- *
- *  static   The URI to the static content directory.
- *  subject  The user who made the request.
- *  path     Collection of path elements of the directory to list.
- *  files    Collection of files in the directory.
- *  base     A prefix to path used in the breadcrumb trail.
- */
-page(static,subject,path,files,base) ::= <<
-<html>
-     $header()$
-    <body>
-         $navi()$
-        <div id="wrap">
-            <div class="content">
-                $title()$
-                <table class="sortable">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Name</th>
-                            <th>Size</th>
-                            <th>Last Modified</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        $files: file()$
-                    </tbody>
-            </table>
-            </div>
-             $footer()$
-        </div>
-    </body>
-</html>
->>
-
-errorpage(static,subject,path,errorcode,errormessage,base) ::= <<
-<html>
- $header()$
-    <body>
-     $navi()$
-        <div id="wrap">
-            <div class="content">
-                $title()$
-                  <table>
-                    <tbody>
-                        <tr>
-			<td><span class="errortext">$errorcode$</span></td>
-                        <td><span class="errortext">$errormessage$</span></td>
-			</tr>
-                    </tbody>
-                </table>
-            </div>
-           $footer()$
-        </div>
-    </body>
-</html>
->>
-
-/**
- * generates a title
- */
-title() ::= <<
-<h1>File System</h1>
->>
-
-
-/**
- * generates a header
- */
-header() ::= <<
-    <head>
-        <title>dCache.org - File system</title>
-        <link rel="stylesheet" type="text/css" href="$static$/styles/webdav.css"/>
-        <link rel="icon" type="image/x-icon" href="$static$/images/favicon.ico"/>
-        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
-        <script type="text/javascript" src="$static$/tablesorter/jquery.tablesorter.min.js"></script>
-        <script type="text/javascript">
-        \$(document).ready(function () {
-            \$.tablesorter.addParser({
-                id: 'customtime',
-                is: function (s) {
-                    return false;
-                },
-                format: function (s) {
-                    var date = s.trim().split(' ');
-                    var dateString = date[1] + "\n" + date[2] + "\n" + date[3] + "\n" + date[5] + "\n";
-                    return (new Date(dateString).getTime());
-                },
-                type: 'numeric'
-            });
-            \$('table.sortable').tablesorter({
-                headers: {
-                    3: {
-                        sorter: 'customtime'
-                    }
-                }
-            });
-        });
-        </script>
-    </head>
->>
-
-/**
- * generates a navigation path and adds a logo
- */
-navi() ::= <<
-    <div id="navi">
-            <div class="figure">
-                <img class="scaled" src="$static$/images/logo.png"/>
-            </div>
-            <p>$subject$</p>
-            <p>
-                $breadcrumbs(base,path)$
-            </p>
-    </div>
->>
-
-
-/**
- * generates a footer
- */
-footer() ::= <<
-    <div id="footer">
-        www.dCache.org
-    </div>
 >>
