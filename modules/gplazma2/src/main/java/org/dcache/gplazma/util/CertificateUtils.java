@@ -79,8 +79,7 @@ public class CertificateUtils {
         for (Object credential : publicCredentials) {
             if (credential instanceof X509Certificate[]) {
                 X509Certificate[] chain = (X509Certificate[]) credential;
-                String dn
-                    = CertificateUtils.getSubjectFromX509Chain(chain, false);
+                String dn = getSubjectFromX509Chain(chain, false);
                 principals.add(new GlobusPrincipal(dn));
             }
         }
