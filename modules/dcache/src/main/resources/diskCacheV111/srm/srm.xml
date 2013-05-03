@@ -152,7 +152,7 @@
     <property name="pinManagerStub" ref="pin-manager-stub"/>
     <property name="gplazmaStub" ref="gplazma-stub"/>
     <property name="isSpaceManagerEnabled"
-              value="#{ '${spaceReservationStatus}' == 'enabled' }"/>
+              value="${spaceManagerEnabled}"/>
     <property name="loginBrokerUpdatePeriod"
               value="${srmLoginBrokerUpdatePeriod}"/>
     <property name="numberOfDoorsInRandomSelection"

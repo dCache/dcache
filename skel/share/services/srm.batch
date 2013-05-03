@@ -160,13 +160,13 @@ check -strong grid.hostcert.cert
 check -strong grid.ca.path
 
 
-# The 'spaceReservationStatus' environment variable is a sanitised
+# The 'spaceManagerEnabled' environment variable is a sanitised
 # version of 'srmSpaceManagerEnabled'.  It is always set and is either
-# 'enabled' or 'disabled'.
+# 'true' or 'false'.
 
 onerror continue
 define env srmSpaceManagerOn.exe endExe
-  set env spaceReservationStatus enabled
+  set env spaceManagerEnabled true
 endExe
 
 #
@@ -176,7 +176,7 @@ endExe
 define env srmSpaceManagerOff.exe endExe
   set env srmImplicitSpaceManagerEnabled false
   set env srmSpaceReservationStrict false
-  set env spaceReservationStatus disabled
+  set env spaceManagerEnabled false
 endExe
 
 eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
@@ -340,5 +340,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -service-cert=${grid.hostcert.cert} \
         -service-trusted-certs=${grid.ca.path} \
         -gplazma=${gplazma} \
-        -spaceReservationStatus=${spaceReservationStatus} \
+        -spaceManagerEnabled=${spaceManagerEnabled} \
 "
