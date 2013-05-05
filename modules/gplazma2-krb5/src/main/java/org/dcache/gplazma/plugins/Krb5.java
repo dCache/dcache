@@ -33,7 +33,7 @@ public class Krb5 implements GPlazmaMappingPlugin
     }
 
     @Override
-    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals) throws AuthenticationException {
         Set<Principal> kerberosPrincipals = new HashSet<>();
         for (Principal principal : principals) {
             if (principal instanceof KerberosPrincipal) {

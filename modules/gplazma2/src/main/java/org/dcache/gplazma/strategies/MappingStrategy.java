@@ -15,7 +15,6 @@ import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 public interface MappingStrategy
                  extends GPlazmaStrategy<GPlazmaMappingPlugin> {
 
-    public void map(LoginMonitor monitor, Set<Principal> principals,
-                    Set<Principal> authorizedPrincipals)
+    public void map(LoginMonitor monitor, Set<Principal> principals)
                 throws AuthenticationException;
 }

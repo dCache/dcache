@@ -320,30 +320,23 @@ public class GPlazma
             sessionStrategy = _sessionStrategy;
         }
 
-        Set<Principal> identifiedPrincipals = doAuthPhase(authStrategy, monitor,
-                subject);
+        Set<Principal> principals = new HashSet<>();
+        doAuthPhase(authStrategy, monitor, subject, principals);
+        doMapPhase(mapStrategy, monitor, principals);
+        doAccountPhase(accountStrategy, monitor, principals);
+        Set<Object> attributes = doSessionPhase(sessionStrategy, monitor, principals);
+        removeIf(principals, not(IS_PUBLIC));
 
-        Set<Principal> authorizedPrincipals = doMapPhase(mapStrategy, monitor,
-                identifiedPrincipals);
-
-        doAccountPhase(accountStrategy, monitor, authorizedPrincipals);
-
-        Set<Object> attributes = doSessionPhase(sessionStrategy, monitor,
-                authorizedPrincipals);
-
-        removeIf(authorizedPrincipals, not(IS_PUBLIC));
-
-        return buildReply(monitor, subject, authorizedPrincipals, attributes);
+        return buildReply(monitor, subject, principals, attributes);
     }
 
-    private Set<Principal> doAuthPhase(AuthenticationStrategy strategy,
-            LoginMonitor monitor, Subject subject)
+    private void doAuthPhase(AuthenticationStrategy strategy,
+            LoginMonitor monitor, Subject subject, Set<Principal> principals)
             throws AuthenticationException
     {
         Set<Object> publicCredentials = subject.getPublicCredentials();
         Set<Object> privateCredentials = subject.getPrivateCredentials();
 
-        Set<Principal> principals = new HashSet<>();
         principals.addAll(subject.getPrincipals());
 
         NDC.push("AUTH");
@@ -359,29 +352,23 @@ public class GPlazma
             NDC.pop();
             monitor.authEnds(principals, result);
         }
-
-        return principals;
     }
 
 
-    private Set<Principal> doMapPhase(MappingStrategy strategy,
-            LoginMonitor monitor, Set<Principal> identifiedPrincipals)
+    private void doMapPhase(MappingStrategy strategy,
+            LoginMonitor monitor, Set<Principal> principals)
             throws AuthenticationException
     {
-        Set<Principal> authorizedPrincipals = new HashSet<>();
-
         NDC.push("MAP");
         Result result = Result.FAIL;
         try {
-            monitor.mapBegins(identifiedPrincipals);
-            strategy.map(monitor, identifiedPrincipals, authorizedPrincipals);
+            monitor.mapBegins(principals);
+            strategy.map(monitor, principals);
             result = Result.SUCCESS;
         } finally {
             NDC.pop();
-            monitor.mapEnds(authorizedPrincipals, result);
+            monitor.mapEnds(principals, result);
         }
-
-        return authorizedPrincipals;
     }
 
 
