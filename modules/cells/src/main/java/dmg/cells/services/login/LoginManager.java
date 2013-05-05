@@ -17,6 +17,7 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 
 import org.dcache.auth.Subjects;
+import org.dcache.util.Version;
 
 /**
  **
@@ -38,6 +39,7 @@ public class       LoginManager
   private int          _loginCounter, _loginFailures;
   private boolean      _sending;
   private Class<?>     _loginClass        = Object.class ;
+  private final CellVersion _version;
   private Constructor<?>_loginConstructor;
   private Constructor<?>_authConstructor;
   private Method       _loginPrintMethod;
@@ -130,6 +132,7 @@ public class       LoginManager
             _log.info( "Using login class : {}", _loginClass.getName() ) ;
             args.shift() ;
          }
+         _version = new CellVersion(Version.of(_loginClass));
          // get the authentication
          _authenticator = args.getOpt("authenticator") ;
          _authenticator = _authenticator == null ? "pam" : _authenticator ;
@@ -251,18 +254,10 @@ public class       LoginManager
         }
     }
 
-    @Override
-public CellVersion getCellVersion(){
-     try{
+    public CellVersion getCellVersion(){
+         return _version;
+    }
 
-       Method m = _loginClass.getMethod( "getStaticCellVersion" , (Class[])null ) ;
-
-       return (CellVersion)m.invoke(null, (Object[])null ) ;
-
-     }catch(Exception ee ){
-         return super.getCellVersion() ;
-     }
-  }
   public class LoginBrokerHandler implements Runnable {
 
      private static final long EAGER_UPDATE_TIME = 1000;

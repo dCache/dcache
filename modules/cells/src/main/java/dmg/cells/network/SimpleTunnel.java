@@ -1,13 +1,31 @@
 package dmg.cells.network ;
 
-import  dmg.cells.nucleus.* ;
-import  dmg.util.Args ;
-import  java.util.Date ;
-import  java.io.* ;
-import  java.net.* ;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+
+import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellDomainInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellRoute;
+import dmg.cells.nucleus.CellTunnel;
+import dmg.cells.nucleus.CellTunnelInfo;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.ExceptionEvent;
+import dmg.cells.nucleus.KillEvent;
+import dmg.cells.nucleus.LastMessageEvent;
+import dmg.cells.nucleus.MessageEvent;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.RoutedMessageEvent;
+import dmg.util.Args;
+
+import org.dcache.util.Version;
 
 /**
   *
@@ -33,6 +51,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    private boolean         _ready;
    private final Object          _readyLock    = new Object() ;
    private CellDomainInfo  _remoteDomainInfo;
+   private final Version version = Version.of(this);
 
    public SimpleTunnel( String cellName , String argString )
           throws Exception {
@@ -245,4 +264,9 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
      _log.info( " exceptionArrived "+ce ) ;
    }
 
+   @Override
+   public CellVersion getCellVersion()
+   {
+       return new CellVersion(version);
+   }
 }

@@ -236,7 +236,7 @@ public class CellNucleus implements ThreadFactory
         info.setCellType(getCellType());
         info.setCreationTime(_creationTime);
         try {
-            info.setCellVersion(getCellVersionByObject(_cell));
+            info.setCellVersion(_cell.getCellVersion());
         } catch(Exception e) {}
         try {
             info.setPrivateInfo(_cell.getInfo());
@@ -818,24 +818,6 @@ public class CellNucleus implements ThreadFactory
         } finally {
             cdc.restore();
         }
-    }
-
-    //
-    // helper to get version string from arbitrary object
-    //
-    public static CellVersion getCellVersionByObject(Object obj) throws Exception {
-        Class<?> c =  obj.getClass();
-
-        Method m = c.getMethod("getCellVersion", (Class<?> [])null);
-
-        return (CellVersion)m.invoke(obj, (Object [])null);
-    }
-
-    public static CellVersion getCellVersionByClass(Class<?> c) throws Exception {
-
-        Method m = c.getMethod("getCellVersion", (Class [])null);
-
-        return (CellVersion)m.invoke(null, (Object [])null);
     }
 
     ////////////////////////////////////////////////////////////

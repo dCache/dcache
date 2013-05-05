@@ -197,13 +197,6 @@ public abstract class TransferManager extends AbstractCell
 		_poolMgrPath = new CellPath( _poolManager ) ;
 	}
 
-        @Override
-	public CellVersion getCellVersion()
-        {
-                return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.38 $" );
-        }
-
-        @Override
 	public void getInfo(PrintWriter pw)
         {
 		pw.printf("    %s\n", getClass().getName());
