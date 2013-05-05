@@ -42,20 +42,17 @@ public class AuthzDbPluginTest
             new SourceBackedPredicateMap<>(new MemoryLineSource(Resources.readLines(TEST_FIXTURE, Charset.defaultCharset())), new AuthzMapLineParser());
     }
 
-    public void check(Set<? extends Principal> principals,
-                      Set<? extends Principal> expectedAuthorizedPrincipals)
+    public void check(Set<? extends Principal> input,
+                      Set<? extends Principal> output)
         throws AuthenticationException
     {
         AuthzDbPlugin plugin =
             new AuthzDbPlugin(testFixture,
                               ImmutableList.of(UID,LOGIN,USER,GROUP),
                               ImmutableList.of(GID,LOGIN,GROUP,USER));
-        Set<Principal> sourcePrincipals = Sets.newHashSet(principals);
-        Set<Principal> expectedPrincipals = Sets.newHashSet(principals);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        plugin.map(sourcePrincipals, authorizedPrincipals);
-        assertEquals(expectedPrincipals, sourcePrincipals);
-        assertEquals(expectedAuthorizedPrincipals, authorizedPrincipals);
+        Set<Principal> principals = Sets.newHashSet(input);
+        plugin.map(principals);
+        assertEquals(output, principals);
     }
 
     @Test
@@ -86,7 +83,8 @@ public class AuthzDbPluginTest
         check(ImmutableSet.of(new GroupNamePrincipal("behrmann", true)),
               ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, true),
-                              new UserNamePrincipal("behrmann")));
+                              new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("behrmann", true)));
     }
 
     @Test(expected=AuthenticationException.class)
@@ -106,7 +104,9 @@ public class AuthzDbPluginTest
               ImmutableSet.of(new UidPrincipal(1002),
                               new GidPrincipal(1001, false),
                               new GidPrincipal(1002, true),
-                              new UserNamePrincipal("atlas-prod")));
+                              new UserNamePrincipal("atlas-prod"),
+                              new GroupNamePrincipal("atlas-user", false),
+                              new GroupNamePrincipal("atlas-prod", true)));
     }
 
     @Test
@@ -118,7 +118,10 @@ public class AuthzDbPluginTest
                               new LoginUidPrincipal(1001)),
               ImmutableSet.of(new UidPrincipal(1001),
                               new GidPrincipal(1001, false),
-                              new GidPrincipal(1002, true)));
+                              new GidPrincipal(1002, true),
+                              new GroupNamePrincipal("atlas-user", false),
+                              new GroupNamePrincipal("atlas-prod", true),
+                              new LoginUidPrincipal(1001)));
     }
 
     @Test
@@ -131,6 +134,9 @@ public class AuthzDbPluginTest
               ImmutableSet.of(new UidPrincipal(1002),
                               new GidPrincipal(1001, true),
                               new GidPrincipal(1002, false),
+                              new LoginGidPrincipal(1001),
+                              new GroupNamePrincipal("atlas-user", false),
+                              new GroupNamePrincipal("atlas-prod", true),
                               new UserNamePrincipal("atlas-prod")));
     }
 
@@ -153,7 +159,8 @@ public class AuthzDbPluginTest
               ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, false),
                               new GidPrincipal(1001, true),
-                              new UserNamePrincipal("behrmann")));
+                              new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("atlas-user", true)));
     }
 
     @Test
@@ -165,7 +172,8 @@ public class AuthzDbPluginTest
               ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, true),
                               new GidPrincipal(1001, false),
-                              new UserNamePrincipal("behrmann")));
+                              new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("atlas-user", false)));
     }
 
     @Test
@@ -180,7 +188,12 @@ public class AuthzDbPluginTest
               ImmutableSet.of(new UidPrincipal(1001),
                               new GidPrincipal(1000, false),
                               new GidPrincipal(1001, true),
-                              new GidPrincipal(1002, false)));
+                              new GidPrincipal(1002, false),
+                              new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("atlas-user", false),
+                              new GroupNamePrincipal("atlas-prod", true),
+                              new LoginUidPrincipal(1001),
+                              new LoginGidPrincipal(1001)));
     }
 
     @Test
@@ -193,7 +206,9 @@ public class AuthzDbPluginTest
               ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, true),
                               new GidPrincipal(1002, false),
-                              new UserNamePrincipal("behrmann")));
+                              new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("atlas-prod", true),
+                              new LoginNamePrincipal("behrmann")));
     }
 
     @Test(expected=AuthenticationException.class)
