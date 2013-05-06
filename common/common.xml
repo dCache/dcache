@@ -106,9 +106,9 @@
         <dependency groupId="org.hsqldb" artifactId="hsqldb" version="2.2.8"/>
         <dependency groupId="org.liquibase" artifactId="liquibase-core" version="2.0.1"/>
         <dependency groupId="org.antlr" artifactId="stringtemplate" version="3.2.1"/>
-        <dependency groupId="org.globus" artifactId="cog-jglobus" version="1.8.0-dcache.1"/>
-        <dependency groupId="org.globus" artifactId="cog-url" version="1.8.0-dcache.1"/>
-        <dependency groupId="org.globus" artifactId="cog-jobmanager" version="1.8.0-dcache.1"/>
+        <dependency groupId="org.globus" artifactId="cog-jglobus" version="1.8.0-dcache.2"/>
+        <dependency groupId="org.globus" artifactId="cog-url" version="1.8.0-dcache.2"/>
+        <dependency groupId="org.globus" artifactId="cog-jobmanager" version="1.8.0-dcache.2"/>
     </artifact:dependencies>
 
     <property name="cog.libDir" value="${libDir}/cog" />
