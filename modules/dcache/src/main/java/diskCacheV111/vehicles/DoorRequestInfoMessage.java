@@ -114,10 +114,10 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
                 CertificateUtils.addGlobusPrincipals(subject.getPublicCredentials(),
                                                      principals);
             } catch (AuthenticationException t) {
-                _logger.warn("{} {} {}", new Object[]
+                _logger.debug("{} {} {}", new Object[]
                                 {"There were problems with an attempted",
                                 "extraction of a DN principal from the",
-                                "Subject'spublic certificate chains"});
+                                "Subject's public certificate chains"});
             }
         }
     }
