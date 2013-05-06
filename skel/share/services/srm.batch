@@ -161,21 +161,33 @@ check -strong grid.hostcert.cert
 check -strong grid.ca.path
 
 
+# The 'spaceManagerEnabled' environment variable is a sanitised
+# version of 'srmSpaceManagerEnabled'.  It is always set and is either
+# 'true' or 'false'.
+
+onerror continue
+define env srmSpaceManagerOn.exe endExe
+  set env spaceManagerEnabled true
+endExe
+
 #
 # Force space manager related settings to off if space manager is
 # disabled.
 #
-
-onerror continue
 define env srmSpaceManagerOff.exe endExe
   set env srmImplicitSpaceManagerEnabled false
-  set env srmSpaceReservation false
   set env srmSpaceReservationStrict false
+  set env spaceManagerEnabled false
 endExe
 
 eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
-exec env srmSpaceManagerOff.exe -ifnotok
+set env srmSpaceManagerIsOn ${rc}
+exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
+exec env srmSpaceManagerOff.exe -ifnotok=srmSpaceManagerIsOn
 onerror shutdown
+
+
+
 
 exec file:${dcache.paths.share}/cells/threadmanager.fragment
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
@@ -329,4 +341,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -service-key=${grid.hostcert.key} \
         -service-cert=${grid.hostcert.cert} \
         -service-trusted-certs=${grid.ca.path} \
+        -spaceManagerEnabled=${spaceManagerEnabled} \
 "
