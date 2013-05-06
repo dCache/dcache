@@ -534,7 +534,7 @@ public class Transfer implements Comparable<Transfer>
                                _poolName,
                                _status,
                                _startedAt,
-                               _clientAddress.getAddress().getHostName());
+                               _clientAddress.getHostString());
     }
 
     /**
