@@ -29,6 +29,7 @@ import java.security.Principal;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -439,6 +440,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         if (addressList.isEmpty()) {
             return;
         }
+
+        addressList = new ArrayList<>(addressList);
 
         Collections.sort(addressList, NetworkUtils.getExternalInternalSorter());
         _resourceDNSHostName = addressList.get(0).getCanonicalHostName();
