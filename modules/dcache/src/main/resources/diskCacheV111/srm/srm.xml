@@ -116,6 +116,8 @@
     <property name="transferManagerStub" ref="transfer-manager-stub"/>
     <property name="copyManagerStub" ref="copy-manager-stub"/>
     <property name="pinManagerStub" ref="pin-manager-stub"/>
+    <property name="isSpaceManagerEnabled"
+              value="${spaceManagerEnabled}"/>
     <property name="loginBrokerUpdatePeriod"
               value="${srmLoginBrokerUpdatePeriod}"/>
     <property name="numberOfDoorsInRandomSelection"
