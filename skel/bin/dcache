@@ -206,7 +206,7 @@ dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 # display dCache package version
 showVersion()
 {
-    "$JAVA" -cp "$(getProperty dcache.paths.classpath)" diskCacheV111.util.Version
+    "$JAVA" -cp "$(getProperty dcache.paths.classpath)" org.dcache.util.Version
 }
 
 #  print either the user a PID is running as (if $1 is non-empty)

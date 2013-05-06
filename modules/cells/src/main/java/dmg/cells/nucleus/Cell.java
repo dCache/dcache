@@ -41,4 +41,6 @@ public interface Cell {
      */
    public void   prepareRemoval( KillEvent killEvent ) ;
    public void   exceptionArrived( ExceptionEvent ce ) ;
+
+    CellVersion getCellVersion();
 }
