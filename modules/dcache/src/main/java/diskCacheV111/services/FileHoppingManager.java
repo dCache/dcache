@@ -17,7 +17,7 @@ import diskCacheV111.vehicles.* ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
+ /**
   *  @Author: Patrick Fuhrmann
   *
   *  The FileHoppingManager receives PoolMgrReplicateFileMsg messages from
@@ -37,8 +37,6 @@ public class FileHoppingManager extends CellAdapter {
    private File        _configFile    = null ;
 
    private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
-
-   public  CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.3 $" ); }
 
    public FileHoppingManager( String name , String args )throws Exception {
 

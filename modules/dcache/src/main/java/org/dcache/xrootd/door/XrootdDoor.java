@@ -1,16 +1,23 @@
 package org.dcache.xrootd.door;
 
-import java.io.PrintWriter;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Ranges;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
+import javax.security.auth.Subject;
+
+import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
@@ -18,44 +25,39 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.security.auth.Subject;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.Ranges;
-import org.dcache.vehicles.PnfsListDirectoryMessage;
-import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
-import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
-import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicy;
-import org.dcache.util.TransferRetryPolicies;
-import org.dcache.util.PingMoversTask;
-import org.dcache.util.FireAndForgetTask;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
-import dmg.cells.nucleus.CellVersion;
+
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
+
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
+import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.PingMoversTask;
+import org.dcache.util.Transfer;
+import org.dcache.util.TransferRetryPolicies;
+import org.dcache.util.TransferRetryPolicy;
+import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
+import org.dcache.vehicles.XrootdProtocolInfo;
 
 /**
  * Shared cell component used to interface with the rest of
@@ -114,12 +116,6 @@ public class XrootdDoor
      */
     private final Map<Integer,XrootdTransfer> _transfers =
         new ConcurrentHashMap<Integer,XrootdTransfer>();
-
-    public static CellVersion getStaticCellVersion()
-    {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision: 11646 $");
-    }
 
     @Required
     public void setPoolStub(CellStub stub)

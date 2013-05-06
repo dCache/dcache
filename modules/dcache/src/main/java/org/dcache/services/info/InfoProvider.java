@@ -62,16 +62,6 @@ public class InfoProvider extends AbstractCell {
     private final StateObservatory _observatory = _state;
     private final StateUpdateManager _sum;
 
-	/**
-	 * Correctly report our version and revision information.
-	 * @return a CellVersion for this cell.
-	 */
-    @Override
-    public CellVersion getCellVersion() {
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision: 9086 $");
-    }
-
     /**
      * Provide information for the info command.
      */
