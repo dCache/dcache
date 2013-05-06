@@ -688,6 +688,11 @@
                   <version>2.4</version>
               </plugin>
               <plugin>
+                  <groupId>org.codehaus.mojo</groupId>
+                  <artifactId>buildnumber-maven-plugin</artifactId>
+                  <version>1.2</version>
+              </plugin>
+              <plugin>
                   <groupId>org.apache.maven.plugins</groupId>
                   <artifactId>maven-surefire-plugin</artifactId>
                   <version>2.12</version>
@@ -717,6 +722,28 @@
           </plugin>
 
           <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>buildnumber-maven-plugin</artifactId>
+              <executions>
+                  <execution>
+                      <phase>generate-resources</phase>
+                      <goals>
+                          <goal>create</goal>
+                      </goals>
+                  </execution>
+              </executions>
+              <configuration>
+                  <doCheck>false</doCheck>
+                  <doUpdate>false</doUpdate>
+                  <format>{0,date,yyyy-MM-dd_HH-mm}_{1}</format>
+                  <items>
+                      <item>timestamp</item>
+                      <item>${user.name}</item>
+                  </items>
+              </configuration>
+          </plugin>
+
+          <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-jar-plugin</artifactId>
               <configuration>
@@ -727,6 +754,8 @@
                       </manifest>
                       <manifestEntries>
                           <Build-Time>${maven.build.timestamp}</Build-Time>
+                          <Implementation-Build>${buildNumber}</Implementation-Build>
+                          <Implementation-Branch>${scmBranch}</Implementation-Branch>
                       </manifestEntries>
                   </archive>
               </configuration>
@@ -837,7 +866,7 @@
     </plugins>
   </reporting>
 
-  <modules>
+    <modules>
     <module>modules/logback-test-config</module>
     <module>modules/logback-console-config</module>
     <module>modules/common</module>

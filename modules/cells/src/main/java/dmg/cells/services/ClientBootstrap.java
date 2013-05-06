@@ -1,13 +1,31 @@
 package dmg.cells.services ;
 
-import dmg.cells.nucleus.* ;
-import dmg.cells.network.* ;
-import dmg.util.* ;
-
-import java.net.* ;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.InetAddress;
+
+import dmg.cells.network.RetryTunnel;
+import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellEvent;
+import dmg.cells.nucleus.CellEventListener;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellRoute;
+import dmg.cells.nucleus.CellShell;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.ExceptionEvent;
+import dmg.cells.nucleus.KillEvent;
+import dmg.cells.nucleus.LastMessageEvent;
+import dmg.cells.nucleus.MessageEvent;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
+import dmg.util.Gate;
+import dmg.util.StateEngine;
+import dmg.util.StateThread;
+
+import org.dcache.util.Version;
 
 /**
   *
@@ -29,6 +47,7 @@ public class ClientBootstrap
    private boolean     _routeAdded = false ;
    private StateThread _engine ;
    private String  []  _commands ;
+   private final Version version = Version.of(this);
 
    public ClientBootstrap( String cellName , String arguments )
           throws Exception {
@@ -239,4 +258,9 @@ public class ClientBootstrap
 //     _log.info( " routeDeleted "+ce ) ;
    }
 
+   @Override
+   public CellVersion getCellVersion()
+   {
+       return new CellVersion(version);
+   }
 }

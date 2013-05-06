@@ -72,7 +72,6 @@ package diskCacheV111.srm.dcache;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
@@ -85,7 +84,6 @@ import dmg.cells.services.login.LoginBrokerInfo;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.Version;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -175,6 +173,7 @@ import org.dcache.util.LoginBrokerHandler;
 import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryEntry;
+import org.dcache.util.Version;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
@@ -247,6 +246,7 @@ public final class Storage
      */
     private final static long TRANSIENT_FAILURE_DELAY =
         MILLISECONDS.toMillis(10);
+    private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
@@ -529,14 +529,6 @@ public final class Storage
         } catch (SQLException e) {
             _log.error(e.toString());
         }
-    }
-
-    @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        info.setCellVersion(new CellVersion(Version.getVersion(),
-                                            "$Revision$"));
-        return info;
     }
 
     public final static String hh_set_switch_to_async_mode_delay_get =
@@ -3137,7 +3129,7 @@ public final class Storage
     }
 
     public String getStorageBackendVersion() {
-        return diskCacheV111.util.Version.getVersion();
+        return VERSION.getVersion();
     }
 
     public boolean exists(SRMUser user, URI surl)  throws SRMException
