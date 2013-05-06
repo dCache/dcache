@@ -4,6 +4,40 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
 
+  <!--
+    Note that we have a three-node circular dependency with the
+    following beans referencing each other:
+
+        config   references  storage,
+        storage  references  srm,
+        srm      references  config.
+
+    However, the "srm" bean's requirement on "config" is stronger: not
+    only must "config" exists, but also that it has been configured
+    with the "storage" bean.  This is because the SRM will fetch the
+    AbstractStorageElement object from Configuration, decorate it and
+    replace Configuration with the decorated object.
+
+    Therefore, we must ensure that the following events happen in this
+    order:
+
+        1. "storage" bean is created,
+        2. "config" bean is created,
+        3. "config" bean is configured with the "storage" bean,
+        4. "srm" bean is created.
+
+    Spring does not complain about this circular dependency.  It will
+    create objects and initialise them in an undocumented ordering,
+    which seems to depend on where within the XML file the bean is
+    described.
+
+    To avoid this abitrary behaviour, the Spring 'depends-on'
+    attribute is used to make the ordering explicit:
+
+        srm     depends-on  config,
+        config  depends-on  storage.
+  -->
+
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
     <property name="location" value="arguments:"/>
@@ -117,6 +151,8 @@
     <property name="copyManagerStub" ref="copy-manager-stub"/>
     <property name="pinManagerStub" ref="pin-manager-stub"/>
     <property name="gplazmaStub" ref="gplazma-stub"/>
+    <property name="isSpaceManagerEnabled"
+              value="${spaceManagerEnabled}"/>
     <property name="loginBrokerUpdatePeriod"
               value="${srmLoginBrokerUpdatePeriod}"/>
     <property name="numberOfDoorsInRandomSelection"
@@ -132,7 +168,7 @@
     <property name="srm" ref="srm"/>
   </bean>
 
-  <bean id="config" class="org.dcache.srm.util.Configuration">
+  <bean id="config" class="org.dcache.srm.util.Configuration" depends-on="storage">
     <description>SRM configuration</description>
     <property name="port" value="${srmPort}"/>
     <property name="timeout" value="${srmTimeout}"/>
@@ -330,7 +366,7 @@
 
 
   <bean id="srm" class="org.dcache.srm.SRM" factory-method="getSRM"
-	destroy-method="stop">
+	destroy-method="stop" depends-on="config">
     <description>SRM engine</description>
 
     <constructor-arg ref="config"/>
