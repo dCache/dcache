@@ -1,9 +1,30 @@
 package org.dcache.gplazma.util;
 
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.globus.gsi.jaas.GlobusPrincipal;
+
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERString;
+import org.bouncycastle.asn1.x509.TBSCertificateStructure;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.glite.voms.PKIStore;
+import org.glite.voms.PKIVerifier;
+import org.glite.voms.VOMSAttribute;
+import org.glite.voms.VOMSValidator;
+import org.glite.voms.ac.ACValidator;
+import org.globus.gsi.bc.BouncyCastleUtil;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.gssapi.auth.AuthorizationException;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.ietf.jgss.GSSException;
+import org.slf4j.MDC;
+
+import javax.security.auth.Subject;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.Principal;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -17,24 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERString;
-import org.bouncycastle.asn1.x509.TBSCertificateStructure;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.dcache.gplazma.AuthenticationException;
-import org.glite.voms.PKIStore;
-import org.glite.voms.PKIVerifier;
-import org.glite.voms.VOMSAttribute;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.ac.ACValidator;
-import org.globus.gsi.bc.BouncyCastleUtil;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.ietf.jgss.GSSException;
-import org.slf4j.MDC;
 
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
@@ -56,6 +60,32 @@ public class CertificateUtils {
     static final String ROLENULL = "/Role=NULL";
 
     private static PKIVerifier pkiVerifier;
+
+    /**
+     * This method is here to avoid violating DRY ({@link X509Plugin}
+     * and {@link DoorRequestInfoMessage}).
+     * This will not be necessary in version 2.6+ because the API change to
+     * authentication and mapping for the GPlazma plugins will no longer
+     * necessitate the hack of adding this kind of principal in
+     * the DoorRequestInfoMessage.
+     *
+     * @return true if a principal was added.
+     */
+    public static boolean addGlobusPrincipals(Set<Object> publicCredentials,
+                                              Set<Principal> principals)
+                                              throws AuthenticationException {
+        int size = principals.size();
+
+        for (Object credential : publicCredentials) {
+            if (credential instanceof X509Certificate[]) {
+                X509Certificate[] chain = (X509Certificate[]) credential;
+                String dn = getSubjectFromX509Chain(chain, false);
+                principals.add(new GlobusPrincipal(dn));
+            }
+        }
+
+        return principals.size() > size;
+    }
 
     /**
      * Extracts the X509Certificate chain from the GSS context,
