@@ -15,6 +15,11 @@ import diskCacheV111.util.Base64;
 import dmg.util.Args;
 import dmg.util.StreamEngine;
 
+import com.google.common.base.Throwables;
+
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.getFirst;
+
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
@@ -107,9 +112,19 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             //debug("GssFtpDoorV1::ac_adat: Token created");
             _gssIdentity = _serviceContext.getSrcName();
             //debug("GssFtpDoorV1::ac_adat: User principal: " + UserPrincipal);
-        } catch( Exception e ) {
-            _logger.error("GssFtpDoorV1::ac_adat: got service context exception", e);
-            reply("535 Authentication failed: " + e);
+        } catch (InterruptedException e) {
+            reply("421 Service unavailable");
+            return;
+        } catch (GSSException e) {
+            CertPathValidatorException cpve =
+                    getFirst(filter(Throwables.getCausalChain(e), CertPathValidatorException.class), null);
+            if (cpve != null && cpve.getCertPath() != null && _logger.isDebugEnabled()) {
+                _logger.error("Authentication failed: {} in #{} of {}",
+                        new Object[] { e.getMessage(), cpve.getIndex() + 1, cpve.getCertPath() });
+            } else {
+                _logger.error("Authentication failed: {}", e.getMessage());
+            }
+            reply("535 Authentication failed: " + e.getMessage());
             return;
         } finally {
             disableInterrupt();
