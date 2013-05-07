@@ -55,7 +55,7 @@ gplazmalite-vorole-mapping-priority="2"
 #  An example dcache.kpwd is located in the share/examples/gplazma directory.
 #  Copy this file into ${dcache.paths.etc} directory and modify the file's
 #  content as appropriate.
-kpwdPath="/opt/d-cache/etc/dcache.kpwd"
+kpwdPath="/etc/dcache/dcache.kpwd"
 
 # grid-mapfile
 gridMapFilePath="/etc/grid-security/grid-mapfile"
