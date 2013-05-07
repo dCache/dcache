@@ -125,6 +125,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             } else {
                 _logger.error("Authentication failed: {}", e.getMessage());
             }
+	    _logger.trace("Authentication failed", e);
             reply("535 Authentication failed: " + e.getMessage());
             return;
         } finally {
