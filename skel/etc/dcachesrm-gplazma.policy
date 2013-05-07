@@ -78,7 +78,7 @@ vomsValidation="false"
 
 # SAZ Settings
 saz-client="OFF"
-SAZ_SERVER_HOST="saz-server.oursite.edu"
+SAZ_SERVER_HOST="saz-server.example.org"
 SAZ_SERVER_PORT="8888"
 
 # #################################################################################
