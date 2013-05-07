@@ -33,9 +33,9 @@
 
 version 2.1
 
-mapping "/O=Grid/O=Globus/OU=domain.org/CN=EXP Production" local-account
+mapping "/O=Grid/O=Globus/OU=example.org/CN=EXP Production" local-account
 # the following are the user auth records
 login local-account read-write uid gid / / /
- /O=Grid/O=Globus/OU=domain.org/CN=EXP Production
+ /O=Grid/O=Globus/OU=example.org/CN=EXP Production
 
 # the following are the user auth records
