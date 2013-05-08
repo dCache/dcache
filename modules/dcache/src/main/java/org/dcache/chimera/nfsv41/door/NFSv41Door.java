@@ -35,6 +35,7 @@ import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
@@ -81,6 +82,7 @@ import org.dcache.chimera.nfs.vfs.ChimeraVfs;
 import org.dcache.chimera.nfs.vfs.Inode;
 import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
+import org.dcache.commons.util.NDC;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -130,7 +132,8 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private CellStub _poolManagerStub;
     private CellStub _billingStub;
-
+    private String _cellName;
+    private String _domainName;
     private PnfsHandler _pnfsHandler;
 
     private String _ioQueue;
@@ -206,6 +209,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     public void init() throws Exception {
 
+        _cellName = getCellName();
+        _domainName = getCellDomainName();
         final NFSv41DeviceManager _dm = this;
 
         _rpcService = new OncRpcSvc(_port, IpProtocolType.TCP, true);
@@ -339,7 +344,9 @@ public class NFSv41Door extends AbstractCellComponent implements
             throws IOException {
 
         FsInode inode = _fileFileSystemProvider.inodeFromBytes(nfsInode.getFileId());
-        try {
+        try(CDC cdc = CDC.reset(_cellName, _domainName)) {
+            NDC.push("pnfsid=" + inode);
+            NDC.push("client=" + context.getRpcCall().getTransport().getRemoteSocketAddress());
             deviceid4 deviceid;
             if (inode.type() != FsInodeType.INODE || inode.getLevel() != 0) {
                 /*
@@ -349,6 +356,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             } else {
                 InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
                 PnfsId pnfsId = new PnfsId(inode.toString());
+                Transfer.initSession();
                 NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"),
                         remote, stateid);
 
