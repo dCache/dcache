@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <configuration>
-    <appender name="LOGBACK" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="SERVER" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${alarms.dir}/server.log</File>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
@@ -15,7 +15,7 @@
         </triggeringPolicy>
 
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>%relative %-5level %logger - %message%n</Pattern>
+            <Pattern>%d{dd MMM yyyy HH:mm:ss} %-5level %logger - %message%n</Pattern>
         </layout>
     </appender>
 
@@ -33,7 +33,7 @@
         </triggeringPolicy>
 
         <encoder>
-            <pattern>%d{dd MMM yyyy HH:mm:ss} %m%n</pattern>
+            <pattern>%-5level %d{dd MMM yyyy HH:mm:ss} \(%X{host}\)\(%X{cells.cell}\)\(%X{cells.domain}\) %m%n</pattern>
         </encoder>
     </appender>
 
@@ -74,7 +74,7 @@
         <from></from>
         <subject>dCache Alarm</subject>
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern>%d{dd MMM yyyy HH:mm:ss} \(%X{cells.cell}\) [%X{org.dcache.ndc}] %m%n</pattern>
+            <pattern>%-5level %d{dd MMM yyyy HH:mm:ss} \(%X{host}\)\(%X{cells.cell}\)\(%X{cells.domain}\) %m%n</pattern>
         </layout>
         <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTrackerImpl">
             <!-- send just one log entry per email -->
@@ -82,11 +82,16 @@
         </cyclicBufferTracker>
     </appender>
 
-     <logger name="ch.qos.logback" additivity="false">
-         <appender-ref ref="LOGBACK"/>
+    <logger name="ch.qos.logback" additivity="false" level="warn">
+         <appender-ref ref="SERVER"/>
     </logger>
 
-    <root level="warn">
-        <appender-ref ref="STORE"/>
+    <!-- do not change the name of this logger (used internally) -->
+    <logger name="domain" additivity="false">
+         <appender-ref ref="SERVER"/>
+    </logger>
+
+    <root level="${alarms.server.log.level}">
+         <appender-ref ref="STORE"/>
     </root>
 </configuration>

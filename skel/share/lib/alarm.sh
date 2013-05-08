@@ -6,8 +6,8 @@ send_alarm() # $@ = [-s=<source-uri>] [-l=<log level>] [-t=<alarm subtype>] mess
     local host
     local port
 
-    host=$(getProperty alarms.server.host)
-    port=$(getProperty alarms.server.port)
+    host=$(getProperty dcache.log.server.host)
+    port=$(getProperty dcache.log.server.port)
 
     CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.alarms.commandline.SendAlarm -d="dst://${host}:${port}" "$@"
 }

@@ -60,16 +60,19 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.spi.AppenderAttachable;
+import org.apache.log4j.MDC;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
+import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 
 import java.io.File;
@@ -112,6 +115,7 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
     private String path;
     private String propertiesPath;
     private String definitionsPath;
+    private String currentDomain;
 
     public void addAlarmType(AlarmDefinition definition) {
         definitions.put(definition.getType(), definition);
@@ -191,6 +195,8 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
     @Override
     public void start() {
         try {
+            currentDomain = String.valueOf(MDC.get(IAlarms.DOMAIN));
+
             if (definitionsPath != null && definitionsPath.trim().length() > 0) {
                 File file = new File(definitionsPath);
                 if (!file.exists()) {
@@ -228,10 +234,23 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
     protected void append(ILoggingEvent eventObject) {
         try {
             if (isStarted()) {
+                if (currentDomain.equals(eventObject.getMDCPropertyMap()
+                                                    .get(IAlarms.DOMAIN_TAG))) {
+                    Logger logger = (Logger)LoggerFactory.getLogger("domain");
+                    if (logger != null &&
+                                    logger.isEnabledFor(eventObject.getLevel())) {
+                        logger.callAppenders(eventObject);
+                    }
+                    return;
+                }
+
                 LogEntry entry = createEntryFromEvent(eventObject);
                 String type = entry.getType();
                 if (type != null && !Level.ERROR.toString().equals(type)
-                                && !Level.WARN.toString().equals(type)) {
+                                 && !Level.WARN.toString().equals(type)
+                                 && !Level.INFO.toString().equals(type)
+                                 && !Level.DEBUG.toString().equals(type)
+                                 && !Level.TRACE.toString().equals(type)) {
                     /*
                      * means it was possibly not sent with an ALARM marker; add
                      * one so any delegated appender with an ALARM marker filter

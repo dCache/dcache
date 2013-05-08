@@ -90,13 +90,10 @@
 
   <!-- sends error/warn to a remote logback server -->
   <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
-      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-          <level>${alarms.remote-logging.level}</level>
-      </filter>
       <!-- adds a few properties to MDC -->
       <filter class="org.dcache.alarms.logback.RemoteMDCFilter"/>
-      <remoteHost>${alarms.server.host}</remoteHost>
-      <port>${alarms.server.port}</port>
+      <remoteHost>${dcache.log.server.host}</remoteHost>
+      <port>${dcache.log.server.port}</port>
       <reconnectionDelay>10000</reconnectionDelay>
   </appender>
 
