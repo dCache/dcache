@@ -168,8 +168,6 @@ import org.dcache.util.FireAndForgetTask;
 
 import dmg.cells.nucleus.CDC;
 
-import org.dcache.commons.util.NDC;
-
 import javax.security.auth.Subject;
 
 import org.dcache.auth.Origin;
@@ -1432,7 +1430,6 @@ public abstract class AbstractFtpDoorV1
      */
     public void run()
     {
-        NDC.push(CDC.getSession());
         try {
             try {
                 /* Notice that we do not close the input stream, as
@@ -1487,8 +1484,6 @@ public abstract class AbstractFtpDoorV1
              * called (although from a different thread).
              */
             kill();
-
-            NDC.clear();
         }
     }
 
