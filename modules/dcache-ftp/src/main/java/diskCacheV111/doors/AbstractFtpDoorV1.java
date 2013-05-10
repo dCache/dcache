@@ -159,7 +159,6 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.Option;
-import org.dcache.commons.util.NDC;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.FileAttribute;
@@ -1448,7 +1447,6 @@ public abstract class AbstractFtpDoorV1
     @Override
     public void run()
     {
-        NDC.push(CDC.getSession());
         try {
             try {
                 /* Notice that we do not close the input stream, as
@@ -1503,8 +1501,6 @@ public abstract class AbstractFtpDoorV1
              * called (although from a different thread).
              */
             kill();
-
-            NDC.clear();
         }
     }
 
