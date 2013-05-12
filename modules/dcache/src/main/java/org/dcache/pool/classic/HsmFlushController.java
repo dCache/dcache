@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolFlushControlMessage;
 import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
@@ -405,9 +407,18 @@ public class HsmFlushController
         PnfsId pnfsId;
 
         @Override
-        public String call() throws CacheException, InterruptedException
+        public String call()
         {
-            _storageHandler.store(pnfsId, null);
+            _storageHandler.store(Collections.singleton(pnfsId), new CacheFileAvailable()
+            {
+                @Override
+                public void cacheFileAvailable(PnfsId pnfsId, Throwable ce)
+                {
+                    if (ce != null) {
+                        LOGGER.error("Flush for {} failed: {}", pnfsId, ce.toString());
+                    }
+                }
+            });
             return "Flush Initiated";
         }
     }

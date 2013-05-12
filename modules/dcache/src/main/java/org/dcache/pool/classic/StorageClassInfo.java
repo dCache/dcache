@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +20,9 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.commons.util.NDC;
 import org.dcache.pool.repository.CacheEntry;
+
+import static com.google.common.collect.Iterables.transform;
 
 /**
  * Holds the files to flush for a particular storage class.
@@ -165,58 +167,35 @@ public class StorageClassInfo implements CacheFileAvailable
     }
 
     public synchronized long submit(HsmStorageHandler2 storageHandler, int maxCount,
-                                    StorageClassInfoFlushable flushCallback)
+                                    final StorageClassInfoFlushable flushCallback)
     {
         if (_activeCounter > 0) {
             throw new IllegalArgumentException("Is already active");
         }
 
-        _flushCallback = flushCallback;
-
         List<Entry> entries = Ordering.natural().sortedCopy(_requests.values());
         maxCount = (maxCount <= 0) ? entries.size() : Math.min(entries.size(), maxCount);
+
         _errorCounter = 0;
-        _requestsSubmitted = 0;
-        //
-        // As long as we are in this loop, we will stuck
-        // in the first 'cacheFileAvailable'.
-        // (Should not be a problem because the store routine
-        // is non blocking.)
-        //
+        _requestsSubmitted = maxCount;
+        _activeCounter = maxCount;
+        _flushCallback = flushCallback;
         _recentFlushId = _lastSubmittedAt = System.currentTimeMillis();
 
-        try {
-            for (Entry entry : entries.subList(0, maxCount)) {
-                _requestsSubmitted++;
-                NDC.push(entry.pnfsId.toString());
-                try {
-                    //
-                    // if store returns true, it didn't register a
-                    // callback and no store is initiated.
-                    //
-                    if (!storageHandler.store(entry.pnfsId, this)) {
-                        _activeCounter++;
-                    }
-                } catch (CacheException e) {
-                    _errorCounter++;
-                    LOGGER.error("Problem flushing {}: {}", entry, e.toString());
-                } catch (RuntimeException e) {
-                    _errorCounter++;
-                    LOGGER.error("Problem flushing " + entry + ". Please report to support@dcache.org.", e);
-                } finally {
-                    NDC.pop();
-                }
-            }
-        } catch (InterruptedException e) {
-            _errorCounter++;
-            Thread.currentThread().interrupt();
-        }
-
-        if (_activeCounter <= 0) {
-            _activeCounter = 0;
-            if (_flushCallback != null) {
-                _callbackExecutor.execute(new CallbackTask(this, _flushCallback));
-            }
+        if (maxCount == 0) {
+            _callbackExecutor.execute(new CallbackTask(this, flushCallback));
+        } else {
+            storageHandler.store(
+                    transform(entries.subList(0, maxCount),
+                            new Function<Entry, PnfsId>()
+                            {
+                                @Override
+                                public PnfsId apply(Entry entry)
+                                {
+                                    return entry.pnfsId;
+                                }
+                            }),
+                    this);
         }
 
         return _recentFlushId;

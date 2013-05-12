@@ -16,7 +16,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
@@ -56,6 +55,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfos;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -63,9 +64,8 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
-import dmg.cells.nucleus.AbstractCellComponent;
 import org.dcache.cells.CellStub;
-import dmg.cells.nucleus.CellCommandListener;
+import org.dcache.commons.util.NDC;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
@@ -79,9 +79,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getFirst;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.SIZE;
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class HsmStorageHandler2
     extends AbstractCellComponent implements CellCommandListener
@@ -329,18 +327,8 @@ public class HsmStorageHandler2
         FetchThread info = _restorePnfsidList.get(fileAttributes.getPnfsId());
         if (info == null) {
             info = new FetchThread(fileAttributes);
-            try {
-                _fetchQueue.add(info);
-                _restorePnfsidList.put(fileAttributes.getPnfsId(), info);
-            } catch (InvocationTargetException e) {
-                /* This happens when the queued method of the FetchThread
-                 * throws an exception. They have been designed not to
-                 * throw any exceptions, so if this happens it must be a
-                 * bug.
-                 */
-                throw new RuntimeException("Failed to queue fetch request",
-                        e.getCause());
-            }
+            _fetchQueue.add(info);
+            _restorePnfsidList.put(fileAttributes.getPnfsId(), info);
         }
         if (callback != null) {
             info.addCallback(callback);
@@ -587,41 +575,45 @@ public class HsmStorageHandler2
         return _storeQueue.getQueueSize();
     }
 
-    public synchronized boolean store(PnfsId pnfsId, CacheFileAvailable callback)
-        throws CacheException, InterruptedException
+    public synchronized void store(Iterable<PnfsId> ids, CacheFileAvailable callback)
     {
-        LOGGER.trace("store requested for {} {} callback",
-                pnfsId, (callback == null) ? " w/o " : " with ");
+        for (PnfsId pnfsId : ids) {
+            NDC.push(pnfsId.toString());
+            try {
+                LOGGER.debug("Flush requested.");
 
-        if (_repository.getState(pnfsId) == EntryState.CACHED) {
-            LOGGER.debug("is already cached {}", pnfsId);
-            return true;
-        }
+                if (_repository.getState(pnfsId) == EntryState.CACHED) {
+                    callback.cacheFileAvailable(pnfsId, null);
+                    LOGGER.debug("File is already cached.");
+                    continue;
+                }
 
-        StoreThread info = _storePnfsidList.get(pnfsId);
-        if (info != null) {
-            if (callback != null) {
+                StoreThread info = _storePnfsidList.get(pnfsId);
+                if (info != null) {
+                    info.addCallback(callback);
+                    LOGGER.debug("Flush already in progress.");
+                    continue;
+                }
+
+                info = new StoreThread(pnfsId);
                 info.addCallback(callback);
+
+                _storeQueue.add(info);
+                _storePnfsidList.put(pnfsId, info);
+                LOGGER.debug("File added to flush queue.");
+            } catch (CacheException e) {
+                callback.cacheFileAvailable(pnfsId, e);
+                LOGGER.error("Problem flushing file: {}", e.getMessage());
+            } catch (InterruptedException e) {
+                callback.cacheFileAvailable(pnfsId, e);
+                Thread.currentThread().interrupt();
+            } catch (RuntimeException e) {
+                callback.cacheFileAvailable(pnfsId, e);
+                LOGGER.error("Problem flushing file. Please report to support@dcache.org.", e);
+            } finally {
+                NDC.pop();
             }
-            LOGGER.debug("flush already in progress {} (callback={})", pnfsId, callback);
-            return false;
         }
-
-        info = new StoreThread(pnfsId);
-        if (callback != null) {
-            info.addCallback(callback);
-        }
-
-        try {
-            _storeQueue.add(info);
-        } catch (InvocationTargetException  e) {
-            throw new RuntimeException("Failed to queue store request",
-                                       e.getCause());
-        }
-
-        _storePnfsidList.put(pnfsId, info);
-        LOGGER.debug("added to flush queue {} (callback={})", pnfsId, callback);
-        return false;
     }
 
     protected synchronized void removeStoreEntry(PnfsId id)

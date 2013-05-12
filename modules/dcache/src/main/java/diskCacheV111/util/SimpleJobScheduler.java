@@ -5,7 +5,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
@@ -145,15 +144,11 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     @Override
-    public int add(Queable runnable) throws InvocationTargetException {
+    public int add(Queable runnable) {
         synchronized (_lock) {
             int id = _nextId++;
 
-            try {
-                runnable.queued(id);
-            } catch (Throwable ee) {
-                throw new InvocationTargetException(ee, "reported by queued");
-            }
+            runnable.queued(id);
 
             if (_maxActiveJobs <= 0) {
                 LOGGER.warn("A task was added to queue '{}', however the queue is not configured to execute any tasks.", _name);
@@ -164,7 +159,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             _queue.add(job);
             _lock.notifyAll();
             return id;
-
         }
     }
 

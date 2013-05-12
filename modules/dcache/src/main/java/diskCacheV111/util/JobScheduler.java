@@ -1,6 +1,5 @@
 package diskCacheV111.util;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.NoSuchElementException;
 
 public interface JobScheduler
@@ -16,8 +15,7 @@ public interface JobScheduler
         public int getJobId();
     }
 
-    public int add(Queable runnable)
-            throws InvocationTargetException;
+    public int add(Queable runnable);
 
     public void kill(int jobId, boolean force)
             throws NoSuchElementException;
