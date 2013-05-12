@@ -60,11 +60,10 @@ documents or software obtained from this server.
 package org.dcache.webadmin.model.dataaccess;
 
 import java.util.Collection;
-import java.util.Date;
 
-import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.exceptions.DAOException;
+import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 
 /**
  * API for the persistent storage to be used in connection with
@@ -76,25 +75,10 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public interface ILogEntryDAO {
     /**
-     * It is assumed that any further filtering will be done in memory.<br>
-     * <br>
-     *
-     * @param after
-     *            closed lower bound (>=) of date range; may be
-     *            <code>null</code>.
-     * @param before
-     *            closed upper bound (<=) of date range; may be
-     *            <code>null</code>.
-     * @param severity
-     *            <code>null</code> will be treated as equivalent to
-     *            <code>Severity.MODERATE</code>.
-     * @param type
-     *            may be <code>null</code>.
-     * @param isAlarm
-     *            may be <code>null</code>.
+     * It is assumed that any filtering beyond what the DAO filter takes
+     * will be done in memory.
      */
-    Collection<LogEntry> get(Date after, Date before, Severity severity,
-                    String type, Boolean isAlarm) throws DAOException;
+    Collection<LogEntry> get(AlarmDAOFilter filter) throws DAOException;
 
     /**
      * @return number of entries removed

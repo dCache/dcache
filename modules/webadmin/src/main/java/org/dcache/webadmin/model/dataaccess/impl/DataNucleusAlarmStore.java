@@ -77,7 +77,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
@@ -151,16 +150,13 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     @Override
-    public Collection<LogEntry> get(Date after, Date before, Severity severity,
-                    String type, Boolean isAlarm) throws DAOException {
+    public Collection<LogEntry> get(AlarmDAOFilter filter) throws DAOException {
         PersistenceManager readManager = getManager();
         if (readManager == null) {
             return Collections.emptyList();
         }
 
         Transaction tx = readManager.currentTransaction();
-        AlarmDAOFilter filter
-            = AlarmJDOUtils.getFilter(after, before, severity, type, isAlarm);
 
         try {
             tx.begin();
