@@ -82,6 +82,8 @@ import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
+import org.dcache.webadmin.model.util.AlarmJDOUtils;
+import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -136,20 +138,25 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         if (!isConnected()) {
             return;
         }
+
         update();
         delete();
+
         Date after = alarmTableProvider.getAfter();
         Date before = alarmTableProvider.getBefore();
-        String severity = alarmTableProvider.getSeverity();
+        String severityStr = alarmTableProvider.getSeverity();
+        Severity severity = severityStr == null ? null :
+            Severity.valueOf(severityStr);
         String type = alarmTableProvider.getType();
         Boolean alarm = alarmTableProvider.isAlarm();
+        Integer rangeStart = alarmTableProvider.getFrom();
+        Integer rangeEnd = alarmTableProvider.getTo();
+
         try {
-            Collection<LogEntry> refreshed
-                = access.get(after,
-                             before,
-                             severity == null ? null
-                                              : Severity.valueOf(severity), type,
-                             alarm);
+            AlarmDAOFilter filter
+                = AlarmJDOUtils.getFilter(after, before, severity, type,
+                                          alarm, rangeStart, rangeEnd);
+            Collection<LogEntry> refreshed = access.get(filter);
             alarmTableProvider.setEntries(refreshed);
         } catch (DAOException e) {
             logger.error(e.getMessage(), e);
