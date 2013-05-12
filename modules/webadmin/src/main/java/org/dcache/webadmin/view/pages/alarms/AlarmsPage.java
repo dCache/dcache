@@ -85,6 +85,7 @@ public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
 
     private static final long serialVersionUID = 993708875580341999L;
     private Button refreshButton;
+    private DisplayPanel displayPanel;
 
     public AlarmsPage() {
         refreshButton = new Button("refresh") {
@@ -93,13 +94,17 @@ public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
             @Override
             public void onSubmit() {
                 getWebadminApplication().getAlarmDisplayService().refresh();
+                if (displayPanel != null) {
+                    displayPanel.clearHeaders();
+                }
             }
         };
 
         Form<?> form = new Form<Void>("form");
         form.add(new QueryPanel("filterPanel", this));
         if(getWebadminApplication().getAlarmDisplayService().isConnected()) {
-            form.add(new DisplayPanel("displayPanel", this));
+            displayPanel = new DisplayPanel("displayPanel", this);
+            form.add(displayPanel);
         } else {
             form.add(new ErrorPanel("displayPanel"));
         }
@@ -117,6 +122,7 @@ public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
                 getWebadminApplication().getAlarmDisplayService().refresh();
             }
         });
+
         add(form);
     }
 
