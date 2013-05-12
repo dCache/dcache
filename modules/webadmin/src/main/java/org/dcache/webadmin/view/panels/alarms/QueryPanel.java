@@ -60,8 +60,6 @@ documents or software obtained from this server.
 package org.dcache.webadmin.view.panels.alarms;
 
 import org.apache.wicket.extensions.ajax.markup.html.autocomplete.DefaultCssAutoCompleteTextField;
-
-import org.apache.wicket.extensions.ajax.markup.html.autocomplete.AutoCompleteTextField;
 import org.apache.wicket.extensions.markup.html.form.DateTextField;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.extensions.yui.calendar.DatePicker;
@@ -104,6 +102,7 @@ public class QueryPanel extends Panel {
         addTypeAutoComplete(parent, provider);
         addExpressionFields(provider);
         addShowClosed(provider);
+        addRangeFields(provider);
         add(parent.getRefreshButton());
     }
 
@@ -144,6 +143,14 @@ public class QueryPanel extends Panel {
                 return true;
             }
         });
+    }
+
+    private void addRangeFields(SortableDataProvider<LogEntry> provider) {
+        IModel<Integer> from = new PropertyModel<>(provider, "from");
+        add(new TextField<Integer>("rangeFrom", from));
+
+        IModel<Integer> to = new PropertyModel<>(provider, "to");
+        add(new TextField<Integer>("rangeTo", to));
     }
 
     private void addSeverityChoice(SortableDataProvider<LogEntry> provider) {
