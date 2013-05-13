@@ -93,6 +93,9 @@ public class DisplayPanel extends Panel {
 
     private static final long serialVersionUID = -4499489059537621331L;
 
+    private CheckBoxColumn<LogEntry> delete;
+    private CheckBoxColumn<LogEntry> close;
+
     public DisplayPanel(String id, final AlarmsPage parent) {
         super(id);
         List<IColumn<LogEntry>> columns
@@ -125,6 +128,11 @@ public class DisplayPanel extends Panel {
         add(table);
     }
 
+    public void clearHeaders() {
+        delete.clearHeader();
+        close.clearHeader();
+    }
+
     private void addAttributeColumns(List<IColumn<LogEntry>> columns) {
         columns.add(new PropertyColumn<LogEntry>(Model.of("First"), "first",
                         "formattedDateOfFirstArrival"));
@@ -148,7 +156,7 @@ public class DisplayPanel extends Panel {
 
     private void addCloseColumn(List<IColumn<LogEntry>> columns,
                     final AlarmTableProvider provider) {
-        columns.add(new CheckBoxColumn<LogEntry>("Close", Model.of("Close")) {
+        close = new CheckBoxColumn<LogEntry>("Close", Model.of("Close")) {
             private static final long serialVersionUID = -7237325512597811741L;
 
             @Override
@@ -182,12 +190,14 @@ public class DisplayPanel extends Panel {
                     }
                 };
             }
-        });
+        };
+
+        columns.add(close);
     }
 
     private void addDeleteColumn(List<IColumn<LogEntry>> columns,
                     final AlarmTableProvider provider) {
-        columns.add(new CheckBoxColumn<LogEntry>("Delete", Model.of("Delete")) {
+        delete = new CheckBoxColumn<LogEntry>("Delete", Model.of("Delete")) {
             private static final long serialVersionUID = -7237325512597811741L;
 
             @Override
@@ -217,7 +227,9 @@ public class DisplayPanel extends Panel {
                     }
                 };
             }
-        });
+        };
+
+        columns.add(delete);
     }
 
     private void addNotesColumn(List<IColumn<LogEntry>> columns,
