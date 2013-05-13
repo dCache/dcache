@@ -98,6 +98,8 @@ public class AlarmTableProvider extends
     private String severity = Severity.MODERATE.toString();
     private String type;
     private boolean showClosed;
+    private Integer from;
+    private Integer to;
 
     public void addToDeleted(LogEntry toDelete) {
         synchronized (deleted) {
@@ -134,6 +136,10 @@ public class AlarmTableProvider extends
         return new Date(before.getTime());
     }
 
+    public Integer getFrom() {
+        return from;
+    }
+
     public String getSeverity() {
         return severity;
     }
@@ -145,6 +151,10 @@ public class AlarmTableProvider extends
             return "ALARMS";
         }
         return "WARNINGS";
+    }
+
+    public Integer getTo() {
+        return to;
     }
 
     public String getType() {
@@ -185,12 +195,20 @@ public class AlarmTableProvider extends
         }
     }
 
+    public void setFrom(Integer from) {
+        this.from = from;
+    }
+
     public void setSeverity(String severity) {
         this.severity = severity;
     }
 
     public void setShowClosed(boolean showClosed) {
         this.showClosed = showClosed;
+    }
+
+    public void setTo(Integer to) {
+        this.to = to;
     }
 
     public void setType(String type) {
