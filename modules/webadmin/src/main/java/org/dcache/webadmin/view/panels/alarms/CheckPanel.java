@@ -81,12 +81,17 @@ import java.util.UUID;
  * @author arossi
  */
 public final class CheckPanel extends Panel {
+    private static final long serialVersionUID = 4172391497442451620L;
+
+    private final CheckBox checkBox;
+
     public static abstract class CheckBoxColumn<T> extends AbstractColumn<T> {
         private static final long serialVersionUID = 8433056726333659452L;
 
         private final String uuid
             = UUID.randomUUID().toString().replace("-", "");
         private final String headerLabel;
+        private CheckPanel headerPanel;
 
         public CheckBoxColumn(String headerLabel, IModel<String> displayModel) {
             super(displayModel);
@@ -115,9 +120,9 @@ public final class CheckPanel extends Panel {
 
         @Override
         public Component getHeader(String componentId) {
-            CheckPanel panel = new CheckPanel(componentId, headerLabel,
+            headerPanel = new CheckPanel(componentId, headerLabel,
                             new Model<Boolean>(), uuid);
-            panel.get("check").add(new Behavior() {
+            headerPanel.get("check").add(new Behavior() {
                 private static final long serialVersionUID = -4210875030052297922L;
 
                 @Override
@@ -125,26 +130,30 @@ public final class CheckPanel extends Panel {
                     tag.put("onclick", js);
                 }
             });
-            return panel;
+
+            return headerPanel;
+        }
+
+        public void clearHeader() {
+           if (headerPanel !=null) {
+               headerPanel.checkBox.setModelObject(false);
+           }
         }
     }
-
-    private static final long serialVersionUID = 4172391497442451620L;
 
     public CheckPanel(String id, String label, IModel<Boolean> checkModel,
                     String uuid) {
         super(id);
         add(new Label("label", label));
-        add(newCheckBox("check", checkModel, uuid));
+        checkBox = newCheckBox("check", checkModel, uuid);
+        add(checkBox);
     }
 
     public CheckPanel(String id, IModel<Boolean> checkModel, String uuid) {
-        super(id);
         /*
          * label is in the mark-up so it needs to be added here
          */
-        add(new Label("label", ""));
-        add(newCheckBox("check", checkModel, uuid));
+        this(id, "", checkModel, uuid);
     }
 
     protected CheckBox newCheckBox(String id, IModel<Boolean> checkModel,
