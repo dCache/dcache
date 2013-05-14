@@ -177,28 +177,20 @@
   <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">
     <description>HSM flush queue manager</description>
     <constructor-arg ref="rep"/>
-    <constructor-arg value="${poolname}"/>
   </bean>
 
   <bean id="hsmset" class="diskCacheV111.util.HsmSet">
     <description>HSM backend manager</description>
   </bean>
 
-  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2"
-        destroy-method="shutdown">
+  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2">
     <description>HSM integration module</description>
-    <constructor-arg ref="rep"/>
-    <constructor-arg ref="pnfs"/>
-    <constructor-arg ref="hsmset"/>
-    <constructor-arg ref="csm"/>
+    <property name="repository" ref="rep"/>
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="hsms" ref="hsmset"/>
+    <property name="checksumModule" ref="csm"/>
     <property name="flushMessageTarget" value="${flushMessageTarget}"/>
     <property name="billingStub" ref="billing-stub"/>
-  </bean>
-
-  <bean id="storage-interpreter" class="org.dcache.pool.classic.HsmStorageInterpreter">
-    <description>HSM module user interface</description>
-    <constructor-arg ref="storagehandler"/>
-    <constructor-arg ref="pnfs"/>
   </bean>
 
   <bean id="jtm" class="org.dcache.pool.classic.JobTimeoutManager"

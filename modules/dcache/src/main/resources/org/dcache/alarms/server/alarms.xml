@@ -16,7 +16,7 @@
 
     <bean id="server" class="org.dcache.alarms.server.LogEntryServerWrapper"
         init-method="startUp" destroy-method="shutDown">
-        <property name="port" value="${alarms.server.port}"/>
+        <property name="port" value="${dcache.log.server.port}"/>
         <property name="baseDir" value="${alarms.dir}"/>
         <property name="configFile" value="${alarms.server.config}"/>
         <property name="path" value="${alarms.store.path}"/>
@@ -26,6 +26,7 @@
         <property name="pass" value="${alarms.store.db.pass}"/>
         <property name="properties" value="${alarms.store.db.properties}"/>
         <property name="definitions" value="${alarms.definitions.path}"/>
+        <property name="level" value="${alarms.server.log.level}"/>
     </bean>
 
     <beans profile="rdbms">

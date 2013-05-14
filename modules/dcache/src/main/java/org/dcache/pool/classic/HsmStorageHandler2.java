@@ -1,51 +1,55 @@
-// $Id$
-
 package org.dcache.pool.classic;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.io.BufferedReader;
+import javax.annotation.PreDestroy;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringReader;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.Batchable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.HsmLocationExtractorFactory;
+import diskCacheV111.util.HsmRunSystem;
 import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RunSystem;
+import diskCacheV111.util.Queable;
 import diskCacheV111.util.SimpleJobScheduler;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -54,10 +58,15 @@ import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.CellCommandListener;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
@@ -69,45 +78,46 @@ import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.getFirst;
+
 public class HsmStorageHandler2
-    extends AbstractCellComponent
+    extends AbstractCellComponent implements CellCommandListener
 {
-    private static Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(HsmStorageHandler2.class);
 
-    private final Repository _repository;
-    private final HsmSet _hsmSet;
-    private final PnfsHandler _pnfs;
-    private final ChecksumModule _checksumModule;
-    private final Map<PnfsId, StoreThread> _storePnfsidList   = new HashMap();
-    private final Map<PnfsId, FetchThread> _restorePnfsidList = new HashMap();
+    private static final int MAX_LINES = 200;
+
+    private final Map<PnfsId, StoreThread> _storePnfsidList = new HashMap<>();
+    private final Map<PnfsId, FetchThread> _restorePnfsidList = new HashMap<>();
+
     private final JobScheduler _fetchQueue;
     private final JobScheduler _storeQueue;
     private final Executor _hsmRemoveExecutor =
         Executors.newSingleThreadExecutor();
     private final ThreadPoolExecutor _hsmRemoveTaskExecutor =
         new ThreadPoolExecutor(1, 1, Long.MAX_VALUE, TimeUnit.NANOSECONDS,
-                               new LinkedBlockingQueue());
+                               new LinkedBlockingQueue<Runnable>());
 
-    private long _maxRuntime = 4 * 3600 * 1000; // 4 hours
-    private long _maxStoreRun = _maxRuntime;
-    private long _maxRestoreRun = _maxRuntime;
-    private long _maxRemoveRun = _maxRuntime;
-    private int _maxLines = 200;
+    private long _maxStoreRun = TimeUnit.HOURS.toMillis(4);
+    private long _maxRestoreRun = TimeUnit.HOURS.toMillis(4);
+    private long _maxRemoveRun = TimeUnit.HOURS.toMillis(4);
+
+    private Repository _repository;
+    private HsmSet _hsmSet;
+    private PnfsHandler _pnfs;
+    private ChecksumModule _checksumModule;
     private String _flushMessageTarget;
     private CellStub _billingStub;
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    //    the generic part
-    //
-    public class    Info
+    private abstract class Info implements Queable
     {
-        private final List<CacheFileAvailable> _callbacks = new ArrayList();
+        private final List<CacheFileAvailable> _callbacks = new ArrayList<>();
         private final PnfsId _pnfsId;
         private long _startTime = System.currentTimeMillis();
-        private Thread _thread;
-        private boolean _active;
+        protected Thread _thread;
+        private boolean _killed;
 
         private Info(PnfsId pnfsId)
         {
@@ -129,21 +139,6 @@ public class HsmStorageHandler2
             return _startTime;
         }
 
-        public  Thread getThread()
-        {
-            return _thread;
-        }
-
-        public void startThread()
-        {
-            _thread.start();
-        }
-
-        public void done()
-        {
-            _active = false;
-        }
-
         synchronized void addCallback(CacheFileAvailable callback)
         {
             _callbacks.add(callback);
@@ -151,80 +146,83 @@ public class HsmStorageHandler2
 
         synchronized void executeCallbacks(Throwable exc)
         {
-            _log.debug("excecuting callbacks  "
-                       + _pnfsId + " (callback=" + _callbacks + ") " + exc);
+            LOGGER.trace("executing callbacks {} (callbacks={}) {}", _pnfsId, _callbacks, exc);
             for (CacheFileAvailable callback : _callbacks) {
                 try {
                     callback.cacheFileAvailable(_pnfsId, exc);
-                } catch (Exception e) {
-                    _log.error("Exception in callback to " +
-                               callback.getClass().getName(), e);
+                } catch (RuntimeException e) {
+                    LOGGER.error("Exception in callback to " + callback.getClass().getName() +
+                            ". Please report to support@dcache.org.", e);
                 }
             }
         }
 
-        void setThread(Thread thread)
+        protected synchronized void setThread(Thread thread)
+                throws InterruptedException
         {
+            if (_killed) {
+                throw new InterruptedException("Killed before script could start");
+            }
             _thread = thread;
+        }
+
+        @Override
+        public synchronized void kill()
+        {
+            _killed = true;
+            if (_thread != null) {
+                _thread.interrupt();
+            }
+        }
+
+        @Override
+        public String toString()
+        {
+            return _pnfsId.toString() + "  " + getListenerCount() + " " + new Date(getStartTime());
         }
     }
 
-    public HsmStorageHandler2(Repository repository,
-                              HsmSet hsmSet,
-                              PnfsHandler pnfs,
-                              ChecksumModule checksumModule)
+    public HsmStorageHandler2()
     {
-        _repository = repository;
-        _hsmSet = hsmSet;
-        _pnfs = pnfs;
-        _checksumModule = checksumModule;
-
         _fetchQueue = new SimpleJobScheduler("fetch");
         _storeQueue = new SimpleJobScheduler("store");
     }
 
-    public void shutdown()
+    @Required
+    public void setRepository(Repository repository)
     {
-        _fetchQueue.shutdown();
-        _storeQueue.shutdown();
+        _repository = repository;
     }
 
+    @Required
+    public void setHsms(HsmSet hsmSet)
+    {
+        _hsmSet = hsmSet;
+    }
+
+    @Required
+    public void setPnfsHandler(PnfsHandler pnfs)
+    {
+        _pnfs = pnfs;
+    }
+
+    @Required
+    public void setChecksumModule(ChecksumModule checksumModule)
+    {
+        _checksumModule = checksumModule;
+    }
+
+    @Required
     public void setFlushMessageTarget(String flushMessageTarget)
     {
         _flushMessageTarget = flushMessageTarget;
     }
 
-    private void assertInitialized()
+    @PreDestroy
+    public void shutdown()
     {
-        if (getCellEndpoint() == null) {
-            throw new IllegalStateException("Cell endpoint must be set");
-        }
-        if (_flushMessageTarget == null) {
-            throw new IllegalStateException("Flush message target must be set");
-        }
-    }
-
-    synchronized void setTimeout(long storeTimeout, long restoreTimeout, long removeTimeout)
-    {
-        if (storeTimeout > 0) {
-            _maxStoreRun = storeTimeout;
-        }
-        if (restoreTimeout > 0) {
-            _maxRestoreRun = restoreTimeout;
-        }
-        if (removeTimeout > 0) {
-            _maxRemoveRun = removeTimeout;
-        }
-    }
-
-    public synchronized void setMaxActiveRestores(int restores)
-    {
-	try {
-	    _fetchQueue.setMaxActiveJobs(restores);
-	} catch(IllegalArgumentException e) {
-	    throw new IllegalArgumentException("Illegal value of max active restores: " + e.getMessage(),
-					       e);
-	}
+        _fetchQueue.shutdown();
+        _storeQueue.shutdown();
     }
 
     @Required
@@ -236,32 +234,33 @@ public class HsmStorageHandler2
     @Override
     public synchronized void printSetup(PrintWriter pw)
     {
-        pw.println("#\n# HsmStorageHandler2("+getClass().getName()+")\n#");
-        pw.println("rh set max active "+_fetchQueue.getMaxActiveJobs());
-        pw.println("st set max active "+_storeQueue.getMaxActiveJobs());
+        pw.println("#");
+        pw.println("# HsmStorageHandler2(" + getClass().getName() + ")");
+        pw.println("#");
+        pw.println("rh set max active " + _fetchQueue.getMaxActiveJobs());
+        pw.println("st set max active " + _storeQueue.getMaxActiveJobs());
         pw.println("rm set max active " + getMaxRemoveJobs());
-        pw.println("rh set timeout "+(_maxRestoreRun/1000L));
-        pw.println("st set timeout "+(_maxStoreRun/1000L));
-        pw.println("rm set timeout "+(_maxRemoveRun/1000L));
+        pw.println("rh set timeout " + (_maxRestoreRun / 1000L));
+        pw.println("st set timeout " + (_maxStoreRun / 1000L));
+        pw.println("rm set timeout " + (_maxRemoveRun / 1000L));
     }
 
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("         Version  : $Id$");
-        pw.println(" Restore Timeout  : "+(_maxRestoreRun/1000L));
-        pw.println("   Store Timeout  : "+(_maxStoreRun/1000L));
-        pw.println("  Remove Timeout  : "+(_maxRemoveRun/1000L));
+        pw.println(" Restore Timeout  : " + (_maxRestoreRun / 1000L));
+        pw.println("   Store Timeout  : " + (_maxStoreRun / 1000L));
+        pw.println("  Remove Timeout  : " + (_maxRemoveRun / 1000L));
         pw.println("  Job Queues ");
-        pw.println("    to store   "+_storeQueue.getActiveJobs()+
-                    "("+_storeQueue.getMaxActiveJobs()+
-                    ")/"+_storeQueue.getQueueSize());
-        pw.println("    from store "+_fetchQueue.getActiveJobs()+
-                    "("+_fetchQueue.getMaxActiveJobs()+
-                    ")/"+_fetchQueue.getQueueSize());
-        pw.println("    delete     "+ "" +
-                    "(" + getMaxRemoveJobs() +
-                    ")/"+"");
+        pw.println("    to store   " + _storeQueue.getActiveJobs() +
+                    "(" + _storeQueue.getMaxActiveJobs() +
+                    ")/" + _storeQueue.getQueueSize());
+        pw.println("    from store " + _fetchQueue.getActiveJobs() +
+                "(" + _fetchQueue.getMaxActiveJobs() +
+                ")/" + _fetchQueue.getQueueSize());
+        pw.println("    delete     " +
+                "(" + getMaxRemoveJobs() +
+                ")/" + "");
     }
 
     private synchronized String
@@ -273,8 +272,7 @@ public class HsmStorageHandler2
 
         String hsmCommand = hsm.getAttribute("command");
         if (hsmCommand == null) {
-            throw new
-                    IllegalArgumentException("hsmCommand not specified in HsmSet");
+            throw new IllegalArgumentException("hsmCommand not specified in HsmSet");
         }
 
         String localPath = file.getPath();
@@ -286,154 +284,77 @@ public class HsmStorageHandler2
             append(pnfsId).append("  ").
             append(localPath);
 
-
         sb.append(" -si=").append(storageInfo.toString());
         for (Map.Entry<String,String> attr : hsm.attributes()) {
             String key = attr.getKey();
             String val = attr.getValue();
             sb.append(" -").append(key);
-            if ((val != null) && (val.length() > 0)) {
+            if (!Strings.isNullOrEmpty(val)) {
                 sb.append("=").append(val);
             }
         }
 
-        if (!storageInfo.locations().isEmpty()) {
-            /*
-             * new style
-             */
-
-            for (URI location: storageInfo.locations()) {
-                if (location.getScheme().equals(hsm.getType()) && location.getAuthority().equals(hsm.getInstance())) {
-                    sb.append(" -uri=").append(location.toString());
-                }
+        for (URI location: storageInfo.locations()) {
+            if (location.getScheme().equals(hsm.getType()) && location.getAuthority().equals(hsm.getInstance())) {
+                sb.append(" -uri=").append(location.toString());
             }
         }
 
         String completeCommand = sb.toString();
-        _log.debug("HSM_COMMAND: " + completeCommand);
+        LOGGER.debug("HSM_COMMAND: {}", completeCommand);
         return completeCommand;
     }
 
-    //////////////////////////////////////////////////////////////////////
-    //
-    //   the fetch part
-    //
-    public JobScheduler getFetchScheduler()
+    public int getMaxActiveFetchJobs()
     {
-        return _fetchQueue;
+        return _fetchQueue.getMaxActiveJobs();
+    }
+
+    public int getActiveFetchJobs()
+    {
+        return _fetchQueue.getActiveJobs();
+    }
+
+    public int getFetchQueueSize()
+    {
+        return _fetchQueue.getQueueSize();
     }
 
     public synchronized void fetch(FileAttributes fileAttributes,
                                    CacheFileAvailable callback)
         throws FileInCacheException, CacheException
     {
-        assertInitialized();
-
         FetchThread info = _restorePnfsidList.get(fileAttributes.getPnfsId());
-
-        if (info != null) {
-            if (callback != null) {
-                info.addCallback(callback);
+        if (info == null) {
+            info = new FetchThread(fileAttributes);
+            try {
+                _fetchQueue.add(info);
+                _restorePnfsidList.put(fileAttributes.getPnfsId(), info);
+            } catch (InvocationTargetException e) {
+                /* This happens when the queued method of the FetchThread
+                 * throws an exception. They have been designed not to
+                 * throw any exceptions, so if this happens it must be a
+                 * bug.
+                 */
+                throw new RuntimeException("Failed to queue fetch request",
+                        e.getCause());
             }
-            return;
         }
-
-        info = new FetchThread(fileAttributes);
         if (callback != null) {
             info.addCallback(callback);
         }
-
-        try {
-            _fetchQueue.add(info);
-            _restorePnfsidList.put(fileAttributes.getPnfsId(), info);
-        } catch (InvocationTargetException e) {
-            /* This happens when the queued method of the FetchThread
-             * throws an exception. They have been designed not to
-             * throw any exceptions, so if this happens it must be a
-             * bug.
-             */
-            throw new RuntimeException("Failed to queue fetch request",
-                                       e.getCause());
-        }
     }
 
-    protected synchronized void removeFetchEntry(PnfsId id)
+    private synchronized void removeFetchEntry(PnfsId id)
     {
         _restorePnfsidList.remove(id);
     }
 
-    public synchronized Collection<PnfsId> getPnfsIds()
-    {
-    	// to avoid extra buffer copy tell array size in advance
-        List<PnfsId> v =
-            new ArrayList<>(_restorePnfsidList.size() + _storePnfsidList.size());
-
-        v.addAll(_restorePnfsidList.keySet());
-        v.addAll(_storePnfsidList.keySet());
-
-        return v;
-    }
-
-    public synchronized Collection<PnfsId> getStorePnfsIds()
-    {
-        return new ArrayList<>(_storePnfsidList.keySet());
-    }
-
-    public synchronized Collection <PnfsId> getRestorePnfsIds()
-    {
-        return new ArrayList<>(_restorePnfsidList.keySet());
-    }
-
-    public synchronized Info getRestoreInfoByPnfsId(PnfsId pnfsId)
-    {
-        return _restorePnfsidList.get(pnfsId);
-    }
-
-    /**
-     * Returns the name of an HSM accessible for this pool and which
-     * contains the given file. Returns null if no such HSM exists.
-     */
-    private String findAccessibleLocation(FileAttributes fileAttributes)
-    {
-        StorageInfo file = fileAttributes.getStorageInfo();
-        if (file.locations().isEmpty()
-            && _hsmSet.getHsmInstances().contains(file.getHsm())) {
-            // This is for backwards compatibility until all info
-            // extractors support URIs.
-            return file.getHsm();
-        } else {
-            for (URI location : file.locations()) {
-                if (_hsmSet.getHsmInstances().contains(location.getAuthority())) {
-                    return location.getAuthority();
-                }
-            }
-        }
-        return null;
-    }
-
-    private synchronized String
-        getFetchCommand(File file, FileAttributes fileAttributes)
-    {
-        String instance = findAccessibleLocation(fileAttributes);
-        if (instance == null) {
-            throw new
-                IllegalArgumentException("HSM not defined on this pool: " +
-                                         fileAttributes.getStorageInfo().locations());
-        }
-        HsmSet.HsmInfo hsm = _hsmSet.getHsmInfoByName(instance);
-
-        _log.debug("getFetchCommand for {} on HSM {}", fileAttributes, instance);
-
-        return getSystemCommand(file, fileAttributes, hsm, "get");
-    }
-
-    private class FetchThread extends Info implements Batchable
+    private class FetchThread extends Info
     {
         private final ReplicaDescriptor _handle;
         private final StorageInfoMessage _infoMsg;
         private long _timestamp;
-        private int _id;
-        private Thread _thread;
 
         public FetchThread(FileAttributes fileAttributes)
             throws CacheException, FileInCacheException
@@ -441,72 +362,53 @@ public class HsmStorageHandler2
             super(fileAttributes.getPnfsId());
             _infoMsg = new StorageInfoMessage(getCellAddress().toString(), fileAttributes.getPnfsId(), true);
             _infoMsg.setStorageInfo(fileAttributes.getStorageInfo());
-
-            long fileSize = fileAttributes.getSize();
-
-            _infoMsg.setFileSize(fileSize);
-
-//             StickyRecord sticky = null;
-//             String value = storageInfo.getKey("flag-s");
-//             if (value != null && value.length() > 0) {
-//                 say("setting sticky bit of " + pnfsId);
-//                 sticky = new StickyRecord("system", -1);
-//             }
-
-            List<StickyRecord> stickyRecords = Collections.emptyList();
+            _infoMsg.setFileSize(fileAttributes.getSize());
             _handle = _repository.createEntry(
                     fileAttributes,
                     EntryState.FROM_STORE,
                     EntryState.CACHED,
-                    stickyRecords,
+                    Collections.<StickyRecord>emptyList(),
                     EnumSet.noneOf(OpenFlags.class));
         }
 
-        @Override
-        public String toString()
+        /**
+         * Returns the name of an HSM accessible for this pool and which
+         * contains the given file. Returns null if no such HSM exists.
+         */
+        private String findAccessibleLocation(FileAttributes fileAttributes)
         {
-            return getPnfsId().toString();
+            StorageInfo file = fileAttributes.getStorageInfo();
+            if (file.locations().isEmpty()
+                    && _hsmSet.getHsmInstances().contains(file.getHsm())) {
+                // This is for backwards compatibility until all info
+                // extractors support URIs.
+                return file.getHsm();
+            } else {
+                for (URI location : file.locations()) {
+                    if (_hsmSet.getHsmInstances().contains(location.getAuthority())) {
+                        return location.getAuthority();
+                    }
+                }
+            }
+            return null;
         }
 
-        @Override
-        public String getClient()
+        private String getFetchCommand(File file, FileAttributes fileAttributes)
         {
-            return "[Unknown]";
-        }
-
-        @Override
-        public long getClientId()
-        {
-            return 0;
+            String instance = findAccessibleLocation(fileAttributes);
+            if (instance == null) {
+                throw new IllegalArgumentException("HSM not defined on this pool: " +
+                        fileAttributes.getStorageInfo().locations());
+            }
+            HsmSet.HsmInfo hsm = _hsmSet.getHsmInfoByName(instance);
+            LOGGER.trace("getFetchCommand for {} on HSM {}", fileAttributes, instance);
+            return getSystemCommand(file, fileAttributes, hsm, "get");
         }
 
         @Override
         public void queued(int id)
         {
             _timestamp = System.currentTimeMillis();
-            _id = id;
-        }
-
-        public double getTransferRate()
-        {
-            return 10.0;
-        }
-
-        @Override
-        protected synchronized void setThread(Thread thread)
-        {
-            _thread = thread;
-        }
-
-        @Override
-        public synchronized boolean kill()
-        {
-            if (_thread == null) {
-                return false;
-            }
-
-            _thread.interrupt();
-            return true;
         }
 
         private void sendBillingInfo()
@@ -514,7 +416,7 @@ public class HsmStorageHandler2
             try {
                 _billingStub.send(_infoMsg);
             } catch (NoRouteToCellException e) {
-                _log.error("Failed to send message to billing: " + e.getMessage());
+                LOGGER.error("Failed to send message to billing: {}", e.getMessage());
             }
         }
 
@@ -524,7 +426,7 @@ public class HsmStorageHandler2
             PnfsId pnfsId = getPnfsId();
 
             try {
-                _log.info("Dequeuing " + pnfsId);
+                LOGGER.debug("Dequeuing {}", pnfsId);
                 _handle.close();
             } finally {
                 removeFetchEntry(pnfsId);
@@ -543,7 +445,6 @@ public class HsmStorageHandler2
         @Override
         public void run()
         {
-            int returnCode;
             Exception excep = null;
             PnfsId pnfsId = getPnfsId();
             FileAttributes attributes = _handle.getFileAttributes();
@@ -551,7 +452,7 @@ public class HsmStorageHandler2
             try {
                 setThread(Thread.currentThread());
                 try {
-                    _log.debug("FetchThread started");
+                    LOGGER.trace("FetchThread started");
 
                     long now = System.currentTimeMillis();
                     _infoMsg.setTimeQueued(now - _timestamp);
@@ -561,27 +462,11 @@ public class HsmStorageHandler2
                         getFetchCommand(_handle.getFile(), attributes);
                     long fileSize = attributes.getSize();
 
-                    _log.debug("Waiting for space (" + fileSize + " bytes)");
+                    LOGGER.debug("Waiting for space ({} bytes)", fileSize);
                     _handle.allocate(fileSize);
-                    _log.debug("Got Space (" + fileSize + " bytes)");
+                    LOGGER.debug("Got Space ({} bytes)", fileSize);
 
-                    RunSystem run =
-                        new RunSystem(fetchCommand, _maxLines, _maxRestoreRun);
-                    run.go();
-                    returnCode = run.getExitValue();
-                    if (returnCode != 0) {
-                        /*
-                         * while shell do not return error code bigger than 255,
-                         * do a trick here
-                         */
-                        if (returnCode == 71 ) {
-                            returnCode = CacheException.HSM_DELAY_ERROR;
-                        }
-
-                        throw new CacheException(returnCode,
-                                                 "HSM script failed: " +
-                                                 run.getErrorString());
-                    }
+                    new HsmRunSystem(fetchCommand, MAX_LINES, _maxRestoreRun).execute();
 
                     doChecksum(_handle);
                 } finally {
@@ -591,30 +476,24 @@ public class HsmStorageHandler2
                     Thread.interrupted();
                 }
                 _handle.commit();
-                _log.info("File successfully restored from tape");
+                LOGGER.info("File successfully restored from tape");
             } catch (CacheException e) {
-                _log.error(e.toString());
-                returnCode = 1;
+                LOGGER.error(e.toString());
                 excep = e;
             } catch (InterruptedException e) {
-                _log.error("Process interrupted (timed out)");
-                returnCode = 1;
-                excep = e;
+                LOGGER.error("Process interrupted (timed out)");
+                excep = new TimeoutCacheException("HSM script was killed (" + e.getMessage() + ")", e);
             } catch (IOException e) {
-                _log.error("Process got an IOException: " + e);
-                returnCode = 2;
+                LOGGER.error("Process got an I/O error: {}", e.toString());
                 excep = e;
             } catch (IllegalThreadStateException  e) {
-                _log.error("Cannot stop process: " + e);
-                returnCode = 3;
+                LOGGER.error("Cannot stop process: {}", e.toString());
                 excep = e;
             } catch (IllegalArgumentException e) {
-                _log.error("Cannot determine 'hsmInfo': " + e.getMessage());
-                returnCode = 4;
+                LOGGER.error("Cannot determine 'hsmInfo': {}", e.getMessage());
                 excep = e;
             } catch (RuntimeException e) {
-                _log.error(e.toString(), e);
-                returnCode = 5;
+                LOGGER.error(e.toString(), e);
                 excep = e;
             } finally {
                 _handle.close();
@@ -659,7 +538,7 @@ public class HsmStorageHandler2
                         String firstLine = Files.readFirstLine(file, Charsets.US_ASCII);
                         if (firstLine != null) {
                             Checksum checksum = Checksum.parseChecksum("1:" + firstLine);
-                            _log.info("Obtained checksum {} for {} from HSM", checksum, getPnfsId());
+                            LOGGER.info("Obtained checksum {} for {} from HSM", checksum, getPnfsId());
                             handle.addChecksums(Collections.singleton(checksum));
                         }
                     } finally {
@@ -670,20 +549,9 @@ public class HsmStorageHandler2
                 /* Should not happen unless somebody else is removing
                  * the file before we got a chance to read it.
                  */
-                Throwables.propagate(e);
+                throw Throwables.propagate(e);
             }
         }
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    //
-    //   the remove part
-    //
-
-    public synchronized void setMaxRemoveJobs(int max)
-    {
-        _hsmRemoveTaskExecutor.setCorePoolSize(max);
-        _hsmRemoveTaskExecutor.setMaximumPoolSize(max);
     }
 
     public synchronized int getMaxRemoveJobs()
@@ -693,8 +561,6 @@ public class HsmStorageHandler2
 
     public synchronized void remove(CellMessage message)
     {
-        assertInitialized();
-
         assert message.getMessageObject() instanceof PoolRemoveFilesFromHSMMessage;
 
         HsmRemoveTask task =
@@ -704,61 +570,38 @@ public class HsmStorageHandler2
         _hsmRemoveExecutor.execute(new FireAndForgetTask(task));
     }
 
-    //////////////////////////////////////////////////////////////////////
-    //
-    //   the store part
-    //
-    private synchronized String
-        getStoreCommand(File file, FileAttributes fileAttributes)
+    public int getMaxActiveStoreJobs()
     {
-        StorageInfo storageInfo = fileAttributes.getStorageInfo();
-        String hsmType = storageInfo.getHsm();
-        _log.debug("getStoreCommand for pnfsid=" + fileAttributes.getPnfsId() +
-                   ";hsm=" + hsmType + ";si=" + storageInfo);
-        List<HsmSet.HsmInfo> hsms = _hsmSet.getHsmInfoByType(hsmType);
-        if (hsms.isEmpty()) {
-            throw new
-                IllegalArgumentException("Info not found for : " + hsmType);
-        }
-
-        // If multiple HSMs are defined for the given type, then we
-        // currently pick the first. We may consider randomizing this
-        // choice.
-        HsmSet.HsmInfo hsm = hsms.get(0);
-
-        return getSystemCommand(file, fileAttributes, hsm, "put");
+        return _storeQueue.getMaxActiveJobs();
     }
 
-    public synchronized Info getStoreInfoByPnfsId(PnfsId pnfsId)
+    public int getActiveStoreJobs()
     {
-        return _storePnfsidList.get(pnfsId);
+        return _storeQueue.getActiveJobs();
     }
 
-    public JobScheduler getStoreScheduler()
+    public int getStoreQueueSize()
     {
-        return _storeQueue;
+        return _storeQueue.getQueueSize();
     }
 
     public synchronized boolean store(PnfsId pnfsId, CacheFileAvailable callback)
         throws CacheException, InterruptedException
     {
-        assertInitialized();
-
-        _log.debug("store requested for " + pnfsId +
-                   (callback == null ? " w/o " : " with ") + "callback");
+        LOGGER.trace("store requested for {} {} callback",
+                pnfsId, (callback == null) ? " w/o " : " with ");
 
         if (_repository.getState(pnfsId) == EntryState.CACHED) {
-            _log.debug("is already cached " + pnfsId);
+            LOGGER.debug("is already cached {}", pnfsId);
             return true;
         }
 
-        StoreThread  info = _storePnfsidList.get(pnfsId);
+        StoreThread info = _storePnfsidList.get(pnfsId);
         if (info != null) {
             if (callback != null) {
                 info.addCallback(callback);
             }
-            _log.debug("flush already in progress "
-                       + pnfsId + " (callback=" + callback + ")");
+            LOGGER.debug("flush already in progress {} (callback={})", pnfsId, callback);
             return false;
         }
 
@@ -775,7 +618,7 @@ public class HsmStorageHandler2
         }
 
         _storePnfsidList.put(pnfsId, info);
-        _log.debug("added to flush queue " + pnfsId + " (callback="+callback+")");
+        LOGGER.debug("added to flush queue {} (callback={})", pnfsId, callback);
         return false;
     }
 
@@ -784,12 +627,10 @@ public class HsmStorageHandler2
         _storePnfsidList.remove(id);
     }
 
-    private class StoreThread extends Info implements Batchable
+    private class StoreThread extends Info
     {
         private final StorageInfoMessage _infoMsg;
         private long _timestamp;
-        private int _id;
-        private Thread _thread;
 
 	public StoreThread(PnfsId pnfsId)
         {
@@ -797,46 +638,27 @@ public class HsmStorageHandler2
             _infoMsg = new StorageInfoMessage(getCellAddress().toString(), pnfsId, false);
 	}
 
-        @Override
-        public String toString()
+        private String getStoreCommand(File file, FileAttributes fileAttributes)
         {
-            return getPnfsId().toString();
-        }
+            StorageInfo storageInfo = fileAttributes.getStorageInfo();
+            String hsmType = storageInfo.getHsm();
+            LOGGER.trace("getStoreCommand for pnfsid={};hsm={};si={}",
+                    fileAttributes.getPnfsId(), hsmType, storageInfo);
 
-        @Override
-        public String getClient()
-        {
-            return "[Unknown]";
-        }
-
-        @Override
-        public long getClientId()
-        {
-            return 0;
-        }
-
-        @Override
-        protected synchronized void setThread(Thread thread)
-        {
-            _thread = thread;
-        }
-
-        @Override
-        public synchronized boolean kill()
-        {
-            if (_thread == null) {
-                return false;
+            // If multiple HSMs are defined for the given type, then we
+            // currently pick the first. We may consider randomizing this
+            // choice.
+            HsmSet.HsmInfo hsm = getFirst(_hsmSet.getHsmInfoByType(hsmType), null);
+            if (hsm == null) {
+                throw new IllegalArgumentException("Info not found for : " + hsmType);
             }
-
-            _thread.interrupt();
-            return true;
+            return getSystemCommand(file, fileAttributes, hsm, "put");
         }
 
         @Override
         public void queued(int id)
         {
             _timestamp = System.currentTimeMillis();
-            _id = id;
         }
 
         private void sendBillingInfo()
@@ -844,7 +666,7 @@ public class HsmStorageHandler2
             try {
                 _billingStub.send(_infoMsg);
             } catch (NoRouteToCellException e) {
-                _log.error("Failed to send message to billing: " + e.getMessage());
+                LOGGER.error("Failed to send message to billing: {}", e.getMessage());
             }
         }
 
@@ -866,36 +688,34 @@ public class HsmStorageHandler2
 	@Override
         public void run()
         {
-            int returnCode;
             PnfsId pnfsId = getPnfsId();
             Throwable excep = null;
 
             try {
                 setThread(Thread.currentThread());
 
-                _log.debug("Store thread started " + _thread);
+                LOGGER.trace("Store thread started {}", _thread);
 
                 /* Check if name space entry still exists. If the name
                  * space entry was deleted, then we delete the file on
                  * the pool right away.
                  */
                 try {
-                    _log.debug("Checking if file still exists");
+                    LOGGER.debug("Checking if file still exists");
                     _pnfs.getFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
                 } catch (CacheException e) {
                     switch (e.getRc()) {
                     case CacheException.FILE_NOT_FOUND:
                         try {
                             _repository.setState(pnfsId, EntryState.REMOVED);
-                            _log.info("File not found in name space; removed " + pnfsId);
+                            LOGGER.info("File not found in name space; removed {}", pnfsId);
                         } catch (IllegalTransitionException f) {
-                            _log.error("File not found in name space, but failed to remove "
-                                       + pnfsId + ": " + f);
+                            LOGGER.error("File not found in name space, but failed to remove {}: {}", pnfsId, f);
                         }
                         break;
 
                     case CacheException.NOT_IN_TRASH:
-                        _log.warn("File no longer appears in the name space; the pool can however not confirm that it has been deleted and will thus not remove the file");
+                        LOGGER.warn("File no longer appears in the name space; the pool can however not confirm that it has been deleted and will thus not remove the file");
                         break;
                     }
                     throw e;
@@ -918,50 +738,26 @@ public class HsmStorageHandler2
                     String storeCommand =
                         getStoreCommand(handle.getFile(), fileAttributes);
 
-                    RunSystem run =
-                        new RunSystem(storeCommand, _maxLines, _maxStoreRun);
-                    run.go();
-                    returnCode = run.getExitValue();
-                    if (returnCode != 0) {
-                        _log.error("HSM script returned " + returnCode
-                                   + ": " + run.getErrorString());
-                        throw new CacheException(returnCode, run.getErrorString());
-                    }
-
-                    String outputData = run.getOutputString();
-                    if (outputData != null && outputData.length() != 0) {
-                        BufferedReader in =
-                            new BufferedReader(new StringReader(outputData));
-                        String line = null;
+                    String output = new HsmRunSystem(storeCommand, MAX_LINES, _maxStoreRun).execute();
+                    for (String uri : Splitter.on("\n").trimResults().omitEmptyStrings().split(output)) {
                         try {
-                            while ((line = in.readLine()) != null) {
-
-                                String uri = line.trim();
-                                if(uri.isEmpty()) {
-                                    continue;
-                                }
-                                URI location = HsmLocationExtractorFactory.validate(new URI(uri));
-                                storageInfo.addLocation(location);
-                                storageInfo.isSetAddLocation(true);
-                                _log.debug(pnfsId.toString()
-                                           + ": added HSM location "
-                                           + location);
-                            }
-                        } catch (URISyntaxException use) {
-                            _log.error("HSM script produced BAD URI: " + line);
-                            throw new CacheException(2, use.getMessage());
-                        } catch (IOException ie) {
-                            // never happens on strings
-                            throw new RuntimeException("Bug detected");
+                            URI location = HsmLocationExtractorFactory.validate(new URI(uri));
+                            storageInfo.addLocation(location);
+                            storageInfo.isSetAddLocation(true);
+                            LOGGER.debug("{}: added HSM location {}", pnfsId, location);
+                        } catch (IllegalArgumentException | URISyntaxException e) {
+                            LOGGER.error("HSM script produced BAD URI: {}", uri);
+                            throw new CacheException(2, e.getMessage(), e);
                         }
                     }
 
                     fileAttributesForNotification.setAccessLatency(fileAttributes.getAccessLatency());
-                    fileAttributesForNotification.setRetentionPolicy(fileAttributes.getRetentionPolicy());
+                    fileAttributesForNotification.setRetentionPolicy(fileAttributes
+                            .getRetentionPolicy());
                     fileAttributesForNotification.setStorageInfo(storageInfo);
                     fileAttributesForNotification.setSize(fileAttributes.getSize());
                 } finally {
-                    /* Surpress thread interruptions after this point.
+                    /* Suppress thread interruptions after this point.
                      */
                     setThread(null);
                     Thread.interrupted();
@@ -1011,15 +807,15 @@ public class HsmStorageHandler2
                          * can live with a little bit of wasted
                          * tape).
                          */
-                        _log.error("Error notifying PNFS about a flushed file: "
-                                + e.getMessage() + "(" + e.getRc() + ")");
+                        LOGGER.error("Error notifying PNFS about a flushed file: {} ({})",
+                                e.getMessage(), e.getRc());
                     }
                     Thread.sleep(120000); // 2 minutes
                 }
 
                 notifyFlushMessageTarget(fileAttributesForNotification);
 
-                _log.info("File successfully stored to tape");
+                LOGGER.info("File successfully stored to tape");
 
                 _repository.setState(pnfsId, EntryState.CACHED);
             } catch (IllegalTransitionException e) {
@@ -1035,27 +831,27 @@ public class HsmStorageHandler2
                                    "Flush aborted because file was deleted");
             } catch (CacheException e) {
                 excep = e;
-                _log.error("Error while flushing to tape: " + e);
+                LOGGER.error("Error while flushing to tape: {}", e.toString());
                 _infoMsg.setResult(e.getRc(), e.getMessage());
             } catch (InterruptedException e) {
                 excep = e;
-                _log.error("Process interrupted (timed out)");
+                LOGGER.error("Process interrupted (timed out)");
                 _infoMsg.setResult(1, "Flush timed out");
             } catch (IOException e) {
                 excep = e;
-                _log.error("Process got an IOException : " + e);
+                LOGGER.error("Process got an I/O error: {}", e.toString());
                 _infoMsg.setResult(2, "IO Error: " + e.getMessage());
             } catch (IllegalThreadStateException e) {
                 excep = e;
-                _log.error("Cannot stop process : " + e);
+                LOGGER.error("Cannot stop process: {}", e.toString());
                 _infoMsg.setResult(3, e.getMessage());
             } catch (IllegalArgumentException e) {
                 excep = e;
-                _log.error("Cannot determine 'hsmInfo': " + e.getMessage());
+                LOGGER.error("Cannot determine 'hsmInfo': {}", e.getMessage());
                 _infoMsg.setResult(4, e.getMessage());
             } catch (Throwable t) {
                 excep = t;
-                _log.error("Unexpected exception", t);
+                LOGGER.error("Unexpected exception", t);
                 _infoMsg.setResult(666, t.getMessage());
             } finally {
                 removeStoreEntry(pnfsId);
@@ -1076,9 +872,242 @@ public class HsmStorageHandler2
                                     poolFileFlushedMessage);
                 sendMessage(msg);
             } catch (NoRouteToCellException e) {
-                _log.info("Failed to send message to " + _flushMessageTarget + ": "
-                          + e.getMessage());
+                LOGGER.info("Failed to send message to {}: {}",
+                        _flushMessageTarget, e.getMessage());
             }
+        }
+    }
+
+    @Command(name = "rh set timeout",
+            hint = "set restore timeout",
+            usage = "Set restore timeout for the HSM script. When the timeout expires " +
+                    "the HSM script is killed.")
+    class RestoreSetTimeoutCommand implements Callable<String>
+    {
+        @Argument(metaVar = "seconds")
+        long timeout;
+
+        @Override
+        public String call()
+        {
+            synchronized (HsmStorageHandler2.this) {
+                _maxRestoreRun = TimeUnit.SECONDS.toMillis(timeout);
+            }
+            return "";
+        }
+    }
+
+    @Command(name = "rh set max active",
+            hint = "set restore concurrency",
+            usage = "Set the maximum number of restore instances of the HSM script to " +
+                    "start. Additional restore requests will be queued.")
+    class RestoreSetMaxActiveCommand implements Callable<String>
+    {
+        @Argument
+        int jobs;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            checkArgument(jobs >= 0, "JOBS must be non-negative");
+            _fetchQueue.setMaxActiveJobs(jobs);
+            return "Max Active Hsm Restore Processes set to " + jobs;
+        }
+    }
+
+    @Command(name = "rh kill",
+            hint = "kill restore request",
+            usage = "Remove an HSM restore request.")
+    class RestoreKillCommand implements Callable<String>
+    {
+        @Argument
+        int jobId;
+
+        @Option(name = "force", usage = "Terminate the HSM script if it is running.")
+        boolean force;
+
+        @Override
+        public String call() throws NoSuchElementException, IllegalStateException
+        {
+            _fetchQueue.kill(jobId, force);
+            return "Kill initialized";
+        }
+    }
+
+    @Command(name = "rh ls",
+            hint = "list restore queue",
+            usage = "List the HSM requests on the restore queue.\n\n" +
+                    "The columns in the output show: job id, job status, pnfs id, request counter, " +
+                    "and request submission time.")
+    class RestoreListCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            return _fetchQueue.printJobQueue();
+        }
+    }
+
+    @Command(name = "st set timeout",
+            hint = "set store timeout",
+            usage = "Set store timeout for the HSM script. When the timeout expires " +
+                    "the HSM script is killed.")
+    class StoreSetTimeoutCommand implements Callable<String>
+    {
+        @Argument(metaVar = "seconds")
+        long timeout;
+
+        @Override
+        public String call()
+        {
+            synchronized (HsmStorageHandler2.this) {
+                _maxStoreRun = TimeUnit.SECONDS.toMillis(timeout);
+            }
+            return "";
+        }
+    }
+
+    @Command(name = "st set max active",
+            hint = "set store concurrency",
+            usage = "Set the maximum number of store instances of the HSM script to " +
+                    "start. Additional store requests will be queued.")
+    class StoreSetMaxActiveCommand implements Callable<String>
+    {
+        @Argument
+        int jobs;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            checkArgument(jobs >= 0, "limit must be non-negative");
+            _storeQueue.setMaxActiveJobs(jobs);
+            return "Max active HSM store processes set to " + jobs;
+        }
+    }
+
+    @Command(name = "st kill",
+            hint = "kill store request",
+            usage = "Remove an HSM store request.")
+    class StoreKillCommand implements Callable<String>
+    {
+        @Argument
+        int jobId;
+
+        @Option(name = "force", usage = "Terminate the HSM script if it is running.")
+        boolean force;
+
+        @Override
+        public String call() throws NoSuchElementException, IllegalStateException
+        {
+            _storeQueue.kill(jobId, force);
+            return "Kill initialized";
+        }
+    }
+
+    @Command(name = "st ls",
+            hint = "list store queue",
+            usage = "List the HSM requests on the store queue.\n\n" +
+                    "The columns in the output show: job id, job status, pnfs id, request counter, " +
+                    "and request submission time.")
+    class StoreListCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            return _storeQueue.printJobQueue();
+        }
+    }
+
+    @Command(name = "rm set timeout",
+            hint = "set tape remove timeout",
+            usage = "Set remove timeout for the HSM script. When the timeout expires " +
+                    "the HSM script is killed.")
+    class RemoveSetTimeoutCommand implements Callable<String>
+    {
+        @Argument(metaVar = "seconds")
+        long timeout;
+
+        @Override
+        public String call()
+        {
+            synchronized (HsmStorageHandler2.this) {
+                _maxRemoveRun = TimeUnit.SECONDS.toMillis(timeout);
+            }
+            return "";
+        }
+    }
+
+    @Command(name = "rm set max active",
+            hint = "set remoe concurrency",
+            usage = "Set the maximum number of remove instances of the HSM script to " +
+                    "start. Additional remove requests will be queued.")
+    class RemoveSetMaxActiveCommand implements Callable<String>
+    {
+        @Argument
+        int jobs;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            checkArgument(jobs >= 0, "Limit must be non-negative");
+            _hsmRemoveTaskExecutor.setCorePoolSize(jobs);
+            _hsmRemoveTaskExecutor.setMaximumPoolSize(jobs);
+            return "Max active remover processes set to " + jobs;
+        }
+    }
+
+    @Command(name = "rh restore",
+            hint = "restore file from tape",
+            usage = "Restore a file from tape.")
+    class RestoreCommand extends DelayedReply implements Callable<Serializable>
+    {
+        @Argument
+        PnfsId pnfsId;
+
+        @Option(name = "block",
+                usage = "Block the shell until the restore has completed. This " +
+                        "option is only relevant when debugging as the shell " +
+                        "would usually time out before a real HSM is able to " +
+                        "restore a file.")
+        boolean block;
+
+        @Override
+        public Serializable call()
+        {
+            final CacheFileAvailable cfa = new CacheFileAvailable() {
+                @Override
+                public void cacheFileAvailable(PnfsId pnfsId, Throwable ee) {
+                    try {
+                        if (ee == null) {
+                            send("Fetched " + pnfsId);
+                        } else {
+                            send("Failed to fetch " + pnfsId + ": " + ee);
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } catch (NoRouteToCellException e) {
+                        LOGGER.error("Failed to deliver reply: {}", e.toString());
+                    }
+                }
+            };
+
+            /* We need to fetch the storage info and we don't want to
+             * block the message thread while waiting for the reply.
+             */
+            Thread t = new Thread("rh restore") {
+                @Override
+                public void run() {
+                    try {
+                        FileAttributes attributes = _pnfs.getStorageInfoByPnfsId(pnfsId).getFileAttributes();
+                        fetch(attributes, block ? cfa : null);
+                    } catch (CacheException e) {
+                        cfa.cacheFileAvailable(pnfsId, e);
+                    }
+                }
+            };
+            t.start();
+
+            return block ? this : "Fetch request queued";
         }
     }
 }

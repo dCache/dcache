@@ -88,6 +88,8 @@ public class AlarmJDOUtils {
         private String filter;
         private String parameters;
         private Object[] values;
+        private Integer rangeStart;
+        private Integer rangeEnd;
 
         @Override
         public String toString() {
@@ -99,8 +101,16 @@ public class AlarmJDOUtils {
             return filter;
         }
 
+        public Integer getRangeStart() {
+            return rangeStart;
+        }
+
         public String getParameters() {
             return parameters;
+        }
+
+        public Integer getRangeEnd() {
+            return rangeEnd;
         }
 
         public Object[] getValues() {
@@ -108,6 +118,18 @@ public class AlarmJDOUtils {
                 return null;
             }
             return Arrays.asList(values).toArray();
+        }
+
+        private void normalizeRange() {
+            if (rangeStart != null) {
+                if (rangeEnd == null) {
+                    rangeEnd = Integer.MAX_VALUE;
+                }
+            } else if (rangeEnd != null) {
+                if (rangeStart == null) {
+                    rangeStart = 0;
+                }
+            }
         }
     }
 
@@ -117,24 +139,28 @@ public class AlarmJDOUtils {
     public static Query createQuery(PersistenceManager pm, AlarmDAOFilter filter) {
         String expression;
         String parameters;
+        Integer from;
+        Integer to;
+        Query query = pm.newQuery(LogEntry.class);
 
         if (filter != null) {
             expression = filter.filter;
             parameters = filter.parameters;
+            filter.normalizeRange();
+            from = filter.rangeStart;
+            to = filter.rangeEnd;
+            query.setFilter(expression);
+            query.declareParameters(parameters);
+            if (from != null) {
+                query.setRange(from, to);
+            }
         } else {
             expression = null;
             parameters = null;
+            from = null;
+            to = null;
         }
 
-        if (parameters == null) {
-            if (expression == null) {
-                return pm.newQuery(LogEntry.class);
-            }
-            return pm.newQuery(LogEntry.class, expression);
-        }
-        Query query = pm.newQuery(LogEntry.class);
-        query.setFilter(expression);
-        query.declareParameters(parameters);
         query.addExtension("datanucleus.query.resultCacheType", "none");
         query.addExtension("datanucleus.rdbms.query.resultSetType",
                         "scroll-insensitive");
@@ -174,9 +200,31 @@ public class AlarmJDOUtils {
 
     /**
      * Construct filter based on values for the parameter fields (AND'd).
+     * <br>
+     *
+     * @param after
+     *            closed lower bound (>=) of date range; may be
+     *            <code>null</code>.
+     * @param before
+     *            closed upper bound (<=) of date range; may be
+     *            <code>null</code>.
+     * @param severity
+     *            <code>null</code> will be treated as equivalent to
+     *            <code>Severity.MODERATE</code>.
+     * @param type
+     *            may be <code>null</code>.
+     * @param isAlarm
+     *            may be <code>null</code>.
+     * @param rangeStart
+     *            range beginning
+     *            may be <code>null</code>.
+     * @param rangeEnd
+     *            range ending
+     *            may be <code>null</code>.
      */
     public static AlarmDAOFilter getFilter(Date after, Date before,
-                    Severity severity, String type, Boolean isAlarm) {
+                    Severity severity, String type, Boolean isAlarm,
+                    Integer rangeStart, Integer rangeEnd) {
         StringBuilder f = new StringBuilder();
         StringBuilder p = new StringBuilder();
         List<Object> values = new ArrayList<>();
@@ -231,6 +279,8 @@ public class AlarmJDOUtils {
         filter.filter = trimToNull(f);
         filter.parameters = trimToNull(p);
         filter.values = emptyListToNull(values);
+        filter.rangeStart = rangeStart;
+        filter.rangeEnd = rangeEnd;
         return filter;
     }
 

@@ -203,8 +203,7 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
     public void setAlarmMetadata(ILoggingEvent event, AlarmDefinition definition) {
         Level level = event.getLevel();
         if (definition == null) {
-            setSeverity(level == Level.ERROR ? Severity.HIGH.ordinal()
-                            : Severity.MODERATE.ordinal());
+            setSeverity(getSeverityFromLevel(level).ordinal());
             if (alarm) {
                 setType(event.getMarker().toString());
             } else {
@@ -302,9 +301,18 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
         notes = entry.getNotes();
     }
 
-    private String getFormattedDate(Date date) {
+    private static String getFormattedDate(Date date) {
         DateFormat format = new SimpleDateFormat(FORMAT);
         format.setLenient(false);
         return format.format(date);
+    }
+
+    private static Severity getSeverityFromLevel(Level level) {
+        switch(level.toInt()) {
+            case Level.ERROR_INT: return Severity.HIGH;
+            case Level.WARN_INT : return Severity.MODERATE;
+            default:
+                return Severity.LOW;
+        }
     }
 }

@@ -1,36 +1,28 @@
 package diskCacheV111.util;
 
+import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-
-import diskCacheV111.vehicles.JobInfo;
 
 import dmg.cells.nucleus.CDC;
 
 import org.dcache.commons.util.NDC;
-import org.dcache.util.CDCThreadFactory;
-import org.dcache.util.FifoPriorityComparator;
+import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
-import org.dcache.util.IoPrioritizable;
-import org.dcache.util.IoPriority;
-import org.dcache.util.LifoPriorityComparator;
 
 public class SimpleJobScheduler implements JobScheduler, Runnable
 {
-    private final static Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(SimpleJobScheduler.class);
 
     private static final int WAITING = 10;
@@ -43,37 +35,27 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     private int _nextId = 1000;
     private final Object _lock = new Object();
     private final Thread _worker;
-    private final Queue<SJob> _queue;
+    private final Queue<SJob> _queue = new ArrayDeque<>();
     private final Map<Integer, SJob> _jobs = new HashMap<>();
-    private int _batch = -1;
-    private String _name = "regular";
-    private int _id = -1;
+    private final String _name;
 
     private String[] _st_string = { "W", "A", "K", "R" };
 
-    /**
-     * thread pool used for job execution
-     */
     private final ExecutorService _jobExecutor;
 
-    private class SJob implements Job, Runnable, IoPrioritizable {
+    private class SJob implements Job, Runnable {
 
         private final long _submitTime = System.currentTimeMillis();
         private long _startTime;
         private int _status = WAITING;
-        private final Runnable _runnable;
+        private final Queable _runnable;
         private final int _id;
-        private final IoPriority _priority;
-        private Future<?> _future;
         private CDC _cdc;
-        private final long _ctime;
 
-        private SJob(Runnable runnable, int id, IoPriority priority) {
+        private SJob(Queable runnable, int id) {
             _runnable = runnable;
             _id = id;
-            _priority = priority;
             _cdc = new CDC();
-            _ctime = System.nanoTime();
         }
 
         @Override
@@ -84,11 +66,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         @Override
         public String getStatusString() {
             return _st_string[_status - WAITING];
-        }
-
-        @Override
-        public Runnable getTarget() {
-            return _runnable;
         }
 
         public int getId() {
@@ -106,27 +83,13 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
 
         public synchronized void start() {
-            _future = _jobExecutor.submit(new FireAndForgetTask(this));
+            _jobExecutor.submit(new FireAndForgetTask(this));
             _status = ACTIVE;
         }
 
-        public synchronized boolean kill(boolean force)
+        public synchronized void kill()
         {
-            if (_future == null) {
-                throw new IllegalStateException("Not running");
-            }
-
-            if (_runnable instanceof Batchable) {
-                if (((Batchable)_runnable).kill()) {
-                    return true;
-                }
-                if (!force) {
-                    return false;
-                }
-            }
-
-            _future.cancel(true);
-            return true;
+            _runnable.kill();
         }
 
         @Override
@@ -156,13 +119,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(_id).append(" ").append(getStatusString()).append(" ");
-            sb
-                    .append(_priority).append(" ");
-            if (_runnable instanceof Batchable) {
-                Batchable b = (Batchable) _runnable;
-                sb.append("{").append(b.getClient()).append(":").append(
-                        b.getClientId()).append("} ");
-            }
             sb.append(_runnable.toString());
             return sb.toString();
         }
@@ -177,103 +133,33 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
             return (o instanceof SJob) && (((SJob) o)._id == _id);
         }
-
-        @Override
-        public IoPriority getPriority() {
-            return _priority;
-        }
-
-        @Override
-        public long getCreateTime() {
-            return _ctime;
-        }
-
-        @Override
-        public JobInfo getJobInfo() {
-            if (_runnable instanceof Batchable) {
-                JobInfo info = new JobInfo(this,
-                        ((Batchable) _runnable).getClient(),
-                        ((Batchable) _runnable).getClientId());
-                return info;
-            } else {
-                return new JobInfo(this);
-            }
-        }
     }
 
     public SimpleJobScheduler(String name) {
-        this(Executors.defaultThreadFactory(), name, true);
-    }
-
-    public SimpleJobScheduler(String name, boolean fifo) {
-        this(Executors.defaultThreadFactory(), name, fifo);
-    }
-
-    private SimpleJobScheduler(ThreadFactory factory, String name, boolean fifo)
-    {
         _name = name;
-        _queue = new PriorityQueue<>(16, fifo? new FifoPriorityComparator() :
-            new LifoPriorityComparator());
-
-        _jobExecutor = Executors.newCachedThreadPool(
-                new CDCThreadFactory(factory, CDC.getCellName(), CDC.getDomainName())
-                {
-                    @Override
-                    public Thread newThread(Runnable r)
-                    {
-                        Thread t = super.newThread(r);
-                        t.setName(_name + "-worker");
-                        return t;
-                    }
-                });
-
-        _worker = factory.newThread(this);
+        _jobExecutor = new CDCExecutorServiceDecorator(Executors.newCachedThreadPool(
+                new ThreadFactoryBuilder().setNameFormat(_name + "-worker-%d").build()));
+        _worker = new Thread(this);
         _worker.setName(_name);
         _worker.start();
     }
 
     @Override
-    public void setSchedulerId(int id) {
-        _id = id;
-    }
-
-    @Override
-    public String getSchedulerName() {
-        return _name;
-    }
-
-    @Override
-    public int getSchedulerId() {
-        return _id;
-    }
-
-    @Override
-    public int add(Runnable runnable) throws InvocationTargetException {
-        return add(runnable, IoPriority.REGULAR);
-    }
-
-    @Override
-    public int add(Runnable runnable, IoPriority priority)
-            throws InvocationTargetException {
+    public int add(Queable runnable) throws InvocationTargetException {
         synchronized (_lock) {
-
-            int id = _id < 0 ? (_nextId++) : ((_nextId++) * 10 + _id);
-
-            // System.out.println(" SimpleJobScheduler, job id is "+id);
+            int id = _nextId++;
 
             try {
-                if (runnable instanceof Batchable) {
-                    ((Batchable) runnable).queued(id);
-                }
+                runnable.queued(id);
             } catch (Throwable ee) {
                 throw new InvocationTargetException(ee, "reported by queued");
             }
 
             if (_maxActiveJobs <= 0) {
-                _log.warn("A task was added to queue '" + _name + "', however the queue is not configured to execute any tasks.");
+                LOGGER.warn("A task was added to queue '{}', however the queue is not configured to execute any tasks.", _name);
             }
 
-            SJob job = new SJob(runnable, id, priority);
+            SJob job = new SJob(runnable, id);
             _jobs.put(id, job);
             _queue.add(job);
             _lock.notifyAll();
@@ -283,107 +169,36 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     @Override
-    public List<JobInfo> getJobInfos() {
+    public String printJobQueue() {
         synchronized (_lock) {
-            List<JobInfo> list = new ArrayList<>();
-            for (Job job : _jobs.values()) {
-                list.add(job.getJobInfo());
-            }
-            return list;
+            return Joiner.on('\n').join(_jobs.values());
         }
-    }
-
-    @Override
-    public JobInfo getJobInfo(int jobId) {
-        synchronized (_lock) {
-            Job job = _jobs.get(jobId);
-            if (job == null) {
-                throw new NoSuchElementException("Job not found : Job-" + jobId);
-            }
-            return job.getJobInfo();
-        }
-    }
-
-    @Override
-    public StringBuffer printJobQueue(StringBuffer sb) {
-        if (sb == null) {
-            sb = new StringBuffer(1024);
-        }
-
-        synchronized (_lock) {
-
-            for (Job job : _jobs.values()) {
-                sb.append(job.toString()).append("\n");
-            }
-            /*
-                       for( int j = LOW ; j <= HIGH ; j++ ){
-                          sb.append(" Queue : "+j+"\n");
-                          i = _queues[j].listIterator() ;
-                          while( i.hasNext() ){
-                            sb.append( i.next().toString() ).append("\n");
-                          }
-                       }
-            */
-        }
-        return sb;
     }
 
     @Override
     public void kill(int jobId, boolean force)
-        throws NoSuchElementException
+        throws IllegalStateException, NoSuchElementException
     {
         synchronized (_lock) {
             SJob job = _jobs.get(jobId);
             if (job == null) {
-                throw new NoSuchElementException("Job not found : Job-" + jobId);
+                throw new NoSuchElementException("Job "+ jobId + " not found");
             }
-
-            // System.out.println("Huch : "+job._id+" <-> "+jobId+" :
-            // "+job._runnable.toString()) ;
-
             switch (job._status) {
             case WAITING:
-                remove(jobId);
-                return;
+                _queue.remove(job);
+                _jobs.remove(job._id);
+                job._runnable.unqueued();
+                break;
             case ACTIVE:
-                job.kill(force);
-                return;
+                if (!force) {
+                    throw new IllegalStateException("Job is active. Use force to remove.");
+                }
+                job.kill();
+                break;
             default:
-                throw new NoSuchElementException("Job is "
-                                                 + job.getStatusString()
-                                                 + " : Job-" + jobId);
+                throw new IllegalStateException("Job is " + job.getStatusString());
             }
-        }
-    }
-
-    @Override
-    public void remove(int jobId) throws NoSuchElementException {
-        synchronized (_lock) {
-            SJob job = _jobs.get(jobId);
-            if (job == null) {
-                throw new NoSuchElementException("Job not found : Job-" + jobId);
-            }
-            if (job._status != WAITING) {
-                throw new NoSuchElementException("Job is "
-                        + job.getStatusString() + " : Job-" + jobId);
-            }
-
-            _queue.remove(job);
-            _jobs.remove(job._id);
-            if (job._runnable instanceof Batchable) {
-                ((Batchable) job._runnable).unqueued();
-            }
-        }
-    }
-
-    public Job getJob(int jobId) throws NoSuchElementException {
-        synchronized (_lock) {
-            Job job = _jobs.get(jobId);
-            if (job == null) {
-                throw new NoSuchElementException("Job-" + jobId);
-            }
-
-            return job;
         }
     }
 
@@ -414,36 +229,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
-    public void suspend() {
-        synchronized (_lock) {
-            _batch = 0;
-        }
-    }
-
-    public void resume() {
-        synchronized (_lock) {
-            _batch = -1;
-            _lock.notifyAll();
-        }
-    }
-
-    public void resume(int batch) {
-        synchronized (_lock) {
-            if (batch <= 0) {
-                throw new IllegalArgumentException("batch <= 0");
-            }
-            _batch = batch;
-            _lock.notifyAll();
-        }
-    }
-
-    public int getBatchSize() {
-        if (_batch < 0) {
-            throw new IllegalStateException("Not batching ....");
-        }
-        return _batch;
-    }
-
     @Override
     public void shutdown() {
         _worker.interrupt();
@@ -455,13 +240,10 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             try {
                 try {
                     while (true) {
-                        if (_batch != 0) {
-                            while (_activeJobs < _maxActiveJobs && !_queue.isEmpty()) {
-                                SJob job = _queue.poll();
-                                _activeJobs++;
-                                _batch = _batch > 0 ? _batch - 1 : _batch;
-                                job.start();
-                            }
+                        while (_activeJobs < _maxActiveJobs && !_queue.isEmpty()) {
+                            SJob job = _queue.poll();
+                            _activeJobs++;
+                            job.start();
                         }
                         _lock.wait();
                     }
@@ -474,11 +256,9 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
                 for (SJob job : _jobs.values()) {
                     if (job._status == WAITING) {
-                        if (job._runnable instanceof Batchable) {
-                            ((Batchable) job._runnable).unqueued();
-                        }
+                        job._runnable.unqueued();
                     } else if (job._status == ACTIVE) {
-                        job.kill(true);
+                        job.kill();
                     }
                     long start = System.currentTimeMillis();
                     while ((_activeJobs > 0)

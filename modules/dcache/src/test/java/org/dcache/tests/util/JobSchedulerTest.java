@@ -9,19 +9,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import diskCacheV111.util.JobScheduler;
+import diskCacheV111.util.Queable;
 import diskCacheV111.util.SimpleJobScheduler;
 
 import static org.junit.Assert.assertTrue;
 
 public class JobSchedulerTest {
 
-    public static class ExampleJob implements Runnable {
+    public static class ExampleJob implements Queable {
 
         private final CountDownLatch _doneCounter;
         private final CountDownLatch _startCounter;
         private final String _name;
         private final long _waitTime;
-        private AtomicBoolean _isInterrupted = new AtomicBoolean(false);
+        private AtomicBoolean _isKilled = new AtomicBoolean(false);
 
         public ExampleJob(String name, CountDownLatch startCounter, CountDownLatch doneCounter, long waitTime) {
             _name = name;
@@ -37,8 +38,7 @@ public class JobSchedulerTest {
                     _startCounter.countDown();
                 }
                 Thread.sleep(_waitTime);
-            } catch (InterruptedException ie) {
-                _isInterrupted.set(true);
+            } catch (InterruptedException ignored) {
             } finally {
                 if (_doneCounter != null) {
                     _doneCounter.countDown();
@@ -46,13 +46,29 @@ public class JobSchedulerTest {
             }
         }
 
-        public boolean isInterrupted() {
-            return _isInterrupted.get();
+        public boolean isKilled() {
+            return _isKilled.get();
         }
 
         @Override
         public String toString() {
             return _name;
+        }
+
+        @Override
+        public void queued(int id)
+        {
+        }
+
+        @Override
+        public void unqueued()
+        {
+        }
+
+        @Override
+        public void kill()
+        {
+            _isKilled.set(true);
         }
     }
     private JobScheduler _jobScheduler;
@@ -97,6 +113,6 @@ public class JobSchedulerTest {
 
         doneCounter.await();
 
-        assertTrue("Job is not interrupted", job.isInterrupted());
+        assertTrue("Job is not interrupted", job.isKilled());
     }
 }
