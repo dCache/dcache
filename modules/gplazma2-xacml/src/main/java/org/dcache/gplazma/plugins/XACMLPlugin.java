@@ -210,7 +210,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             LocalId localId = xacmlClient.mapCredentials(_mappingServiceURL);
             Preconditions.checkArgument(localId != null, DENIED_MESSAGE + key);
 
-            logger.info("mapping service {} returned localId {} for {} ", _mappingServiceURL, localId, key);
+            logger.debug("mapping service {} returned localId {} for {} ", _mappingServiceURL, localId, key);
             return localId;
         }
     }
@@ -588,7 +588,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                                 extensions);
             }
         }
-        logger.warn("no XACML mappings found for {}, {}", login, extensionSet);
+        logger.debug("no XACML mappings found for {}, {}", login, extensionSet);
         return null;
     }
 
