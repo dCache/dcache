@@ -44,5 +44,4 @@ _dcache ()
   return 0
 }
 
-complete -F _dcache /opt/d-cache/bin/dcache
-
+complete -F _dcache dcache
