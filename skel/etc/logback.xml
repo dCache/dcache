@@ -103,9 +103,22 @@
     </encoder>
   </appender-->
 
+   <!-- sends error/warn to a remote logback server -->
+  <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
+      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+          <level>${alarms.remote-logging.level}</level>
+      </filter>
+      <!-- adds a few properties to MDC -->
+      <filter class="org.dcache.alarms.logback.RemoteMDCFilter"/>
+      <remoteHost>${alarms.server.host}</remoteHost>
+      <port>${alarms.server.port}</port>
+      <reconnectionDelay>10000</reconnectionDelay>
+  </appender>
+
   <root>
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
+    <appender-ref ref="remote"/>
   </root>
 
   <logger name="events" additivity="false">
@@ -128,6 +141,7 @@
     <appender-ref ref="pinboard"/>
     <appender-ref ref="traceFile"/>
     <appender-ref ref="events"/>
+    <appender-ref ref="remote"/>
   </logger>
 
   <turboFilter class="dmg.util.logback.CellThresholdFilter">
@@ -175,6 +189,12 @@
 
     <threshold>
       <appender>stdout</appender>
+      <logger>root</logger>
+      <level>warn</level>
+    </threshold>
+
+    <threshold>
+      <appender>remote</appender>
       <logger>root</logger>
       <level>warn</level>
     </threshold>
