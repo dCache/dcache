@@ -3,7 +3,6 @@
 define env startLogin.exe enddefine
   onerror shutdown
   check -strong cell.name
-  check -strong gplazmaPolicy
   check -strong gPlazmaNumberOfSimultaneousRequests
   check -strong gplazma.configuration.file
   check -strong pnfsmanager
@@ -12,7 +11,6 @@ define env startLogin.exe enddefine
     "classpath:org/dcache/services/login/gplazma.xml \
      -export -monitor \
      -num-simultaneous-requests=${gPlazmaNumberOfSimultaneousRequests} \
-     -gplazmaPolicy=${gplazmaPolicy} \
      -gplazmaConfig=${gplazma.configuration.file} \
      -messageExecutor=message-thread-pool \
      -pnfsmanager=${pnfsmanager} \
