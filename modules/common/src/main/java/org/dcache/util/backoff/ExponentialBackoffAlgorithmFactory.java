@@ -153,12 +153,12 @@ public class ExponentialBackoffAlgorithmFactory implements
     private boolean quitAtMaxDelay = false;
 
     @Override
-    public IBackoffAlgorithm getAlgorithm() throws IllegalArgumentException {
+    public IBackoffAlgorithm getAlgorithm() {
         ExponentialBackoffAlgorithm algorithm = new ExponentialBackoffAlgorithm();
         algorithm.minDelayInMillis = minUnit.toMillis(minDelay);
         if (maxDelay != null) {
-            checkArgument(maxDelay >= minDelay);
             algorithm.maxDelayInMillis = maxUnit.toMillis(maxDelay);
+            checkArgument(algorithm.maxDelayInMillis  >= algorithm.minDelayInMillis);
         }
 
         return algorithm;
