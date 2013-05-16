@@ -97,12 +97,12 @@
         <dependency>
             <groupId>org.globus</groupId>
             <artifactId>cog-jglobus</artifactId>
-            <version>1.8.0-dcache.2</version>
+            <version>1.8.0-dcache.3</version>
         </dependency>
         <dependency>
             <groupId>org.globus</groupId>
             <artifactId>cog-url</artifactId>
-            <version>1.8.0-dcache.2</version>
+            <version>1.8.0-dcache.3</version>
         </dependency>
         <dependency>
             <groupId>org.globus</groupId>
