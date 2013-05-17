@@ -6,6 +6,12 @@
     <package name="org.dcache.alarms.dao">
         <class name="LogEntry" detachable="true" >
             <field name="key" primary-key="true"/>
+            <field name="info">
+                <column name="info" length="8000" jdbc-type="VARCHAR" />
+            </field>
+            <field name="notes">
+                <column name="notes" length="8000" jdbc-type="VARCHAR" />
+            </field>
         </class>
     </package>
 </jdo>
