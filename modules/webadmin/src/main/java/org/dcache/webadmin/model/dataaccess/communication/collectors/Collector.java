@@ -32,6 +32,7 @@ public abstract class Collector implements Runnable,
     protected CellStub _cellStub;
     protected Long sleepInterval;
 
+    private boolean enabled = true;
     private IBackoffAlgorithmFactory factory;
     private BackoffController controller;
 
@@ -47,11 +48,16 @@ public abstract class Collector implements Runnable,
         controller = new BackoffControllerBuilder().using(factory).build();
     }
 
+    public synchronized boolean isEnabled() {
+        return enabled;
+    }
+
     @Override
     public void run() {
         Status status = Status.SUCCESS;
-        while (true) {
+        while (isEnabled()) {
             try {
+                logger.debug("collector {} calling controller.call", this);
                 status = controller.call(this);
             } catch (InterruptedException t) {
                 break;
@@ -93,5 +99,9 @@ public abstract class Collector implements Runnable,
 
     public void setSleepInterval(Long sleepInterval) {
         this.sleepInterval = sleepInterval;
+    }
+
+    protected synchronized void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }
