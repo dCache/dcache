@@ -367,10 +367,16 @@
 			<column name="date"/>
 		</createIndex>
 	</changeSet>
-	<changeSet id="4.0" author="arossi" context="billing">
-		<preConditions onError="WARN" onFail="WARN">
-			<sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
-		</preConditions>
+    <changeSet id="4.0.0" author="arossi" context="billing">
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from pg_catalog.pg_language where lanname='plpgsql'</sqlCheck>
+        </preConditions>
+        <comment>create plpgsql</comment>
+        <sql splitStatements="false">
+            CREATE LANGUAGE plpgsql;
+        </sql>
+    </changeSet>
+	<changeSet id="4.0.1" author="arossi" context="billing">
 		<comment>trigger functions</comment>
 		<sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_billinginfo_rd_daily() RETURNS TRIGGER
 			AS $$
