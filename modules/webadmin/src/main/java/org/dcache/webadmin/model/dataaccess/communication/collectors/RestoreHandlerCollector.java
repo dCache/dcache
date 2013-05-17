@@ -27,18 +27,13 @@ public class RestoreHandlerCollector extends Collector {
     private static final long CONSIDERED_NEW_INTERVAL = TimeUnit.MINUTES.toMillis(2L);
     private static final Logger _log = LoggerFactory.getLogger(RestoreHandlerCollector.class);
 
-    private void collectRestores()
-            throws InterruptedException {
-        try {
-            RestoreHandlerInfo[] restores =
-                    _cellStub.sendAndWait(new CellPath(_poolManagerName),
-                    "xrc ls", RestoreHandlerInfo[].class);
-            List<RestoreInfo> agedList = filterOutNewRestores(restores);
-            _pageCache.put(ContextPaths.RESTORE_INFOS, ImmutableSet.copyOf(agedList));
-        } catch (CacheException ex) {
-            _log.debug("Could not retrieve restoreHandlerInfos from {}", _poolManagerName);
-            _pageCache.remove(ContextPaths.RESTORE_INFOS);
-        }
+    private void collectRestores() throws InterruptedException, CacheException {
+        RestoreHandlerInfo[] restores = _cellStub.sendAndWait(new CellPath(
+                        _poolManagerName), "xrc ls", RestoreHandlerInfo[].class);
+        List<RestoreInfo> agedList = filterOutNewRestores(restores);
+        _pageCache.put(ContextPaths.RESTORE_INFOS,
+                        ImmutableSet.copyOf(agedList));
+
     }
 
     private List<RestoreInfo> filterOutNewRestores(RestoreHandlerInfo[] restores) {
@@ -59,7 +54,15 @@ public class RestoreHandlerCollector extends Collector {
 
     @Override
     public Status call() throws Exception {
-        collectRestores();
+        try {
+            collectRestores();
+        } catch (CacheException ex) {
+            _log.debug("Could not retrieve restoreHandlerInfos from {}",
+                            _poolManagerName);
+            _pageCache.remove(ContextPaths.RESTORE_INFOS);
+            return Status.FAILURE;
+        }
+
         return Status.SUCCESS;
     }
 }

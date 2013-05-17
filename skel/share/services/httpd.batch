@@ -50,6 +50,7 @@ define context webadmin.exe endDefine
      -loginBrokerName=${loginBroker} \
      -pnfsManagerName=${pnfsmanager} \
      -poolManagerName=${poolmanager} \
+     -srmSpaceManagerEnabled=${srmSpaceManagerEnabled} \
      -collectorTimeout=${collectorTimeout} \
      -transfersCollectorUpdate=${transfersCollectorUpdate} \
      -tempUnpackDir=${webadminWarunpackdir} \

@@ -23,29 +23,26 @@ public class PoolMonitorCollector extends Collector {
     private boolean plottingEnabled;
     private RrdPoolInfoAgent rrdAgent;
 
-    private void collectPoolSelectionUnit() throws InterruptedException {
-        try {
-            _log.debug("Retrieving Pool Monitor");
-            PoolManagerGetPoolMonitor reply
-                = _cellStub.sendAndWait(new PoolManagerGetPoolMonitor());
-            PoolMonitor monitor = reply.getPoolMonitor();
-            _pageCache.put(ContextPaths.POOLMONITOR, monitor);
-            if (plottingEnabled) {
-                rrdAgent.notify(monitor);
-            }
-            _log.debug("Pool Monitor retrieved successfully");
-        } catch (CacheException ex) {
-            _log.debug("Could not retrieve Pool Monitor ", ex);
-            _pageCache.remove(ContextPaths.POOLMONITOR);
+    private void collectPoolSelectionUnit() throws CacheException,
+                    InterruptedException {
+        _log.debug("Retrieving Pool Monitor");
+        PoolManagerGetPoolMonitor reply
+            = _cellStub.sendAndWait(new PoolManagerGetPoolMonitor());
+        PoolMonitor monitor = reply.getPoolMonitor();
+        _pageCache.put(ContextPaths.POOLMONITOR, monitor);
+        if (plottingEnabled) {
+            rrdAgent.notify(monitor);
         }
+        _log.debug("Pool Monitor retrieved successfully");
     }
 
     @Override
     public Status call() throws Exception {
         try {
             collectPoolSelectionUnit();
-        } catch (RuntimeException e) {
-            _log.error(e.toString(), e);
+        } catch (CacheException ex) {
+            _log.debug("Could not retrieve Pool Monitor ", ex);
+            _pageCache.remove(ContextPaths.POOLMONITOR);
             return Status.FAILURE;
         }
         return Status.SUCCESS;
