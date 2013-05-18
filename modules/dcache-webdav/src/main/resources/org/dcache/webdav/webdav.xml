@@ -271,12 +271,9 @@
 
 	  <property name="port" value="${webdavPort}"/>
 	  <property name="host" value="${webdavAddress}"/>
-	  <property name="hostCertificatePath"
-		    value="/etc/grid-security/hostcert.pem"/>
-	  <property name="hostKeyPath"
-		    value="/etc/grid-security/hostkey.pem"/>
-	  <property name="caCertificatePath"
-		    value="/etc/grid-security/certificates"/>
+	  <property name="hostCertificatePath" value="${grid.hostcert.cert}"/>
+	  <property name="hostKeyPath" value="${grid.hostcert.key}"/>
+	  <property name="caCertificatePath" value="${grid.ca.path}"/>
 	  <property name="autoFlush" value="true"/>
 	  <property name="encrypt" value="true"/>
 	  <property name="requireClientAuth" value="${webdavWantClientAuth}"/>

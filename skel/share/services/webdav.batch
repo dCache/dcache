@@ -68,6 +68,9 @@ enddefine
 define env verify-https-jglobus.exe enddefine
   check -strong trustAnchorRefreshPeriod
   check -strong hostCertificateRefreshPeriod
+  check -strong grid.hostcert.cert
+  check -strong grid.hostcert.key
+  check -strong grid.ca.path
 enddefine
 
 define env failMissingKeyStore.exe enddefine
@@ -148,4 +151,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdav.overwrite=${webdav.overwrite} \
     -missing-files.timeout=${missing-files.timeout} \
     -missing-files.name=${missing-files.name} \
+    -grid.hostcert.cert=${grid.hostcert.cert} \
+    -grid.hostcert.key=${grid.hostcert.key} \
+    -grid.ca.path=${grid.ca.path} \
     -export -cellClass=WebDAVDoor"
