@@ -57,54 +57,54 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.view.panels.poolqueues;
+package org.dcache.webadmin.view.beans;
 
-import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.repeater.Item;
-import org.apache.wicket.markup.repeater.data.GridView;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
+import org.apache.wicket.extensions.markup.html.repeater.util.SingleSortState;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
-import org.dcache.webadmin.view.beans.ThumbnailPanelBean;
 
 /**
- * Panel which displays the grid view of the thumbnail links to each pool queue
- * histogram.
+ * Session data bean, for use with {@link ThumbnailPanelProvider}.
  *
  * @author arossi
  */
-public class PoolQueuePlotsDisplayPanel extends Panel {
-    private static final long serialVersionUID = 5701767178955064955L;
-    private static final String VIEW_ID = "PoolQueuePlotsGridView";
+public class PoolPlotOptionBean extends
+                AbstractRegexFilterBean<ThumbnailPanelBean> {
 
-    public PoolQueuePlotsDisplayPanel(String id, ThumbnailPanelProvider provider) {
-        super(id);
-        addGridView(provider);
+    private static final long serialVersionUID = 4006531168978523898L;
+
+    private final List<ThumbnailPanelBean> panels
+        = new ArrayList<ThumbnailPanelBean>();
+
+    private String order = SortOrder.ASCENDING.toString();
+    private final SingleSortState state = new SingleSortState();
+
+    public String getOrder() {
+        return order;
     }
 
-    private void addGridView(final ThumbnailPanelProvider provider) {
-        add(new GridView(VIEW_ID, provider) {
-            private static final long serialVersionUID = -7245101719065647956L;
+    public void setSort(final String property, final SortOrder order) {
+        state.setPropertySortOrder(property, order);
+    }
 
-            @Override
-            protected void onBeforeRender() {
-                setColumns(provider.getNumCols());
-                super.onBeforeRender();
-            }
+    public List<ThumbnailPanelBean> getPanels() {
+        return panels;
+    }
 
-            @Override
-            protected void populateEmptyItem(Item item) {
-                ThumbnailPanelBean bean = new ThumbnailPanelBean();
-                item.add(new Label("poolname", bean.getName()));
-                item.add(bean.getLink());
-            }
+    public SortParam getSort() {
+        return state.getSort();
+    }
 
-            @Override
-            protected void populateItem(Item item) {
-                ThumbnailPanelBean bean = (ThumbnailPanelBean) item.getModelObject();
-                item.add(new Label("poolname", bean.getName()));
-                item.add(bean.getLink());
-            }
-        });
+    public void setOrder(String order) {
+        this.order = order;
+    }
+
+    public void setSort(final SortParam param) {
+        state.setSort(param);
     }
 }

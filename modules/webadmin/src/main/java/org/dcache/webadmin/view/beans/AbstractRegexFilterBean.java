@@ -57,54 +57,70 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.view.panels.poolqueues;
+package org.dcache.webadmin.view.beans;
 
-import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.repeater.Item;
-import org.apache.wicket.markup.repeater.data.GridView;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
-import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
-import org.dcache.webadmin.view.beans.ThumbnailPanelBean;
+import org.dcache.util.RegexUtils;
+import org.dcache.webadmin.controller.util.AbstractRegexFilteringProvider;
 
 /**
- * Panel which displays the grid view of the thumbnail links to each pool queue
- * histogram.
+ * Used with {@link AbstractRegexFilteringProvider}
  *
  * @author arossi
  */
-public class PoolQueuePlotsDisplayPanel extends Panel {
-    private static final long serialVersionUID = 5701767178955064955L;
-    private static final String VIEW_ID = "PoolQueuePlotsGridView";
+public abstract class AbstractRegexFilterBean<T extends Serializable>
+                implements Serializable {
 
-    public PoolQueuePlotsDisplayPanel(String id, ThumbnailPanelProvider provider) {
-        super(id);
-        addGridView(provider);
+    private static final long serialVersionUID = 2993536497336974850L;
+
+    protected final List<T> entries = new ArrayList<>();
+
+    protected String expression;
+    protected boolean regex;
+    protected int flags = 0;
+
+    public List<T> getEntries() {
+        return new ArrayList<T>(entries);
     }
 
-    private void addGridView(final ThumbnailPanelProvider provider) {
-        add(new GridView(VIEW_ID, provider) {
-            private static final long serialVersionUID = -7245101719065647956L;
+    public String getExpression() {
+        return expression;
+    }
 
-            @Override
-            protected void onBeforeRender() {
-                setColumns(provider.getNumCols());
-                super.onBeforeRender();
-            }
+    public int getFlags() {
+        return flags;
+    }
 
-            @Override
-            protected void populateEmptyItem(Item item) {
-                ThumbnailPanelBean bean = new ThumbnailPanelBean();
-                item.add(new Label("poolname", bean.getName()));
-                item.add(bean.getLink());
-            }
+    public String getFlagsAsString() {
+        return RegexUtils.flagsToString(flags);
+    }
 
-            @Override
-            protected void populateItem(Item item) {
-                ThumbnailPanelBean bean = (ThumbnailPanelBean) item.getModelObject();
-                item.add(new Label("poolname", bean.getName()));
-                item.add(bean.getLink());
-            }
-        });
+    public boolean isRegex() {
+        return regex;
+    }
+
+    public void setEntries(Collection<T> refreshed) {
+        entries.clear();
+        entries.addAll(refreshed);
+    }
+
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
+
+    public void setFlags(int flags) {
+        this.flags = flags;
+    }
+
+    public void setFlags(String flags) {
+        this.flags = RegexUtils.parseFlags(flags);
+    }
+
+    public void setRegex(boolean regex) {
+        this.regex = regex;
     }
 }
