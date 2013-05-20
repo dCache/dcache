@@ -129,7 +129,7 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
-        <artifactId>webadmin</artifactId>
+        <artifactId>dcache-webadmin</artifactId>
         <version>${project.version}</version>
         <type>war</type>
     </dependency>

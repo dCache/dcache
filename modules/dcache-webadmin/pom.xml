@@ -8,7 +8,7 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>webadmin</artifactId>
+  <artifactId>dcache-webadmin</artifactId>
   <packaging>war</packaging>
 
   <name>webadmin</name>
