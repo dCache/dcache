@@ -63,8 +63,6 @@ import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvid
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -73,13 +71,13 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.dcache.util.IRegexFilterable;
-import org.dcache.util.RegexUtils;
+import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
 
 /**
  * Base class for all {@link SortableDataProvider} classes with capabilities for
  * filtering table contents based on string expressions, as provided by
  * {@link IRegexFilterable}.
- *
+ * 
  * @author arossi
  */
 public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
@@ -87,26 +85,20 @@ public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
 
     private static final long serialVersionUID = 1L;
 
-    protected final List<T> entries = new ArrayList<>();
-
-    protected String expression;
-    protected boolean regex;
-    protected int flags = 0;
-
     public String getExpression() {
-        return expression;
-    }
-
-    public boolean isRegex() {
-        return regex;
+        return getRegexBean().getExpression();
     }
 
     public int getFlags() {
-        return 0;
+        return getRegexBean().getFlags();
     }
 
     public String getFlagsAsString() {
-      return RegexUtils.flagsToString(flags);
+        return getRegexBean().getFlagsAsString();
+    }
+
+    public boolean isRegex() {
+        return getRegexBean().isRegex();
     }
 
     @Override
@@ -121,27 +113,20 @@ public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
         return Model.of(object);
     }
 
-    public void setEntries(Collection<T> refreshed) {
-        synchronized (entries) {
-            entries.clear();
-            entries.addAll(refreshed);
-        }
-    }
-
     public void setExpression(String expression) {
-        this.expression = expression;
-    }
-
-    public void setRegex(boolean regex) {
-        this.regex = regex;
-    }
-
-    public void setFlags(String flags) {
-        this.flags = RegexUtils.parseFlags(flags);
+        getRegexBean().setExpression(expression);
     }
 
     public void setFlags(int flags) {
-        this.flags = flags;
+        getRegexBean().setFlags(flags);
+    }
+
+    public void setFlags(String flags) {
+        getRegexBean().setFlags(flags);
+    }
+
+    public void setRegex(boolean regex) {
+        getRegexBean().setRegex(regex);
     }
 
     @Override
@@ -154,8 +139,10 @@ public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
      *            assumed to be a thread-local copy, hence not synchronized.
      */
     protected void filterOnExpression(List<T> entries) {
-        if (expression != null) {
-            if (regex) {
+        String expression = getExpression();
+        int flags = getFlags();
+        if (getExpression() != null) {
+            if (isRegex()) {
                 try {
                     Pattern pattern = Pattern.compile(expression, flags);
                     for (Iterator<T> it = entries.iterator(); it.hasNext();) {
@@ -183,4 +170,6 @@ public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
     protected abstract Comparator<T> getComparator();
 
     protected abstract List<T> getFiltered();
+
+    protected abstract AbstractRegexFilterBean<T> getRegexBean();
 }
