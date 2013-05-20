@@ -214,6 +214,7 @@ public class AlarmDefinition {
     public static final String REGEX_FLAGS_TAG = "regexFlags";
     public static final String THREAD_TAG = "thread";
     public static final String INCLUDE_IN_KEY_DELIMITER = "[\\s]";
+    public static final String RM = "-";
 
     public static final ImmutableList<String> ATTRIBUTES
         = new ImmutableList.Builder<String>()
@@ -235,6 +236,7 @@ public class AlarmDefinition {
         = new ImmutableSet.Builder<String>()
             .add(IAlarms.TIMESTAMP_TAG)
             .add(IAlarms.MESSAGE_TAG)
+            .add(IAlarms.GROUP_TAG + "N")
             .add(LOGGER_TAG)
             .add(IAlarms.TYPE_TAG)
             .add(IAlarms.DOMAIN_TAG)
@@ -510,6 +512,7 @@ public class AlarmDefinition {
     public void setIncludeInKey(String includeInKey) {
         Preconditions.checkNotNull(includeInKey);
         String[] keyNames = includeInKey.split(INCLUDE_IN_KEY_DELIMITER);
+        hashedKeyElements.clear();
         Collections.addAll(hashedKeyElements, keyNames);
     }
 
@@ -554,7 +557,7 @@ public class AlarmDefinition {
             .setText(String.valueOf(depth)));
         }
         String key = getIncludeInKey();
-        if (key != null) {
+        if (key != null && !key.isEmpty()) {
             alarmType.addContent(new Element(INCLUDE_IN_KEY_TAG)
             .setText(key));
         }
@@ -562,7 +565,7 @@ public class AlarmDefinition {
             alarmType.addContent(new Element(LEVEL_TAG)
             .setText(level.toString()));
         }
-        if (logger != null) {
+        if (logger != null && !logger.isEmpty()) {
             alarmType.addContent(new Element(LOGGER_TAG)
             .setText(logger));
         }
@@ -570,11 +573,11 @@ public class AlarmDefinition {
             alarmType.addContent(new Element(MATCH_EXCEPTION_TAG)
             .setText(matchException.toString()));
         }
-        if (regexStr != null) {
+        if (regexStr != null && !regexStr.isEmpty()) {
             alarmType.addContent(new Element(REGEX_TAG)
             .setText(regexStr));
         }
-        if (regexFlags != null) {
+        if (regexFlags != null && !regexFlags.isEmpty()) {
             alarmType.addContent(new Element(REGEX_FLAGS_TAG)
             .setText(regexFlags));
         }
@@ -582,11 +585,11 @@ public class AlarmDefinition {
             alarmType.addContent(new Element(IAlarms.SEVERITY_TAG)
             .setText(severity.toString()));
         }
-        if (thread != null) {
+        if (thread != null && !thread.isEmpty()) {
             alarmType.addContent(new Element(THREAD_TAG)
             .setText(thread));
         }
-        if (type != null) {
+        if (type != null && !type.isEmpty()) {
             alarmType.addContent(new Element(IAlarms.TYPE_TAG)
             .setText(type));
         }
@@ -612,10 +615,10 @@ public class AlarmDefinition {
 
     public void validateAndSet(String name, String value)
                     throws AlarmDefinitionValidationException {
-        if (value.length() == 0 ) {
+        value = value.trim();
+
+        if (value.length() == 0 || RM.equals(value)) {
             value = null;
-        } else {
-            value = value.trim();
         }
 
         switch(name) {
@@ -633,23 +636,22 @@ public class AlarmDefinition {
                 break;
             case INCLUDE_IN_KEY_TAG:
                 if (value == null) {
+                    hashedKeyElements.clear();
                     return;
                 }
 
                 String[] parts = value.split("[\\s]");
                 for (String part : parts) {
-                    if (!KEY_VALUES.contains(part.trim())) {
-                        if (part.startsWith(IAlarms.GROUP_TAG)) {
-                            try {
-                                 Integer.parseInt(part.substring(5));
-                            } catch (NumberFormatException e) {
-                                throw new AlarmDefinitionValidationException
-                                    (part + " must end in an integer");
-                            }
-                        } else {
+                    if (part.startsWith(IAlarms.GROUP_TAG)) {
+                        try {
+                             Integer.parseInt(part.substring(5));
+                        } catch (NumberFormatException e) {
                             throw new AlarmDefinitionValidationException
-                                (part + " is not a valid key field");
+                                (IAlarms.GROUP_TAG + " must end in an integer");
                         }
+                    } else if (!KEY_VALUES.contains(part.trim())) {
+                        throw new AlarmDefinitionValidationException
+                            (part + " is not a valid key field");
                     }
                 }
                 setIncludeInKey(value);
@@ -705,6 +707,7 @@ public class AlarmDefinition {
                                         + " is not a valid flag");
                     }
                 }
+
                 regexFlags = value;
                 break;
             case IAlarms.SEVERITY_TAG:
