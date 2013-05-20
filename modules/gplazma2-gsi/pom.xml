@@ -8,7 +8,7 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>dcache-gsi</artifactId>
+  <artifactId>gplazma2-gsi</artifactId>
   <packaging>jar</packaging>
 
   <name>GSI/GSS Utilities</name>

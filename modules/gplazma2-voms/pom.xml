@@ -28,7 +28,7 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
-        <artifactId>dcache-gsi</artifactId>
+        <artifactId>gplazma2-gsi</artifactId>
         <version>${project.version}</version>
     </dependency>
     <dependency>
