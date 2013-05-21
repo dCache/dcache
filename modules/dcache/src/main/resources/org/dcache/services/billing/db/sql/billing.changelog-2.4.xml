@@ -20,4 +20,99 @@
         <dropTable tableName="costinfo_daily"/>
         <dropTable tableName="costinfo"/>
     </changeSet>
+    <!-- VARCHAR ADJUSTMENTS, AGAIN.  The original changeset was discovered to have an off-by-one error in it
+         4.1.7, 4.1.8 and 4.1.9 have been deleted -->
+    <changeSet author="arossi" id="5.1.0.0" context="billing" failOnError="false">
+        <sql splitStatements="false">
+            INSERT INTO billinginfo (pnfsid, errormessage)
+            VALUES ('-1', '01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789');
+        </sql>
+    </changeSet>
+    <changeSet author="arossi" id="5.1.0.1" context="billing">
+        <!-- If the insert (5.1.0) worked, the database was probably already initialized with VARCHAR unlimited;
+             so this check runs the changeset only if select turns 0, i.e., no insert occurred -->
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from billinginfo where pnfsid='-1'</sqlCheck>
+        </preConditions>
+        <modifyDataType tableName="billinginfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
+        <modifyDataType tableName="billinginfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
+    </changeSet>
+    <changeSet author="arossi" id="5.1.0.2" context="billing">
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">select count(*) from billinginfo where pnfsid='-1'</sqlCheck>
+        </preConditions>
+        <sql splitStatements="false">
+            DELETE FROM billinginfo WHERE pnfsid='-1';
+        </sql>
+    </changeSet>
+    <changeSet author="arossi" id="5.1.1.0" context="billing" failOnError="false">
+        <sql splitStatements="false">
+            INSERT INTO doorinfo (pnfsid, errormessage)
+            VALUES ('-1', '01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789');
+        </sql>
+    </changeSet>
+    <changeSet author="arossi" id="5.1.1.1" context="billing">
+        <!-- If the insert (5.1.2) worked, the database was probably already initialized with VARCHAR unlimited;
+             so this check runs the changeset only if select turns 0, i.e., no insert occurred -->
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from doorinfo where pnfsid='-1'</sqlCheck>
+        </preConditions>
+        <modifyDataType tableName="doorinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
+        <modifyDataType tableName="doorinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
+        <modifyDataType tableName="doorinfo" columnName="path" newDataType="VARCHAR(8000)" />
+    </changeSet>
+    <changeSet author="arossi" id="5.1.1.2" context="billing">
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">select count(*) from doorinfo where pnfsid='-1'</sqlCheck>
+        </preConditions>
+        <sql splitStatements="false">
+            DELETE FROM doorinfo WHERE pnfsid='-1';
+        </sql>
+    </changeSet>
+    <changeSet author="arossi" id="5.1.2.0" context="billing" failOnError="false">
+        <sql splitStatements="false">
+            INSERT INTO storageinfo (pnfsid, errormessage)
+            VALUES ('-1', '01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789');
+        </sql>
+    </changeSet>
+    <changeSet author="arossi" id="5.1.2.1" context="billing">
+        <!-- If the insert (5.1.4) worked, the database was probably already initialized with VARCHAR unlimited;
+             so this check runs the changeset only if select turns 0, i.e., no insert occurred -->
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from storageinfo where pnfsid='-1'</sqlCheck>
+        </preConditions>
+        <modifyDataType tableName="storageinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
+        <modifyDataType tableName="storageinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
+    </changeSet>
+    <changeSet author="arossi" id="5.1.2.2" context="billing">
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">select count(*) from storageinfo where pnfsid='-1'</sqlCheck>
+        </preConditions>
+        <sql splitStatements="false">
+            DELETE FROM storageinfo WHERE pnfsid='-1';
+        </sql>
+    </changeSet>
+    <changeSet author="arossi" id="5.1.3.0" context="billing" failOnError="false">
+        <sql splitStatements="false">
+            INSERT INTO hitinfo (pnfsid, errormessage)
+            VALUES ('-1', '01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789');
+        </sql>
+    </changeSet>
+    <changeSet author="arossi" id="5.1.3.1" context="billing">
+        <!-- If the insert (5.1.6) worked, the database was probably already initialized with VARCHAR unlimited;
+             so this check runs the changeset only if select turns 0, i.e., no insert occurred -->
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">select count(*) from hitinfo where pnfsid='-1'</sqlCheck>
+        </preConditions>
+        <modifyDataType tableName="hitinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
+        <modifyDataType tableName="hitinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
+    </changeSet>
+    <changeSet author="arossi" id="5.1.3.2" context="billing">
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">select count(*) from hitinfo where pnfsid='-1'</sqlCheck>
+        </preConditions>
+        <sql splitStatements="false">
+            DELETE FROM hitinfo WHERE pnfsid='-1';
+        </sql>
+    </changeSet>
 </databaseChangeLog>
