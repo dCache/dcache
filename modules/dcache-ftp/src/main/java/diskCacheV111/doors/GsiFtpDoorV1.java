@@ -32,6 +32,7 @@ import dmg.util.StreamEngine;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.Option;
+import org.dcache.util.Crypto;
 
 /**
  *
@@ -117,6 +118,8 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
                                (ExtendedGSSContext)manager.createContext(cred);
 
         context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
+        context.setBannedCiphers(Crypto.BANNED_CIPHERS);
+
         return context;
     }
 
