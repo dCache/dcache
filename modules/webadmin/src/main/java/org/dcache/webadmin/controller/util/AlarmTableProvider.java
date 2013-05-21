@@ -62,22 +62,23 @@ package org.dcache.webadmin.controller.util;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
-import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
+import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
+import org.dcache.webadmin.view.beans.AlarmQueryBean;
+import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 
 /**
  * Encapsulates the in-memory datasets used to display the alarms and to update
  * the underlying data store via user input. Implements iterator as sorted
- * stream.
+ * stream. Delegates to the session bean for the query data.
  *
  * @author arossi
  */
@@ -85,158 +86,89 @@ public class AlarmTableProvider extends
                 AbstractRegexFilteringProvider<LogEntry> {
     private static final long serialVersionUID = 402824287543303781L;
 
-    private final Set<LogEntry> updated = new HashSet<>();
-    private final Set<LogEntry> deleted = new HashSet<>();
-
-    private Boolean alarm = true;
-    private Date after;
-    private Date before;
-    /*
-     * give this a default value so that the drop-down box displays this instead
-     * of the "SELECT ONE" message
-     */
-    private String severity = Severity.MODERATE.toString();
-    private String type;
-    private boolean showClosed;
-    private Integer from;
-    private Integer to;
-
-    public void addToDeleted(LogEntry toDelete) {
-        synchronized (deleted) {
-            deleted.add(toDelete);
-        }
-    }
-
-    public void addToUpdated(LogEntry toUpdate) {
-        synchronized (updated) {
-            updated.add(toUpdate);
-        }
-    }
-
-    public void delete(ILogEntryDAO access) throws DAOException {
-        synchronized (deleted) {
-            if (!deleted.isEmpty()) {
-                access.remove(deleted);
-                deleted.clear();
-            }
-        }
-    }
-
     public Date getAfter() {
-        if (after == null) {
-            return null;
-        }
-        return new Date(after.getTime());
+        return getAlarmQueryBean().getAfter();
     }
 
     public Date getBefore() {
-        if (before == null) {
-            return null;
-        }
-        return new Date(before.getTime());
+        return getAlarmQueryBean().getBefore();
+    }
+
+    public Collection<LogEntry> getEntries() {
+        return getRegexBean().getEntries();
     }
 
     public Integer getFrom() {
-        return from;
+        return getAlarmQueryBean().getFrom();
     }
 
     public String getSeverity() {
-        return severity;
+        return getAlarmQueryBean().getSeverity();
     }
 
     public String getTableTitle() {
-        if (alarm == null) {
-            return "ALARMS / WARNINGS";
-        } else if (alarm) {
-            return "ALARMS";
-        }
-        return "WARNINGS";
+        return getAlarmQueryBean().getTableTitle();
     }
 
     public Integer getTo() {
-        return to;
+        return getAlarmQueryBean().getTo();
     }
 
     public String getType() {
-        return type;
+        return getAlarmQueryBean().getType();
     }
 
     public Boolean isAlarm() {
-        return alarm;
+        return getAlarmQueryBean().isAlarm();
     }
 
     public boolean isShowClosed() {
-        return showClosed;
+        return getAlarmQueryBean().isShowClosed();
     }
 
     public void removeFromDeleted(LogEntry toDelete) {
-        synchronized (deleted) {
-            deleted.remove(toDelete);
-        }
-    }
-
-    public void setAlarm(Boolean alarm) {
-        this.alarm = alarm;
+        getAlarmQueryBean().removeFromDeleted(toDelete);
     }
 
     public void setAfter(Date after) {
-        if (after == null) {
-            this.after = null;
-        } else {
-            this.after = new Date(after.getTime());
-        }
+        getAlarmQueryBean().setAfter(after);
+    }
+
+    public void setAlarm(Boolean alarm) {
+        getAlarmQueryBean().setAlarm(alarm);
     }
 
     public void setBefore(Date before) {
-        if (before == null) {
-            this.before = null;
-        } else {
-            this.before = new Date(before.getTime());
-        }
+        getAlarmQueryBean().setBefore(before);
+    }
+
+    public void setEntries(Collection<LogEntry> entries) {
+        getRegexBean().setEntries(entries);
     }
 
     public void setFrom(Integer from) {
-        this.from = from;
+        getAlarmQueryBean().setFrom(from);
     }
 
     public void setSeverity(String severity) {
-        this.severity = severity;
+        getAlarmQueryBean().setSeverity(severity);
     }
 
     public void setShowClosed(boolean showClosed) {
-        this.showClosed = showClosed;
+        getAlarmQueryBean().setShowClosed(showClosed);
     }
 
     public void setTo(Integer to) {
-        this.to = to;
+        getAlarmQueryBean().setTo(to);
     }
 
     public void setType(String type) {
-        this.type = type;
-    }
-
-    public boolean shouldDelete(LogEntry entry) {
-        synchronized (deleted) {
-            return deleted.contains(entry);
-        }
-    }
-
-    public void update(ILogEntryDAO access) throws DAOException {
-        synchronized (updated) {
-            if (!updated.isEmpty()) {
-                access.update(updated);
-                updated.clear();
-            }
-        }
+        getAlarmQueryBean().setType(type);
     }
 
     @Override
     protected Comparator<LogEntry> getComparator() {
         return new Comparator<LogEntry>() {
-
-            private <T extends Comparable<T>> int compare(int dir, T a, T b) {
-                return (a == null) ? dir : dir * a.compareTo(b);
-            }
 
             @Override
             public int compare(LogEntry alarm0, LogEntry alarm1) {
@@ -265,7 +197,7 @@ public class AlarmTableProvider extends
                         return compare(dir, alarm0.getType(), alarm1.getType());
                     case "count":
                         return compare(dir, alarm0.getReceived(),
-                                            alarm1.getReceived());
+                                        alarm1.getReceived());
                     case "host":
                         return compare(dir, alarm0.getHost(), alarm1.getHost());
                     case "domain":
@@ -278,7 +210,31 @@ public class AlarmTableProvider extends
                         return 0;
                 }
             }
+
+            private <T extends Comparable<T>> int compare(int dir, T a, T b) {
+                return (a == null) ? dir : dir * a.compareTo(b);
+            }
         };
+    }
+
+    public void addToDeleted(LogEntry toDelete) {
+        getAlarmQueryBean().addToDeleted(toDelete);
+    }
+
+    public void addToUpdated(LogEntry toUpdate) {
+        getAlarmQueryBean().addToUpdated(toUpdate);
+    }
+
+    public void delete(ILogEntryDAO access) throws DAOException {
+        getAlarmQueryBean().delete(access);
+    }
+
+    public boolean shouldDelete(LogEntry entry) {
+        return getAlarmQueryBean().shouldDelete(entry);
+    }
+
+    public void update(ILogEntryDAO access) throws DAOException {
+        getAlarmQueryBean().update(access);
     }
 
     /**
@@ -287,13 +243,20 @@ public class AlarmTableProvider extends
      */
     @Override
     protected List<LogEntry> getFiltered() {
-        List<LogEntry> filtered;
-        synchronized (entries) {
-            filtered = new ArrayList<>(entries);
-        }
+        List<LogEntry> entries = getRegexBean().getEntries();
+        List<LogEntry> filtered = new ArrayList<>(entries);
         filterOnExpression(filtered);
         filterOnClosed(filtered);
         return filtered;
+    }
+
+    protected AlarmQueryBean getAlarmQueryBean() {
+        return WebAdminInterfaceSession.getAlarmQueryBean();
+    }
+
+    @Override
+    protected AbstractRegexFilterBean<LogEntry> getRegexBean() {
+        return WebAdminInterfaceSession.getAlarmQueryBean();
     }
 
     /**
@@ -301,7 +264,7 @@ public class AlarmTableProvider extends
      *            assumed to be a thread-local copy, hence not synchronized.
      */
     private void filterOnClosed(List<LogEntry> alarms) {
-        if (!showClosed) {
+        if (!getAlarmQueryBean().isShowClosed()) {
             for (Iterator<LogEntry> it = alarms.iterator(); it.hasNext();) {
                 LogEntry entry = it.next();
                 if (entry.isClosed()) {

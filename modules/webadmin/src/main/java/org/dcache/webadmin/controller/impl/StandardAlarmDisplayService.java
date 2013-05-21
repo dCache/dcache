@@ -142,6 +142,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         update();
         delete();
 
+        AlarmTableProvider alarmTableProvider = getDataProvider();
         Date after = alarmTableProvider.getAfter();
         Date before = alarmTableProvider.getBefore();
         String severityStr = alarmTableProvider.getSeverity();
@@ -173,7 +174,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
 
     private void delete() {
         try {
-            alarmTableProvider.delete(access);
+            getDataProvider().delete(access);
         } catch (DAOException t) {
             logger.error(t.getMessage(), t);
         }
@@ -200,7 +201,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
 
     private void update() {
         try {
-            alarmTableProvider.update(access);
+            getDataProvider().update(access);
         } catch (DAOException t) {
             logger.error(t.getMessage(), t);
         }
