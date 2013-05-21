@@ -628,38 +628,4 @@
 			f_update_costinfo_daily();
 		</sql>
 	</changeSet>
-    <!-- VARCHAR ADJUSTMENTS -->
-    <changeSet author="arossi" id="4.1.7" context="billing" failOnError="false">
-        <sql splitStatements="false">
-            INSERT INTO costinfo (errormessage)
-            VALUES ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX');
-        </sql>
-    </changeSet>
-    <changeSet author="arossi" id="4.1.8" context="billing">
-        <!-- If the insert (4.1.7) worked, the database was probably already initialized with VARCHAR unlimited;
-             so this check runs the changeset only if select turns 0, i.e., no insert occurred -->
-        <preConditions onError="CONTINUE" onFail="MARK_RAN">
-            <sqlCheck expectedResult="0">select count(*) from costinfo where errormessage = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX'</sqlCheck>
-        </preConditions>
-        <modifyDataType tableName="doorinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="doorinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
-        <modifyDataType tableName="doorinfo" columnName="path" newDataType="VARCHAR(8000)" />
-        <modifyDataType tableName="storageinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="storageinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
-        <modifyDataType tableName="costinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="costinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
-        <modifyDataType tableName="billinginfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="billinginfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
-        <modifyDataType tableName="hitinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
-        <modifyDataType tableName="hitinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
-    </changeSet>
-    <changeSet author="arossi" id="4.1.9" context="billing">
-        <preConditions onError="CONTINUE" onFail="MARK_RAN">
-            <sqlCheck expectedResult="1">select count(*) from costinfo where errormessage = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX'</sqlCheck>
-        </preConditions>
-        <sql splitStatements="false">
-            DELETE FROM costinfo
-            WHERE errormessage = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX';
-        </sql>
-     </changeSet>
 </databaseChangeLog>
