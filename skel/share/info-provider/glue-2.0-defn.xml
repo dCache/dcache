@@ -441,6 +441,13 @@
               </map>
             </attr>
 
+	    <attr name="GLUE2EndpointImplementationName">dCache</attr>
+	    <attr name="GLUE2EndpointImplementationVersion">
+              <map name="cell-version-to-dcache-version">
+		<lookup path="/d:dCache/d:domains/d:domain[@name=current()/d:metric[@name='domain']]/d:cells/d:cell[@name=current()/d:metric[@name='cell']]/d:version/d:metric[@name='release']"/>
+	      </map>
+	    </attr>
+
             <choose>
               <optionally>
                 <when test="SRM">
