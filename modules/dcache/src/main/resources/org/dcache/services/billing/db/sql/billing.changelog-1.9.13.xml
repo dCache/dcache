@@ -628,18 +628,18 @@
 			f_update_costinfo_daily();
 		</sql>
 	</changeSet>
-    <!-- VARCHAR ADJUSTMENTS -->
-    <changeSet author="arossi" id="4.1.7" context="billing" failOnError="false">
+    <!-- VARCHAR ADJUSTMENTS (previous changeset has bug and has never run; this one corrects it)-->
+    <changeSet author="arossi" id="4.1.7.1" context="billing" failOnError="false">
         <sql splitStatements="false">
-            INSERT INTO costinfo (errormessage)
-            VALUES ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX');
+            INSERT INTO costinfo (pnsfid, errormessage)
+            VALUES('-1', '01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789');
         </sql>
     </changeSet>
-    <changeSet author="arossi" id="4.1.8" context="billing">
-        <!-- If the insert (4.1.7) worked, the database was probably already initialized with VARCHAR unlimited;
+    <changeSet author="arossi" id="4.1.8.1" context="billing">
+        <!-- If the insert (4.1.7.1) worked, the database was probably already initialized with VARCHAR unlimited;
              so this check runs the changeset only if select turns 0, i.e., no insert occurred -->
         <preConditions onError="CONTINUE" onFail="MARK_RAN">
-            <sqlCheck expectedResult="0">select count(*) from costinfo where errormessage = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX'</sqlCheck>
+            <sqlCheck expectedResult="0">select count(*) from costinfo where pnfsid='-1'</sqlCheck>
         </preConditions>
         <modifyDataType tableName="doorinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
         <modifyDataType tableName="doorinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
@@ -653,13 +653,12 @@
         <modifyDataType tableName="hitinfo" columnName="pnfsid" newDataType="VARCHAR(36)" />
         <modifyDataType tableName="hitinfo" columnName="errormessage" newDataType="VARCHAR(8000)" />
     </changeSet>
-    <changeSet author="arossi" id="4.1.9" context="billing">
+    <changeSet author="arossi" id="4.1.9.1" context="billing">
         <preConditions onError="CONTINUE" onFail="MARK_RAN">
-            <sqlCheck expectedResult="1">select count(*) from costinfo where errormessage = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX'</sqlCheck>
+            <sqlCheck expectedResult="1">select count(*) from costinfo where pnfsid='-1'</sqlCheck>
         </preConditions>
         <sql splitStatements="false">
-            DELETE FROM costinfo
-            WHERE errormessage = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX';
+            DELETE FROM costinfo WHERE pnfsid='-1';
         </sql>
-     </changeSet>
+    </changeSet>
 </databaseChangeLog>
