@@ -76,6 +76,8 @@ import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.model.exceptions.DAOException;
+import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
+import org.dcache.webadmin.view.beans.AlarmQueryBean;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -98,14 +100,36 @@ public class StandardAlarmDisplayServiceTest {
     public void setup() throws Exception {
         helper = new DAOFactoryImplHelper();
         mocked = helper.getLogEntryDAO();
-        service = new StandardAlarmDisplayService(helper){
+        service = new StandardAlarmDisplayService(helper) {
             private static final long serialVersionUID = -260651971282691608L;
+
+            private AlarmQueryBean alarmQueryBean = new AlarmQueryBean();
+
+            private AlarmTableProvider testProvider = new AlarmTableProvider() {
+                private static final long serialVersionUID = 3077908716332980559L;
+
+                @Override
+                protected AlarmQueryBean getAlarmQueryBean() {
+                    return alarmQueryBean;
+                }
+
+                @Override
+                protected AbstractRegexFilterBean<LogEntry> getRegexBean() {
+                    return alarmQueryBean;
+                }
+            };
 
             @Override
             public boolean isConnected() {
                 return true;
             }
+
+            @Override
+            public AlarmTableProvider getDataProvider() {
+                return testProvider;
+            }
         };
+
         provider = service.getDataProvider();
     }
 

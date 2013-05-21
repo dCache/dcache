@@ -69,7 +69,10 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.dcache.webadmin.model.dataaccess.util.RrdSettings;
+import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
+import org.dcache.webadmin.view.beans.PoolPlotOptionBean;
 import org.dcache.webadmin.view.beans.ThumbnailPanelBean;
+import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.panels.poolqueues.PoolQueuePlotsDisplayPanel;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -94,18 +97,14 @@ public final class ThumbnailPanelProvider extends
 
     private static final int MAX_COLS = 8;
 
-    private final List<ThumbnailPanelBean> panels;
     private final File dir;
     private final int imgWidth;
     private final int imgHeight;
-    private String order;
 
     public ThumbnailPanelProvider(String plotsDirectoryPath, String imgHeight,
                     String imgWidth) {
         checkNotNull(plotsDirectoryPath);
         dir = new File(plotsDirectoryPath);
-        panels = new ArrayList<ThumbnailPanelBean>();
-        order = SortOrder.ASCENDING.toString();
         this.imgHeight = Integer.valueOf(imgHeight);
         this.imgWidth = Integer.valueOf(imgWidth);
     }
@@ -117,22 +116,36 @@ public final class ThumbnailPanelProvider extends
     }
 
     public String getOrder() {
-        return order;
+        return getPoolPlotBean().getOrder();
+    }
+
+    @Override
+    public SortParam getSort() {
+        return getPoolPlotBean().getSort();
     }
 
     public void refresh() {
-        synchronized (panels) {
-            panels.clear();
-            File[] files = dir.listFiles(filter);
-            for (File file : files) {
-                panels.add(new ThumbnailPanelBean(file, imgHeight, imgWidth));
-            }
+        List<ThumbnailPanelBean> panels = getPoolPlotBean().getPanels();
+        panels.clear();
+        File[] files = dir.listFiles(filter);
+        for (File file : files) {
+            panels.add(new ThumbnailPanelBean(file, imgHeight, imgWidth));
         }
     }
 
     public void setOrder(String order) {
-        this.order = order;
+        getPoolPlotBean().setOrder(order);
         setSort("name", SortOrder.valueOf(order));
+    }
+
+    @Override
+    public void setSort(SortParam param) {
+        getPoolPlotBean().setSort(param);
+    }
+
+    @Override
+    public void setSort(String property, SortOrder order) {
+        getPoolPlotBean().setSort(property, order);
     }
 
     @Override
@@ -159,11 +172,18 @@ public final class ThumbnailPanelProvider extends
 
     @Override
     protected List<ThumbnailPanelBean> getFiltered() {
-        List<ThumbnailPanelBean> filtered;
-        synchronized (panels) {
-            filtered = new ArrayList<>(panels);
-        }
+        List<ThumbnailPanelBean> panels = getPoolPlotBean().getPanels();
+        List<ThumbnailPanelBean> filtered = new ArrayList<>(panels);
         filterOnExpression(filtered);
         return filtered;
+    }
+
+    @Override
+    protected AbstractRegexFilterBean<ThumbnailPanelBean> getRegexBean() {
+        return WebAdminInterfaceSession.getPoolPlotBean();
+    }
+
+    protected PoolPlotOptionBean getPoolPlotBean() {
+        return WebAdminInterfaceSession.getPoolPlotBean();
     }
 }
