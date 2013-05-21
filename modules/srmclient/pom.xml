@@ -1,79 +1,164 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.dcache</groupId>
-    <artifactId>dcache-parent</artifactId>
-    <version>2.7.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
-  </parent>
-
-  <artifactId>srmclient</artifactId>
-  <packaging>jar</packaging>
-
-  <name>SRM Client</name>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jul-to-slf4j</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>log4j-over-slf4j</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.jglobus</groupId>
-        <artifactId>axisg</artifactId>
-    </dependency>
-    <dependency>
+    <parent>
         <groupId>org.dcache</groupId>
-        <artifactId>srm</artifactId>
-        <version>${project.version}</version>
-    </dependency>
+        <artifactId>dcache-parent</artifactId>
+        <version>2.7.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
 
-    <dependency>
-	<groupId>org.bouncycastle</groupId>
-	<artifactId>${bouncycastle.bcprov}</artifactId>
-	<scope>runtime</scope>
-    </dependency>
-  </dependencies>
+    <artifactId>srmclient</artifactId>
+    <packaging>jar</packaging>
 
-  <!--attribute name="Main-Class" value="gov.fnal.srm.util.Version" /-->
-  <!--attribute name="Specification-Title" value="Storage Resource Manager (SRM)" /-->
+    <name>SRM Client</name>
 
-  <build>
-      <plugins>
-          <plugin>
-              <artifactId>maven-assembly-plugin</artifactId>
-              <configuration>
-                  <descriptors>
-                      <descriptor>src/main/assembly/dir.xml</descriptor>
-                  </descriptors>
-                  <appendAssemblyId>false</appendAssemblyId>
-              </configuration>
-              <executions>
-                  <execution>
-                      <id>make-assembly</id>
-                      <phase>package</phase>
-                      <goals>
-                          <goal>single</goal>
-                      </goals>
-                  </execution>
-              </executions>
-          </plugin>
-      </plugins>
-  </build>
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>log4j-over-slf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jglobus</groupId>
+            <artifactId>axisg</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>srm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>${bouncycastle.bcprov}</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <formats>
+                        <format>dir</format>
+                    </formats>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/dir.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>rpm</id>
+
+            <properties>
+                <build.id>1</build.id>
+                <local.version></local.version>
+                <build.number>${build.id}${local.version}</build.number>
+                <Timestamp>${maven.build.timestamp}</Timestamp>
+                <Release>${build.number}</Release>
+                <maven.build.timestamp.format>EEE MMM dd yyyy</maven.build.timestamp.format>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>regex-property</id>
+                                <goals>
+                                    <goal>regex-property</goal>
+                                </goals>
+                                <configuration>
+                                    <name>Version</name>
+                                    <value>${project.version}</value>
+                                    <regex>-</regex>
+                                    <replacement></replacement>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>spec</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/spec.xml</descriptor>
+                                    </descriptors>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <finalName>SPECS</finalName>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <executable>rpmbuild</executable>
+                            <workingDirectory>${project.build.directory}</workingDirectory>
+                            <arguments>
+                                <argument>-bb</argument>
+                                <argument>--define</argument>
+                                <argument>_topdir ${project.build.directory}</argument>
+                                <argument>--buildroot</argument>
+                                <argument>${project.build.directory}/${project.build.finalName}</argument>
+                                <argument>SPECS/dcache-srmclient.spec</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

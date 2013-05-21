@@ -1,0 +1,18 @@
+<assembly>
+    <id>deb</id>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>src/main/deb/</directory>
+            <outputDirectory>debian</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <file>
+            <source>src/main/scripts/dcache.bash-completion</source>
+            <outputDirectory>debian</outputDirectory>
+        </file>
+    </files>
+</assembly>

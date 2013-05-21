@@ -1,0 +1,16 @@
+<assembly>
+    <id>rpm</id>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <files>
+      <file>
+	<source>src/main/scripts/dcache.bash-completion</source>
+	<outputDirectory>etc/bash_completion.d</outputDirectory>
+	<destName>dcache</destName>
+      </file>
+      <file>
+	<source>src/main/rpm/dcache-server.init</source>
+	<outputDirectory>etc/rc.d/init.d</outputDirectory>
+	<destName>dcache-server</destName>
+      </file>
+    </files>
+</assembly>

@@ -1,0 +1,11 @@
+<assembly>
+    <id>spec</id>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <files>
+      <file>
+	<source>src/main/rpm/dcache-server.spec</source>
+	<outputDirectory></outputDirectory>
+	<filtered>true</filtered>
+      </file>
+    </files>
+</assembly>
