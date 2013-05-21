@@ -111,6 +111,8 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
+                <!-- Remember to update modules/logback-test-config/pom.xml
+                     when upgrading logback. -->
                 <version>1.0.12</version>
             </dependency>
             <dependency>
