@@ -1112,9 +1112,6 @@
         <module>modules/chimera</module>
         <module>modules/missingfiles-semsg</module>
         <module>plugins</module>
-        <module>packages/packaging</module>
-        <module>packages/fhs</module>
-        <module>packages/tar</module>
-        <module>packages/system-test</module>
+        <module>packages</module>
     </modules>
 </project>
