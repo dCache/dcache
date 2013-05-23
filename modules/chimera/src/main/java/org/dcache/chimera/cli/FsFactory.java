@@ -45,12 +45,15 @@ public class FsFactory {
         ds.setPassword(dbPass);
         ds.setIdleConnectionTestPeriodInMinutes(60);
         ds.setIdleMaxAgeInMinutes(240);
-        ds.setMaxConnectionsPerPartition(30);
-        ds.setMaxConnectionsPerPartition(10);
-        ds.setPartitionCount(3);
-        ds.setAcquireIncrement(5);
+        ds.setMaxConnectionsPerPartition(2); //mkdir needs two connections (!)
+        ds.setMinConnectionsPerPartition(1);
+        ds.setPartitionCount(1);
+        ds.setAcquireIncrement(1);
         ds.setStatementsCacheSize(100);
-        ds.setReleaseHelperThreads(3);
+        ds.setReleaseHelperThreads(0);
+        ds.setDisableConnectionTracking(true);
+        ds.setDisableJMX(true);
+        ds.setStatisticsEnabled(false);
 
         return new JdbcFs(ds, dbDialect);
     }

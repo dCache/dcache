@@ -28,5 +28,5 @@ liquibase() # $1 = domain, $2 = cell, $3+ = liquibase arguments
     changelog=$(getProperty db.schema.changelog "$1" "$2")
 
     shift 2
-    CLASSPATH="$classpath" "$JAVA" liquibase.integration.commandline.Main --driver="${driver}" --changeLogFile="${changelog}" --url="${url}" --username="${user}" --password="${password}" "$@"
+    CLASSPATH="$classpath" quickJava liquibase.integration.commandline.Main --driver="${driver}" --changeLogFile="${changelog}" --url="${url}" --username="${user}" --password="${password}" "$@"
 }
