@@ -16,11 +16,11 @@
         </dependencySet>
         <dependencySet>
             <includes>
-                <include>*:*:war:*</include>
+                <include>*:dcache-webadmin:war:*</include>
             </includes>
             <outputDirectory>share/classes/webapps</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+            <outputFileNameMapping>webadmin.war</outputFileNameMapping>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
         </dependencySet>
