@@ -699,13 +699,7 @@ public class      CellShell
                         response = e;
                     }
 
-
-                    try {
-                        future.send(response);
-                    } catch (NoRouteToCellException | SerializationException e){
-                        _log.error("problem sending result of 'kill {}' " +
-                                "command: {}", cell, e.getMessage());
-                    }
+                    future.reply(response);
                 } catch (InterruptedException e) {
                     // Do nothing, dCache is shutting down.
                 }

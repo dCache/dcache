@@ -1,14 +1,10 @@
 package dmg.util.command;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 
 /**
@@ -21,7 +17,6 @@ public abstract class DelayedCommand<T extends Serializable>
         extends DelayedReply
         implements Callable<Reply>, Runnable
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DelayedCommand.class);
     private static final Executor NEW_THREAD_EXECUTOR = new Executor()
     {
         @Override
@@ -61,12 +56,6 @@ public abstract class DelayedCommand<T extends Serializable>
         } catch (Exception e) {
             result = e;
         }
-        try {
-            send(result);
-        } catch (NoRouteToCellException e) {
-            LOGGER.warn("Failed to send reply: {}", e.getMessage());
-        } catch (InterruptedException e) {
-            LOGGER.warn("Failed to send reply as request was interrupted");
-        }
+        reply(result);
     }
 }

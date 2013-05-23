@@ -25,7 +25,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
@@ -409,13 +408,7 @@ public class Job
                 _refreshTask.cancel(false);
 
                 for (Map.Entry<PoolMigrationJobCancelMessage,DelayedReply> entry: _cancelRequests.entrySet()) {
-                    try {
-                        entry.getValue().send(entry.getKey());
-                    } catch (NoRouteToCellException e) {
-                        _log.info(e.toString());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                    entry.getValue().reply(entry.getKey());
                 }
                 break;
             }

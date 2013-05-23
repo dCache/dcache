@@ -196,14 +196,12 @@ public class DirectoryLookUpPool extends AbstractCell
         {
             try {
                 try {
-                    send(list(_path));
+                    reply(list(_path));
                 } catch (CacheException e) {
-                    send(e);
+                    reply(e);
                 }
             } catch (InterruptedException e) {
                 // end of thread
-            } catch (NoRouteToCellException e) {
-                _log.warn("Failed to send list reply: " + e.getMessage());
             }
         }
     }

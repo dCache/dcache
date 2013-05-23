@@ -1077,16 +1077,10 @@ public class HsmStorageHandler2
             final CacheFileAvailable cfa = new CacheFileAvailable() {
                 @Override
                 public void cacheFileAvailable(PnfsId pnfsId, Throwable ee) {
-                    try {
-                        if (ee == null) {
-                            send("Fetched " + pnfsId);
-                        } else {
-                            send("Failed to fetch " + pnfsId + ": " + ee);
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    } catch (NoRouteToCellException e) {
-                        LOGGER.error("Failed to deliver reply: {}", e.toString());
+                    if (ee == null) {
+                        reply("Fetched " + pnfsId);
+                    } else {
+                        reply("Failed to fetch " + pnfsId + ": " + ee);
                     }
                 }
             };

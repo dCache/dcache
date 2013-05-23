@@ -1,32 +1,50 @@
 package dmg.cells.nucleus;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DelayedReply implements Reply
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DelayedReply.class);
+
     private CellEndpoint _endpoint;
     private CellMessage _envelope;
+    private Serializable _msg;
 
     @Override
     public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope)
     {
-        if (endpoint == null || envelope == null) {
-            throw new IllegalArgumentException("Arguments must not be null");
+        _endpoint = checkNotNull(endpoint);
+        _envelope = checkNotNull(envelope);
+        if (_msg != null) {
+            send();
         }
-        _endpoint = endpoint;
-        _envelope = envelope;
-        notifyAll();
     }
 
-    public synchronized void send(Serializable msg)
-        throws SerializationException,
-               NoRouteToCellException,
-               InterruptedException
+    public synchronized void reply(Serializable msg)
     {
-        while (_endpoint == null || _envelope == null) {
-            wait();
+        _msg = msg;
+        if (_envelope != null) {
+            send();
         }
-        _envelope.setMessageObject(msg);
-        _endpoint.sendMessage(_envelope);
+    }
+
+    protected synchronized void send()
+    {
+        try {
+            _envelope.setMessageObject(_msg);
+            _endpoint.sendMessage(_envelope);
+        } catch (NoRouteToCellException e) {
+            onNoRouteToCell(e);
+        }
+    }
+
+    protected void onNoRouteToCell(NoRouteToCellException e)
+    {
+        LOGGER.error("Failed to send reply: " + e.getMessage());
     }
 }

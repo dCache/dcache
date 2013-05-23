@@ -52,7 +52,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import org.dcache.cells.AbstractCellComponent;
@@ -725,13 +724,7 @@ public class PoolManagerV5
                 _message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.getMessage());
             } finally {
-                try {
-                    send(_message);
-                } catch (NoRouteToCellException e) {
-                    _log.error("Failed to send reply: " + e.getMessage());
-                } catch (InterruptedException e) {
-                    _log.warn("Link group selection handler was interrupted");
-                }
+                reply(_message);
             }
         }
 
@@ -837,11 +830,7 @@ public class PoolManagerV5
         protected void requestFailed(int errorCode, String errorMessage)
         {
             _request.setFailed(errorCode, errorMessage);
-            try {
-                send(_request);
-            } catch (Exception e) {
-                _log.warn("Exception requestFailed : " + e, e);
-            }
+            reply(_request);
         }
 
         protected void requestSucceeded(PoolInfo pool)
@@ -849,13 +838,9 @@ public class PoolManagerV5
             _request.setPoolName(pool.getName());
             _request.setPoolAddress(pool.getAddress());
             _request.setSucceeded();
-            try {
-                send(_request);
-                if (!_request.getSkipCostUpdate()) {
-                    _costModule.messageArrived(_envelope);
-                }
-            } catch (Exception e) {
-                _log.warn("Exception in requestSucceeded : " + e, e);
+            reply(_request);
+            if (!_request.getSkipCostUpdate()) {
+                _costModule.messageArrived(_envelope);
             }
         }
     }

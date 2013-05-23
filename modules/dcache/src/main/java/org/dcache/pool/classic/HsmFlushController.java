@@ -24,7 +24,6 @@ import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
 import diskCacheV111.vehicles.PoolFlushGainControlMessage;
 
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
@@ -236,13 +235,7 @@ public class HsmFlushController
                 _flush.setFailed(576, e);
             }
             if (_flush.getReplyRequired()) {
-                try {
-                    send(_flush);
-                } catch (NoRouteToCellException e) {
-                    LOGGER.error("Failed to send reply: {}", e.getMessage());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+                reply(_flush);
             }
         }
 
@@ -255,13 +248,7 @@ public class HsmFlushController
                 _flush.setCellInfo((PoolCellInfo) getCellInfo());
                 _flush.setFlushInfos(_storageQueue.getFlushInfos());
                 _flush.setResult(requests, failed);
-                try {
-                    send(_flush);
-                } catch (NoRouteToCellException e) {
-                    LOGGER.error("Failed to send reply: {}", e.getMessage());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+                reply(_flush);
             }
         }
     }

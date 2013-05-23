@@ -976,14 +976,7 @@ public class PoolV4
                     }
                 }
 
-                try {
-                    send(_message);
-                } catch (NoRouteToCellException e) {
-                    _log.error("Failed to send reply: " + e.getMessage());
-                } catch (InterruptedException e) {
-                    _log.error("Failed to send reply: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+                reply(_message);
             }
         }
     }
@@ -1039,14 +1032,7 @@ public class PoolV4
                     _message.setReply(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, error);
                 }
 
-                try {
-                    send(_message);
-                } catch (NoRouteToCellException e) {
-                    _log.error("Cannot send P2P reply: " + e.getMessage());
-                } catch (InterruptedException e) {
-                    _log.error("Cannot send P2P reply: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+                reply(_message);
             }
         }
     }
