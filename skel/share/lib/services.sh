@@ -133,11 +133,44 @@ printJavaPid() # $1 = domain
 printClassPath() # $1 = domain
 {
     local classpath
+    local plugin_classpath
+
+    classpath="$(getProperty dcache.paths.classpath "$1")"
+
+    plugin_classpath="$(printPluginClassPath "$1")"
+    if [ -n "$plugin_classpath" ]; then
+	classpath="${plugin_classpath}:${classpath}"
+    fi
+
+    echo $classpath
+}
+
+# Print the classpath of a CLI.  The dCache jar files are limited to
+# those matching the supplied list.
+printLimitedClassPath() # $1..$n = list of jar files
+{
+    local classpath
+    local classes_path
+    local jar
+
+    classpath="$(printPluginClassPath)"
+
+    classes_path="$(getProperty dcache.paths.classes)"
+    for name in "$@"; do
+	jar="$(echo $classes_path/$name-*.jar)"
+	classpath="${classpath}:${jar}"
+    done
+
+    echo $classpath
+}
+
+# Prints the classpath to include plugins for a given domain
+printPluginClassPath() # $1 = domain
+{
     local plugins
     local plugin
     local jar
 
-    classpath="$(getProperty dcache.paths.classpath "$1")"
     plugins="$(getProperty dcache.paths.plugins "$1")"
     while [ -n "$plugins" ]; do
         # plugins is a colon separated path of directories
@@ -160,6 +193,8 @@ printClassPath() # $1 = domain
 
     echo $classpath
 }
+
+
 
 # Start domain. Use runDomain rather than calling this function
 # directly.
