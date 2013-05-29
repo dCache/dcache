@@ -10,6 +10,7 @@ check -strong pnfsmanager
 check -strong spacemanager
 check -strong loginBroker
 check -strong gplazma
+check -strong billing
 check -strong kerberosdcapIoQueueOverwrite
 check -strong kerberosdcapMaxLogin
 check -strong srmSpaceManagerEnabled
@@ -51,7 +52,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -poolProxy=${doorPoolManager} \
               -pinManager=PinManager \
               -gplazma=\"${gplazma}\" \
-              -billing=billing \
+              -billing=\"${billing}\" \
               -loginBroker=${loginBroker} \
               -brokerUpdateTime=120 \
               -protocolFamily=dcap \

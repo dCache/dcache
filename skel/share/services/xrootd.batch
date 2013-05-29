@@ -17,6 +17,8 @@ check -strong xrootdAuthzPlugin
 check -strong xrootdUser
 check -strong poolmanager
 check -strong pnfsmanager
+check -strong gplazma
+check -strong billing
 check -strong loginBrokerUpdateTime
 check -strong loginBrokerUpdateThreshold
 
@@ -49,7 +51,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -gplazma=${gplazma} \
        -poolmanager=${poolmanager} \
        -pnfsmanager=${pnfsmanager} \
-       -billing=billing \
+       -billing=\"${billing}\" \
        -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
        -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
        -loginBroker=${loginBroker} \

@@ -13,6 +13,7 @@ check -strong gsiftpReadAhead
 check -strong allowCleaningPreciousFiles
 check -strong poolupDestination
 check -strong pnfsmanager
+check -strong billing
 check -strong flushMessageTarget
 check -strong sweeper
 check -strong xrootdMoverDiskThreads
@@ -70,7 +71,7 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -allowCleaningPreciousFiles=\"${allowCleaningPreciousFiles}\" \
     -poolupDestination=\"${poolupDestination}\" \
     -pnfsmanager=\"${pnfsmanager}\" \
-    -billing=billing \
+    -billing=\"${billing}\" \
     -flushMessageTarget=\"${flushMessageTarget}\" \
     -sweeper=\"${sweeper}\" \
     -xrootd-mover-disk-threads=\"${xrootdMoverDiskThreads}\" \

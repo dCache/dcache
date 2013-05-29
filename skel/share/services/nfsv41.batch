@@ -10,6 +10,7 @@ check -strong loginBroker
 check -strong poolmanager
 check -strong pnfsmanager
 check -strong gplazma
+check -strong billing
 check -strong db.user
 check -strong db.url
 check -strong db.driver
@@ -44,7 +45,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -poolManager=\"${poolmanager}\" \
        -pnfsManager=\"${pnfsmanager}\" \
        -gplazma=\"${gplazma}\" \
-       -billing=billing \
+       -billing=\"${billing}\" \
        -chimera.db.user=\"${db.user}\" \
        -chimera.db.password=\"${db.password}\" \
        -chimera.db.url=\"${db.url}\" \

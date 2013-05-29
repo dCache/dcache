@@ -28,6 +28,7 @@ check -strong webdavBasicAuthentication
 check -strong pnfsmanager
 check -strong poolmanager
 check -strong gplazma
+check -strong billing
 check -strong loginBrokerUpdateTime
 check -strong loginBrokerUpdateThreshold
 check -strong webdav.static-content.dir.local
@@ -138,7 +139,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -pnfsmanager=${pnfsmanager} \
     -poolmanager=${doorPoolManager} \
     -gplazma=${gplazma} \
-    -billing=billing \
+    -billing=\"${billing}\" \
     -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
     -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
     -loginBroker=${loginBroker} \
