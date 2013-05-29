@@ -11,6 +11,7 @@ check -strong threadPool
 check -strong quotaManager
 check -strong poolStatusRelay
 check -strong pnfsmanager
+check -strong billing
 check poolmanager.setup.file
 
 # External settings
@@ -71,6 +72,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -selectionUnit=\"${selectionUnit}\" \
     -costCalculator=\"${costCalculator}\" \
     -pnfsManager=\"${pnfsmanager}\" \
+    -billing=\"${billing}\" \
     -threadPool=\"${threadPool}\" \
     -quotaManager=\"${quotaManager}\" \
     -poolStatusRelay=\"${poolStatusRelay}\" \

@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:annotation-config/>
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
@@ -58,6 +63,10 @@
     <property name="partitionManager" ref="pm"/>
   </bean>
 
+  <bean id="billing-stub" class="org.dcache.cells.CellStub">
+      <property name="destination" value="${billing}"/>
+  </bean>
+
   <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5"
         destroy-method="shutdown">
     <description>Request container</description>
@@ -70,6 +79,7 @@
     <property name="stageConfigurationFile" value="${stageConfigurationFilePath}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="hitInfoMessages" value="${hitInfoMessages}"/>
+    <property name="billing" ref="billing-stub"/>
   </bean>
 
   <bean id="rebalance" class="org.dcache.poolmanager.Rebalancer">

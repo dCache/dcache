@@ -5,6 +5,7 @@ package diskCacheV111.poolManager ;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -59,6 +60,7 @@ import dmg.util.Args;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
@@ -93,7 +95,7 @@ public class RequestContainerV5
     private final Map<UOID, PoolRequestHandler>     _messageHash   = new HashMap<>() ;
     private final Map<String, PoolRequestHandler>   _handlerHash   = new HashMap<>() ;
 
-    private String      _warningPath   = "billing" ;
+    private CellStub _billing;
     private long        _retryTimer    = 15 * 60 * 1000 ;
 
     private int         _maxRequestClumping = 1 ;
@@ -150,26 +152,31 @@ public class RequestContainerV5
         _tickerThread.interrupt();
     }
 
+    @Required
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
     {
         _selectionUnit = selectionUnit;
     }
 
+    @Required
     public void setPoolMonitor(PoolMonitorV5 poolMonitor)
     {
         _poolMonitor = poolMonitor;
     }
 
+    @Required
     public void setPnfsHandler(PnfsHandler pnfsHandler)
     {
         _pnfsHandler = pnfsHandler;
     }
 
+    @Required
     public void setPartitionManager(PartitionManager partitionManager)
     {
         _partitionManager = partitionManager;
     }
 
+    @Required
     public void setThreadPool(ThreadPool threadPool)
     {
         _threadPool = threadPool;
@@ -178,6 +185,12 @@ public class RequestContainerV5
     public void setHitInfoMessages(boolean sendHitInfo)
     {
         _sendHitInfo = sendHitInfo;
+    }
+
+    @Required
+    public void setBilling(CellStub billing)
+    {
+        _billing = billing;
     }
 
     public void messageArrived(CellMessage envelope, Object message)
@@ -277,7 +290,6 @@ public class RequestContainerV5
        pw.println( "    Maximum Retries : "+_maxRetries ) ;
        pw.println( "    Pool Ping Timer : "+(_checkFilePingTimer/1000) + " seconds" ) ;
        pw.println( "           On Error : "+_onError ) ;
-       pw.println( "       Warning Path : "+_warningPath ) ;
        pw.println( "          Allow p2p : "+( def._p2pAllowed ? "on" : "off" )+
                                           " oncost="+( def._p2pOnCost ? "on" : "off" )+
                                           " fortransfer="+( def._p2pForTransfer ? "on" : "off" ) );
@@ -300,7 +312,6 @@ public class RequestContainerV5
         pw.append("rc onerror ").println(_onError);
         pw.append("rc set max retries ").println(_maxRetries);
         pw.append("rc set retry ").println(_retryTimer/1000);
-        pw.append("rc set warning path ").println(_warningPath);
         pw.append("rc set poolpingtimer ").println(_checkFilePingTimer/1000);
         pw.append("rc set max restore ")
             .println(_maxRestore<0?"unlimited":(""+_maxRestore));
@@ -380,12 +391,9 @@ public class RequestContainerV5
        }
        return "" ;
     }
-    public static final String hh_rc_set_warning_path = " # where to send the warnings to" ;
+    public static final String hh_rc_set_warning_path = " # obsolete";
     public String ac_rc_set_warning_path_$_0_1( Args args ){
-       if( args.argc() > 0 ){
-          _warningPath = args.argv(0) ;
-       }
-       return _warningPath ;
+       return "";
     }
     public static final String fh_rc_set_poolpingtimer =
     " rc set poolpingtimer <timer/seconds> "+
@@ -2158,8 +2166,7 @@ public class RequestContainerV5
                                     "PoolManager","PoolManager",pnfsId ,
                                     rc , infoMessage )  ;
         info.setStorageInfo(storageInfo);
-
-        sendMessage(new CellMessage(new CellPath(_warningPath), info));
+        _billing.send(info);
       } catch (NoRouteToCellException e) {
           _log.warn("Couldn't send WarningInfoMessage: {}", e.toString());
       }
@@ -2170,7 +2177,7 @@ public class RequestContainerV5
         try {
             PoolHitInfoMessage msg = new PoolHitInfoMessage(poolName, pnfsId);
             msg.setFileCached(cached);
-            sendMessage(new CellMessage( new CellPath(_warningPath), msg));
+            _billing.send(msg);
         } catch (NoRouteToCellException e) {
             _log.warn("Couldn't report hit info for {}: {}",
                       pnfsId, e.toString());
