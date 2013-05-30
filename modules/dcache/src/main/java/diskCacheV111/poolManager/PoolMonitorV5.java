@@ -433,7 +433,7 @@ public class PoolMonitorV5
             };
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
-        return queryPoolsForCost(transform(link.pools(), getName), filesize);
+        return queryPoolsForCost(transform(link.getPools(), getName), filesize);
     }
 
     private List<PoolCostCheckable> queryPoolsForCost(Iterable<String> pools,
@@ -498,7 +498,7 @@ public class PoolMonitorV5
     {
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
-        return new ArrayList(getPoolInformation(link.pools()));
+        return new ArrayList(getPoolInformation(link.getPools()));
     }
 
     @Override

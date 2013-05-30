@@ -80,30 +80,30 @@ public class PoolSelectionUnitV2
     private final NetHandler _netHandler = new NetHandler();
 
     @Override
-    public Collection<SelectionLink> getLinks() {
+    public Map<String, SelectionLink> getLinks() {
         _psuReadLock.lock();
         try {
-            return new ArrayList<SelectionLink>(_links.values());
+            return Maps.<String, SelectionLink>newHashMap(_links);
         } finally {
             _psuReadLock.unlock();
         }
     }
 
     @Override
-    public Collection<SelectionUnit> getSelectionUnits() {
+    public Map<String, SelectionUnit> getSelectionUnits() {
         _psuReadLock.lock();
         try {
-            return new ArrayList<SelectionUnit>(_units.values());
+            return Maps.<String, SelectionUnit>newHashMap(_units);
         } finally {
             _psuReadLock.unlock();
         }
     }
 
     @Override
-    public Collection<SelectionUnitGroup> getUnitGroups() {
+    public Map<String, SelectionUnitGroup> getUnitGroups() {
         _psuReadLock.lock();
         try {
-            return new ArrayList<SelectionUnitGroup>(_uGroups.values());
+            return Maps.<String, SelectionUnitGroup>newHashMap(_uGroups);
         } finally {
             _psuReadLock.unlock();
         }
@@ -199,7 +199,7 @@ public class PoolSelectionUnitV2
             pw.append("psu set allpoolsactive ").append(_allPoolsActive?"on":"off").append("\n");
             pw.append("#\n# The units ...\n#\n");
             for (Unit unit : _units.values()) {
-                int type = unit._type;
+                int type = unit.getType();
                 pw.append("psu create unit ").append(
                         type == STORE ? "-store " : type == DCACHE ? "-dcache"
                                 : type == PROTOCOL ? "-protocol" : "-net   ")
@@ -284,7 +284,7 @@ public class PoolSelectionUnitV2
                     }
                 }
 
-                for (SelectionLink link : linkGroup.links()) {
+                for (SelectionLink link : linkGroup.getLinks()) {
                     pw.append("psu addto linkGroup ").append(
                             linkGroup.getName()).append(" ").println(
                             link.getName());
@@ -473,7 +473,7 @@ public class PoolSelectionUnitV2
                 Unit classCoverage = null;
 
                 for (Unit unit : _units.values()) {
-                    if (unit._type != STORE) {
+                    if (unit.getType() != STORE) {
                         continue;
                     }
 
@@ -623,32 +623,32 @@ public class PoolSelectionUnitV2
 
                 case READ:
                     for (Link link : sortedSet) {
-                        if (link._readPref < 1) {
+                        if (link.getReadPref() < 1) {
                             continue;
                         }
-                        if (link._readPref != pref) {
+                        if (link.getReadPref() != pref) {
                             listList.add(current = new ArrayList<>());
-                            pref = link._readPref;
+                            pref = link.getReadPref();
                         }
                         current.add(link);
                     }
                     break;
                 case CACHE:
                     for (Link link : sortedSet) {
-                        if (link._cachePref < 1) {
+                        if (link.getCachePref() < 1) {
                             continue;
                         }
-                        if (link._cachePref != pref) {
+                        if (link.getCachePref() != pref) {
                             listList.add(current = new ArrayList<>());
-                            pref = link._cachePref;
+                            pref = link.getCachePref();
                         }
                         current.add(link);
                     }
                     break;
                 case P2P:
                     for (Link link : sortedSet) {
-                        int tmpPref = link._p2pPref < 0 ? link._readPref
-                                : link._p2pPref;
+                        int tmpPref = link.getP2pPref() < 0 ? link.getReadPref()
+                                : link.getP2pPref();
                         if (tmpPref < 1) {
                             continue;
                         }
@@ -661,12 +661,12 @@ public class PoolSelectionUnitV2
                     break;
                 case WRITE:
                     for (Link link : sortedSet) {
-                        if (link._writePref < 1) {
+                        if (link.getWritePref() < 1) {
                             continue;
                         }
-                        if (link._writePref != pref) {
+                        if (link.getWritePref() != pref) {
                             listList.add(current = new ArrayList<>());
-                            pref = link._writePref;
+                            pref = link.getWritePref();
                         }
                         current.add(link);
                     }
@@ -686,8 +686,8 @@ public class PoolSelectionUnitV2
                     //
                     // get the link if available
                     //
-                    if ((tag == null) && (link._tag != null)) {
-                        tag = link._tag;
+                    if ((tag == null) && (link.getTag() != null)) {
+                        tag = link.getTag();
                     }
 
                     for (PoolCore poolCore : link._poolList.values()) {
@@ -971,7 +971,7 @@ public class PoolSelectionUnitV2
                 }
                 sb.append("Link : ").append(link.toString()).append("\n");
 
-                for(SelectionPool pool: link.pools()) {
+                for(SelectionPool pool: link.getPools()) {
                     sb.append("    ").append(pool.getName()).append(
                             "\n");
                 }
@@ -1293,9 +1293,9 @@ public class PoolSelectionUnitV2
                 result[0] = poolName;
                 result[1] = pool._pGroupList.keySet().toArray();
                 result[2] = pool._linkList.keySet().toArray();
-                result[3] = pool._enabled;
+                result[3] = pool.isEnabled();
                 result[4] = pool.getActive();
-                result[5] = pool._rdOnly;
+                result[5] = pool.isReadOnly();
                 xlsResult = result;
             }
         } finally {
@@ -1339,10 +1339,10 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public Collection<SelectionPoolGroup> getPoolGroups() {
+    public Map<String, SelectionPoolGroup> getPoolGroups() {
         _psuReadLock.lock();
         try {
-            return new ArrayList<SelectionPoolGroup>(_pGroups.values());
+            return Maps.<String, SelectionPoolGroup>newHashMap(_pGroups);
         } finally {
             _psuReadLock.unlock();
         }
@@ -1369,10 +1369,10 @@ public class PoolSelectionUnitV2
 
                 Object[] result = new Object[3];
                 result[0] = unitName;
-                result[1] = unit._type == STORE ? "Store"
-                        : unit._type == PROTOCOL ? "Protocol"
-                                : unit._type == DCACHE ? "dCache"
-                                        : unit._type == NET ? "Net" : "Unknown";
+                result[1] = unit.getType() == STORE ? "Store"
+                        : unit.getType() == PROTOCOL ? "Protocol"
+                                : unit.getType() == DCACHE ? "dCache"
+                                        : unit.getType() == NET ? "Net" : "Unknown";
                 result[2] = unit._uGroupList.keySet().toArray();
                 xlsResult = result;
             }
@@ -1473,15 +1473,15 @@ public class PoolSelectionUnitV2
         }
 
         Object[] result = new Object[resolve ? 13 : 9];
-        result[0] = link._name;
-        result[1] = link._readPref;
-        result[2] = link._cachePref;
-        result[3] = link._writePref;
+        result[0] = link.getName();
+        result[1] = link.getReadPref();
+        result[2] = link.getCachePref();
+        result[3] = link.getWritePref();
         result[4] = link._uGroupList.keySet().toArray();
         result[5] = pools.toArray();
         result[6] = groups.toArray();
-        result[7] = link._p2pPref;
-        result[8] = link._tag;
+        result[7] = link.getP2pPref();
+        result[8] = link.getTag();
 
         if ((!resolve) || (link._uGroupList == null)) {
             return result;
@@ -1497,18 +1497,18 @@ public class PoolSelectionUnitV2
                 continue;
             }
             for (Unit unit : ug._unitList.values()) {
-                switch (unit._type) {
+                switch (unit.getType()) {
                     case NET:
-                        net.add(unit._name);
+                        net.add(unit.getName());
                         break;
                     case PROTOCOL:
-                        protocol.add(unit._name);
+                        protocol.add(unit.getName());
                         break;
                     case DCACHE:
-                        dcache.add(unit._name);
+                        dcache.add(unit.getName());
                         break;
                     case STORE:
-                        store.add(unit._name);
+                        store.add(unit.getName());
                         break;
                 }
             }
@@ -1650,16 +1650,16 @@ public class PoolSelectionUnitV2
                 Link link = i.next();
                 sb.append(link.getName()).append("\n");
                 if (detail) {
-                    sb.append(" readPref  : ").append(link._readPref).append(
+                    sb.append(" readPref  : ").append(link.getReadPref()).append(
                             "\n");
-                    sb.append(" cachePref : ").append(link._cachePref).append(
+                    sb.append(" cachePref : ").append(link.getCachePref()).append(
                             "\n");
-                    sb.append(" writePref : ").append(link._writePref).append(
+                    sb.append(" writePref : ").append(link.getWritePref()).append(
                             "\n");
-                    sb.append(" p2pPref   : ").append(link._p2pPref).append(
+                    sb.append(" p2pPref   : ").append(link.getP2pPref()).append(
                             "\n");
                     sb.append(" section   : ").append(
-                            link._tag == null ? "None" : link._tag)
+                            link.getTag() == null ? "None" : link.getTag())
                             .append("\n");
                     sb.append(" linkGroup : ").append(
                             link.getLinkGroup() == null ? "None" : link
@@ -2415,23 +2415,23 @@ public class PoolSelectionUnitV2
 
             String tmp = args.getOpt("readpref");
             if (tmp != null) {
-                link._readPref = Integer.parseInt(tmp);
+                link.setReadPref(Integer.parseInt(tmp));
             }
             tmp = args.getOpt("cachepref");
             if (tmp != null) {
-                link._cachePref = Integer.parseInt(tmp);
+                link.setCachePref(Integer.parseInt(tmp));
             }
             tmp = args.getOpt("writepref");
             if (tmp != null) {
-                link._writePref = Integer.parseInt(tmp);
+                link.setWritePref(Integer.parseInt(tmp));
             }
             tmp = args.getOpt("p2ppref");
             if (tmp != null) {
-                link._p2pPref = Integer.parseInt(tmp);
+                link.setP2pPref(Integer.parseInt(tmp));
             }
             tmp = args.getOpt("section");
             if (tmp != null) {
-                link._tag = tmp.equals("NONE") ? null : tmp;
+                link.setTag(tmp.equals("NONE") ? null : tmp);
             }
 
         } finally {
@@ -2625,18 +2625,25 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public String[] getLinkGroups() {
-
-        String[] linkGroups;
+    public Map<String, SelectionPool> getPools()
+    {
         _psuReadLock.lock();
         try {
-            linkGroups = _linkGroups.keySet().toArray(
-                    new String[_linkGroups.size()]);
+            return new HashMap<String, SelectionPool>(_pools);
         } finally {
             _psuReadLock.unlock();
         }
+    }
 
-        return linkGroups;
+    @Override
+    public Map<String, SelectionLinkGroup> getLinkGroups()
+    {
+        _psuReadLock.lock();
+        try {
+            return new HashMap<String, SelectionLinkGroup>(_linkGroups);
+        } finally {
+            _psuReadLock.unlock();
+        }
     }
 
     @Override
@@ -2649,33 +2656,6 @@ public class PoolSelectionUnitV2
             _psuReadLock.unlock();
         }
         return linkGroup;
-    }
-
-    @Override
-    public String[] getLinksByGroupName(String linkGroupName) throws NoSuchElementException {
-
-        String[] linkNames = null;
-
-        _psuReadLock.lock();
-        try {
-            LinkGroup linkGroup = _linkGroups.get(linkGroupName);
-            if (linkGroup == null) {
-                throw new NoSuchElementException("LinkGroup not found : "
-                        + linkGroupName);
-            }
-
-            Collection<SelectionLink> links = linkGroup.links();
-            int count = links.size();
-            linkNames = new String[count];
-            int j = 0;
-            for (SelectionLink link : links) {
-                linkNames[j++] = link.getName();
-            }
-        } finally {
-            _psuReadLock.unlock();
-        }
-
-        return linkNames;
     }
 
     @Override

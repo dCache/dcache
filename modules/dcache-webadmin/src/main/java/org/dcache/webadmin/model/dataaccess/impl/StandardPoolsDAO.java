@@ -118,7 +118,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     @Override
     public Set<SelectionLink> getLinks() throws DAOException {
         try {
-            return new HashSet(getPoolSelectionUnit().getLinks());
+            return new HashSet(getPoolSelectionUnit().getLinks().values());
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
@@ -128,7 +128,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     public Set<SelectionPoolGroup> getPoolGroups() throws DAOException {
         _log.debug("getPoolGroups called");
         try {
-            return new HashSet(getPoolSelectionUnit().getPoolGroups());
+            return new HashSet(getPoolSelectionUnit().getPoolGroups().values());
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
@@ -138,11 +138,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     public Set<String> getPoolGroupNames() throws DAOException {
         _log.debug("getPoolGroupNames called");
         try {
-            Set<String> poolGroupNames = new HashSet();
-            for (SelectionPoolGroup group : getPoolSelectionUnit().getPoolGroups()) {
-                poolGroupNames.add(group.getName());
-            }
-            return poolGroupNames;
+            return new HashSet(getPoolSelectionUnit().getPoolGroups().keySet());
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
@@ -162,7 +158,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     @Override
     public Set<SelectionUnitGroup> getUnitGroups() throws DAOException {
         try {
-            return new HashSet(getPoolSelectionUnit().getUnitGroups());
+            return new HashSet(getPoolSelectionUnit().getUnitGroups().values());
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
@@ -171,7 +167,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     @Override
     public Set<SelectionUnit> getUnits() throws DAOException {
         try {
-            return new HashSet(getPoolSelectionUnit().getSelectionUnits());
+            return new HashSet(getPoolSelectionUnit().getSelectionUnits().values());
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }

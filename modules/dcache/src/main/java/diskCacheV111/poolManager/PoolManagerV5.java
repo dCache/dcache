@@ -430,7 +430,7 @@ public class PoolManagerV5
           PoolStatusChangedMessage msg = new PoolStatusChangedMessage( poolName , status ) ;
           msg.setPoolMode( poolMode ) ;
           msg.setDetail( statusCode , statusMessage ) ;
-          _log.info("sendPoolStatusRelay : "+msg);
+          _log.info("sendPoolStatusRelay : " + msg);
           sendMessage(
                new CellMessage( _poolStatusRelayPath , msg )
                      ) ;
@@ -477,7 +477,7 @@ public class PoolManagerV5
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
         List<PoolInfo> pools =
-            _costModule.getPoolInfo(transform(link.pools(), getName));
+            _costModule.getPoolInfo(transform(link.getPools(), getName));
         if (pools.isEmpty()) {
             throw new CacheException(57, "No appropriate pools found for link: " + linkName);
         }
@@ -719,7 +719,7 @@ public class PoolManagerV5
                 _message.setSucceeded();
 
                 _log.info("Select link group handler finished after {} ms",
-                          (System.currentTimeMillis() - started));
+                        (System.currentTimeMillis() - started));
             } catch (Exception e) {
                 _message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.getMessage());
@@ -817,7 +817,7 @@ public class PoolManagerV5
                    .selectWritePool(_request.getPreallocated());
 
               _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
-                        System.currentTimeMillis() - started);
+                      System.currentTimeMillis() - started);
               requestSucceeded(pool);
 
            }catch(CacheException ce ){

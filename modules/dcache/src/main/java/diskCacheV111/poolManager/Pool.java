@@ -1,11 +1,12 @@
 package diskCacheV111.poolManager;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
@@ -16,13 +17,13 @@ import dmg.cells.nucleus.CellAddressCore;
 
 public class Pool extends PoolCore implements SelectionPool {
     private static final long serialVersionUID = 8108406418388363116L;
-    final Map<String, PGroup> _pGroupList = new HashMap<>();
-    boolean _enabled = true;
+    final Map<String, PGroup> _pGroupList = new ConcurrentHashMap<>();
+    private boolean _enabled = true;
     private long _active;
     private boolean _ping = true;
     private long _serialId;
-    boolean _rdOnly;
-    private Set<String> _hsmInstances = new HashSet<>(0);
+    private boolean _rdOnly;
+    private ImmutableSet<String> _hsmInstances = ImmutableSet.of();
     private PoolV2Mode _mode = new PoolV2Mode(PoolV2Mode.DISABLED);
     private CellAddressCore _address;
 
@@ -132,7 +133,7 @@ public class Pool extends PoolCore implements SelectionPool {
 
     @Override
     public String toString() {
-        return _name + "  (enabled=" + _enabled + ";active=" + (_active > 0 ? (getActive() / 1000) : "no") + ";rdOnly=" + isReadOnly() + ";links=" + _linkList.size() + ";pgroups=" + _pGroupList.size() + ";hsm=" + _hsmInstances.toString() + ";mode=" + _mode + ")";
+        return getName() + "  (enabled=" + _enabled + ";active=" + (_active > 0 ? (getActive() / 1000) : "no") + ";rdOnly=" + isReadOnly() + ";links=" + _linkList.size() + ";pgroups=" + _pGroupList.size() + ";hsm=" + _hsmInstances.toString() + ";mode=" + _mode + ")";
     }
 
     @Override
@@ -155,16 +156,17 @@ public class Pool extends PoolCore implements SelectionPool {
     }
 
     @Override
-    public Set<String> getHsmInstances() {
+    public ImmutableSet<String> getHsmInstances() {
         return _hsmInstances;
     }
 
     @Override
     public void setHsmInstances(Set<String> hsmInstances) {
         if (hsmInstances == null) {
-            hsmInstances = new HashSet<>(0);
+            _hsmInstances = ImmutableSet.of();
+        } else {
+            _hsmInstances = ImmutableSet.copyOf(hsmInstances);
         }
-        _hsmInstances = hsmInstances;
     }
 
     @Override
