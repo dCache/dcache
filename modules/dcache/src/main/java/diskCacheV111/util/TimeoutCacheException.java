@@ -8,4 +8,9 @@ public class TimeoutCacheException extends CacheException
     {
         super(CacheException.TIMEOUT, msg);
     }
+
+    public TimeoutCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.TIMEOUT, msg, cause);
+    }
 }

@@ -162,8 +162,12 @@ public class CacheException extends Exception {
      * Create a new CacheException with default error code and given error message
      * @param msg error message
      */
-    public CacheException( String msg ){
+    public CacheException(String msg) {
     	this(DEFAULT_ERROR_CODE, msg);
+    }
+
+    public CacheException(String msg, Throwable cause) {
+        this(DEFAULT_ERROR_CODE, msg, cause);
     }
 
     /**
@@ -174,6 +178,12 @@ public class CacheException extends Exception {
     public CacheException( int rc , String msg ){
         _message = setMessage(msg) ;
         _rc = rc ;
+    }
+
+    public CacheException(int rc, String msg, Throwable cause) {
+        super(cause);
+        _message = setMessage(msg);
+        _rc = rc;
     }
 
     @Override

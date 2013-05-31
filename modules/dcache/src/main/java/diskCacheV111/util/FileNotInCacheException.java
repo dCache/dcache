@@ -7,4 +7,8 @@ public class FileNotInCacheException extends CacheException {
      public FileNotInCacheException( String msg ){
         super( CacheException.FILE_NOT_IN_REPOSITORY , msg ) ;
      }
+
+    public FileNotInCacheException(String msg, Throwable cause) {
+        super(CacheException.FILE_NOT_IN_REPOSITORY , msg, cause);
+    }
 }
