@@ -37,28 +37,6 @@
         </encoder>
     </appender>
 
-    <!-- stores all received events; adds alarm metadata on the basis of either
-         a marker or a match with one of the alarmType definitions provided;
-         delegates all received events to other appenders, possibly with using a
-         cloned event with an added alarm marker if it is an alarm and was not
-         originally sent with one.
-         for further information, see the dCache Book -->
-    <appender name="STORE" class="org.dcache.alarms.logback.LogEntryAppender">
-        <storePath>${alarms.store.path}</storePath>
-        <url>${alarms.store.db.url}</url>
-        <user>${alarms.store.db.user}</user>
-        <pass>${alarms.store.db.pass}</pass>
-        <driver>${alarms.store.db.driver}</driver>
-        <propertiesPath>${alarms.store.db.properties}</propertiesPath>
-        <definitionsPath>${alarms.definitions.path}</definitionsPath>
-        <!-- it would be normal to comment this out if you are using an RDBMS
-             and not running periodic deletes -->
-        <appender-ref ref="HISTORY"/>
-        <!-- uncomment this in order to receive alarm mails;
-             see below for how to set mail appender -->
-        <!-- <appender-ref ref="ALARM_MAIL"/> -->
-    </appender>
-
     <!--
         if you wish alarms to be sent as email, you will need to provide host,
         to and from information below (note the possibility of multiple 'to's),
@@ -80,6 +58,28 @@
             <!-- send just one log entry per email -->
             <bufferSize>1</bufferSize>
         </cyclicBufferTracker>
+    </appender>
+
+    <!-- stores all received events; adds alarm metadata on the basis of either
+         a marker or a match with one of the alarmType definitions provided;
+         delegates all received events to other appenders, possibly with using a
+         cloned event with an added alarm marker if it is an alarm and was not
+         originally sent with one.
+         for further information, see the dCache Book -->
+    <appender name="STORE" class="org.dcache.alarms.logback.LogEntryAppender">
+        <storePath>${alarms.store.path}</storePath>
+        <url>${alarms.store.db.url}</url>
+        <user>${alarms.store.db.user}</user>
+        <pass>${alarms.store.db.pass}</pass>
+        <driver>${alarms.store.db.driver}</driver>
+        <propertiesPath>${alarms.store.db.properties}</propertiesPath>
+        <definitionsPath>${alarms.definitions.path}</definitionsPath>
+        <!-- it would be normal to comment this out if you are using an RDBMS
+             and not running periodic deletes -->
+        <appender-ref ref="HISTORY"/>
+        <!-- uncomment this in order to receive alarm mails;
+             see below for how to set mail appender -->
+        <!-- <appender-ref ref="ALARM_MAIL"/> -->
     </appender>
 
     <logger name="ch.qos.logback" additivity="false" level="warn">
