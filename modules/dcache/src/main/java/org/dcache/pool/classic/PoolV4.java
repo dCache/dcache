@@ -1985,7 +1985,9 @@ public class PoolV4
         return sb.toString();
     }
 
-    public Object ac_mover_ls_$_0_1(Args args) throws NoSuchElementException {
+    public Object ac_mover_ls_$_0_1(Args args)
+            throws NoSuchElementException, NumberFormatException
+    {
         String queueName = args.getOpt("queue");
         boolean binary = args.hasOption("binary");
 
@@ -2018,6 +2020,7 @@ public class PoolV4
     }
 
     public Object ac_p2p_ls_$_0_1(Args args)
+            throws NoSuchElementException, NumberFormatException
     {
         IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
 
