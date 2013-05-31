@@ -8,7 +8,7 @@ public class FileNotFoundCacheException extends CacheException {
         super( 10001 , msg ) ;
     }
 
-    public FileNotFoundCacheException( String msg, Exception cause){
+    public FileNotFoundCacheException( String msg, Throwable cause){
         super( 10001 , msg, cause ) ;
     }
 }

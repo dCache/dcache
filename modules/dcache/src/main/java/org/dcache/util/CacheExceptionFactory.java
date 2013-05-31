@@ -34,39 +34,41 @@ public class CacheExceptionFactory {
     }
 
     public static CacheException exceptionOf(int errorCode, String message) {
+        return exceptionOf(errorCode, message, null);
+    }
 
+    public static CacheException exceptionOf(int errorCode, String message, Throwable cause) {
         switch (errorCode) {
-
             case ERROR_IO_DISK:
-                return new DiskErrorCacheException(message);
+                return new DiskErrorCacheException(message, cause);
             case FILE_NOT_FOUND:
-                return new FileNotFoundCacheException(message);
+                return new FileNotFoundCacheException(message, cause);
             case FILE_NOT_ONLINE:
-                return new FileNotOnlineCacheException(message);
+                return new FileNotOnlineCacheException(message, cause);
             case FILE_NOT_IN_REPOSITORY:
-                return new FileNotInCacheException(message);
+                return new FileNotInCacheException(message, cause);
             case FILE_EXISTS:
-                return new FileExistsCacheException(message);
+                return new FileExistsCacheException(message, cause);
             case NOT_DIR:
-                return new NotDirCacheException(message);
+                return new NotDirCacheException(message, cause);
             case NOT_FILE:
-                return new NotFileCacheException(message);
+                return new NotFileCacheException(message, cause);
             case RESOURCE:
-                return new MissingResourceCacheException(message);
+                return new MissingResourceCacheException(message, cause);
             case PERMISSION_DENIED:
-                return new PermissionDeniedCacheException(message);
+                return new PermissionDeniedCacheException(message, cause);
             case LOCKED:
-                return new LockedCacheException(message);
+                return new LockedCacheException(message, cause);
             case NOT_IN_TRASH:
-                return new NotInTrashCacheException(message);
+                return new NotInTrashCacheException(message, cause);
             case TIMEOUT:
-                return new TimeoutCacheException(message);
+                return new TimeoutCacheException(message, cause);
             case OUT_OF_DATE:
-                return new OutOfDateCacheException(message);
+                return new OutOfDateCacheException(message, cause);
             case FILE_IN_CACHE:
-                return new FileInCacheException(message);
+                return new FileInCacheException(message, cause);
             case FILE_CORRUPTED:
-                return new FileCorruptedCacheException(message);
+                return new FileCorruptedCacheException(message, cause);
             /*
              * these do not have exception classes
              */
@@ -80,7 +82,7 @@ public class CacheExceptionFactory {
             case FILE_NOT_STORED:
             case POOL_DISABLED:
             default:
-                return new CacheException(errorCode, message);
+                return new CacheException(errorCode, message, cause);
         }
     }
 

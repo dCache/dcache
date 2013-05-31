@@ -13,4 +13,9 @@ public class FileNotOnlineCacheException extends CacheException {
     public FileNotOnlineCacheException( String msg ){
         super( CacheException.FILE_NOT_ONLINE , msg ) ;
      }
+
+    public FileNotOnlineCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.FILE_NOT_ONLINE, msg, cause);
+    }
 }

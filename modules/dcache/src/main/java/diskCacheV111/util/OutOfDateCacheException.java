@@ -8,4 +8,9 @@ public class OutOfDateCacheException extends CacheException
     {
         super(OUT_OF_DATE, msg);
     }
+
+    public OutOfDateCacheException(String msg, Throwable cause)
+    {
+        super(OUT_OF_DATE, msg, cause);
+    }
 }
