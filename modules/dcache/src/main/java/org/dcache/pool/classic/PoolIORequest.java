@@ -1,6 +1,7 @@
 package org.dcache.pool.classic;
 
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
@@ -194,6 +195,9 @@ public class PoolIORequest implements IoProcessable {
     {
         try {
             _transfer.close();
+        } catch (FileNotFoundCacheException e) {
+            _log.debug("Transfer failed in post-processing: {}", e.toString());
+            throw e;
         } catch (CacheException e) {
             _log.warn("Transfer failed in post-processing: {}", e.toString());
             throw e;
@@ -207,7 +211,7 @@ public class PoolIORequest implements IoProcessable {
             _log.warn("Transfer failed in post-processing: {}", e.toString());
             throw e;
         } catch (RuntimeException e) {
-            _log.error("Transfer failed in post-processing due to unexpected exception", e);
+            _log.error("Transfer failed in post-processing. Please report this bug to support@dcache.org.", e);
             throw e;
         }
     }
