@@ -131,6 +131,12 @@ public class DataNucleusLogEntryStore implements ILogEntryDAO {
                 LogEntry original = dup.iterator().next();
                 original.setLastUpdate(entry.getLastUpdate());
                 original.setReceived(original.getReceived() + 1);
+		/*
+                 * this needs to be done or else newly arriving instances
+                 * will not be tracked if this type has been closed
+                 * previously
+                 */
+                original.setClosed(false);
                 /*
                  * original is not detached so it will be updated on commit
                  */
