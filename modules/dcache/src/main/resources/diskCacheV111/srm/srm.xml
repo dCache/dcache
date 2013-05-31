@@ -154,7 +154,7 @@
     <property name="isSpaceManagerEnabled"
               value="${spaceManagerEnabled}"/>
     <property name="loginBrokerUpdatePeriod"
-              value="${srmLoginBrokerUpdatePeriod}"/>
+              value="${srm.lookup.period}"/>
     <property name="numberOfDoorsInRandomSelection"
               value="${srm.lookup.population-size}"/>
     <property name="useCustomGetHostByAddress"
