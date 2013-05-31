@@ -46,7 +46,7 @@ public class FileCorruptedCacheException extends CacheException
         _actualSize = Optional.absent();
     }
 
-    public FileCorruptedCacheException(String message, Exception cause)
+    public FileCorruptedCacheException(String message, Throwable cause)
     {
         super(FILE_CORRUPTED, message, cause);
         _expectedChecksums = Optional.absent();
