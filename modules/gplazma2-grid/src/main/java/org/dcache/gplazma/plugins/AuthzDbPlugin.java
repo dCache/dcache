@@ -83,7 +83,7 @@ public class AuthzDbPlugin
 
     /**
      * package visible constructor for testing purposes
-     * @param authzMapCache map of usernames to user information (e.q. uid/gid)
+     * @param map map of usernames to user information (e.q. uid/gid)
      */
     AuthzDbPlugin(SourceBackedPredicateMap<String,UserAuthzInformation> map,
                   ImmutableList<PrincipalType> uidOrder,
@@ -157,8 +157,7 @@ public class AuthzDbPlugin
     }
 
     @Override
-    public void map(Set<Principal> principals,
-                    Set<Principal> authorizedPrincipals)
+    public void map(Set<Principal> principals)
         throws AuthenticationException
     {
         /* Classify input principals.
@@ -220,9 +219,9 @@ public class AuthzDbPlugin
          */
         UserAuthzInformation user =
             getEntity(_uidOrder, loginUid, null, loginName, userName, primaryGroup);
-        authorizedPrincipals.add(new UidPrincipal(user.getUid()));
+        principals.add(new UidPrincipal(user.getUid()));
         if (user.getUsername() != null) {
-            authorizedPrincipals.add(new UserNamePrincipal(user.getUsername()));
+            principals.add(new UserNamePrincipal(user.getUsername()));
         }
 
         /* Pick a GID to authorize.
@@ -230,13 +229,13 @@ public class AuthzDbPlugin
         UserAuthzInformation group =
             getEntity(_gidOrder, null, loginGid, loginName, userName, primaryGroup);
         long primaryGid = group.getGids()[0];
-        authorizedPrincipals.add(new GidPrincipal(primaryGid, true));
+        principals.add(new GidPrincipal(primaryGid, true));
 
         /* Add remaining gids.
          */
         for (long gid: gids) {
             if (gid != primaryGid) {
-                authorizedPrincipals.add(new GidPrincipal(gid, false));
+                principals.add(new GidPrincipal(gid, false));
             }
         }
     }

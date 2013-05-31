@@ -29,6 +29,7 @@ import org.dcache.gplazma.monitor.LoginResult.MapPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
 
+import static com.google.common.collect.Iterables.concat;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
@@ -106,14 +107,12 @@ public class LoginResultPrinterTest
 
         givenMapPhaseRuns(
                 mapPlugin("kerberos", OPTIONAL, FAIL,
-                        "no kerberos principal found", identified, identified,
-                        NO_PRINCIPALS, NO_PRINCIPALS),
+                        "no kerberos principal found", identified, identified),
                 mapPlugin("vorolemap", OPTIONAL, SUCCESS, null, identified,
-                        identified, NO_PRINCIPALS, principals(NAME_ATLAS_PROD)),
-                mapPlugin("authzdb", SUFFICIENT, SUCCESS, null, identified,
-                        identified, principals(NAME_ATLAS_PROD),
-                        principals(NAME_ATLAS_PROD, UID, GID_ATLAS_PROD))
-                );
+                        concat(identified, principals(NAME_ATLAS_PROD))),
+                mapPlugin("authzdb", SUFFICIENT, SUCCESS, null,
+                        concat(identified, principals(NAME_ATLAS_PROD)),
+                        concat(identified, principals(NAME_ATLAS_PROD, UID, GID_ATLAS_PROD))));
 
         givenAccountPhaseWith(SUCCESS, authorized, authorized);
 
@@ -212,13 +211,11 @@ public class LoginResultPrinterTest
     }
 
     MapPluginResult mapPlugin(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Principal> identifiedBefore,
-            Set<Principal> identifiedAfter, Set<Principal> authorizedBefore,
-            Set<Principal> authorizedAfter)
+            Result result, String error, Iterable<Principal> principalsBefore,
+            Iterable<Principal> principalsAfter)
     {
         MapPluginResult plugin = new MapPluginResult(name, control);
-        plugin.setIdentified(identifiedBefore, identifiedAfter);
-        plugin.setAuthorized(authorizedBefore, authorizedAfter);
+        plugin.setPrincipals(principalsBefore, principalsAfter);
         plugin.setResult(result);
         if(result == Result.FAIL) {
             plugin.setError(error);
