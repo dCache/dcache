@@ -196,8 +196,7 @@ public class KpwdPlugin
      * Authorizes user name, DN, Kerberos principal, UID and GID.
      */
     @Override
-    public void map(Set<Principal> principals,
-                    Set<Principal> authorizedPrincipals)
+    public void map(Set<Principal> principals)
         throws AuthenticationException
     {
         KpwdPrincipal kpwd =
@@ -254,20 +253,9 @@ public class KpwdPlugin
 
             authRecord.DN = principal.getName();
             kpwd = new KpwdPrincipal(authRecord);
-
-            if (!(principal instanceof UserNamePrincipal)) {
-                /*
-                 * besides GlobusPrincipal, KerberosPrincipal, LoginNamePrincipal
-                 * kpwd file can contain UserNamePrincipal that can be mapped to
-                 * another UserNamePrincipal. To avoid issue with multiple usernames
-                 * we skip adding principal if it is UserNamePrincipal
-                 *
-                 */
-                authorizedPrincipals.add(principal);
-            }
         }
 
-        authorizedPrincipals.add(kpwd);
+        principals.add(kpwd);
 
         /* We explicitly check whether the user record is banned and
          * don't authorize the remaining principals. We do however
@@ -276,9 +264,9 @@ public class KpwdPlugin
          */
         checkAuthentication(!kpwd.isDisabled(), "account disabled");
 
-        authorizedPrincipals.add(new UserNamePrincipal(kpwd.getName()));
-        authorizedPrincipals.add(new UidPrincipal(kpwd.getUid()));
-        authorizedPrincipals.add(new GidPrincipal(kpwd.getGid(), true));
+        principals.add(new UserNamePrincipal(kpwd.getName()));
+        principals.add(new UidPrincipal(kpwd.getUid()));
+        principals.add(new GidPrincipal(kpwd.getGid(), true));
     }
 
     private static String errorMessage(Principal principal1,

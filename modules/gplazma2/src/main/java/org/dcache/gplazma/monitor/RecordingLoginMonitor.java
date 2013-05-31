@@ -27,8 +27,7 @@ public class RecordingLoginMonitor implements LoginMonitor
      * or plug
      */
     private Set<Principal> _atPhaseStartPrincipals;
-    private Set<Principal> _identifiedPrincipals;
-    private Set<Principal> _authorizedPrincipals;
+    private Set<Principal> _principals;
     private Set<Object> _publicCredentials;
     private Set<Object> _privateCredentials;
 
@@ -49,7 +48,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         AuthPhaseResult auth = _result.getAuthPhase();
         auth.addPluginResult(new AuthPluginResult(name, control));
-        _identifiedPrincipals = new HashSet<>(principals);
+        _principals = new HashSet<>(principals);
         _publicCredentials = new HashSet<>(publicCredentials);
         _privateCredentials = new HashSet<>(privateCredentials);
     }
@@ -61,7 +60,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         AuthPhaseResult auth = _result.getAuthPhase();
         AuthPluginResult plugin = auth.getLastPlugin();
-        plugin.setIdentified(_identifiedPrincipals, principals);
+        plugin.setIdentified(_principals, principals);
         plugin.setPublicCredentials(_publicCredentials, publicCredentials);
         plugin.setPrivateCredentials(_privateCredentials, privateCredentials);
         plugin.setResult(result);
@@ -86,24 +85,21 @@ public class RecordingLoginMonitor implements LoginMonitor
 
     @Override
     public void mapPluginBegins(String name, ConfigurationItemControl control,
-            Set<Principal> principals, Set<Principal> authorizedPrincipals)
+            Set<Principal> principals)
     {
         MapPhaseResult map = _result.getMapPhase();
         map.addPluginResult(new MapPluginResult(name, control));
-        _identifiedPrincipals = new HashSet<>(principals);
-        _authorizedPrincipals = new HashSet<>(authorizedPrincipals);
+        _principals = new HashSet<>(principals);
     }
 
     @Override
     public void mapPluginEnds(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Principal> principals,
-            Set<Principal> authorizedPrincipals)
+            Result result, String error, Set<Principal> principals)
     {
         MapPhaseResult map = _result.getMapPhase();
         MapPluginResult plugin = map.getLastPlugin();
         plugin.setResult(result);
-        plugin.setIdentified(_identifiedPrincipals, principals);
-        plugin.setAuthorized(_authorizedPrincipals, authorizedPrincipals);
+        plugin.setPrincipals(_principals, principals);
         if(result == Result.FAIL) {
             plugin.setError(error);
         }
@@ -129,7 +125,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         AccountPhaseResult account = _result.getAccountPhase();
         account.addPluginResult(new AccountPluginResult(name, control));
-        _authorizedPrincipals = new HashSet<>(principals);
+        _principals = new HashSet<>(principals);
     }
 
     @Override
@@ -139,7 +135,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         AccountPhaseResult account = _result.getAccountPhase();
         AccountPluginResult plugin = account.getLastPlugin();
-        plugin.setAuthorized(_authorizedPrincipals, principals);
+        plugin.setAuthorized(_principals, principals);
         plugin.setResult(result);
         if(result == Result.FAIL) {
             plugin.setError(error);
@@ -167,7 +163,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         SessionPhaseResult session = _result.getSessionPhase();
         session.addPluginResult(new SessionPluginResult(name, control));
-        _authorizedPrincipals = new HashSet<>(principals);
+        _principals = new HashSet<>(principals);
     }
 
     @Override
@@ -177,7 +173,7 @@ public class RecordingLoginMonitor implements LoginMonitor
     {
         SessionPhaseResult session = _result.getSessionPhase();
         SessionPluginResult plugin = session.getLastPlugin();
-        plugin.setAuthorized(_authorizedPrincipals, principals);
+        plugin.setAuthorized(_principals, principals);
         plugin.setAttributes(attributes);
         plugin.setResult(result);
         if(result == Result.FAIL) {
