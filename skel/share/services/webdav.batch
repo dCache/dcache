@@ -47,6 +47,8 @@ check webdavInternalAddress
 check webdavIoQueue
 check loginBroker
 
+check webdav.security.ciphers
+
 define env verify-http.exe enddefine
 enddefine
 
@@ -155,4 +157,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -grid.hostcert.cert=${grid.hostcert.cert} \
     -grid.hostcert.key=${grid.hostcert.key} \
     -grid.ca.path=${grid.ca.path} \
-    -export -cellClass=WebDAVDoor"
+    -export -cellClass=WebDAVDoor \
+    -webdav.security.ciphers=\"${webdav.security.ciphers}\" \
+    "
