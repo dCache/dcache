@@ -276,9 +276,9 @@
 	  <property name="caCertificatePath" value="${grid.ca.path}"/>
 	  <property name="autoFlush" value="true"/>
 	  <property name="encrypt" value="true"/>
-	  <property name="requireClientAuth" value="${webdavWantClientAuth}"/>
-	  <property name="acceptNoClientCerts"
-		    value="#{ '${webdavNeedClientAuth}' == 'false' }"/>
+      <property name="requireClientAuth" value="${webdavNeedClientAuth}"/>
+      <property name="acceptNoClientCerts"
+                 value="#{ '${webdavWantClientAuth}' == 'false' }"/>
 	  <property name="gssMode" value="SSL"/>
 	  <property name="millisecBetweenHostCertRefresh"
 		    value="#{ ${hostCertificateRefreshPeriod} * 1000 }"/>
