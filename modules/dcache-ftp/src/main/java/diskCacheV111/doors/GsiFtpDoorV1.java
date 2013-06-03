@@ -58,6 +58,12 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     )
     protected String service_trusted_certs;
 
+    @Option(
+            name="gridftp.security.ciphers",
+            required=true
+    )
+    protected String cipherFlags;
+
     private String _user;
 
     /** Creates a new instance of GsiFtpDoorV1 */
@@ -118,7 +124,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
                                (ExtendedGSSContext)manager.createContext(cred);
 
         context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
-        context.setBannedCiphers(Crypto.BANNED_CIPHERS);
+        context.setBannedCiphers(Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
 
         return context;
     }
