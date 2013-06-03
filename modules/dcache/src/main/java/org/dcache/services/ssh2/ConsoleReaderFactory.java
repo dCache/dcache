@@ -10,7 +10,7 @@ import dmg.cells.nucleus.CellEndpoint;
 
 import org.dcache.cells.CellMessageSender;
 
-public class CommandFactory implements Factory<Command>, CellMessageSender
+public class ConsoleReaderFactory implements Factory<Command>, CellMessageSender
 {
     private CellEndpoint _endpoint;
     private File _historyFile;

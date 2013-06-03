@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.springframework.org/schema/beans
-  http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd ">
+
+  <context:annotation-config/>
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
@@ -27,10 +32,12 @@
     <property name="anonymousAccess" value="NONE"/>
   </bean>
 
-  <bean id="shell-factory" class="org.dcache.services.ssh2.CommandFactory">
+  <bean id="shell-factory" class="org.dcache.services.ssh2.ConsoleReaderFactory">
     <property name="historyFile" value="${adminHistoryFile}"/>
     <property name="useColor" value="${admin.colors.enable}"/>
   </bean>
+
+  <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory"/>
 
   <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
     <property name="port"               value="${admin.ssh2AdminPort}"/>
@@ -39,6 +46,11 @@
     <property name="authorizedKeyList"  value="${admin.authorizedKey2}"/>
     <property name="loginStrategy"      ref="login-strategy"/>
     <property name="adminGroupId"       value="${admin.ssh2.gid}"/>
-    <property name="serverShellFactory" ref="shell-factory"/>
+    <property name="shellFactory"       ref="shell-factory"/>
+    <property name="subsystemFactories">
+      <list>
+        <ref bean="pcells-factory"/>
+      </list>
+    </property>
   </bean>
 </beans>

@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
+import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.PasswordAuthenticator;
@@ -28,8 +29,6 @@ import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import dmg.cells.nucleus.CellEndpoint;
-
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.PasswordCredential;
@@ -37,7 +36,6 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.UnionLoginStrategy;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellLifeCycleAware;
-import org.dcache.cells.CellMessageSender;
 
 import static org.dcache.util.Files.checkFile;
 
@@ -117,9 +115,15 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     @Required
-    public void setServerShellFactory(Factory<Command> shellCommand)
+    public void setShellFactory(Factory<Command> shellCommand)
     {
         _server.setShellFactory(shellCommand);
+    }
+
+    @Required
+    public void setSubsystemFactories(List<NamedFactory<Command>> subsystemFactories)
+    {
+        _server.setSubsystemFactories(subsystemFactories);
     }
 
     public void configureAuthentication() {
