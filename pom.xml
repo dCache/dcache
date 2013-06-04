@@ -29,7 +29,7 @@
       <version.aspectj>1.6.12</version.aspectj>
       <version.smc>5.1.0</version.smc>
       <version.xerces>2.9.1</version.xerces>
-      <version.jglobus>2.0.5-dcache-rc4</version.jglobus>
+      <version.jglobus>2.0.6-rc2</version.jglobus>
   </properties>
 
   <scm>
