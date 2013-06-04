@@ -123,7 +123,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                         mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                 "Transfer failed in post-processing: " + e.getMessage());
                     } catch (RuntimeException e) {
-                        LOGGER.error("Transfer failed in post-processing due to unexpected exception", e);
+                        LOGGER.error("Transfer failed in post-processing. Please report this bug to support@dcache.org.", e);
                         mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                 "Transfer failed due to unexpected exception: " + e.getMessage());
                     } catch (Throwable e) {
