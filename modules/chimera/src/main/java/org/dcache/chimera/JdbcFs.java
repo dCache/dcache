@@ -1337,7 +1337,16 @@ public class JdbcFs implements FileSystemProvider {
             // read/write only
             dbConnection.setAutoCommit(false);
 
-            _sqlDriver.setInodeAttributes(dbConnection, inode, level, stat);
+            switch (inode.type()) {
+                case INODE:
+                    _sqlDriver.setInodeAttributes(dbConnection, inode, level, stat);
+                    break;
+                case TAG:
+                    _sqlDriver.setTagMode(dbConnection, (FsInode_TAG) inode, stat.getMode());
+                    _sqlDriver.setTagOwner(dbConnection, (FsInode_TAG) inode, stat.getUid());
+                    _sqlDriver.setTagOwnerGroup(dbConnection, (FsInode_TAG) inode, stat.getGid());
+                    break;
+            }
             dbConnection.commit();
 
         } catch (SQLException e) {
