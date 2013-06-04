@@ -855,4 +855,21 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         assertTrue(statBefore.getMTime() != statAfter.getMTime());
     }
+
+    @Test
+    public void testSetAttribitesOnTag() throws Exception {
+        final String tagName = "myTag";
+
+        FsInode base = _rootInode.mkdir("junit");
+        _fs.createTag(base, tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+
+        Stat stat = tagInode.stat();
+        Stat baseStat = base.stat();
+
+        stat.setUid(123);
+        _fs.setInodeAttributes(tagInode, 0, stat);
+
+        assertEquals(baseStat, base.stat());
+    }
 }
