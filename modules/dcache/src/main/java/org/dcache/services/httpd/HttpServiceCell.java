@@ -28,6 +28,7 @@ import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
 import org.dcache.services.httpd.handlers.HandlerDelegator;
 import org.dcache.services.httpd.util.AliasEntry;
+import org.dcache.util.Crypto;
 
 public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
     private static final String IPV4_INETADDR_ANY = "0.0.0.0";
@@ -250,6 +251,7 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         final SslSelectChannelConnector connector = new SslSelectChannelConnector();
         connector.setPort(httpsPort);
         connector.setHost(IPV4_INETADDR_ANY);
+        connector.setExcludeCipherSuites(Crypto.BANNED_CIPHERS);
         final SslContextFactory factory = connector.getSslContextFactory();
         factory.setKeyStorePath(keystore);
         factory.setKeyStoreType(keystoreType);
