@@ -8,4 +8,9 @@ public class LockedCacheException extends CacheException
     {
         super(CacheException.LOCKED, msg);
     }
+
+    public LockedCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.LOCKED, msg, cause);
+    }
 }
