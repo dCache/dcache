@@ -349,6 +349,7 @@
       <property name="maxMemory" value="${xrootd-mover-max-memory}"/>
       <property name="clientIdleTimeout" value="${xrootd-mover-idle-client-timeout}"/>
       <property name="socketThreads" value="${xrootd-mover-socket-threads}"/>
+      <property name="maxFrameSize" value="${xrootd-mover-max-frame-size}"/>
       <property name="plugins">
           <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
               <property name="plugins" value="${xrootd-plugins}"/>
