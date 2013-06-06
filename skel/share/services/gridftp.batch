@@ -9,11 +9,13 @@ check -strong cell.name
 check -strong srmSpaceManagerEnabled
 check -strong clientDataPortRange
 check -strong gsiftpMaxLogin
+check -strong gridftp.service.loginbroker
+check -strong gridftp.service.loginbroker.update-period
+check -strong gridftp.service.loginbroker.update-period.unit
+check -strong gridftp.service.loginbroker.update-threshold
 check -strong dcache.service.gplazma
 check -strong dcache.service.billing
-check -strong dcache.service.loginbroker
 check -strong dcache.service.pnfsmanager
-check -strong loginBrokerUpdateTime
 check -strong performanceMarkerPeriod
 check -strong gsiftpPoolManagerTimeout
 check -strong gsiftpPoolTimeout
@@ -34,7 +36,7 @@ check -strong grid.hostcert.cert
 check -strong grid.ca.path
 check gridftp.security.ciphers
 check FtpTLogDir
-check listen
+check gridftp.net.listen
 
 onerror continue
 
@@ -65,17 +67,19 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 # defaultStreamsPerClient must be 1 for compliance with GFD.21
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
-             -listen=${listen} \
+             -listen=${gridftp.net.listen} \
              -export \
              diskCacheV111.doors.GsiFtpDoorV1 \
              -prot=raw \
              -clientDataPortRange=${clientDataPortRange} \
              -poolManager=${myPoolManager}  \
              -maxLogin=${gsiftpMaxLogin} \
-             -brokerUpdateTime=${loginBrokerUpdateTime} \
+             -brokerUpdateTime=${gridftp.service.loginbroker.update-period} \
+             -brokerUpdateTimeUnit=${gridftp.service.loginbroker.update-period.unit} \
+             -brokerUpdateOffset=${gridftp.service.loginbroker.update-threshold} \
              -protocolFamily=gsiftp \
              -protocolVersion=1.0.0 \
-             -loginBroker=\"${dcache.service.loginbroker}\" \
+             -loginBroker=\"${gridftp.service.loginbroker}\" \
              -gplazma=\"${dcache.service.gplazma}\" \
              -billing=\"${dcache.service.billing}\" \
              -pnfsManager=\"${dcache.service.pnfsmanager}\" \

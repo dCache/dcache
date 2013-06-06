@@ -4,9 +4,10 @@
 
 onerror shutdown
 check -strong cell.name
-check -strong loginBrokerUpdateTime
-check -strong loginBrokerUpdateThreshold
-check -strong dcache.service.loginbroker
+check -strong nfsv41.service.loginbroker
+check -strong nfsv41.service.loginbroker.update-period
+check -strong nfsv41.service.loginbroker.update-period.unit
+check -strong nfsv41.service.loginbroker.update-threshold
 check -strong dcache.service.poolmanager
 check -strong dcache.service.pnfsmanager
 check -strong dcache.service.gplazma

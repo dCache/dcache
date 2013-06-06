@@ -8,18 +8,21 @@ check -strong cell.name
 check -strong dcache.service.poolmanager
 check -strong dcache.service.pnfsmanager
 check -strong dcache.service.spacemanager
-check -strong dcache.service.loginbroker
 check -strong dcache.service.gplazma
 check -strong dcache.service.billing
 check -strong dcache.service.pinmanager
+check -strong gsidcap.service.loginbroker
+check -strong gsidcap.service.loginbroker.update-period
+check -strong gsidcap.service.loginbroker.update-period.unit
+check -strong gsidcap.service.loginbroker.update-threshold
 check -strong gsidcapIoQueueOverwrite
 check -strong gsidcapMaxLogin
 check -strong srmSpaceManagerEnabled
 check -strong dcapReadOnly
 check -strong dcapAnonymousAccessLevel
 check gsidcapIoQueue
-check listen
 check gsidcap.security.ciphers
+check gsidcap.net.listen
 
 #
 #  ----  Usage of Srm Space Manager
@@ -42,7 +45,7 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
              "${port} \
-              -listen=${listen} \
+              -listen=${gsidcap.net.listen} \
               diskCacheV111.doors.DCapDoor \
               -export \
               -prot=telnet -localOk \
@@ -53,8 +56,10 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -pinManager=${dcache.service.pinmanager} \
               -gplazma=\"${dcache.service.gplazma}\" \
               -billing=\"${dcache.service.billing}\" \
-              -loginBroker=${dcache.service.loginbroker} \
-              -brokerUpdateTime=120 \
+              -loginBroker=${gsidcap.service.loginbroker} \
+              -brokerUpdateTime=${gsidcap.service.loginbroker.update-period} \
+              -brokerUpdateTimeUnit=${gsidcap.service.loginbroker.update-period.unit} \
+              -brokerUpdateOffset=${gsidcap.service.loginbroker.update-threshold} \
               -protocolFamily=gsidcap \
               -protocolVersion=1.3.0 \
               -authorization=strong \

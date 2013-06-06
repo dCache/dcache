@@ -2,6 +2,8 @@ package org.dcache.util;
 
 import javax.security.auth.Subject;
 
+import java.util.concurrent.TimeUnit;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
@@ -72,5 +74,11 @@ public class RedirectedTransfer<T> extends Transfer
             setStatus(null);
         }
         return _redirectObject;
+    }
+
+    public synchronized T waitForRedirect(long timeout, TimeUnit unit)
+            throws CacheException, InterruptedException
+    {
+        return waitForRedirect(unit.toMillis(timeout));
     }
 }

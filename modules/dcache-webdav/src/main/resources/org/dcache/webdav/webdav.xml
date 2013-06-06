@@ -182,17 +182,18 @@
       <description>Registers the door with a LoginBroker</description>
 
       <property name="executor" ref="scheduled-thread-pool"/>
-      <property name="updateTime" value="${loginBrokerUpdateTime}"/>
-      <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+      <property name="updateTime" value="${webdav.service.loginbroker.update-period}"/>
+      <property name="updateTimeUnit" value="${webdav.service.loginbroker.update-period.unit}"/>
+      <property name="updateThreshold" value="${webdav.service.loginbroker.update-threshold}"/>
       <property name="protocolEngine"
 		value="org.dcache.webdav.DcacheResourceFactory"/>
       <property name="protocolVersion" value="1.1"/>
       <property name="protocolFamily" ref="protocol-family"/>
-      <property name="address" value="${webdavAddress}"/>
+      <property name="address" value="${webdav.net.listen}"/>
       <property name="port" value="${port}"/>
       <property name="loginBroker">
 	  <bean class="dmg.cells.nucleus.CellPath">
-	      <constructor-arg value="${dcache.service.loginbroker}"/>
+	      <constructor-arg value="${webdav.service.loginbroker}"/>
 	  </bean>
       </property>
   </bean>
@@ -216,7 +217,7 @@
 	      <list>
 		  <bean class="org.eclipse.jetty.server.nio.SelectChannelConnector">
 		      <property name="port" value="${port}"/>
-		      <property name="host" value="${webdavAddress}"/>
+		      <property name="host" value="${webdav.net.listen}"/>
 		  </bean>
 	      </list>
 	  </property>
@@ -255,7 +256,7 @@
           <description>HTTPS connector from Jetty</description>
 
 	  <property name="port" value="${port}"/>
-	  <property name="host" value="${webdavAddress}"/>
+	  <property name="host" value="${webdav.net.listen}"/>
 	  <property name="keystore" value="${webdavKeyStore}"/>
 	  <property name="keystoreType" value="PKCS12"/>
 	  <property name="password" value="${webdavKeyStorePassword}"/>
@@ -274,7 +275,7 @@
           <description>HTTPS connector using jGlobus</description>
 
 	  <property name="port" value="${port}"/>
-	  <property name="host" value="${webdavAddress}"/>
+	  <property name="host" value="${webdav.net.listen}"/>
 	  <property name="hostCertificatePath" value="${grid.hostcert.cert}"/>
 	  <property name="hostKeyPath" value="${grid.hostcert.key}"/>
 	  <property name="caCertificatePath" value="${grid.ca.path}"/>

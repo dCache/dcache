@@ -4,7 +4,7 @@
 
 onerror shutdown
 check -strong port
-check listen
+check srm.net.listen
 check -strong hostCertificateRefreshPeriod
 check -strong trustAnchorRefreshPeriod
 check -strong srmClientTransport
@@ -117,11 +117,12 @@ check -strong dcache.service.pnfsmanager
 check -strong dcache.service.poolmanager
 check -strong dcache.service.gplazma
 
-check -strong srm.loginbroker
-check -strong srm.loginbroker.period
-check -strong srm.loginbroker.threshold
-check -strong srm.loginbroker.version
-check -strong srm.loginbroker.family
+check -strong srm.service.loginbroker
+check -strong srm.service.loginbroker.update-period
+check -strong srm.service.loginbroker.update-period.unit
+check -strong srm.service.loginbroker.update-threshold
+check -strong srm.service.loginbroker.version
+check -strong srm.service.loginbroker.family
 
 check -strong srm.lookup.loginbroker
 check -strong srm.lookup.period

@@ -5,27 +5,36 @@
 onerror shutdown
 
 check -strong cell.name
-check -strong port
-check -strong xrootdPoolTimeout
-check -strong xrootdThreads
-check -strong xrootdBacklog
-check -strong xrootdMaxChannelMemorySize
-check -strong xrootdRootPath
-check -strong xrootdPoolManagerTimeout
-check -strong xrootdMoverTimeout
-check -strong xrootdAuthzPlugin
-check -strong xrootdUser
-check -strong dcache.service.poolmanager
-check -strong dcache.service.pnfsmanager
-check -strong dcache.service.gplazma
-check -strong dcache.service.billing
-check -strong dcache.service.loginbroker
-check -strong loginBrokerUpdateTime
-check -strong loginBrokerUpdateThreshold
+check -strong xrootd.net.port
+check -strong xrootd.net.listen
+check -strong xrootd.net.backlog
+check -strong xrootd.threads
+check -strong xrootd.max-channel-memory-size
+check -strong xrootd.max-total-memory-size
+check -strong xrootd.root
+check -strong xrootd.service.pool.timeout
+check -strong xrootd.service.pool.timeout.unit
+check -strong xrootd.service.poolmanager
+check -strong xrootd.service.poolmanager.timeout
+check -strong xrootd.service.poolmanager.timeout.unit
+check -strong xrootd.service.pnfsmanager
+check -strong xrootd.service.gplazma
+check -strong xrootd.service.gplazma.timeout
+check -strong xrootd.service.gplazma.timeout.unit
+check -strong xrootd.service.billing
+check -strong xrootd.service.loginbroker
+check -strong xrootd.service.loginbroker.update-period
+check -strong xrootd.service.loginbroker.update-period.unit
+check -strong xrootd.service.loginbroker.update-threshold
+check -strong xrootd.service.loginbroker.version
+check -strong xrootd.service.loginbroker.family
 
-check xrootdAllowedReadPaths
-check xrootdAllowedWritePaths
-check xrootdIoQueue
+check -strong xrootd.mover.timeout
+check -strong xrootd.mover.queue
+check -strong xrootd.plugins
+check -strong xrootd.authz.user
+check -strong xrootd.authz.read-paths
+check -strong xrootd.authz.write-paths
 
 onerror continue
 

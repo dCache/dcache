@@ -10,7 +10,7 @@ check -strong port
 check -strong admin.colors.enable
 check -strong cell.name
 check adminHistoryFile
-check listen
+check admin.net.listen
 
 
 
@@ -57,7 +57,7 @@ create dmg.cells.services.login.SshKeyManager    skm
 
 #create dmg.cells.services.login.LoginManager slm \
 #      "${port}  \
-#       -listen=${listen} \
+#       -listen=${admin.net.listen} \
 #       dmg.cells.services.StreamLoginCell \
 #       -prot=ssh -auth=dmg.cells.services.login.SshSAuth_X"
 
@@ -66,7 +66,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
        -history=${adminHistoryFile} \
-       -listen=${listen} \
+       -listen=${admin.net.listen} \
        -useColors=${admin.colors.enable} \
        diskCacheV111.admin.UserAdminShell"
 

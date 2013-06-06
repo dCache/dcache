@@ -346,7 +346,7 @@
       <property name="diskThreads" value="${xrootdMoverDiskThreads}"/>
       <property name="maxMemoryPerConnection" value="${xrootdMoverMaxMemoryPerConnection}"/>
       <property name="maxMemory" value="${xrootdMoverMaxMemory}"/>
-      <property name="clientIdleTimeout" value="${xrootd.mover.timeout.idle}"/>
+      <property name="clientIdleTimeout" value="${pool.mover.xrootd.timeout.idle}"/>
       <property name="socketThreads" value="${xrootdMoverSocketThreads}"/>
       <property name="maxFrameSize" value="${xrootdMoverMaxFrameSize}"/>
       <property name="plugins">

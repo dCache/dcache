@@ -8,8 +8,10 @@ check -strong port
 check -strong cell.name
 check -strong clientDataPortRange
 check -strong gsiftpMaxLogin
-check -strong loginBrokerUpdateTime
-check -strong dcache.service.loginbroker
+check -strong ftp.service.loginbroker
+check -strong ftp.service.loginbroker.update-period
+check -strong ftp.service.loginbroker.update-period.unit
+check -strong ftp.service.loginbroker.update-threshold
 check -strong dcache.service.gplazma
 check -strong dcache.service.billing
 check -strong dcache.service.pnfsmanager
@@ -29,7 +31,7 @@ check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
 check -strong ftp.read-only
 check FtpTLogDir
-check listen
+check ftp.net.listen
 
 onerror continue
 
@@ -60,16 +62,18 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 #  defaultStreamsPerClient must be 1 for compliance with GFD.21
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
-             -listen=${listen} \
+             -listen=${ftp.net.listen} \
              -export \
              diskCacheV111.doors.WeakFtpDoorV1 \
              -prot=raw \
              -clientDataPortRange=${clientDataPortRange} \
              -maxLogin=${gsiftpMaxLogin} \
-             -brokerUpdateTime=${loginBrokerUpdateTime} \
+             -brokerUpdateTime=${ftp.service.loginbroker.update-period} \
+             -brokerUpdateTimeUnit=${ftp.service.loginbroker.update-period.unit} \
+             -brokerUpdateOffset=${ftp.service.loginbroker.update-threshold} \
              -protocolFamily=ftp \
              -protocolVersion=1.0.0 \
-             -loginBroker=${dcache.service.loginbroker} \
+             -loginBroker=${ftp.service.loginbroker} \
              -gplazma=\"${dcache.service.gplazma}\" \
              -billing=\"${dcache.service.billing}\" \
              -perfMarkerPeriod=${performanceMarkerPeriod} \

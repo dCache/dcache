@@ -105,15 +105,16 @@
         destroy-method="stop">
         <description>Notifies LoginBroker </description>
         <property name="executor" ref="scheduled-thread-pool"/>
-        <property name="updateTime" value="${loginBrokerUpdateTime}"/>
-        <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+        <property name="updateTime" value="${nfsv41.service.loginbroker.update-period}"/>
+        <property name="updateTimeUnit" value="${nfsv41.service.loginbroker.update-period.unit}"/>
+        <property name="updateThreshold" value="${nfsv41.service.loginbroker.update-threshold}"/>
         <property name="protocolEngine" value="org.dcache.chimera.nfsv41.door.NFSv41Door"/>
         <property name="protocolVersion" value="nfs4.1"/>
         <property name="protocolFamily" value="${nfs.published.name}"/>
         <property name="port" value="${nfs.port}"/>
         <property name="loginBroker">
             <bean class="dmg.cells.nucleus.CellPath">
-                <constructor-arg value="${dcache.service.loginbroker}"/>
+                <constructor-arg value="${nfsv41.service.loginbroker}"/>
             </bean>
         </property>
     </bean>

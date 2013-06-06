@@ -11,8 +11,10 @@ check -string kerberos.key-distribution-center-list
 check -strong srmSpaceManagerEnabled
 check -strong clientDataPortRange
 check -strong gsiftpMaxLogin
-check -strong loginBrokerUpdateTime
-check -strong dcache.service.loginbroker
+check -strong kerberosftp.service.loginbroker
+check -strong kerberosftp.service.loginbroker.update-period
+check -strong kerberosftp.service.loginbroker.update-period.unit
+check -strong kerberosftp.service.loginbroker.update-threshold
 check -strong dcache.service.gplazma
 check -strong dcache.service.billing
 check -strong dcache.service.pnfsmanager
@@ -32,7 +34,7 @@ check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
 check -strong ftp.read-only
 check FtpTLogDir
-check listen
+check keberosftp.net.listen
 
 onerror continue
 
@@ -63,7 +65,7 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 # defaultStreamsPerClient must be 1 for compliance with GFD.21
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
-             -listen=${listen} \
+             -listen=${kerberosftp.net.listen} \
              -export \
              diskCacheV111.doors.KerberosFtpDoorV1 \
              -kdc-list=${kerberos.key-distribution-center-list} \
@@ -72,10 +74,12 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -clientDataPortRange=${clientDataPortRange} \
              -poolManager=${myPoolManager}  \
              -maxLogin=${gsiftpMaxLogin} \
-             -brokerUpdateTime=${loginBrokerUpdateTime} \
+             -brokerUpdateTime=${kerberosftp.service.loginbroker.update-period} \
+             -brokerUpdateTimeUnit=${kerberosftp.service.loginbroker.update-period.unit} \
+             -brokerUpdateOffset=${kerberosftp.service.loginbroker.update-threshold} \
              -protocolFamily=gkftp \
              -protocolVersion=1.0.0 \
-             -loginBroker=${dcache.service.loginbroker} \
+             -loginBroker=${kerberosftp.service.loginbroker} \
              -gplazma=\"${dcache.service.gplazma}\" \
              -billing=\"${dcache.service.billing}\" \
              -pnfsManager=\"${dcache.service.pnfsmanager}\" \

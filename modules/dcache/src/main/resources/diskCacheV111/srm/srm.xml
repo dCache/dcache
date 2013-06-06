@@ -115,15 +115,16 @@
         <description>Thread pool for scheduled activities</description>
       </bean>
     </property>
-    <property name="updateTime" value="${srm.loginbroker.period}"/>
-    <property name="updateThreshold" value="${srm.loginbroker.threshold}"/>
+    <property name="updateTime" value="${srm.service.loginbroker.update-period}"/>
+    <property name="updateTimeUnit" value="${srm.service.loginbroker.update-period.unit}"/>
+    <property name="updateThreshold" value="${srm.service.loginbroker.update-threshold}"/>
     <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
-    <property name="protocolVersion" value="${srm.loginbroker.version}"/>
-    <property name="protocolFamily" value="${srm.loginbroker.family}"/>
+    <property name="protocolVersion" value="${srm.service.loginbroker.version}"/>
+    <property name="protocolFamily" value="${srm.service.loginbroker.family}"/>
     <property name="port" value="${port}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${srm.loginbroker}"/>
+        <constructor-arg value="${srm.service.loginbroker}"/>
       </bean>
     </property>
   </bean>
@@ -446,7 +447,7 @@
           class="org.dcache.util.JettyGSIConnector">
         <description>synchronous GSI connector</description>
         <property name="port" value="${port}"/>
-        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
+        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
 
         <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
         <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
@@ -472,7 +473,7 @@
           class="org.dcache.util.JettyGSIConnector">
         <description>synchronous SSL connector</description>
         <property name="port" value="${srm.ssl.port}"/>
-        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
+        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
 
         <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
         <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
