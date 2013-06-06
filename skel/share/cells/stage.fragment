@@ -2,12 +2,12 @@
 
 # Disables stage PEP in this domain
 define env stage-disable-pep.exe end
-  set env stageConfigurationFilePath ""
+  set env ${0}.authz.staging ""
 end
 
 # Decide whether to enable the stage PEP
 onerror continue
-eval ${stagePolicyEnforcementPoint} ${0} !=
+eval ${0}.authz.staging.pep ${1} !=
 exec env stage-disable-pep.exe -ifok
 onerror shutdown
 

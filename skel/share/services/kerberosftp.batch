@@ -11,10 +11,11 @@ check -string kerberos.key-distribution-center-list
 check -strong srmSpaceManagerEnabled
 check -strong clientDataPortRange
 check -strong gsiftpMaxLogin
-check -strong loginBroker
 check -strong loginBrokerUpdateTime
-check -strong gplazma
-check -strong billing
+check -strong dcache.service.loginbroker
+check -strong dcache.service.gplazma
+check -strong dcache.service.billing
+check -strong dcache.service.pnfsmanager
 check -strong performanceMarkerPeriod
 check -strong gsiftpPoolManagerTimeout
 check -strong gsiftpPoolTimeout
@@ -45,18 +46,18 @@ exec env usePoolManager -ifok
 
 # Otherwise use space manager, if enabled
 define env useSpaceManager end
-  set env -c myPoolManager ${spacemanager}
+  set env -c myPoolManager ${dcache.service.spacemanager}
 end
 
 eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
 exec env useSpaceManager -ifok
 
 # Otherwise use poolmanager
-set env -c myPoolManager ${poolmanager}
+set env -c myPoolManager ${dcache.service.poolmanager}
 
 onerror shutdown
 
-exec file:${dcache.paths.share}/cells/stage.fragment doors
+exec file:${dcache.paths.share}/cells/stage.fragment dcache doors
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 # defaultStreamsPerClient must be 1 for compliance with GFD.21
@@ -74,9 +75,10 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -brokerUpdateTime=${loginBrokerUpdateTime} \
              -protocolFamily=gkftp \
              -protocolVersion=1.0.0 \
-             -loginBroker=${loginBroker} \
-             -gplazma=\"${gplazma}\" \
-             -billing=\"${billing}\" \
+             -loginBroker=${dcache.service.loginbroker} \
+             -gplazma=\"${dcache.service.gplazma}\" \
+             -billing=\"${dcache.service.billing}\" \
+             -pnfsManager=\"${dcache.service.pnfsmanager}\" \
              -perfMarkerPeriod=${performanceMarkerPeriod} \
              -poolManagerTimeout=${gsiftpPoolManagerTimeout} \
              -poolTimeout=${gsiftpPoolTimeout} \
@@ -88,7 +90,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -use-login-service=${useLoginService} \
              -io-queue=${gsiftpIoQueue} \
              -kpwd-file=${kpwdFile} \
-             -stageConfigurationFilePath=${stageConfigurationFilePath} \
+             -stageConfigurationFilePath=${dcache.authz.staging} \
              -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
              -overwrite=${overwriteEnabled} \
              -proxyPassive=${ftp.proxy.on-passive} \

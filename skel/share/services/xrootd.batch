@@ -15,17 +15,17 @@ check -strong xrootdPoolManagerTimeout
 check -strong xrootdMoverTimeout
 check -strong xrootdAuthzPlugin
 check -strong xrootdUser
-check -strong poolmanager
-check -strong pnfsmanager
-check -strong gplazma
-check -strong billing
+check -strong dcache.service.poolmanager
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.gplazma
+check -strong dcache.service.billing
+check -strong dcache.service.loginbroker
 check -strong loginBrokerUpdateTime
 check -strong loginBrokerUpdateThreshold
 
 check xrootdAllowedReadPaths
 check xrootdAllowedWritePaths
 check xrootdIoQueue
-check loginBroker
 
 onerror continue
 

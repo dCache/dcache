@@ -113,9 +113,9 @@ check -strong srmSizeOfSingleRemoveBatch
 
 check -strong srmUserCredentialsDirectory
 
-check -strong pnfsmanager
-check -strong poolmanager
-check -strong gplazma
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.poolmanager
+check -strong dcache.service.gplazma
 
 check -strong srm.loginbroker
 check -strong srm.loginbroker.period

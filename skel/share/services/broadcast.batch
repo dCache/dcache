@@ -14,9 +14,9 @@ check -strong srmSpaceManagerEnabled
 onerror continue
 set context -c replicaManager no
 define env replicaManagerOn.exe endExe
-  set env -c broadcastSetupReplicaManager1 "register diskCacheV111.vehicles.PoolStatusChangedMessage       replicaManager"
-  set env -c broadcastSetupReplicaManager2 "register diskCacheV111.vehicles.PnfsModifyCacheLocationMessage replicaManager"
-  set env -c broadcastSetupReplicaManager3 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         replicaManager"
+  set env -c broadcastSetupReplicaManager1 "register diskCacheV111.vehicles.PoolStatusChangedMessage       ${dcache.service.replica}"
+  set env -c broadcastSetupReplicaManager2 "register diskCacheV111.vehicles.PnfsModifyCacheLocationMessage ${dcache.service.replica}"
+  set env -c broadcastSetupReplicaManager3 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         ${dcache.service.replica}"
 endExe
 eval ${replicaManager} yes ==
 exec env replicaManagerOn.exe -ifok
@@ -30,8 +30,8 @@ onerror shutdown
 #
 onerror continue
 define env spaceManager.exe endExe
-  set env -c broadcastToSpaceManager1 "register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager"
-  set env -c broadcastToSpaceManager2 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager"
+  set env -c broadcastToSpaceManager1 "register diskCacheV111.vehicles.PoolFileFlushedMessage         ${dcache.service.spacemanager}"
+  set env -c broadcastToSpaceManager2 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         ${dcache.service.spacemanager}"
 endExe
 eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
 exec env spaceManager.exe -ifok
@@ -51,10 +51,10 @@ define context broadcastSetup endDefine
    ${broadcastToSpaceManager1}
    ${broadcastToSpaceManager2}
 
-   register diskCacheV111.vehicles.PoolRemoveFilesMessage         billing
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         ${dcache.service.billing}
 
-   register diskCacheV111.vehicles.PoolRemoveFilesMessage         PinManager
-   register diskCacheV111.vehicles.PoolManagerPoolUpMessage       PoolManager
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         ${dcache.service.pinmanager}
+   register diskCacheV111.vehicles.PoolManagerPoolUpMessage       ${dcache.service.poolmanager}
 endDefine
 
 #

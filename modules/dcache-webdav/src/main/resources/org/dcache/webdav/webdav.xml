@@ -16,37 +16,34 @@
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
       <description>PnfsManager communication stub</description>
-
-      <property name="destination" value="${pnfsmanager}"/>
+      <property name="destination" value="${dcache.service.pnfsmanager}"/>
       <property name="timeout" value="${webdavPnfsTimeout}"/>
   </bean>
 
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
       <description>PoolManager communication stub</description>
-
-      <property name="destination" value="${poolmanager}"/>
+      <property name="destination" value="${dcache.service.poolmanager}"/>
       <property name="timeout" value="${webdavPoolManagerTimeout}"/>
   </bean>
 
 
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
       <description>Pool communication stub</description>
-
       <property name="timeout" value="${webdavPoolTimeout}"/>
   </bean>
 
 
   <bean id="login-stub" class="org.dcache.cells.CellStub">
-      <description>Login cell communication stub</description>
-      <property name="destination" value="${gplazma}"/>
+      <description>Login serviceunication stub</description>
+      <property name="destination" value="${dcache.service.gplazma}"/>
       <property name="timeout" value="${webdavGplazmaTimeout}"/>
   </bean>
 
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
       <description>Billing communication stub</description>
-      <property name="destination" value="${billing}"/>
+      <property name="destination" value="${dcache.service.billing}"/>
   </bean>
 
 
@@ -195,7 +192,7 @@
       <property name="port" value="${port}"/>
       <property name="loginBroker">
 	  <bean class="dmg.cells.nucleus.CellPath">
-	      <constructor-arg value="${loginBroker}"/>
+	      <constructor-arg value="${dcache.service.loginbroker}"/>
 	  </bean>
       </property>
   </bean>

@@ -14,6 +14,8 @@ check -strong DefaultAccessLatencyForSpaceReservation
 check -strong SpaceManagerReserveSpaceForNonSRMTransfers
 check SpaceManagerLinkGroupAuthorizationFileName
 check -strong srmSpaceManagerEnabled
+check -strong dcache.service.poolmanager
+check -strong dcache.service.pnfsmanager
 
 create diskCacheV111.services.space.Manager ${cell.name} \
        "default \
@@ -22,8 +24,8 @@ create diskCacheV111.services.space.Manager ${cell.name} \
         -jdbcDriver=${db.driver} \
         -dbUser=${db.user} \
         -dbPass=${db.password} \
-        -poolManager=${poolmanager} \
-        -pnfsManager=${pnfsmanager} \
+        -poolManager=${dcache.service.poolmanager} \
+        -pnfsManager=${dcache.service.pnfsmanager} \
         -defaultAccessLatencyForSpaceReservation=${DefaultAccessLatencyForSpaceReservation} \
         -reserveSpaceForNonSRMTransfers=${SpaceManagerReserveSpaceForNonSRMTransfers} \
         -deleteStoredFileRecord=false \

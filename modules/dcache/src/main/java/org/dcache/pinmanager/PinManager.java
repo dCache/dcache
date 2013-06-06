@@ -17,6 +17,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.FireAndForgetTask;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class PinManager
@@ -31,6 +32,7 @@ public class PinManager
     private PinDao _dao;
     private CellStub _poolStub;
     private long _expirationPeriod;
+    private TimeUnit _expirationPeriodUnit = MILLISECONDS;
     private PoolMonitor _poolMonitor;
 
     @Required
@@ -68,20 +70,32 @@ public class PinManager
         return _expirationPeriod;
     }
 
+    public void setExpirationPeriodUnit(TimeUnit unit)
+    {
+        _expirationPeriodUnit = unit;
+    }
+
+    public TimeUnit getExpirationPeriodUnit()
+    {
+        return _expirationPeriodUnit;
+    }
+
     public void init()
     {
         Runnable expirationTask =
             new FireAndForgetTask(new ExpirationTask());
-        _executor.scheduleWithFixedDelay(expirationTask,
-                                         INITIAL_EXPIRATION_DELAY,
-                                         _expirationPeriod,
-                                         TimeUnit.MILLISECONDS);
+        _executor.scheduleWithFixedDelay(
+                expirationTask,
+                INITIAL_EXPIRATION_DELAY,
+                _expirationPeriodUnit.toMillis(_expirationPeriod),
+                MILLISECONDS);
         Runnable unpinProcessor =
             new FireAndForgetTask(new UnpinProcessor(_dao, _poolStub, _poolMonitor));
-        _executor.scheduleWithFixedDelay(unpinProcessor,
-                                         INITIAL_UNPIN_DELAY,
-                                         _expirationPeriod,
-                                         TimeUnit.MILLISECONDS);
+        _executor.scheduleWithFixedDelay(
+                unpinProcessor,
+                INITIAL_UNPIN_DELAY,
+                _expirationPeriodUnit.toMillis(_expirationPeriod),
+                MILLISECONDS);
     }
 
     public void messageArrived(PoolRemoveFilesMessage message)

@@ -17,6 +17,10 @@ check -strong httpd.static-content.images
 check -strong httpd.static-content.styles
 check -strong httpd.static-content.index
 check -strong httpd.static-content.plots
+check -strong dcache.service.loginbroker
+check -strong dcache.service.gplazma
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.poolmanager
 
 check httpd.security.ciphers
 
@@ -63,11 +67,11 @@ exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 define context webadmin.exe endDefine
     set alias webadmin webapp ${webadminWebappsPath} \
      "-adminGid=${webadminAdminGid} \
-     -gPlazmaName=${gplazma} \
-     -dCacheInstanceName=${webadminDCacheInstanceName} \
-     -loginBrokerName=${loginBroker} \
-     -pnfsManagerName=${pnfsmanager} \
-     -poolManagerName=${poolmanager} \
+     -gPlazmaName=${dcache.service.gplazma} \
+     -dCacheInstanceName=${webadminDCacheInstanceName}  \
+     -loginBrokerName=${dcache.service.loginbroker} \
+     -pnfsManagerName=${dcache.service.pnfsmanager} \
+     -poolManagerName=${dcache.service.poolmanager} \
      -srmSpaceManagerEnabled=${srmSpaceManagerEnabled} \
      -collectorTimeout=${collectorTimeout} \
      -transfersCollectorUpdate=${transfersCollectorUpdate} \

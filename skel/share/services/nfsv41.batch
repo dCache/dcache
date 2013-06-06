@@ -6,11 +6,11 @@ onerror shutdown
 check -strong cell.name
 check -strong loginBrokerUpdateTime
 check -strong loginBrokerUpdateThreshold
-check -strong loginBroker
-check -strong poolmanager
-check -strong pnfsmanager
-check -strong gplazma
-check -strong billing
+check -strong dcache.service.loginbroker
+check -strong dcache.service.poolmanager
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.gplazma
+check -strong dcache.service.billing
 check -strong db.user
 check -strong db.url
 check -strong db.driver

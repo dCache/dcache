@@ -5,7 +5,7 @@ define env startLogin.exe enddefine
   check -strong cell.name
   check -strong gPlazmaNumberOfSimultaneousRequests
   check -strong gplazma.configuration.file
-  check -strong pnfsmanager
+  check -strong dcache.service.pnfsmanager
 
   create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     "classpath:org/dcache/services/login/gplazma.xml \

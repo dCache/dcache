@@ -10,12 +10,12 @@ check -strong costCalculator
 check -strong threadPool
 check -strong quotaManager
 check -strong poolStatusRelay
-check -strong pnfsmanager
-check -strong billing
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.billing
 check poolmanager.setup.file
 
 # External settings
-exec -shell file:${dcache.paths.share}/cells/stage.fragment PoolManager
+exec -shell file:${dcache.paths.share}/cells/stage.fragment dcache PoolManager
 
 # default configuration for selection unit:
 #     all pools added into default pool group

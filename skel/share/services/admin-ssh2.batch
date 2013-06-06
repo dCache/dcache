@@ -4,7 +4,7 @@ check -strong cell.nameSsh2
 check -strong admin.ssh2AdminPort
 check -strong admin.dsaHostKeyPrivate
 check -strong admin.dsaHostKeyPublic
-check -strong gplazma
+check -strong dcache.service.gplazma
 check -strong admin.ssh2.gid
 check admin.authorizedKey2
 

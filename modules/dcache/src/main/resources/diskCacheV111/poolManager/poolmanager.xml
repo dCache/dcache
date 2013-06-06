@@ -51,7 +51,7 @@
     <description>PNFS manager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${pnfsmanager}"/>
+        <constructor-arg value="${dcache.service.pnfsmanager}"/>
       </bean>
     </constructor-arg>
   </bean>
@@ -64,7 +64,7 @@
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
-      <property name="destination" value="${billing}"/>
+      <property name="destination" value="${dcache.service.billing}"/>
   </bean>
 
   <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5"
@@ -76,7 +76,7 @@
     <property name="threadPool">
       <bean class="${threadPool}"/>
     </property>
-    <property name="stageConfigurationFile" value="${stageConfigurationFilePath}"/>
+    <property name="stageConfigurationFile" value="${dcache.authz.staging}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="hitInfoMessages" value="${poolmanager.cache-hit-messages.enabled}"/>
     <property name="billing" ref="billing-stub"/>

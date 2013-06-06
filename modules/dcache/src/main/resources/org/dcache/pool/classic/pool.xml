@@ -105,7 +105,7 @@
     <description>PNFS manager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${pnfsmanager}"/>
+        <constructor-arg value="${dcache.service.pnfsmanager}"/>
       </bean>
     </constructor-arg>
     <constructor-arg value="${poolname}"/>
@@ -205,13 +205,13 @@
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
       <description>Billing communication stub</description>
-      <property name="destination" value="${billing}"/>
+      <property name="destination" value="${dcache.service.billing}"/>
   </bean>
 
   <bean id="pnfsStub" class="org.dcache.cells.CellStub">
     <description>PNFS manager cell stub</description>
     <property name="timeout" value="300000"/>
-    <property name="destination" value="PnfsManager"/>
+    <property name="destination" value="${dcache.service.pnfsmanager}"/>
   </bean>
 
   <bean id="poolStub" class="org.dcache.cells.CellStub">

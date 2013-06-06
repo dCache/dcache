@@ -40,7 +40,7 @@
     <description>PnfsManager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${pnfsmanager}"/>
+        <constructor-arg value="${dcache.service.pnfsmanager}"/>
       </bean>
     </constructor-arg>
   </bean>

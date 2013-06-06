@@ -17,7 +17,7 @@
 
   <bean id="poolmanager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
-    <property name="destination" value="${poolmanager}"/>
+    <property name="destination" value="${dcache.service.poolmanager}"/>
     <property name="timeout" value="${poolConnectTimeout}"/>
   </bean>
 

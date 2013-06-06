@@ -17,17 +17,17 @@
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager cell stub</description>
     <property name="timeout" value="${xrootdPoolManagerTimeout}"/>
-    <property name="destination" value="${poolmanager}"/>
+    <property name="destination" value="${dcache.service.poolmanager}"/>
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
     <description>Billing communication stub</description>
-    <property name="destination" value="${billing}"/>
+    <property name="destination" value="${dcache.service.billing}"/>
   </bean>
 
   <bean id="gPlazma-stub" class="org.dcache.cells.CellStub">
     <description>gPlazma communication stub</description>
-    <property name="destination" value="${gplazma}" />
+    <property name="destination" value="${dcache.service.gplazma}" />
     <property name="timeout" value="30000" />
   </bean>
 
@@ -91,7 +91,7 @@
     <description>PNFS manager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${pnfsmanager}"/>
+        <constructor-arg value="${dcache.service.pnfsmanager}"/>
       </bean>
     </constructor-arg>
   </bean>
@@ -148,7 +148,7 @@
     <property name="port" value="${port}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${loginBroker}"/>
+        <constructor-arg value="${dcache.service.loginbroker}"/>
       </bean>
     </property>
   </bean>

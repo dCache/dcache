@@ -1,6 +1,7 @@
 package org.dcache.cells;
 
 import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -29,6 +30,7 @@ public class CellStub
     private CellEndpoint _endpoint;
     private CellPath _destination;
     private long _timeout = 30000;
+    private TimeUnit _timeoutUnit = TimeUnit.MILLISECONDS;
     private boolean _retryOnNoRouteToCell;
 
     public CellStub()
@@ -88,6 +90,16 @@ public class CellStub
     public long getTimeout()
     {
         return _timeout;
+    }
+
+    public void setTimeoutUnit(TimeUnit unit)
+    {
+        _timeoutUnit = unit;
+    }
+
+    public TimeUnit getTimeoutUnit()
+    {
+        return _timeoutUnit;
     }
 
     /**

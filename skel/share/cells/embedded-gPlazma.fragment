@@ -2,12 +2,13 @@
 
 define env startLogin.exe enddefine
   onerror shutdown
-  check -strong gplazma
+  # Fix me: This is a service and not a cell name!
+  check -strong dcache.service.gplazma
   check -strong gPlazmaNumberOfSimultaneousRequests
   check -strong gplazma.configuration.file
   check -strong pnfsmanager
 
-  create org.dcache.cells.UniversalSpringCell "${gplazma}" \
+  create org.dcache.cells.UniversalSpringCell "${dcache.service.gplazma}" \
     "classpath:org/dcache/services/login/gplazma.xml \
      -monitor \
      -num-simultaneous-requests=${gPlazmaNumberOfSimultaneousRequests} \
@@ -21,7 +22,7 @@ enddefine
 
 define env startLoginIfNotRunning.exe enddefine
   onerror continue
-  test -i ${gplazma}
+  test -i ${dcache.service.gplazma}
   exec env startLogin.exe -ifnotok
 enddefine
 

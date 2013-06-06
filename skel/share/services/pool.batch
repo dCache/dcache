@@ -12,8 +12,8 @@ check -strong metaDataRepository
 check -strong gsiftpReadAhead
 check -strong allowCleaningPreciousFiles
 check -strong poolupDestination
-check -strong pnfsmanager
-check -strong billing
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.billing
 check -strong flushMessageTarget
 check -strong sweeper
 check -strong xrootdMoverDiskThreads

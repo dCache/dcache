@@ -47,13 +47,13 @@
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
-    <property name="destination" value="${poolmanager}"/>
+    <property name="destination" value="${dcache.service.poolmanager}"/>
     <property name="timeout" value="#{ ${srmPoolManagerTimeout} * 1000}"/>
   </bean>
 
   <bean id="gplazma-stub" class="org.dcache.cells.CellStub">
     <description>gPlazma communication stub</description>
-    <property name="destination" value="${gplazma}"/>
+    <property name="destination" value="${dcache.service.gplazma}"/>
     <property name="timeout" value="30000"/>
   </bean>
 
@@ -89,7 +89,7 @@
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
     <description>PNFS manager communication stub</description>
-    <property name="destination" value="${pnfsmanager}"/>
+    <property name="destination" value="${dcache.service.pnfsmanager}"/>
     <property name="timeout" value="#{ ${srmPnfsTimeout} * 1000 }"/>
     <property name="retryOnNoRouteToCell" value="true"/>
   </bean>

@@ -25,10 +25,12 @@ check -strong webdavTransferConfirmationTimeout
 check -strong webdavWantClientAuth
 check -strong webdavNeedClientAuth
 check -strong webdavBasicAuthentication
-check -strong pnfsmanager
-check -strong poolmanager
-check -strong gplazma
-check -strong billing
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.poolmanager
+check -strong dcache.service.gplazma
+check -strong dcache.service.billing
+check -strong dcache.service.loginbroker
+check -strong dcache.service.spacemanager
 check -strong loginBrokerUpdateTime
 check -strong loginBrokerUpdateThreshold
 check -strong webdav.static-content.dir.local
@@ -45,7 +47,6 @@ check -strong missing-files.enabled
 
 check webdavInternalAddress
 check webdavIoQueue
-check loginBroker
 
 check webdav.security.ciphers
 
@@ -98,7 +99,7 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 onerror continue
 
 define env srmSpaceManagerOn.exe endExe
-  set env poolmanager "${spacemanager}"
+  set env dcache.service.poolmanager "${dcache.service.spacemanager}"
 endExe
 
 eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
