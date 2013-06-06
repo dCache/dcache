@@ -8,4 +8,9 @@ public class PermissionDeniedCacheException extends CacheException
     {
         super(CacheException.PERMISSION_DENIED, msg);
     }
+
+    public PermissionDeniedCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.PERMISSION_DENIED, msg, cause);
+    }
 }

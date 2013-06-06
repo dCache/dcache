@@ -8,4 +8,8 @@ public class NotFileCacheException extends CacheException {
 		super(CacheException.NOT_FILE, msg);
 	}
 
+    public NotFileCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.NOT_FILE, msg, cause);
+    }
 }

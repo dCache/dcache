@@ -8,4 +8,9 @@ public class NotInTrashCacheException extends CacheException
     {
         super(CacheException.NOT_IN_TRASH, msg);
     }
+
+    public NotInTrashCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.NOT_IN_TRASH, msg, cause);
+    }
 }
