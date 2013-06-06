@@ -8,4 +8,9 @@ public class DiskErrorCacheException extends CacheException
     {
         super(CacheException.ERROR_IO_DISK, msg);
     }
+
+    public DiskErrorCacheException(String message, Throwable cause)
+    {
+        super(CacheException.ERROR_IO_DISK, message, cause);
+    }
 }
