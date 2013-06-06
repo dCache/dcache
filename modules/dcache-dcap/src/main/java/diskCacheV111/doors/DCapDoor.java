@@ -205,17 +205,7 @@ public class      DCapDoor
     private boolean _connectionLost;
     private boolean _abortCacheFinished;
     private int _state = __NormalOperation  ;
-    private void abortCacheProtocol(){
 
-       _log.info( "abortCacheProtocol : starting" ) ;
-       try{
-            TimeUnit.SECONDS.sleep(10) ;
-       }catch(InterruptedException ie ){
-          _log.info( "abortCacheProtocol : interrupted " ) ;
-       }
-       _log.info( "abortCacheProtocol : finished" ) ;
-
-    }
     private synchronized void _stateChanged( int event ){
        _log.info( "_stateChanged : state = "+_state+" ; event = "+event ) ;
        switch( _state ){
@@ -227,38 +217,13 @@ public class      DCapDoor
                    // this is the usual case
                    //
                    _state = __AbortCacheProtOnBye ;
-                   _nucleus.newThread(
-                      new Runnable(){
-                         //
-                         //Warning : this code is no longer synchronized
-                         //
-                         @Override
-                         public void run(){
-                            _log.info( "Starting abortCacheProtocol" ) ;
-                            abortCacheProtocol() ;
-                            _stateChanged( __abortCacheFinishedEvent ) ;
-                            _log.info( "Finished abortCacheProtocol" ) ;
-                         }
-                      } , "finishCacheProtocol" ).start() ;
+                   _stateChanged(__abortCacheFinishedEvent);
                 break ;
                 case __weWereKilledEvent :
                    println( "0 0 server shutdown" ) ;
                    _out.close();
                    _state = __AbortCacheProtOnKill ;
-                   _nucleus.newThread(
-                      new Runnable(){
-                         //
-                         //Warning : this code is no longer synchronized
-                         //
-                         @Override
-                         public void run(){
-                            _log.info( "Starting abortCacheProtocol" ) ;
-                            abortCacheProtocol() ;
-                            _log.info( "Finished abortCacheProtocol" ) ;
-                            _stateChanged( __abortCacheFinishedEvent ) ;
-                         }
-                      } , "finishCacheProtocol" ).start() ;
-
+                   _stateChanged(__abortCacheFinishedEvent);
                 break ;
              }
           break ;
