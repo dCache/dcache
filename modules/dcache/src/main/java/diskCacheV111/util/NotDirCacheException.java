@@ -7,4 +7,9 @@ public class NotDirCacheException extends CacheException {
      public NotDirCacheException( String msg ){
         super( CacheException.NOT_DIR , msg ) ;
      }
+
+    public NotDirCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.NOT_DIR, msg, cause);
+    }
 }
