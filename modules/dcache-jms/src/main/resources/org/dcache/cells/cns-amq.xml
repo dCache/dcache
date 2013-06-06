@@ -12,7 +12,7 @@
     <property name="location" value="arguments:"/>
   </bean>
 
-  <amq:connectionFactory id="connection-factory" brokerURL="${amqUrl}"/>
+  <amq:connectionFactory id="connection-factory" brokerURL="${broker.amq.url}"/>
 
   <bean id="registry" class="org.dcache.cells.CellNameServiceRegistry">
     <description>Registry of domains and well known cells</description>

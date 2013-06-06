@@ -68,7 +68,6 @@
         init-method="init">
     <description>Main pool component</description>
     <constructor-arg index="0" value="${poolname}"/>
-    <constructor-arg index="1" value="${arguments}"/>
 
     <property name="baseDir"
               value="${pooldir}"/>
@@ -344,15 +343,15 @@
       <description>Xrootd transfer service</description>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="faultListener" ref="pool"/>
-      <property name="diskThreads" value="${xrootd-mover-disk-threads}"/>
-      <property name="maxMemoryPerConnection" value="${xrootd-mover-max-memory-per-connection}"/>
-      <property name="maxMemory" value="${xrootd-mover-max-memory}"/>
-      <property name="clientIdleTimeout" value="${xrootd-mover-idle-client-timeout}"/>
-      <property name="socketThreads" value="${xrootd-mover-socket-threads}"/>
-      <property name="maxFrameSize" value="${xrootd-mover-max-frame-size}"/>
+      <property name="diskThreads" value="${xrootdMoverDiskThreads}"/>
+      <property name="maxMemoryPerConnection" value="${xrootdMoverMaxMemoryPerConnection}"/>
+      <property name="maxMemory" value="${xrootdMoverMaxMemory}"/>
+      <property name="clientIdleTimeout" value="${xrootd.mover.timeout.idle}"/>
+      <property name="socketThreads" value="${xrootdMoverSocketThreads}"/>
+      <property name="maxFrameSize" value="${xrootdMoverMaxFrameSize}"/>
       <property name="plugins">
           <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
-              <property name="plugins" value="${xrootd-plugins}"/>
+              <property name="plugins" value="${xrootdPlugins}"/>
           </bean>
       </property>
   </bean>
@@ -362,13 +361,13 @@
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="checksumModule" ref="csm"/>
       <property name="faultListener" ref="pool"/>
-      <property name="diskThreads" value="${http-mover-disk-threads}"/>
-      <property name="maxMemoryPerConnection" value="${http-mover-max-memory-per-connection}"/>
-      <property name="maxMemory" value="${http-mover-max-memory}"/>
-      <property name="chunkSize" value="${http-mover-chunk-size}"/>
-      <property name="clientIdleTimeout" value="#{1000 * ${http-mover-client-idle-timeout}}"/>
-      <property name="socketThreads" value="${http-mover-socket-threads}"/>
-      <property name="connectTimeout" value="#{1000 * ${http-mover-connect-timeout}}"/>
+      <property name="diskThreads" value="${httpMoverDiskThreads}"/>
+      <property name="maxMemoryPerConnection" value="${httpMoverConnectionMaxMemory}"/>
+      <property name="maxMemory" value="${httpMoverMaxMemory}"/>
+      <property name="chunkSize" value="${httpMoverChunkSize}"/>
+      <property name="clientIdleTimeout" value="#{1000 * ${httpMoverClientIdleTimeout}}"/>
+      <property name="socketThreads" value="${httpMoverSocketThreads}"/>
+      <property name="connectTimeout" value="#{1000 * ${httpMoverConnectTimeout}}"/>
   </bean>
 
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"

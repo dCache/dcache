@@ -1,4 +1,4 @@
-onerror shutdown
+$onerror shutdown
 
 check -strong cell.name
 check -strong db.driver
@@ -11,6 +11,8 @@ check db.password.file
 check -strong pinManagerMaxPinDuration
 check -strong pinManagerMaxActiveJdbcConnections
 check -strong pinManagerMaxIdleJdbcConnections
+check -strong poolmanager
+check -strong pnfsmanager
 
 exec file:${dcache.paths.share}/cells/stage.fragment doors
 
@@ -21,22 +23,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -export  \
         -callbackExecutor=message-thread-pool \
         -messageExecutor=message-thread-pool \
-        -jdbcDriver=${db.driver} \
-        -jdbcUrl=${db.url} \
-        -dbUser=${db.user} \
-        -dbPass=${db.password} \
-        -pgPass=${db.password.file} \
-        -db.schema.auto=${db.schema.auto} \
-        -db.schema.changelog=${db.schema.changelog} \
-        -maxPinDuration=${pinManagerMaxPinDuration} \
-        -maxActiveJdbcConnections=${pinManagerMaxActiveJdbcConnections} \
-        -maxJdbcConnectionsWaitSec=${pinManagerMaxJdbcConnectionsWaitSec} \
-        -maxIdleJdbcConnections=${pinManagerMaxIdleJdbcConnections} \
-        -stageConfigurationFilePath=${stageConfigurationFilePath} \
         -expirationFrequency=60000 \
-        -pnfsManager=PnfsManager \
-        -poolManager=PoolManager \
-        -pinManagerPolicy=org.dcache.services.pinmanager1.SimplePinManagerPolicyImpl \
         -threadsCore=20 \
         -threadsMax=200 \
         -threadsKeepAliveTime=60 \

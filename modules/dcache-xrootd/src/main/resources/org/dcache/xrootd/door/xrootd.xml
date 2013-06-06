@@ -77,7 +77,7 @@
   <bean id="server" class="org.dcache.xrootd.door.NettyXrootdServer"
         init-method="init">
     <description>Netty based Xrootd service</description>
-    <property name="port" value="${xrootdPort}"/>
+    <property name="port" value="${port}"/>
     <property name="backlog" value="${xrootdBacklog}"/>
     <property name="requestExecutor" ref="request-thread-pool"/>
     <property name="channelFactory" ref="channel-factory"/>
@@ -116,8 +116,8 @@
     <property name="poolStub" ref="pool-stub"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
     <property name="billingStub" ref="billing-stub"/>
-    <property name="writePaths" value="${xrootdWritePaths}"/>
-    <property name="readPaths" value="${xrootdReadPaths}"/>
+    <property name="writePaths" value="${xrootdAllowedWritePaths}"/>
+    <property name="readPaths" value="${xrootdAllowedReadPaths}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="ioQueue" value="${xrootdIoQueue}"/>
     <property name="moverTimeout" value="${xrootdMoverTimeout}"/>
@@ -145,7 +145,7 @@
     <property name="protocolEngine" value="org.dcache.xrootd.door.XrootdDoor"/>
     <property name="protocolVersion" value="2.4"/>
     <property name="protocolFamily" value="root"/>
-    <property name="port" value="${xrootdPort}"/>
+    <property name="port" value="${port}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
         <constructor-arg value="${loginBroker}"/>

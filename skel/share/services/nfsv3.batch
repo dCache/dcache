@@ -12,11 +12,5 @@ check db.password
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
         "classpath:org/dcache/chimera/nfsv41/door/nfsv3.xml \
-         -chimera.db.user=\"${db.user}\" \
-         -chimera.db.password=\"${db.password}\" \
-         -chimera.db.url=\"${db.url}\" \
          -chimera.db.dialect=\"${chimera.db.dialect}\" \
-         -chimera.db.driver=\"${db.driver}\" \
-         -nfs.port=\"${nfs.port}\" \
-         -nfs.export.file=${nfs.export.file} \
         "

@@ -38,29 +38,4 @@ set env -c secflavor nogss
 onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-        "classpath:org/dcache/chimera/nfsv41/door/nfsv41-${secflavor}.xml \
-       -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
-       -loginBrokerUpdateThreshold=\"${loginBrokerUpdateThreshold}\" \
-       -loginBroker=\"${loginBroker}\" \
-       -poolManager=\"${poolmanager}\" \
-       -pnfsManager=\"${pnfsmanager}\" \
-       -gplazma=\"${gplazma}\" \
-       -billing=\"${billing}\" \
-       -chimera.db.user=\"${db.user}\" \
-       -chimera.db.password=\"${db.password}\" \
-       -chimera.db.url=\"${db.url}\" \
-       -chimera.db.dialect=\"${chimera.db.dialect}\" \
-       -chimera.db.driver=\"${db.driver}\" \
-       -nfs.idmap.cache.size=\"${nfs.idmap.cache.size}\" \
-       -nfs.idmap.cache.timeout=\"${nfs.idmap.cache.timeout}\" \
-       -nfs.idmap.cache.timeout.unit=\"${nfs.idmap.cache.timeout.unit}\" \
-       -nfs.idmap.legacy=${nfs.idmap.legacy} \
-       -poolManagerTimeout=\"${poolManagerTimeout}\" \
-       -poolTimeout=\"${poolTimeout}\" \
-       -nfsIoQueue=\"${nfsIoQueue}\" \
-       -nfs.port=\"${nfs.port}\" \
-       -nfs.domain=\"${nfs.domain}\" \
-       -nfs.v3=\"${nfs.v3}\" \
-       -nfs.export.file=${nfs.export.file} \
-       -nfs.published.name=${nfs.published.name} \
-       "
+        "classpath:org/dcache/chimera/nfsv41/door/nfsv41-${secflavor}.xml"

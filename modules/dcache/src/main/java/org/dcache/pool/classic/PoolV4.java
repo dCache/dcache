@@ -185,7 +185,7 @@ public class PoolV4
     private double _moverCostFactor = 0.5;
     private TransferServices _transferServices;
 
-    public PoolV4(String poolName, String args)
+    public PoolV4(String poolName)
     {
         _poolName = poolName;
 

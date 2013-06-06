@@ -9,24 +9,33 @@
     <property name="location" value="arguments:"/>
   </bean>
 
-  <import resource="pnfsmanager-shared.xml"/>
+    <bean id="permission-handler"
+          class="org.dcache.namespace.ChainedPermissionHandler">
+        <description>Permission handler</description>
+        <property name="chain">
+            <list>
+                <bean class="org.dcache.namespace.ACLPermissionHandler"/>
+                <bean class="org.dcache.namespace.PosixPermissionHandler"/>
+            </list>
+        </property>
+    </bean>
 
   <bean id="pnfs-manager" class="diskCacheV111.namespace.PnfsManagerV3"
         init-method="init">
       <description>Request processor</description>
-      <property name="threads" value="${threads}"/>
-      <property name="threadGroups" value="${threadGroups}"/>
-      <property name="listThreads" value="${listThreads}"/>
+      <property name="threads" value="${pnfsNumberOfThreads}"/>
+      <property name="threadGroups" value="${pnfsNumberOfThreadGroups}"/>
+      <property name="listThreads" value="${pnfsNumberOfListThreads}"/>
       <property name="cacheLocationThreads" value="${cachelocation-threads}"/>
       <property name="cacheModificationRelay" value="${cmRelay}"/>
       <property name="pnfsDeleteNotificationRelay" value="${pnfsDeleteRelay}"/>
-      <property name="logSlowThreshold" value="${logSlowThreshold}"/>
-      <property name="folding" value="${folding}"/>
-      <property name="directoryListLimit" value="${directoryListLimit}"/>
+      <property name="logSlowThreshold" value="${pnfsLogSlowThreshold}"/>
+      <property name="folding" value="${pnfsFolding}"/>
+      <property name="directoryListLimit" value="${pnfsListChunkSize}"/>
       <property name="permissionHandler" ref="permission-handler"/>
       <property name="nameSpaceProvider" ref="name-space-provider"/>
       <property name="cacheLocationProvider" ref="name-space-provider"/>
-      <property name="queueMaxSize" value="${queueMaxSize}"/>
+      <property name="queueMaxSize" value="${pnfsQueueMaxSize}"/>
   </bean>
 
   <bean id="chimera-data-source" class="com.jolbox.bonecp.BoneCPDataSource"
@@ -61,10 +70,10 @@
 
   <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
       <constructor-arg ref="chimera-data-source"/>
-      <constructor-arg value="${db.dialect}"/>
+      <constructor-arg value="${chimera.db.dialect}"/>
   </bean>
 
-  <bean id="extractor" class="${extractor}">
+  <bean id="extractor" class="${hsmStorageInfoExtractor}">
       <description>Storage info extractor</description>
       <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('${DefaultAccessLatency}') }"/>
       <constructor-arg value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${DefaultRetentionPolicy}') }"/>
@@ -74,8 +83,8 @@
         class="org.dcache.chimera.namespace.ChimeraNameSpaceProvider">
       <description>Name space provider</description>
       <property name="permissionHandler" ref="permission-handler"/>
-      <property name="inheritFileOwnership" value="${inheritFileOwnership}"/>
-      <property name="verifyAllLookups" value="${verifyAllLookups}"/>
+      <property name="inheritFileOwnership" value="${pnfsInheritFileOwnership}"/>
+      <property name="verifyAllLookups" value="${pnfsVerifyAllLookups}"/>
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
       <property name="aclEnabled" value="${aclEnabled}"/>

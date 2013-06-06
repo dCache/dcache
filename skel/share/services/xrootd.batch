@@ -32,28 +32,5 @@ onerror continue
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-       "classpath:org/dcache/xrootd/door/xrootd.xml -export\
-       -cellClass=XrootdDoor \
-       -xrootdPort=${port} \
-       -xrootdPoolTimeout=${xrootdPoolTimeout} \
-       -xrootdThreads=${xrootdThreads} \
-       -xrootdBacklog=${xrootdBacklog} \
-       -xrootdMaxChannelMemorySize=${xrootdMaxChannelMemorySize} \
-       -xrootdMaxTotalMemorySize=${xrootdMaxTotalMemorySize} \
-       -xrootdRootPath=${xrootdRootPath} \
-       -xrootdReadPaths=${xrootdAllowedReadPaths} \
-       -xrootdWritePaths=${xrootdAllowedWritePaths} \
-       -xrootdUser=${xrootdUser} \
-       -xrootdPoolManagerTimeout=${xrootdPoolManagerTimeout} \
-       -xrootdMoverTimeout=${xrootdMoverTimeout} \
-       -xrootdPlugins=${xrootdPlugins} \
-       -xrootdIoQueue=${xrootdIoQueue} \
-       -gplazma=${gplazma} \
-       -poolmanager=${poolmanager} \
-       -pnfsmanager=${pnfsmanager} \
-       -billing=\"${billing}\" \
-       -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
-       -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
-       -loginBroker=${loginBroker} \
-       "
+       "classpath:org/dcache/xrootd/door/xrootd.xml -export -cellClass=XrootdDoor"
 

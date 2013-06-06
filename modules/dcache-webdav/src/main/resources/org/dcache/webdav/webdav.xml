@@ -10,7 +10,6 @@
   <bean id="properties"
 	class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
       <description>Imported configuration data</description>
-
       <property name="location" value="arguments:"/>
   </bean>
 
@@ -41,7 +40,7 @@
   <bean id="login-stub" class="org.dcache.cells.CellStub">
       <description>Login cell communication stub</description>
       <property name="destination" value="${gplazma}"/>
-      <property name="timeout" value="${webdavLoginTimeout}"/>
+      <property name="timeout" value="${webdavGplazmaTimeout}"/>
   </bean>
 
 
@@ -193,7 +192,7 @@
       <property name="protocolVersion" value="1.1"/>
       <property name="protocolFamily" ref="protocol-family"/>
       <property name="address" value="${webdavAddress}"/>
-      <property name="port" value="${webdavPort}"/>
+      <property name="port" value="${port}"/>
       <property name="loginBroker">
 	  <bean class="dmg.cells.nucleus.CellPath">
 	      <constructor-arg value="${loginBroker}"/>
@@ -219,7 +218,7 @@
 	  <property name="connectors">
 	      <list>
 		  <bean class="org.eclipse.jetty.server.nio.SelectChannelConnector">
-		      <property name="port" value="${webdavPort}"/>
+		      <property name="port" value="${port}"/>
 		      <property name="host" value="${webdavAddress}"/>
 		  </bean>
 	      </list>
@@ -258,7 +257,7 @@
 	    class="org.eclipse.jetty.server.ssl.SslSelectChannelConnector">
           <description>HTTPS connector from Jetty</description>
 
-	  <property name="port" value="${webdavPort}"/>
+	  <property name="port" value="${port}"/>
 	  <property name="host" value="${webdavAddress}"/>
 	  <property name="keystore" value="${webdavKeyStore}"/>
 	  <property name="keystoreType" value="PKCS12"/>
@@ -277,7 +276,7 @@
       <bean id="https-connector" class="org.dcache.util.JettyGSIConnector">
           <description>HTTPS connector using jGlobus</description>
 
-	  <property name="port" value="${webdavPort}"/>
+	  <property name="port" value="${port}"/>
 	  <property name="host" value="${webdavAddress}"/>
 	  <property name="hostCertificatePath" value="${grid.hostcert.cert}"/>
 	  <property name="hostKeyPath" value="${grid.hostcert.key}"/>

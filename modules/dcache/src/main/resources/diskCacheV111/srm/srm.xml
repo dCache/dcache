@@ -47,7 +47,7 @@
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
-    <property name="destination" value="${srmPoolManager}"/>
+    <property name="destination" value="${poolmanager}"/>
     <property name="timeout" value="#{ ${srmPoolManagerTimeout} * 1000}"/>
   </bean>
 
@@ -89,7 +89,7 @@
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
     <description>PNFS manager communication stub</description>
-    <property name="destination" value="${srmPnfsManager}"/>
+    <property name="destination" value="${pnfsmanager}"/>
     <property name="timeout" value="#{ ${srmPnfsTimeout} * 1000 }"/>
     <property name="retryOnNoRouteToCell" value="true"/>
   </bean>
@@ -120,7 +120,7 @@
     <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
     <property name="protocolVersion" value="${srm.loginbroker.version}"/>
     <property name="protocolFamily" value="${srm.loginbroker.family}"/>
-    <property name="port" value="${srmPort}"/>
+    <property name="port" value="${port}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
         <constructor-arg value="${srm.loginbroker}"/>
@@ -131,10 +131,10 @@
   <bean id="auth-persistence-manager"
         class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
     <description>Persistence manager for authentication</description>
-    <constructor-arg value="${jdbcUrl}"/>
-    <constructor-arg value="${jdbcDriver}"/>
-    <constructor-arg value="${srmDbUser}"/>
-    <constructor-arg value="${srmDbPassword}"/>
+    <constructor-arg value="${db.url}"/>
+    <constructor-arg value="${db.driver}"/>
+    <constructor-arg value="${db.user}"/>
+    <constructor-arg value="${db.password}"/>
   </bean>
 
   <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
@@ -161,7 +161,7 @@
               value="${srmCustomGetHostByAddr}"/>
     <property name="ignoreClientProtocolOrder"
               value="${srmIgnoreClientProtocolOrder}"/>
-    <property name="httpRootPath" value="${httpRootPath}"/>
+    <property name="httpRootPath" value="${webdavRootPath}"/>
     <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
     <property name="configuration" ref="config"/>
     <property name="pinOnlineFiles" value="${srmPinOnlineFiles}"/>
@@ -170,7 +170,7 @@
 
   <bean id="config" class="org.dcache.srm.util.Configuration" depends-on="storage">
     <description>SRM configuration</description>
-    <property name="port" value="${srmPort}"/>
+    <property name="port" value="${port}"/>
     <property name="timeout" value="${srmTimeout}"/>
     <property name="srmHost" value="${srmHost}"/>
     <property name="srmHostsAsArray" value="${localSrmHosts}"/>
@@ -199,11 +199,11 @@
     <property name="space_reservation_strict"
               value="${srmSpaceReservationStrict}"/>
 
-    <property name="jdbcUrl" value="${jdbcUrl}"/>
-    <property name="jdbcClass" value="${jdbcDriver}"/>
-    <property name="jdbcUser" value="${srmDbUser}"/>
-    <property name="jdbcPass" value="${srmDbPassword}"/>
-    <property name="jdbcPwdfile" value="${srmPasswordFile}"/>
+    <property name="jdbcUrl" value="${db.url}"/>
+    <property name="jdbcClass" value="${db.driver}"/>
+    <property name="jdbcUser" value="${db.user}"/>
+    <property name="jdbcPass" value="${db.password}"/>
+    <property name="jdbcPwdfile" value="${db.password.file}"/>
 
     <property name="getReqTQueueSize" value="${srmGetReqThreadQueueSize}"/>
     <property name="getThreadPoolSize" value="${srmGetReqThreadPoolSize}"/>
@@ -370,7 +370,7 @@
     <description>SRM engine</description>
 
     <constructor-arg ref="config"/>
-    <constructor-arg value="${srmName}"/>
+    <constructor-arg value="${cell.name}"/>
   </bean>
 
 
@@ -445,7 +445,7 @@
     <bean id="gsi-connector"
           class="org.dcache.util.JettyGSIConnector">
         <description>synchronous GSI connector</description>
-        <property name="port" value="${srmPort}"/>
+        <property name="port" value="${port}"/>
         <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
 
         <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
@@ -454,9 +454,9 @@
                   value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
         <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 
-        <property name="hostCertificatePath" value="${service-cert}"/>
-        <property name="hostKeyPath" value="${service-key}"/>
-        <property name="caCertificatePath" value="${service-trusted-certs}"/>
+        <property name="hostCertificatePath" value="${grid.hostcert.cert}"/>
+        <property name="hostKeyPath" value="${grid.hostcert.key}"/>
+        <property name="caCertificatePath" value="${grid.ca.path}"/>
         <property name="autoFlush" value="true"/>
         <property name="encrypt" value="true"/>
         <property name="requireClientAuth" value="true"/>
@@ -471,7 +471,7 @@
     <bean id="ssl-connector"
           class="org.dcache.util.JettyGSIConnector">
         <description>synchronous SSL connector</description>
-        <property name="port" value="${srmSslPort}"/>
+        <property name="port" value="${srm.ssl.port}"/>
         <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
 
         <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
@@ -480,9 +480,9 @@
                   value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
         <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
 
-        <property name="hostCertificatePath" value="${service-cert}"/>
-        <property name="hostKeyPath" value="${service-key}"/>
-        <property name="caCertificatePath" value="${service-trusted-certs}"/>
+        <property name="hostCertificatePath" value="${grid.hostcert.cert}"/>
+        <property name="hostKeyPath" value="${grid.hostcert.key}"/>
+        <property name="caCertificatePath" value="${grid.ca.path}"/>
         <property name="autoFlush" value="true"/>
         <property name="encrypt" value="true"/>
         <property name="requireClientAuth" value="true"/>

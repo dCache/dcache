@@ -35,13 +35,4 @@ onerror shutdown
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.nameSsh2} \
-    "classpath:org/dcache/services/ssh2/ssh2Admin.xml \
-     -export \
-     -gplazma=\"${gplazma}\" \
-     -port=\"${admin.ssh2AdminPort}\" \
-     -hostKeyPrivate=\"${admin.dsaHostKeyPrivate}\" \
-     -hostKeyPublic=\"${admin.dsaHostKeyPublic}\" \
-     -authorizedKeyList=\"${admin.authorizedKey2}\" \
-     -historyFilePath=\"${adminHistoryFile}\" \
-     -adminGroupID=\"${admin.ssh2.gid}\" \
-     "
+    "classpath:org/dcache/services/ssh2/ssh2Admin.xml -export"

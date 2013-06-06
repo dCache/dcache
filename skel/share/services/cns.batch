@@ -21,10 +21,7 @@ define env cns-amq.exe end
   check -strong broker.amq.url
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/cells/cns-amq.xml \
-      -cellClass=TopoCell \
-      -amqUrl=${broker.amq.url} \
-     "
+     "classpath:org/dcache/cells/cns-amq.xml -cellClass=TopoCell"
 end
 
 define env cns-openmq.exe end
@@ -33,12 +30,7 @@ define env cns-openmq.exe end
   check -strong broker.openmq.reconnect.interval
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/cells/cns-openmq.xml \
-      -cellClass=TopoCell \
-      -broker.openmq.host=${broker.openmq.host} \
-      -broker.openmq.port=${broker.openmq.port} \
-      -broker.openmq.reconnect.interval=${broker.openmq.reconnect.interval} \
-     "
+     "classpath:org/dcache/cells/cns-openmq.xml -cellClass=TopoCell"
 end
 
 define env cns-embedded-jms.exe end

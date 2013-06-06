@@ -98,12 +98,11 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 onerror continue
 
 define env srmSpaceManagerOn.exe endExe
-  set env -c doorPoolManager "${spacemanager}"
+  set env poolmanager "${spacemanager}"
 endExe
 
 eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
 exec env srmSpaceManagerOn.exe -ifok
-set context -c doorPoolManager "${poolmanager}"
 
 ###########################################################################
 # Create door cell
@@ -112,51 +111,4 @@ onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
     -profiles=connector-${webdavProtocol},missing-files-${missing-files.enabled} \
-    -webdavKeyStore=\"${webdavKeyStore}\" \
-    -webdavKeyStorePassword=${webdavKeyStorePassword} \
-    -webdavTrustStore=\"${webdavTrustStore}\" \
-    -webdavTrustStorePassword=${webdavTrustStorePassword} \
-    -webdavBasicAuthentication=\"${webdavBasicAuthentication}\" \
-    -webdavPnfsTimeout=${webdavPnfsTimeout} \
-    -webdavPoolManagerTimeout=${webdavPoolManagerTimeout} \
-    -webdavPoolTimeout=${webdavPoolTimeout} \
-    -webdavLoginTimeout=${webdavGplazmaTimeout} \
-    -webdavPort=${port} \
-    -webdavAddress=${webdavAddress} \
-    -webdavInternalAddress=${webdavInternalAddress} \
-    -webdavRootPath=${webdavRootPath} \
-    -webdavAllowedPaths=${webdavAllowedPaths} \
-    -webdavReadOnly=${webdavReadOnly} \
-    -webdavAnonymousAccess=${webdavAnonymousAccess} \
-    -webdavAnonymousListing=${webdavAnonymousListing} \
-    -webdavIoQueue=${webdavIoQueue} \
-    -webdavKillTimeout=${webdavKillTimeout} \
-    -webdavMoverTimeout=${webdavMoverTimeout} \
-    -webdavTransferConfirmationTimeout=${webdavTransferConfirmationTimeout} \
-    -webdavWantClientAuth=${webdavWantClientAuth} \
-    -webdavNeedClientAuth=${webdavNeedClientAuth} \
-    -webdavChrootToUserRoot=${webdavChrootToUserRoot} \
-    -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod} \
-    -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod} \
-    -pnfsmanager=${pnfsmanager} \
-    -poolmanager=${doorPoolManager} \
-    -gplazma=${gplazma} \
-    -billing=\"${billing}\" \
-    -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
-    -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
-    -loginBroker=${loginBroker} \
-    -webdav.static-content.dir.default=${webdav.static-content.dir.default} \
-    -webdav.static-content.dir.local=${webdav.static-content.dir.local} \
-    -webdav.static-content.location=${webdav.static-content.location} \
-    -webdav.templates.html=${webdav.templates.html} \
-    -webdav.redirect.on-read=${webdav.redirect.on-read} \
-    -webdav.redirect.on-write=${webdav.redirect.on-write} \
-    -webdav.overwrite=${webdav.overwrite} \
-    -missing-files.timeout=${missing-files.timeout} \
-    -missing-files.name=${missing-files.name} \
-    -grid.hostcert.cert=${grid.hostcert.cert} \
-    -grid.hostcert.key=${grid.hostcert.key} \
-    -grid.ca.path=${grid.ca.path} \
-    -export -cellClass=WebDAVDoor \
-    -webdav.security.ciphers=\"${webdav.security.ciphers}\" \
-    "
+    -export -cellClass=WebDAVDoor"

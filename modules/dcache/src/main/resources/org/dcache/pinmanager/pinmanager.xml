@@ -40,13 +40,13 @@
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
       <description>PNFS manager communication stub</description>
-      <property name="destination" value="${pnfsManager}"/>
+      <property name="destination" value="${pnfsmanager}"/>
       <property name="timeout" value="300000"/>
   </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
       <description>Pool manager communication stub</description>
-      <property name="destination" value="${poolManager}"/>
+      <property name="destination" value="${poolmanager}"/>
       <property name="timeout" value="3600000"/>
   </bean>
 
@@ -78,7 +78,7 @@
       <property name="dao" ref="dao"/>
       <property name="executor" ref="scheduled-executor"/>
       <property name="stagePermission" ref="stage-permission"/>
-      <property name="maxLifetime" value="${maxPinDuration}"/>
+      <property name="maxLifetime" value="${pinManagerMaxPinDuration}"/>
       <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
@@ -93,7 +93,7 @@
       <property name="dao" ref="dao"/>
       <property name="poolStub" ref="pool-stub"/>
       <property name="authorizationPolicy" ref="pdp"/>
-      <property name="maxLifetime" value="${maxPinDuration}"/>
+      <property name="maxLifetime" value="${pinManagerMaxPinDuration}"/>
       <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
@@ -123,10 +123,10 @@
     <description>Database schema manager</description>
     <property name="dataSource">
       <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="driverClassName" value="${jdbcDriver}"/>
-        <property name="url" value="${jdbcUrl}"/>
-        <property name="username" value="${dbUser}"/>
-        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${jdbcUrl}', '${dbUser}', '${dbPass}') }"/>
+        <property name="driverClassName" value="${db.driver}"/>
+        <property name="url" value="${db.url}"/>
+        <property name="username" value="${db.user}"/>
+        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${db.password.file}', '${db.url}', '${db.user}', '${db.password}') }"/>
       </bean>
     </property>
     <property name="changeLog" value="classpath:${db.schema.changelog}"/>
@@ -141,10 +141,10 @@
       <props>
         <prop key="javax.jdo.PersistenceManagerFactoryClass">
         org.datanucleus.api.jdo.JDOPersistenceManagerFactory</prop>
-        <prop key="javax.jdo.option.ConnectionURL">${jdbcUrl}</prop>
-        <prop key="javax.jdo.option.ConnectionUserName">${dbUser}</prop>
-        <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${jdbcUrl}', '${dbUser}', '${dbPass}') }</prop>
-        <prop key="javax.jdo.option.ConnectionDriverName">${jdbcDriver}</prop>
+        <prop key="javax.jdo.option.ConnectionURL">${db.url}</prop>
+        <prop key="javax.jdo.option.ConnectionUserName">${db.user}</prop>
+        <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${db.password.file}', '${db.url}', '${db.user}', '${db.password}') }</prop>
+        <prop key="javax.jdo.option.ConnectionDriverName">${db.driver}</prop>
         <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
         <prop key="datanucleus.connectionPoolingType">BoneCP</prop>
 
@@ -173,7 +173,7 @@
                         setIdleMaxAge. This method has been deprecated.
 
              NB #2: Previous code used the value of the dCache property
-                    maxIdleJdbcConnections; however, this is inappropriate as
+                    pinManagerMaxIdleJdbcConnections; however, this is inappropriate as
                     this property counts connections, rather than providing
                     a duration. This inconsistency is likely a bug in
                     DataNucleus.
@@ -181,7 +181,7 @@
              For these reasons, we leave maxIdle property undefined and
              accept the default value of 1 hour
 
-        <prop key="datanucleus.connectionPool.maxIdle">${maxIdleJdbcConnections}</prop>
+        <prop key="datanucleus.connectionPool.maxIdle">${pinManagerMaxIdleJdbcConnections}</prop>
         -->
 
         <!-- datanucleus.connectionPool.minIdle is currently ignored by
@@ -196,12 +196,12 @@
 
         <!-- datanucleus.connectionPool.maxWait is currently ignored by
              DataNucleus' BoneCP support
-        <prop key="datanucleus.connectionPool.maxWait">#{ ${maxJdbcConnectionsWaitSec} * 1000 }</prop>
+        <prop key="datanucleus.connectionPool.maxWait">#{ ${pinManagerMaxJdbcConnectionsWaitSec} * 1000 }</prop>
         -->
 
         <!-- BoneCP setMaxConnectionsPerPartition: maximum number of
              connections (per partition) -->
-        <prop key="datanucleus.connectionPool.maxPoolSize">${maxActiveJdbcConnections}</prop>
+        <prop key="datanucleus.connectionPool.maxPoolSize">${pinManagerMaxActiveJdbcConnections}</prop>
 
         <!-- BoneCP setMinConnectionsPerPartition: the minimum number of
              connections that will be contained in every partition -->

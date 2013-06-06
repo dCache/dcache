@@ -21,23 +21,7 @@ enddefine
 
 define env startService.exe enddefine
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-        "classpath:org/dcache/alarms/server/alarms.xml \
-        -profiles=${alarms.store.db.type} \
-        -dcache.log.server.port=${dcache.log.server.port} \
-        -alarms.dir=${alarms.dir} \
-        -alarms.server.config=${alarms.server.config} \
-        -alarms.store.path=${alarms.store.path} \
-        -alarms.definitions.path=${alarms.definitions.path} \
-        -alarms.store.db.changelog=${alarms.store.db.changelog} \
-        -alarms.store.db.type=${alarms.store.db.type} \
-        -alarms.store.db.rdbms=${alarms.store.db.rdbms} \
-        -alarms.store.db.driver=${alarms.store.db.driver} \
-        -alarms.store.db.url=${alarms.store.db.url} \
-        -alarms.store.db.host=${alarms.store.db.host} \
-        -alarms.store.db.user=${alarms.store.db.user} \
-        -alarms.store.db.pass=${alarms.store.db.pass} \
-        -alarms.store.db.properties=${alarms.store.db.properties} \
-        -alarms.server.log.level=${alarms.server.log.level}"
+        "classpath:org/dcache/alarms/server/alarms.xml -profiles=${alarms.store.db.type}"
 enddefine
 
 onerror continue

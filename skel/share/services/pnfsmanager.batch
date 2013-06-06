@@ -13,7 +13,6 @@ check -strong pnfsNumberOfThreads
 check -strong pnfsListChunkSize
 check -strong pnfsLogSlowThreshold
 check -strong pnfsQueueMaxSize
-check -strong defaultPnfsServer
 check -strong cell.name
 check -strong aclEnabled
 check -strong db.user
@@ -25,34 +24,9 @@ check db.password
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \
         -export \
-        -extractor=${hsmStorageInfoExtractor} \
         -cmRelay=broadcast \
-        -threads=${pnfsNumberOfThreads} \
-        -threadGroups=${pnfsNumberOfThreadGroups} \
-        -listThreads=${pnfsNumberOfListThreads} \
-        -directoryListLimit=${pnfsListChunkSize} \
-        -logSlowThreshold=${pnfsLogSlowThreshold} \
         -pnfsDeleteRelay=SrmSpaceManager \
-        -queueMaxSize=${pnfsQueueMaxSize} \
-        -default=${defaultPnfsServer} \
-        -DefaultAccessLatency=${DefaultAccessLatency} \
-        -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
-        -aclEnabled=${aclEnabled} \
         -cachelocation-threads=0 \
-        -folding=${pnfsFolding} \
-        -db.user=${db.user} \
-        -db.password=${db.password} \
-        -db.url=${db.url} \
-        -db.driver=${db.driver} \
-        -db.dialect=${chimera.db.dialect} \
-        -db.schema.auto=${db.schema.auto} \
-        -db.schema.changelog=${db.schema.changelog} \
-        -db.connections.max-per-partition=${db.connections.max-per-partition} \
-        -db.connections.min-per-partition=${db.connections.min-per-partition} \
-        -db.connections.partition-count=${db.connections.partition-count} \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
-        -inheritFileOwnership=${pnfsInheritFileOwnership} \
-        -verifyAllLookups=${pnfsVerifyAllLookups} \
-        -atime.gap=${atime.gap} \
        "

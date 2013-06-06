@@ -1025,10 +1025,16 @@ public class UniversalSpringCell
             args.shift();
 
             Properties properties = new Properties();
+            for (Map.Entry<String, Object> entry : _environment.entrySet()) {
+                properties.setProperty(entry.getKey(), entry.getValue().toString());
+            }
+            for (Map.Entry<String, String> option : args.optionsAsMap().entrySet()) {
+                properties.setProperty(option.getKey(), option.getValue());
+            }
             String arguments =
-                args.toString().replaceAll("-\\$\\{[0-9]+\\}", "");
+                    args.toString().replaceAll("-\\$\\{[0-9]+\\}", "");
             properties.setProperty("arguments", arguments);
-            mergeProperties(properties, args.optionsAsMap());
+
 
             /* Convert to byte array form such that we can make it
              * available as a Spring resource.

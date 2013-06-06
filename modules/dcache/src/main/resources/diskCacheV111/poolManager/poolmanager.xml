@@ -51,7 +51,7 @@
     <description>PNFS manager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${pnfsManager}"/>
+        <constructor-arg value="${pnfsmanager}"/>
       </bean>
     </constructor-arg>
   </bean>
@@ -78,7 +78,7 @@
     </property>
     <property name="stageConfigurationFile" value="${stageConfigurationFilePath}"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="hitInfoMessages" value="${hitInfoMessages}"/>
+    <property name="hitInfoMessages" value="${poolmanager.cache-hit-messages.enabled}"/>
     <property name="billing" ref="billing-stub"/>
   </bean>
 

@@ -9,47 +9,28 @@ onerror shutdown
 check -strong cell.name
 
 define env topo-cells.exe end
-  set context -c topoWaitTime 300000
-  set context -c topoTimeout 20000
-  set context -c topologyClass org.dcache.services.topology.ClassicCellsTopology
+  set env -c topoWaitTime 300000
+  set env -c topoTimeout 20000
+  set env -c topologyClass org.dcache.services.topology.ClassicCellsTopology
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/services/topology/classic.xml \
-      -export \
-      -cellClass=TopoCell \
-      -topoWaitTime=\"${topoWaitTime}\" \
-      -topoTimeout=\"${topoTimeout}\" \
-      -topologyClass=\"${topologyClass}\" \
-     "
+     "classpath:org/dcache/services/topology/classic.xml -export -cellClass=TopoCell"
 end
 
 define env topo-amq.exe end
-  set context -c topoWaitTime 300000
-  set context -c topoTimeout 20000
+  set env -c topoWaitTime 300000
+  set env -c topoTimeout 20000
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/services/topology/amq.xml \
-      -export \
-      -cellClass=TopoCell \
-      -topoWaitTime=\"${topoWaitTime}\" \
-      -topoTimeout=\"${topoTimeout}\" \
-     "
+     "classpath:org/dcache/services/topology/amq.xml -export -cellClass=TopoCell"
 end
 
 define env topo-openmq.exe end
-  set context -c topoWaitTime 300000
-  set context -c topoTimeout 20000
+  set env -c topoWaitTime 300000
+  set env -c topoTimeout 20000
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/services/topology/openmq.xml \
-      -export \
-      -cellClass=TopoCell \
-      -topoWaitTime=\"${topoWaitTime}\" \
-      -topoTimeout=\"${topoTimeout}\" \
-      -broker.openmq.host=\"${broker.openmq.host}\" \
-      -broker.openmq.port=\"${broker.openmq.port}\" \
-      -broker.openmq.reconnect.interval=${broker.openmq.reconnect.interval} \
-     "
+     "classpath:org/dcache/services/topology/openmq.xml -export -cellClass=TopoCell"
 end
 
 define env topo-embedded-jms.exe end

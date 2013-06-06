@@ -22,7 +22,7 @@
           factory-method="newFixedThreadPool" destroy-method="shutdown">
     <description>executor for processing requests</description>
 
-    <constructor-arg value="${thread-count}"/>
+    <constructor-arg value="${missing-files.thread-count}"/>
   </bean>
 
 
@@ -30,7 +30,7 @@
         init-method="init">
     <description>a list of active plugins</description>
 
-    <property name="pluginList" value="${plugin-list}"/>
+    <property name="pluginList" value="${missing-files.plugin.list}"/>
   </bean>
 
 </beans>

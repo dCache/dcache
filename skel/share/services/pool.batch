@@ -60,41 +60,13 @@ endDefine
 create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
     -export -cellClass=Pool -poolname=\"${name}\" -pooldir=\"${path}\" \
-    -maxDiskSpace=\"${maxDiskSpace}\" \
     -setupClass=pool -setupFile=\"${path}/setup\" \
-    -poolIoQueue=\"${poolIoQueue}\" \
-    -checkRepository=\"${checkRepository}\" \
     -ftpProxyPassive=\"${ftp.proxy.on-passive}\" \
     -allowMmap=\"${gsiftpAllowMmap}\" \
-    -metaDataRepository=\"${metaDataRepository}\" \
-    -gsiftpReadAhead=\"${gsiftpReadAhead}\" \
-    -allowCleaningPreciousFiles=\"${allowCleaningPreciousFiles}\" \
-    -poolupDestination=\"${poolupDestination}\" \
-    -pnfsmanager=\"${pnfsmanager}\" \
-    -billing=\"${billing}\" \
-    -flushMessageTarget=\"${flushMessageTarget}\" \
-    -sweeper=\"${sweeper}\" \
-    -xrootd-mover-disk-threads=\"${xrootdMoverDiskThreads}\" \
-    -xrootd-mover-socket-threads=\"${xrootdMoverSocketThreads}\" \
-    -xrootd-mover-max-memory-per-connection=\"${xrootdMoverMaxMemoryPerConnection}\" \
-    -xrootd-mover-max-memory=\"${xrootdMoverMaxMemory}\" \
     -xrootd-mover-max-frame-size=\"${xrootdMoverMaxFrameSize}\" \
-    -xrootd-mover-idle-client-timeout=\"${xrootd.mover.timeout.idle}\" \
-    -xrootd-plugins=\"${xrootdPlugins}\" \
-    -http-mover-disk-threads=\"${httpMoverDiskThreads}\" \
-    -http-mover-socket-threads=\"${httpMoverSocketThreads}\" \
-    -http-mover-max-memory-per-connection=\"${httpMoverConnectionMaxMemory}\" \
-    -http-mover-max-memory=\"${httpMoverMaxMemory}\" \
-    -http-mover-client-idle-timeout=\"${httpMoverClientIdleTimeout}\" \
-    -http-mover-connect-timeout=\"${httpMoverConnectTimeout}\" \
-    -http-mover-chunk-size=\"${httpMoverChunkSize}\" \
     -callbackExecutor=callbackThreadPool \
     -messageExecutor=messageThreadPool \
-    -replicateOnArrival=\"${replicateOnArrival}\" \
-    -lfs=\"${lfs}\" \
     -waitForFiles=\"${waitForFiles}\" \
-    -tags=\"${tags}\" \
-    -nfs.rpcsec_gss=\"${nfs.rpcsec_gss}\" \
 "
 
 

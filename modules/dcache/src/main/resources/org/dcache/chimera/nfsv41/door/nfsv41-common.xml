@@ -12,7 +12,7 @@
     <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
         <description>Pool manager cell stub</description>
         <property name="timeout" value="${poolManagerTimeout}"/>
-        <property name="destination" value="${poolManager}"/>
+        <property name="destination" value="${poolmanager}"/>
     </bean>
 
     <bean id="pool-stub" class="org.dcache.cells.CellStub">
@@ -35,10 +35,10 @@
 
     <bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource"
           destroy-method="close">
-        <property name="driverClass" value="${chimera.db.driver}"/>
-        <property name="jdbcUrl" value="${chimera.db.url}"/>
-        <property name="username" value="${chimera.db.user}"/>
-        <property name="password" value="${chimera.db.password}"/>
+        <property name="driverClass" value="${db.driver}"/>
+        <property name="jdbcUrl" value="${db.url}"/>
+        <property name="username" value="${db.user}"/>
+        <property name="password" value="${db.password}"/>
         <property name="idleConnectionTestPeriodInMinutes" value="60"/>
         <property name="idleMaxAgeInMinutes" value="240"/>
         <property name="maxConnectionsPerPartition" value="30"/>
@@ -70,7 +70,7 @@
         <description>PNFS manager client module</description>
         <constructor-arg>
             <bean class="dmg.cells.nucleus.CellPath">
-                <constructor-arg value="${pnfsManager}"/>
+                <constructor-arg value="${pnfsmanager}"/>
             </bean>
         </constructor-arg>
     </bean>

@@ -12,8 +12,4 @@ check -strong missing-files.thread-count
 check missing-files.plugin.list
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/missingfiles/missingfiles.xml \
-      -export \
-      -plugin-list=${missing-files.plugin.list} \
-      -thread-count=${missing-files.thread-count} \
-     "
+     "classpath:org/dcache/missingfiles/missingfiles.xml -export"
