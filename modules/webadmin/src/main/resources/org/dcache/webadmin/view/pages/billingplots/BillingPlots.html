@@ -1,141 +1,26 @@
-<!--
-To change this template, choose Tools | Templates
-and open the template in the editor.
--->
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="BillingPlots.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-        <wicket:link>
-            <script type="text/javascript" src="js/jquery.min.js"></script>
-        </wicket:link>
-        <wicket:link>
-            <script type="text/javascript" src="js/jquery.magnifier.js">
-
-                /***********************************************
-                 * jQuery Image Magnify- (c) Dynamic Drive DHTML code library (www.dynamicdrive.com)
-                 * This notice MUST stay intact for legal use
-                 * Visit Dynamic Drive at http://www.dynamicdrive.com/ for this script and 100s more
-                 ***********************************************/
-
-            </script>
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+	<wicket:link>
+		<link href="BillingPlots.css" rel="stylesheet" type="text/css" />
+	</wicket:link>
+</wicket:head>
 </head>
-<body>
-<wicket:extend>
-    <h1><wicket:message key="header1"></wicket:message></h1>
-
-    <div class="clear">&nbsp;</div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Plot Type</th>
-                <th>24-Hour</th>
-                <th>Weekly</th>
-
-                <th>Monthly</th>
-                <th>Yearly</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td> <wicket:message key="bytes.read"></wicket:message> </td>
-        <td>
-            <img wicket:id="image_00" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_01" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_02" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_03" width="80%" class="magnify"/>
-        </td>
-        </tr>
-        <tr>
-            <td> <wicket:message key="bytes.written"></wicket:message> </td>
-        <td>
-            <img wicket:id="image_10" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_11" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_12" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_13" width="80%" class="magnify"/>
-        </td>
-        </tr>
-        <tr>
-            <td> <wicket:message key="transfers.read"></wicket:message> </td>
-        <td>
-            <img wicket:id="image_20" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_21" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_22" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_23" width="80%" class="magnify"/>
-        </td>
-        </tr>
-        <tr>
-            <td> <wicket:message key="transfers.write"></wicket:message> </td>
-        <td>
-            <img wicket:id="image_30" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_31" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_32" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_33" width="80%" class="magnify"/>
-        </td>
-        </tr>
-        <tr>
-            <td> <wicket:message key="connection.time"></wicket:message> </td>
-        <td>
-            <img wicket:id="image_40" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_41" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_42" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_43" width="80%" class="magnify"/>
-        </td>
-        </tr>
-        <tr>
-            <td> <wicket:message key="cache.hits"></wicket:message> </td>
-        <td>
-            <img wicket:id="image_50" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_51" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_52" width="80%" class="magnify"/>
-        </td>
-        <td>
-            <img wicket:id="image_53" width="80%" class="magnify"/>
-        </td>
-        </tr>
-        </tbody>
-    </table>
-</wicket:extend>
+<body id="billingBody">
+   <h1>
+       <wicket:message key="header1"></wicket:message>
+   </h1>
+   <br>
+   <wicket:extend>
+         <form wicket:id="billingForm">
+             <span wicket:id="optionPanel"></span>
+             <br>
+             <hr style="color:#880000">
+             <br>
+             <span wicket:id="plotsPanel"></span>
+         </form>
+   </wicket:extend>
 </body>
 </html>

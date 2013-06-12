@@ -55,9 +55,4 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -billingChangelog=${db.schema.changelog} \
         -shouldUpdate=${db.schema.auto} \
         -poolManager=${poolManager} \
-        -poolConnectTimeout=${poolConnectTimeout} \
-        -generatePlots=${generatePlots} \
-        -plotsDir=${httpd.static-content.plots} \
-        -plotsProperties=${billingPlotPropertiesFile} \
-        -plotsTimeout=${billingPlotsTimeoutInMins} \
-        -exportType=${billingPlotsExportType}"
+        -poolConnectTimeout=${poolConnectTimeout}"

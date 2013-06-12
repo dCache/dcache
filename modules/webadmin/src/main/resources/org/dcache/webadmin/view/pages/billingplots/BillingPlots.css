@@ -4,13 +4,7 @@ h2 {
     text-align: center;
 }
 
-table {
-    margin-left: auto;
-    margin-right: auto;
-    width:100%
-}
-
-td, th {
+.plots td, th {
     width: 20%;
 }
 
@@ -24,4 +18,15 @@ tr:nth-child(odd) {
 
 tr:nth-child(even) {
     background: #789498;
+}
+
+.options table {
+	width: 25%;
+	margin-right: auto;
+}
+
+.plots table {
+	margin-left: auto;
+    margin-right: auto;
+	width: 100%;
 }
