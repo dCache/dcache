@@ -62,4 +62,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -nfs.domain=\"${nfs.domain}\" \
        -nfs.v3=\"${nfs.v3}\" \
        -nfs.export.file=${nfs.export.file} \
+       -nfs.published.name=${nfs.published.name} \
        "
