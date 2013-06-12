@@ -162,7 +162,7 @@ public class AliasEntry {
                                 + entry.getSpecificString() + ")";
                 break;
             case WEBAPP:
-                handler = createWebAppContext(alias, specific, args, cell);
+                handler = createWebAppContext(alias, specific, new Args(args.argv(3)), cell);
                 entry = new AliasEntry(alias, aliasType, handler, args.toString());
                 entry.statusMessage = alias + " -> " + TYPE_WEBAPP + "(" + args + ")";
                 break;
