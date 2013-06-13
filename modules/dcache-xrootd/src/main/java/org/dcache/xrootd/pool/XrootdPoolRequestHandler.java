@@ -74,12 +74,6 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     private static final int DEFAULT_FILESTATUS_MODTIME = 0;
 
     /**
-     * Maximum frame size of a read or readv reply. Does not include the size
-     * of the frame header.
-     */
-    private static final int MAX_FRAME_SIZE = 2 << 20;
-
-    /**
      * Store file descriptors of open files.
      */
     private final List<FileDescriptor> _descriptors =
@@ -373,7 +367,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         if (msg.bytesToRead() == 0) {
             return withOk(msg);
         } else {
-            return new ChunkedFileDescriptorReadResponse(msg, MAX_FRAME_SIZE, _descriptors.get(fd));
+            return new ChunkedFileDescriptorReadResponse(msg, _server.getMaxFrameSize(), _descriptors.get(fd));
         }
     }
 
@@ -411,15 +405,15 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             int totalBytesToRead = req.BytesToRead() +
                 ReadResponse.READ_LIST_HEADER_SIZE;
 
-            if (totalBytesToRead > MAX_FRAME_SIZE) {
+            if (totalBytesToRead > _server.getMaxFrameSize()) {
                 _log.warn("Vector read of {} bytes requested, exceeds " +
                           "maximum frame size of {} bytes!", totalBytesToRead,
-                          MAX_FRAME_SIZE);
+                          _server.getMaxFrameSize());
                 throw new XrootdException(kXR_ArgInvalid, "Single readv transfer is too large");
             }
         }
 
-        return new ChunkedFileDescriptorReadvResponse(msg, MAX_FRAME_SIZE, new ArrayList<>(_descriptors));
+        return new ChunkedFileDescriptorReadvResponse(msg, _server.getMaxFrameSize(), new ArrayList<>(_descriptors));
     }
 
     /**
