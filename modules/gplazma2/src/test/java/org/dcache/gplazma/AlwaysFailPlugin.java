@@ -35,7 +35,7 @@ public class AlwaysFailPlugin implements
     }
 
     @Override
-    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals) throws AuthenticationException {
         throw new AuthenticationException(FAIL_MSG);
     }
 

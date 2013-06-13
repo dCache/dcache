@@ -129,8 +129,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(emptyList);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     /**
@@ -146,8 +145,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(oneDoNothingPlugins);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     @Test (expected=AuthenticationException.class)
@@ -158,8 +156,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(failedPlugins);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     @Test
@@ -170,8 +167,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(successRequiredPlugins);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     @Test
@@ -182,8 +178,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(successRequisitePlugins);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     @Test
@@ -195,7 +190,6 @@ public class MappingStrategyMapTests
         strategy.setPlugins(successOptionalPlugins);
         Set<Principal> principals = Sets.newHashSet();
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
     }
 
     @Test
@@ -206,8 +200,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(successSufficientPlugins);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     /**
@@ -223,8 +216,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(sufficientPluginFollowedByFailedArray);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     /**
@@ -240,8 +232,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(testOptionalFailingPlugins);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     /**
@@ -258,8 +249,7 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins1);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     /**
@@ -276,15 +266,13 @@ public class MappingStrategyMapTests
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins2);
         Set<Principal> principals = Sets.newHashSet();
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        strategy.map(IGNORING_LOGIN_MONITOR, principals, authorizedPrincipals);
+        strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
     private static final class DoNotingStrategy implements GPlazmaMappingPlugin
     {
         @Override
-        public void map(Set<Principal> principals,
-                Set<Principal> authorizedPrincipals)
+        public void map(Set<Principal> principals)
                 throws AuthenticationException
         {
         }
@@ -294,16 +282,15 @@ public class MappingStrategyMapTests
             implements GPlazmaMappingPlugin
     {
         @Override
-        public void map(Set<Principal> principals,
-                Set<Principal> authorizedPrincipals)
+        public void map(Set<Principal> principals)
                 throws AuthenticationException
         {
             UidPrincipal uid = new UidPrincipal(1L);
             GidPrincipal gid = new GidPrincipal(1L, true);
             UserNamePrincipal userName = new UserNamePrincipal("user");
-            authorizedPrincipals.add(uid);
-            authorizedPrincipals.add(gid);
-            authorizedPrincipals.add(userName);
+            principals.add(uid);
+            principals.add(gid);
+            principals.add(userName);
         }
     }
 
@@ -311,8 +298,7 @@ public class MappingStrategyMapTests
             implements GPlazmaMappingPlugin
     {
         @Override
-        public void map(Set<Principal> principals,
-                Set<Principal> authorizedPrincipals)
+        public void map(Set<Principal> principals)
                 throws AuthenticationException
         {
             throw new AuthenticationException("I always fail");
@@ -323,8 +309,7 @@ public class MappingStrategyMapTests
             implements GPlazmaMappingPlugin
     {
         @Override
-        public void map(Set<Principal> principals,
-                Set<Principal> authorizedPrincipals)
+        public void map(Set<Principal> principal)
                 throws AuthenticationException
         {
             throw new TestAuthenticationException("I always fail too");
@@ -335,8 +320,7 @@ public class MappingStrategyMapTests
             implements GPlazmaMappingPlugin
     {
         @Override
-        public void map(Set<Principal> principals,
-                Set<Principal> authorizedPrincipals)
+        public void map(Set<Principal> principals)
                 throws AuthenticationException
         {
             throw new RuntimeException("That is what I call an exception");

@@ -1,18 +1,16 @@
 package org.dcache.pool.repository.meta.file;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OptionalDataException;
-import java.io.StreamCorruptedException;
-import java.lang.ref.SoftReference;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
@@ -30,10 +28,11 @@ import org.dcache.vehicles.FileAttributes;
 
 public class CacheRepositoryEntryImpl implements MetaDataRecord
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
     private final CacheRepositoryEntryState _state;
     private final PnfsId _pnfsId;
     private int _linkCount;
-    private SoftReference<StorageInfo> _storageInfo;
+    private StorageInfo _storageInfo;
     private long _creationTime = System.currentTimeMillis();
     private long _lastAccess;
     private long _size;
@@ -65,8 +64,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
         _state = new CacheRepositoryEntryState(_controlFile);
 
-        if (_siFile.exists()) {
+        try {
+            _storageInfo = readStorageInfo(siFile);
             _creationTime = _siFile.lastModified();
+        }catch(FileNotFoundException fnf) {
+            /*
+             * it's not an error state.
+             */
         }
 
         _lastAccess = _dataFile.lastModified();
@@ -229,6 +233,11 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _dataFile.setLastModified(_lastAccess);
     }
 
+    private synchronized StorageInfo getStorageInfo()
+    {
+        return _storageInfo;
+    }
+
     private synchronized void setStorageInfo(StorageInfo storageInfo) throws CacheException {
         try {
             File siFileTemp = File.createTempFile(_siFile.getName(), null, _siFile.getParentFile());
@@ -249,7 +258,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             // TODO: disk io error code here
             throw new CacheException(10, _pnfsId + " " + e.getMessage(), e);
         }
-        _storageInfo = new SoftReference<>(storageInfo);
+        _storageInfo = storageInfo;
     }
 
     private static StorageInfo readStorageInfo(File objIn) throws IOException {
@@ -257,37 +266,10 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(objIn)))) {
                 return (StorageInfo) in.readObject();
             }
-        } catch (ClassNotFoundException cnf) {
-
-        } catch (InvalidClassException ife) {
-            // valid exception if siFIle is broken
-        } catch( StreamCorruptedException sce ) {
-            // valid exception if siFIle is broken
-        } catch (OptionalDataException ode) {
-            // valid exception if siFIle is broken
-        } catch (EOFException eof){
-            // object file size mismatch
+        } catch (Throwable t) {
+            LOGGER.debug("Failed to read {}: {}", objIn.getPath(), t.toString());
         }
         return null;
-    }
-
-    private synchronized StorageInfo getStorageInfo() {
-        StorageInfo si = null;
-        if (_storageInfo != null) {
-            si = _storageInfo.get();
-        }
-        if (si == null) {
-            try {
-                si = readStorageInfo(_siFile);
-                _storageInfo = new SoftReference<>(si);
-            }catch(FileNotFoundException fnf) {
-                /* it's not an error
-                 */
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to read " + _siFile, e);
-            }
-        }
-        return si;
     }
 
     @Override

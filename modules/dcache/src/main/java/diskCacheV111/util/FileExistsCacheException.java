@@ -7,4 +7,9 @@ public class FileExistsCacheException extends CacheException {
      public FileExistsCacheException( String msg ){
         super( CacheException.FILE_EXISTS , msg ) ;
      }
+
+    public FileExistsCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.FILE_EXISTS, msg, cause);
+    }
 }

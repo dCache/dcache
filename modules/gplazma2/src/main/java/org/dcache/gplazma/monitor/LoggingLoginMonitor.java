@@ -43,10 +43,9 @@ public class LoggingLoginMonitor extends IgnoringLoginMonitor
 
     @Override
     public void mapPluginBegins(String name, ConfigurationItemControl control,
-            Set<Principal> principals, Set<Principal> authorizedPrincipals)
+            Set<Principal> principals)
     {
-        _log.debug("calling (principals: {}, authPrincipals: {})", principals,
-                authorizedPrincipals);
+        _log.debug("calling (principals: {})", principals);
     }
 
     @Override
@@ -73,7 +72,7 @@ public class LoggingLoginMonitor extends IgnoringLoginMonitor
             ConfigurationItemControl control, Set<Principal> principals,
             Set<Object> attributes)
     {
-        _log.debug("calling (pricipals: {}, attrib: {})", principals,
+        _log.debug("calling (principals: {}, attributes: {})", principals,
                 attributes);
 
     }

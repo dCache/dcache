@@ -204,7 +204,7 @@ public class SendAlarm {
             sourceHost = arg;
 
             arg = uri.getPath();
-            if (arg == null) {
+            if (arg == null || arg.isEmpty()) {
                 arg = DEFAULT_SOURCE_PATH;
             }
 

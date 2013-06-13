@@ -439,9 +439,14 @@ public class PoolV4
                     _repository.load();
                     enablePool();
                     _flushingThread.start();
+                } catch (RuntimeException e) {
+                    _log.error("Repository reported a problem. Please report this to support@dcache.org.", e);
+                    _log.warn("Pool not enabled {}", _poolName);
+                    disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
+                            666, "Init failed: " + e.getMessage());
                 } catch (Throwable e) {
-                    _log.error("Repository reported a problem : " + e.getMessage());
-                    _log.warn("Pool not enabled " + _poolName);
+                    _log.error("Repository reported a problem: " + e.getMessage());
+                    _log.warn("Pool not enabled {}", _poolName);
                     disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                                 666, "Init failed: " + e.getMessage());
                 }
@@ -1961,7 +1966,9 @@ public class PoolV4
         return sb.toString();
     }
 
-    public Object ac_mover_ls_$_0_1(Args args) throws NoSuchElementException {
+    public Object ac_mover_ls_$_0_1(Args args)
+            throws NoSuchElementException, NumberFormatException
+    {
         String queueName = args.getOpt("queue");
         boolean binary = args.hasOption("binary");
 
@@ -1994,6 +2001,7 @@ public class PoolV4
     }
 
     public Object ac_p2p_ls_$_0_1(Args args)
+            throws NoSuchElementException, NumberFormatException
     {
         IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
 

@@ -569,7 +569,7 @@ public class AlarmDefinition {
             alarmType.addContent(new Element(LOGGER_TAG)
             .setText(logger));
         }
-        if (matchException != null && !matchException) {
+        if (matchException != null && matchException) {
             alarmType.addContent(new Element(MATCH_EXCEPTION_TAG)
             .setText(matchException.toString()));
         }

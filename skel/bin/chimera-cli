@@ -84,8 +84,11 @@ lib="$(getProperty dcache.paths.share.lib)"
 
 dbpass=$(getProperty chimera.db.password)
 
-CLASSPATH="$(printClassPath)" \
-    ${JAVA} $(getProperty dcache.java.options) \
+classpath=$(printLimitedClassPath chimera bonecp \
+    guava slf4j-api dcache-common logback-classic \
+    logback-core logback-console-config)
+
+quickJava -Xbootclasspath/a:$classpath \
     -Dlog=${DCACHE_LOG:-warn} \
     ${class}  $(getProperty chimera.db.driver) \
     $(getProperty chimera.db.url) \
@@ -93,3 +96,4 @@ CLASSPATH="$(printClassPath)" \
     $(getProperty chimera.db.user) \
     ${dbpass:-""} \
     "$@"
+

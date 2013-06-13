@@ -12,4 +12,9 @@ public class MissingResourceCacheException extends CacheException {
 	public MissingResourceCacheException(String msg) {
 		super(CacheException.RESOURCE, msg);
 	}
+
+    public MissingResourceCacheException(String msg, Throwable cause)
+    {
+        super(CacheException.RESOURCE, msg, cause);
+    }
 }

@@ -83,8 +83,8 @@
 
   <bean id="login-broker-stub" class="org.dcache.cells.CellStub">
     <description>Login broker communication stub</description>
-    <property name="destination" value="LoginBroker"/>
-    <property name="timeout" value="#{ ${srmPnfsTimeout} * 1000 }"/>
+    <property name="destination" value="${srm.lookup.loginbroker}"/>
+    <property name="timeout" value="#{ ${srm.lookup.timeout} * 1000 }"/>
   </bean>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
@@ -115,15 +115,15 @@
         <description>Thread pool for scheduled activities</description>
       </bean>
     </property>
-    <property name="updateTime" value="${loginBrokerUpdateTime}"/>
-    <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+    <property name="updateTime" value="${srm.loginbroker.period}"/>
+    <property name="updateThreshold" value="${srm.loginbroker.threshold}"/>
     <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
-    <property name="protocolVersion" value="${protocolVersion}"/>
-    <property name="protocolFamily" value="${protocolFamily}"/>
+    <property name="protocolVersion" value="${srm.loginbroker.version}"/>
+    <property name="protocolFamily" value="${srm.loginbroker.family}"/>
     <property name="port" value="${srmPort}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${srmLoginBroker}"/>
+        <constructor-arg value="${srm.loginbroker}"/>
       </bean>
     </property>
   </bean>
@@ -154,9 +154,9 @@
     <property name="isSpaceManagerEnabled"
               value="${spaceManagerEnabled}"/>
     <property name="loginBrokerUpdatePeriod"
-              value="${srmLoginBrokerUpdatePeriod}"/>
+              value="${srm.lookup.period}"/>
     <property name="numberOfDoorsInRandomSelection"
-              value="${srmNumberOfDoorsInRandomSelection}"/>
+              value="${srm.lookup.population-size}"/>
     <property name="useCustomGetHostByAddress"
               value="${srmCustomGetHostByAddr}"/>
     <property name="ignoreClientProtocolOrder"

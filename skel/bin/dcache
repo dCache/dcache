@@ -210,7 +210,7 @@ dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 # display dCache package version
 showVersion()
 {
-    "$JAVA" -cp "$(getProperty dcache.paths.classpath)" org.dcache.util.Version
+    CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.util.Version
 }
 
 #  print either the user a PID is running as (if $1 is non-empty)
@@ -330,7 +330,7 @@ poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
         fail 2 "Cannot convert pool '$name', as it is already of type $src."
     fi
 
-    CLASSPATH="$classpath" "$JAVA" org.dcache.pool.repository.MetaDataStoreCopyTool "$path" "$src" "$3"
+    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataStoreCopyTool "$path" "$src" "$3"
 
     printp ""\
            "The pool meta data database of '$name' was converted from
@@ -347,7 +347,7 @@ poolDumpYaml() # $1 = domain, $2 = cell
     classpath=$(getProperty dcache.paths.classpath "$1" "$2")
     path=$(getProperty path "$1" "$2")
     type=$(getProperty metaDataRepository "$1" "$2")
-    CLASSPATH="$classpath" "$JAVA" org.dcache.pool.repository.MetaDataStoreYamlTool "$path" "$type"
+    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataStoreYamlTool "$path" "$type"
 }
 
 if [ $# -eq 0 ]; then
@@ -777,7 +777,7 @@ case "$1" in
         checkForPkcs8HostKey
 
         if [ $# -eq 0 ]; then
-            CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile
+            CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.auth.KAuthFile
         else
             command="$1"
             shift
@@ -787,7 +787,7 @@ case "$1" in
                 touch "$kpwdFile"
             fi
 
-            CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile "$command" "$(getProperty kpwdFile)" "$@"
+            CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.auth.KAuthFile "$command" "$(getProperty kpwdFile)" "$@"
         fi
         ;;
 

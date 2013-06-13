@@ -11,7 +11,7 @@ for domain in $(getProperty dcache.domains); do
         if [ "$service" = "pool" -a $(getProperty metaDataRepository "$domain" "$cell") = "org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository" ]; then
             path=$(getProperty path "$domain" "$cell")
             echo "Preparing $path for upgrade"
-            $JAVA -jar $(getProperty dcache.paths.share)/misc/je-4.1.21.jar DbPreUpgrade_4_1 -h "$path"
+            quickJava -jar $(getProperty dcache.paths.share)/misc/je-4.1.21.jar DbPreUpgrade_4_1 -h "$path/meta"
         fi
     done
 done

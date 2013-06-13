@@ -13,9 +13,6 @@ public class IdentityMappingPlugin implements GPlazmaMappingPlugin {
     }
 
     @Override
-    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
-        for (Principal p : principals) {
-            authorizedPrincipals.add(p);
-        }
+    public void map(Set<Principal> principals) throws AuthenticationException {
     }
 }

@@ -52,51 +52,44 @@ public class KpwdPluginTest
     }
 
     public void check(Set<?> credentials,
-                      Set<? extends Principal> principals,
-                      Set<? extends Principal> expectedAuthorizedPrincipals,
+                      Set<? extends Principal> input,
+                      Set<? extends Principal> output,
                       Set<?> expectedAttributes)
         throws AuthenticationException
     {
         KpwdPlugin plugin = new KpwdPlugin(testFixture);
         Set<Object> privateCredentials = Sets.newHashSet(credentials);
-        Set<Principal> identifiedPrincipals = Sets.newHashSet(principals);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Principal> principals = Sets.newHashSet(input);
         Set<Object> attributes = Sets.newHashSet();
 
-        plugin.authenticate(Sets.newHashSet(), privateCredentials,
-                            identifiedPrincipals);
+        plugin.authenticate(Sets.newHashSet(), privateCredentials, principals);
 
-        plugin.map(identifiedPrincipals, authorizedPrincipals);
-        assertTrue("expected: " + expectedAuthorizedPrincipals
-                   + " was: " + authorizedPrincipals,
-                   authorizedPrincipals.containsAll(expectedAuthorizedPrincipals));
+        plugin.map(principals);
+        assertTrue("expected: " + output + " was: " + principals,
+                   principals.containsAll(output));
 
-        plugin.account(authorizedPrincipals);
+        plugin.account(principals);
 
-        plugin.session(authorizedPrincipals, attributes);
+        plugin.session(principals, attributes);
         assertEquals(expectedAttributes, attributes);
     }
 
-    public void check(Set<? extends Principal> principals,
-                      Set<? extends Principal> expectedAuthorizedPrincipals,
+    public void check(Set<? extends Principal> input,
+                      Set<? extends Principal> output,
                       Set<?> expectedAttributes)
         throws AuthenticationException
     {
         KpwdPlugin plugin = new KpwdPlugin(testFixture);
-        Set<Principal> identifiedPrincipals = Sets.newHashSet(principals);
-        Set<Principal> expectedPrincipals = Sets.newHashSet(principals);
-        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Principal> principals = Sets.newHashSet(input);
         Set<Object> attributes = Sets.newHashSet();
 
-        plugin.map(identifiedPrincipals, authorizedPrincipals);
-        assertEquals(expectedPrincipals, identifiedPrincipals);
-        assertTrue("expected: " + expectedAuthorizedPrincipals
-                   + " was: " + authorizedPrincipals,
-                   authorizedPrincipals.containsAll(expectedAuthorizedPrincipals));
+        plugin.map(principals);
+        assertTrue("expected: " + output + " was: " + principals,
+                   principals.containsAll(output));
 
-        plugin.account(authorizedPrincipals);
+        plugin.account(principals);
 
-        plugin.session(authorizedPrincipals, attributes);
+        plugin.session(principals, attributes);
         assertEquals(expectedAttributes, attributes);
     }
 

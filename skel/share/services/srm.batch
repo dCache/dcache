@@ -117,11 +117,18 @@ check -strong pnfsmanager
 check -strong poolmanager
 check -strong gplazma
 
-check -strong srmLoginBrokerUpdatePeriod
+check -strong srm.loginbroker
+check -strong srm.loginbroker.period
+check -strong srm.loginbroker.threshold
+check -strong srm.loginbroker.version
+check -strong srm.loginbroker.family
+
+check -strong srm.lookup.loginbroker
+check -strong srm.lookup.period
+check -strong srm.lookup.timeout
+check -strong srm.lookup.population-size
 
 check -strong srmPoolManagerTimeout
-
-check -strong srmNumberOfDoorsInRandomSelection
 
 check -strong srmKeepRequestHistoryPeriod
 
@@ -139,8 +146,6 @@ check -strong srmCleanPendingRequestsOnRestart
 check -strong srmClientDNSLookup
 
 check -strong srmGracefulShutdown
-check -strong loginBrokerUpdateTime
-check -strong loginBrokerUpdateThreshold
 
 check -strong srmCustomGetHostByAddr
 check -strong srmIgnoreClientProtocolOrder
@@ -286,11 +291,15 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
-        -srmLoginBroker=srm-LoginBroker \
-        -protocolFamily=SRM \
-        -protocolVersion=1.1.1 \
-        -srmLoginBrokerUpdatePeriod=${srmLoginBrokerUpdatePeriod} \
-        -srmNumberOfDoorsInRandomSelection=${srmNumberOfDoorsInRandomSelection} \
+        -srm.loginbroker=${srm.loginbroker} \
+        -srm.loginbroker.period=${srm.loginbroker.period} \
+        -srm.loginbroker.threshold=${srm.loginbroker.threshold} \
+        -srm.loginbroker.version=${srm.loginbroker.version} \
+        -srm.loginbroker.family=${srm.loginbroker.family} \
+        -srm.lookup.loginbroker=${srm.lookup.loginbroker} \
+        -srm.lookup.timeout=${srm.lookup.timeout} \
+        -srm.lookup.period=${srm.lookup.period} \
+        -srm.lookup.population-size=${srm.lookup.population-size} \
         -overwriteEnabled=${overwriteEnabled} \
         -srmOverwriteByDefault=${srmOverwriteByDefault} \
         -srmCustomGetHostByAddr=${srmCustomGetHostByAddr} \
@@ -331,8 +340,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmClientTransport=${srmClientTransport} \
         -srmGracefulShutdown=\"${srmGracefulShutdown}\" \
         -srmPinOnlineFiles=\"${srmPinOnlineFiles}\" \
-        -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
-        -loginBrokerUpdateThreshold=\"${loginBrokerUpdateThreshold}\" \
         -dcache.paths.share=\"${dcache.paths.share}\" \
         -qosPluginClass=\"${qosPluginClass}\" \
         -qosConfigFile=\"${qosConfigFile}\" \
