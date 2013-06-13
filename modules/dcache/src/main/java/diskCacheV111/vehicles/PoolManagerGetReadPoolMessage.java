@@ -38,4 +38,10 @@ public class PoolManagerGetReadPoolMessage extends PoolManagerMessage {
            return super.toString();
        }
     }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
 }

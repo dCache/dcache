@@ -22,6 +22,11 @@ public class HttpDoorUrlInfoMessage extends Message
   {
     return url;
   }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
 }
 
 

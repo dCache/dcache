@@ -54,6 +54,11 @@ public class DoorTransferFinishedMessage extends Message {
    public String getPoolName() {
        return _poolName;
    }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
 }
 
 
