@@ -89,6 +89,10 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
             description = "Password for accessing trusted CA certs")
     protected String trustPassword;
 
+    @Option(name = "httpd.security.ciphers",
+            description = "Cipher flags")
+    protected String cipherFlags;
+
     private Server server;
     private String defaultWebappsXml;
     private volatile Map<String, Object> environment = Collections.emptyMap();
@@ -251,7 +255,7 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
         final SslSelectChannelConnector connector = new SslSelectChannelConnector();
         connector.setPort(httpsPort);
         connector.setHost(IPV4_INETADDR_ANY);
-        connector.setExcludeCipherSuites(Crypto.BANNED_CIPHERS);
+        connector.setExcludeCipherSuites(Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
         final SslContextFactory factory = connector.getSslContextFactory();
         factory.setKeyStorePath(keystore);
         factory.setKeyStoreType(keystoreType);

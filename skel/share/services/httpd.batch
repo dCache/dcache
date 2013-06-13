@@ -18,6 +18,8 @@ check -strong httpd.static-content.styles
 check -strong httpd.static-content.index
 check -strong httpd.static-content.plots
 
+check httpd.security.ciphers
+
 # Default content for httpd service.
 #
 # Can be redefined in etc/httpd.conf or additional content can
@@ -211,6 +213,7 @@ create org.dcache.services.httpd.HttpServiceCell ${cell.name} \
        "-authenticated=${authenticated}  \
         -httpPort=${port}  \
         -httpsPort=${httpsPort}  \
+        -httpd.security.ciphers=\"${httpd.security.ciphers}\" \
         -keystore=${keyStore}  \
         -keystoreType=PKCS12  \
         -keystorePassword=${keyStorePassword}  \
