@@ -219,7 +219,10 @@
       </property>
   </bean>
 
-
+    <bean id="banned-ciphers" class="org.dcache.util.Crypto"
+          factory-method="getBannedCipherSuitesFromConfigurationValue">
+        <constructor-arg value="${webdav.security.ciphers}"/>
+    </bean>
 
   <beans profile="connector-http">
       <bean id="protocol-family" class="java.lang.String">
@@ -268,7 +271,6 @@
   </beans>
 
 
-
   <beans profile="connector-https">
       <bean id="https-connector"
 	    class="org.eclipse.jetty.server.ssl.SslSelectChannelConnector">
@@ -283,9 +285,7 @@
 	  <property name="trustPassword" value="${webdavTrustStorePassword}"/>
 	  <property name="wantClientAuth" value="${webdavWantClientAuth}"/>
 	  <property name="needClientAuth" value="${webdavNeedClientAuth}"/>
-          <property name="excludeCipherSuites">
-              <util:constant static-field="org.dcache.util.Crypto.BANNED_CIPHERS"/>
-	  </property>
+      <property name="excludeCipherSuites" ref="banned-ciphers"/>
       </bean>
   </beans>
 
@@ -313,6 +313,7 @@
 		    value="#{ ${hostCertificateRefreshPeriod} * 1000 }"/>
 	  <property name="millisecBetweenTrustAnchorRefresh"
 		    value="#{ ${trustAnchorRefreshPeriod} * 1000 }"/>
+      <property name="excludeCipherSuites" ref="banned-ciphers"/>
       </bean>
   </beans>
 
