@@ -3567,11 +3567,11 @@ public final class Manager
 
         private void processMessage( CellMessage cellMessage ) {
                 Object object = cellMessage.getMessageObject();
-                if (logger.isDebugEnabled()) {
-                        logger.debug("Message  arrived: "+object +" from "+cellMessage.getSourcePath());
-                }
+
+                logger.debug("Message  arrived: {} from {}", object, cellMessage.getSourcePath());
+
                 if (!(object instanceof Message)) {
-                        logger.error("Unexpected message class "+object.getClass());
+                        logger.error("Unexpected message class {}", object.getClass());
                         return;
                 }
                 Message spaceMessage = (Message)object;
@@ -3665,13 +3665,14 @@ public final class Manager
                                 PnfsDeleteEntryNotificationMessage msg=
                                         (PnfsDeleteEntryNotificationMessage) spaceMessage;
                                 markFileDeleted(msg);
-                        }
-                        else {
-                                logger.error("unknown Space Manager message type :"+
-                                             spaceMessage.getClass().getName()+
-                                             " value: "+spaceMessage);
-                                super.messageArrived(cellMessage);
-                                return;
+                        } else {
+                            if (!spaceMessage.isReply()) {
+                                logger.trace("just forwarding the message to {}", poolManager);
+                                cellMessage.getDestinationPath().add(new CellPath(poolManager));
+                                cellMessage.nextDestination();
+                                sendMessage(cellMessage);
+                            }
+                            return;
                         }
                 }
                 catch(SpaceException se) {
