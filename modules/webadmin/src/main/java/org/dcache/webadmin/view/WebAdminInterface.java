@@ -340,6 +340,7 @@ public class WebAdminInterface extends WebApplication {
         mountPage("alarms", AlarmsPage.class);
 
         if (Boolean.parseBoolean(_generatePlots)) {
+            _billingService.initialize();
             mountPage("billingplots", BillingPlots.class);
             BasicNavigationPanel.addBillingPage();
         } else {

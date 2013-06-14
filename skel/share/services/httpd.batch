@@ -27,6 +27,20 @@ check httpd.security.ciphers
 ####################################################################
 
 #
+#  This checks to see if billingToDb is enabled
+onerror continue
+
+define env usePlottingFlag end
+  set env -c plotBillingData ${generatePlots}
+end
+
+eval ${billingToDb} yes ==
+exec env usePlottingFlag -ifok
+
+# Otherwise turn them off
+set env -c plotBillingData false
+
+#
 #  The following block defines the context set_alias_statistics to be either
 #  "set alias statistics directory ${statisticsLocation}" if
 #  ${statisticsLocation} exists and is a directory, or an empty string otherwise
@@ -57,7 +71,7 @@ define context webadmin.exe endDefine
      -transfersCollectorUpdate=${transfersCollectorUpdate} \
      -tempUnpackDir=${webadminWarunpackdir} \
      -billingCell=${billing} \
-     -generatePlots=${generatePlots} \
+     -generatePlots=${plotBillingData} \
      -profiles=plotting-${billingToDb} \
      -plotsDir=${httpd.static-content.plots} \
      -imageType=${billingPlotsExportType} \

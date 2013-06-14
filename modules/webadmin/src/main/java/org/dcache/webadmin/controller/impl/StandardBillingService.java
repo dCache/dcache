@@ -239,7 +239,7 @@ public final class StandardBillingService implements IBillingService, Runnable {
 
     @Override
     public int getPopupHeight() {
-        return popupWidth;
+        return popupHeight;
     }
 
     @Override
