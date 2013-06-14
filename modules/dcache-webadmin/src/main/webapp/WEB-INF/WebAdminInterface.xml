@@ -179,7 +179,7 @@
     <bean id="PlotGenerator" class="org.dcache.services.billing.plots.jaida.JaidaTimeFramePlotGenerator"/>
 
     <bean id="BillingService" class="org.dcache.webadmin.controller.impl.StandardBillingService"
-        init-method="initialize" destroy-method="shutDown">
+        destroy-method="shutDown">
         <constructor-arg ref="webadmin.billing-plot.default-style"/>
         <constructor-arg ref="webadmin.billing-plot.default-scale"/>
         <property name="cell" ref="BillingCellStub"/>

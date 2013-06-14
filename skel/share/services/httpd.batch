@@ -27,6 +27,20 @@ check httpd.security.ciphers
 ####################################################################
 
 #
+#  This checks to see if billingToDb is enabled
+onerror continue
+
+define env usePlottingFlag end
+  set env -c plotBillingData ${generatePlots}
+end
+
+eval ${billingToDb} yes ==
+exec env usePlottingFlag -ifok
+
+# Otherwise turn them off
+set env -c plotBillingData false
+
+#
 #  The following block defines the context set_alias_statistics to be either
 #  "set alias statistics directory ${statisticsLocation}" if
 #  ${statisticsLocation} exists and is a directory, or an empty string otherwise
@@ -37,9 +51,11 @@ endDefine
 define env defineEmptyStatisticsAlias.exe endDefine
    set context set_alias_statistics ""
 endDefine
+
 onerror continue
 test -d ${statisticsLocation}
 set env have_stats_loc ${rc}
+
 onerror shutdown
 exec env defineStatisticsAlias.exe -ifok=have_stats_loc
 exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
@@ -57,8 +73,7 @@ define context webadmin.exe endDefine
      -transfersCollectorUpdate=${transfersCollectorUpdate} \
      -tempUnpackDir=${webadminWarunpackdir} \
      -billingCell=${billing} \
-     -generatePlots=${generatePlots} \
-     -profiles=plotting-${billingToDb} \
+     -generatePlots=${plotBillingData} \
      -plotsDir=${httpd.static-content.plots} \
      -imageType=${billingPlotsExportType} \
      -webadmin.billing-plot.refresh-threshold=${webadmin.billing-plot.refresh-threshold} \
@@ -228,3 +243,4 @@ create org.dcache.services.httpd.HttpServiceCell ${cell.name} \
         -webappsResource=${httpdDefaultWebapp} \
         -maxIdleTime=${httpdMaxIdleTimeInMs} \
         -maxThreads=${httpdMaxThreads}"
+
