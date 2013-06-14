@@ -45,6 +45,7 @@ public class XrootdPoolNettyServer
     private Timer _timer;
 
     private final long _clientIdleTimeout;
+    private final int _maxFrameSize;
 
     private int _numberClientConnections;
     private List<ChannelHandlerFactory> _plugins;
@@ -53,11 +54,13 @@ public class XrootdPoolNettyServer
                                  int memoryPerConnection,
                                  int maxMemory,
                                  long clientIdleTimeout,
+                                 int maxFrameSize,
                                  List<ChannelHandlerFactory> plugins) {
         this(threadPoolSize,
              memoryPerConnection,
              maxMemory,
              clientIdleTimeout,
+             maxFrameSize,
              plugins,
              -1);
     }
@@ -66,16 +69,23 @@ public class XrootdPoolNettyServer
                                  int memoryPerConnection,
                                  int maxMemory,
                                  long clientIdleTimeout,
+                                 int maxFrameSize,
                                  List<ChannelHandlerFactory> plugins,
                                  int socketThreads) {
         super("xrootd", threadPoolSize, memoryPerConnection, maxMemory, socketThreads);
         _clientIdleTimeout = clientIdleTimeout;
+        _maxFrameSize = maxFrameSize;
         _plugins = plugins;
 
         String range = System.getProperty("org.globus.tcp.port.range");
         PortRange portRange =
             (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
         setPortRange(portRange);
+    }
+
+    public int getMaxFrameSize()
+    {
+        return _maxFrameSize;
     }
 
     @Override

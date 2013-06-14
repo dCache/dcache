@@ -105,6 +105,7 @@ public class XrootdTransferService
     private int maxMemoryPerConnection;
     private int maxMemory;
     private long clientIdleTimeout;
+    private int maxFrameSize;
     private Integer socketThreads;
     private List<ChannelHandlerFactory> plugins;
 
@@ -183,6 +184,12 @@ public class XrootdTransferService
         this.plugins = plugins;
     }
 
+    @Required
+    public void setMaxFrameSize(int maxFrameSize)
+    {
+        this.maxFrameSize = maxFrameSize;
+    }
+
     public List<ChannelHandlerFactory> getPlugins()
     {
         return plugins;
@@ -197,6 +204,7 @@ public class XrootdTransferService
                     maxMemoryPerConnection,
                     maxMemory,
                     clientIdleTimeout,
+                    maxFrameSize,
                     plugins);
         } else {
             server = new XrootdPoolNettyServer(
@@ -204,6 +212,7 @@ public class XrootdTransferService
                     maxMemoryPerConnection,
                     maxMemory,
                     clientIdleTimeout,
+                    maxFrameSize,
                     plugins,
                     socketThreads);
         }
