@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.CacheException;
@@ -497,6 +498,12 @@ public class Transfer implements Comparable<Transfer>
         return _clientAddress;
     }
 
+    public boolean waitForMover(long timeout, TimeUnit unit)
+            throws CacheException, InterruptedException
+    {
+        return waitForMover(unit.toMillis(timeout));
+    }
+
     /**
      * Blocks until the mover of this transfer finished, or until
      * a timeout is reached. Relies on the
@@ -837,6 +844,12 @@ public class Transfer implements Comparable<Transfer>
             setStatus(null);
         }
     }
+
+    public void killMover(long timeout, TimeUnit unit)
+    {
+        killMover(unit.toMillis(timeout));
+    }
+
 
     /**
      * Kills the mover of the transfer. Blocks until the mover has

@@ -37,6 +37,7 @@ import dmg.cells.nucleus.CDC;
 import org.dcache.commons.util.NDC;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static org.dcache.util.Files.checkDirectory;
 import static org.dcache.util.Files.checkFile;
 import static org.globus.axis.gsi.GSIConstants.*;
@@ -61,10 +62,6 @@ public class JettyGSIConnector
 
     protected static final String MODE_SSL = "ssl";
     protected static final String MODE_GSI = "gsi";
-    private static final long DEFAULT_HOST_CERT_REFRESH_INTERVAL =
-        TimeUnit.MILLISECONDS.convert(12, TimeUnit.HOURS);
-    private static final long DEFAULT_TRUST_ANCHOR_REFRESH_INTERVAL =
-        TimeUnit.MILLISECONDS.convert(4, TimeUnit.HOURS);
 
     private GSSCredential _credentials;
     private TrustedCertificates _trustedCerts;
@@ -81,8 +78,10 @@ public class JettyGSIConnector
     private String _serverProxy;
     private String _caCertDir;
     private boolean _encrypt;
-    private long _hostCertRefreshInterval;
-    private long _trustAnchorRefreshInterval;
+    private long _hostCertRefreshInterval = 12;
+    private TimeUnit _hostCertRefreshIntervalUnit = HOURS;
+    private long _trustAnchorRefreshInterval = 4;
+    private TimeUnit _trustAnchorRefreshIntervalUnit = HOURS;
     private long _hostCertRefreshTimestamp = 0;
     private long _trustAnchorRefreshTimestamp = 0;
 
@@ -94,15 +93,6 @@ public class JettyGSIConnector
     private volatile Integer _mode = GSIConstants.MODE_SSL;
     private volatile int _handshakeTimeout = 0; // 0 means use maxIdleTime
     private String[] _excludedCipherSuites = {};
-
-    /**
-     * Assing default values to the certificate refresh intervals
-     */
-    public JettyGSIConnector()
-    {
-        _hostCertRefreshInterval = DEFAULT_HOST_CERT_REFRESH_INTERVAL;
-        _trustAnchorRefreshInterval = DEFAULT_TRUST_ANCHOR_REFRESH_INTERVAL;
-    }
 
     /**
      * Throws an IllegalStateException if the connector is open.
@@ -333,12 +323,11 @@ public class JettyGSIConnector
 
         try {
             if (_credentials == null || _manager == null ||
-               (timeSinceLastServerRefresh >= _hostCertRefreshInterval)) {
+               (timeSinceLastServerRefresh >= _hostCertRefreshIntervalUnit.toMillis(_hostCertRefreshInterval))) {
                     _log.info("Time since last server cert refresh {}",
                               timeSinceLastServerRefresh);
-                    _log.info("Loading server certificates. Current refresh " +
-                              "interval: {} ms",
-                              _hostCertRefreshInterval);
+                    _log.info("Loading server certificates. Current refresh interval: {} {}",
+                              _hostCertRefreshInterval, _hostCertRefreshIntervalUnit);
 
                     X509Credential cred;
                     if (_serverProxy != null && !_serverProxy.equals("")) {
@@ -375,10 +364,10 @@ public class JettyGSIConnector
                 _trustAnchorRefreshTimestamp);
 
         if (_caCertDir != null && (_trustedCerts == null ||
-                (timeSinceLastTARefresh >= _trustAnchorRefreshInterval))) {
+                (timeSinceLastTARefresh >= _trustAnchorRefreshIntervalUnit.toMillis(_trustAnchorRefreshInterval)))) {
             _log.info("Time since last TA Refresh {}", timeSinceLastTARefresh);
-            _log.info("Loading trust anchors. Current refresh interval: {} ms",
-                   _trustAnchorRefreshInterval);
+            _log.info("Loading trust anchors. Current refresh interval: {} {}",
+                   _trustAnchorRefreshInterval, _trustAnchorRefreshIntervalUnit);
             _log.info("CA certificate directory: {}", _caCertDir);
             _trustedCerts = TrustedCertificates.load(_caCertDir);
             _trustAnchorRefreshTimestamp = System.currentTimeMillis();
@@ -533,14 +522,24 @@ public class JettyGSIConnector
         }
     }
 
-    public void setMillisecBetweenHostCertRefresh(int ms)
+    public void setHostCertRefreshInterval(int value)
     {
-        _hostCertRefreshInterval = ms;
+        _hostCertRefreshInterval = value;
     }
 
-    public void setMillisecBetweenTrustAnchorRefresh(int ms)
+    public void setHostCertRefreshIntervalUnit(TimeUnit unit)
     {
-        _trustAnchorRefreshInterval = ms;
+        _hostCertRefreshIntervalUnit = unit;
+    }
+
+    public void setTrustAnchorRefreshInterval(int value)
+    {
+        _trustAnchorRefreshInterval = value;
+    }
+
+    public void setTrustAnchorRefreshIntervalUnit(TimeUnit unit)
+    {
+        _trustAnchorRefreshIntervalUnit = unit;
     }
 
     public class GsiConnection extends ConnectorEndPoint

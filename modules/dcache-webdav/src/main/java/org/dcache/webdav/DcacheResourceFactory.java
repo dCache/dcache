@@ -88,7 +88,9 @@ import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 
@@ -135,8 +137,11 @@ public class DcacheResourceFactory
     private ScheduledExecutorService _executor;
 
     private int _moverTimeout = 180000;
+    private TimeUnit _moverTimeoutUnit = MILLISECONDS;
     private long _killTimeout = 1500;
+    private TimeUnit _killTimeoutUnit = MILLISECONDS;
     private long _transferConfirmationTimeout = 60000;
+    private TimeUnit _transferConfirmationTimeoutUnit = MILLISECONDS;
     private int _bufferSize = 65536;
     private CellStub _poolStub;
     private CellStub _poolManagerStub;
@@ -157,7 +162,7 @@ public class DcacheResourceFactory
     private STGroup _listingGroup;
 
     private TransferRetryPolicy _retryPolicy =
-        TransferRetryPolicies.tryOncePolicy(_moverTimeout);
+        TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
 
     private MissingFileStrategy _missingFileStrategy =
         new AlwaysFailMissingFileStrategy();
@@ -190,6 +195,16 @@ public class DcacheResourceFactory
         _killTimeout = timeout;
     }
 
+    public void setKillTimeoutUnit(TimeUnit unit)
+    {
+        _killTimeoutUnit = checkNotNull(unit);
+    }
+
+    public TimeUnit getKillTimeoutUnit()
+    {
+        return _killTimeoutUnit;
+    }
+
     /**
      * Returns the mover timeout in milliseconds.
      */
@@ -210,7 +225,18 @@ public class DcacheResourceFactory
             throw new IllegalArgumentException("Timeout must be positive");
         }
         _moverTimeout = timeout;
-        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout);
+        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
+    }
+
+    public void setMoverTimeoutUnit(TimeUnit unit)
+    {
+        _moverTimeoutUnit = checkNotNull(unit);
+        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
+    }
+
+    public TimeUnit getMoverTimeoutUnit()
+    {
+        return _moverTimeoutUnit;
     }
 
     /**
@@ -231,6 +257,16 @@ public class DcacheResourceFactory
     public void setTransferConfirmationTimeout(long timeout)
     {
         _transferConfirmationTimeout = timeout;
+    }
+
+    public void setTransferConfirmationTimeoutUnit(TimeUnit unit)
+    {
+        _transferConfirmationTimeoutUnit = checkNotNull(unit);
+    }
+
+    public TimeUnit getTransferConfirmationTimeoutUnit()
+    {
+        return _transferConfirmationTimeoutUnit;
     }
 
     /**
@@ -445,7 +481,7 @@ public class DcacheResourceFactory
         _executor = executor;
         _executor.scheduleAtFixedRate(new PingMoversTask<>(_transfers.values()),
                                       PING_DELAY, PING_DELAY,
-                                      TimeUnit.MILLISECONDS);
+                                      MILLISECONDS);
     }
 
     public void setInternalAddress(String ipString)
@@ -588,13 +624,13 @@ public class DcacheResourceFactory
                 transfer.setLength(length);
                 try {
                     transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
-                    String uri = transfer.waitForRedirect(_moverTimeout);
+                    String uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                     if (uri == null) {
                         throw new TimeoutCacheException("Server is busy (internal timeout)");
                     }
                     transfer.relayData(inputStream);
                 } finally {
-                    transfer.killMover(_killTimeout);
+                    transfer.killMover(_killTimeout, _killTimeoutUnit);
                 }
                 success = true;
             } finally {
@@ -634,7 +670,7 @@ public class DcacheResourceFactory
             try {
                 transfer.setLength(length);
                 transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
-                uri = transfer.waitForRedirect(_moverTimeout);
+                uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
                 }
@@ -876,7 +912,7 @@ public class DcacheResourceFactory
             transfer.readNameSpaceEntry();
             try {
                 transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
-                uri = transfer.waitForRedirect(_moverTimeout);
+                uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
                 }
@@ -1147,7 +1183,7 @@ public class DcacheResourceFactory
                     connection.disconnect();
                 }
 
-                if (!waitForMover(_transferConfirmationTimeout)) {
+                if (!waitForMover(_transferConfirmationTimeout, _transferConfirmationTimeoutUnit)) {
                     throw new CacheException("Missing transfer confirmation from pool");
                 }
             } catch (SocketTimeoutException e) {
@@ -1216,7 +1252,7 @@ public class DcacheResourceFactory
                     connection.disconnect();
                 }
 
-                if (!waitForMover(_transferConfirmationTimeout)) {
+                if (!waitForMover(_transferConfirmationTimeout, _transferConfirmationTimeoutUnit)) {
                     throw new CacheException("Missing transfer confirmation from pool");
                 }
             } catch (SocketTimeoutException e) {

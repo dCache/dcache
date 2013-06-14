@@ -5,8 +5,8 @@
 onerror shutdown
 check -strong port
 check srm.net.listen
-check -strong hostCertificateRefreshPeriod
-check -strong trustAnchorRefreshPeriod
+check -strong grid.hostcert.refresh
+check -strong grid.ca.refresh
 check -strong srmClientTransport
 check -strong srmHost
 check -strong localSrmHosts

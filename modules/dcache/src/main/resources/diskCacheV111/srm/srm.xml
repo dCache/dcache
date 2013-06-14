@@ -464,8 +464,10 @@
         <property name="acceptNoClientCerts" value="false"/>
         <property name="gssMode" value="gsi"/>
         <property name="handshakeTimeout" value="10000" />
-        <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
-        <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+        <property name="hostCertRefreshInterval" value="${grid.hostcert.refresh}" />
+        <property name="hostCertRefreshIntervalUnit" value="SECONDS" />
+        <property name="trustAnchorRefreshInterval" value="${grid.ca.refresh}" />
+        <property name="trustAnchorRefreshIntervalUnit" value="SECONDS" />
         <property name="excludeCipherSuites" ref="banned-ciphers"/>
     </bean>
 
@@ -490,8 +492,10 @@
         <property name="acceptNoClientCerts" value="false"/>
         <property name="gssMode" value="ssl"/>
         <property name="handshakeTimeout" value="10000" />
-        <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
-        <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+        <property name="hostCertRefreshInterval" value="${grid.hostcert.refresh}" />
+        <property name="hostCertRefreshIntervalUnit" value="SECONDS" />
+        <property name="trustAnchorRefreshInterval" value="${grid.ca.refresh}" />
+        <property name="trustAnchorRefreshIntervalUnit" value="SECONDS" />
         <property name="excludeCipherSuites" ref="banned-ciphers"/>
     </bean>
 

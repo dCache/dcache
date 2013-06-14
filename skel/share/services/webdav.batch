@@ -2,38 +2,43 @@
 #      WebDAV Door
 #
 
-###########################################################################
-# Verify properties needed by WebDAV
-
 onerror shutdown
 check -strong cell.name
-check -strong port
-check -strong webdavProtocol
-check -strong webdavPnfsTimeout
-check -strong webdavPoolManagerTimeout
-check -strong webdavPoolTimeout
-check -strong webdavGplazmaTimeout
-check -strong webdavAddress
-check -strong webdavRootPath
-check -strong webdavAllowedPaths
-check -strong webdavReadOnly
-check -strong webdavAnonymousAccess
-check -strong webdavAnonymousListing
-check -strong webdavKillTimeout
-check -strong webdavMoverTimeout
-check -strong webdavTransferConfirmationTimeout
-check -strong webdavWantClientAuth
-check -strong webdavNeedClientAuth
-check -strong webdavBasicAuthentication
-check -strong dcache.service.pnfsmanager
-check -strong dcache.service.poolmanager
-check -strong dcache.service.gplazma
-check -strong dcache.service.billing
-check -strong dcache.service.spacemanager
+check -strong webdav.net.port
+check -strong webdav.net.listen
+check -strong webdav.service.pnfsmanager
+check -strong webdav.service.pnfsmanager.timeout
+check -strong webdav.service.pnfsmanager.timeout.unit
+check -strong webdav.service.poolmanager
+check -strong webdav.service.poolmanager.timeout
+check -strong webdav.service.poolmanager.timeout.unit
+check -strong webdav.service.pool.timeout
+check -strong webdav.service.pool.timeout.unit
+check -strong webdav.service.gplazma
+check -strong webdav.service.gplazma.timeout
+check -strong webdav.service.gplazma.timeout.unit
+check -strong webdav.service.billing
 check -strong webdav.service.loginbroker
 check -strong webdav.service.loginbroker.update-period
 check -strong webdav.service.loginbroker.update-period.unit
 check -strong webdav.service.loginbroker.update-threshold
+check -strong webdav.service.loginbroker.version
+check -strong webdav.service.loginbroker.family
+check -strong webdav.root
+check -strong webdav.authz.allowed-paths
+check -strong webdav.authz.readonly
+check -strong webdav.authz.anonymous-operations
+check -strong webdav.authz.anonymous-listing
+check -strong webdav.mover.kill-timeout
+check -strong webdav.mover.kill-timeout.unit
+check -strong webdav.mover.timeout
+check -strong webdav.mover.timeout.unit
+check -strong webdav.mover.transfer-confirmation-timeout
+check -strong webdav.mover.transfer-confirmation-timeout.unit
+check -strong webdav.authn.accept-client-cert
+check -strong webdav.authn.require-client-cert
+check -strong webdav.authn.basic
+check -strong webdav.authn.protocol
 check -strong webdav.static-content.dir.local
 check -strong webdav.static-content.dir.default
 check -strong webdav.static-content.location
@@ -41,76 +46,62 @@ check -strong webdav.templates.html
 check -strong webdav.redirect.on-read
 check -strong webdav.redirect.on-write
 check -strong webdav.overwrite
-check -strong srmSpaceManagerEnabled
-check -strong missing-files.timeout
-check -strong missing-files.name
-check -strong missing-files.enabled
+check -strong webdav.service.missing-files
+check -strong webdav.service.missing-files.timeout
+check -strong webdav.service.missing-files.timeout.unit
+check -strong webdav.service.missing-files.enabled
 
-check webdavInternalAddress
-check webdavIoQueue
-
+check webdav.net.internal
+check webdav.mover.queue
 check webdav.security.ciphers
 
 define env verify-http.exe enddefine
 enddefine
 
 onerror continue
-test -f ${webdavKeyStore}
+test -f ${webdav.authn.keystore}
 set env have_keystore ${rc}
-test -f ${webdavTrustStore}
+test -f ${webdav.authn.truststore}
 set env have_truststore ${rc}
 onerror shutdown
 
 define env verify-https.exe enddefine
-  check -strong webdavKeyStore
-  check -strong webdavKeyStorePassword
-  check -strong webdavTrustStore
+  check -strong webdav.authn.keystore
+  check webdav.authn.keystore.password
+  check -strong webdav.authn.truststore
+  check webdav.authn.truststore.password
 
   exec env failMissingKeyStore.exe -ifnotok=have_keystore
   exec env failMissingTrustStore.exe -ifnotok=have_truststore
 enddefine
 
 define env verify-https-jglobus.exe enddefine
-  check -strong trustAnchorRefreshPeriod
-  check -strong hostCertificateRefreshPeriod
-  check -strong grid.hostcert.cert
-  check -strong grid.hostcert.key
-  check -strong grid.ca.path
+  check -strong webdav.authn.hostcert.refresh
+  check -strong webdav.authn.hostcert.refresh.unit
+  check -strong webdav.authn.capath.refresh
+  check -strong webdav.authn.capath.refresh.unit
+  check -strong webdav.authn.hostcert.cert
+  check -strong webdav.authn.hostcert.key
+  check -strong webdav.authn.capath
 enddefine
 
 define env failMissingKeyStore.exe enddefine
-   say -level=esay "The key-store file ${webdavKeyStore} is missing.  Please generate it with:"
-   say -level=esay "     /opt/d-cache/bin/dcache import hostcert --out=${webdavKeyStore}"
+   say -level=esay "The key-store file ${webdav.authn.keystore} is missing.  Please generate it with:"
+   say -level=esay "     dcache import hostcert --out=${webdav.authn.keystore}"
    exit 1
 enddefine
 
 define env failMissingTrustStore.exe enddefine
-   say -level=esay "The TrustStore file ${webdavTrustStore} is missing.  Please generate it with:"
-   say -level=esay "     /opt/d-cache/bin/dcache import cacerts --out=${webdavTrustStore}"
+   say -level=esay "The TrustStore file ${webdav.authn.truststore} is missing.  Please generate it with:"
+   say -level=esay "     dcache import cacerts --out=${webdav.authn.truststore}"
    exit 1
 enddefine
 
-exec env verify-${webdavProtocol}.exe
+exec env verify-${webdav.authn.protocol}.exe
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
-
-###########################################################################
-# If srmSpaceManagerEnabled is on we need to use SrmSpaceManager as
-#
-
-onerror continue
-
-define env srmSpaceManagerOn.exe endExe
-  set env dcache.service.poolmanager "${dcache.service.spacemanager}"
-endExe
-
-eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
-exec env srmSpaceManagerOn.exe -ifok
-
-###########################################################################
-# Create door cell
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
-    -profiles=connector-${webdavProtocol},missing-files-${missing-files.enabled} \
+    -profiles=connector-${webdav.authn.protocol},missing-files-${webdav.service.missing-files.enabled} \
     -export -cellClass=WebDAVDoor"
