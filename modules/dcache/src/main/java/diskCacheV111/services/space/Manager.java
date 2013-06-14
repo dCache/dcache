@@ -3506,21 +3506,31 @@ public final class Manager
 
             Message message = (Message) cellMessage.getMessageObject();
 
-            if (message instanceof PoolMgrSelectPoolMsg) {
-
-                forwardToPoolmanager(cellMessage);
-
-            } else if (message instanceof PoolFileFlushedMessage ||
+            if (message instanceof PoolFileFlushedMessage ||
                     message instanceof PoolRemoveFilesMessage ||
                     message instanceof PnfsDeleteEntryNotificationMessage) {
 
                 // Simply ignore these notification messages
 
-            } else if (message.getReplyRequired()) {
+            } else if (message instanceof Reserve
+                    || message instanceof GetSpaceTokensMessage
+                    || message instanceof GetSpaceTokenIdsMessage
+                    || message instanceof GetLinkGroupsMessage
+                    || message instanceof GetLinkGroupNamesMessage
+                    || message instanceof GetLinkGroupIdsMessage
+                    || message instanceof Release
+                    || message instanceof Use
+                    || message instanceof CancelUse
+                    || message instanceof GetSpaceMetaData
+                    || message instanceof GetSpaceTokens
+                    || message instanceof ExtendLifetime
+                    || message instanceof GetFileSpaceTokensMessage ) {
 
                 returnFailedResponse("SpaceManager is disabled in configuration",
                         message, cellMessage);
 
+            } else {
+                forwardToPoolmanager(cellMessage);
             }
         }
 
@@ -3618,12 +3628,10 @@ public final class Manager
                                 markFileDeleted(msg);
                         }
                         else {
-                                logger.error("unknown message, type {} " +
-                                        "value {}",
-                                        spaceMessage.getClass().getName(),
-                                        spaceMessage);
-                                super.messageArrived(cellMessage);
-                                return;
+                            if (!spaceMessage.isReply()) {
+                                forwardToPoolmanager(cellMessage);
+                            }
+                            return;
                         }
                 }
                 catch(SpaceException se) {
