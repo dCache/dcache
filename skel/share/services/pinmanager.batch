@@ -1,4 +1,4 @@
-$onerror shutdown
+onerror shutdown
 
 check -strong cell.name
 check -strong db.driver
