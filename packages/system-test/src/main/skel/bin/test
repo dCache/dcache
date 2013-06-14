@@ -6,6 +6,7 @@ require 'ostruct'
 require 'fileutils'
 require 'tempfile'
 require 'ansi'
+require 'etc'
 
 include ANSI::Code
 
@@ -21,6 +22,7 @@ include ANSI::Code
 @ngls = 'arcls'
 @xrdcp = 'xrdcp'
 @dccp = 'dccp'
+@curl = 'curl'
 
 @unique = Time.now.to_i
 @count = 0
@@ -161,6 +163,12 @@ def gsidcap(source, dest, *args)
       "#{dest}")
 end
 
+def http(source, dest, *args)
+  tmp1 = makeTempName
+  run(@curl, args, "-s", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-s", "-L", "-o", dest, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+end
+
 def test(transfer, *args)
   tmp = Tempfile.new('dcache.test')
   begin
@@ -205,7 +213,8 @@ def OptionParser.parse(args)
     :srmcp => [ [ :srmcp, '-1' ],
                 [ :srmcp, '-2' ]
               ],
-    :arc => [ [ :arc ] ]
+    :arc => [ [ :arc ] ],
+    :http => [ [ :http ] ]
   }
 
   parser = OptionParser.new do |opts|
@@ -249,6 +258,10 @@ def OptionParser.parse(args)
 
     opts.on("--[no-]arc", "Test ARC client") do |value|
       (value ? options.includes : options.excludes ) << :arc
+    end
+
+    opts.on("--[no-]http", "Test HTTP") do |value|
+      (value ? options.includes : options.excludes ) << :http
     end
 
     opts.on("-h", "--help", "Show this message") do |value|
