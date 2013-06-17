@@ -11,13 +11,13 @@
 
     <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
         <description>Pool manager cell stub</description>
-        <property name="timeout" value="${poolManagerTimeout}"/>
+        <property name="timeout" value="${nfs.poolmanager.timeout}"/>
         <property name="destination" value="${poolmanager}"/>
     </bean>
 
     <bean id="pool-stub" class="org.dcache.cells.CellStub">
         <description>Pool communication stub</description>
-        <property name="timeout" value="${poolTimeout}"/>
+        <property name="timeout" value="${nfs.pool.timeout}"/>
     </bean>
 
     <bean id="billing-stub" class="org.dcache.cells.CellStub">
@@ -78,7 +78,7 @@
     <bean id="login-stub" class="org.dcache.cells.CellStub">
         <description>Login cell communication stub</description>
         <property name="destination" value="${gplazma}"/>
-        <property name="timeout" value="3000"/>
+        <property name="timeout" value="${nfs.pool.timeout}"/>
     </bean>
 
     <bean id="identity-strategy" class="org.dcache.services.login.RemoteLoginStrategy">
