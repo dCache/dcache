@@ -15,6 +15,8 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.CacheExceptionFactory;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 /**
  * Stub class for common cell communication patterns. An instance
  * of the template class encapsulates properties such as the
@@ -30,7 +32,7 @@ public class CellStub
     private CellEndpoint _endpoint;
     private CellPath _destination;
     private long _timeout = 30000;
-    private TimeUnit _timeoutUnit = TimeUnit.MILLISECONDS;
+    private TimeUnit _timeoutUnit = MILLISECONDS;
     private boolean _retryOnNoRouteToCell;
 
     public CellStub()
@@ -50,8 +52,14 @@ public class CellStub
 
     public CellStub(CellEndpoint endpoint, CellPath destination, long timeout)
     {
+        this(endpoint, destination, timeout, MILLISECONDS);
+    }
+
+    public CellStub(CellEndpoint endpoint, CellPath destination, long timeout, TimeUnit unit)
+    {
         this(endpoint, destination);
         setTimeout(timeout);
+        setTimeoutUnit(unit);
     }
 
     @Override

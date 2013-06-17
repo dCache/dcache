@@ -4,97 +4,95 @@
 
 onerror shutdown
 
-check -strong port
 check -strong cell.name
-check -strong clientDataPortRange
-check -strong gsiftpMaxLogin
+check -strong ftp.implementation
+check -strong ftp.net.port
+check -strong srmSpaceManagerEnabled
+check -strong ftp.net.port-range
+check -strong ftp.limits.clients
+check -strong ftp.limits.retries
+check -strong ftp.limits.streams-per-client
 check -strong ftp.service.loginbroker
 check -strong ftp.service.loginbroker.update-period
 check -strong ftp.service.loginbroker.update-period.unit
 check -strong ftp.service.loginbroker.update-threshold
-check -strong dcache.service.gplazma
-check -strong dcache.service.billing
-check -strong dcache.service.pnfsmanager
-check -strong performanceMarkerPeriod
-check -strong gsiftpPoolManagerTimeout
-check -strong gsiftpPoolTimeout
-check -strong gsiftpPnfsTimeout
-check -strong gsiftpMaxRetries
-check -strong gsiftpMaxStreamsPerClient
-check -strong gsiftpDeleteOnConnectionClosed
-check gsiftpPoolManager
-check gsiftpIoQueue
-check kpwdFile
-check gsiftpAdapterInternalInterface
-check -strong overwriteEnabled
+check -strong ftp.service.loginbroker.family
+check -strong ftp.service.loginbroker.version
+check -strong ftp.service.gplazma
+check -strong ftp.service.billing
+check -strong ftp.service.pnfsmanager
+check -strong ftp.performance-marker-period
+check -strong ftp.performance-marker-period.unit
+check -strong ftp.service.poolmanager
+check -strong ftp.service.poolmanager.timeout
+check -strong ftp.service.poolmanager.timeout.unit
+check -strong ftp.service.pool.timeout
+check -strong ftp.service.pool.timeout.unit
+check -strong ftp.service.pnfsmanager.timeout
+check -strong ftp.service.pnfsmanager.timeout.unit
+check -strong ftp.delete-on-failure
+check -strong ftp.overwrite
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
-check -strong ftp.read-only
-check FtpTLogDir
+check -strong ftp.authz.readonly
+check -strong ftp.authn.hostcert.key
+check -strong ftp.authn.hostcert.cert
+check -strong ftp.authn.capath
+check -strong ftp.authn.kerberos.key-distribution-center-list
+check -strong ftp.authn.kerberos.service-principle-name
+check ftp.security.ciphers
+check ftp.transaction-log
 check ftp.net.listen
+check ftp.net.internal
+check ftp.mover.queue
+check ftp.authn.kpwd
 
-onerror continue
-
-# Use gsiftpPoolManager if defined
-define env usePoolManager end
-set env -c myPoolManager ${gsiftpPoolManager}
-end
-
-eval "${gsiftpPoolManager}" "" !=
-exec env usePoolManager -ifok
-
-# Otherwise use space manager, if enabled
-define env useSpaceManager end
-  set env -c myPoolManager ${dcache.service.spacemanager}
-end
-
-eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
-exec env useSpaceManager -ifok
-
-# Otherwise use poolmanager
-set env -c myPoolManager ${dcache.service.poolmanager}
-
-onerror shutdown
-
-exec file:${dcache.paths.share}/cells/stage.fragment dcache doors
+exec file:${dcache.paths.share}/cells/stage.fragment ftp doors
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
-#  defaultStreamsPerClient must be 1 for compliance with GFD.21
-create dmg.cells.services.login.LoginManager ${cell.name} \
-            "${port} \
-             -listen=${ftp.net.listen} \
-             -export \
-             diskCacheV111.doors.WeakFtpDoorV1 \
-             -prot=raw \
-             -clientDataPortRange=${clientDataPortRange} \
-             -maxLogin=${gsiftpMaxLogin} \
-             -brokerUpdateTime=${ftp.service.loginbroker.update-period} \
-             -brokerUpdateTimeUnit=${ftp.service.loginbroker.update-period.unit} \
-             -brokerUpdateOffset=${ftp.service.loginbroker.update-threshold} \
-             -protocolFamily=ftp \
-             -protocolVersion=1.0.0 \
-             -loginBroker=${ftp.service.loginbroker} \
-             -gplazma=\"${dcache.service.gplazma}\" \
-             -billing=\"${dcache.service.billing}\" \
-             -perfMarkerPeriod=${performanceMarkerPeriod} \
-             -poolManager=${myPoolManager} \
-             -poolManagerTimeout=${gsiftpPoolManagerTimeout} \
-             -poolTimeout=${gsiftpPoolTimeout} \
-             -pnfsManager={dcache.service.pnfsmanager} \
-             -pnfsTimeout=${gsiftpPnfsTimeout} \
-             -maxRetries=${gsiftpMaxRetries} \
-             -maxStreamsPerClient=${gsiftpMaxStreamsPerClient} \
-             -defaultStreamsPerClient=1 \
-             -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
-             -use-login-service=${useLoginService} \
-             -io-queue=${gsiftpIoQueue} \
-             -kpwd-file=${kpwdFile} \
-             -stageConfigurationFilePath=${dcache.authz.staging} \
-             -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
-             -overwrite=${overwriteEnabled} \
-             -proxyPassive=${ftp.proxy.on-passive} \
-             -proxyActive=${ftp.proxy.on-active} \
-             -tlog=${FtpTLogDir} \
-             -read-only=${ftp.read-only} \
-"
-
+create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
+  "${ftp.net.port} ${ftp.implementation} \
+   -listen=${ftp.net.listen} \
+   -prot=raw \
+   -export \
+   -clientDataPortRange=${ftp.net.port-range} \
+   -protocolFamily=${ftp.service.loginbroker.family} \
+   -protocolVersion=${ftp.service.loginbroker.version} \
+   -brokerUpdateTime=${ftp.service.loginbroker.update-period} \
+   -brokerUpdateTimeUnit=${ftp.service.loginbroker.update-period.unit} \
+   -brokerUpdateOffset=${ftp.service.loginbroker.update-threshold} \
+   -loginBroker=\"${ftp.service.loginbroker}\" \
+   -gplazma=\"${ftp.service.gplazma}\" \
+   -billing=\"${ftp.service.billing}\" \
+   -pnfsManager=\"${ftp.service.pnfsmanager}\" \
+   -pnfsTimeout=${ftp.service.pnfsmanager.timeout} \
+   -pnfsTimeoutUnit=${ftp.service.pnfsmanager.timeout.unit} \
+   -poolManager=${ftp.service.poolmanager}  \
+   -poolManagerTimeout=${ftp.service.poolmanager.timeout} \
+   -poolManagerTimeoutUnit=${ftp.service.poolmanager.timeout.unit} \
+   -poolTimeout=${ftp.service.pool.timeout} \
+   -poolTimeoutUnit=${ftp.service.pool.timeout.unit} \
+   -perfMarkerPeriod=${ftp.performance-marker-period} \
+   -perfMarkerPeriodUnit=${ftp.performance-marker-period.unit} \
+   -maxLogin=${ftp.limits.clients} \
+   -maxRetries=${ftp.limits.retries} \
+   -maxStreamsPerClient=${ftp.limits.streams-per-client} \
+   -defaultStreamsPerClient=1 \
+   -deleteOnConnectionClosed=${ftp.delete-on-failure} \
+   -use-login-service=${useLoginService} \
+   -io-queue=${ftp.mover.queue} \
+   -stageConfigurationFilePath=${ftp.authz.staging} \
+   -ftp-adapter-internal-interface=${ftp.net.internal} \
+   -overwrite=${ftp.overwrite} \
+   -proxyPassive=${ftp.proxy.on-passive} \
+   -proxyActive=${ftp.proxy.on-active} \
+   -tlog=${ftp.transaction-log} \
+   -read-only=${ftp.authz.readonly} \
+   -kpwd-file=${ftp.authn.kpwd} \
+   -kdc-list=${ftp.authn.kerberos.key-distribution-center-list} \
+   -svc-principal=${ftp.authn.kerberos.service-principle-name} \
+   -service-key=${ftp.authn.hostcert.key} \
+   -service-cert=${ftp.authn.hostcert.cert} \
+   -service-trusted-certs=${ftp.authn.capath} \
+   -gridftp.security.ciphers=\"${ftp.security.ciphers}\" \
+   "

@@ -106,6 +106,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -427,6 +428,12 @@ public abstract class AbstractFtpDoorV1
     protected int _poolManagerTimeout;
 
     @Option(
+            name = "poolManagerTimeoutUnit",
+            defaultValue = "SECONDS"
+    )
+    protected TimeUnit _poolManagerTimeoutUnit;
+
+    @Option(
         name = "pnfsTimeout",
         defaultValue = "60",
         unit = "seconds"
@@ -434,11 +441,23 @@ public abstract class AbstractFtpDoorV1
     protected int _pnfsTimeout;
 
     @Option(
+            name = "pnfsTimeoutUnit",
+            defaultValue = "SECONDS"
+    )
+    protected TimeUnit _pnfsTimeoutUnit;
+
+    @Option(
         name = "poolTimeout",
         defaultValue = "300",
         unit = "seconds"
     )
     protected int _poolTimeout;
+
+    @Option(
+            name = "poolTimeoutUnit",
+            defaultValue = "SECONDS"
+    )
+    protected TimeUnit _poolTimeoutUnit;
 
     @Option(
         name = "retryWait",
@@ -1179,9 +1198,9 @@ public abstract class AbstractFtpDoorV1
                 new CellStub(this, new CellPath(_billing));
         _poolManagerStub =
                 new CellStub(this, new CellPath(_poolManager),
-                        _poolManagerTimeout * 1000);
+                        _poolManagerTimeout, _poolManagerTimeoutUnit);
         _poolStub =
-                new CellStub(this, null, _poolTimeout * 1000);
+                new CellStub(this, null, _poolTimeout, _poolTimeoutUnit);
 
         _gPlazmaStub =
                 new CellStub(this, new CellPath(_gPlazma), 30000);
@@ -1271,8 +1290,7 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
-        _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
+        _pnfs = new PnfsHandler(new CellStub(this, new CellPath(_pnfsManager), _pnfsTimeout, _pnfsTimeoutUnit));
         _pnfs.setSubject(_subject);
         ListDirectoryHandler listSource = new ListDirectoryHandler(_pnfs);
         addMessageListener(listSource);
