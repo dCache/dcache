@@ -7,7 +7,6 @@ onerror shutdown
 check -strong cell.name
 check -strong ftp.implementation
 check -strong ftp.net.port
-check -strong srmSpaceManagerEnabled
 check -strong ftp.net.port-range
 check -strong ftp.limits.clients
 check -strong ftp.limits.retries

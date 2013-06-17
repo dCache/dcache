@@ -14,7 +14,7 @@ check -strong dcache.service.billing
 check poolmanager.setup.file
 
 # External settings
-exec -shell file:${dcache.paths.share}/cells/stage.fragment dcache PoolManager
+exec file:${dcache.paths.share}/cells/stage.fragment dcache PoolManager
 
 # default configuration for selection unit:
 #     all pools added into default pool group

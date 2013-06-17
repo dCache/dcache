@@ -2,73 +2,64 @@
 #    dCap    D o o r
 #
 
-# Define defaults
 onerror shutdown
-check -strong dcapMaxLogin
-check -strong dcapIoQueueOverwrite
-check -strong dcache.paths.share
-check -strong port
+check -strong dcap.limits.clients
+check -strong dcap.mover.overwrite
+check -strong dcap.net.port
 check -strong cell.name
-check -strong dcache.service.poolmanager
-check -strong dcache.service.pnfsmanager
-check -strong dcache.service.gplazma
-check -strong dcache.service.billing
-check -strong dcache.service.spacemanager
-check -strong dcache.service.pinmanager
+check -strong dcap.service.poolmanager
+check -strong dcap.service.pnfsmanager
+check -strong dcap.service.gplazma
+check -strong dcap.service.billing
+check -strong dcap.service.pinmanager
 check -strong dcap.service.loginbroker
 check -strong dcap.service.loginbroker.update-period
 check -strong dcap.service.loginbroker.update-period.unit
 check -strong dcap.service.loginbroker.update-threshold
-check -strong srmSpaceManagerEnabled
-check -strong loginBroker
-check -strong truncate
-check -strong dcapReadOnly
-check -strong dcapAnonymousAccessLevel
-check dcapIoQueue
+check -strong dcap.authn.protocol
+check -strong dcap.authz.truncate
+check -strong dcap.authz.readonly
+check -strong dcap.authz.anonymous-operations
+check dcap.authn.passwd
+check dcap.mover.queue
 check dcap.net.listen
+check -strong dcache.paths.share
 
-onerror continue
+exec file:${dcache.paths.share}/cells/stage.fragment dcap doors
+exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
-define env useSpaceManager end
-  set env -c myPoolManager ${dcache.service.spacemanager}
-end
-
-eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
-exec env useSpaceManager -ifok
-
-# Otherwise use poolmanager
-set env -c myPoolManager ${dcache.service.poolmanager}
-
-onerror shutdown
-
-exec file:${dcache.paths.share}/cells/stage.fragment dcache doors
+set env arguments-plain "-localOk"
+set env arguments-auth "-pswdfile=${dcap.authn.passwd} -authorization=required"
+set env arguments-gsi "-localOk -authorization=strong -socketfactory=\\\"javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,-service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -service_voms_dir='${dcap.authn.vomsdir}' -ciphers='${dcap.security.ciphers}'\\\""
+set env arguments-kerberos "-localOk -authorization=strong -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,'${dcap.authn.kerberos.service-principle-name}'"
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
-            "${port} \
+            "${dcap.net.port} diskCacheV111.doors.DCapDoor \
              -listen=${dcap.net.listen} \
              -export \
-             diskCacheV111.doors.DCapDoor \
+             -acceptErrorWait=60000 \
              -keepAlive=300 \
              -poolRetry=2700 \
-             -prot=telnet -localOk \
-             -truncate=${truncate} \
-             -maxLogin=${dcapMaxLogin} \
+             -prot=telnet \
+             -keepPrincipal \
+             -read-only=${dcap.authz.readonly} \
+             -truncate=${dcap.authz.truncate} \
+             -maxLogin=${dcap.limits.clients} \
              -brokerUpdateTime=${dcap.service.loginbroker.update-period} \
              -brokerUpdateTimeUnit=${dcap.service.loginbroker.update-period.unit} \
              -brokerUpdateOffset=${dcap.service.loginbroker.update-threshold} \
-             -protocolFamily=dcap \
-             -protocolVersion=1.3.0 \
+             -protocolFamily=${dcap.service.loginbroker.family} \
+             -protocolVersion=${dcap.service.loginbroker.version} \
              -loginBroker=${dcap.service.loginbroker}  \
-             -pnfsManager=${dcache.service.pnfsmanager} \
-             -poolManager=${myPoolManager}  \
-             -poolProxy=${myPoolManager} \
-             -pinManager=${dcache.service.pinmanager) \
-             -gplazma=\"${dcache.service.gplazma}\" \
-             -billing=\"${dcache.service.billing}\" \
-             -stageConfigurationFilePath=\"${dcache.authz.staging}\" \
-             -io-queue=${dcapIoQueue} \
-             -io-queue-overwrite=${dcapIoQueueOverwrite} \
-	     -read-only=${dcapReadOnly} \
-	     -anonymous-access=${dcapAnonymousAccessLevel} \
-"
-
+             -pnfsManager=${dcap.service.pnfsmanager} \
+             -poolManager=${dcap.service.poolmanager}  \
+             -poolProxy=${dcap.service.poolmanager} \
+             -pinManager=${dcap.service.pinmanager} \
+             -gplazma=\"${dcap.service.gplazma}\" \
+             -billing=\"${dcap.service.billing}\" \
+             -stageConfigurationFilePath=\"${dcap.authz.staging}\" \
+             -io-queue=${dcap.mover.queue} \
+             -io-queue-overwrite=${dcap.mover.overwrite} \
+             -anonymous-access=${dcap.authz.anonymous-operations} \
+             ${arguments-${dcap.authn.protocol}} \
+             "

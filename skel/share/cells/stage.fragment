@@ -5,9 +5,10 @@ define env stage-disable-pep.exe end
   set env ${0}.authz.staging ""
 end
 
-# Decide whether to enable the stage PEP
+onerror shutdown
+check ${0}.authz.staging.pep
 onerror continue
-eval ${0}.authz.staging.pep ${1} !=
+eval "${0}.authz.staging.pep" "${1}" !=
 exec env stage-disable-pep.exe -ifok
 onerror shutdown
 
