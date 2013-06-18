@@ -1,4 +1,0 @@
-#!/usr/bin/env sh
-# $Id: dc_stage,v 1.2 2003-10-16 08:58:40 tigran Exp $
-#
-dccp -P $*
