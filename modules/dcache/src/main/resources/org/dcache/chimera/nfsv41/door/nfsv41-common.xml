@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+            http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
 
     <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <description>Imported configuration data</description>
@@ -118,6 +118,15 @@
         </property>
     </bean>
 
-    <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"/>
+    <beans  profile="portmap-true">
+        <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"/>
+    </beans>
 
+    <beans  profile="portmap-false">
+        <!--
+            as other rpc services depend on rpcbind,
+            crreate a place holder to keep depemdency happy
+        -->
+        <bean id="rpcbind" class="java.lang.Object"/>
+    </beans>
 </beans>

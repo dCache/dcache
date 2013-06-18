@@ -38,4 +38,5 @@ set env -c secflavor nogss
 onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-        "classpath:org/dcache/chimera/nfsv41/door/nfsv41-${secflavor}.xml"
+        "classpath:org/dcache/chimera/nfsv41/door/nfsv41-${secflavor}.xml \
+        -profiles=portmap-${nfs.enable.portmap}"
