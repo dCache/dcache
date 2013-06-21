@@ -251,10 +251,22 @@ public class SRMServerV2 implements ISRM  {
                     String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
                     log.debug("SRMServerV2."+requestName+"() : role is "+role);
                     requestCredential = srmAuth.getRequestCredential(userCred,role);
-                    user              = srmAuth.getRequestUser(
-                        requestCredential,
-                            null,
-                        userCred.context);
+                    user              = srmAuth.getRequestUser(requestCredential,
+                                                               null,
+                                                               userCred.context);
+                    switch (requestName) {
+                    case "srmRmdir":
+                    case "srmMkdir":
+                    case "srmPrepareToPut":
+                    case "srmRm" :
+                    case "srmMv":
+                    case "srmSetPermission":
+                        if (user.isReadOnly()) {
+                            return getFailedResponse(capitalizedRequestName,
+                                                     TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                                                     "Session is read-only");
+                        }
+                    }
                 } catch (SRMAuthorizationException sae) {
                     log.info("SRM Authorization failed: {}", sae.getMessage());
                     return getFailedResponse(capitalizedRequestName,
