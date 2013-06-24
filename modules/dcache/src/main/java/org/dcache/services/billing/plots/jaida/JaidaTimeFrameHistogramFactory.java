@@ -39,8 +39,6 @@ import org.dcache.services.billing.plots.util.ITimeFrameHistogram;
 import org.dcache.services.billing.plots.util.ITimeFramePlot;
 import org.dcache.services.billing.plots.util.TimeFrame;
 import org.dcache.services.billing.plots.util.TimeFrame.BinType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Wraps IHistogramFactory.
@@ -50,10 +48,6 @@ import org.slf4j.LoggerFactory;
  */
 public final class JaidaTimeFrameHistogramFactory extends
                 AbstractTimeFrameHistogramFactory {
-
-    private static final Logger logger
-        = LoggerFactory.getLogger(JaidaTimeFrameHistogramFactory.class);
-
     /**
      * Stand-in aggregate object for hits data.
      *
@@ -101,7 +95,7 @@ public final class JaidaTimeFrameHistogramFactory extends
             if (propertiesPath != null) {
                 properties.load(new FileInputStream(new File(propertiesPath)));
             }
-        } catch (Throwable t) {
+        } catch (Exception t) {
             throw new TimeFrameFactoryInitializationException(t);
         }
     }
@@ -123,7 +117,7 @@ public final class JaidaTimeFrameHistogramFactory extends
 
     @Override
     public ITimeFrameHistogram createDcBytesHistogram(TimeFrame timeFrame,
-                    boolean write) {
+                    boolean write) throws BillingQueryException {
         String title = write ? getProperty(ITimeFramePlot.LABEL_DC_WR)
                         : getProperty(ITimeFramePlot.LABEL_DC_RD);
         ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
@@ -134,31 +128,23 @@ public final class JaidaTimeFrameHistogramFactory extends
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_HR));
-            try {
-                if (write) {
-                    plotData = getViewData(DcacheWritesHourly.class);
-                    histogram.setData(plotData, DcacheWritesHourly.SIZE, GB);
-                } else {
-                    plotData = getViewData(DcacheReadsHourly.class);
-                    histogram.setData(plotData, DcacheReadsHourly.SIZE, GB);
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            if (write) {
+                plotData = getViewData(DcacheWritesHourly.class);
+                histogram.setData(plotData, DcacheWritesHourly.SIZE, GB);
+            } else {
+                plotData = getViewData(DcacheReadsHourly.class);
+                histogram.setData(plotData, DcacheReadsHourly.SIZE, GB);
             }
         } else {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_DY));
-            try {
-                if (write) {
-                    plotData = getCoarseGrainedPlotData(
-                                    DcacheWritesDaily.class, timeFrame);
-                    histogram.setData(plotData, DcacheWritesDaily.SIZE, GB);
-                } else {
-                    plotData = getCoarseGrainedPlotData(DcacheReadsDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, DcacheReadsDaily.SIZE, GB);
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            if (write) {
+                plotData = getCoarseGrainedPlotData(DcacheWritesDaily.class,
+                                                    timeFrame);
+                histogram.setData(plotData, DcacheWritesDaily.SIZE, GB);
+            } else {
+                plotData = getCoarseGrainedPlotData(DcacheReadsDaily.class,
+                                                    timeFrame);
+                histogram.setData(plotData, DcacheReadsDaily.SIZE, GB);
             }
         }
         return histogram;
@@ -166,7 +152,7 @@ public final class JaidaTimeFrameHistogramFactory extends
 
     @Override
     public ITimeFrameHistogram createDcTransfersHistogram(TimeFrame timeFrame,
-                    boolean write) throws Throwable {
+                    boolean write) throws BillingQueryException {
         String title = write ? getProperty(ITimeFramePlot.LABEL_DC_WR)
                         : getProperty(ITimeFramePlot.LABEL_DC_RD);
         ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
@@ -177,31 +163,23 @@ public final class JaidaTimeFrameHistogramFactory extends
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_HR));
-            try {
-                if (write) {
-                    plotData = getViewData(DcacheWritesHourly.class);
-                    histogram.setData(plotData, DcacheWritesHourly.COUNT, null);
-                } else {
-                    plotData = getViewData(DcacheReadsHourly.class);
-                    histogram.setData(plotData, DcacheReadsHourly.COUNT, null);
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            if (write) {
+                plotData = getViewData(DcacheWritesHourly.class);
+                histogram.setData(plotData, DcacheWritesHourly.COUNT, null);
+            } else {
+                plotData = getViewData(DcacheReadsHourly.class);
+                histogram.setData(plotData, DcacheReadsHourly.COUNT, null);
             }
         } else {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_DY));
-            try {
-                if (write) {
-                    plotData = getCoarseGrainedPlotData(
-                                    DcacheWritesDaily.class, timeFrame);
-                    histogram.setData(plotData, DcacheWritesDaily.COUNT, null);
-                } else {
-                    plotData = getCoarseGrainedPlotData(DcacheReadsDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, DcacheReadsDaily.COUNT, null);
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            if (write) {
+                plotData = getCoarseGrainedPlotData(DcacheWritesDaily.class,
+                                                    timeFrame);
+                histogram.setData(plotData, DcacheWritesDaily.COUNT, null);
+            } else {
+                plotData = getCoarseGrainedPlotData(DcacheReadsDaily.class,
+                                                    timeFrame);
+                histogram.setData(plotData, DcacheReadsDaily.COUNT, null);
             }
         }
         return histogram;
@@ -209,7 +187,7 @@ public final class JaidaTimeFrameHistogramFactory extends
 
     @Override
     public ITimeFrameHistogram createHsmBytesHistogram(TimeFrame timeFrame,
-                    boolean write) {
+                    boolean write) throws BillingQueryException {
         String title = write ? getProperty(ITimeFramePlot.LABEL_HSM_WR)
                         : getProperty(ITimeFramePlot.LABEL_HSM_RD);
         ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
@@ -220,31 +198,23 @@ public final class JaidaTimeFrameHistogramFactory extends
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_HR));
-            try {
-                if (write) {
-                    plotData = getViewData(HSMWritesHourly.class);
-                    histogram.setData(plotData, HSMWritesHourly.SIZE, GB);
-                } else {
-                    plotData = getViewData(HSMReadsHourly.class);
-                    histogram.setData(plotData, HSMReadsHourly.SIZE, GB);
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            if (write) {
+                plotData = getViewData(HSMWritesHourly.class);
+                histogram.setData(plotData, HSMWritesHourly.SIZE, GB);
+            } else {
+                plotData = getViewData(HSMReadsHourly.class);
+                histogram.setData(plotData, HSMReadsHourly.SIZE, GB);
             }
         } else {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_GBYTES_DY));
-            try {
-                if (write) {
-                    plotData = getCoarseGrainedPlotData(HSMWritesDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, HSMWritesDaily.SIZE, GB);
-                } else {
-                    plotData = getCoarseGrainedPlotData(HSMReadsDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, HSMReadsDaily.SIZE, GB);
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            if (write) {
+                plotData = getCoarseGrainedPlotData(HSMWritesDaily.class,
+                                                    timeFrame);
+                histogram.setData(plotData, HSMWritesDaily.SIZE, GB);
+            } else {
+                plotData = getCoarseGrainedPlotData(HSMReadsDaily.class,
+                                                    timeFrame);
+                histogram.setData(plotData, HSMReadsDaily.SIZE, GB);
             }
         }
         return histogram;
@@ -252,7 +222,7 @@ public final class JaidaTimeFrameHistogramFactory extends
 
     @Override
     public ITimeFrameHistogram createHsmTransfersHistogram(TimeFrame timeFrame,
-                    boolean write) throws Throwable {
+                    boolean write) throws BillingQueryException {
         String title = write ? getProperty(ITimeFramePlot.LABEL_HSM_WR)
                         : getProperty(ITimeFramePlot.LABEL_HSM_RD);
         ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
@@ -263,31 +233,23 @@ public final class JaidaTimeFrameHistogramFactory extends
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_HR));
-            try {
-                if (write) {
-                    plotData = getViewData(HSMWritesHourly.class);
-                    histogram.setData(plotData, HSMWritesHourly.COUNT, null);
-                } else {
-                    plotData = getViewData(HSMReadsHourly.class);
-                    histogram.setData(plotData, HSMReadsHourly.COUNT, null);
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            if (write) {
+                plotData = getViewData(HSMWritesHourly.class);
+                histogram.setData(plotData, HSMWritesHourly.COUNT, null);
+            } else {
+                plotData = getViewData(HSMReadsHourly.class);
+                histogram.setData(plotData, HSMReadsHourly.COUNT, null);
             }
         } else {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_TRANSF_DY));
-            try {
-                if (write) {
-                    plotData = getCoarseGrainedPlotData(HSMWritesDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, HSMWritesDaily.COUNT, null);
-                } else {
-                    plotData = getCoarseGrainedPlotData(HSMReadsDaily.class,
-                                    timeFrame);
-                    histogram.setData(plotData, HSMReadsDaily.COUNT, null);
-                }
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
+            if (write) {
+                plotData = getCoarseGrainedPlotData(HSMWritesDaily.class,
+                                                    timeFrame);
+                histogram.setData(plotData, HSMWritesDaily.COUNT, null);
+            } else {
+                plotData = getCoarseGrainedPlotData(HSMReadsDaily.class,
+                                                    timeFrame);
+                histogram.setData(plotData, HSMReadsDaily.COUNT, null);
             }
         }
         return histogram;
@@ -295,21 +257,13 @@ public final class JaidaTimeFrameHistogramFactory extends
 
     @Override
     public ITimeFrameHistogram[] createDcConnectTimeHistograms(
-                    TimeFrame timeFrame) throws Throwable {
+                    TimeFrame timeFrame) throws BillingQueryException {
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            try {
-                plotData = getViewData(DcacheTimeHourly.class);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
-            }
+            plotData = getViewData(DcacheTimeHourly.class);
         } else {
-            try {
-                plotData = getCoarseGrainedPlotData(DcacheTimeDaily.class,
-                                timeFrame);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
-            }
+            plotData = getCoarseGrainedPlotData(DcacheTimeDaily.class,
+                            timeFrame);
         }
 
         String[] title = new String[] { getProperty(ITimeFramePlot.LABEL_MIN),
@@ -337,7 +291,8 @@ public final class JaidaTimeFrameHistogramFactory extends
     }
 
     @Override
-    public ITimeFrameHistogram createCostHistogram(TimeFrame timeFrame) {
+    public ITimeFrameHistogram createCostHistogram(TimeFrame timeFrame)
+                    throws BillingQueryException {
         ITimeFrameHistogram histogram = new JaidaTimeFrameHistogram(factory,
                         timeFrame, getProperty(ITimeFramePlot.LABEL_COST));
         histogram.setXLabel(getProperty(ITimeFramePlot.LABEL_X_AXIS));
@@ -348,41 +303,25 @@ public final class JaidaTimeFrameHistogramFactory extends
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_HR));
-            try {
-                /*
-                 * COST HAS NEVER BEEN ACTIVATED AND IS REMOVED IN 2.4+
-                 */
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
-            }
+            /*
+             * COST HAS NEVER BEEN ACTIVATED AND IS REMOVED IN 2.4+
+             */
         } else {
             histogram.setYLabel(getProperty(ITimeFramePlot.LABEL_Y_AXIS_COST_DY));
-            try {
-                plotData = getCoarseGrainedPlotData(CostDaily.class, timeFrame);
-                histogram.setData(plotData, CostDaily.TOTAL_COST, null);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
-            }
+            plotData = getCoarseGrainedPlotData(CostDaily.class, timeFrame);
+            histogram.setData(plotData, CostDaily.TOTAL_COST, null);
         }
         return histogram;
     }
 
     @Override
     public ITimeFrameHistogram[] createHitHistograms(TimeFrame timeFrame)
-                    throws Throwable {
+                    throws BillingQueryException {
         Collection<IPlotData> plotData = null;
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            try {
-                plotData = getHourlyAggregateForHits(timeFrame);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
-            }
+            plotData = getHourlyAggregateForHits(timeFrame);
         } else {
-            try {
-                plotData = getCoarseGrainedPlotData(HitsDaily.class, timeFrame);
-            } catch (Throwable t) {
-                logger.error(t.getMessage(), t);
-            }
+            plotData = getCoarseGrainedPlotData(HitsDaily.class, timeFrame);
         }
         ITimeFrameHistogram[] histogram = new ITimeFrameHistogram[2];
         histogram[0] = new JaidaTimeFrameHistogram(factory, timeFrame,
@@ -430,8 +369,7 @@ public final class JaidaTimeFrameHistogramFactory extends
 
     private Collection<IPlotData> getHourlyAggregateForHits(TimeFrame timeFrame)
                     throws BillingQueryException {
-        Map<String, HourlyHitData> hourlyAggregate
-            = new TreeMap<String, HourlyHitData>();
+        Map<String, HourlyHitData> hourlyAggregate = new TreeMap<String, HourlyHitData>();
         Collection<IPlotData> plotData = getViewData(HitsHourly.class);
         for (IPlotData d : plotData) {
             Date date = normalizeForHour(d.timestamp());

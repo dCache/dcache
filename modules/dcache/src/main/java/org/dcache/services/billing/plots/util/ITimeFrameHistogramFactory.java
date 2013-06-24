@@ -3,6 +3,7 @@ package org.dcache.services.billing.plots.util;
 import java.util.Properties;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
+import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.plots.exceptions.TimeFrameFactoryInitializationException;
 
 /**
@@ -62,7 +63,7 @@ public interface ITimeFrameHistogramFactory {
      * @return histogram
      */
     ITimeFrameHistogram createDcBytesHistogram(TimeFrame timeFrame,
-                    boolean write) throws Throwable;
+                    boolean write) throws BillingQueryException;
 
     /**
      * Histogram for HSM system stage/store (size).
@@ -73,7 +74,7 @@ public interface ITimeFrameHistogramFactory {
      * @return histogram
      */
     ITimeFrameHistogram createHsmBytesHistogram(TimeFrame timeFrame,
-                    boolean write) throws Throwable;
+                    boolean write) throws BillingQueryException;
 
     /**
      * Histogram for DCache number of read/write operations.
@@ -83,7 +84,7 @@ public interface ITimeFrameHistogramFactory {
      * @return histogram
      */
     ITimeFrameHistogram createDcTransfersHistogram(TimeFrame timeFrame,
-                    boolean write) throws Throwable;
+                    boolean write) throws BillingQueryException;
 
     /**
      * Histogram for HSM number of stage/store operations.
@@ -94,7 +95,7 @@ public interface ITimeFrameHistogramFactory {
      * @return histogram
      */
     ITimeFrameHistogram createHsmTransfersHistogram(TimeFrame timeFrame,
-                    boolean write) throws Throwable;
+                    boolean write) throws BillingQueryException;
 
     /**
      * Histograms for connection time on DCache operations.
@@ -103,7 +104,7 @@ public interface ITimeFrameHistogramFactory {
      * @return triple histogram array (minimum, maximum, average)
      */
     public ITimeFrameHistogram[] createDcConnectTimeHistograms(
-                    TimeFrame timeFrame) throws Throwable;
+                    TimeFrame timeFrame) throws BillingQueryException;
 
     /**
      * Histogram for pool cost.
@@ -112,7 +113,7 @@ public interface ITimeFrameHistogramFactory {
      * @return histogram
      */
     public ITimeFrameHistogram createCostHistogram(TimeFrame timeFrame)
-                    throws Throwable;
+                    throws BillingQueryException;
 
     /**
      * Histogram for cache hits/misses.
@@ -121,5 +122,5 @@ public interface ITimeFrameHistogramFactory {
      * @return histogram pair (cached, notcached)
      */
     ITimeFrameHistogram[] createHitHistograms(TimeFrame timeFrame)
-                    throws Throwable;
+                    throws BillingQueryException;
 }
