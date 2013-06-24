@@ -68,6 +68,8 @@ package org.dcache.alarms.server;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Strings;
+
 import java.io.File;
 
 import org.dcache.cells.UniversalSpringCell;
@@ -149,10 +151,18 @@ public class LogEntryServerWrapper {
     }
 
     public void shutDown() {
-        server.close();
+        if (server != null) {
+            server.close();
+        }
     }
 
     public void startUp() throws JoranException {
+        if (Strings.isNullOrEmpty(url)) {
+            LoggerFactory.getLogger("root")
+                .warn("alarms database type is OFF; server will not be started");
+            return;
+        }
+
         checkNotNull(configFile);
         checkNotNull(baseDir);
         File f = new File(baseDir);
