@@ -27,7 +27,11 @@ import org.dcache.srm.RemoveFileCallbacks;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.GetFileRequest;
+import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmRmRequest;
@@ -141,8 +145,8 @@ public class SrmRm {
 		while(end<=callbacks.length) {
 			for ( int i=start;i<end;i++) {
 				try {
-                                        URI surl = new URI(surls[i].toString());
-					storage.removeFile(user,surl,callbacks[i]);
+                                    URI surl = new URI(surls[i].toString());
+                                    storage.removeFile(user,surl,callbacks[i]);
 				}
 				catch(RuntimeException re) {
 					logger.error(re.toString());
@@ -163,13 +167,51 @@ public class SrmRm {
 			try {
 				for(int i = start; i<end; i++) {
 					callbacks[i].waitToComplete();
-					surlReturnStatusArray[i].setStatus(callbacks[i].getStatus());
-					if (callbacks[i].getStatus().getStatusCode() !=
-					    TStatusCode.SRM_SUCCESS) {
-						any_failed=true;
-						error.append(
-                           surlReturnStatusArray[i].getStatus().getExplanation());
-                        error.append('\n');
+
+                                        // [SRM 2.2, 4.3.2, e)] srmRm aborts the SURLs from srmPrepareToPut requests not yet
+                                        // in SRM_PUT_DONE state, and must set its file status as SRM_ABORTED.
+                                        //
+                                        // [SRM 2.2, 4.3.2, f)] srmRm must remove SURLs even if the statuses of the SURLs
+                                        // are SRM_FILE_BUSY. In this case, operations such as srmPrepareToPut or srmCopy
+                                        // that holds the SURL status as SRM_FILE_BUSY must return SRM_INVALID_PATH upon
+                                        // status request or srmPutDone.
+                                        //
+                                        // It seems the SRM specs is undecided about whether to move put requests to
+                                        // SRM_ABORTED or SRM_INVALID_PATH. We choose SRM_ABORTED as it seems like saner of
+                                        // the two options.
+                                        URI surl = new URI(surls[i].toString());
+                                        TReturnStatus status = callbacks[i].getStatus();
+                                        for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, surl)) {
+                                            try {
+                                                request.setState(State.CANCELED,
+                                                        "Upload aborted because the file was deleted by another request");
+                                                status = new TReturnStatus(TStatusCode.SRM_SUCCESS, "Upload was aborted");
+                                            } catch (IllegalStateTransition e) {
+                                                // The request likely aborted or finished before we could abort it
+                                                logger.debug("srmRm attempted to abort put request {}, but failed: {}",
+                                                        request.getId(), e.getMessage());
+                                            }
+                                        }
+
+                                        // [SRM 2.2, 4.3.2, d)] srmLs,srmPrepareToGet or srmBringOnlinemust not find these
+                                        // removed files any more. It must set file requests on SURL from srmPrepareToGet
+                                        // as SRM_ABORTED.
+                                        for (GetFileRequest request : SRM.getSRM().getActiveFileRequests(GetFileRequest.class, surl)) {
+                                            try {
+                                                request.setState(State.CANCELED,
+                                                        "Download aborted because the file was deleted by another request");
+                                            } catch (IllegalStateTransition e) {
+                                                // The request likely aborted or finished before we could abort it
+                                                logger.debug("srmRm attempted to abort get request {}, but failed: {}",
+                                                        request.getId(), e.getMessage());
+                                            }
+                                        }
+
+                                        surlReturnStatusArray[i].setStatus(status);
+					if (status.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                                            any_failed=true;
+                                            error.append(surlReturnStatusArray[i].getStatus().getExplanation());
+                                            error.append('\n');
 					}
 				}
 			}

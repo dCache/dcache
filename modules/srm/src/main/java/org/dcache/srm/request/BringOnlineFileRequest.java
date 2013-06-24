@@ -85,6 +85,7 @@ import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PinCallbacks;
+import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
@@ -344,6 +345,13 @@ public final class BringOnlineFileRequest extends FileRequest {
         logger.debug("run()");
         try {
             if(getPinId() == null) {
+                // [ SRM 2.2, 5.4.3] SRM_FILE_BUSY: client requests for a file which there is an
+                // active srmPrepareToPut (no srmPutDone is yet called) request for.
+                if (SRM.getSRM().isFileBusy(surl)) {
+                    setStateAndStatusCode(State.FAILED, "The requested SURL is being used by another client.",
+                            TStatusCode.SRM_FILE_BUSY);
+                }
+
                 // do not check explicitely if we can read the file
                 // this is done by pnfs manager when we call askFileId()
 
@@ -427,6 +435,12 @@ public final class BringOnlineFileRequest extends FileRequest {
             }
         }
         super.stateChanged(oldState);
+    }
+
+    @Override
+    public boolean isTouchingSurl(URI surl)
+    {
+        return surl.equals(getSurl());
     }
 
     public TSURLReturnStatus releaseFile() throws SRMInvalidRequestException {
