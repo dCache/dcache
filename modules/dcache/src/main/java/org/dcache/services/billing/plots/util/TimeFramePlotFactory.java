@@ -42,7 +42,7 @@ public class TimeFramePlotFactory {
      * @return implementation factory
      * @throws Throwable
      */
-    public ITimeFrameHistogramFactory create(String className) throws Throwable {
+    public ITimeFrameHistogramFactory create(String className) throws Exception {
         return create(className, null);
     }
 
@@ -55,7 +55,7 @@ public class TimeFramePlotFactory {
      * @throws Throwable
      */
     public ITimeFrameHistogramFactory create(String className,
-                    Properties properties) throws Throwable {
+                    Properties properties) throws Exception {
         ClassLoader classLoader = Thread.currentThread()
                         .getContextClassLoader();
         Class clzz = Class.forName(className, true, classLoader);

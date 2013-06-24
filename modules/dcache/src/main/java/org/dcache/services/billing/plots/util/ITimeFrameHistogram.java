@@ -21,10 +21,8 @@ public interface ITimeFrameHistogram {
      *            the Y-axis data to be plotted.
      * @param dfactor
      *            (optional) scaling factor for Y-axis data.
-     * @throws Throwable
      */
-    void setData(Collection<IPlotData> data, String field, Double dfactor)
-                    throws Throwable;
+    void setData(Collection<IPlotData> data, String field, Double dfactor);
 
     /**
      * @return the TimeFrame

@@ -17,9 +17,6 @@ import org.dcache.services.billing.plots.util.AbstractTimeFramePlot;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogram;
 import org.dcache.services.billing.plots.util.PlotGridPosition;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-
 /**
  * Wraps IPlotterFactory and IPlotter.
  *
@@ -28,7 +25,6 @@ import org.slf4j.Logger;
  * @author arossi
  */
 public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
-    private static final Logger _log = LoggerFactory.getLogger(JaidaTimeFramePlot.class);
     private final IPlotterFactory factory;
     private final IPlotter plotter;
     private List<IPlotterStyle> styles;
@@ -59,7 +55,7 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
      * @see org.dcache.billing.statistics.util.ITimeFramePlot#plot()
      */
     @Override
-    public void plot() {
+    public void plot() throws IOException {
         setHistogramStyles();
         plotter.createRegions(rows, cols);
         int region = 0;
@@ -76,9 +72,8 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
                     if (region < titles.length) {
                         plotter.region(region).setTitle(titles[region]);
                     }
-                    plotter.region(region)
-                    .plot(((JaidaTimeFrameHistogram) h)
-                                    .getHistogram(),
+                    plotter.region(region).plot(
+                                    ((JaidaTimeFrameHistogram) h).getHistogram(),
                                     style);
                 }
                 region++;
@@ -95,14 +90,10 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
     /**
      * create image file
      */
-    private void exportPlot() {
+    private void exportPlot() throws IOException {
         File path = new File(exportSubdir, name + extension);
-        try {
-            PlotterUtilities.writeToFile(plotter, path.getAbsolutePath(),
-                            imageType, properties);
-        } catch (IOException e) {
-            _log.error("Cannot write billing plot: " + e.getMessage());
-        }
+        PlotterUtilities.writeToFile(plotter, path.getAbsolutePath(),
+                        imageType, properties);
     }
 
     /**
@@ -132,13 +123,11 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
      * @param style
      */
     private void normalizeTitleStyle(IPlotterStyle style) {
-        style.titleStyle()
-        .textStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(PLOT_TITLE_SIZE)));
+        style.titleStyle().textStyle().setFontSize(
+                        Integer.parseInt(properties.getProperty(PLOT_TITLE_SIZE)));
         style.titleStyle().textStyle().setBold(true);
-        style.titleStyle().textStyle()
-        .setColor(properties.getProperty(PLOT_TITLE_COLOR));
+        style.titleStyle().textStyle().setColor(
+                        properties.getProperty(PLOT_TITLE_COLOR));
         style.titleStyle().textStyle().setVisible(true);
     }
 
@@ -156,18 +145,13 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
         histogramStyle.dataStyle().showInStatisticsBox(false);
 
         histogramStyle.dataStyle().outlineStyle().setVisible(true);
-        histogramStyle.dataStyle().outlineStyle()
-        .setColor(histogram.getColor());
-        histogramStyle.dataStyle()
-        .outlineStyle()
-        .setThickness(Integer.parseInt(properties
-                        .getProperty(CURVE_THICKNESS)));
-        histogramStyle.dataStyle().markerStyle()
-        .setShape(properties.getProperty(MARKER_SHAPE));
-        histogramStyle.dataStyle()
-        .markerStyle()
-        .setSize(Integer.parseInt(properties
-                        .getProperty(MARKER_SIZE)));
+        histogramStyle.dataStyle().outlineStyle().setColor(histogram.getColor());
+        histogramStyle.dataStyle().outlineStyle().setThickness(
+                        Integer.parseInt(properties.getProperty(CURVE_THICKNESS)));
+        histogramStyle.dataStyle().markerStyle().setShape(
+                        properties.getProperty(MARKER_SHAPE));
+        histogramStyle.dataStyle().markerStyle().setSize(
+                        Integer.parseInt(properties.getProperty(MARKER_SIZE)));
         histogramStyle.dataStyle().markerStyle().setColor(histogram.getColor());
         histogramStyle.dataStyle().markerStyle().setVisible(true);
     }
@@ -184,22 +168,16 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
                         properties.getProperty(X_AXIS_TYPE));
         histogramStyle.xAxisStyle().setLabel(histogram.getXLabel());
         histogramStyle.xAxisStyle().labelStyle().setBold(true);
-        histogramStyle.xAxisStyle()
-        .labelStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(X_AXIS_SIZE)));
+        histogramStyle.xAxisStyle().labelStyle().setFontSize(
+                        Integer.parseInt(properties.getProperty(X_AXIS_SIZE)));
         histogramStyle.xAxisStyle().labelStyle().setItalic(true);
-        histogramStyle.xAxisStyle().labelStyle()
-        .setColor(properties.getProperty(X_AXIS_LABEL_COLOR));
-        histogramStyle.xAxisStyle()
-        .tickLabelStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(X_AXIS_TICK_SIZE)));
+        histogramStyle.xAxisStyle().labelStyle().setColor(
+                        properties.getProperty(X_AXIS_LABEL_COLOR));
+        histogramStyle.xAxisStyle().tickLabelStyle().setFontSize(
+                        Integer.parseInt(properties.getProperty(X_AXIS_TICK_SIZE)));
         histogramStyle.xAxisStyle().tickLabelStyle().setBold(true);
-        histogramStyle.xAxisStyle()
-        .tickLabelStyle()
-        .setColor(properties
-                        .getProperty(X_AXIS_TICK_LABEL_COLOR));
+        histogramStyle.xAxisStyle().tickLabelStyle().setColor(
+                        properties.getProperty(X_AXIS_TICK_LABEL_COLOR));
     }
 
     /**
@@ -212,22 +190,16 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
                     ITimeFrameHistogram histogram) {
         histogramStyle.yAxisStyle().setLabel(histogram.getYLabel());
         histogramStyle.yAxisStyle().labelStyle().setBold(true);
-        histogramStyle.yAxisStyle()
-        .labelStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(Y_AXIS_SIZE)));
+        histogramStyle.yAxisStyle().labelStyle().setFontSize(
+                        Integer.parseInt(properties.getProperty(Y_AXIS_SIZE)));
         histogramStyle.yAxisStyle().labelStyle().setItalic(true);
-        histogramStyle.yAxisStyle().labelStyle()
-        .setColor(properties.getProperty(Y_AXIS_LABEL_COLOR));
-        histogramStyle.yAxisStyle()
-        .tickLabelStyle()
-        .setFontSize(Integer.parseInt(properties
-                        .getProperty(Y_AXIS_TICK_SIZE)));
+        histogramStyle.yAxisStyle().labelStyle().setColor(
+                        properties.getProperty(Y_AXIS_LABEL_COLOR));
+        histogramStyle.yAxisStyle().tickLabelStyle().setFontSize(
+                        Integer.parseInt(properties.getProperty(Y_AXIS_TICK_SIZE)));
         histogramStyle.yAxisStyle().tickLabelStyle().setBold(true);
-        histogramStyle.yAxisStyle()
-        .tickLabelStyle()
-        .setColor(properties
-                        .getProperty(Y_AXIS_TICK_LABEL_COLOR));
+        histogramStyle.yAxisStyle().tickLabelStyle().setColor(
+                        properties.getProperty(Y_AXIS_TICK_LABEL_COLOR));
         histogramStyle.yAxisStyle().setScaling(histogram.getScaling());
         histogramStyle.yAxisStyle().setParameter("allowZeroSuppression",
                         properties.getProperty(Y_AXIS_ALLOW_ZERO_SUPPRESSION));
