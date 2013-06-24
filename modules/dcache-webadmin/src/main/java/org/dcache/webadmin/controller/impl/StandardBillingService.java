@@ -181,8 +181,10 @@ public final class StandardBillingService implements IBillingService, Runnable {
 
     private static void add(TimeFrameHistogramData[] returned,
                     List<TimeFrameHistogramData> histograms) {
-        for (TimeFrameHistogramData d : returned) {
-            histograms.add(d);
+        if (returned != null) {
+            for (TimeFrameHistogramData d : returned) {
+                histograms.add(d);
+            }
         }
     }
 
