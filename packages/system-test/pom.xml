@@ -45,6 +45,7 @@
                                       <filename name="**/*.jpg" />
                                       <filename name="**/*.png" />
                                       <filename name="**/*.jar" />
+                                      <filename name="**/*.ico" />
                                   </or>
                               </selector>
                               <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">

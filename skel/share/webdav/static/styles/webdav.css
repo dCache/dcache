@@ -176,7 +176,6 @@ table.sortable thead tr th, table.sortable tfoot tr th {
 
 table.sortable thead tr .header {
 
-	background-image: url(/.webdav/images/bg.gif);
 	background-repeat: no-repeat;
 	background-position: center right;
 	cursor: pointer;
