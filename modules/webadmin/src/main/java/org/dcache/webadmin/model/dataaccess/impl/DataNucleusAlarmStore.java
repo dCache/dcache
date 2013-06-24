@@ -103,6 +103,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
 
     private final Properties properties;
     private final File xml;
+    private final boolean active;
     private final boolean usesXml;
 
     /**
@@ -135,17 +136,24 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
         properties.put("javax.jdo.PersistenceManagerFactoryClass",
                         "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
 
-        this.usesXml = properties.getProperty("datanucleus.ConnectionURL")
-                                 .startsWith("xml:");
+        String url = properties.getProperty("datanucleus.ConnectionURL");
 
-        xml = Strings.isNullOrEmpty(xmlPath) ? null : new File(xmlPath);
+        if (Strings.isNullOrEmpty(url)) {
+           active = false;
+           xml = null;
+           usesXml = false;
+        } else {
+           active = true;
 
-        checkArgument(!(usesXml && xml == null));
+           usesXml = url.startsWith("xml:");
+           xml = Strings.isNullOrEmpty(xmlPath) ? null : new File(xmlPath);
+           checkArgument(!(usesXml && xml == null));
 
-        if (enableCleaner) {
-            checkArgument(cleanerSleepInterval > 0);
-            checkArgument(cleanerDeleteThreshold > 0);
-            cleanerThread = new Thread(this, "alarm-cleanup-daemon");
+           if (enableCleaner) {
+               checkArgument(cleanerSleepInterval > 0);
+               checkArgument(cleanerDeleteThreshold > 0);
+               cleanerThread = new Thread(this, "alarm-cleanup-daemon");
+           }
         }
     }
 
@@ -183,6 +191,10 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     public void initialize() {
+        if (!active) {
+            return;
+        }
+
         if (cleanerThread != null && !cleanerThread.isAlive()) {
             cleanerThread.start();
         }
@@ -190,7 +202,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
 
     public boolean isConnected() {
         try {
-            return (getManager() != null);
+            return active && (getManager() != null);
         } catch (DAOException t) {
             return false;
         }
@@ -329,7 +341,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     private synchronized boolean isRunning() {
-        return cleanerThread != null && !cleanerThread.isInterrupted();
+        return active && cleanerThread != null && !cleanerThread.isInterrupted();
     }
 
     /**
