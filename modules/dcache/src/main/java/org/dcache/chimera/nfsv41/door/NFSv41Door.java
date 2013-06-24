@@ -52,7 +52,6 @@ import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.ExportFile;
-import org.dcache.chimera.nfs.FsExport;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v3.NfsServerV3;
@@ -440,13 +439,26 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @see org.dcache.chimera.nfsv4.NFSv41DeviceManager#releaseDevice(stateid4 stateid)
      */
     @Override
-    public void  layoutReturn(CompoundContext context, stateid4 stateid) {
+    public void layoutReturn(CompoundContext context, stateid4 stateid) throws IOException {
 
         _log.debug("Releasing device by stateid: {}", stateid);
-        Transfer transfer = _ioMessages.get(stateid);
-        if (transfer != null) {
-            _log.debug("Sending KILL to {}@{}", transfer.getMoverId(), transfer.getPool());
-            transfer.killMover(5000);
+
+        NfsTransfer transfer = _ioMessages.get(stateid);
+        if (transfer == null) {
+            return;
+        }
+
+        _log.debug("Sending KILL to {}@{}", transfer.getMoverId(), transfer.getPool());
+        transfer.killMover(0);
+
+        try {
+            if(!transfer.waitForMover(500)) {
+                throw new ChimeraNFSException(nfsstat.NFSERR_DELAY, "Mover not stopped");
+            }
+        } catch (CacheException | InterruptedException e) {
+            _log.info("Failed to kill mover: {}@{} : {}",
+                    transfer.getMoverId(), transfer.getPool(), e.getMessage());
+            throw new ChimeraNFSException(nfsstat.NFSERR_IO, e.getMessage());
         }
     }
 
@@ -571,7 +583,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         protected NFS4ProtocolInfo getProtocolInfoForPool() {
             return _protocolInfo;
         }
-    }
+        }
 
     /**
      * To allow the transfer monitoring in the httpd cell to recognize us
