@@ -125,6 +125,7 @@ header() ::= <<
     <head>
         <title>dCache.org - File system</title>
         <link rel="stylesheet" type="text/css" href="$static$/styles/webdav.css"/>
+        <link rel="icon" type="image/x-icon" href="$static$/images/favicon.ico"/>
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
         <script type="text/javascript" src="$static$/tablesorter/jquery.tablesorter.min.js"></script>
         <script type="text/javascript">
