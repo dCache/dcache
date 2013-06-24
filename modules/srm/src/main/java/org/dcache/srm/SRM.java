@@ -73,6 +73,8 @@ documents or software obtained from this server.
  */
 package org.dcache.srm;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +84,7 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URI;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -1527,4 +1530,33 @@ public class SRM {
         return ids;
     }
 
+    public boolean isFileBusy(URI surl)
+    {
+        return hasActivePutRequests(surl);
+    }
+
+    private boolean hasActivePutRequests(URI surl)
+    {
+        Set<PutFileRequest> requests = Job.getActiveJobs(PutFileRequest.class);
+        for (PutFileRequest request: requests) {
+            if (request.getSurl().equals(surl)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public <T extends FileRequest> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
+    {
+        return Iterables.filter(Job.getActiveJobs(type),
+                new Predicate<T>()
+                {
+                    @Override
+                    public boolean apply(T request)
+                    {
+                        return request.isTouchingSurl(surl);
+                    }
+                }
+        );
+    }
 }
