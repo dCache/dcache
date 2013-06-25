@@ -826,7 +826,7 @@ public void cleanUp(){
                          currentChildHash = _childCount;
                      }
                      _log.info("New connection : " + currentChildHash);
-                     if ((_maxLogin > 0) && (currentChildHash > _maxLogin)) {
+                     if ((_maxLogin > -1) && (currentChildHash >= _maxLogin)) {
                          _connectionDeniedCounter++;
                          _log.warn("Connection denied " + currentChildHash + " > " + _maxLogin);
                          _logSocketIO.warn("number of allowed logins exceeded.");
