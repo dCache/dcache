@@ -11,7 +11,6 @@ public class SymbolTable extends org.dcache.util.expression.SymbolTable
     {
         PoolCostInfo cost = info.getPoolCostInfo();
         put(name + ".name", info.getName());
-        put(name + ".spaceCost", info.getSpaceCost());
         put(name + ".cpuCost", info.getCpuCost());
         put(name + ".free",
             (cost == null) ? 0 : cost.getSpaceInfo().getFreeSpace());

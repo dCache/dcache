@@ -47,7 +47,7 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolCheckFileCostMessage;
+import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
@@ -1782,8 +1782,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             for( String pool: result ){
 
                                 _log.debug("Sending query to pool {}", pool);
-                                PoolCheckFileCostMessage request =
-                                    new PoolCheckFileCostMessage( pool , _fileAttributes.getPnfsId() , 0L ) ;
+                                PoolCheckFileMessage request =
+                                    new PoolCheckFileMessage(pool, _fileAttributes.getPnfsId());
                                 controller.send( new CellMessage( new CellPath(pool) , request ) );
                             }
                             controller.waitForReplies() ;
@@ -1799,12 +1799,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             while( iterate.hasNext() ){
                                 CellMessage msg = iterate.next() ;
                                 Object obj = msg.getMessageObject() ;
-                                if( ! ( obj instanceof PoolCheckFileCostMessage ) ){
+                                if( ! ( obj instanceof PoolCheckFileMessage ) ){
                                     _log.error("Unexpected reply from PoolCheckFileCostMessage: {}",
                                                obj.getClass().getName());
                                     continue ;
                                 }
-                                PoolCheckFileCostMessage reply = (PoolCheckFileCostMessage)obj ;
+                                PoolCheckFileMessage reply = (PoolCheckFileMessage)obj ;
                                 if( reply.getHave() ){
                                     _log.debug("pool {}: ok",
                                                reply.getPoolName());

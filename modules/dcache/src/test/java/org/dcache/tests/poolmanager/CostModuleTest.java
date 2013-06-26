@@ -6,11 +6,9 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import diskCacheV111.poolManager.CostModuleV1;
-import diskCacheV111.pools.CostCalculationEngine;
 import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
@@ -46,23 +44,19 @@ public class CostModuleTest {
     public static final double FRACTION_JUST_BELOW_TWO_THIRDS = 0.666;
     public static final double FRACTION_JUST_ABOVE_TWO_THIRDS = 0.667;
 
-    /** Value taken from {@link CostCalculationV5#recalculate(long)} */
+    /** Value taken from {@link CostCalculationV5#recalculate()} */
     private static final double INFINITE_PERF_COST_VALUE = 1000000;
-
-    private static final String COST_CALCULATION_ENGINE_CLASS="diskCacheV111.pools.CostCalculationV5";
 
     private CostModuleV1 _costModule;
 
     @Before
     public void setUp() throws ClassNotFoundException, NoSuchMethodException {
         _costModule = new CostModuleV1();
-        _costModule.setCostCalculationEngine( new CostCalculationEngine( COST_CALCULATION_ENGINE_CLASS));
     }
 
     @Test
     public void testPoolNotExist() {
         assertNull( "getPoolCostInfo() on non existing pool", _costModule.getPoolCostInfo( POOL_NAME));
-        assertNull( "getPoolCost() on non-existing pool", _costModule.getPoolCost(  POOL_NAME, DEFAULT_FILE_SIZE));
         assertEquals( "getPoolsPercentilePerformanceCost on non-existing pool", 0, _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE), 0);
     }
 
@@ -72,7 +66,6 @@ public class CostModuleTest {
         _costModule.messageArrived(buildEnvelope(POOL_ADDRESS), buildEmptyPoolUpMessage( POOL_NAME, PoolV2Mode.ENABLED));
 
         assertNull("getPoolCostInfo on a pool without costInfo", _costModule.getPoolCostInfo( POOL_NAME));
-        assertNull( "getPoolCost() on a pool without costInfo", _costModule.getPoolCost(  POOL_NAME, DEFAULT_FILE_SIZE));
         assertEquals( "getPoolsPercentilePerformanceCost on a pool without costInfo", 0, _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE), 0);
     }
 
@@ -97,13 +90,6 @@ public class CostModuleTest {
         assertPoolSpaceInfo( "pool", receivedCost.getSpaceInfo(),  totalSpace,
                              freeSpace, removableSpace, preciousSpace);
 
-        PoolCostCheckable poolCost = _costModule.getPoolCost( POOL_NAME,
-                                                              CostModuleV1.PERCENTILE_FILE_SIZE);
-
-        assertNotNull( "getPoolCost() on a pool without costInfo", poolCost);
-        assertEquals( "perf cost for pool without queue info", INFINITE_PERF_COST_VALUE,
-                      poolCost.getPerformanceCost(), 0);
-        assertTrue( "space cost for pool > 0", poolCost.getSpaceCost() > 0);
         assertEquals( "getPoolsPercentilePerformanceCost on a single pool",
                       INFINITE_PERF_COST_VALUE,
                       _costModule.getPoolsPercentilePerformanceCost( DEFAULT_PERCENTILE), 0);
@@ -130,11 +116,6 @@ public class CostModuleTest {
                       receivedCost);
         assertPoolSpaceInfo( "pool", receivedCost.getSpaceInfo(),  totalSpace,
                              freeSpace, removableSpace, preciousSpace);
-
-        PoolCostCheckable poolCost = _costModule.getPoolCost( POOL_NAME,
-                                                              CostModuleV1.PERCENTILE_FILE_SIZE);
-
-        assertNotNull( "getPoolCost() on a pool without costInfo", poolCost);
 
         double perfCost = getPerformanceCostOfPercentileFile( POOL_NAME);
 
@@ -357,7 +338,9 @@ public class CostModuleTest {
      * @return
      */
     private double getPerformanceCostOfPercentileFile( String poolName) {
-        return _costModule.getPoolCost( poolName, CostModuleV1.PERCENTILE_FILE_SIZE).getPerformanceCost();
+        CostCalculationV5 cost = new CostCalculationV5(_costModule.getPoolCostInfo(poolName));
+        cost.recalculate();
+        return cost.getPerformanceCost();
     }
 
 

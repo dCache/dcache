@@ -29,6 +29,7 @@ public class PoolCostInfo implements Serializable {
     {
         _poolName = poolName;
         _defaultQueueName = IoQueueManager.DEFAULT_QUEUE;
+        _space = new PoolSpaceInfo(0, 0, 0, 0);
     }
 
     public String getPoolName(){ return _poolName ; }

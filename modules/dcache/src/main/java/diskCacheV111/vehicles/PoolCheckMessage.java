@@ -16,10 +16,7 @@ public class PoolCheckMessage
     public PoolCheckMessage( String poolName ){
        super(poolName) ;
     }
-    @Override
-    public void setTagMap( Map<String, String> map ){ _map = map ; }
-    @Override
-    public Map<String, String>  getTagMap(){ return _map ; }
+
     public String toString(){
       StringBuilder sb = new StringBuilder() ;
       sb.append(super.toString()).append(";");

@@ -45,7 +45,6 @@ import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
-import diskCacheV111.vehicles.PoolCheckMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolQueryRepositoryMsg;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
@@ -1849,9 +1848,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    protected String getPoolHost( String poolName )
            throws InterruptedException, NoRouteToCellException {
 
-       PoolCheckMessage msg = new PoolCheckMessage(poolName);
-
-       msg.setReplyRequired(true);
        CellMessage      cellMessage = new CellMessage( new CellPath(poolName) , "xgetcellinfo" ) ;
 
        CellMessage answer;

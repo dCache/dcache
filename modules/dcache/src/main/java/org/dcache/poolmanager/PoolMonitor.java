@@ -1,12 +1,15 @@
 package org.dcache.poolmanager;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import java.util.Collection;
 import java.util.NoSuchElementException;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.FileLocality;
-import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
 
@@ -32,12 +35,10 @@ public interface PoolMonitor
             ProtocolInfo protocolInfo,
             String linkGroup);
 
-    Collection<PoolCostCheckable> queryPoolsByLinkName(
-            String linkName, long filesize);
+    Collection<PoolCostInfo> queryPoolsByLinkName(String linkName);
 
-    PoolManagerPoolInformation getPoolInformation(String name)
-            throws
-            NoSuchElementException;
+    @Nullable
+    PoolManagerPoolInformation getPoolInformation(@Nonnull String name);
 
     Collection<PoolManagerPoolInformation> getPoolsByLink(
             String linkName)

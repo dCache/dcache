@@ -19,7 +19,6 @@ import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.RequestContainerV5;
-import diskCacheV111.pools.CostCalculationEngine;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsHandler;
@@ -82,7 +81,6 @@ public class HsmRestoreTest {
         _partitionManager = new PartitionManager();
         _selectionUnit = new PoolSelectionUnitV2();
         _costModule = new CostModuleV1();
-        _costModule.setCostCalculationEngine(new CostCalculationEngine("diskCacheV111.pools.CostCalculationV5"));
 
         _pnfsHandler = new PnfsHandler(new CellPath("PnfsManager"));
         _pnfsHandler.setCellEndpoint(_cell);

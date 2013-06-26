@@ -11,7 +11,6 @@ import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
-import diskCacheV111.pools.CostCalculationEngine;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsId;
@@ -51,7 +50,6 @@ public class PoolMonitorTest
         _poolMonitor.setPoolSelectionUnit(_selectionUnit);
         _poolMonitor.setCostModule(_costModule);
         _poolMonitor.setPartitionManager(_partitionManager);
-        _costModule.setCostCalculationEngine(new CostCalculationEngine("diskCacheV111.pools.CostCalculationV5"));
     }
 
 

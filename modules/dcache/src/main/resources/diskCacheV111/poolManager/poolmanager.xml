@@ -36,11 +36,6 @@
 
   <bean id="cm" class="diskCacheV111.poolManager.CostModuleV1">
     <description>Cost module</description>
-    <property name="costCalculationEngine">
-      <bean class="diskCacheV111.pools.CostCalculationEngine">
-        <constructor-arg value="${costCalculator}"/>
-      </bean>
-    </property>
   </bean>
 
   <bean id="pm" class="org.dcache.poolmanager.PartitionManager">

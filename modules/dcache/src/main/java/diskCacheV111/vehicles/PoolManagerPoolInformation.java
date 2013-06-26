@@ -2,7 +2,10 @@ package diskCacheV111.vehicles;
 
 import java.io.Serializable;
 
+import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PoolManagerPoolInformation
     implements Serializable
@@ -10,20 +13,19 @@ public class PoolManagerPoolInformation
     private static final long serialVersionUID = -279163439475487756L;
 
     private final String _name;
+    @Deprecated // Can be removed after Golden Release 4
     private double _spaceCost;
     private double _cpuCost;
-    private PoolCostInfo _poolCostInfo;
+    private final PoolCostInfo _poolCostInfo;
 
-    public PoolManagerPoolInformation(String name)
-    {
-        this(name, 0.0, 0.0);
-    }
-
-    public PoolManagerPoolInformation(String name, double spaceCost, double cpuCost)
+    public PoolManagerPoolInformation(String name, PoolCostInfo poolCostInfo)
     {
         _name = name;
-        _spaceCost = spaceCost;
-        _cpuCost = cpuCost;
+        _poolCostInfo = checkNotNull(poolCostInfo);
+        CostCalculationV5 calc = new CostCalculationV5(_poolCostInfo);
+        calc.recalculate();
+        _spaceCost = calc.getSpaceCost();
+        _cpuCost = calc.getPerformanceCost();
     }
 
     public String getName()
@@ -31,29 +33,9 @@ public class PoolManagerPoolInformation
         return _name;
     }
 
-    public void setSpaceCost(double spaceCost)
-    {
-        _spaceCost = spaceCost;
-    }
-
-    public double getSpaceCost()
-    {
-        return _spaceCost;
-    }
-
-    public void setCpuCost(double cpuCost)
-    {
-        _cpuCost = cpuCost;
-    }
-
     public double getCpuCost()
     {
         return _cpuCost;
-    }
-
-    public void setPoolCostInfo(PoolCostInfo poolCostInfo)
-    {
-        _poolCostInfo = poolCostInfo;
     }
 
     public PoolCostInfo getPoolCostInfo()
@@ -64,7 +46,7 @@ public class PoolManagerPoolInformation
     @Override
     public String toString()
     {
-        return String.format("[name=%s;space=%f;cpu=%f;cost=%s]",
-                             _name, _spaceCost, _cpuCost, _poolCostInfo);
+        return String.format("[name=%s;cpu=%f;cost=%s]",
+                             _name, _cpuCost, _poolCostInfo);
     }
 }
