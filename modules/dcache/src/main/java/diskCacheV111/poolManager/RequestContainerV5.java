@@ -742,6 +742,14 @@ public class RequestContainerV5
         private   String     _stageCandidateHost;
 
         /**
+         * The name of the pool used for staging.
+         *
+         * Serves a critical role when retrying staging to avoid that
+         * the same pool is chosen twice in a row.
+         */
+        private   String     _stageCandidatePool;
+
+        /**
          * The destination of a pool to pool transfer. Set by
          * askForPoolToPool() when it returns RT_FOUND.
          */
@@ -920,6 +928,7 @@ public class RequestContainerV5
 
            _retryCounter = request.getContext().getRetryCounter();
            _stageCandidateHost = request.getContext().getPreviousStageHost();
+           _stageCandidatePool = request.getContext().getPreviousStagePool();
 
            if( request instanceof PoolMgrReplicateFileMsg ){
               _enforceP2P            = true ;
@@ -1146,7 +1155,7 @@ public class RequestContainerV5
                 CellMessage m =  messages.next();
                 PoolMgrSelectReadPoolMsg rpm =
                     (PoolMgrSelectReadPoolMsg) m.getMessageObject();
-                rpm.setContext(_retryCounter + 1, _stageCandidateHost);
+                rpm.setContext(_retryCounter + 1, _stageCandidateHost, _stageCandidatePool);
                 if (_currentRc == 0) {
                     rpm.setPoolName(_poolCandidate.getName());
                     rpm.setPoolAddress(_poolCandidate.getAddress());
@@ -2116,9 +2125,9 @@ public class RequestContainerV5
         {
             try {
                 PoolInfo pool =
-                    _poolSelector.selectStagePool((_poolCandidate == null) ? null : _poolCandidate.getName(),
-                                                      _stageCandidateHost);
+                    _poolSelector.selectStagePool(_stageCandidatePool, _stageCandidateHost);
                 _poolCandidate = pool;
+                _stageCandidatePool = pool.getName();
                 _stageCandidateHost = pool.getHostName();
 
                 _log.info("[staging] poolCandidate -> {}", _poolCandidate);
@@ -2132,6 +2141,7 @@ public class RequestContainerV5
             } catch (CostException e) {
                if (e.getPool() != null) {
                    _poolCandidate = e.getPool();
+                   _stageCandidatePool = e.getPool().getName();
                    _stageCandidateHost = e.getPool().getHostName();
                    return RT_FOUND;
                }
