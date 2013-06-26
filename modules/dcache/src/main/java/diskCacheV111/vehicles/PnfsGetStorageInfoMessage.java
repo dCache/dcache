@@ -46,6 +46,11 @@ public class PnfsGetStorageInfoMessage extends PnfsGetFileMetaDataMessage {
     @Override
     public void setFileAttributes(FileAttributes fileAttributes)
     {
+        // For compatibility with pre 2.6 pools: 'rh restore' issues a PnfsGetStorageInfoMessage
+        // and expects the size to be part of the storage info.
+        if (fileAttributes.isDefined(STORAGEINFO) && fileAttributes.isDefined(SIZE)) {
+            fileAttributes.getStorageInfo().setLegacySize(fileAttributes.getSize());
+        }
         super.setFileAttributes(fileAttributes);
     }
 
