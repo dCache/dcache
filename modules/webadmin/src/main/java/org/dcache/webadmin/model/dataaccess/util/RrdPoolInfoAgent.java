@@ -316,20 +316,22 @@ public class RrdPoolInfoAgent implements Runnable {
         }
 
         try {
-            Sample sample = rrdDb.createSample();
-            sample.setTime(now);
-            Map<String, Double> values = data.data();
+            if (now - rrdDb.getLastUpdateTime() >= 1) {
+                Sample sample = rrdDb.createSample();
+                sample.setTime(now);
+                Map<String, Double> values = data.data();
 
-            for (RrdHistogram h : RrdHistogram.values()) {
-                sample.setValue(RrdHistogram.getSourceName(h),
-                                values.get(h.toString()));
+                for (RrdHistogram h : RrdHistogram.values()) {
+                    sample.setValue(RrdHistogram.getSourceName(h),
+                                    values.get(h.toString()));
+                }
+
+                logger.debug("{}\t{}", new Date(TimeUnit.SECONDS.toMillis(now)),
+                                sample.dump());
+
+                sample.update();
+                logger.debug(rrdDb.dump());
             }
-
-            logger.debug("{}\t{}", new Date(TimeUnit.SECONDS.toMillis(now)),
-                            sample.dump());
-
-            sample.update();
-            logger.debug(rrdDb.dump());
         } catch (IOException t) {
             logger.error("problem writing data to RrdDb", t);
         } finally {
