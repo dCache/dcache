@@ -206,12 +206,12 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
                 callbacks);
         Use use = new Use(
                 spaceToken,
-                user,
                 pnfPath,
                 null,
                 sizeInBytes,
                 markLifetime,
                 overwrite);
+        use.setSubject(user.toSubject());
         spaceManagerStub.send(use, Use.class,
                 new ThreadManagerMessageCallback(companion));
     }

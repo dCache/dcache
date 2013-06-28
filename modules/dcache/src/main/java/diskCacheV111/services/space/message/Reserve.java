@@ -13,8 +13,6 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.Message;
 
-import org.dcache.auth.AuthorizationRecord;
-
 
 /**
  *
@@ -23,7 +21,6 @@ import org.dcache.auth.AuthorizationRecord;
 public class Reserve extends Message{
     private static final long serialVersionUID = 8295404238593418916L;
     private long spaceToken;
-    private AuthorizationRecord authRecord;
     private long sizeInBytes;
     private RetentionPolicy retentionPolicy;
     private AccessLatency accessLatency;
@@ -35,13 +32,11 @@ public class Reserve extends Message{
     }
 
     public Reserve(
-            AuthorizationRecord authRecord,
             long sizeInBytes,
             RetentionPolicy retentionPolicy,
             AccessLatency accessLatency,
             long lifetime,
             String description){
-        this.authRecord = authRecord;
         this.sizeInBytes = sizeInBytes;
         this.lifetime = lifetime;
         this.accessLatency = accessLatency;
@@ -105,13 +100,4 @@ public class Reserve extends Message{
     public void setDescription(String description) {
         this.description = description;
     }
-
-    public AuthorizationRecord getAuthRecord() {
-        return authRecord;
-    }
-
-    public void setAuthRecord(AuthorizationRecord authRecord) {
-        this.authRecord = authRecord;
-    }
-
 }

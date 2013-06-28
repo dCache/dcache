@@ -14,8 +14,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.Message;
 
-import org.dcache.auth.AuthorizationRecord;
-
 /**
  *
  * @author timur
@@ -23,7 +21,6 @@ import org.dcache.auth.AuthorizationRecord;
 public class Use extends Message{
     private static final long serialVersionUID = 7864026870745603985L;
     private long spaceToken;
-    private AuthorizationRecord authRecord ;
     private String pnfsName;
     private PnfsId pnfsId;
     private long sizeInBytes;
@@ -40,14 +37,12 @@ public class Use extends Message{
 
     public Use(
             long spaceToken,
-            AuthorizationRecord authRecord,
             String pnfsName,
             PnfsId pnfsId,
             long sizeInBytes,
             long lifetime){
 
         this( spaceToken,
-             authRecord,
              pnfsName,
              pnfsId,
              sizeInBytes,
@@ -57,14 +52,12 @@ public class Use extends Message{
 
     public Use(
             long spaceToken,
-            AuthorizationRecord authRecord,
             String pnfsName,
             PnfsId pnfsId,
             long sizeInBytes,
             long lifetime,
             boolean overwrite){
         this.spaceToken = spaceToken;
-        this.authRecord = authRecord;
         this.sizeInBytes = sizeInBytes;
         this.pnfsName= pnfsName;
         this.pnfsId = pnfsId;
@@ -136,14 +129,6 @@ public class Use extends Message{
 
     public void setFileId(long fileId) {
         this.fileId = fileId;
-    }
-
-    public AuthorizationRecord getAuthRecord() {
-        return authRecord;
-    }
-
-    public void setAuthRecord(AuthorizationRecord authRecord) {
-        this.authRecord = authRecord;
     }
 
     public boolean isOverwrite() {

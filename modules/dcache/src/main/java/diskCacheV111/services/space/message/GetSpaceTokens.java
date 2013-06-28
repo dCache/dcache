@@ -11,8 +11,6 @@ package diskCacheV111.services.space.message;
 
 import diskCacheV111.vehicles.Message;
 
-import org.dcache.auth.AuthorizationRecord;
-
 /**
  *
  * @author timur
@@ -21,10 +19,8 @@ public class GetSpaceTokens extends Message{
     private static final long serialVersionUID = -2482510383290374236L;
     private long[] spaceTokens;
     private String description;
-    private AuthorizationRecord authRecord ;
     /** Creates a new instance of Reserve */
-    public GetSpaceTokens(AuthorizationRecord authRecord,String description) {
-        this.authRecord = authRecord;
+    public GetSpaceTokens(String description) {
         this.description = description;
         setReplyRequired(true);
     }
@@ -44,13 +40,4 @@ public class GetSpaceTokens extends Message{
     public void setDescription(String description) {
         this.description = description;
     }
-
-    public AuthorizationRecord getAuthRecord() {
-        return authRecord;
-    }
-
-    public void setAuthRecord(AuthorizationRecord authRecord) {
-        this.authRecord = authRecord;
-    }
-
 }

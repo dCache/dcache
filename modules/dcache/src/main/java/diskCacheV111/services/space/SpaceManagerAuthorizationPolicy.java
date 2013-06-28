@@ -5,9 +5,9 @@
 
 package diskCacheV111.services.space;
 
-import diskCacheV111.util.VOInfo;
+import javax.security.auth.Subject;
 
-import org.dcache.auth.AuthorizationRecord;
+import diskCacheV111.util.VOInfo;
 
 /**
  *
@@ -15,9 +15,9 @@ import org.dcache.auth.AuthorizationRecord;
  */
 public interface SpaceManagerAuthorizationPolicy {
 
-    public void checkReleasePermission(AuthorizationRecord authRecord, Space space)
+    public void checkReleasePermission(Subject subject, Space space)
         throws SpaceAuthorizationException;
-    public VOInfo checkReservePermission(AuthorizationRecord authRecord, LinkGroup linkGroup)
+    public VOInfo checkReservePermission(Subject subject, LinkGroup linkGroup)
         throws SpaceAuthorizationException;
 
 }

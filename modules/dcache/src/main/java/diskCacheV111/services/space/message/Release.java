@@ -11,8 +11,6 @@ package diskCacheV111.services.space.message;
 
 import diskCacheV111.vehicles.Message;
 
-import org.dcache.auth.AuthorizationRecord;
-
 
 /**
  *
@@ -23,7 +21,6 @@ public class Release extends Message{
     private long spaceToken;
     private Long releaseSizeInBytes; // all if null
     private long remainingSizeInBytes;
-    private AuthorizationRecord authRecord ;
 
     /** Creates a new instance of Reserve */
     public Release(
@@ -32,24 +29,6 @@ public class Release extends Message{
         this.spaceToken = spaceToken;
         this.releaseSizeInBytes = releaseSizeInBytes;
         setReplyRequired(true);
-    }
-
-    public Release(
-            long spaceToken,
-            Long releaseSizeInBytes,
-            AuthorizationRecord authRecord ) {
-        this.spaceToken = spaceToken;
-        this.releaseSizeInBytes = releaseSizeInBytes;
-        this.authRecord=authRecord;
-        setReplyRequired(true);
-    }
-
-    public AuthorizationRecord getAuthRecord() {
-        return authRecord;
-    }
-
-    public void setAuthRecord(AuthorizationRecord authRecord) {
-        this.authRecord = authRecord;
     }
 
     public long getSpaceToken() {

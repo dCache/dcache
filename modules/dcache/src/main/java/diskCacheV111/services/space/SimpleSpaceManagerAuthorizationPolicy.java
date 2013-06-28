@@ -3,11 +3,13 @@ package diskCacheV111.services.space;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import diskCacheV111.util.VOInfo;
 
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.FQAN;
-import org.dcache.auth.GroupList;
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.Subjects;
 
 /**
  *
@@ -19,90 +21,57 @@ public class SimpleSpaceManagerAuthorizationPolicy
             LoggerFactory.getLogger(SimpleSpaceManagerAuthorizationPolicy.class);
 
     @Override
-    public void checkReleasePermission(AuthorizationRecord authRecord, Space space)
+    public void checkReleasePermission(Subject subject, Space space)
         throws SpaceAuthorizationException {
         String spaceGroup = space.getVoGroup();
         String spaceRole  = space.getVoRole();
 
-        if((spaceGroup == null || spaceGroup.equals(authRecord.getVoGroup())) &&
-            (spaceRole == null || spaceRole.equals(authRecord.getVoRole()))) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("userGroup : "+authRecord.getVoGroup()+", userRole : "+
-                             authRecord.getVoRole()+ " have permission to release ");
-            }
+        if (spaceGroup == null && spaceRole != null) {
+            logger.debug("Space {} has no owner and can be released by anybody", space);
+            return;
+        }
+        if (spaceGroup != null && spaceGroup.equals(Subjects.getUserName(subject)) && spaceRole == null) {
+            logger.debug("Subject with user name {} has permission to release space {}",
+                    Subjects.getUserName(subject), space);
             return;
         }
 
-        for(GroupList groupList: authRecord.getGroupLists()) {
-            String attribute = groupList.getAttribute();
-            if (attribute == null) {
-                continue;
-            }
-
-            String userGroup;
-            String userRole;
-            if( FQAN.isValid( attribute)) {
-                FQAN fqan = new FQAN(attribute);
-                userGroup = fqan.getGroup();
-                userRole  = fqan.getRole();
-            } else {
-                userGroup = attribute;
-                userRole = "";
-            }
-            if((spaceGroup == null || spaceGroup.equals(userGroup)) &&
-                (spaceRole == null || spaceRole.equals(userRole))) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
-                                 " have permission to release ");
-                }
+        for (FQANPrincipal principal : subject.getPrincipals(FQANPrincipal.class)) {
+            FQAN fqan = principal.getFqan();
+            if ((spaceGroup == null || spaceGroup.equals(fqan.getGroup())) &&
+                    (spaceRole == null || spaceRole.equals(fqan.getRole()))) {
+                logger.debug("Subject with fqan {} has permission to release space {}",
+                        fqan, space);
                 return;
             }
         }
 
-        throw new SpaceAuthorizationException("user with "+authRecord+
-                " has no permission to release "+space);
+        throw new SpaceAuthorizationException("Subject " + subject.getPrincipals() +
+                " has no permission to release " + space);
     }
 
     @Override
-    public VOInfo checkReservePermission(AuthorizationRecord authRecord, LinkGroup linkGroup)
+    public VOInfo checkReservePermission(Subject subject, LinkGroup linkGroup)
         throws SpaceAuthorizationException {
-        VOInfo[] voInfos = linkGroup.getVOs();
-        for(VOInfo voInfo:voInfos) {
-            String userGroup = authRecord.getVoGroup();
-            String userRole = authRecord.getVoRole();
-            if (voInfo.match(userGroup,userRole)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
-                                 " have permission to reserve ");
-                }
-                return new VOInfo(userGroup,userRole );
+        for (VOInfo voInfo: linkGroup.getVOs()) {
+            String userName = Subjects.getUserName(subject);
+            if (userName != null && voInfo.match(userName, null)) {
+                logger.debug("Subject with user name {} has permission to reserve {}", userName, linkGroup);
+                return new VOInfo(userName, null);
             }
 
-            for(GroupList groupList: authRecord.getGroupLists()) {
-                String attribute = groupList.getAttribute();
-                if (attribute == null) {
-                    continue;
-                }
-                if( FQAN.isValid( attribute)) {
-                    FQAN fqan = new FQAN(attribute);
-                    userGroup = fqan.getGroup();
-                    userRole = fqan.getRole();
-                } else {
-                    userGroup = attribute;
-                    userRole = "";
-                }
-                if (voInfo.match(userGroup,userRole)) {
+            for (FQANPrincipal principal : subject.getPrincipals(FQANPrincipal.class)) {
+                FQAN fqan = principal.getFqan();
+
+                if (voInfo.match(fqan.getGroup(), fqan.getRole())) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
-                                     " have permission to reserve ");
-                        return new VOInfo(userGroup,userRole );
-                        }
+                        logger.debug("Subject with FQAN {} has permission to reserve {}", fqan, linkGroup);
+                    }
+                    return new VOInfo(fqan.getGroup(), fqan.getRole());
                 }
             }
-
         }
-        throw new SpaceAuthorizationException("user with "+authRecord+
-                                                  " has no permission to reserve in "+linkGroup);
+        throw new SpaceAuthorizationException("Subject " + subject.getPrincipals() +
+                " has no permission to reserve in " + linkGroup);
     }
-
 }
