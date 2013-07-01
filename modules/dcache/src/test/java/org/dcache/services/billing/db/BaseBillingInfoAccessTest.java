@@ -64,6 +64,8 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
         properties.setProperty("datanucleus.connectionPool.minIdle", "1");
         properties.setProperty("datanucleus.connectionPool.maxActive", "1");
         properties.setProperty("datanucleus.connectionPool.maxWait", "60");
+        properties.setProperty("datanucleus.connectionPool.minPoolSize", "1");
+        properties.setProperty("datanucleus.connectionPool.maxPoolSize", "5");
         properties.setProperty("datanucleus.autoCreateSchema", "true");
         properties.setProperty("datanucleus.autoCreateTables", "true");
         properties.setProperty("datanucleus.autoCreateColumns", "true");

@@ -3,22 +3,19 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd" version="1.0">
 
-    <!-- Tutorial "unit" -->
     <persistence-unit name="AuthRecordPersistenceUnit">
         <provider>org.datanucleus.api.jpa.PersistenceProviderImpl</provider>
         <mapping-file>org/dcache/auth/AuthRecordORM.xml</mapping-file>
         <class>org.dcache.auth.AuthorizationRecord</class>
         <class>org.dcache.auth.GroupList</class>
         <class>org.dcache.auth.Group</class>
+        <exclude-unlisted-classes/>
         <properties>
             <property name="datanucleus.autoCreateSchema" value="true"/>
         </properties>
     </persistence-unit>
 
     <persistence-unit name="PinManager">
-      <!-- The provider is not required for JDO, but TopLink doesn't
-           appear to be happy if we don't specify something. -->
-      <provider>org.datanucleus</provider>
       <mapping-file>org/dcache/pinmanager/model/package.jdo</mapping-file>
       <properties>
         <property name="datanucleus.identifier.case" value="PreserveCase"/>

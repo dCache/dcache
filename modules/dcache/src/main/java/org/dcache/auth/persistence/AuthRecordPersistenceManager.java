@@ -65,6 +65,9 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         p.setProperty("javax.persistence.jdbc.url", jdbcUrl);
         p.setProperty("javax.persistence.jdbc.user", user);
         p.setProperty("javax.persistence.jdbc.password", pass);
+        p.setProperty("datanucleus.connectionPoolingType", "BoneCP");
+        p.setProperty("datanucleus.connectionPool.minPoolSize", "1");
+        p.setProperty("datanucleus.connectionPool.maxPoolSize", "20");
 
         EntityManagerFactory emf =
             Persistence.createEntityManagerFactory("AuthRecordPersistenceUnit", p);
