@@ -136,7 +136,7 @@ public class Configuration {
     private int parallel_streams=10;
 
     private int port=8443;
-    private String authzCacheLifetime="180";
+    private long authzCacheLifetime = 180;
     private String srm_root="/";
     private String proxies_directory = "../proxies";
     private int timeout=60*60; //one hour
@@ -370,7 +370,7 @@ public class Configuration {
                 "integer, 0 by default (which means do not set tcp_buffer_size at all)");
         put(document,root,"port",Integer.toString(port),
                 "port on which to publish the srm service");
-        put(document,root,"srmAuthzCacheLifetime", authzCacheLifetime,
+        put(document,root,"srmAuthzCacheLifetime", Long.toString(authzCacheLifetime),
                 "time in seconds to cache authorizations ");
         put(document,root,"srm_root", srm_root,
                 "root of the srm within the file system, nothing outside the root is accessible to the users");
@@ -547,7 +547,7 @@ public class Configuration {
             port = Integer.parseInt(value);
             break;
         case "srmAuthzCacheLifetime":
-            authzCacheLifetime = value;
+            authzCacheLifetime = Long.parseLong(value);
             break;
         case "srm_root":
             srm_root = value;
@@ -855,14 +855,14 @@ public class Configuration {
      * Getter for property authzCacheLifetime.
      * @return Value of property authzCacheLifetime.
      */
-    public String getAuthzCacheLifetime() {
+    public long getAuthzCacheLifetime() {
         return authzCacheLifetime;
     }
 
     /** Setter for property authzCacheLifetime.
      * @param authzCacheLifetime New value of property authzCacheLifetime.
      */
-    public void setAuthzCacheLifetime(String authzCacheLifetime) {
+    public void setAuthzCacheLifetime(long authzCacheLifetime) {
         this.authzCacheLifetime = authzCacheLifetime;
     }
 

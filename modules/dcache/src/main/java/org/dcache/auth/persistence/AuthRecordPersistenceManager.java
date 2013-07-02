@@ -30,7 +30,6 @@ import java.util.Set;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Group;
 import org.dcache.auth.GroupList;
-import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMUserPersistenceManager;
 
 /**
@@ -72,14 +71,6 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         EntityManagerFactory emf =
             Persistence.createEntityManagerFactory("AuthRecordPersistenceUnit", p);
         em = emf.createEntityManager();
-    }
-
-    @Override
-    public SRMUser persist(SRMUser user) {
-        if(user instanceof AuthorizationRecord ) {
-            return persist((AuthorizationRecord) user);
-        }
-        throw new IllegalArgumentException("illegal user type: "+user.getClass());
     }
 
     public synchronized AuthorizationRecord persist(AuthorizationRecord rec) {

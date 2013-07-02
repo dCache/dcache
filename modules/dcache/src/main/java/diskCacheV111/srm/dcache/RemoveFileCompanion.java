@@ -76,6 +76,8 @@ package diskCacheV111.srm.dcache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import java.util.EnumSet;
 
 import diskCacheV111.util.CacheException;
@@ -89,7 +91,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.RemoveFileCallbacks;
@@ -105,33 +106,33 @@ public class RemoveFileCompanion
 
     private final static CellPath BILLING_PATH = new CellPath("billing");
 
-    private final AuthorizationRecord _user;
+    private final Subject _subject;
     private final RemoveFileCallbacks _callbacks;
     private final String _path;
     private final CellEndpoint _endpoint;
 
-    private RemoveFileCompanion(AuthorizationRecord user,
+    private RemoveFileCompanion(Subject subject,
                                 String path,
                                 RemoveFileCallbacks callbacks,
                                 CellEndpoint endpoint)
     {
-        _user = user;
+        _subject = subject;
         _path = path;
         _callbacks = callbacks;
         _endpoint = endpoint;
     }
 
-    public static void removeFile(AuthorizationRecord user,
+    public static void removeFile(Subject subject,
                                   String path,
                                   RemoveFileCallbacks callbacks,
                                   CellStub pnfsStub,
                                   CellEndpoint endpoint)
     {
         RemoveFileCompanion companion =
-            new RemoveFileCompanion(user, path, callbacks, endpoint);
+            new RemoveFileCompanion(subject, path, callbacks, endpoint);
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
-        message.setSubject(user.toSubject());
+        message.setSubject(subject);
         pnfsStub.send(message, PnfsDeleteEntryMessage.class, companion);
     }
 
@@ -186,7 +187,7 @@ public class RemoveFileCompanion
             DoorRequestInfoMessage msg =
                 new DoorRequestInfoMessage(info.getCellName() + "@" +
                                            info.getDomainName(), "remove");
-            msg.setSubject(_user.toSubject());
+            msg.setSubject(_subject);
             msg.setPath(_path);
             msg.setPnfsId(pnfsid);
 

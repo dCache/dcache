@@ -1,12 +1,3 @@
-/*
- * AuthorizationRecord.java
- *
- * Created on August 14, 2008, 11:13 AM
- *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
-
 package org.dcache.auth;
 
 import com.google.common.base.Objects;
@@ -22,11 +13,9 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.security.auth.Subject;
 
-import java.io.Serializable;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -51,8 +40,7 @@ import static javax.persistence.FetchType.EAGER;
 
 @Entity
 @Table(name="authrecord")
-public class AuthorizationRecord implements Serializable, SRMUser{
-    private static final long serialVersionUID = 7412538400840464074L;
+public class AuthorizationRecord implements SRMUser{
 
     private static final String PRIMARY_ATTRIBUTE_PREFIX_THAT_RETURN_IDENTITY_AS_VO_GROUP = "/Role=";
 
@@ -71,7 +59,6 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     private String home = "/";
     private String root = "/";
     private boolean readOnly;
-    private int currentGIDindex;
     private String authn;
     private String authz;
 
@@ -356,19 +343,6 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         return authz;
     }
 
-    @Transient
-    public int getCurrentGIDindex() {
-        return currentGIDindex;
-    }
-
-    public void setCurrentGIDindex(int currentGIDindex) {
-        this.currentGIDindex = currentGIDindex;
-    }
-
-    public void incrementGIDindex() {
-        currentGIDindex++;
-    }
-
     @Basic
     @Column( name="name")
     public String getName() {
@@ -407,10 +381,6 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         }
         sb.append(" >");
         return sb.toString();
-    }
-
-    public String hashCodeString() {
-        return Integer.toHexString(hashCode());
     }
 
     @Transient
@@ -547,50 +517,5 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public int hashCode(){
         initHashStrings();
         return getAuthn().hashCode()^getAuthz().hashCode();
-    }
-
-    @Transient
-    public int[] getGids() {
-        List<Integer> gids = new ArrayList<>();
-        if(groupLists != null) {
-            for(GroupList groupList : groupLists) {
-                List<Group> groups = groupList.getGroups();
-                if(groups!=null) {
-                    for(Group group:groups) {
-                        gids.add(group.getGid());
-                    }
-                }
-            }
-        }
-        if(gids.isEmpty()) {
-            return new int[] {-1};
-        }
-
-        int [] gidIntArray = new int[gids.size()];
-        for(int i=0; i<gidIntArray.length; i++) {
-            gidIntArray[i] = gids.get(i);
-        }
-        return gidIntArray;
-    }
-
-    /**
-     *
-     * @return UserAuthRecord which corresponds to this GroupList
-     */
-    @Transient
-    public UserAuthRecord getUserAuthRecord() {
-        return new UserAuthRecord(
-                getIdentity(),
-                getName(),
-                getPrimaryAttribute(),
-                isReadOnly(),
-                getPriority(),
-                getUid(),
-                getGids(),
-                getHome(),
-                getRoot(),
-                "/",
-                new HashSet<String>());
-
     }
 }

@@ -1,69 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.13  2007/03/27 19:20:28  tdh
-// Merge of support for multiple attributes from 1.7.1.
-//
-// Revision 1.12  2006/12/15 16:08:44  tdh
-// Added code to make delegation from cell to gPlazma optional, through the batch file parameter "delegate-to-gplazma". Default is to not delegate.
-//
-// Revision 1.11  2006/08/07 21:31:29  tdh
-// Do not throw exception if gPlazma cell failes and direct module calls yet to be tried.
-//
-// Revision 1.10  2006/08/02 22:09:54  timur
-// more work for srm space reservation, included voGroup and voRole support
-//
-// Revision 1.9  2006/07/25 16:07:50  tdh
-// Make message to gPlazma cell independent of gPlazma domain.
-//
-// Revision 1.8  2006/07/03 19:56:50  tdh
-// Added code to throw and/or catch AuthenticationServiceExceptions from GPLAZMA cell.
-//
-// Revision 1.7  2006/06/29 20:27:43  tdh
-// Changed hard-coded path of gplazma cell to gPlazma@gPlazmaDomain.
-//
-// Revision 1.6  2006/06/09 15:17:17  tdh
-// Added fields to constructor for using gplazma cell for authentfication. Added logic to use gplazma cell.
-//
-// Revision 1.5  2005/05/20 16:50:39  timur
-// adding optional usage of vo authorization module
-//
-// Revision 1.4  2005/03/01 23:12:09  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.3  2005/01/25 05:17:31  timur
-// moving general srm stuff into srm repository
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.4  2004/06/18 22:20:51  timur
-// adding sql database storage for requests
-//
-// Revision 1.1.2.3  2004/06/16 22:14:31  timur
-// copy works for mulfile request
-//
-// Revision 1.1.2.2  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-// Revision 1.1.2.1  2004/05/18 21:40:30  timur
-// incorporation of the new scheduler into srm, repackaging of all the srm classes
-//
-// Revision 1.11  2003/10/22 21:00:26  cvs
-// adding staff for srm v2.1
-//
-// Revision 1.10  2003/06/18 01:33:23  cvs
-// upgrading Globus Java CoG Kit to version 1.1 Alpha
-//
-// Revision 1.9  2003/05/09 22:00:05  cvs
-// new better implementation of srm copy functionality, that workes with groups of files
-//
-// Revision 1.8  2003/04/10 22:05:31  cvs
-// dcache authorization changes
-//
-// Revision 1.7  2003/03/28 17:47:47  cvs
-// remove credential caching, so that changes in kpwd passwd file take effect immediately
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -152,23 +86,13 @@ import javax.security.auth.Subject;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 import diskCacheV111.util.CacheException;
 
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.Group;
-import org.dcache.auth.GroupList;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Origin.AuthType;
-import org.dcache.auth.UserAuthRecord;
-import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
@@ -177,25 +101,17 @@ import org.dcache.srm.SRMUser;
  *
  * @author  timur
  */
-public final class DCacheAuthorization implements SRMAuthorization {
-
-      static Random random;
-      static {
-        random = new Random();
-      }
-
-    private static  Logger _logAuth =
-             LoggerFactory.getLogger(DCacheAuthorization.class);
-    private static Map<Object, TimedAuthorizationRecord> UsernameMap = new HashMap<>();
-    private long cache_lifetime;
-    private AuthRecordPersistenceManager authRecordPersistenceManager;
+public final class DCacheAuthorization implements SRMAuthorization
+{
+    private static final Logger LOGGER = LoggerFactory.getLogger(DCacheAuthorization.class);
+    private final DcacheUserPersistenceManager persistenceManager;
     private final LoginStrategy loginStrategy;
 
     public DCacheAuthorization(LoginStrategy loginStrategy,
-            AuthRecordPersistenceManager authRecordPersistenceManager)
+            DcacheUserPersistenceManager persistenceManager)
     {
        this.loginStrategy = loginStrategy;
-       this.authRecordPersistenceManager = authRecordPersistenceManager;
+       this.persistenceManager = persistenceManager;
     }
 
     /** Performs authorization checks. Throws
@@ -211,90 +127,17 @@ public final class DCacheAuthorization implements SRMAuthorization {
      */
     @Override
     public SRMUser authorize(Long requestCredentialId,
-        String secureId,String name, GSSContext gsscontext, String remoteIP)
-    throws SRMAuthorizationException {
-
-        AuthorizationRecord user_rec = null;
-        if( _logAuth.isDebugEnabled() ) {
-                _logAuth.debug("authorize " + requestCredentialId + ":"+
-                    secureId+":"+
-                    name+":" );
-        }
-
-        if(cache_lifetime>0) {
-            if( _logAuth.isDebugEnabled() ) {
-                    _logAuth.debug("getting user mapping");
-            }
-
-
-          TimedAuthorizationRecord tUserRec = getUsernameMapping(requestCredentialId);
-            if( _logAuth.isDebugEnabled() ) {
-              if(tUserRec != null ) {
-                  AuthorizationRecord userRec = tUserRec.user_rec;
-                  if(userRec != null ) {
-                     _logAuth.debug("cached tUserRec = "+userRec);
-                  } else {
-                      _logAuth.debug("cached tUserRec = null ");
-                  }
-              } else {
-                  _logAuth.debug("cached tUserRec = null ");
-              }
-          }
-
-          if( tUserRec!=null && tUserRec.age() < cache_lifetime &&
-            tUserRec.sameDesiredUserName(name)) {
-              user_rec = tUserRec.getAuthorizationRecord();
-          }
-        }
-
-        if(user_rec  == null){
-            user_rec = authorize(secureId, gsscontext, name, remoteIP);
-
-            /* Persist the authorization record. This is the place
-             * in which we resolve conflicts in id generation.
-             */
-            AuthorizationRecord persistent;
-            long id = user_rec.getId();
-            do {
-                user_rec.setId(id++); // Effectively, a delayed incrementation.
-                persistent =
-                    authRecordPersistenceManager.find(user_rec.getId());
-            } while (persistent != null && !persistent.equals(user_rec));
-
-            if (persistent == null) {
-                _logAuth.debug("auth object not found in database, persisting ");
-                persistent = authRecordPersistenceManager.persist(user_rec);
-                if (!persistent.equals(user_rec)) {
-                    _logAuth.error("Persisted authorization record is different from the original");
-                }
-            }
-
-            if(cache_lifetime>0) {
-                putUsernameMapping(requestCredentialId, new TimedAuthorizationRecord(user_rec, name));
-            }
-        }
-
-
-        if(user_rec==null) {
-          throw new SRMAuthorizationException("username is null");
-        }
-        return user_rec;
-
-    }
-
-    private AuthorizationRecord authorize(String secureId,
-                                          GSSContext serviceContext,
-                                          String name,
-                                          String remoteIP)
-        throws SRMAuthorizationException
+                             String secureId,String name, GSSContext gsscontext, String remoteIP)
+            throws SRMAuthorizationException
     {
+        LOGGER.trace("authorize {}:{}:{}", requestCredentialId, secureId, name);
         try {
-            if (!(serviceContext instanceof ExtendedGSSContext)) {
+            if (!(gsscontext instanceof ExtendedGSSContext)) {
                 throw new RuntimeException("GSSContext not instance of ExtendedGSSContext");
             }
 
             ExtendedGSSContext extendedcontext =
-                (ExtendedGSSContext) serviceContext;
+                (ExtendedGSSContext) gsscontext;
             X509Certificate[] chain =
                 (X509Certificate[]) extendedcontext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
 
@@ -315,112 +158,16 @@ public final class DCacheAuthorization implements SRMAuthorization {
                 InetAddress remoteOrigin = InetAddress.getByName(remoteIP);
                 subject.getPrincipals().add(new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                                                       remoteOrigin));
-                _logAuth.debug("User connected from the following IP, setting as origin: {}.",
-                              remoteIP);
+                LOGGER.debug("User connected from the following IP, setting as origin: {}.",
+                        remoteIP);
             } catch (UnknownHostException uhex) {
-                _logAuth.info("Could not add the remote-IP {} as an origin principal.",
-                              remoteIP);
+                LOGGER.info("Could not add the remote-IP {} as an origin principal.",
+                        remoteIP);
             }
 
-            AuthorizationRecord authRecord =
-                new AuthorizationRecord(loginStrategy.login(subject));
-
-            return authRecord;
-        } catch (GSSException e) {
-            throw new SRMAuthorizationException(e.getMessage(), e);
-        } catch (CacheException e) {
+            return persistenceManager.persist(loginStrategy.login(subject));
+        } catch (GSSException | CacheException e) {
             throw new SRMAuthorizationException(e.getMessage(), e);
         }
     }
-
-  public void setCacheLifetime(String lifetime_str) {
-    if(lifetime_str==null || lifetime_str.length()==0) {
-        return;
-    }
-    try {
-      setCacheLifetime(Long.decode(lifetime_str) *1000);
-    } catch (NumberFormatException nfe) {
-      _logAuth.error("Could not format cache lifetime=" + lifetime_str + " as long integer.");
-    }
-  }
-
-  public void setCacheLifetime(long lifetime) {
-    cache_lifetime = lifetime;
-  }
-
-  private synchronized void putUsernameMapping(Object key, TimedAuthorizationRecord tUserRec) {
-    UsernameMap.put(key, tUserRec);
-}
-
-  private synchronized TimedAuthorizationRecord getUsernameMapping(Object key) {
-    return UsernameMap.get(key);
-  }
-
-  private class TimedAuthorizationRecord  {
-    AuthorizationRecord user_rec;
-    long timestamp;
-    String desiredUserName;
-
-    TimedAuthorizationRecord(AuthorizationRecord user_rec) {
-      this.user_rec=user_rec;
-      this.timestamp=System.currentTimeMillis();
-    }
-
-    TimedAuthorizationRecord(AuthorizationRecord user_rec, String desiredUserName) {
-      this(user_rec);
-      this.desiredUserName=desiredUserName;
-    }
-
-    private AuthorizationRecord getAuthorizationRecord() {
-      return user_rec;
-    }
-
-    private long age() {
-      return System.currentTimeMillis() - timestamp;
-    }
-
-    private boolean sameDesiredUserName(String requestDesiredUserName) {
-      if(desiredUserName==null && requestDesiredUserName==null) {
-          return true;
-      }
-      if(desiredUserName == null) {
-          return false;
-      }
-      return (desiredUserName.equals(requestDesiredUserName));
-    }
-  }
-
-
-  public static AuthorizationRecord convertLegacyToNewAuthRec(
-      UserAuthRecord legacyAuthRec) {
-        AuthorizationRecord authRec = new AuthorizationRecord();
-
-        authRec.setId(random.nextLong());
-        authRec.setIdentity(legacyAuthRec.Username);
-        authRec.setName(legacyAuthRec.DN);
-        authRec.setUid(legacyAuthRec.UID);
-        authRec.setPriority(legacyAuthRec.priority);
-        authRec.setHome(legacyAuthRec.Home);
-        authRec.setRoot(legacyAuthRec.Root);
-        authRec.setReadOnly(legacyAuthRec.ReadOnly);
-
-        List<GroupList> grplistcoll = new LinkedList<>();
-        GroupList grplist = new GroupList();
-        List<Group> grpcoll = new LinkedList<>();
-        int[] GIDs = legacyAuthRec.GIDs;
-        for (int gid : GIDs) {
-            Group grp = new Group();
-            grp.setGroupList(grplist);
-            grp.setGid(gid);
-            grpcoll.add(grp);
-        }
-        grplist.setGroups(grpcoll);
-        grplist.setAttribute(legacyAuthRec.getFqan().toString());
-        grplist.setAuthRecord(authRec);
-        grplistcoll.add(grplist);
-        authRec.setGroupLists(grplistcoll);
-
-        return authRec;
-
-  }
 }

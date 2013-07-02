@@ -69,11 +69,12 @@ package diskCacheV111.srm.dcache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import diskCacheV111.services.space.message.CancelUse;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 
@@ -135,25 +136,22 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion {
     }
 
     public static void unmarkSpace(
-            AuthorizationRecord user,
+            Subject subject,
             long spaceToken,
-            String pnfPath,
+            String pnfsPath,
             SrmCancelUseOfSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.debug(" SrmMarkSpaceAsBeingUsedCompanion.markSpace(" +
-                   user +
-                   " for spaceToken" + spaceToken +
-                   " pnfsPath=" + pnfPath +
-                   ")");
+        _log.trace("SrmMarkSpaceAsBeingUsedCompanion.markSpace({} for spaceToken={} pnfsPath={})",
+                subject.getPrincipals(), spaceToken, pnfsPath);
         SrmUnmarkSpaceAsBeingUsedCompanion companion =
                 new SrmUnmarkSpaceAsBeingUsedCompanion(
                 spaceToken,
-                pnfPath,
+                pnfsPath,
                 callbacks);
         CancelUse cancelUse =
                 new CancelUse(
                 spaceToken,
-                pnfPath,
+                pnfsPath,
                 null);
         cancelUse.setReplyRequired(true);
         try {

@@ -72,14 +72,9 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm;
 
-
-
-/**
- *
- * @author  timur
- */
-public interface SRMUser{
-    public int getPriority();
-    public long getId();
-    public boolean isReadOnly();
+public interface SRMUser
+{
+    int getPriority();
+    long getId();
+    boolean isReadOnly();
 }

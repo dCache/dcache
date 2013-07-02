@@ -129,13 +129,32 @@
     </property>
   </bean>
 
-  <bean id="auth-persistence-manager"
-        class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
-    <description>Persistence manager for authentication</description>
-    <constructor-arg value="${db.url}"/>
-    <constructor-arg value="${db.driver}"/>
-    <constructor-arg value="${db.user}"/>
-    <constructor-arg value="${db.password}"/>
+  <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
+      <constructor-arg>
+          <bean class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
+              <description>Persistence manager for authentication</description>
+              <constructor-arg value="${db.url}"/>
+              <constructor-arg value="${db.driver}"/>
+              <constructor-arg value="${db.user}"/>
+              <constructor-arg value="${db.password}"/>
+          </bean>
+      </constructor-arg>
+  </bean>
+
+  <bean id="login-strategy" class="org.dcache.services.login.CachingLoginStrategy">
+      <constructor-arg>
+          <bean class="org.dcache.services.login.RemoteLoginStrategy">
+              <property name="cellStub" ref="gplazma-stub"/>
+          </bean>
+      </constructor-arg>
+      <constructor-arg value="1000"/> <!-- Cache size -->
+      <constructor-arg value="${srmAuthzCacheLifetime}"/>
+      <constructor-arg value="#{T(java.util.concurrent.TimeUnit).SECONDS}"/>
+  </bean>
+
+  <bean id="authorization" class="diskCacheV111.srm.dcache.DCacheAuthorization">
+      <constructor-arg ref="login-strategy"/>
+      <constructor-arg ref="auth-persistence-manager"/>
   </bean>
 
   <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
@@ -285,6 +304,7 @@
 
     <property name="storage" ref="storage"/>
     <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
+    <property name="authorization" ref="authorization"/>
 
     <property name="databaseParametersForList.databaseEnabled"
               value="${srmLsDatabaseEnabled}"/>

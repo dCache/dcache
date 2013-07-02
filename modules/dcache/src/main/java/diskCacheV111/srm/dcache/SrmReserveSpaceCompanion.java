@@ -74,6 +74,8 @@ package diskCacheV111.srm.dcache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import diskCacheV111.services.space.NoFreeSpaceException;
 import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.services.space.message.Reserve;
@@ -82,7 +84,6 @@ import diskCacheV111.util.RetentionPolicy;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
@@ -153,7 +154,7 @@ public final class SrmReserveSpaceCompanion
 
     @Override
     public void success(Reserve reservationResponse) {
-        _log.debug("success");
+        _log.trace("success");
         callbacks.SpaceReserved(
                 Long.toString(reservationResponse.getSpaceToken()),
                 reservationResponse.getSizeInBytes());
@@ -175,7 +176,7 @@ public final class SrmReserveSpaceCompanion
     }
 
     public static void reserveSpace(
-            AuthorizationRecord user,
+            Subject subject,
             long sizeInBytes,
             long spaceReservationLifetime,
             String retentionPolicyString,
@@ -183,10 +184,8 @@ public final class SrmReserveSpaceCompanion
             String description,
             SrmReserveSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.debug(" SrmReserveSpaceCompanion.reserveSpace(" + user + " for " + sizeInBytes +
-                " bytes, access lat.=" + accessLatencyString + " retention pol.=" + retentionPolicyString +
-                " lifetime=" + spaceReservationLifetime +
-                ")");
+        _log.trace(" SrmReserveSpaceCompanion.reserveSpace({} for {} bytes, access lat.={} retention pol.={} lifetime={})",
+                subject.getPrincipals(), sizeInBytes, accessLatencyString, retentionPolicyString, spaceReservationLifetime);
 
 
 
@@ -226,7 +225,7 @@ public final class SrmReserveSpaceCompanion
                 accessLatency,
                 spaceReservationLifetime,
                 description);
-        reserve.setSubject(user.toSubject());
+        reserve.setSubject(subject);
         spaceManagerStub.send(reserve, Reserve.class,
                 new ThreadManagerMessageCallback(companion));
     }

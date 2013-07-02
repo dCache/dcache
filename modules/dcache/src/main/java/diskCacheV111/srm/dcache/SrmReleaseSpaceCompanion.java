@@ -74,9 +74,10 @@ package diskCacheV111.srm.dcache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import diskCacheV111.services.space.message.Release;
 
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
@@ -126,7 +127,7 @@ public final class SrmReleaseSpaceCompanion
 
     @Override
     public void success(Release releaseResponse) {
-        _log.debug("success");
+        _log.trace("success");
         callbacks.SpaceReleased(
                 Long.toString(releaseResponse.getSpaceToken()),
                 releaseResponse.getRemainingSizeInBytes());
@@ -146,14 +147,13 @@ public final class SrmReleaseSpaceCompanion
     }
 
     public static void releaseSpace(
-            AuthorizationRecord user,
+            Subject subject,
             long spaceToken,
             Long spaceToReleaseInBytes,
             SrmReleaseSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.debug("SrmReleaseSpaceCompanion.releaseSpace(" + user +
-                ", token " + spaceToken +
-                ", spaceToReleaseInBytes " + spaceToReleaseInBytes + ")");
+        _log.trace("SrmReleaseSpaceCompanion.releaseSpace({}, token {}, spaceToReleaseInBytes {})",
+                subject.getPrincipals(),  spaceToken, spaceToReleaseInBytes);
 
         SrmReleaseSpaceCompanion companion = new SrmReleaseSpaceCompanion(
                 spaceToken,
@@ -162,7 +162,7 @@ public final class SrmReleaseSpaceCompanion
         Release release =
                 new Release(spaceToken,
                 spaceToReleaseInBytes);
-        release.setSubject(user.toSubject());
+        release.setSubject(subject);
         spaceManagerStub.send(release, Release.class,
                 new ThreadManagerMessageCallback(companion));
     }

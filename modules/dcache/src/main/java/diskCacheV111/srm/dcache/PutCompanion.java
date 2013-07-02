@@ -93,7 +93,7 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 
 import org.dcache.acl.enums.AccessType;
-import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
@@ -140,8 +140,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     private boolean recursive_directory_creation;
     private List<String> pathItems;
     private int current_dir_depth = -1;
-    private AuthorizationRecord user;
-    private Subject userSubject;
+    private Subject subject;
     private boolean overwrite;
     private String fileId;
     private FileMetaData fileFMD;
@@ -149,16 +148,14 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     private long lastOperationTime = creationTime;
     private PermissionHandler permissionHandler;
 
-    private PutCompanion(AuthorizationRecord user,
-                         Subject userSubject,
+    private PutCompanion(Subject subject,
                          PermissionHandler permissionHandler,
                          String path,
                          PrepareToPutCallbacks callbacks,
                          CellStub pnfsStub,
                          boolean recursive_directory_creation,
                          boolean overwrite) {
-        this.user =  user;
-        this.userSubject = userSubject;
+        this.subject = subject;
         this.permissionHandler = permissionHandler;
         this.path = path;
         this.pnfsStub = pnfsStub;
@@ -327,7 +324,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         state = State.WAITING_FOR_FILE_DELETE_RESPONSE_MESSAGE;
         PnfsDeleteEntryMessage deleteMessage = new PnfsDeleteEntryMessage(message.getPnfsId(),
                                                                           EnumSet.of(LINK, REGULAR));
-        deleteMessage.setSubject(userSubject);
+        deleteMessage.setSubject(subject);
         pnfsStub.send(deleteMessage,
                       PnfsDeleteEntryMessage.class,
                       new ThreadManagerMessageCallback(this));
@@ -349,7 +346,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             FileMetaData srm_dirFmd = new DcacheFileMetaData(attributes);
             if((pathItems.size() -1 ) >current_dir_depth) {
                 AccessType canCreateSubDir =
-                        permissionHandler.canCreateSubDir(userSubject,
+                        permissionHandler.canCreateSubDir(subject,
                         attributes);
                 if(canCreateSubDir == AccessType.ACCESS_ALLOWED) {
                     createNextDirectory(srm_dirFmd);
@@ -364,7 +361,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             }
             else {
                  AccessType canCreateFile =
-                          permissionHandler.canCreateFile(userSubject,
+                          permissionHandler.canCreateFile(subject,
                           attributes);
                 if(canCreateFile != AccessType.ACCESS_ALLOWED ) {
                     String error = "user has no permission to create file "+
@@ -395,8 +392,8 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         current_dir_depth++;
         String newDirPath = getCurrentDirPath();
 
-        int uid = user.getUid();
-        int gid = user.getGid();
+        int uid = (int) Subjects.getUid(subject);
+        int gid = (int) Subjects.getPrimaryGid(subject);
         int perm = 0755;
 
         if ( parentFmd != null ) {
@@ -533,14 +530,14 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
        return state.toString();
    }
 
-    public static void PrepareToPutFile(AuthorizationRecord user,
+    public static void PrepareToPutFile(Subject subject,
                                         PermissionHandler permissionHandler,
                                         String path,
                                         PrepareToPutCallbacks callbacks,
                                         CellStub pnfsStub,
                                         boolean recursive_directory_creation,
                                         boolean overwrite) {
-        if(user == null) {
+        if(subject == null) {
             callbacks.AuthorizationError("user unknown, can not write");
             return;
         }
@@ -552,11 +549,9 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                     " FileRequest does not specify path!!!");
         }
         PnfsMapPathMessage message = new PnfsMapPathMessage(pnfsPath);
-        Subject userSubject = user.toSubject();
-        message.setSubject(userSubject);
+        message.setSubject(subject);
         PutCompanion companion = new PutCompanion(
-            user,
-            userSubject,
+            subject,
             permissionHandler,
             path,
             callbacks,

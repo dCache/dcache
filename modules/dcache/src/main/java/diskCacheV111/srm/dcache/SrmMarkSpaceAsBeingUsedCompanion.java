@@ -74,13 +74,14 @@ package diskCacheV111.srm.dcache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import diskCacheV111.services.space.NoFreeSpaceException;
 import diskCacheV111.services.space.SpaceAuthorizationException;
 import diskCacheV111.services.space.SpaceExpiredException;
 import diskCacheV111.services.space.SpaceReleasedException;
 import diskCacheV111.services.space.message.Use;
 
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
@@ -161,7 +162,7 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
 
     @Override
     public void success(Use message) {
-        _log.debug("success");
+        _log.trace("success");
         callbacks.SpaceUsed();
     }
 
@@ -180,38 +181,35 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
     }
 
     public static void markSpace(
-            AuthorizationRecord user,
+            Subject subject,
             long spaceToken,
-            String pnfPath,
+            String pnfsPath,
             long sizeInBytes,
             long markLifetime,
             boolean overwrite,
             SrmUseSpaceCallbacks callbacks,
             CellStub spaceManagerStub) {
-        _log.debug(" SrmMarkSpaceAsBeingUsedCompanion.markSpace(" + user +
-                " spaceToken=" + spaceToken +
-                " pnfsPath=" + pnfPath + " of " + sizeInBytes +
-                " bytes, makr lifetime=" + markLifetime +
-                ")");
+        _log.trace("SrmMarkSpaceAsBeingUsedCompanion.markSpace({} spaceToken={} pnfsPath={} of {} bytes, mark lifetime={})",
+                subject.getPrincipals(), spaceToken, pnfsPath, sizeInBytes, markLifetime);
 
 
 
         SrmMarkSpaceAsBeingUsedCompanion companion =
                 new SrmMarkSpaceAsBeingUsedCompanion(
                 spaceToken,
-                pnfPath,
+                pnfsPath,
                 sizeInBytes,
                 markLifetime,
                 overwrite,
                 callbacks);
         Use use = new Use(
                 spaceToken,
-                pnfPath,
+                pnfsPath,
                 null,
                 sizeInBytes,
                 markLifetime,
                 overwrite);
-        use.setSubject(user.toSubject());
+        use.setSubject(subject);
         spaceManagerStub.send(use, Use.class,
                 new ThreadManagerMessageCallback(companion));
     }

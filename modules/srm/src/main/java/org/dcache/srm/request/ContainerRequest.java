@@ -726,35 +726,29 @@ public abstract class ContainerRequest extends Request {
 
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
-        try {
+        if (longformat) {
+            sb.append(getMethod()).append("\n");
+            sb.append("id: ").append(getId()).append("\n");
+            sb.append("owner: ").append(getUser()).append("\n");
+            sb.append("state: ").append(getState()).append("\n");
+            sb.append("credential: \"").append(getCredential()).append("\"\n");
+            sb.append("submitted: ").append(new Date(getCreationTime())).append("\n");
+            sb.append("expires: ").append(new Date(getCreationTime() + getLifetime())).append("\n");
+            sb.append("status code: ").append(getStatusCode()).append("\n");
+            sb.append("error message: ").append(getErrorMessage()).append("\n");
+            sb.append("History of State Transitions: \n");
+            sb.append(getHistory());
+            for (FileRequest fr:fileRequests) {
+                sb.append("\n");
+                fr.toString(sb, longformat);
+            }
+        } else {
             sb.append(getMethod());
             sb.append(" id: ").append(getId());
-            sb.append(" created: ").append(getUser());
+            sb.append(" owner: ").append(getUser());
             sb.append(" state: ").append(getState());
-
-            if(longformat) {
-                sb.append("\ncredential: \"").append(getCredential()).
-                        append("\"\n");
-                sb.append("\nsubmitted: ").
-                        append(new Date(getCreationTime()));
-                sb.append("\nexpires: ").
-                        append(new Date(
-                        getCreationTime() +getLifetime()));
-                sb.append("\nstatus code: ").append(getStatusCode());
-                sb.append("\nerror message: ").append(getErrorMessage());
-                sb.append("\nHistory of State Transitions: \n");
-                sb.append(getHistory());
-                for(FileRequest fr:fileRequests) {
-                    sb.append("\n");
-                    fr.toString(sb, longformat);
-                }
-            } else {
-                sb.append(" number of files:").append(fileRequests.size());
-            }
-        }catch(Exception e) {
-            logger.error(e.toString());
+            sb.append(" number of files:").append(fileRequests.size());
         }
-
     }
 
     public void fileRequestStateChanged(FileRequest request)
