@@ -51,6 +51,10 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
         _libc = (LibC) Native.loadLibrary("c", LibC.class);
     }
 
+    Nsswitch(LibC libc) {
+        _libc = libc;
+    }
+
     private __password findPasswordRecord(Set<Principal> principals) {
         for (UserNamePrincipal principal: filter(principals, UserNamePrincipal.class)) {
             __password p = _libc.getpwnam(principal.getName());
