@@ -82,7 +82,7 @@ public final class MoverData extends PnfsStorageInfo {
                         + transferSize + "," + storageClass + "," + isNew
                         + "," + client + "," + connectionTime + ","
                         + errorCode + "," + errorMessage + "," + protocol
-                        + "," + initiator + "," + isP2p + ")";
+                        + "," + initiator + "," + p2p + ")";
     }
 
     private Long transferSize;
@@ -90,14 +90,14 @@ public final class MoverData extends PnfsStorageInfo {
     private String client;
     private String protocol;
     private String initiator;
-    private Boolean isP2p;
+    private Boolean p2p;
 
     public MoverData() {
         transferSize = 0L;
         isNew = false;
         protocol = DEFAULT_PROTOCOL;
         client = DEFAULT_PROTOCOL;
-        isP2p = false;
+        p2p = false;
     }
 
     public MoverData(MoverInfoMessage info) {
@@ -123,7 +123,7 @@ public final class MoverData extends PnfsStorageInfo {
         }
 
         initiator = info.getInitiator();
-        isP2p = info.isP2P();
+        p2p = info.isP2P();
     }
 
     public Long getTransferSize() {
@@ -138,12 +138,16 @@ public final class MoverData extends PnfsStorageInfo {
         return isNew;
     }
 
-    public Boolean isP2P() {
-        return isP2p;
-    }
-
     public void setIsNew(Boolean isNew) {
         this.isNew = isNew;
+    }
+
+    public Boolean isP2p() {
+        return p2p;
+    }
+
+    public void setP2p(Boolean p2p) {
+        this.p2p = p2p;
     }
 
     public String getClient() {
