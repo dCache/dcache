@@ -101,20 +101,24 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
                 try {
                     doCommitIfNeeded(true);
                 } catch (BillingQueryException t) {
-                    logger.error("{}; {}",
-                                 "could not not commit",
-                                 "some billing data may be lost");
-                    logger.debug("{}: {}", "timed commit failure", t.toString());
+                    synchronized (this) {
+                        logger.error("failed periodic commit! " +
+                                     "{} billing records may have been lost",
+                                     insertCount);
+                        logger.trace("timed commit failure", t);
+                    }
                 }
             }
             logger.trace("TimedCommitter thread doCommitIfNeeded");
             try {
                 doCommitIfNeeded(true);
             } catch (BillingQueryException t) {
-                logger.error("{}; {}",
-                             "could not not commit",
-                             "some billing data may be lost");
-                logger.debug("{}: {}", "timed commit failure", t.toString());
+                synchronized (this) {
+                    logger.error("failed final commit! " +
+                                 "{} billing records may have been lost",
+                                 insertCount);
+                    logger.trace("timed commit failure", t);
+                }
             }
             logger.trace("TimedCommitter thread exiting");
         }

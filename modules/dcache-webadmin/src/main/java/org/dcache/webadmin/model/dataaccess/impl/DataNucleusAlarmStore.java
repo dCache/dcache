@@ -253,7 +253,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
                 logger.debug("removed {} closed alarms with timestamp prior to {}",
                                 count, new Date(currentThreshold));
             } catch (DAOException e) {
-                logger.error("error in alarm cleanup: {}", e.getLocalizedMessage());
+                logger.error("error in alarm cleanup: {}", e.getMessage());
             }
 
             try {

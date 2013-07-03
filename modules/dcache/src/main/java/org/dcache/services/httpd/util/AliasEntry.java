@@ -230,20 +230,18 @@ public class AliasEntry {
     private String statusMessage;
     private Method getInfo;
 
-    private AliasEntry(String name, AliasType type, Handler handler, String spec) {
+    private AliasEntry(String name, AliasType type, Handler handler, String spec)
+                    throws NoSuchMethodException, SecurityException {
         this.name = name;
         this.type = type;
         this.handler = handler;
         this.spec = spec;
 
         if (handler instanceof ResponseEngineHandler) {
-            try {
-                final HttpResponseEngine engine
-                    = ((ResponseEngineHandler) handler).getEngine();
-                getInfo = engine.getClass().getMethod("getInfo",
-                                new Class[] { PrintWriter.class });
-            } catch (final Exception e) {
-            }
+            HttpResponseEngine engine
+                = ((ResponseEngineHandler) handler).getEngine();
+            getInfo = engine.getClass().getMethod("getInfo",
+                            new Class[] { PrintWriter.class });
         }
     }
 

@@ -296,7 +296,8 @@ public final class StandardBillingService implements IBillingService, Runnable {
                     generatePlot(type, timeFrames[tFrame], fileName,
                                     getTitle(type.ordinal(), tFrame, low));
                 } catch (TimeFrameHistogramException t) {
-                    logger.error("generatePlot {}", type, t);
+                    logger.error("Failed to generate plot {}: {}",
+                                    type, t.getMessage());
                 }
             }
         }
@@ -429,8 +430,8 @@ public final class StandardBillingService implements IBillingService, Runnable {
                     p.load(is);
                     properties.override(p);
                 } catch (IOException t) {
-                    logger.trace("problem loading properties", t);
-                    throw new RuntimeException(t);
+                    throw new RuntimeException("problem loading properties: "
+                                    + t.getMessage(), t);
                 }
             } else {
                 throw new RuntimeException("resource " + resource

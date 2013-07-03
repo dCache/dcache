@@ -53,7 +53,7 @@ public class HandlerDelegator extends AbstractHandler {
         } else {
             printHttpException(new HttpException(HttpServletResponse.SC_BAD_REQUEST,
                                                 "Bad Request : " + e), response);
-            logger.warn("Problem in HttpServiceCellHandler: {}", e);
+            logger.warn("Problem in HttpServiceCellHandler: {}", e.getMessage());
         }
     }
 
@@ -91,7 +91,7 @@ public class HandlerDelegator extends AbstractHandler {
             uri = request.getRequestURI();
             alias = extractAlias(uri);
 
-            logger.info("handle {}, {}", uri, alias);
+            logger.debug("handle {}, {}", uri, alias);
 
             entry = aliases.get(alias);
 

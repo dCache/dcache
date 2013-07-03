@@ -160,7 +160,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
             Collection<LogEntry> refreshed = access.get(filter);
             alarmTableProvider.setEntries(refreshed);
         } catch (DAOException e) {
-            logger.error(e.getMessage(), e);
+            logger.error("refresh error: {}", e.getMessage());
         }
     }
 
@@ -176,7 +176,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         try {
             getDataProvider().delete(access);
         } catch (DAOException t) {
-            logger.error(t.getMessage(), t);
+            logger.error("deletion error: {}", t.getMessage());
         }
     }
 
@@ -203,7 +203,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         try {
             getDataProvider().update(access);
         } catch (DAOException t) {
-            logger.error(t.getMessage(), t);
+            logger.error("update error: {}", t.getMessage());
         }
     }
 }
