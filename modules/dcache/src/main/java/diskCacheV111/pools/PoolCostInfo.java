@@ -83,40 +83,12 @@ public class PoolCostInfo implements Serializable {
 
         public int getReaders()
         {
-            /* For pre 1.9.14 pools we estimate the number of readers.
-             */
-            if (_readers + _writers > 0 || _active + _queued == 0) {
-                return _readers;
-            } else if (this == _p2pClient) {
-                return 0;
-            } else if (this == _p2p) {
-                return _active + _queued;
-            } else if (this == _store) {
-                return _active + _queued;
-            } else if (this == _restore) {
-                return 0;
-            } else {
-                return (_active + _queued + 1) / 2;
-            }
+            return _readers;
         }
 
         public int getWriters()
         {
-            /* For pre 1.9.14 pools we estimate the number of writers.
-             */
-            if (_readers + _writers > 0 || _active + _queued == 0) {
-                return _writers;
-            } else if (this == _p2pClient) {
-                return _active + _queued;
-            } else if (this == _p2p) {
-                return 0;
-            } else if (this == _store) {
-                return 0;
-            } else if (this == _restore) {
-                return _active + _queued;
-            } else {
-                return (_active + _queued) / 2;
-            }
+            return _writers;
         }
 
         public void modifyQueue(int diff)
