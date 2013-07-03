@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -189,7 +190,7 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
     }
 
     @PostConstruct
-    public void init()
+    public synchronized void init()
     {
         if (socketThreads == null) {
             server = new HttpPoolNettyServer(diskThreads,
@@ -204,6 +205,14 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
                     chunkSize,
                     clientIdleTimeout,
                     socketThreads);
+        }
+    }
+
+    @PreDestroy
+    public synchronized void shutdown()
+    {
+        if (server != null) {
+            server.shutdown();
         }
     }
 
