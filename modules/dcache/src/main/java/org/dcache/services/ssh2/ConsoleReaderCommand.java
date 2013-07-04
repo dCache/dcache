@@ -121,13 +121,13 @@ public class ConsoleReaderCommand implements Command, Runnable {
         } catch (IOException e) {
             _logger.warn(e.getMessage());
         } finally {
-            _exitCallback.onExit(0);
             try {
                 cleanUp();
             } catch (IOException e) {
-                _logger.warn("Something went wrong cleaning up the console: "
+                _logger.warn("Failed to shutdown console cleanly: "
                         + e.getMessage());
             }
+            _exitCallback.onExit(0);
         }
     }
 
@@ -277,7 +277,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
         _console.printString(NL);
         _console.flushConsole();
         _outWriter.close();
-        _in.close();
     }
 
     private static class ConsoleReaderTerminal extends UnixTerminal {
