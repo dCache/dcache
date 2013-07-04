@@ -1,0 +1,42 @@
+#
+#    NFS   D o o r
+#
+
+onerror shutdown
+check -strong cell.name
+check -strong nfs.net.port
+check -strong nfs.version
+check -strong nfs.service.loginbroker
+check -strong nfs.service.loginbroker.update-period
+check -strong nfs.service.loginbroker.update-period.unit
+check -strong nfs.service.loginbroker.update-threshold
+check -strong nfs.service.loginbroker.family
+check -strong nfs.service.loginbroker.version
+check -strong nfs.service.poolmanager
+check -strong nfs.service.poolmanager.timeout
+check -strong nfs.service.poolmanager.timeout.unit
+check -strong nfs.service.pool.timeout
+check -strong nfs.service.pool.timeout.unit
+check -strong nfs.service.pnfsmanager
+check -strong nfs.service.gplazma
+check -strong nfs.service.gplazma.timeout
+check -strong nfs.service.gplazma.timeout.unit
+check -strong nfs.service.billing
+check -strong nfs.enable.portmap
+check -strong nfs.export.file
+check -strong nfs.cell.spring
+check -strong nfs.idmap.cache.size
+check -strong nfs.idmap.cache.timeout
+check -strong nfs.idmap.cache.timeout.unit
+check -strong nfs.idmap.legacy
+check -strong nfs.db.dialect
+check -strong db.user
+check -strong db.url
+check -strong db.driver
+check db.password
+check nfs.domain
+check nfs.mover.queue
+
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
+        "${nfs.cell.spring} -profiles=portmap-${nfs.enable.portmap}"
+

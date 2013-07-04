@@ -13,11 +13,11 @@
         <property name="billingStub" ref="billing-stub"/>
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="fileSystemProvider" ref="fileSystem"/>
-        <property name="ioQueue" value="${nfsIoQueue}" />
+        <property name="ioQueue" value="${nfs.mover.queue}" />
         <property name="exportFile" ref="export" />
         <property name="idMapper" ref="id-mapper" />
-        <property name="portNumber" value="${nfs.port}" />
-        <property name="enableV3" value="${nfs.v3}" />
+        <property name="portNumber" value="${nfs.net.port}" />
+        <property name="enableV3" value="#{ '${nfs.version}' == '3+4.1'}"/>
     </bean>
 
 </beans>
