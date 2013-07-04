@@ -761,14 +761,41 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-	    <groupId>org.powermock</groupId>
-	    <artifactId>powermock-api-mockito</artifactId>
-	    <version>1.5.1</version>
+           <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito</artifactId>
+            <version>1.5.1</version>
+            <scope>test</scope>
+            <exclusions>
+                <!-- powermock-api-mockito depends on mockito-all,
+                     which includes all dependencies, including
+                     hamcrest, in the jar file.  Unfortunate this
+                     version of hamcrest (v1.1?) is incompatible with
+                     the version we compile against.  Somehow maven 3
+                     works (different CP order?), but using maven 2
+                     has unit-tests in error due to NoSuchMethod
+                     exceptions.
+
+                     Here, we replace mockito-all with mockito-core,
+                     which exposes the hamcrest dependency in the pom
+                     file.  This allowing maven to do the right
+                     thing. -->
+                <exclusion>
+                    <groupId>org.mockito</groupId>
+                    <artifactId>mockito-all</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+	<dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>1.9.5</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
@@ -782,7 +809,6 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
