@@ -255,12 +255,12 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
                     }
                 }
             } catch (FileNotFoundException e) {
-                _log.error("The authorized_keys2 file was not found. "
-                        + "Please check if it exists in: {}",
-                        _authorizedKeyList);
+                _log.debug("File not found: {}", _authorizedKeyList);
+                return false;
             } catch (IOException e) {
-                _log.error("There was an error reading lines from the "
-                        + "authorized_keys2 file");
+                _log.error("Failed to read {}: {}", _authorizedKeyList,
+                        e.getMessage());
+                return false;
             } catch (IllegalArgumentException e) {
                 _log.warn("One of the keys in {} is of an unknown type: {}",
                         _authorizedKeyList, e.getMessage());
@@ -271,8 +271,8 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
                 _log.warn("The cryptographic algorithm of one of the "
                         + "keys in {} is not known.", _authorizedKeyList);
             }
-            _log.warn("Could not find key: " + key.toString() + "in {}.",
-                    _authorizedKeyList);
+            _log.debug("User {} failed authenticate since supplied {} not in {}",
+                    userName, key.getAlgorithm(), _authorizedKeyList);
             return false;
         }
     }
