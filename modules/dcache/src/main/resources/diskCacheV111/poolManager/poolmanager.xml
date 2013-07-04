@@ -21,16 +21,12 @@
     <property name="costModule" ref="cm"/>
     <property name="poolMonitor" ref="poolMonitor"/>
     <property name="requestContainer" ref="rc"/>
-    <property name="poolStatusRelayPath">
-      <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${poolStatusRelay}"/>
-      </bean>
-    </property>
-    <property name="quotaManager" value="${quotaManager}"/>
+    <property name="broadcastStub" ref="broadcast-stub"/>
+    <property name="quotaManager" value="${poolmanager.plugins.quota-manager}"/>
     <property name="pnfsHandler" ref="pnfs"/>
   </bean>
 
-  <bean id="psu" class="${selectionUnit}">
+  <bean id="psu" class="${poolmanager.plugins.selection-unit}">
     <description>Pool selection unit</description>
   </bean>
 
@@ -46,7 +42,7 @@
     <description>PNFS manager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${dcache.service.pnfsmanager}"/>
+        <constructor-arg value="${poolmanager.service.pnfsmanager}"/>
       </bean>
     </constructor-arg>
   </bean>
@@ -59,7 +55,11 @@
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
-      <property name="destination" value="${dcache.service.billing}"/>
+      <property name="destination" value="${poolmanager.service.billing}"/>
+  </bean>
+
+  <bean id="broadcast-stub" class="org.dcache.cells.CellStub">
+      <property name="destination" value="${poolmanager.service.broadcast}"/>
   </bean>
 
   <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5"
@@ -69,9 +69,9 @@
     <property name="poolMonitor" ref="poolMonitor"/>
     <property name="partitionManager" ref="pm"/>
     <property name="threadPool">
-      <bean class="${threadPool}"/>
+      <bean class="${poolmanager.plugins.thread-pool}"/>
     </property>
-    <property name="stageConfigurationFile" value="${dcache.authz.staging}"/>
+    <property name="stageConfigurationFile" value="${poolmanager.authz.staging}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="hitInfoMessages" value="${poolmanager.cache-hit-messages.enabled}"/>
     <property name="billing" ref="billing-stub"/>
@@ -83,7 +83,8 @@
     <property name="costModule" ref="cm"/>
     <property name="poolStub">
       <bean class="org.dcache.cells.CellStub">
-        <property name="timeout" value="10000"/>
+        <property name="timeout" value="${poolmanager.service.pool.timeout}"/>
+        <property name="timeoutUnit" value="${poolmanager.service.pool.timeout.unit}"/>
       </bean>
     </property>
   </bean>

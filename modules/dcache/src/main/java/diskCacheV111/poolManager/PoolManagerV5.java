@@ -57,6 +57,7 @@ import dmg.util.Args;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
@@ -85,7 +86,7 @@ public class PoolManagerV5
     private PoolMonitor _poolMonitor;
 
     private CostModule   _costModule  ;
-    private CellPath     _poolStatusRelayPath;
+    private CellStub _broadcast;
     private PnfsHandler _pnfsHandler;
 
     private RequestContainerV5 _requestContainer ;
@@ -123,12 +124,9 @@ public class PoolManagerV5
         _requestContainer = requestContainer;
     }
 
-    public void setPoolStatusRelayPath(CellPath poolStatusRelayPath)
+    public void setBroadcastStub(CellStub stub)
     {
-        _poolStatusRelayPath =
-            (poolStatusRelayPath.hops() == 0)
-            ? null
-            : poolStatusRelayPath;
+        _broadcast = stub;
     }
 
     public void setQuotaManager(String quotaManager)
@@ -416,23 +414,14 @@ public class PoolManagerV5
     private void sendPoolStatusRelay( String poolName , int status ,
                                       PoolV2Mode poolMode ,
                                       int statusCode , String statusMessage ){
-
-       if( _poolStatusRelayPath == null ) {
-           return;
-       }
-
-       try{
-
+       try {
           PoolStatusChangedMessage msg = new PoolStatusChangedMessage( poolName , status ) ;
           msg.setPoolMode( poolMode ) ;
           msg.setDetail( statusCode , statusMessage ) ;
-          _log.info("sendPoolStatusRelay : " + msg);
-          sendMessage(
-               new CellMessage( _poolStatusRelayPath , msg )
-                     ) ;
-
+          _log.trace("sendPoolStatusRelay: {}", msg);
+          _broadcast.send(msg);
        }catch(Exception ee ){
-          _log.warn("Failed to send poolStatus changed message : "+ee ) ;
+          _log.warn("Failed to send poolStatus changed message: {}", ee.toString());
        }
     }
 
