@@ -317,9 +317,9 @@ checkForHeapDumpFiles()
 poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
 {
     classpath=$(getProperty dcache.paths.classpath "$1" "$2")
-    path=$(getProperty path "$1" "$2")
-    src=$(getProperty metaDataRepository "$1" "$2")
-    name=$(getProperty name "$1" "$2")
+    path=$(getProperty pool.path "$1" "$2")
+    src=$(getProperty pool.plugins.meta "$1" "$2")
+    name=$(getProperty pool.name "$1" "$2")
 
     if [ "$(printSimpleDomainStatus "$1")" != "stopped" ]; then
         fail 1 "Domain '$1' has to be stopped before pool '$name'
@@ -345,8 +345,8 @@ poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
 poolDumpYaml() # $1 = domain, $2 = cell
 {
     classpath=$(getProperty dcache.paths.classpath "$1" "$2")
-    path=$(getProperty path "$1" "$2")
-    type=$(getProperty metaDataRepository "$1" "$2")
+    path=$(getProperty pool.path "$1" "$2")
+    type=$(getProperty pool.plugins.meta "$1" "$2")
     CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataStoreYamlTool "$path" "$type"
 }
 
@@ -587,9 +587,9 @@ case "$1" in
                         for cell in $(getProperty domain.cells "$domain"); do
                             service=$(getProperty domain.service "$domain" "$cell")
                             if [ "$service" = "pool" ]; then
-                                name=$(getProperty name "$domain" "$cell")
-                                path=$(getProperty path "$domain" "$cell")
-                                meta=$(getProperty metaDataRepository "$domain" "$cell")
+                                name=$(getProperty pool.name "$domain" "$cell")
+                                path=$(getProperty pool.path "$domain" "$cell")
+                                meta=$(getProperty pool.plugins.meta "$domain" "$cell")
                                 case "$meta" in
                                     org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository)
                                         meta=db

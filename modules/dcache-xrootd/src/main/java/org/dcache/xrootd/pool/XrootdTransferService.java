@@ -106,6 +106,7 @@ public class XrootdTransferService
     private int maxMemoryPerConnection;
     private int maxMemory;
     private long clientIdleTimeout;
+    private TimeUnit clientIdleTimeoutUnit;
     private int maxFrameSize;
     private Integer socketThreads;
     private List<ChannelHandlerFactory> plugins;
@@ -169,6 +170,17 @@ public class XrootdTransferService
         return clientIdleTimeout;
     }
 
+    public TimeUnit getClientIdleTimeoutUnit()
+    {
+        return clientIdleTimeoutUnit;
+    }
+
+    @Required
+    public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit)
+    {
+        this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
+    }
+
     public void setSocketThreads(String socketThreads)
     {
         this.socketThreads = Strings.isNullOrEmpty(socketThreads) ? null : Integer.parseInt(socketThreads);
@@ -204,7 +216,7 @@ public class XrootdTransferService
                     diskThreads,
                     maxMemoryPerConnection,
                     maxMemory,
-                    clientIdleTimeout,
+                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
                     maxFrameSize,
                     plugins);
         } else {
@@ -212,7 +224,7 @@ public class XrootdTransferService
                     diskThreads,
                     maxMemoryPerConnection,
                     maxMemory,
-                    clientIdleTimeout,
+                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
                     maxFrameSize,
                     plugins,
                     socketThreads);

@@ -26,7 +26,7 @@ getSizeOfPool() # in $1 = pool path
 
     size=$(getPoolSetting "$path" "set max diskspace" max)
     if [ -z "$size" ]; then
-        size=$(getProperty maxDiskSpace "$domain" "$cell")
+        size=$(getProperty pool.size "$domain" "$cell")
     fi
     if [ "$size" != "Infinity" ]; then
         stringToGiB "$size" size
@@ -54,24 +54,24 @@ printPoolConfig() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = 
     echo "name=$name"
     echo "path=$path"
     if [ -n "$size" ]; then
-        echo "maxDiskSpace=$size"
+        echo "pool.size=$size"
     fi
     case "$meta" in
         file)
-            echo "metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository"
-            echo "waitForFiles=\${path}/data:\${path}/control"
+            echo "pool.plugins.meta=org.dcache.pool.repository.meta.file.FileMetaDataRepository"
+            echo "pool.cell.wait-for-files=\${path}/data:\${path}/control"
             ;;
         db)
-            echo "metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository"
-            echo "waitForFiles=\${path}/data:\${path}/meta"
+            echo "pool.plugins.meta=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository"
+            echo "pool.cell.wait-for-files=\${path}/data:\${path}/meta"
             ;;
         *)
-            echo "waitForFiles=\${path}/data"
+            echo "pool.cell.wait-for-files=\${path}/data"
             ;;
     esac
 
     if [ -n "$lfs" ]; then
-        echo "lfs=$lfs"
+        echo "pool.lfs=$lfs"
     fi
 }
 
@@ -211,7 +211,7 @@ doForPoolOrFail() # $1 = name, $2 = function
         for cell in $(getProperty domain.cells "$domain"); do
             service=$(getProperty domain.service "$domain" "$cell")
             if [ "$service" = "pool" ]; then
-                if [ "$name" = $(getProperty name "$domain" "$cell") ]; then
+                if [ "$name" = $(getProperty pool.name "$domain" "$cell") ]; then
                     eval "$func" "$domain" "$cell" "$@" || fail $?
                     return 0
                 fi
