@@ -1,9 +1,11 @@
 package dmg.cells.nucleus ;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -240,8 +242,17 @@ class CellGlue {
           }
       }
 
-      return  newClass.getConstructor( argClasses ).
-                       newInstance( arguments ) ;
+       Constructor<? extends Cell> constructor = newClass.getConstructor(argClasses);
+       try {
+          return constructor.newInstance(arguments) ;
+      } catch (InvocationTargetException e) {
+           for (Class<?> clazz: constructor.getExceptionTypes()) {
+               if (clazz.isAssignableFrom(e.getTargetException().getClass())) {
+                   throw e;
+               }
+           }
+           throw Throwables.propagate(e.getTargetException());
+       }
    }
 
     Map<String, Object> getCellContext()

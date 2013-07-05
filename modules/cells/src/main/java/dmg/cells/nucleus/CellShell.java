@@ -809,7 +809,8 @@ public class      CellShell
    //
     public static final String hh_create = "<cellClass> <cellName> [<Arguments>]";
     public String ac_create_$_2_3(Args args)
-        throws Throwable
+            throws ClassNotFoundException, NoSuchMethodException, InstantiationException,
+                   IllegalAccessException, CommandThrowableException
     {
         try {
             Cell cell;
@@ -837,7 +838,7 @@ public class      CellShell
 
             return "created : " + cell;
         } catch (InvocationTargetException e) {
-            throw e.getTargetException();
+            throw new CommandThrowableException(e.getTargetException().getMessage(), e.getTargetException());
         }
     }
    ////////////////////////////////////////////////////////////
