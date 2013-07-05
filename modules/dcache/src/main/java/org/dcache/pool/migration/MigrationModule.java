@@ -538,9 +538,7 @@ public class MigrationModule
         @Argument(metaVar="target")
         String[] targets;
 
-        private RefreshablePoolList
-        createPoolList(String type,
-                       List<String> targets)
+        private RefreshablePoolList createPoolList(String type, List<String> targets)
         {
             CellStub poolManager = _context.getPoolManagerStub();
 
@@ -548,11 +546,7 @@ public class MigrationModule
             case "pool":
                 return new PoolListByNames(poolManager, targets);
             case "pgroup":
-                if (targets.size() != 1) {
-                    throw new IllegalArgumentException(targets.toString() +
-                            ": Only one target supported for -type=pgroup");
-                }
-                return new PoolListByPoolGroup(poolManager, targets.get(0));
+                return new PoolListByPoolGroup(poolManager, targets);
             case "link":
                 if (targets.size() != 1) {
                     throw new IllegalArgumentException(targets.toString() +

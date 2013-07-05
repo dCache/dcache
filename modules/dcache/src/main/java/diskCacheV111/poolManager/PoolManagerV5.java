@@ -508,7 +508,11 @@ public class PoolManagerV5
         messageArrived(PoolManagerGetPoolsByPoolGroupMessage msg)
     {
         try {
-            msg.setPools(_poolMonitor.getPoolsByPoolGroup(msg.getPoolGroup()));
+            List<PoolManagerPoolInformation> pools = new ArrayList<>();
+            for (String poolGroup : msg.getPoolGroups()) {
+                pools.addAll(_poolMonitor.getPoolsByPoolGroup(poolGroup));
+            }
+            msg.setPools(pools);
             msg.setSucceeded();
         } catch (NoSuchElementException e) {
             Collection<PoolManagerPoolInformation> empty =
