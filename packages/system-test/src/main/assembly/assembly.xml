@@ -81,5 +81,11 @@
             <outputDirectory>etc/grid-security/certificates</outputDirectory>
             <fileMode>644</fileMode>
         </fileSet>
+
+        <fileSet>
+            <directory>${user.home}/.globus/certificates</directory>
+            <outputDirectory>etc/grid-security/certificates</outputDirectory>
+            <fileMode>644</fileMode>
+        </fileSet>
     </fileSets>
 </assembly>
