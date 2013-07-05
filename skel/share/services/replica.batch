@@ -7,46 +7,58 @@ onerror shutdown
 check -strong cell.name
 check -strong db.user
 check db.password
-check replicaPasswordFile
+check replica.db.password.file
 check -strong db.driver
-check -strong resilientGroupName
-check -strong replicaPoolWatchDogPeriod
-check -strong replicaWaitDBUpdateTimeout
-check -strong replicaExcludedFilesExpirationTimeout
-check -strong replicaDelayDBStartTimeout
-check -strong replicaAdjustStartTimeout
-check -strong replicaWaitReplicateTimeout
-check -strong replicaWaitReduceTimeout
-check -strong replicaDebug
-check -strong replicaMaxWorkers
-check -strong replicaMin
-check -strong replicaMax
-check -strong replicaCheckPoolHost
-check -strong replicaEnableSameHostReplica
+check -strong replica.poolgroup
+check -strong replica.limits.pool-watchdog-period
+check -strong replica.limits.pool-watchdog-period.unit
+check -strong replica.limits.wait-db-update-timeout
+check -strong replica.limits.wait-db-update-timeout.unit
+check -strong replica.limits.excluded-files-expiration-timeout
+check -strong replica.limits.excluded-files-expiration-timeout.unit
+check -strong replica.limits.delay-db-start-timeout
+check -strong replica.limits.delay-db-start-timeout.unit
+check -strong replica.limits.adjust-start-timeout
+check -strong replica.limits.adjust-start-timeout.unit
+check -strong replica.limits.wait-replicate-timeout
+check -strong replica.limits.wait-replicate-timeout.unit
+check -strong replica.limits.wait-reduce-timeout
+check -strong replica.limits.wait-reduce-timeout.unit
+check -strong replica.limits.workers
+check -strong replica.limits.replicas.min
+check -strong replica.limits.replicas.max
+check -strong replica.enable.check-pool-host
+check -strong replica.enable.same-host-replica
 
 create diskCacheV111.replicaManager.ReplicaManagerV2 ${cell.name} \
         "default \
         -export \
-        -debug=${replicaDebug} \
         -dbClass=diskCacheV111.replicaManager.ReplicaDbV1 \
         -coldStart \
 #        -hotRestart \
-        -maxWorkers=${replicaMaxWorkers} \
-        -min=${replicaMin} \
-        -max=${replicaMax} \
-        -resilientGroupName=${resilientGroupName} \
-        -poolWatchDogPeriod=${replicaPoolWatchDogPeriod} \
-        -excludedFilesExpirationTO=${replicaExcludedFilesExpirationTimeout} \
-        -waitDBUpdateTO=${replicaWaitDBUpdateTimeout} \
-        -delayDBStartTO=${replicaDelayDBStartTimeout} \
-        -delayAdjStartTO=${replicaAdjustStartTimeout} \
-        -waitReplicateTO=${replicaWaitReplicateTimeout} \
-        -waitReduceTO=${replicaWaitReduceTimeout} \
+        -maxWorkers=${replica.limits.workers} \
+        -min=${replica.limits.replicas.min} \
+        -max=${replica.limits.replicas.max} \
+        -resilientGroupName=${replica.poolgroup} \
+        -poolWatchDogPeriod=${replica.limits.pool-watchdog-period} \
+        -poolWatchDogPeriodUnit=${replica.limits.pool-watchdog-period.unit} \
+        -excludedFilesExpirationTO=${replica.limits.excluded-files-expiration-timeout} \
+        -excludedFilesExpirationTOUnit=${replica.limits.excluded-files-expiration-timeout.unit} \
+        -waitDBUpdateTO=${replica.limits.wait-db-update-timeout} \
+        -waitDBUpdateTOUnit=${replica.limits.wait-db-update-timeout.unit} \
+        -delayDBStartTO=${replica.limits.delay-db-start-timeout} \
+        -delayDBStartTOUnit=${replica.limits.delay-db-start-timeout.unit} \
+        -delayAdjStartTO=${replica.limits.adjust-start-timeout} \
+        -delayAdjStartTOUnit=${replica.limits.adjust-start-timeout.unit} \
+        -waitReplicateTO=${replica.limits.wait-replicate-timeout} \
+        -waitReplicateTOUnit=${replica.limits.wait-replicate-timeout.unit} \
+        -waitReduceTO=${replica.limits.wait-reduce-timeout} \
+        -waitReduceTOUnit=${replica.limits.wait-reduce-timeout.unit} \
         -dbURL=${db.url} \
         -jdbcDrv=${db.driver} \
         -dbUser=${db.user} \
         -dbPass=${db.password} \
-        -pgPass=${replicaPasswordFile}   \
-        -XXcheckPoolHost=${replicaCheckPoolHost} \
-        -enableSameHostReplica=${replicaEnableSameHostReplica} \
+        -pgPass=${replica.db.password.file}   \
+        -XXcheckPoolHost=${replica.enable.check-pool-host} \
+        -enableSameHostReplica=${replica.enable.same-host-replica} \
        "
