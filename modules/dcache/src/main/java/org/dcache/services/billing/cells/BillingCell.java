@@ -27,11 +27,11 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 

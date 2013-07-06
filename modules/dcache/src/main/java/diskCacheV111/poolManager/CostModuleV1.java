@@ -36,11 +36,11 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageDispatcher;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellSetupProvider;

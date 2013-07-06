@@ -25,6 +25,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -37,7 +39,8 @@ import dmg.util.HttpResponseEngine;
 import org.dcache.poolmanager.Partition;
 import org.dcache.vehicles.FileAttributes;
 
-public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
+public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
+        CellInfoProvider
 {
     private static final String PARAMETER_DCACHE = "dcache";
     private static final String PARAMETER_GREP = "grep";
@@ -148,6 +151,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         }
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println(" PoolManagerEngine : [$Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $]");
@@ -861,6 +865,12 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
         return si.toString().contains(grep);
 
+    }
+
+    @Override
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
     private class OurComparator implements Comparator<Object>

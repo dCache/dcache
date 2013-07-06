@@ -59,6 +59,7 @@ import java.util.concurrent.ExecutorService;
 import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.EnvironmentAware;

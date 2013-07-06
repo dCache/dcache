@@ -1,8 +1,6 @@
-package org.dcache.cells;
+package dmg.cells.nucleus;
 
 import java.io.PrintWriter;
-
-import dmg.cells.nucleus.CellInfo;
 
 /**
  * Classes implementing this interface can provide information about

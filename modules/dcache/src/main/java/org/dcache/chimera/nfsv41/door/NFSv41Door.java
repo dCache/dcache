@@ -38,13 +38,13 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.FsInode;
