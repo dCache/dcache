@@ -40,9 +40,8 @@ import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
-  private final static String _svnId = "$Id$";
-
+public class ReplicaManagerV2 extends DCacheCoreControllerV2
+{
   private final static Logger _log =
       LoggerFactory.getLogger(ReplicaManagerV2.class);
 
@@ -97,7 +96,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       String group = args.getOpt("resilientGroupName");
       if( group != null && (! group.equals("")) ) {
           _resilientPoolGroupName = group;
-          _log.warn("resilientGroupName=" + group + "\n");
+          _log.info("resilientGroupName={}", group);
       }else{
         _log.warn("Argument 'resilientGroupName' is not defined, use default settings:"
                 + " _resilientPoolGroupName={}", _resilientPoolGroupName);
@@ -410,9 +409,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     _adj        = new Adjuster( _repMin, _repMax) ;
     _watchPools = new WatchPools();
 
-    _log.warn("ReplicaManager   version: " + _svnId );
-    _log.warn("DCacheController version: " + super.getSvnId() );
-
     _log.info("Parse arguments");
     parseArgs();
 
@@ -497,7 +493,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   @Override
   public void getInfo(PrintWriter pw) {
-    pw.println("       Version : " + _svnId);
     super.getInfo( pw );
 
     synchronized (_dbLock) {

@@ -110,8 +110,6 @@ import org.dcache.vehicles.FileAttributes;
   */
 
 abstract public class DCacheCoreControllerV2 extends CellAdapter {
-   private final static String _svnId = "$Id$";
-
    private final static Logger _log =
        LoggerFactory.getLogger(DCacheCoreControllerV2.class);
 
@@ -269,16 +267,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        _log.debug("commandArrived - call super cse=[" + cse + "], str = ["+str+"]");
        return super.commandArrived(str, cse);
    }
-
-   public String getSvnId() {
-    return( _svnId );
-   }
-
-   @Override
-   public void getInfo(PrintWriter pw) {
-    pw.println("       Version : " + getSvnId() );
-   }
-
 
    //
    // task feature
