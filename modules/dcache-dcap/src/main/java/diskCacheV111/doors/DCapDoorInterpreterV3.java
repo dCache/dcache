@@ -1878,7 +1878,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if (_passive) {
                 _clientSocketAddress = new InetSocketAddress(_clientAddress, port);
             } else {
-                _clientSocketAddress = new InetSocketAddress(st.nextToken(), port);
+                String hostname = st.nextToken();
+
+                _clientSocketAddress = new InetSocketAddress(hostname, port);
+
+                if (_clientSocketAddress.isUnresolved()) {
+                    _log.debug("Client sent unresolvable hostname {}", hostname);
+                    throw new CacheException("Unknown host: " + hostname);
+                }
             }
 
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _clientSocketAddress  ) ;
