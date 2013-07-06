@@ -264,26 +264,7 @@ public class      CellShell
       }else
          return super.command( c ) ;
    }
-   public Object binCommand( String c ){
-      Args args = new Args( c ) ;
-      if( args.argc() == 0 )return "" ;
-      String cs = args.argv(0) ;
-      if( cs.equals( ".getroutes" ) ){
-        return _nucleus.getRoutingList() ;
-      }else if( cs.equals( ".getcelltunnelinfos" ) ){
-        return  _nucleus.getCellTunnelInfos() ;
-      }else if( cs.equals( ".getcellinfos" ) ){
-         List<String> list = _nucleus.getCellNames();
-         CellInfo[] info = new CellInfo[list.size()];
-         for (int i = 0; i < list.size(); i++) {
-             info[i] = _nucleus.getCellInfo(list.get(i));
-         }
-        return  info ;
-      }else{
-        return null ;
-      }
 
-   }
    ////////////////////////////////////////////////////////////
    //
    //  version
@@ -312,8 +293,9 @@ public class      CellShell
    public Object ac_getroutes( Args args ){
        return _nucleus.getRoutingList() ;
    }
-   public Object ac_getcelltunnelinfos( Args args ){
-       return _nucleus.getCellTunnelInfos() ;
+   public CellTunnelInfo[] ac_getcelltunnelinfos( Args args ){
+       List<CellTunnelInfo> cellTunnelInfos = _nucleus.getCellTunnelInfos();
+       return cellTunnelInfos.toArray(new CellTunnelInfo[cellTunnelInfos.size()]);
    }
    public Object ac_getcellinfo_$_1( Args args ) throws CommandException {
       CellInfo info = _nucleus.getCellInfo( args.argv(0) ) ;
