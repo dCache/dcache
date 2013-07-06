@@ -20,7 +20,6 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
@@ -52,14 +51,12 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
 
     private final static Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private final SshServer _server;
-    private ScheduledExecutorService _executer;
     // UniversalSpringCell injected parameters
     private String _hostKeyPrivate;
     private String _hostKeyPublic;
     private File _authorizedKeyList;
     private int _port;
     private int _adminGroupId;
-    private CommandFactory _commandFactory;
     private File _historyFile;
     private LoginStrategy _loginStrategy;
     // Cell Functionality
@@ -135,9 +132,9 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
     }
 
     public void setServerShellFactory(String userName) {
-        _commandFactory = new CommandFactory(userName, _cellEndPoint,
+        CommandFactory factory = new CommandFactory(userName, _cellEndPoint,
                 _historyFile);
-        _server.setShellFactory(_commandFactory);
+        _server.setShellFactory(factory);
     }
 
     public void configureAuthentication() {

@@ -53,9 +53,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private static final String CONTROL_C_ANSWER =
         "Got interrupt. Please issue \'logoff\' from "
         + "within the Admin Cell to end this session.\n";
-    private static File _historyFile;
     private final UserAdminShell _userAdminShell;
-    private OutputStream _err;
     private InputStream _in;
     private ExitCallback _exitCallback;
     private OutputStreamWriter _outWriter;
@@ -87,7 +85,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void setErrorStream(OutputStream err) {
-        _err = err;
+        // we don't use the error stream
     }
 
     @Override
@@ -196,18 +194,12 @@ public class ConsoleReaderCommand implements Command, Runnable {
                         + "support@dcache.org: {}" + e.getMessage());
             } catch (CommandException e) {
                 if (e instanceof CommandPanicException) {
-                    result =
-                        ((CommandPanicException) e)
-                                .getTargetException().getMessage();
                     _logger.warn("Something went wrong during the remote "
                             + "execution of the command: {}"
                             + ((CommandPanicException) e).getTargetException());
                     return;
                 }
                 if (e instanceof CommandThrowableException) {
-                    result =
-                        ((CommandThrowableException) e)
-                                .getTargetException().getMessage();
                     _logger.warn("Something went wrong during the remote "
                             + "execution of the command: {}"
                             + ((CommandThrowableException) e)
