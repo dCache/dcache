@@ -107,10 +107,6 @@
     </dependency>
     <dependency>
         <groupId>org.datanucleus</groupId>
-        <artifactId>datanucleus-enhancer</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.datanucleus</groupId>
         <artifactId>datanucleus-api-jpa</artifactId>
     </dependency>
     <dependency>
