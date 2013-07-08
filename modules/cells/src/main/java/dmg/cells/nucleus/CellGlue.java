@@ -669,7 +669,8 @@ class CellGlue {
             // here we try to inform the last sender that we are
             // not able to deliver the packet.
             //
-            LOGGER.debug("sendMessage : Route target Not found: {}", routeTarget);
+            LOGGER.debug("Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
+                    msg.getSourcePath(), routeTarget);
             NoRouteToCellException exception =
                  new   NoRouteToCellException(
                               msg.getUOID() ,
@@ -679,7 +680,6 @@ class CellGlue {
             CellPath retAddr = msg.getSourcePath().revert();
             CellExceptionMessage ret =
                  new CellExceptionMessage( retAddr , exception )  ;
-            LOGGER.warn("Sending CellException to {}", retAddr);
             ret.setLastUOID( msg.getUOID() ) ;
             sendMessage( nucleus , ret ) ;
 
