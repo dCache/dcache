@@ -3,6 +3,15 @@ package dmg.cells.nucleus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implements cell event logging following the NetLogger format.
+ *
+ * The log format was originally documented as a CEDPS best practice recommendation,
+ * however CEDPS no longer exists. A more current description of the format can
+ * be found at https://docs.google.com/document/d/1oeW_l_YgQbR-C_7R2cKl6eYBT5N4WSMbvz0AT6hYDvA
+ *
+ * The NetLogger project can be found at http://netlogger.lbl.gov
+ */
 public class EventLogger
 {
     private final static Logger deliver =
