@@ -197,7 +197,6 @@ onerror shutdown
 
 
 exec file:${dcache.paths.share}/cells/threadmanager.fragment
-exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/srm.xml -export"

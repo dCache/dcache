@@ -44,10 +44,8 @@ check ftp.transaction-log
 check ftp.net.listen
 check ftp.net.internal
 check ftp.mover.queue
-check ftp.authn.kpwd
 
 exec file:${dcache.paths.share}/cells/stage.fragment ftp doors
-exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
   "${ftp.net.port} ${ftp.implementation} \
@@ -78,7 +76,6 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -maxStreamsPerClient=${ftp.limits.streams-per-client} \
    -defaultStreamsPerClient=1 \
    -deleteOnConnectionClosed=${ftp.delete-on-failure} \
-   -use-login-service=${useLoginService} \
    -io-queue=${ftp.mover.queue} \
    -stageConfigurationFilePath=${ftp.authz.staging} \
    -ftp-adapter-internal-interface=${ftp.net.internal} \
@@ -87,7 +84,6 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -proxyActive=${ftp.proxy.on-active} \
    -tlog=${ftp.transaction-log} \
    -read-only=${ftp.authz.readonly} \
-   -kpwd-file=${ftp.authn.kpwd} \
    -kdc-list=${ftp.authn.kerberos.key-distribution-center-list} \
    -svc-principal=${ftp.authn.kerberos.service-principle-name} \
    -service-key=${ftp.authn.hostcert.key} \

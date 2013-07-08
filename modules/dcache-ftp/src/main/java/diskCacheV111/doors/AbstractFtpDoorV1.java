@@ -76,7 +76,6 @@ import javax.security.auth.Subject;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -148,7 +147,6 @@ import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
 import org.dcache.acl.enums.AccessType;
-import org.dcache.auth.KauthFileLoginStrategy;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
@@ -504,24 +502,6 @@ public abstract class AbstractFtpDoorV1
         required = true
     )
     protected boolean _isProxyRequiredOnActive;
-
-    /**
-     * If true, the door will first contact the login service for
-     * login processing.
-     */
-    @Option(
-        name = "use-login-service",
-        description = "Whether to use the login service",
-        defaultValue = "false"
-    )
-    protected boolean _useLoginService;
-
-    @Option(
-        name = "kpwd-file",
-        description = "Path to kpwd file",
-        defaultValue = ""
-    )
-    protected String _kpwdFilePath;
 
      /**
      * File (StageConfiguration.conf) containing DNs and FQANs whose owner are allowed to STAGE files
@@ -1205,24 +1185,7 @@ public abstract class AbstractFtpDoorV1
         _gPlazmaStub =
                 new CellStub(this, new CellPath(_gPlazma), 30000);
 
-        if (_useLoginService) {
-            _loginStrategy = new RemoteLoginStrategy(_gPlazmaStub);
-        } else {
-            /* Use kpwd file if login service is not enabled.
-             */
-            if (Strings.isNullOrEmpty(_kpwdFilePath)) {
-                String s = "-kpwd-file file argument wasn't specified";
-                _logger.error(s);
-                throw new IllegalArgumentException(s);
-            }
-            File file = new File(_kpwdFilePath);
-            if (!file.exists()) {
-                String s = "File not found: " + file;
-                _logger.error(s);
-                throw new IllegalArgumentException(s);
-            }
-            _loginStrategy = new KauthFileLoginStrategy(file);
-        }
+        _loginStrategy = new RemoteLoginStrategy(_gPlazmaStub);
 
         /* Data channel port range used when client issues PASV
          * command.

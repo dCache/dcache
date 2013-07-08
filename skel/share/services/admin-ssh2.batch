@@ -32,7 +32,5 @@ test -i ${AccessControlCell}
 exec env createAcl.exe -ifnotok
 onerror shutdown
 
-exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
-
 create org.dcache.cells.UniversalSpringCell ${cell.nameSsh2} \
     "classpath:org/dcache/services/ssh2/ssh2Admin.xml -export"

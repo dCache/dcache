@@ -98,7 +98,6 @@ define env failMissingTrustStore.exe enddefine
 enddefine
 
 exec env verify-${webdav.authn.protocol}.exe
-exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${cell.name} \

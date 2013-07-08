@@ -26,7 +26,6 @@ check dcap.net.listen
 check -strong dcache.paths.share
 
 exec file:${dcache.paths.share}/cells/stage.fragment dcap doors
-exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 set env arguments-plain "-localOk"
 set env arguments-auth "-pswdfile=${dcap.authn.passwd} -authorization=required"

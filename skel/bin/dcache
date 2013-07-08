@@ -782,12 +782,12 @@ case "$1" in
             command="$1"
             shift
 
-            kpwdFile="$(getProperty kpwdFile)"
+            kpwdFile="$(getProperty gplazma.kpwd.file)"
             if [ ! -e "$kpwdFile" ]; then
                 touch "$kpwdFile"
             fi
 
-            CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.auth.KAuthFile "$command" "$(getProperty kpwdFile)" "$@"
+            CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.auth.KAuthFile "$command" "$(getProperty gplazma.kpwd.file)" "$@"
         fi
         ;;
 

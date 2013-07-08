@@ -38,8 +38,6 @@ check -strong xrootd.authz.write-paths
 
 onerror continue
 
-exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
-
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
        "classpath:org/dcache/xrootd/door/xrootd.xml -export -cellClass=XrootdDoor"
 
