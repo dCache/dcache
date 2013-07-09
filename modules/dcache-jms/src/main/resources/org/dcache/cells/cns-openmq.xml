@@ -14,10 +14,10 @@
         factory-method="createConnectionFactory">
       <constructor-arg>
           <props>
-              <prop key="imqAddressList">${broker.openmq.host}:${broker.openmq.port}</prop>
+              <prop key="imqAddressList">${cns.broker.openmq.host}:${cns.broker.openmq.port}</prop>
               <prop key="imqReconnectEnabled">true</prop>
               <prop key="imqReconnectAttempts">-1</prop>
-              <prop key="imqReconnectInterval">${broker.openmq.reconnect.interval}</prop>
+              <prop key="imqReconnectInterval">#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${cns.broker.openmq.reconnect-interval}, '${cns.broker.openmq.reconnect-interval.unit}') }</prop>
           </props>
       </constructor-arg>
   </bean>

@@ -9,40 +9,33 @@ onerror shutdown
 check -strong cell.name
 
 define env topo-cells.exe end
-  set env -c topoWaitTime 300000
-  set env -c topoTimeout 20000
-  set env -c topologyClass org.dcache.services.topology.ClassicCellsTopology
+  check -strong topo.limits.refresh-period
+  check -strong topo.limits.refresh-period.unit
+  check -strong topo.service.system.timeout
+  check -strong topo.service.system.timeout.unit
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
      "classpath:org/dcache/services/topology/classic.xml -export -cellClass=TopoCell"
 end
 
 define env topo-amq.exe end
-  set env -c topoWaitTime 300000
-  set env -c topoTimeout 20000
+  check -strong topo.limits.refresh-period
+  check -strong topo.limits.refresh-period.unit
+  check -strong topo.service.system.timeout
+  check -strong topo.service.system.timeout.unit
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
      "classpath:org/dcache/services/topology/amq.xml -export -cellClass=TopoCell"
 end
 
 define env topo-openmq.exe end
-  set env -c topoWaitTime 300000
-  set env -c topoTimeout 20000
+  check -strong topo.limits.refresh-period
+  check -strong topo.limits.refresh-period.unit
+  check -strong topo.service.system.timeout
+  check -strong topo.service.system.timeout.unit
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
      "classpath:org/dcache/services/topology/openmq.xml -export -cellClass=TopoCell"
-end
-
-define env topo-embedded-jms.exe end
-  exec env topo-amq.exe
-end
-
-define env topo-hybrid.exe end
-  exec env topo-amq.exe
-end
-
-define env topo-jms.exe end
-  exec env topo-amq.exe
 end
 
 define env topo-amq-embedded.exe end

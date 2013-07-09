@@ -1,6 +1,6 @@
 onerror shutdown
 check -strong dcache.paths.share
-check -strong broker.domain
+check -strong dcache.broker.domain
 check -strong domain.name
 
 #
@@ -8,17 +8,15 @@ check -strong domain.name
 ##############################################################
 
 onerror continue
-eval ${domain.name} ${broker.domain} ==
+eval ${domain.name} ${dcache.broker.domain} ==
 set env is_broker ${rc}
 onerror shutdown
 
 define env amq-embedded.exe endDefine
-  check -strong broker.amq.port
+  check -strong dcache.broker.amq.port
 
   create org.dcache.cells.UniversalSpringCell JMS \
-    "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq-embedded.xml \
-     -amqPort=${broker.amq.port} \
-    "
+    "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq-embedded.xml"
 endDefine
 
 exec env amq-embedded.exe -ifok=is_broker

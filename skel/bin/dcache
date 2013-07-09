@@ -795,14 +795,14 @@ case "$1" in
         . ${lib}/utils.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
-        broker_domain=$(getProperty broker.domain)
+        broker_domain=$(getProperty dcache.broker.domain)
         (
             printf "DOMAIN\tCELL\tSERVICE\tPROTO\tPORT\n"
             for domain in $(getProperty dcache.domains); do
                 if [ "$domain" = "$broker_domain" ]; then
-                    prop_prefix=broker.net.ports
+                    prop_prefix=dcache.broker.net.ports
                 else
-                    prop_prefix=non-broker.net.ports
+                    prop_prefix=dcache.non-broker.net.ports
                 fi
 
                 for port in $(getProperty "${prop_prefix}.tcp" "$domain"); do
@@ -829,9 +829,9 @@ case "$1" in
 
         for domain in $(getProperty dcache.domains); do
 	    if [ "$domain" = "$broker_domain" ]; then
-                prop_prefix=broker.net.ports
+                prop_prefix=dcache.broker.net.ports
 	    else
-                prop_prefix=non-broker.net.ports
+                prop_prefix=dcache.non-broker.net.ports
 	    fi
 
 	    for port in $(getProperty "${prop_prefix}.tcp" "$domain") \

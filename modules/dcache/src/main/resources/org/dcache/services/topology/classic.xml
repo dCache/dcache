@@ -12,7 +12,7 @@
     <property name="location" value="arguments:"/>
   </bean>
 
-  <bean id="topology" class="${topologyClass}">
+  <bean id="topology" class="org.dcache.services.topology.ClassicCellsTopology">
     <property name="cellStub" ref="stub"/>
   </bean>
 
@@ -29,12 +29,13 @@
   </bean>
 
   <bean id="stub" class="org.dcache.cells.CellStub">
-    <property name="timeout" value="${topoTimeout}"/>
+      <property name="timeout" value="${topo.service.system.timeout}"/>
+      <property name="timeoutUnit" value="${topo.service.system.timeout.unit}"/>
   </bean>
 
   <task:scheduled-tasks scheduler="scheduler">
-    <task:scheduled ref="topology" method="update" fixed-delay="${topoWaitTime}"/>
-    <task:scheduled ref="hostnameService" method="updateHostnames" fixed-delay="${topoWaitTime}"/>
+    <task:scheduled ref="topology" method="update" fixed-delay="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${topo.limits.refresh-period}, '${topo.limits.refresh-period.unit}') }"/>
+    <task:scheduled ref="hostnameService" method="updateHostnames" fixed-delay="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${topo.limits.refresh-period}, '${topo.limits.refresh-period.unit}') }"/>
   </task:scheduled-tasks>
 
   <task:scheduler id="scheduler" pool-size="1"/>

@@ -12,7 +12,7 @@
     <property name="location" value="arguments:"/>
   </bean>
 
-  <amq:connectionFactory id="jmsFactory" brokerURL="${amqUrl}"/>
+  <amq:connectionFactory id="jmsFactory" brokerURL="${dcache.broker.amq.url}"/>
 
   <bean id="tunnel" class="org.dcache.cells.JMSTunnel"
         destroy-method="kill">

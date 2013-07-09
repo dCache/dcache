@@ -1,8 +1,6 @@
 onerror shutdown
-check -strong broker.amq.url
+check -strong dcache.broker.amq.url
 
 create org.dcache.cells.UniversalSpringCell JMS \
-     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq.xml \
-      -amqUrl=${broker.amq.url} \
-     "
+     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq.xml"
 

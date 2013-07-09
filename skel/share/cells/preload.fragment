@@ -3,14 +3,14 @@
 ##############################################################
 
 onerror shutdown
-exec file:${dcache.paths.share}/cells/tunnel-${broker.scheme}.fragment
+exec file:${dcache.paths.share}/cells/tunnel-${dcache.broker.scheme}.fragment
 
 #
 # Instantiate cell name service in broker domain
 ##############################################################
 
 onerror continue
-eval ${domain.name} ${broker.domain} ==
+eval ${domain.name} ${dcache.broker.domain} ==
 set env is_broker ${rc}
 onerror shutdown
 

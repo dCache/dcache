@@ -1,5 +1,0 @@
-# embedded-jms is a deprecated name
-
-say -level=2 "broker.scheme=embedded-jms is deprecated"
-
-exec file:${dcache.paths.share}/cells/tunnel-cells+amq-embedded.fragment
