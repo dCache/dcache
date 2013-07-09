@@ -1,4 +1,0 @@
-onerror shutdown
-check -strong cell.name
-create diskCacheV111.services.FileHoppingManager ${cell.name} \
- "${dcache.paths.config}/HoppingManager.conf -export"
