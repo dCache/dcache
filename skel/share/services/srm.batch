@@ -152,7 +152,7 @@ check -strong srmCustomGetHostByAddr
 check -strong srmIgnoreClientProtocolOrder
 check -strong srmImplicitSpaceManagerEnabled
 check -strong srmSpaceReservationStrict
-check -strong srmSpaceManagerEnabled
+check -strong dcache.enable.spacemanager
 
 check qosPluginClass
 check qosConfigFile
@@ -167,16 +167,6 @@ check -strong grid.ca.path
 
 check srm.security.ciphers
 
-
-# The 'spaceManagerEnabled' environment variable is a sanitised
-# version of 'srmSpaceManagerEnabled'.  It is always set and is either
-# 'true' or 'false'.
-
-onerror continue
-define env srmSpaceManagerOn.exe endExe
-  set env spaceManagerEnabled true
-endExe
-
 #
 # Force space manager related settings to off if space manager is
 # disabled.
@@ -184,16 +174,11 @@ endExe
 define env srmSpaceManagerOff.exe endExe
   set env srmImplicitSpaceManagerEnabled false
   set env srmSpaceReservationStrict false
-  set env spaceManagerEnabled false
 endExe
 
-eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
-set env srmSpaceManagerIsOn ${rc}
-exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
-exec env srmSpaceManagerOff.exe -ifnotok=srmSpaceManagerIsOn
+eval ${dcache.enable.spacemanager} true ==
+exec env srmSpaceManagerOff.exe -ifnotok
 onerror shutdown
-
-
 
 
 exec file:${dcache.paths.share}/cells/threadmanager.fragment

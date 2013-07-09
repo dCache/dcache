@@ -72,7 +72,7 @@ define context webadmin.exe endDefine
      -loginBrokerName=${dcache.service.loginbroker} \
      -pnfsManagerName=${dcache.service.pnfsmanager} \
      -poolManagerName=${dcache.service.poolmanager} \
-     -srmSpaceManagerEnabled=${srmSpaceManagerEnabled} \
+     -srmSpaceManagerEnabled=${dcache.enable.spacemanager} \
      -collectorTimeout=${collectorTimeout} \
      -transfersCollectorUpdate=${transfersCollectorUpdate} \
      -tempUnpackDir=${webadminWarunpackdir} \
