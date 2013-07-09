@@ -69,6 +69,7 @@ bootLoader()
 
 quickJava()
 {
+    export CLASSPATH
     "$JAVA" $(getProperty dcache.java.options.short-lived) "$@"
 }
 
