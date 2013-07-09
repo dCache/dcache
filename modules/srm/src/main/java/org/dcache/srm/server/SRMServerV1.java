@@ -92,6 +92,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
               log.debug("SRMServerV1.put() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
               user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              if (user.isReadOnly()) {
+                  throw new SRMAuthorizationException("Session is read-only");
+              }
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -597,7 +600,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
               String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
               log.debug("SRMServerV1.advisoryDelete() : role is "+role);
               requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              if (user.isReadOnly()) {
+                  throw new SRMAuthorizationException("Session is read-only");
+              }
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
