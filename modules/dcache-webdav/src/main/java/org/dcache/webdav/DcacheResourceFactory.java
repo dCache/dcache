@@ -93,7 +93,6 @@ import static java.util.Arrays.asList;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 
-
 /**
  * This ResourceFactory exposes the dCache name space through the
  * Milton WebDAV framework.
@@ -160,7 +159,6 @@ public class DcacheResourceFactory
     private String _path;
     private boolean _doRedirectOnRead = true;
     private boolean _doRedirectOnWrite = true;
-    private boolean _doChrootToUserRoot = false;
     private boolean _isOverwriteAllowed;
     private boolean _isAnonymousListingAllowed;
 
@@ -322,17 +320,6 @@ public class DcacheResourceFactory
     public void setIoQueue(String ioQueue)
     {
         _ioQueue = (ioQueue != null && !ioQueue.isEmpty()) ? ioQueue : null;
-    }
-
-    /**
-     * Sers whether chroot to user root extracted from user login record
-     */
-    public void setChrootToUserRoot(boolean chroot) {
-        _doChrootToUserRoot = chroot;
-    }
-
-    public boolean isChrootToUserRoot() {
-        return _doChrootToUserRoot;
     }
 
     /**
@@ -503,29 +490,21 @@ public class DcacheResourceFactory
         if (_log.isDebugEnabled()) {
             _log.debug("Resolving " + HttpManager.request().getAbsoluteUrl());
         }
-        return getResource(new FsPath(path));
+         return getResource(getFullPath(path));
     }
 
     /**
      * Returns the resource object for a path.
      *
-     * @param requestPath request path
+     * @param path The full path
      */
-    public DcacheResource getResource(FsPath requestPath)
+    public DcacheResource getResource(FsPath path)
     {
-
-        FsPath fullPath;
-        try {
-            fullPath = getFullPath(requestPath);
-        } catch (IllegalArgumentException e) {
-            _log.debug(e.getMessage());
+        if (!isAllowedPath(path)) {
             return null;
         }
 
-        if (!isAllowedPath(fullPath)) {
-            return null;
-        }
-
+        FsPath requestPath = getRequestPath(path);
         boolean haveRetried = false;
         Subject subject = getSubject();
 
@@ -539,14 +518,14 @@ public class DcacheResourceFactory
                         requestedAttributes.add(CHECKSUM);
                     }
                     FileAttributes attributes =
-                        pnfs.getFileAttributes(fullPath.toString(), requestedAttributes);
-                    return getResource(fullPath, attributes);
+                        pnfs.getFileAttributes(path.toString(), requestedAttributes);
+                    return getResource(path, attributes);
                 } catch (FileNotFoundCacheException e) {
                     if(haveRetried) {
                         return null;
                     } else {
                         switch(_missingFileStrategy.recommendedAction(subject,
-                                fullPath, requestPath)) {
+                                path, requestPath)) {
                         case FAIL:
                             return null;
                         case RETRY:
@@ -958,45 +937,12 @@ public class DcacheResourceFactory
     }
 
     /**
-     * Calculate root path based on _rootPath and User Root directory
-     * extracted from login record and taking into account _rootPath
-     * if necessary
-     */
-
-    private FsPath getUserRootPath()
-    {
-        FsPath path = _rootPath;
-        if (!_doChrootToUserRoot) {
-            return path;
-        }
-        Request request = HttpManager.request();
-        FsPath userRootDirectory = (request.getAttributes().containsKey(SecurityFilter.USER_ROOT_DIRECTORY)) ?
-            (FsPath)request.getAttributes().get(SecurityFilter.USER_ROOT_DIRECTORY) : null;
-        if (userRootDirectory!=null)  {
-            if (userRootDirectory.startsWith(_rootPath)) {
-                path=userRootDirectory;
-            } else {
-                if (!_rootPath.startsWith(userRootDirectory)) {
-                    throw new
-                        IllegalArgumentException("webdavRootPath = "+
-                                                 _rootPath+
-                                                 " and user root path = "+
-                                                 userRootDirectory +
-                                                 " are not subpaths of each other");
-                }
-            }
-        }
-        return path;
-    }
-
-    /**
      * Given a path relative to the root path, this method returns a
      * full PNFS path.
      */
-    private FsPath getFullPath(FsPath path)
+    private FsPath getFullPath(String path)
     {
-        FsPath rootPath = getUserRootPath();
-        return new FsPath(rootPath, new FsPath(path));
+        return new FsPath(_rootPath, new FsPath(path));
     }
 
     /**
@@ -1005,9 +951,9 @@ public class DcacheResourceFactory
      */
     private FsPath getRequestPath(FsPath internalPath)
     {
-        FsPath rootPath = getUserRootPath();
-        return rootPath.relativize(internalPath);
+        return _rootPath.relativize(internalPath);
     }
+
 
     /**
      * Returns true if access to path is allowed through the WebDAV
