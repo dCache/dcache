@@ -65,18 +65,19 @@ COPYRIGHT STATUS:
  */
 package org.dcache.alarms.server;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.io.File;
-
-import org.dcache.cells.UniversalSpringCell;
-import org.slf4j.LoggerFactory;
-
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.classic.net.SimpleSocketServer;
 import ch.qos.logback.core.joran.spi.JoranException;
+import com.google.common.base.Strings;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+
+import org.dcache.cells.UniversalSpringCell;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Simple POJO wrapper around {@link SimpleSocketServer} to be run inside a
@@ -144,10 +145,18 @@ public class LogEntryServerWrapper {
     }
 
     public void shutDown() {
-        server.close();
+        if (server != null) {
+            server.close();
+        }
     }
 
+
     public void startUp() throws JoranException {
+        if (Strings.isNullOrEmpty(url)) {
+            LoggerFactory.getLogger("root")
+                .warn("alarms database type is OFF; server will not be started");
+            return;
+        }
         checkNotNull(configFile);
         checkNotNull(baseDir);
         File f = new File(baseDir);
