@@ -16,7 +16,6 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1777,14 +1776,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                         if( _checkStrict ){
 
-                            SpreadAndWait controller = new SpreadAndWait( _cell, 10000 ) ;
-
+                            SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(new CellStub(_cell, null, 10000));
                             for( String pool: result ){
 
                                 _log.debug("Sending query to pool {}", pool);
                                 PoolCheckFileMessage request =
                                     new PoolCheckFileMessage(pool, _fileAttributes.getPnfsId());
-                                controller.send( new CellMessage( new CellPath(pool) , request ) );
+                                controller.send(new CellPath(pool), PoolCheckFileMessage.class, request);
                             }
                             controller.waitForReplies() ;
                             int numberOfReplies = controller.getReplyCount() ;
@@ -1794,17 +1792,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                         CacheException(4, "File not cached");
                             }
 
-                            Iterator<CellMessage> iterate = controller.getReplies() ;
                             int found = 0 ;
-                            while( iterate.hasNext() ){
-                                CellMessage msg = iterate.next() ;
-                                Object obj = msg.getMessageObject() ;
-                                if( ! ( obj instanceof PoolCheckFileMessage ) ){
-                                    _log.error("Unexpected reply from PoolCheckFileCostMessage: {}",
-                                               obj.getClass().getName());
-                                    continue ;
-                                }
-                                PoolCheckFileMessage reply = (PoolCheckFileMessage)obj ;
+                            for (PoolCheckFileMessage reply: controller.getReplies().values()) {
                                 if( reply.getHave() ){
                                     _log.debug("pool {}: ok",
                                                reply.getPoolName());

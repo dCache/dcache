@@ -5,7 +5,6 @@ package diskCacheV111.replicaManager ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +13,6 @@ import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,6 +58,7 @@ import dmg.cells.nucleus.UOID;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
+import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -1641,18 +1640,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            return new ArrayList<>(confirmed); // return empty List
        }
 
-       SpreadAndWait controller = new SpreadAndWait( this , _TO_GetCacheLocationList ) ;
+       SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(new CellStub(this, null, _TO_GetCacheLocationList));
 
 //       _log.debug("getCacheLocationList: SpreadAndWait to " + assumed.size() +" pools");
 
-       PoolCheckFileMessage query;
        for (Object pool : assumed) {
            String poolName = pool.toString();
-           query = new PoolCheckFileMessage(poolName, pnfsId);
-           CellMessage cellMessage2Pool = new CellMessage(new CellPath(poolName), query);
-
+           PoolCheckFileMessage query = new PoolCheckFileMessage(poolName, pnfsId);
            try {
-               controller.send(cellMessage2Pool);
+               controller.send(new CellPath(poolName), PoolCheckFileMessage.class, query);
            } catch (Exception eeee) {
                _log.warn("Problem sending query to " + query
                        .getPoolName() + " " + eeee);
@@ -1666,11 +1662,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        // Copy certanly 'confirmed' pools to another map
        // instead of dropping 'not have' pools from the original map
 
-       for( Iterator<CellMessage> i = controller.getReplies() ; i.hasNext() ; ){
-          query = (PoolCheckFileMessage) (i.next()).getMessageObject() ;
-	  _log.debug("getCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
-          if( query.getHave() ) {
-              confirmed.add(query.getPoolName());
+       for (PoolCheckFileMessage reply: controller.getReplies().values()) {
+	  _log.trace("getCacheLocationList : PoolCheckFileMessage={}", reply);
+          if (reply.getHave()) {
+              confirmed.add(reply.getPoolName());
           }
        }
 
@@ -1696,16 +1691,14 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            return new ArrayList<>(confirmed); // return empty List
        }
 
-       SpreadAndWait controller = new SpreadAndWait(this, _TO_GetCacheLocationList);
+       SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(new CellStub(this, null, _TO_GetCacheLocationList));
 
-       PoolCheckFileMessage query;
        for (Object pool : assumed) {
            String poolName = pool.toString();
-           query = new PoolCheckFileMessage(poolName, pnfsId);
-           CellMessage cellMessage2Pool = new CellMessage(new CellPath(poolName), query);
+           PoolCheckFileMessage query = new PoolCheckFileMessage(poolName, pnfsId);
 
            try {
-               controller.send(cellMessage2Pool);
+               controller.send(new CellPath(poolName), PoolCheckFileMessage.class, query);
            } catch (Exception ex) {
                _log.warn("Problem sending query to " + query
                        .getPoolName() + " " + ex);
@@ -1719,12 +1712,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        // Copy certanly 'confirmed' pools to another map
        // instead of dropping 'not have' pools from the original map
 
-       for (Iterator<CellMessage> i = controller.getReplies(); i.hasNext(); ) {
-           query = (PoolCheckFileMessage) (i.next()).
-                   getMessageObject();
-	   _log.debug("confirmCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
-           if (query.getHave()) {
-               confirmed.add(query.getPoolName());
+       for (PoolCheckFileMessage reply: controller.getReplies().values()) {
+	   _log.trace("confirmCacheLocationList : PoolCheckFileMessage={}", reply);
+           if (reply.getHave()) {
+               confirmed.add(reply.getPoolName());
            }
        }
        return new ArrayList<>(confirmed);

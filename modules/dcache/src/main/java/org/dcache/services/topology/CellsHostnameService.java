@@ -1,33 +1,31 @@
 package org.dcache.services.topology;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import diskCacheV111.util.SpreadAndWait;
 
 import dmg.cells.network.CellDomainNode;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.cells.CellMessageSender;
+import org.dcache.cells.CellStub;
 
 /**
  *
  * @author jans
  */
-public class CellsHostnameService implements HostnameService, CellMessageSender {
+public class CellsHostnameService implements HostnameService
+{
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(CellsHostnameService.class);
 
-    private long _timeout;
-    private CellEndpoint _endpoint;
     private CellsTopology _topology;
     private Set<String> _hostnames = new HashSet<>();
-    private static final Logger _log =
-            LoggerFactory.getLogger(CellsHostnameService.class);
+    private CellStub _stub;
 
     @Override
     public synchronized String getHostnames() {
@@ -38,48 +36,31 @@ public class CellsHostnameService implements HostnameService, CellMessageSender 
     public void updateHostnames() {
         CellDomainNode[] info = _topology.getInfoMap();
         if (info == null) {
-            _log.info("Cannot update Hostnames. Domains not known yet." +
-                    " Try running update first");
+            LOGGER.info("Cannot update host names. Domains not known yet. Try to run update first.");
             return;
         }
-        _log.info("Hostnames update started");
-        SpreadAndWait spreader = new SpreadAndWait(_endpoint, _timeout);
+        LOGGER.debug("Host name update started");
+        SpreadAndWait<String> spreader = new SpreadAndWait<>(_stub);
         for (CellDomainNode domain : info) {
-            spreader.send(createMessage(domain.getAddress()));
+            spreader.send(new CellPath(domain.getAddress()), String.class, "get hostname");
         }
         try {
             spreader.waitForReplies();
-            buildHostnameList(spreader.getReplyList());
-            _log.info("Hostnames update finished");
-        } catch (InterruptedException ex) {
+            setHostnames(spreader.getReplies().values());
+            LOGGER.debug("Host name update finished");
+        } catch (InterruptedException ignored) {
         }
     }
 
-    private void buildHostnameList(List<CellMessage> replyList) {
-        Set<String> hostnames = new HashSet<>();
-        for (CellMessage msg : replyList) {
-            hostnames.add((String) msg.getMessageObject());
-        }
-        synchronized (this) {
-            _hostnames = hostnames;
-        }
-    }
-
-    private CellMessage createMessage(String cellPath) {
-        CellMessage message = new CellMessage(new CellPath(cellPath), "get hostname");
-        return message;
+    private synchronized void setHostnames(Iterable<String> hostnames) {
+        _hostnames = Sets.newHashSet(hostnames);
     }
 
     public void setTopology(CellsTopology topology) {
         _topology = topology;
     }
 
-    public void setTimeout(long timeout) {
-        _timeout = timeout;
-    }
-
-    @Override
-    public void setCellEndpoint(CellEndpoint endpoint) {
-        _endpoint = endpoint;
+    public void setCellStub(CellStub stub) {
+        _stub = stub;
     }
 }

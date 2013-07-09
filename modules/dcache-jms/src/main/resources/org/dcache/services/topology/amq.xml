@@ -4,9 +4,9 @@
        xmlns:task="http://www.springframework.org/schema/task"
        xmlns:amq="http://activemq.apache.org/schema/core"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+           http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/task
-           http://www.springframework.org/schema/task/spring-task-3.0.xsd
+           http://www.springframework.org/schema/task/spring-task.xsd
            http://activemq.apache.org/schema/core
            http://activemq.apache.org/schema/core/activemq-core.xsd">
 
@@ -36,7 +36,7 @@
   <bean id="hostnameService" class="org.dcache.services.topology.CellsHostnameService">
     <description>Service for dCache-hostname retrieval</description>
     <property name="topology" ref="topology"/>
-    <property name="timeout" value="${topoTimeout}"/>
+    <property name="cellStub" ref="stub"/>
   </bean>
 
   <bean id="ui" class="org.dcache.services.topology.CellsTopologyInterpreter">

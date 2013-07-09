@@ -376,7 +376,7 @@ public class CellStub
      */
     public <T extends Serializable> void send(CellPath destination,
                                               Serializable message,
-                                              Class<T> type,
+                                              Class<? extends T> type,
                                               MessageCallback<T> callback)
     {
         if (message instanceof Message) {
@@ -415,9 +415,9 @@ public class CellStub
     static class CellCallback<T> implements CellMessageAnswerable
     {
         private final MessageCallback<T> _callback;
-        private final Class<T> _type;
+        private final Class<? extends T> _type;
 
-        CellCallback(Class<T> type, MessageCallback<T> callback)
+        CellCallback(Class<? extends T> type, MessageCallback<T> callback)
         {
             _callback = callback;
             _type = type;
