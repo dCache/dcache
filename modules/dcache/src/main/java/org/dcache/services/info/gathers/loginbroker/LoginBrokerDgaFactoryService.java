@@ -35,8 +35,6 @@ public class LoginBrokerDgaFactoryService implements DgaFactoryService
 
     	return ImmutableSet.of(
     			(Schedulable)new SingleMessageDga(sender, "LoginBroker",
-    					"ls -binary", lbHandler, TimeUnit.MINUTES.toSeconds(1)),
-    			new SingleMessageDga(sender, "srm-LoginBroker", "ls -binary",
-    					lbHandler, TimeUnit.MINUTES.toSeconds(1)));
+                                "ls -binary", lbHandler, TimeUnit.MINUTES.toSeconds(1)));
     }
 }

@@ -165,6 +165,10 @@ check -strong grid.hostcert.key
 check -strong grid.hostcert.cert
 check -strong grid.ca.path
 
+check srm.protocols.disallowed.get
+check srm.protocols.disallowed.put
+check srm.protocols.preferred
+
 check srm.security.ciphers
 
 #

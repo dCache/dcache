@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+              http://www.springframework.org/schema/beans/spring-beans.xsd
+              http://www.springframework.org/schema/context
+              http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:annotation-config/>
 
   <!--
     Note that we have a three-node circular dependency with the
@@ -43,7 +48,17 @@
     <property name="location" value="arguments:"/>
   </bean>
 
-  <bean id="required" class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
+  <!-- Convert properties with multiple values separated by comma into an array of strings:
+       key=value1,value2,value3 : String[] {value1, value2, value3}
+    -->
+  <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+      <property name="customEditors">
+          <map>
+              <entry key="java.lang.String[]"
+                     value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor" />
+          </map>
+      </property>
+  </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
@@ -122,11 +137,7 @@
     <property name="protocolVersion" value="${srm.service.loginbroker.version}"/>
     <property name="protocolFamily" value="${srm.service.loginbroker.family}"/>
     <property name="port" value="${port}"/>
-    <property name="loginBroker">
-      <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${srm.service.loginbroker}"/>
-      </bean>
-    </property>
+    <property name="loginBrokers" value="${srm.service.loginbroker}"/>
   </bean>
 
   <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
@@ -185,6 +196,9 @@
     <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
     <property name="configuration" ref="config"/>
     <property name="pinOnlineFiles" value="${srmPinOnlineFiles}"/>
+    <property name="srmPutNotSupportedProtocols" value="${srm.protocols.disallowed.put}"/>
+    <property name="srmGetNotSupportedProtocols" value="${srm.protocols.disallowed.get}"/>
+    <property name="srmPreferredProtocols" value="${srm.protocols.preferred}"/>
     <property name="srm" ref="srm"/>
   </bean>
 

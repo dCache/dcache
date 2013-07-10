@@ -1,5 +1,0 @@
-# Load arguments into environment
-
-onerror shutdown
-check -strong cell.name
-create dmg.cells.services.login.LoginBroker ${cell.name} "default -export"

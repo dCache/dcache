@@ -14,6 +14,18 @@
     <property name="location" value="arguments:"/>
   </bean>
 
+  <!-- Convert properties with multiple values separated by comma into an array of strings:
+       key=value1,value2,value3 : String[] {value1, value2, value3}
+    -->
+  <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+      <property name="customEditors">
+          <map>
+              <entry key="java.lang.String[]"
+                     value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor" />
+          </map>
+      </property>
+  </bean>
+
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool cell stub</description>
     <property name="timeout" value="${xrootd.service.pool.timeout}"/>
@@ -158,10 +170,6 @@
     <property name="protocolFamily" value="${xrootd.service.loginbroker.family}"/>
     <property name="port" value="${xrootd.net.port}"/>
     <property name="address" value="${webdav.net.listen}"/>
-    <property name="loginBroker">
-      <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${xrootd.service.loginbroker}"/>
-      </bean>
-    </property>
+    <property name="loginBrokers" value="${xrootd.service.loginbroker}"/>
   </bean>
 </beans>

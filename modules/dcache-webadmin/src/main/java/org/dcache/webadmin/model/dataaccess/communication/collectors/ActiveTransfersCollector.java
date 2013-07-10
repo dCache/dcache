@@ -1,9 +1,12 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,20 +34,22 @@ import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
  */
 public class ActiveTransfersCollector extends Collector {
 
-    private String _loginBrokerName;
+    private String[] _loginBrokerNames;
     private final static Logger _log = LoggerFactory.getLogger(ActiveTransfersCollector.class);
 
     private Set<CellAddressCore> getAllDoorsToAsk() throws InterruptedException,
                     CacheException {
-        _log.debug("Requesting doorInfo from LoginBroker {}", _loginBrokerName);
-        LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(
-                        _loginBrokerName), "ls -binary -all",
-                        LoginBrokerInfo[].class);
+        _log.debug("Requesting doorInfo from LoginBroker {}", Arrays.toString(_loginBrokerNames));
+
         Set<CellAddressCore> doors = new HashSet<>();
-        for (LoginBrokerInfo info : infos) {
-            doors.add(new CellAddressCore(info.getCellName(), info.getDomainName()));
+        for (String loginBroker: _loginBrokerNames) {
+            LoginBrokerInfo[] infos =
+                    _cellStub.sendAndWait(new CellPath(loginBroker), "ls -binary -all", LoginBrokerInfo[].class);
+            for (LoginBrokerInfo info : infos) {
+                doors.add(new CellAddressCore(info.getCellName(), info.getDomainName()));
+            }
+            _log.debug("LoginBrokers found: {}", doors);
         }
-        _log.debug("LoginBrokers found: {}", doors);
         return doors;
     }
 
@@ -136,8 +141,9 @@ public class ActiveTransfersCollector extends Collector {
         }
     }
 
-    public void setLoginBrokerName(String loginBrokerName) {
-        _loginBrokerName = loginBrokerName;
+    public void setLoginBrokerNames(String loginBrokerNames) {
+        _loginBrokerNames =
+                Iterables.toArray(Splitter.on(",").omitEmptyStrings().split(loginBrokerNames), String.class);
     }
 
     @Override
