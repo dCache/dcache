@@ -18,8 +18,9 @@ include ANSI::Code
 @srmmkdir = 'srmmkdir'
 @srmrmdir = 'srmrmdir'
 @srmcheck = 'srm-check-permissions'
-@ngcp = 'arccp'
-@ngls = 'arcls'
+@arccp = 'arccp'
+@arcrm = 'arcrm'
+@arcls = 'arcls'
 @xrdcp = 'xrdcp'
 @dccp = 'dccp'
 @curl = 'curl'
@@ -111,22 +112,24 @@ def arc(source, dest, *args)
   tmp3 = makeTempName
   tmp4 = makeTempName
 
-  run(@ngcp, '-p', args,
+  run(@arccp, '-p', args,
       "#{source}",
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp1}")
-  run(@ngcp, args,
+  run(@arccp, args,
       "gsiftp://#{@options.host}/#{@options.dir}/#{tmp1}",
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp2}")
-  run(@ngcp, args,
+  run(@arccp, args,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp2}",
       "gsiftp://#{@options.host}/#{@options.dir}/#{tmp3}")
-  run(@ngcp, args,
+  run(@arccp, args,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp3}",
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp4}")
-  run(@ngcp, '-p', args,
+  run(@arccp, '-p', args,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp4}",
       "#{dest}")
-  run(@ngls,
+  run(@arcls,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp1}")
+  run(@arcrm,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp1}")
 end
 
@@ -167,6 +170,7 @@ def http(source, dest, *args)
   tmp1 = makeTempName
   run(@curl, args, "-s", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
   run(@curl, args, "-s", "-L", "-o", dest, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
 end
 
 def test(transfer, *args)

@@ -3,39 +3,52 @@ package org.dcache.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.multicaster.BroadcastRegisterMessage;
 import dmg.cells.services.multicaster.BroadcastUnregisterMessage;
+
+import org.dcache.cells.CellStub;
 
 /**
  * TimerTask to periodically register a broadcast subscription.
  */
 public class BroadcastRegistrationTask implements Runnable
 {
-    /** Cell used to send message. */
-    private final CellEndpoint _cellEndpoint;
+    private static final Logger LOGGER = LoggerFactory.getLogger(BroadcastRegistrationTask.class);
 
     /** Name of the message class to register. */
-    private final String _eventClass;
+    private Class<?> _eventClass;
 
     /** Target cell to which to send broadcasts. */
-    private final CellPath _target;
+    private CellPath _target;
 
-    private static CellPath _broadcast = new CellPath("broadcast");
-
-    private static final Logger _logger =
-        LoggerFactory.getLogger(BroadcastRegistrationTask.class);
+    private CellStub _broadcast;
 
     private long _expires;
     private boolean _isCancelOnFailure;
 
-    public BroadcastRegistrationTask(CellEndpoint cellEndpoint, Class<?> eventClass, CellPath target)
+    public BroadcastRegistrationTask()
     {
-        _cellEndpoint = cellEndpoint;
-        _eventClass = eventClass.getName();
+    }
+
+    public void setEventClass(Class<?> eventClass)
+    {
+        _eventClass = eventClass;
+    }
+
+    public Class<?> getEventClass()
+    {
+        return _eventClass;
+    }
+
+    public void setBroadcastStub(CellStub stub)
+    {
+        _broadcast = stub;
+    }
+
+    public void setTarget(CellPath target)
+    {
         _target = target;
     }
 
@@ -64,12 +77,12 @@ public class BroadcastRegistrationTask implements Runnable
     {
         try {
             BroadcastRegisterMessage message =
-                new BroadcastRegisterMessage(_eventClass, _target);
+                new BroadcastRegisterMessage(_eventClass.getName(), _target);
             message.setExpires(_expires);
             message.setCancelOnFailure(_isCancelOnFailure);
-            _cellEndpoint.sendMessage(new CellMessage(_broadcast, message));
+            _broadcast.send(message);
         } catch (NoRouteToCellException e) {
-            _logger.error("Failed to register with broadcast cell: No route to cell");
+            LOGGER.error("Failed to register with broadcast cell: No route to cell {}", _broadcast.getDestinationPath());
         }
     }
 
@@ -82,10 +95,10 @@ public class BroadcastRegistrationTask implements Runnable
     {
         try {
             BroadcastUnregisterMessage message =
-                new BroadcastUnregisterMessage(_eventClass, _target);
-            _cellEndpoint.sendMessage(new CellMessage(_broadcast, message));
+                new BroadcastUnregisterMessage(_eventClass.getName(), _target);
+            _broadcast.send(message);
         } catch (NoRouteToCellException e) {
-            _logger.info("Failed to unregister with broadcast cell: No route to cell");
+            LOGGER.info("Failed to unregister with broadcast cell: No route to cell {}", _broadcast.getDestinationPath());
         }
     }
 }
