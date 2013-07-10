@@ -42,8 +42,9 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
     /**
      * Test simple inserts and retrievals on the 5 basic info objects. The
      * CommitTimer is set to 0.
+     * @throws BillingQueryException
      */
-    public void testPutGetDelete() {
+    public void testPutGetDelete() throws BillingQueryException {
         long sleep = 1500L * timeout;
         for (int i = 0; i < 4; i++) {
             PnfsBaseInfo original = messageGenerator.newPnfsInfo(i);
@@ -78,8 +79,9 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
     /**
      * Test the delayed commit mechanism. Timeout is infinite, so commit will
      * only take place when the insert margin has been reached;
+     * @throws BillingQueryException
      */
-    public void testDelayedCommit() {
+    public void testDelayedCommit() throws BillingQueryException {
         int k = maxBefore / 2;
         for (int i = 0; i < k; i++) {
             getAccess().put(messageGenerator.newPnfsInfo(1));
@@ -110,8 +112,9 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
 
     /**
      * Check that filter works.
+     * @throws BillingQueryException
      */
-    public void testSelect() {
+    public void testSelect() throws BillingQueryException {
         PnfsBaseInfo p1 = messageGenerator.newPnfsInfo(1);
         PnfsBaseInfo p2 = messageGenerator.newPnfsInfo(1);
         p1.setAction("store");

@@ -57,84 +57,54 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.cells;
+package org.dcache.services.billing.histograms.data;
 
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.InfoMessage;
-import diskCacheV111.vehicles.MoverInfoMessage;
-import diskCacheV111.vehicles.PoolHitInfoMessage;
-import diskCacheV111.vehicles.StorageInfoMessage;
+import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.services.billing.db.IBillingInfoAccess;
-import org.dcache.services.billing.db.data.DoorRequestData;
-import org.dcache.services.billing.db.data.MoverData;
-import org.dcache.services.billing.db.data.PnfsBaseInfo;
-import org.dcache.services.billing.db.data.PoolHitData;
-import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.plots.BillingInfoHistogramGenerator;
+import org.dcache.cells.CellStub;
+import org.dcache.services.billing.histograms.TimeFrame;
+import org.dcache.vehicles.billing.HistogramRequestMessage;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * This class is responsible for the processing of messages from other domains
- * regarding transfers and pool usage. It calls out to a IBillingInfoAccess
- * implementation to handle persistence of the data.<br>
- * <br>
+ * Proxied client handler to the {@link ITimeFrameHistogramDataService} service.
  *
- * It also optionally runs a thread to generate histogram images and write them to a well-known location.
+ * @author arossi
  */
-public final class BillingDatabase implements CellMessageReceiver {
+public class TimeFrameHistogramDataProxy implements InvocationHandler {
 
-    private IBillingInfoAccess access;
-    private BillingInfoHistogramGenerator billingPlotGenerator;
-    private boolean generatePlots;
+    private static final Class[] ONE_PARAM = new Class[] { TimeFrame.class };
+    private static final Class[] TWO_PARAM = new Class[] { TimeFrame.class,
+                    Boolean.class };
 
-    public void initialize() throws Throwable {
-        if (generatePlots) {
-            billingPlotGenerator.start();
-        }
+    private final CellStub cell;
+
+    public TimeFrameHistogramDataProxy(CellStub cell) {
+        checkNotNull(cell);
+        this.cell = cell;
     }
 
-    public void messageArrived(InfoMessage info) {
-        access.put(convert(info));
+    public Object invoke(Object proxy, Method method, Object[] args)
+                    throws Throwable {
+        HistogramRequestMessage request = createRequestMessage(method, args);
+        request = cell.sendAndWait(request, HistogramRequestMessage.class);
+        return request.getReturnValue(); // request cannot be null
     }
 
-    public void setAccess(IBillingInfoAccess access) {
-        this.access = access;
-    }
-
-    public void setBillingPlotGenerator(
-                    BillingInfoHistogramGenerator billingPlotGenerator) {
-        this.billingPlotGenerator = billingPlotGenerator;
-    }
-
-
-    public void setGeneratePlots(boolean generatePlots) {
-        this.generatePlots = generatePlots;
-    }
-
-    public synchronized void shutDown() {
-        if (generatePlots) {
-            billingPlotGenerator.shutDown();
+    private static HistogramRequestMessage createRequestMessage(Method method, Object[] args) {
+        Class<Serializable>[] types;
+        Serializable[] serializable;
+        if (args.length == 1) {
+            types = ONE_PARAM;
+            serializable = new Serializable[]{(TimeFrame)args[0]};
+        } else {
+            types = TWO_PARAM;
+            serializable = new Serializable[]{(TimeFrame)args[0], (Boolean)args[1]};
         }
-        access.close();
-    }
 
-    /*
-     * Converts from the InfoMessage type to the storage type.
-     */
-    private PnfsBaseInfo convert(InfoMessage info) {
-        if (info instanceof MoverInfoMessage) {
-            return new MoverData((MoverInfoMessage) info);
-        }
-        if (info instanceof DoorRequestInfoMessage) {
-            return new DoorRequestData((DoorRequestInfoMessage) info);
-        }
-        if (info instanceof StorageInfoMessage) {
-            return new StorageData((StorageInfoMessage) info);
-        }
-        if (info instanceof PoolHitInfoMessage) {
-            return new PoolHitData((PoolHitInfoMessage) info);
-        }
-        return null;
+        return new HistogramRequestMessage(method.getName(), types, serializable);
     }
 }
