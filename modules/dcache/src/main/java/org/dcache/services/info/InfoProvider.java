@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
