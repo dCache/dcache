@@ -33,6 +33,7 @@ import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.IAlarmDisplayService;
+import org.dcache.webadmin.controller.IBillingService;
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.LinkGroupsService;
 import org.dcache.webadmin.controller.LogInService;
@@ -97,16 +98,14 @@ public class WebAdminInterface extends WebApplication {
     private ActiveTransfersService _activeTransfersService;
     private PoolSelectionSetupService _poolSelectionSetupService;
     private TapeTransfersService _tapeTransfersService;
+    private IBillingService _billingService;
     private IAlarmDisplayService _alarmDisplayService;
     private ThumbnailPanelProvider _thumbnailPanelProvider;
     private String _dcacheName;
     private String _authDestination;
     private Integer _adminGid;
-    private String _billingToDb = "no";
     private String _generatePlots = "false";
     private String _poolQueuePlotsEnabled = "false";
-    private String _plotsDir;
-    private String _exportExt = ".png";
     private int _httpsPort;
     private int _httpPort;
 
@@ -130,8 +129,8 @@ public class WebAdminInterface extends WebApplication {
         return _authDestination;
     }
 
-    public String getBillingToDb() {
-        return _billingToDb;
+    public IBillingService getBillingService() {
+        return _billingService;
     }
 
     public CellAdminService getCellAdminService() {
@@ -148,10 +147,6 @@ public class WebAdminInterface extends WebApplication {
 
     public String getDcacheName() {
         return _dcacheName;
-    }
-
-    public String getExportExt() {
-        return _exportExt;
     }
 
     public String getGeneratePlots() {
@@ -173,10 +168,6 @@ public class WebAdminInterface extends WebApplication {
 
     public LogInService getLogInService() {
         return _logInService;
-    }
-
-    public String getPlotsDir() {
-        return _plotsDir;
     }
 
     public PoolAdminService getPoolAdminService() {
@@ -233,8 +224,8 @@ public class WebAdminInterface extends WebApplication {
         _authDestination = authDestination;
     }
 
-    public void setBillingToDb(String billingToDb) {
-        _billingToDb = billingToDb;
+    public void setBillingService(IBillingService billingService) {
+        _billingService = billingService;
     }
 
     public void setCellAdminService(CellAdminService cellAdminService) {
@@ -255,10 +246,6 @@ public class WebAdminInterface extends WebApplication {
         _dcacheName = dCacheName;
     }
 
-    public void setExportExt(String exportExt) {
-        _exportExt = exportExt;
-    }
-
     public void setGeneratePlots(String generatePlots) {
         _generatePlots = generatePlots;
     }
@@ -273,10 +260,6 @@ public class WebAdminInterface extends WebApplication {
 
     public void setLogInService(LogInService logInService) {
         _logInService = logInService;
-    }
-
-    public void setPlotsDir(String plotsDir) {
-        _plotsDir = plotsDir;
     }
 
     public void setPoolAdminService(PoolAdminService poolAdminService) {
@@ -356,8 +339,8 @@ public class WebAdminInterface extends WebApplication {
         mountPage("tapetransfers", TapeTransferQueue.class);
         mountPage("alarms", AlarmsPage.class);
 
-        if (_billingToDb.trim().equalsIgnoreCase("yes")
-                        && Boolean.parseBoolean(_generatePlots)) {
+        if (Boolean.parseBoolean(_generatePlots)) {
+            _billingService.initialize();
             mountPage("billingplots", BillingPlots.class);
             BasicNavigationPanel.addBillingPage();
         } else {

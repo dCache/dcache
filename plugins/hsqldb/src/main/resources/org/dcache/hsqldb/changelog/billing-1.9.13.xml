@@ -25,7 +25,8 @@
             "errorcode"      integer,
             "errormessage"   varchar(8000),
             "pnfsid"         varchar(36),
-            "transaction"    varchar(256)
+            "transaction"    varchar(256),
+            "p2p"            boolean
             );
 
             CREATE TABLE "storageinfo"
@@ -89,6 +90,14 @@
             "transferred"  bigint
             );
 
+            CREATE TABLE "billinginfo_p2p_daily"
+            (
+            "date"         timestamp with time zone,
+            "count"        bigint,
+            "size"         bigint,
+            "transferred"  bigint
+            );
+
             CREATE TABLE "billinginfo_tm_daily"
             (
             "date"         timestamp with time zone,
@@ -124,18 +133,46 @@
                 ON "billinginfo" ("datestamp");
             CREATE INDEX "billinginfo_isnew_idx"
                 ON "billinginfo" ("isnew");
+            CREATE INDEX "billinginfo_client_idx"
+                ON "billinginfo" ("client");
+            CREATE INDEX "billinginfo_initiator_idx"
+                ON "billinginfo" ("initiator");
+            CREATE INDEX "billinginfo_pnfsid_idx"
+                ON "billinginfo" ("pnfsid");
+            CREATE INDEX "billinginfo_storageclass_idx"
+                ON "billinginfo" ("storageclass");
+            CREATE INDEX "billinginfo_transaction_idx"
+                ON "billinginfo" ("transaction");
             CREATE INDEX "storageinfo_date_idx"
                 ON "storageinfo" ("datestamp");
             CREATE INDEX "storageinfo_action_idx"
                 ON "storageinfo" ("action");
+            CREATE INDEX "storageinfo_pnfsid_idx"
+                ON "storageinfo" ("pnfsid");
+            CREATE INDEX "storageinfo_storageclass_idx"
+                ON "storageinfo" ("storageclass");
+            CREATE INDEX "storageinfo_transaction_idx"
+                ON "storageinfo" ("transaction");
             CREATE INDEX "doorinfo_date_idx"
                 ON "doorinfo" ("datestamp");
+            CREATE INDEX "doorinfo_owner_idx"
+                ON "doorinfo" ("owner");
+            CREATE INDEX "doorinfo_pnfsid_idx"
+                ON "doorinfo" ("pnfsid");
+            CREATE INDEX "doorinfo_transaction_idx"
+                ON "doorinfo" ("transaction");
             CREATE INDEX "hitinfo_date_idx"
                 ON "hitinfo" ("datestamp");
+            CREATE INDEX "hitinfo_pnfsid_idx"
+                ON "hitinfo" ("pnfsid");
+            CREATE INDEX "hitinfo_transaction_idx"
+                ON "hitinfo" ("transaction");
             CREATE INDEX "billinginfo_rd_daily_date_idx"
                 ON "billinginfo_rd_daily" ("date");
             CREATE INDEX "billinginfo_wr_daily_date_idx"
                 ON "billinginfo_wr_daily" ("date");
+            CREATE INDEX "billinginfo_p2p_daily_date_idx"
+                ON "billinginfo_p2p_daily" ("date");
             CREATE INDEX "billinginfo_tm_daily_date_idx"
                 ON "billinginfo_tm_daily" ("date");
             CREATE INDEX "storageinfo_rd_daily_date_idx"
@@ -156,7 +193,8 @@
                 BEGIN ATOMIC
                     DECLARE truncated_date timestamp with time zone;
                     SET truncated_date = trunc(new."datestamp");
-                    IF (new."isnew" = false AND new."errorcode" = 0) THEN
+                    IF (new."isnew" = false AND new."errorcode" = 0
+                        AND (new."p2p" = false OR new."p2p" is null)) THEN
                         UPDATE "billinginfo_rd_daily"
                         SET "count" = "count" + 1,
                             "size" = "size" + new."fullsize",
@@ -181,7 +219,8 @@
                 BEGIN ATOMIC
                     DECLARE truncated_date timestamp with time zone;
                     SET truncated_date = trunc(new."datestamp");
-                    IF (new."isnew" = true AND new."errorcode" = 0) THEN
+                    IF (new."isnew" = true AND new."errorcode" = 0
+                        AND (new."p2p" = false OR new."p2p" is null)) THEN
                         UPDATE "billinginfo_wr_daily"
                         SET "count" = "count" + 1,
                             "size" = "size" + new."fullsize",
@@ -301,6 +340,31 @@
                                    ("date", "count", "notcached", "cached")
                             VALUES (truncated_date, 1, delta_notcached, delta_cached);
                         END IF;
+                    END IF;
+                END
+        </sql>
+    </changeSet>
+    <changeSet id="4.1.6" author="arossi" context="billing">
+        <comment>trigger to populate daily table</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER "tgr_update_billinginfo_p2p_daily"
+                AFTER INSERT ON "billinginfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE truncated_date timestamp with time zone;
+                    SET truncated_date = trunc(new."datestamp");
+                    IF (new."p2p" = true AND new."errorcode" = 0) THEN
+                        UPDATE "billinginfo_p2p_daily"
+                        SET "count" = "count" + 1,
+                            "size" = "size" + new."fullsize",
+                            "transferred" = "transferred" + new."transfersize"
+                        WHERE trunc("date") = truncated_date;
+                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
+                            INSERT INTO "billinginfo_p2p_daily"
+                                   ("date", "count", "size", "transferred")
+                            VALUES (truncated_date, 1, new."fullsize", new."transfersize");
+                       END IF;
                     END IF;
                 END
         </sql>
