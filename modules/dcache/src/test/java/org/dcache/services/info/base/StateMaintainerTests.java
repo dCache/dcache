@@ -207,7 +207,9 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
     public void setUp()
     {
         _caretaker = new DummyCaretaker();
-        _maintainer = new StateMaintainer( _caretaker, Executors.defaultThreadFactory());
+        _maintainer = new StateMaintainer();
+        _maintainer.setCaretaker(_caretaker);
+        _maintainer.setExecutor(Executors.newSingleThreadScheduledExecutor());
     }
 
     @After

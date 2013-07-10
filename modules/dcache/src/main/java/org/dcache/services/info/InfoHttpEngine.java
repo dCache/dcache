@@ -11,12 +11,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import org.dcache.util.Version;
-
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;

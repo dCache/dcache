@@ -28,7 +28,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
 
     private static final String ROOT_ELEMENT_LABEL = "dCache";
 
-    private final StateExhibitor _exhibitor;
+    private StateExhibitor _exhibitor;
     private final Stack<Chunk> _lastChunkStack = new Stack<>();
     private final List<Chunk> _pendingChunks = new ArrayList<>();
 
@@ -37,7 +37,8 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     private boolean _foundSomething;
     private boolean _nextChunkHasStalk;
 
-    public PrettyPrintTextSerialiser( StateExhibitor exhibitor) {
+    public void setStateExhibitor(StateExhibitor exhibitor)
+    {
         _exhibitor = exhibitor;
     }
 

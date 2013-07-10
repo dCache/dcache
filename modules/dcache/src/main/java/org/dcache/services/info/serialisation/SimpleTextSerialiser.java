@@ -33,9 +33,10 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
     private StringBuilder _result = new StringBuilder();
     private StatePath _lastStateComponentPath;
     private StatePath _startPath;
-    private final StateExhibitor _exhibitor;
+    private StateExhibitor _exhibitor;
 
-    public SimpleTextSerialiser( StateExhibitor exhibitor) {
+    public void setStateExhibitor(StateExhibitor exhibitor)
+    {
         _exhibitor = exhibitor;
     }
 

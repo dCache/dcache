@@ -1,5 +1,7 @@
 package org.dcache.services.info.base;
 
+import java.util.List;
+
 /**
  * Classes that implement StateObservatory provides a facility where
  * StateWatchers can register to observe the current dCache state. A
@@ -17,20 +19,9 @@ package org.dcache.services.info.base;
 public interface StateObservatory {
 
     /**
-     * Add a watcher to the group of StateWatchers.
-     *
-     * @param watcher
-     *            the StateWatcher to add.
+     * Set the StateWatcher objects that are aware of changes to dCache state.
      */
-    public void addStateWatcher( StateWatcher watcher);
-
-    /**
-     * Remove a specific StateWatcher from the group.
-     *
-     * @param watcher
-     *            the StateWatcher to remove.
-     */
-    public void removeStateWatcher( StateWatcher watcher);
+    public void setStateWatchers(List<StateWatcher> watchers);
 
     /**
      * Provide an array of Strings that describe the current group
@@ -47,7 +38,7 @@ public interface StateObservatory {
      *            name of StateWatcher(s) that are to be enabled.
      * @return number of StateWatchers that matched name.
      */
-    public int enableStateWatcher( String name);
+    public int enableStateWatcher(String name);
 
     /**
      * Disable all StateWatchers that match the given name.
@@ -56,7 +47,7 @@ public interface StateObservatory {
      *            name of StateWatcher(s) that are to be disabled.
      * @return number of StateWatchers that matched name.
      */
-    public int disableStateWatcher( String name);
+    public int disableStateWatcher(String name);
 
     /**
      * Scan through the group of StateWatchers and trigger those that have
@@ -69,5 +60,5 @@ public interface StateObservatory {
      * @return a StateUpdate with all changes to derived metrics, or null if
      *         there are none.
      */
-    public StateUpdate checkWatchers( StateTransition transition);
+    public StateUpdate checkWatchers(StateTransition transition);
 }

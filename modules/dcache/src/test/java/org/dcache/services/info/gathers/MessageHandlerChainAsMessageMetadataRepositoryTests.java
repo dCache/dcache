@@ -22,7 +22,7 @@ public class MessageHandlerChainAsMessageMetadataRepositoryTests {
     @Before
     public void setUp()
     {
-        _metadataRepo = new MessageHandlerChain(null, null);
+        _metadataRepo = new MessageHandlerChain();
         _metadataRepo.putMetricTTL( AVAILABLE_ID, AVAILABLE_TTL);
     }
 

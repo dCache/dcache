@@ -79,7 +79,9 @@ public class XmlSerialiserTests {
     @Before
     public void setUp() {
         _exhibitor = new TestStateExhibitor();
-        _serialiser = new XmlSerialiser( _exhibitor);
+        XmlSerialiser serialiser = new XmlSerialiser();
+        serialiser.setStateExhibitor(_exhibitor);
+        _serialiser = serialiser;
 
         _exhibitor.addListItem( StatePath.parsePath( "domains.dCacheDomain"),
                 "domain", "name");
@@ -111,7 +113,9 @@ public class XmlSerialiserTests {
     @Test
     public void testEmptyState() throws IOException, SAXException, IncorrectSchemaException {
         _exhibitor = new TestStateExhibitor();
-        _serialiser = new XmlSerialiser( _exhibitor);
+        XmlSerialiser serialiser = new XmlSerialiser();
+        serialiser.setStateExhibitor(_exhibitor);
+        _serialiser = serialiser;
         String result = _serialiser.serialise();
         assertXmlValidates( RNC_ONLY_DCACHE, result);
     }

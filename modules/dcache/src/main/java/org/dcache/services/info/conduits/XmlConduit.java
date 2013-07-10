@@ -2,6 +2,7 @@ package org.dcache.services.info.conduits;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -9,8 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import org.dcache.services.info.base.StateExhibitor;
-import org.dcache.services.info.serialisation.XmlSerialiser;
+import org.dcache.services.info.serialisation.StateSerialiser;
 
 /**
  * Information Exporter class.<br>
@@ -36,12 +36,13 @@ public class XmlConduit extends AbstractThreadedConduit {
 	private ServerSocket _svr_skt;
 
 	/** Our serialiser for the current dCache state */
-	private final XmlSerialiser _xmlSerialiser;
+	private StateSerialiser _serialiser;
 
-	public XmlConduit( StateExhibitor exhibitor) {
-		super();
-		_xmlSerialiser = new XmlSerialiser( exhibitor);
-	}
+        @Required
+        public void setSerialiser(StateSerialiser serialiser)
+        {
+            _serialiser = serialiser;
+        }
 
 	@Override
 	public void enable() {
@@ -108,8 +109,8 @@ public class XmlConduit extends AbstractThreadedConduit {
 
 			try {
 				_callCount++;
-				String xmlData = _xmlSerialiser.serialise();
-				skt.getOutputStream().write( xmlData.getBytes());
+				String data = _serialiser.serialise();
+				skt.getOutputStream().write(data.getBytes());
 			} catch( IOException e) {
 				_log.error( "failed to write XML data", e);
 			} catch( Exception e) {
