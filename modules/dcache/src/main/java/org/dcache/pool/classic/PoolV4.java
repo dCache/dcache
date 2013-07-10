@@ -911,6 +911,8 @@ public class PoolV4
             attributes.setStorageInfo(storageInfo);
             attributes.setLocations(Collections.singleton(_poolName));
             attributes.setSize(fileAttributes.getSize());
+            attributes.setAccessLatency(fileAttributes.getAccessLatency());
+            attributes.setRetentionPolicy(fileAttributes.getRetentionPolicy());
 
             PoolMgrReplicateFileMsg req =
                 new PoolMgrReplicateFileMsg(attributes,
