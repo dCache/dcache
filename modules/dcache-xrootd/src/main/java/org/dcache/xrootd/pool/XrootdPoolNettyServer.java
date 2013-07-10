@@ -10,7 +10,6 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +41,7 @@ public class XrootdPoolNettyServer
     /**
      * Used to generate channel-idle events for the pool handler
      */
-    private Timer _timer;
+    private final Timer _timer;
 
     private final long _clientIdleTimeout;
     private final int _maxFrameSize;
@@ -76,6 +75,7 @@ public class XrootdPoolNettyServer
         _clientIdleTimeout = clientIdleTimeout;
         _maxFrameSize = maxFrameSize;
         _plugins = plugins;
+        _timer = new HashedWheelTimer();
 
         String range = System.getProperty("org.globus.tcp.port.range");
         PortRange portRange =
@@ -88,19 +88,10 @@ public class XrootdPoolNettyServer
         return _maxFrameSize;
     }
 
-    @Override
-    protected synchronized void startServer() throws IOException
+    public void shutdown()
     {
-        _timer = new HashedWheelTimer();
-        super.startServer();
-    }
-
-    @Override
-    protected synchronized void stopServer()
-    {
-        super.stopServer();
+        stopServer();
         _timer.stop();
-        _timer = null;
     }
 
     @Override
