@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -196,7 +197,7 @@ public class XrootdTransferService
     }
 
     @PostConstruct
-    private synchronized void init() throws Exception
+    public synchronized void init()
     {
         if (socketThreads == null) {
             server = new XrootdPoolNettyServer(
@@ -215,6 +216,14 @@ public class XrootdTransferService
                     maxFrameSize,
                     plugins,
                     socketThreads);
+        }
+    }
+
+    @PreDestroy
+    public synchronized void shutdown()
+    {
+        if (server != null) {
+            server.shutdown();
         }
     }
 
