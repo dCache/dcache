@@ -31,6 +31,9 @@
                           <property name="stateExhibitor" ref="state"/>
                       </bean>
                   </property>
+                  <property name="port" value="${info.net.port}"/>
+                  <property name="backlog" value="${info.net.backlog}"/>
+                  <property name="bindAddress" value="${info.net.listen}"/>
               </bean>
           </list>
       </property>

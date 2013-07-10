@@ -1,11 +1,11 @@
 package org.dcache.services.info.conduits;
 
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -27,10 +27,14 @@ public class XmlConduit extends AbstractThreadedConduit {
 
 	private static Logger _log = LoggerFactory.getLogger( XmlConduit.class);
 
-	private static final int DEFAULT_PORT = 22112;
+	/** TCP port that the server listens on */
+	private int _port;
 
-	/** TCP port that the server listen on by default */
-	public  int _port = DEFAULT_PORT;
+        /** TCP backlog */
+        private int _backlog;
+
+        /** IP address to bind to */
+        private String _bindAddress;
 
 	/** Server Socket reference */
 	private ServerSocket _svr_skt;
@@ -44,10 +48,43 @@ public class XmlConduit extends AbstractThreadedConduit {
             _serialiser = serialiser;
         }
 
+        @Required
+        public void setPort(int port)
+        {
+            _port = port;
+        }
+
+        public int getPort()
+        {
+            return _port;
+        }
+
+        @Required
+        public void setBacklog(int backlog)
+        {
+            _backlog = backlog;
+        }
+
+        public int getBacklog()
+        {
+            return _backlog;
+        }
+
+        @Required
+        public void setBindAddress(String address)
+        {
+            _bindAddress = address;
+        }
+
+        public String getBindAddress()
+        {
+            return _bindAddress;
+        }
+
 	@Override
 	public void enable() {
 		try {
-			_svr_skt = new ServerSocket(_port, 5, InetAddress.getByName( null));
+			_svr_skt = new ServerSocket(_port, _backlog, InetAddresses.forString(_bindAddress));
 		} catch( IOException e) {
 			Thread.currentThread().interrupt();
 			return;
