@@ -39,14 +39,14 @@ public class UnixfsUser implements SRMUser
     this.uid  = uid;
     this.gid  = gid;
   }
-  
-  
+
+
  @Override
  public long getId() { return id; }
- 
+
  @Override
  public int getPriority() { return 0; }
-  
+
   /** */
   public String getName() {  return name; }
   /** */
@@ -89,33 +89,8 @@ public class UnixfsUser implements SRMUser
     public String getVoGroup() {
         return name;
     }
-}
 
-//
-// $Log: not supported by cvs2svn $
-// Revision 1.1  2005/01/14 23:07:15  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.3  2004/11/09 08:04:48  tigran
-// added SerialVersion ID
-//
-// Revision 1.2  2004/08/06 19:35:26  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.1  2004/07/19 20:44:09  aik
-// DiskSEAuthorization.java,
-// UnixfsUser.java  -- inital revision
-//
-// unixfs.java -- Pre-Initial release to cvs
-//   so timur can work on main().
-// Several methods are not implemeted, as well as some features
-//  (e.g. "user" is ignored).
-//
-// templateStorageElement.java -- template file for SE,
-//  all methods throw exception or return error 'not implemented'
-//
-//
-// Initial Version: refer to
-// = Log: DCacheUser.java,v =
-// = Revision 1.1.2.4  2004/06/18 22:20:51  timur =
-//
+    public boolean isReadOnly() {
+        return false;
+    }
+}

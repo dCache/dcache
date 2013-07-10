@@ -76,22 +76,19 @@ public class CombinedLoginMonitor implements LoginMonitor
 
     @Override
     public void mapPluginBegins(String name, ConfigurationItemControl control,
-            Set<Principal> principals, Set<Principal> authorizedPrincipals)
+            Set<Principal> principals)
     {
         for(LoginMonitor monitor : _inner) {
-            monitor.mapPluginBegins(name, control, principals,
-                    authorizedPrincipals);
+            monitor.mapPluginBegins(name, control, principals);
         }
     }
 
     @Override
     public void mapPluginEnds(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Principal> principals,
-            Set<Principal> authorizedPrincipals)
+            Result result, String error, Set<Principal> principals)
     {
         for(LoginMonitor monitor : _inner) {
-            monitor.mapPluginEnds(name, control, result, error, principals,
-                    authorizedPrincipals);
+            monitor.mapPluginEnds(name, control, result, error, principals);
         }
     }
 

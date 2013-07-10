@@ -47,15 +47,14 @@ public class IgnoringLoginMonitor implements LoginMonitor
 
     @Override
     public void mapPluginBegins(String name, ConfigurationItemControl control,
-            Set<Principal> principals, Set<Principal> authorizedPrincipals)
+            Set<Principal> principals)
     {
         // ignored
     }
 
     @Override
     public void mapPluginEnds(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Principal> principals,
-            Set<Principal> authorizedPrincipals)
+            Result result, String error, Set<Principal> principals)
     {
         // ignored
     }

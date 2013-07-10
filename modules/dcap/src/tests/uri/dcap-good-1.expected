@@ -1,6 +1,0 @@
-URL: dcap://dcap-door:22223/path/to/file
-  host: dcap-door:22223
-  file: path/to/file
-  type: 1
-  prefix: none
-  config line: dcap-door:22223

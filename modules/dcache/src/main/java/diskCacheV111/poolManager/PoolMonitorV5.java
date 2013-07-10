@@ -10,6 +10,9 @@ import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +32,6 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -421,8 +423,8 @@ public class PoolMonitorV5
     }
 
     @Override
-    public Collection<PoolCostCheckable>
-        queryPoolsByLinkName(String linkName, long filesize)
+    public Collection<PoolCostInfo>
+        queryPoolsByLinkName(String linkName)
     {
         Function<PoolSelectionUnit.SelectionPool,String> getName =
             new Function<PoolSelectionUnit.SelectionPool,String>() {
@@ -433,82 +435,71 @@ public class PoolMonitorV5
             };
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
-        return queryPoolsForCost(transform(link.pools(), getName), filesize);
+        return queryPoolsForCost(transform(link.getPools(), getName));
     }
 
-    private List<PoolCostCheckable> queryPoolsForCost(Iterable<String> pools,
-                                                      long filesize)
+    private List<PoolCostInfo> queryPoolsForCost(Iterable<String> pools)
     {
-        List<PoolCostCheckable> list = new ArrayList<>();
-
+        List<PoolCostInfo> list = new ArrayList<>();
         for( String poolName: pools ){
-
-            PoolCostCheckable costCheck = _costModule.getPoolCost( poolName , filesize ) ;
-            if( costCheck != null ){
-               list.add( costCheck ) ;
-               _log.info( "queryPoolsForCost : costModule : "+poolName+" ("+filesize+") "+costCheck);
+            PoolCostInfo cost = _costModule.getPoolCostInfo(poolName);
+            if (cost != null) {
+               list.add(cost);
             }
         }
-
         return list ;
     }
 
-    private PoolManagerPoolInformation getPoolInformation(PoolSelectionUnit.SelectionPool pool)
+    @Nullable
+    private PoolManagerPoolInformation getPoolInformation(@Nonnull PoolSelectionUnit.SelectionPool pool)
     {
         String name = pool.getName();
-        PoolManagerPoolInformation info = new PoolManagerPoolInformation(name);
-        PoolCostCheckable cost = _costModule.getPoolCost(name, 0);
+        PoolCostInfo cost = _costModule.getPoolCostInfo(name);
         if (!pool.isActive() || cost == null) {
-            info.setSpaceCost(Double.POSITIVE_INFINITY);
-            info.setCpuCost(Double.POSITIVE_INFINITY);
-        } else {
-            info.setSpaceCost(cost.getSpaceCost());
-            info.setCpuCost(cost.getPerformanceCost());
+            return null;
         }
-        info.setPoolCostInfo(_costModule.getPoolCostInfo(name));
-        return info;
+        return new PoolManagerPoolInformation(name, cost);
     }
 
+    @Nonnull
     private Collection<PoolManagerPoolInformation>
-        getPoolInformation(Collection<PoolSelectionUnit.SelectionPool> pools)
+        getPoolInformation(@Nonnull Collection<PoolSelectionUnit.SelectionPool> pools)
     {
-        List<PoolManagerPoolInformation> result =
-            new ArrayList<>();
+        List<PoolManagerPoolInformation> result = new ArrayList<>();
         for (PoolSelectionUnit.SelectionPool pool: pools) {
-            result.add(getPoolInformation(pool));
+            PoolManagerPoolInformation poolInformation = getPoolInformation(pool);
+            if (poolInformation != null) {
+                result.add(poolInformation);
+            }
         }
         return result;
     }
 
-    @Override
-    public PoolManagerPoolInformation getPoolInformation(String name)
-        throws NoSuchElementException
+    @Override @Nullable
+    public PoolManagerPoolInformation getPoolInformation(@Nonnull String name)
     {
         PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
-        if (pool == null) {
-            throw new NoSuchElementException("No such pool: " + name);
-        }
-        return getPoolInformation(pool);
+        return (pool == null) ? null : getPoolInformation(pool);
     }
 
-    @Override
+    @Override @Nonnull
     public Collection<PoolManagerPoolInformation>
-        getPoolsByLink(String linkName)
+        getPoolsByLink(@Nonnull String linkName)
         throws NoSuchElementException
     {
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
-        return new ArrayList(getPoolInformation(link.pools()));
+        return new ArrayList<>(getPoolInformation(link.getPools()));
     }
 
-    @Override
+    @Override @Nonnull
     public Collection<PoolManagerPoolInformation>
-        getPoolsByPoolGroup(String poolGroup)
+        getPoolsByPoolGroup(@Nonnull String poolGroup)
         throws NoSuchElementException
     {
         Collection<PoolSelectionUnit.SelectionPool> pools =
             _selectionUnit.getPoolsByPoolGroup(poolGroup);
-        return new ArrayList(getPoolInformation(pools));
+        return new ArrayList<>(getPoolInformation(pools));
     }
 
     public static Set<FileAttribute> getRequiredAttributesForFileLocality()

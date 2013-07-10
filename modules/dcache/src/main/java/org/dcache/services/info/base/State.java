@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -57,7 +57,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     private final StateComposite _state;
 
     /** All registered StateWatchers */
-    private final Collection<StateWatcherInfo> _watchers = new CopyOnWriteArrayList<>();
+    private volatile Collection<StateWatcherInfo> _watchers = new ArrayList<>();
 
     /** Our read/write lock: we use the fair version to reduce the risk of writers constantly blocking a reader */
     private final ReadWriteLock _stateRWLock = new ReentrantReadWriteLock(true);
@@ -272,33 +272,18 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         return update.count() > 0 || update.countPurges() > 0 ? update : null;
     }
 
-    /**
-     * Add a watcher to the Collection of StateWatchers.
-     *
-     * @param watcher
-     *            : the StateWatcher to add.
-     */
+
     @Override
-    public void addStateWatcher( StateWatcher watcher) {
-        _watchers.add( new StateWatcherInfo( watcher));
+    public void setStateWatchers(List<StateWatcher> watchers) {
+        List<StateWatcherInfo> newList = new ArrayList<>(watchers.size());
+
+        for (StateWatcher watcher : watchers) {
+            newList.add(new StateWatcherInfo(watcher));
+        }
+
+        _watchers = newList;
     }
 
-    /**
-     * Remove a specific Secondary Information Provider.
-     *
-     * @param watcher
-     *            : the Secondary Information Provider to remove.
-     */
-    @Override
-    public void removeStateWatcher(StateWatcher watcher) {
-        Iterator<StateWatcherInfo> itr = _watchers.iterator();
-        while( itr.hasNext()) {
-            StateWatcherInfo info = itr.next();
-            if(info.getWatcher().equals(watcher)) {
-                itr.remove();
-            }
-        }
-    }
 
     /**
      * Return a String containing a list of all state watchers.

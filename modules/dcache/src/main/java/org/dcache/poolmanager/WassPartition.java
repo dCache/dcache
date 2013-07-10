@@ -38,19 +38,24 @@ import static java.util.concurrent.TimeUnit.DAYS;
  */
 public class WassPartition extends ClassicPartition
 {
-    private final static double SECONDS_IN_WEEK = DAYS.toSeconds(7);
-    private final static double LOG2 = Math.log(2);
+    private static final double SECONDS_IN_WEEK = DAYS.toSeconds(7);
+    private static final double LOG2 = Math.log(2);
 
-    final static String TYPE = "wass";
+    static final String TYPE = "wass";
 
     /* SecureRandom is a higher quality source for randomness than
      * Random.
      */
-    protected final static SecureRandom _random = new SecureRandom();
+    protected static final SecureRandom _random = new SecureRandom();
     private static final long serialVersionUID = -3587599095801229561L;
 
     protected transient Function<PoolInfo,String> _getHost;
     protected transient Function<PoolInfo,String> _getName;
+
+    public WassPartition()
+    {
+        this(NO_PROPERTIES);
+    }
 
     public WassPartition(Map<String,String> inherited)
     {
@@ -331,7 +336,7 @@ public class WassPartition extends ClassicPartition
          * we will only read from the pool
          */
         List<PoolCost> sources =
-            _byPerformanceCost.sortedCopy(transform(src, toPoolCost(0)));
+            _byPerformanceCost.sortedCopy(transform(src, toPoolCost()));
         if (!force && isAlertCostExceeded(sources.get(0).performanceCost)) {
             throw new SourceCostException("P2P denied: All source pools are too busy (performance cost > " + _alertCostCut + ")");
         }
@@ -347,7 +352,7 @@ public class WassPartition extends ClassicPartition
         if (!force && maxTargetCost > 0.0) {
             Predicate<PoolInfo> condition =
                 compose(performanceCostIsBelow(maxTargetCost),
-                        toPoolCost(attributes.getSize()));
+                        toPoolCost());
             dst = Lists.newArrayList(filter(dst, condition));
         }
 
@@ -439,7 +444,7 @@ public class WassPartition extends ClassicPartition
              */
             Predicate<PoolInfo> belowFallback =
                 compose(performanceCostIsBelow(_fallbackCostCut),
-                        toPoolCost(attributes.getSize()));
+                        toPoolCost());
             List<PoolInfo> filtered =
                 Lists.newArrayList(filter(pools, belowFallback));
             PoolInfo pool =

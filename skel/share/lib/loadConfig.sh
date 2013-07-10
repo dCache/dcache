@@ -45,9 +45,32 @@ findJava()
     return 1
 }
 
+isJavaVersionOk()
+{
+    version=$($JAVA -version 2>&1)
+    case $version in
+        *1.7*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 bootLoader()
 {
-    $JAVA -client -cp "${DCACHE_CLASSPATH}" "-Dlog=${DCACHE_LOG:-warn}" "-Ddcache.home=${DCACHE_HOME}" "-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" org.dcache.boot.BootLoader "$@"
+    CLASSPATH="${DCACHE_CLASSPATH}" "$JAVA" -client -XX:+TieredCompilation \
+	-XX:TieredStopAtLevel=0  "-Dlog=${DCACHE_LOG:-warn}" \
+	"-Ddcache.home=${DCACHE_HOME}" \
+	"-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" \
+	org.dcache.boot.BootLoader "$@"
+}
+
+quickJava()
+{
+    export CLASSPATH
+    "$JAVA" $(getProperty dcache.java.options.short-lived) "$@"
 }
 
 isCacheValidForFiles()
@@ -78,7 +101,7 @@ loadConfig()
 }
 
 # Get java location
-if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[7]' >/dev/null ; then
+if ! findJava || ! isJavaVersionOk; then
     echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 7"
     echo "or newer."
     exit 1

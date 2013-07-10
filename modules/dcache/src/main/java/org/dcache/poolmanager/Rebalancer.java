@@ -29,7 +29,7 @@ public class Rebalancer
     private final static String JOB_NAME = "rebalance";
 
     private final static String METRIC_RELATIVE = "relative";
-    private final static String METRIC_SPACE_COST = "sc";
+    private final static String METRIC_FREE_COST = "free";
 
     private PoolSelectionUnit _psu;
     private CostModule _cm;
@@ -61,7 +61,7 @@ public class Rebalancer
     }
 
     public final static String hh_rebalance_pgroup =
-        "[-metric=relative|sc] [-refresh=<period>] <pgroup>";
+        "[-metric=relative|free] [-refresh=<period>] <pgroup>";
     public final static String fh_rebalance_pgroup =
         "Moves files between pools of a pool group to balance space usage.\n\n" +
 
@@ -90,10 +90,7 @@ public class Rebalancer
         "pool restart. If the lots of files are written, deleted or moved\n" +
         "while the rebalancing job runs, then the pool group may not be\n" +
         "completely balanced when the jobs terminate. Run the rebalancer\n" +
-        "a second time to improve the balance further.\n\n" +
-
-        "This feature is EXPERIMENTAL. Please monitor the system while\n" +
-        "rebalancing is in progress.";
+        "a second time to improve the balance further.";
     public String ac_rebalance_pgroup_$_1(Args args)
         throws CacheException, InterruptedException
     {
@@ -129,9 +126,9 @@ public class Rebalancer
                     String.format(Locale.US, "migration move -id=%s -include-when='target.used < %2$f * target.total' -stop-when='targets == 0 or source.used <= %2$f * source.total' -refresh=%3$d %4$s",
                             JOB_NAME, factor, period, Joiner.on(" ").join(names));
             break;
-        case METRIC_SPACE_COST:
+        case METRIC_FREE_COST:
             command =
-                    String.format(Locale.US, "migration move -id=%s -include-when='target.spaceCost < source.spaceCost' -stop-when='targets == 0' -refresh=%d %s",
+                    String.format(Locale.US, "migration move -id=%s -include-when='target.free > source.free' -stop-when='targets == 0' -refresh=%d %s",
                             JOB_NAME, period, Joiner.on(" ").join(names));
             break;
         default:

@@ -87,6 +87,9 @@ public class PnfsManagerTest
         _ds.setJdbcUrl("jdbc:hsqldb:mem:chimeramem");
         _ds.setUsername("sa");
         _ds.setPassword("");
+        _ds.getConfig().setMaxConnectionsPerPartition(2); // seems to require >= 2
+        _ds.getConfig().setMinConnectionsPerPartition(1);
+        _ds.getConfig().setPartitionCount(1);
 
         _fs = new JdbcFs(_ds, "HsqlDB");
 

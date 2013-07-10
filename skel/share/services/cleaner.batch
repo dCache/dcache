@@ -3,33 +3,44 @@
 onerror shutdown
 
 check -strong cell.name
-check -strong cleaner.period
-check -strong cleaner.pool-retry
-check -strong cleaner.pool-reply-timeout
-check -strong cleaner.max-files-in-message
-check -strong cleaner.hsm
-check -strong cleaner.hsm.max-files-in-message
-check -strong cleaner.hsm.pool-reply-timeout
-check -strong cleaner.thread-pool.size
-check -strong cleaner.report-cell
+check -strong cleaner.cell.export
+check -strong cleaner.service.pool.retry-period
+check -strong cleaner.service.pool.retry-period.unit
+check -strong cleaner.service.pool.timeout
+check -strong cleaner.service.pool.timeout.unit
+check -strong cleaner.service.pool.hsm-timeout
+check -strong cleaner.service.pool.hsm-timeout.unit
+check -strong cleaner.service.broadcast
+check -strong cleaner.enable.hsm
+check -strong cleaner.limits.period
+check -strong cleaner.limits.period.unit
+check -strong cleaner.limits.batch-size
+check -strong cleaner.limits.hsm-batch-size
+check -strong cleaner.limits.threads
+check -strong cleaner.destination.remove-notification
 check -strong db.user
 check -strong db.url
 check -strong db.driver
-check chimera.db.password
+check db.password
 
 create org.dcache.chimera.namespace.ChimeraCleaner ${cell.name} \
-        "-export \
-         -refresh=${cleaner.period} \
-         -recover=${cleaner.pool-retry} \
-         -reportRemove=${cleaner.report-cell} \
-         -poolTimeout=${cleaner.pool-reply-timeout}   \
-         -processFilesPerRun=${cleaner.max-files-in-message} \
+        "-export=${cleaner.cell.export} \
+         -refresh=${cleaner.limits.period} \
+         -refreshUnit=${cleaner.limits.period.unit} \
+         -recover=${cleaner.service.pool.retry-period} \
+         -recoverUnit=${cleaner.service.pool.retry-period.unit} \
+         -reportRemove=${cleaner.destination.remove-notification} \
+         -poolTimeout=${cleaner.service.pool.timeout}   \
+         -poolTimeoutUnit=${cleaner.service.pool.timeout.unit}   \
+         -processFilesPerRun=${cleaner.limits.batch-size} \
          -chimera.db.user=${db.user} \
          -chimera.db.password=${db.password} \
          -chimera.db.url=${db.url} \
          -chimera.db.driver=${db.driver} \
-         -hsmCleaner=${cleaner.hsm} \
-         -hsmCleanerRequest=${cleaner.hsm.max-files-in-message} \
-         -hsmCleanerTimeout=${cleaner.hsm.pool-reply-timeout} \
-         -threads=${cleaner.thread-pool.size} \
+         -hsmCleaner=${cleaner.enable.hsm} \
+         -hsmCleanerRequest=${cleaner.limits.hsm-batch-size} \
+         -hsmCleanerTimeout=${cleaner.service.pool.hsm-timeout} \
+         -hsmCleanerTimeoutUnit=${cleaner.service.pool.hsm-timeout.unit} \
+         -threads=${cleaner.limits.threads} \
+         -broadcast=${cleaner.service.broadcast} \
   "

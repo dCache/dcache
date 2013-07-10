@@ -2,31 +2,40 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+           http://www.springframework.org/schema/beans/spring-beans.xsd">
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
     <property name="location" value="arguments:"/>
   </bean>
 
-  <import resource="pnfsmanager-shared.xml"/>
+    <bean id="permission-handler"
+          class="org.dcache.namespace.ChainedPermissionHandler">
+        <description>Permission handler</description>
+        <property name="chain">
+            <list>
+                <bean class="org.dcache.namespace.ACLPermissionHandler"/>
+                <bean class="org.dcache.namespace.PosixPermissionHandler"/>
+            </list>
+        </property>
+    </bean>
 
   <bean id="pnfs-manager" class="diskCacheV111.namespace.PnfsManagerV3"
         init-method="init">
       <description>Request processor</description>
-      <property name="threads" value="${threads}"/>
-      <property name="threadGroups" value="${threadGroups}"/>
-      <property name="listThreads" value="${listThreads}"/>
+      <property name="threads" value="${pnfsmanager.limits.threads-per-group}"/>
+      <property name="threadGroups" value="${pnfsmanager.limits.thread-groups}"/>
+      <property name="listThreads" value="${pnfsmanager.limits.list-threads}"/>
       <property name="cacheLocationThreads" value="${cachelocation-threads}"/>
       <property name="cacheModificationRelay" value="${cmRelay}"/>
       <property name="pnfsDeleteNotificationRelay" value="${pnfsDeleteRelay}"/>
-      <property name="logSlowThreshold" value="${logSlowThreshold}"/>
-      <property name="folding" value="${folding}"/>
-      <property name="directoryListLimit" value="${directoryListLimit}"/>
+      <property name="logSlowThreshold" value="${pnfsmanager.limits.log-slow-threshold}"/>
+      <property name="folding" value="${pnfsmanager.folding}"/>
+      <property name="directoryListLimit" value="${pnfsmanager.limits.list-chunk-size}"/>
       <property name="permissionHandler" ref="permission-handler"/>
       <property name="nameSpaceProvider" ref="name-space-provider"/>
       <property name="cacheLocationProvider" ref="name-space-provider"/>
-      <property name="queueMaxSize" value="${queueMaxSize}"/>
+      <property name="queueMaxSize" value="${pnfsmanager.limits.queue-length}"/>
   </bean>
 
   <bean id="chimera-data-source" class="com.jolbox.bonecp.BoneCPDataSource"
@@ -61,25 +70,25 @@
 
   <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
       <constructor-arg ref="chimera-data-source"/>
-      <constructor-arg value="${db.dialect}"/>
+      <constructor-arg value="${pnfsmanager.db.dialect}"/>
   </bean>
 
-  <bean id="extractor" class="${extractor}">
+  <bean id="extractor" class="${pnfsmanager.plugins.storage-info-extractor}">
       <description>Storage info extractor</description>
-      <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('${DefaultAccessLatency}') }"/>
-      <constructor-arg value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${DefaultRetentionPolicy}') }"/>
+      <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('${pnfsmanager.default-access-latency}') }"/>
+      <constructor-arg value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${pnfsmanager.default-retention-policy}') }"/>
   </bean>
 
   <bean id="name-space-provider"
         class="org.dcache.chimera.namespace.ChimeraNameSpaceProvider">
       <description>Name space provider</description>
       <property name="permissionHandler" ref="permission-handler"/>
-      <property name="inheritFileOwnership" value="${inheritFileOwnership}"/>
-      <property name="verifyAllLookups" value="${verifyAllLookups}"/>
+      <property name="inheritFileOwnership" value="${pnfsmanager.inherit-file-ownership}"/>
+      <property name="verifyAllLookups" value="${pnfsmanager.full-path-permission-check}"/>
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
-      <property name="aclEnabled" value="${aclEnabled}"/>
-      <property name="atimeGap" value="${atime.gap}" />
+      <property name="aclEnabled" value="${pnfsmanager.acl}"/>
+      <property name="atimeGap" value="${pnfsmanager.atime-gap}" />
   </bean>
 
   <bean id="acl-admin" class="org.dcache.acl.AclAdmin">

@@ -12,10 +12,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
 
 import static org.jboss.netty.channel.Channels.close;
 

@@ -1,6 +1,7 @@
 package org.dcache.cells;
 
 import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -13,6 +14,8 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.CacheExceptionFactory;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Stub class for common cell communication patterns. An instance
@@ -29,6 +32,7 @@ public class CellStub
     private CellEndpoint _endpoint;
     private CellPath _destination;
     private long _timeout = 30000;
+    private TimeUnit _timeoutUnit = MILLISECONDS;
     private boolean _retryOnNoRouteToCell;
 
     public CellStub()
@@ -48,8 +52,14 @@ public class CellStub
 
     public CellStub(CellEndpoint endpoint, CellPath destination, long timeout)
     {
+        this(endpoint, destination, timeout, MILLISECONDS);
+    }
+
+    public CellStub(CellEndpoint endpoint, CellPath destination, long timeout, TimeUnit unit)
+    {
         this(endpoint, destination);
         setTimeout(timeout);
+        setTimeoutUnit(unit);
     }
 
     @Override
@@ -88,6 +98,16 @@ public class CellStub
     public long getTimeout()
     {
         return _timeout;
+    }
+
+    public void setTimeoutUnit(TimeUnit unit)
+    {
+        _timeoutUnit = unit;
+    }
+
+    public TimeUnit getTimeoutUnit()
+    {
+        return _timeoutUnit;
     }
 
     /**
@@ -356,7 +376,7 @@ public class CellStub
      */
     public <T extends Serializable> void send(CellPath destination,
                                               Serializable message,
-                                              Class<T> type,
+                                              Class<? extends T> type,
                                               MessageCallback<T> callback)
     {
         if (message instanceof Message) {
@@ -395,9 +415,9 @@ public class CellStub
     static class CellCallback<T> implements CellMessageAnswerable
     {
         private final MessageCallback<T> _callback;
-        private final Class<T> _type;
+        private final Class<? extends T> _type;
 
-        CellCallback(Class<T> type, MessageCallback<T> callback)
+        CellCallback(Class<? extends T> type, MessageCallback<T> callback)
         {
             _callback = callback;
             _type = type;

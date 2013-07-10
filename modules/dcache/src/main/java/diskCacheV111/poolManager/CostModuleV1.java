@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import diskCacheV111.pools.CostCalculatable;
-import diskCacheV111.pools.CostCalculationEngine;
+import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.pools.PoolV2Mode;
@@ -28,7 +28,6 @@ import diskCacheV111.vehicles.CostModulePoolInfoTable;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
@@ -37,11 +36,11 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageDispatcher;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellSetupProvider;
@@ -57,14 +56,8 @@ public class CostModuleV1
                CellInfoProvider,
                CellSetupProvider
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(CostModuleV1.class);
-
-    /**
-     * The file size used when calculating performance cost ranked
-     * percentile.
-     */
-    public static final long PERCENTILE_FILE_SIZE = 104857600;
 
     private static final long serialVersionUID = -267023006449629909L;
 
@@ -90,7 +83,6 @@ public class CostModuleV1
        private final long timestamp;
        private final PoolCostInfo _info;
        private double _fakeCpu = -1.0;
-       private double _fakeSpace = -1.0;
        private final ImmutableMap<String,String> _tagMap;
        private final CellAddressCore _address;
 
@@ -125,41 +117,10 @@ public class CostModuleV1
            return new PoolInfo(_address, _info, _tagMap);
        }
    }
-   private CostCalculationEngine _costCalculationEngine;
-
-   private class CostCheck
-       extends PoolCheckAdapter implements PoolCostCheckable
-   {
-       private static final long serialVersionUID = -77487683158664348L;
-
-       private PoolCostInfo _info ;
-
-       private CostCheck( String poolName , Entry e , long filesize ){
-          super(poolName,filesize);
-          _info     = e.getPoolCostInfo() ;
-
-          CostCalculatable  cost = _costCalculationEngine.getCostCalculatable( _info ) ;
-
-          cost.recalculate( filesize ) ;
-
-          setSpaceCost( e._fakeSpace > -1.0 ?
-                        e._fakeSpace :
-                        cost.getSpaceCost() ) ;
-          setPerformanceCost( e._fakeCpu > -1.0 ?
-                              e._fakeCpu :
-                              cost.getPerformanceCost() ) ;
-          setTagMap( e.getTagMap() );
-       }
-   }
 
     public CostModuleV1()
     {
         _handlers.addMessageListener(this);
-    }
-
-    public void setCostCalculationEngine(CostCalculationEngine engine)
-    {
-        _costCalculationEngine = engine;
     }
 
     public synchronized void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage msg)
@@ -234,8 +195,8 @@ public class CostModuleV1
 
     private double getPerformanceCost(PoolCostInfo info)
     {
-        CostCalculatable cost = _costCalculationEngine.getCostCalculatable(info);
-        cost.recalculate(PERCENTILE_FILE_SIZE);
+        CostCalculatable cost = new CostCalculationV5(info);
+        cost.recalculate();
         return cost.getPerformanceCost();
     }
 
@@ -505,18 +466,6 @@ public class CostModuleV1
     }
 
    @Override
-   public synchronized PoolCostCheckable getPoolCost( String poolName , long filesize ){
-      Entry cost = _hash.get(poolName);
-
-      if( ( cost == null ) ||( !cost.isValid() && _update  ) ) {
-          return null;
-      }
-
-      return  new CostCheck( poolName , cost , filesize ) ;
-
-   }
-
-   @Override
    public synchronized double getPoolsPercentilePerformanceCost(double fraction) {
 
        if( fraction <= 0 || fraction >= 1) {
@@ -604,7 +553,7 @@ public class CostModuleV1
      }
      return "";
    }
-   public static final String hh_cm_fake = "<poolName> [off] | [-space=<spaceCost>|off] [-cpu=<cpuCost>|off]" ;
+   public static final String hh_cm_fake = "<poolName> [off] | [-cpu=<cpuCost>|off]" ;
    public synchronized String ac_cm_fake_$_1_2( Args args ){
       String poolName = args.argv(0) ;
       Entry e = _hash.get(poolName);
@@ -616,7 +565,6 @@ public class CostModuleV1
       if( args.argc() > 1 ){
         if( args.argv(1).equals("off") ){
            e._fakeCpu   = -1.0 ;
-           e._fakeSpace = -1.0 ;
         }else{
            throw new
            IllegalArgumentException("Unknown argument : "+args.argv(1));
@@ -627,103 +575,49 @@ public class CostModuleV1
       if( val != null ) {
           e._fakeCpu = Double.parseDouble(val);
       }
-      val = args.getOpt("space") ;
-      if( val != null ) {
-          e._fakeSpace = Double.parseDouble(val);
-      }
 
-      return poolName+" -space="+e._fakeSpace+" -cpu="+e._fakeCpu ;
+      return poolName+" -cpu="+e._fakeCpu ;
    }
-   public static final String hh_xcm_ls = "<poolName> [<filesize>] [-l]" ;
-   public synchronized Object ac_xcm_ls_$_0_2( Args args )
+
+   public static final String hh_xcm_ls = "";
+   public synchronized Object ac_xcm_ls_$_0(Args args)
    {
-
-
-      if( args.argc()==0 ){   // added by nicolo : binary full cm ls list
-
-	   CostModulePoolInfoTable reply = new CostModulePoolInfoTable();
-
-	   /* This cycle browse an HashMap of Entry
-	    * and put the PoolCostInfo object in the
-	    * InfoPoolTable to return.
-	    */
-	   for (Entry e : _hash.values() ){
-  		   reply.addPoolCostInfo(e.getPoolCostInfo().getPoolName(), e.getPoolCostInfo());
-	   }
-	   return reply;
-
-      }
-
-      String poolName = args.argv(0) ;
-      long filesize   = Long.parseLong( args.argc() < 2 ? "0" : args.argv(2) ) ;
-      boolean pci     = args.hasOption("l") ;
-      Object [] reply;
-
-      if( pci ){
-
-         Entry e = _hash.get(poolName) ;
-         reply = new Object[3] ;
-         reply[0] = poolName ;
-         reply[1] = e == null ? null : e.getPoolCostInfo() ;
-         reply[2] = e == null ? null : System.currentTimeMillis() - e.timestamp;
-
-      }else{
-
-         PoolCostCheckable pcc = getPoolCost( poolName , filesize ) ;
-
-         reply = new Object[4] ;
-
-         reply[0] = poolName ;
-         reply[1] = filesize;
-         reply[2] = pcc == null ? null : pcc.getSpaceCost();
-         reply[3] = pcc == null ? null : pcc.getPerformanceCost();
-
-      }
-
-      return reply ;
+       CostModulePoolInfoTable reply = new CostModulePoolInfoTable();
+       for (Entry e : _hash.values() ){
+           reply.addPoolCostInfo(e.getPoolCostInfo().getPoolName(), e.getPoolCostInfo());
+       }
+       return reply;
    }
-   public static final String hh_cm_ls = " -d  | -t | -r [-size=<filesize>] <pattern> # list all pools" ;
-   public synchronized String ac_cm_ls_$_0_1( Args args )
+
+   public static final String hh_cm_ls = " -t | -r <pattern> # list all pools";
+   public synchronized String ac_cm_ls_$_0_1(Args args)
    {
-      StringBuilder   sb = new StringBuilder() ;
-      boolean useTime   = args.hasOption("t") ;
-      boolean useDetail = args.hasOption("d") ;
-      boolean useReal   = args.hasOption("r") ;
-      String  sizeStr   = args.getOpt("size") ;
-      long    filesize  = Long.parseLong( sizeStr == null ? "0" : sizeStr ) ;
-      Pattern pattern   = args.argc() == 0 ? null : Pattern.compile(args.argv(0)) ;
-
-
-      for(  Entry e : _hash.values() ){
-
-         String poolName = e.getPoolCostInfo().getPoolName() ;
-         if( ( pattern != null ) && ( ! pattern.matcher(poolName).matches() ) ) {
-             continue;
-         }
-         sb.append(e.getPoolCostInfo().toString()).append("\n") ;
-         if( useReal ){
-             PoolCostCheckable pcc = getPoolCost(poolName,filesize) ;
-             if( pcc == null ) {
-                 sb.append("NONE\n");
-             } else {
-                 sb.append(getPoolCost(poolName, filesize).toString()).
-                         append("\n");
-             }
-         }
-         if( useDetail ) {
-             sb.append(new CostCheck(poolName, e, filesize).toString()).
-                     append("\n");
-         }
-         if( useTime ) {
-             sb.append(poolName).
-                     append("=").
-                     append(System.currentTimeMillis() - e.timestamp).
-                     append("\n");
-         }
-
-      }
-
-      return sb.toString();
+       StringBuilder sb = new StringBuilder();
+       boolean useTime   = args.hasOption("t");
+       boolean useReal   = args.hasOption("r");
+       Pattern pattern   = (args.argc() == 0) ? null : Pattern.compile(args.argv(0));
+       for (Entry e : _hash.values()) {
+           PoolCostInfo pool = e.getPoolCostInfo();
+           String poolName = pool.getPoolName();
+           if (pattern == null || pattern.matcher(poolName).matches()) {
+               sb.append(pool).append("\n");
+               if (useReal) {
+                   sb.append(poolName).append("={");
+                   if (e.getTagMap() != null) {
+                       sb.append("Tag={").append(e.getTagMap()).append("};");
+                   }
+                   sb.append(";CC=").append(getPerformanceCost(pool)).append(";");
+                   sb.append("}").append("\n");
+               }
+               if (useTime) {
+                   sb.append(poolName).
+                           append("=").
+                           append(System.currentTimeMillis() - e.timestamp).
+                           append("\n");
+               }
+           }
+       }
+       return sb.toString();
    }
 
     @Override

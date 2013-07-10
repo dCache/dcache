@@ -31,12 +31,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.util.Version;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
@@ -49,6 +47,8 @@ import org.dcache.services.hsmcleaner.PoolInformationBase;
 import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.services.hsmcleaner.Sink;
 import org.dcache.util.BroadcastRegistrationTask;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author Irina Kozlova
@@ -75,26 +75,44 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="refresh",
         description="Refresh interval",
-        required=true,
-        unit="seconds"
+        required=true
     )
     protected long _refreshInterval;
 
     @Option(
+            name="refreshUnit",
+            description="Refresh interval unit",
+            required=true
+    )
+    protected TimeUnit _refreshIntervalUnit;
+
+    @Option(
         name="recover",
         description="",
-        required=true,
-        unit="seconds"
+        required=true
     )
     protected long _recoverTimer;
 
     @Option(
+        name="recoverUnit",
+        description="",
+        required=true
+    )
+    protected TimeUnit _recoverTimerUnit;
+
+    @Option(
         name="poolTimeout",
         description="",
-        required=true,
-        unit="seconds"
+        required=true
     )
     protected long _replyTimeout;
+
+    @Option(
+        name="poolTimeoutUnit",
+        description="",
+        required=true
+    )
+    protected TimeUnit _replyTimeoutUnit;
 
     @Option(
         name="processFilesPerRun",
@@ -129,10 +147,16 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="hsmCleanerTimeout",
         description="Timeout in milliseconds for delete requests send to HSM-pools",
-        required=true,
-        unit="seconds"
+        required=true
     )
     protected long _hsmTimeout;
+
+    @Option(
+        name="hsmCleanerTimeoutUnit",
+        description="Timeout in milliseconds for delete requests send to HSM-pools",
+        required=true
+    )
+    protected TimeUnit _hsmTimeoutUnit;
 
     @Option(
         name="threads",
@@ -140,6 +164,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         required=true
     )
     protected int _threadPoolSize;
+
+    @Option(
+            name="broadcast",
+            description="Cell address of broadcast service",
+            required=true
+    )
+    protected String _broadcastAddress;
 
     private final ConcurrentHashMap<String, Long> _poolsBlackList =
         new ConcurrentHashMap<>();
@@ -172,7 +203,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         dbInit(getArgs().getOpt("chimera.db.url"), getArgs().getOpt("chimera.db.driver"),
                 getArgs().getOpt("chimera.db.user"), getArgs().getOpt("chimera.db.password"));
 
-        if (!_reportTo.equals("none")) {
+        if (!_reportTo.isEmpty()) {
             _broadcasterStub = new CellStub();
             _broadcasterStub.setCellEndpoint(this);
             _broadcasterStub.setDestination(_reportTo);
@@ -181,7 +212,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         if (_hsmCleanerEnabled) {
             _requests = new RequestTracker();
             _requests.setMaxFilesPerRequest(_hsmCleanerRequest);
-            _requests.setTimeout(_hsmTimeout * 1000);
+            _requests.setTimeout(_hsmTimeoutUnit.toMillis(_hsmTimeout));
             _requests.setPoolStub(new CellStub(this));
                 _requests.setPoolInformationBase(_pools);
             _requests.setSuccessSink(new Sink<URI>() {
@@ -217,11 +248,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         _poolStub = new CellStub();
         _poolStub.setCellEndpoint(this);
-        _poolStub.setTimeout(_replyTimeout * 1000);
+        _poolStub.setTimeout(_replyTimeout);
+        _poolStub.setTimeoutUnit(_recoverTimerUnit);
 
-        CellPath me = new CellPath(getCellName(), getCellDomainName());
-        _broadcastRegistration =
-            new BroadcastRegistrationTask(this, POOLUP_MESSAGE, me);
+        _broadcastRegistration = new BroadcastRegistrationTask();
+        _broadcastRegistration.setTarget(new CellPath(getCellName(), getCellDomainName()));
+        _broadcastRegistration.setBroadcastStub(new CellStub(this, new CellPath(_broadcastAddress)));
+        _broadcastRegistration.setEventClass(POOLUP_MESSAGE);
         _broadcastRegistration.setExpires(BROADCAST_REGISTRATION_EXPIRATION);
         _executor.scheduleAtFixedRate(
                 _broadcastRegistration, 0, BROADCAST_REGISTRATION_PERIOD, TimeUnit.MILLISECONDS);
@@ -230,7 +263,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             _executor.scheduleWithFixedDelay(this,
                                              _refreshInterval,
                                              _refreshInterval,
-                                             TimeUnit.SECONDS);
+                                             _refreshIntervalUnit);
     }
 
     void dbInit(String jdbcUrl, String jdbcClass, String user, String pass )
@@ -285,7 +318,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             _log.info("*********NEW_RUN*************");
 
             if (_log.isDebugEnabled()){
-                _log.debug("INFO: Refresh Interval (seconds): " + _refreshInterval);
+                _log.debug("INFO: Refresh Interval : " + _refreshInterval + " " + _refreshIntervalUnit);
                 _log.debug("INFO: Number of files processed at once: " + _processAtOnce);
             }
 
@@ -309,7 +342,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                     //check, if it is time to remove pool from the black list
                     if ((valueTime != 0)
                         && (_recoverTimer > 0)
-                        && ((System.currentTimeMillis() - valueTime) > _recoverTimer * 1000)) {
+                        && ((System.currentTimeMillis() - valueTime) > _recoverTimerUnit.toMillis(_recoverTimer))) {
                         _poolsBlackList.remove(poolName);
                         if (_log.isDebugEnabled()) {
                             _log.debug("Remove the following pool from the Black List : "+ poolName);
@@ -456,7 +489,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
          */
         synchronized(callback) {
             _poolStub.send(new CellPath(poolName), msg, PoolRemoveFilesMessage.class, callback);
-            callback.wait(_replyTimeout * 1000);
+            callback.wait(_replyTimeoutUnit.toMillis(_replyTimeout));
         }
     }
 
@@ -603,13 +636,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         StringBuilder sb = new StringBuilder();
 
-            sb.append("Refresh Interval (sec) : ").append(_refreshInterval).append("\n");
-            sb.append("Reply Timeout (sec): ").append(_replyTimeout).append("\n");
-            sb.append("Recover Timer (min): ").append(_recoverTimer/60L).append("\n");
+            sb.append("Refresh Interval: ").append(_refreshInterval).append(" ").append(_refreshIntervalUnit).append("\n");
+            sb.append("Reply Timeout: ").append(_replyTimeout).append(" ").append(_replyTimeoutUnit).append("\n");
+            sb.append("Recover Timer: ").append(_recoverTimer).append(" ").append(_recoverTimerUnit).append("\n");
             sb.append("Number of files processed at once: ").append(_processAtOnce);
             if ( _hsmCleanerEnabled ) {
                 sb.append("\n HSM Cleaner enabled. Info : \n");
-                sb.append("Timeout for cleaning requests to HSM-pools (sec): ").append(_hsmTimeout).append("\n");
+                sb.append("Timeout for cleaning requests to HSM-pools: ").append(_hsmTimeout).append(" ").append(_hsmTimeoutUnit).append("\n");
                 sb.append("Maximal number of concurrent requests to a single HSM : ").append(_hsmCleanerRequest);
             } else {
                sb.append("\n HSM Cleaner disabled.");
@@ -696,6 +729,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             }
 
             _refreshInterval = newRefresh;
+            _refreshIntervalUnit = SECONDS;
 
             if (_cleanerTask != null) {
                 _cleanerTask.cancel(true);
@@ -704,9 +738,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 _executor.scheduleWithFixedDelay(this,
                                                  0,
                                                  _refreshInterval,
-                                                 TimeUnit.SECONDS);
+                                                 _refreshIntervalUnit);
         }
-        return "Refresh set to " + _refreshInterval + " seconds";
+        return "Refresh set to " + _refreshInterval + " " + _refreshIntervalUnit;
     }
 
     public static final String hh_set_processedAtOnce = "<processedAtOnce> # max number of files sent to pool for processing at once " ;
@@ -798,9 +832,10 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
              long timeOutHSM = Long.valueOf(args.argv(0));
 
              _hsmTimeout = timeOutHSM;
+             _hsmTimeoutUnit = SECONDS;
           }
 
-          return "Timeout for cleaning requests to HSM-pools is set to "+ _hsmTimeout + " seconds";
+          return "Timeout for cleaning requests to HSM-pools is set to "+ _hsmTimeout + " " + _hsmTimeoutUnit;
        } else {
          return "HSM Cleaner is disabled.";
        }

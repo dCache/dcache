@@ -40,12 +40,12 @@ public class PartitionManager
 {
     private static final long serialVersionUID = 3245564135066081407L;
 
-    private final static String DEFAULT = "default";
+    private static final String DEFAULT = "default";
 
-    private final static ServiceLoader<PartitionFactory> _factories =
+    private static final ServiceLoader<PartitionFactory> _factories =
         ServiceLoader.load(PartitionFactory.class);
 
-    private final static Function<PartitionFactory,String> getType =
+    private static final Function<PartitionFactory,String> getType =
         new Function<PartitionFactory,String>()
         {
             @Override
@@ -100,7 +100,7 @@ public class PartitionManager
         _hasImplicitDefaultPartition = true;
         _inheritedProperties = ImmutableMap.of();
         _partitions =
-            ImmutableMap.of(DEFAULT, (Partition) new ClassicPartition());
+            ImmutableMap.of(DEFAULT, (Partition) new WassPartition());
     }
 
     private PartitionFactory getFactory(String type)
@@ -291,7 +291,7 @@ public class PartitionManager
         "\n" +
         "Description:\n" +
         "    Creates a pool manager partition named <partition> of <type>.\n" +
-        "    If no <type> is specified then 'classic' is used as a default\n" +
+        "    If no <type> is specified then 'wass' is used as a default\n" +
         "    type.\n" +
         "\n" +
         "    A partition encapsulates configuration parameters and pool\n" +
@@ -311,7 +311,7 @@ public class PartitionManager
     {
         String type = args.getOption("type");
         PartitionFactory factory =
-            getFactory((type == null) ? "classic" : type);
+            getFactory((type == null) ? "wass" : type);
         createPartition(factory,args.argv(0));
         return "";
     }

@@ -1,1 +1,0 @@
-say -level=esay "The separate webadmin service is obsolete; the functionality has been incorporated into the httpd service."

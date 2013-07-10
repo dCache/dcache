@@ -60,6 +60,7 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.RequestTimeOutException;
 
+import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
@@ -571,13 +572,10 @@ public class UserAdminShell
             return "No file locations found";
         }
 
-        List<CellMessage> replies = askPoolsForRepLs(fileAttributes, pnfsId);
-
-        for (CellMessage reply : replies) {
-
-            String replyFromPool = reply.getSourcePath().getCellName();
-            sb.append(replyFromPool).append(" : ");
-            sb.append(reply.getMessageObject().toString());
+        Map<CellPath, String> replies = askPoolsForRepLs(fileAttributes, pnfsId);
+        for (Map.Entry<CellPath, String> reply : replies.entrySet()) {
+            sb.append(reply.getKey().getCellName()).append(" : ");
+            sb.append(reply.getValue());
         }
 
         return sb.toString();
@@ -611,14 +609,12 @@ public class UserAdminShell
         return replyFileLocations.getFileAttributes();
     }
 
-    private List<CellMessage> askPoolsForRepLs(FileAttributes fileAttributes, PnfsId pnfsId) {
+    private Map<CellPath,String> askPoolsForRepLs(FileAttributes fileAttributes, PnfsId pnfsId) {
 
-        SpreadAndWait spreader = new SpreadAndWait(cellEndPoint, _timeout);
+        SpreadAndWait<String> spreader = new SpreadAndWait<>(new CellStub(cellEndPoint, null, _timeout));
 
         for (String poolName : fileAttributes.getLocations()) {
-
-            CellMessage message = new CellMessage(new CellPath(poolName), "rep ls " + pnfsId);
-            spreader.send(message);
+            spreader.send(new CellPath(poolName), String.class, "rep ls " + pnfsId);
         }
 
         try {
@@ -627,7 +623,7 @@ public class UserAdminShell
             _log.info("InterruptedException while waiting for a reply from pools " + ex);
         }
 
-        return spreader.getReplyList();
+        return spreader.getReplies();
     }
 
     private String setSticky(

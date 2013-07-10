@@ -4,9 +4,9 @@
        xmlns:task="http://www.springframework.org/schema/task"
        xmlns:amq="http://activemq.apache.org/schema/core"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+           http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/task
-           http://www.springframework.org/schema/task/spring-task-3.0.xsd
+           http://www.springframework.org/schema/task/spring-task.xsd
            http://activemq.apache.org/schema/core
            http://activemq.apache.org/schema/core/activemq-core.xsd">
 
@@ -19,7 +19,8 @@
 
   <bean id="stub" class="org.dcache.cells.CellStub">
     <description>Stub for cells communication</description>
-    <property name="timeout" value="${topoTimeout}"/>
+    <property name="timeout" value="${topo.service.system.timeout}"/>
+    <property name="timeoutUnit" value="${topo.service.system.timeout.unit}"/>
   </bean>
 
   <bean id="registry" class="org.dcache.cells.CellNameServiceRegistry"/>
@@ -27,6 +28,7 @@
   <bean id="topology" class="org.dcache.services.topology.JmsCellsTopology"
         init-method="start" destroy-method="stop">
     <description>Updatable topology map of all domains</description>
+    <property name="cellStub" ref="stub"/>
     <property name="cellStub" ref="stub"/>
     <property name="connectionFactory" ref="connectionFactory"/>
     <property name="executor" ref="scheduler"/>
@@ -36,7 +38,7 @@
   <bean id="hostnameService" class="org.dcache.services.topology.CellsHostnameService">
     <description>Service for dCache-hostname retrieval</description>
     <property name="topology" ref="topology"/>
-    <property name="timeout" value="${topoTimeout}"/>
+    <property name="cellStub" ref="stub"/>
   </bean>
 
   <bean id="ui" class="org.dcache.services.topology.CellsTopologyInterpreter">
@@ -46,8 +48,8 @@
   </bean>
 
   <task:scheduled-tasks scheduler="scheduler">
-    <task:scheduled ref="topology" method="update" fixed-delay="${topoWaitTime}"/>
-    <task:scheduled ref="hostnameService" method="updateHostnames" fixed-delay="${topoWaitTime}"/>
+    <task:scheduled ref="topology" method="update" fixed-delay="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${topo.limits.refresh-period}, '${topo.limits.refresh-period.unit}') }"/>
+    <task:scheduled ref="hostnameService" method="updateHostnames" fixed-delay="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${topo.limits.refresh-period}, '${topo.limits.refresh-period.unit}') }"/>
   </task:scheduled-tasks>
 
   <task:scheduler id="scheduler" pool-size="5"/>

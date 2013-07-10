@@ -1,5 +1,7 @@
 package org.dcache.services.info.serialisation;
 
+import org.springframework.beans.factory.annotation.Required;
+
 import java.util.Map;
 
 import org.dcache.services.info.base.BooleanStateValue;
@@ -41,9 +43,11 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
     private String _lastBranchIdName;
     private boolean _haveLastBranch;
 
-    private final StateExhibitor _exhibitor;
+    private StateExhibitor _exhibitor;
 
-    public XmlSerialiser( StateExhibitor exhibitor) {
+    @Required
+    public void setStateExhibitor(StateExhibitor exhibitor)
+    {
         _exhibitor = exhibitor;
     }
 

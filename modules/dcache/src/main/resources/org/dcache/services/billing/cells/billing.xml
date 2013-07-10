@@ -6,12 +6,8 @@
     +-->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="
-           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
-           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
-           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
 
   <bean id="properties"
     class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -21,7 +17,7 @@
 
   <bean id="poolmanager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
-    <property name="destination" value="${poolManager}"/>
+    <property name="destination" value="${dcache.service.poolmanager}"/>
     <property name="timeout" value="${poolConnectTimeout}"/>
   </bean>
 
@@ -35,53 +31,48 @@
 
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-yes">
-    <bean id="jdbc-billing-info-access" class="${dbAccess}"
-          init-method="initialize">
-      <property name="jdbcUrl" value="${dbUrl}"/>
-      <property name="jdbcDriver" value="${dbDriver}"/>
-      <property name="jdbcUser" value="${dbUser}"/>
+    <bean id="jdbc-billing-info-access" class="${billingInfoAccess}"
+          init-method="initialize" destroy-method="close">
+      <property name="jdbcUrl" value="${db.url}"/>
+      <property name="jdbcDriver" value="${db.driver}"/>
+      <property name="jdbcUser" value="${db.user}"/>
       <property name="jdbcPassword"
-        value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${dbUrl}', '${dbUser}', '${dbPass}') }"/>
+        value="#{ T(diskCacheV111.util.Pgpass).getPassword('${db.password.file}', '${db.url}', '${db.user}', '${db.password}') }"/>
       <property name="maxInsertsBeforeCommit"
-        value="${dbAccessMaxInsertsBeforeCommit}"/>
+        value="${billingMaxInsertsBeforeCommit}"/>
       <property name="maxTimeBeforeCommit"
-        value="${dbAccessMaxTimeBeforeCommit}"/>
-      <property name="propertiesPath" value="${dbAccessProperties}"/>
+        value="${billingMaxTimeBeforeCommitInSecs}"/>
+      <property name="propertiesPath" value="${billingInfoAccessPropertiesFile}"/>
       <property name="partitionCount" value="${db.connections.partition-count}"/>
       <property name="maxConnectionsPerPartition" value="${db.connections.max-per-partition}"/>
       <property name="minConnectionsPerPartition" value="${db.connections.min-per-partition}"/>
     </bean>
 
-    <bean id="billing-plot-generator"
-          class="org.dcache.services.billing.plots.BillingInfoHistogramGenerator">
+    <bean id="histogram-service" class="org.dcache.services.billing.histograms.data.JDOTimeFrameHistogramDataService">
       <property name="access" ref="jdbc-billing-info-access"/>
-      <property name="propertiesPath" value="${plotsProperties}"/>
-      <property name="plotsDir" value="${plotsDir}"/>
-      <property name="imgType" value="${exportType}"/>
-      <property name="plotsTimeout" value="${plotsTimeout}"/>
     </bean>
 
-    <bean id="billing-database"
-          class="org.dcache.services.billing.cells.BillingDatabase"
-          init-method="initialize" destroy-method="shutDown">
+    <bean id="histogram-request-receiver" class="org.dcache.services.billing.cells.receivers.HistogramRequestReceiver">
+      <property name="service" ref="histogram-service"/>
+    </bean>
+
+    <bean id="billing-info-message-receiver" class="org.dcache.services.billing.cells.receivers.BillingInfoMessageReceiver">
       <property name="access" ref="jdbc-billing-info-access"/>
-      <property name="billingPlotGenerator" ref="billing-plot-generator"/>
-      <property name="generatePlots" value="${generatePlots}"/>
     </bean>
 
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
       <description>Database schema manager</description>
       <property name="dataSource">
-    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-      <property name="driverClassName" value="${dbDriver}"/>
-      <property name="url" value="${dbUrl}"/>
-      <property name="username" value="${dbUser}"/>
-      <property name="password"
-                    value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${dbUrl}', '${dbUser}', '${dbPass}') }"/>
-    </bean>
+        <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+          <property name="driverClassName" value="${db.driver}"/>
+          <property name="url" value="${db.url}"/>
+          <property name="username" value="${db.user}"/>
+          <property name="password"
+                    value="#{ T(diskCacheV111.util.Pgpass).getPassword('${db.password.file}', '${db.url}', '${db.user}', '${db.password}') }"/>
+        </bean>
       </property>
-      <property name="changeLog" value="classpath:${billingChangelog}"/>
-      <property name="shouldUpdate" value="${shouldUpdate}"/>
+      <property name="changeLog" value="classpath:${db.schema.changelog}"/>
+      <property name="shouldUpdate" value="${db.schema.auto}"/>
     </bean>
   </beans>
 </beans>

@@ -944,10 +944,8 @@ public class CacheRepositoryV5
                 return _store.get(id);
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.TIMEOUT) {
-                    String s =
-                        String.format("Failed to read meta data record [%s]: %s",
-                                      id, e.getMessage());
-                    throw CacheExceptionFactory.exceptionOf(e.getRc(), s);
+                    throw CacheExceptionFactory.exceptionOf(e.getRc(),
+                            "Failed to read meta data for " + id + ": " + e.getMessage(), e);
                 }
             }
             Thread.sleep(1000);

@@ -69,8 +69,7 @@ public class GridMapFilePlugin
     }
 
     @Override
-    public void map(Set<Principal> principals,
-                    Set<Principal> authorizedPrincipals)
+    public void map(Set<Principal> principals)
         throws AuthenticationException
     {
         if (any(principals, instanceOf(UserNamePrincipal.class))) {
@@ -82,8 +81,6 @@ public class GridMapFilePlugin
         Map.Entry<Principal,String> entry = getMappingFor(principals);
         checkAuthentication(entry != null, "no mapping");
 
-        Principal principal = new UserNamePrincipal(entry.getValue());
-        principals.add(principal);
-        authorizedPrincipals.add(entry.getKey());
+        principals.add(new UserNamePrincipal(entry.getValue()));
     }
 }

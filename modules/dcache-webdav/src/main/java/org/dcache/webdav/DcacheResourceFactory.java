@@ -2,16 +2,19 @@ package org.dcache.webdav;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ranges;
 import com.google.common.io.ByteStreams;
+import com.google.common.net.InetAddresses;
 import io.milton.http.HttpManager;
 import io.milton.http.Range;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
 import io.milton.resource.Resource;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.AutoIndentWriter;
@@ -29,14 +32,11 @@ import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ServerSocketChannel;
 import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,7 +57,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.GFtpProtocolInfo;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -89,10 +88,11 @@ import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
-
 
 /**
  * This ResourceFactory exposes the dCache name space through the
@@ -113,14 +113,6 @@ public class DcacheResourceFactory
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
     private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
     private static final int PROTOCOL_INFO_UNKNOWN_PORT = 0;
-
-    private static final String RELAY_PROTOCOL_INFO_NAME = "GFtp";
-    private static final int RELAY_PROTOCOL_INFO_MAJOR_VERSION = 1;
-    private static final int RELAY_PROTOCOL_INFO_MINOR_VERSION = 0;
-    private static final int RELAY_PROTOCOL_INFO_STREAMS = 1;
-    private static final int RELAY_PROTOCOL_INFO_BUFFERSIZE = 0;
-    private static final int RELAY_PROTOCOL_INFO_OFFSET = 0;
-    private static final int RELAY_PROTOCOL_INFO_SIZE = 0;
 
     private static final long PING_DELAY = 300000;
 
@@ -145,8 +137,11 @@ public class DcacheResourceFactory
     private ScheduledExecutorService _executor;
 
     private int _moverTimeout = 180000;
+    private TimeUnit _moverTimeoutUnit = MILLISECONDS;
     private long _killTimeout = 1500;
+    private TimeUnit _killTimeoutUnit = MILLISECONDS;
     private long _transferConfirmationTimeout = 60000;
+    private TimeUnit _transferConfirmationTimeoutUnit = MILLISECONDS;
     private int _bufferSize = 65536;
     private CellStub _poolStub;
     private CellStub _poolManagerStub;
@@ -160,7 +155,6 @@ public class DcacheResourceFactory
     private String _path;
     private boolean _doRedirectOnRead = true;
     private boolean _doRedirectOnWrite = true;
-    private boolean _doChrootToUserRoot = false;
     private boolean _isOverwriteAllowed;
     private boolean _isAnonymousListingAllowed;
 
@@ -168,7 +162,7 @@ public class DcacheResourceFactory
     private STGroup _listingGroup;
 
     private TransferRetryPolicy _retryPolicy =
-        TransferRetryPolicies.tryOncePolicy(_moverTimeout);
+        TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
 
     private MissingFileStrategy _missingFileStrategy =
         new AlwaysFailMissingFileStrategy();
@@ -201,6 +195,16 @@ public class DcacheResourceFactory
         _killTimeout = timeout;
     }
 
+    public void setKillTimeoutUnit(TimeUnit unit)
+    {
+        _killTimeoutUnit = checkNotNull(unit);
+    }
+
+    public TimeUnit getKillTimeoutUnit()
+    {
+        return _killTimeoutUnit;
+    }
+
     /**
      * Returns the mover timeout in milliseconds.
      */
@@ -221,7 +225,18 @@ public class DcacheResourceFactory
             throw new IllegalArgumentException("Timeout must be positive");
         }
         _moverTimeout = timeout;
-        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout);
+        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
+    }
+
+    public void setMoverTimeoutUnit(TimeUnit unit)
+    {
+        _moverTimeoutUnit = checkNotNull(unit);
+        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
+    }
+
+    public TimeUnit getMoverTimeoutUnit()
+    {
+        return _moverTimeoutUnit;
     }
 
     /**
@@ -242,6 +257,16 @@ public class DcacheResourceFactory
     public void setTransferConfirmationTimeout(long timeout)
     {
         _transferConfirmationTimeout = timeout;
+    }
+
+    public void setTransferConfirmationTimeoutUnit(TimeUnit unit)
+    {
+        _transferConfirmationTimeoutUnit = checkNotNull(unit);
+    }
+
+    public TimeUnit getTransferConfirmationTimeoutUnit()
+    {
+        return _transferConfirmationTimeoutUnit;
     }
 
     /**
@@ -322,17 +347,6 @@ public class DcacheResourceFactory
     public void setIoQueue(String ioQueue)
     {
         _ioQueue = (ioQueue != null && !ioQueue.isEmpty()) ? ioQueue : null;
-    }
-
-    /**
-     * Sers whether chroot to user root extracted from user login record
-     */
-    public void setChrootToUserRoot(boolean chroot) {
-        _doChrootToUserRoot = chroot;
-    }
-
-    public boolean isChrootToUserRoot() {
-        return _doChrootToUserRoot;
     }
 
     /**
@@ -467,16 +481,16 @@ public class DcacheResourceFactory
         _executor = executor;
         _executor.scheduleAtFixedRate(new PingMoversTask<>(_transfers.values()),
                                       PING_DELAY, PING_DELAY,
-                                      TimeUnit.MILLISECONDS);
+                                      MILLISECONDS);
     }
 
-    public void setInternalAddress(String host)
-        throws UnknownHostException
+    public void setInternalAddress(String ipString)
+            throws IllegalArgumentException, UnknownHostException
     {
-        if (host != null && !host.isEmpty()) {
-            InetAddress address = InetAddress.getByName(host);
+        if (!Strings.isNullOrEmpty(ipString)) {
+            InetAddress address = InetAddresses.forString(ipString);
             if (address.isAnyLocalAddress()) {
-                throw new IllegalArgumentException("Wildcard address is not allowed: " + host);
+                throw new IllegalArgumentException("Wildcard address is not a valid local address: " + address);
             }
             _internalAddress = address;
         } else {
@@ -503,29 +517,21 @@ public class DcacheResourceFactory
         if (_log.isDebugEnabled()) {
             _log.debug("Resolving " + HttpManager.request().getAbsoluteUrl());
         }
-        return getResource(new FsPath(path));
+         return getResource(getFullPath(path));
     }
 
     /**
      * Returns the resource object for a path.
      *
-     * @param requestPath request path
+     * @param path The full path
      */
-    public DcacheResource getResource(FsPath requestPath)
+    public DcacheResource getResource(FsPath path)
     {
-
-        FsPath fullPath;
-        try {
-            fullPath = getFullPath(requestPath);
-        } catch (IllegalArgumentException e) {
-            _log.debug(e.getMessage());
+        if (!isAllowedPath(path)) {
             return null;
         }
 
-        if (!isAllowedPath(fullPath)) {
-            return null;
-        }
-
+        FsPath requestPath = getRequestPath(path);
         boolean haveRetried = false;
         Subject subject = getSubject();
 
@@ -539,14 +545,14 @@ public class DcacheResourceFactory
                         requestedAttributes.add(CHECKSUM);
                     }
                     FileAttributes attributes =
-                        pnfs.getFileAttributes(fullPath.toString(), requestedAttributes);
-                    return getResource(fullPath, attributes);
+                        pnfs.getFileAttributes(path.toString(), requestedAttributes);
+                    return getResource(path, attributes);
                 } catch (FileNotFoundCacheException e) {
                     if(haveRetried) {
                         return null;
                     } else {
                         switch(_missingFileStrategy.recommendedAction(subject,
-                                fullPath, requestPath)) {
+                                path, requestPath)) {
                         case FAIL:
                             return null;
                         case RETRY:
@@ -600,8 +606,7 @@ public class DcacheResourceFactory
     }
 
     /**
-     * Creates a new file. The door will relay all data to a pool
-     * using a GridFTP mode S data connection.
+     * Creates a new file. The door will relay all data to the pool.
      */
     public DcacheResource createFile(FsPath path, InputStream inputStream, Long length)
             throws CacheException, InterruptedException, IOException,
@@ -609,24 +614,24 @@ public class DcacheResourceFactory
     {
         Subject subject = getSubject();
 
-        ProxyThroughGftpWriteTransfer transfer =
-            new ProxyThroughGftpWriteTransfer(_pnfs, subject, path);
+        WriteTransfer transfer = new WriteTransfer(_pnfs, subject, path);
         _transfers.put((int) transfer.getSessionId(), transfer);
         try {
             boolean success = false;
+            transfer.setProxyTransfer(true);
             transfer.createNameSpaceEntry();
             try {
                 transfer.setLength(length);
-                transfer.openServerChannel();
                 try {
                     transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
+                    String uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
+                    if (uri == null) {
+                        throw new TimeoutCacheException("Server is busy (internal timeout)");
+                    }
                     transfer.relayData(inputStream);
                 } finally {
-                    transfer.killMover(_killTimeout);
-                    transfer.closeServerChannel();
+                    transfer.killMover(_killTimeout, _killTimeoutUnit);
                 }
-
-                transfer.notifyBilling(0, "");
                 success = true;
             } finally {
                 if (!success) {
@@ -658,15 +663,14 @@ public class DcacheResourceFactory
         Subject subject = getSubject();
 
         String uri = null;
-        WriteTransfer transfer =
-                new WriteTransfer(_pnfs, subject, path);
+        WriteTransfer transfer = new WriteTransfer(_pnfs, subject, path);
         _transfers.put((int) transfer.getSessionId(), transfer);
         try {
             transfer.createNameSpaceEntry();
             try {
                 transfer.setLength(length);
                 transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
-                uri = transfer.waitForRedirect(_moverTimeout);
+                uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
                 }
@@ -707,7 +711,7 @@ public class DcacheResourceFactory
             throws CacheException, InterruptedException, IOException,
                    URISyntaxException
     {
-        ReadTransfer transfer = beginRead(path, pnfsid);
+        ReadTransfer transfer = beginRead(path, pnfsid, true);
         try {
             transfer.relayData(outputStream, range);
         } catch (CacheException e) {
@@ -882,17 +886,19 @@ public class DcacheResourceFactory
     public String getReadUrl(FsPath path, PnfsId pnfsid)
             throws CacheException, InterruptedException, URISyntaxException
     {
-        return beginRead(path, pnfsid).getRedirect();
+        return beginRead(path, pnfsid, false).getRedirect();
     }
 
     /**
      * Initiates a read operation.
      *
+     *
      * @param path The full path of the file.
      * @param pnfsid The PNFS ID of the file.
+     * @param isProxyTransfer
      * @return ReadTransfer encapsulating the read operation
      */
-    private ReadTransfer beginRead(FsPath path, PnfsId pnfsid)
+    private ReadTransfer beginRead(FsPath path, PnfsId pnfsid, boolean isProxyTransfer)
             throws CacheException, InterruptedException, URISyntaxException
     {
         Subject subject = getSubject();
@@ -902,10 +908,11 @@ public class DcacheResourceFactory
         transfer.setIsChecksumNeeded(isDigestRequested());
         _transfers.put((int) transfer.getSessionId(), transfer);
         try {
+            transfer.setProxyTransfer(isProxyTransfer);
             transfer.readNameSpaceEntry();
             try {
                 transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
-                uri = transfer.waitForRedirect(_moverTimeout);
+                uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
                 }
@@ -958,45 +965,12 @@ public class DcacheResourceFactory
     }
 
     /**
-     * Calculate root path based on _rootPath and User Root directory
-     * extracted from login record and taking into account _rootPath
-     * if necessary
-     */
-
-    private FsPath getUserRootPath()
-    {
-        FsPath path = _rootPath;
-        if (!_doChrootToUserRoot) {
-            return path;
-        }
-        Request request = HttpManager.request();
-        FsPath userRootDirectory = (request.getAttributes().containsKey(SecurityFilter.USER_ROOT_DIRECTORY)) ?
-            (FsPath)request.getAttributes().get(SecurityFilter.USER_ROOT_DIRECTORY) : null;
-        if (userRootDirectory!=null)  {
-            if (userRootDirectory.startsWith(_rootPath)) {
-                path=userRootDirectory;
-            } else {
-                if (!_rootPath.startsWith(userRootDirectory)) {
-                    throw new
-                        IllegalArgumentException("webdavRootPath = "+
-                                                 _rootPath+
-                                                 " and user root path = "+
-                                                 userRootDirectory +
-                                                 " are not subpaths of each other");
-                }
-            }
-        }
-        return path;
-    }
-
-    /**
      * Given a path relative to the root path, this method returns a
      * full PNFS path.
      */
-    private FsPath getFullPath(FsPath path)
+    private FsPath getFullPath(String path)
     {
-        FsPath rootPath = getUserRootPath();
-        return new FsPath(rootPath, new FsPath(path));
+        return new FsPath(_rootPath, new FsPath(path));
     }
 
     /**
@@ -1005,9 +979,9 @@ public class DcacheResourceFactory
      */
     private FsPath getRequestPath(FsPath internalPath)
     {
-        FsPath rootPath = getUserRootPath();
-        return rootPath.relativize(internalPath);
+        return _rootPath.relativize(internalPath);
     }
+
 
     /**
      * Returns true if access to path is allowed through the WebDAV
@@ -1107,22 +1081,24 @@ public class DcacheResourceFactory
     private class HttpTransfer extends RedirectedTransfer<String>
     {
         private URI _location;
+        private InetSocketAddress _clientAddressForPool;
 
         public HttpTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
                 throws URISyntaxException
         {
             super(pnfs, subject, path);
             initializeTransfer(this, subject);
+            _clientAddressForPool = getClientAddress();
         }
 
-        protected ProtocolInfo createProtocolInfo()
+        protected ProtocolInfo createProtocolInfo(InetSocketAddress address)
         {
             HttpProtocolInfo protocolInfo =
                 new HttpProtocolInfo(
                         PROTOCOL_INFO_NAME,
                         PROTOCOL_INFO_MAJOR_VERSION,
                         PROTOCOL_INFO_MINOR_VERSION,
-                        getClientAddress(),
+                        address,
                         getCellName(), getCellDomainName(),
                         _path.toString(),
                         _location);
@@ -1133,18 +1109,27 @@ public class DcacheResourceFactory
         @Override
         protected ProtocolInfo getProtocolInfoForPoolManager()
         {
-            return createProtocolInfo();
+            return createProtocolInfo(getClientAddress());
         }
 
         @Override
         protected ProtocolInfo getProtocolInfoForPool()
         {
-            return createProtocolInfo();
+            return createProtocolInfo(_clientAddressForPool);
         }
 
         public void setLocation(URI location)
         {
             _location = location;
+        }
+
+        public void setProxyTransfer(boolean isProxyTransfer)
+        {
+            if (isProxyTransfer) {
+                _clientAddressForPool = new InetSocketAddress(_internalAddress, 0);
+            } else {
+                _clientAddressForPool = getClientAddress();
+            }
         }
     }
 
@@ -1198,7 +1183,7 @@ public class DcacheResourceFactory
                     connection.disconnect();
                 }
 
-                if (!waitForMover(_transferConfirmationTimeout)) {
+                if (!waitForMover(_transferConfirmationTimeout, _transferConfirmationTimeoutUnit)) {
                     throw new CacheException("Missing transfer confirmation from pool");
                 }
             } catch (SocketTimeoutException e) {
@@ -1235,6 +1220,48 @@ public class DcacheResourceFactory
             super(pnfs, subject, path);
         }
 
+        public void relayData(InputStream inputStream)
+                throws IOException, CacheException, InterruptedException
+        {
+            setStatus("Mover " + getPool() + "/" + getMoverId() +
+                    ": Opening data connection");
+            try {
+                URL url = new URL(getRedirect());
+                HttpURLConnection connection =
+                        (HttpURLConnection) url.openConnection();
+                try {
+                    connection.setRequestMethod("PUT");
+                    connection.setRequestProperty("Connection", "Close");
+                    connection.setDoOutput(true);
+                    if (getFileAttributes().isDefined(SIZE)) {
+                        connection.setFixedLengthStreamingMode(getFileAttributes().getSize());
+                    } else {
+                        connection.setChunkedStreamingMode(8192);
+                    }
+                    connection.connect();
+                    try (OutputStream outputStream = connection.getOutputStream()) {
+                        setStatus("Mover " + getPool() + "/" + getMoverId() +
+                                ": Receiving data");
+                        ByteStreams.copy(inputStream, outputStream);
+                        outputStream.flush();
+                    }
+                    if (connection.getResponseCode() != HttpResponseStatus.CREATED.getCode()) {
+                        throw new CacheException(connection.getResponseMessage());
+                    }
+                } finally {
+                    connection.disconnect();
+                }
+
+                if (!waitForMover(_transferConfirmationTimeout, _transferConfirmationTimeoutUnit)) {
+                    throw new CacheException("Missing transfer confirmation from pool");
+                }
+            } catch (SocketTimeoutException e) {
+                throw new TimeoutCacheException("Server is busy (internal timeout)");
+            } finally {
+                setStatus(null);
+            }
+        }
+
         /**
          * Sets the length of the file to be uploaded. The length is
          * optional and will be ignored if null.
@@ -1260,133 +1287,4 @@ public class DcacheResourceFactory
             }
         }
     }
-
-    /**
-     * Specialised HttpTransfer for uploads. Uses mode S FTP for writing
-     * to the pool. Kept for backwards compatibility with 2.2 pools. Can be
-     * removed in dCache 2.4.
-     */
-    private class ProxyThroughGftpWriteTransfer extends HttpTransfer
-    {
-        private ServerSocketChannel _serverChannel;
-
-        public ProxyThroughGftpWriteTransfer(PnfsHandler pnfs, Subject subject,
-                                             FsPath path)
-                throws URISyntaxException
-        {
-            super(pnfs, subject, path);
-        }
-
-        public synchronized void openServerChannel()
-            throws IOException
-        {
-            _serverChannel = ServerSocketChannel.open();
-            try {
-                _serverChannel.socket().setSoTimeout(_moverTimeout);
-               _serverChannel.socket().bind(new InetSocketAddress(_internalAddress, 0));
-            } catch (IOException e) {
-                _serverChannel.close();
-                _serverChannel = null;
-                throw e;
-            }
-        }
-
-        public synchronized void closeServerChannel()
-            throws IOException
-        {
-            if (_serverChannel != null) {
-                _serverChannel.close();
-                _serverChannel = null;
-            }
-        }
-
-        public synchronized ServerSocketChannel getServerChannel()
-        {
-            return _serverChannel;
-        }
-
-        @Override
-        protected ProtocolInfo getProtocolInfoForPool()
-        {
-            ServerSocket socket = getServerChannel().socket();
-            return new GFtpProtocolInfo(RELAY_PROTOCOL_INFO_NAME,
-                                        RELAY_PROTOCOL_INFO_MAJOR_VERSION,
-                                        RELAY_PROTOCOL_INFO_MINOR_VERSION,
-                                        (InetSocketAddress)socket.getLocalSocketAddress(),
-                                        RELAY_PROTOCOL_INFO_STREAMS,
-                                        RELAY_PROTOCOL_INFO_STREAMS,
-                                        RELAY_PROTOCOL_INFO_STREAMS,
-                                        RELAY_PROTOCOL_INFO_BUFFERSIZE,
-                                        RELAY_PROTOCOL_INFO_OFFSET,
-                                        RELAY_PROTOCOL_INFO_SIZE);
-        }
-
-        public void relayData(InputStream inputStream)
-            throws IOException, CacheException, InterruptedException
-        {
-            setStatus("Mover " + getPool() + "/" + getMoverId() +
-                      ": Waiting for data connection");
-            try {
-                ServerSocketChannel serverChannel = getServerChannel();
-                if (serverChannel == null) {
-                    throw new AsynchronousCloseException();
-                }
-
-                try (OutputStream outputStream = getServerChannel().accept()
-                        .socket().getOutputStream()) {
-                    closeServerChannel();
-
-                    setStatus("Mover " + getPool() + "/" + getMoverId() +
-                            ": Receiving data");
-
-                    /* Relay the data to the pool.
-                     */
-                    ByteStreams.copy(inputStream, outputStream);
-                    outputStream.flush();
-                }
-
-                if (!waitForMover(_transferConfirmationTimeout)) {
-                    throw new CacheException("Missing transfer confirmation from pool");
-                }
-            } catch (AsynchronousCloseException e) {
-                /* Server socket closed because the mover reported an
-                 * error rather than connection to us. The mover has
-                 * likely a much more interesting error message than
-                 * the asynchronous close.
-                 */
-                waitForMover(0);
-                throw new IllegalStateException("Server channel is not open");
-            } catch (SocketTimeoutException e) {
-                throw new TimeoutCacheException("Server is busy (internal timeout)");
-            } finally {
-                setStatus(null);
-            }
-        }
-
-        @Override
-        public synchronized void finished(CacheException error)
-        {
-            super.finished(error);
-            if (_serverChannel != null) {
-                try {
-                    _serverChannel.close();
-                } catch (IOException e) {
-                    _log.error("Failed to close pool connection: " +
-                               e.getMessage());
-                }
-            }
-        }
-
-        /**
-         * Sets the length of the file to be uploaded. The length is
-         * optional and will be ignored if null.
-         */
-        public void setLength(Long length)
-        {
-            if (length != null) {
-                super.setLength(length);
-            }
-        }
-    }
-
 }

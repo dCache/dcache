@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
@@ -13,9 +15,9 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 class LinkGroup implements SelectionLinkGroup, Serializable {
     private static final long serialVersionUID = 5425784079451748166L;
     private final String _name;
-    private final Collection<SelectionLink> _links = new HashSet<>();
+    private final Collection<SelectionLink> _links = new CopyOnWriteArraySet<>();
     // no duplicates is allowed
-    private final Map<String, Set<String>> _attributes = new HashMap<>();
+    private final Map<String, Set<String>> _attributes = new ConcurrentHashMap<>();
     /*
      * my personal view to default behavior
      */
@@ -45,7 +47,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
     }
 
     @Override
-    public Collection<SelectionLink> links() {
+    public Collection<SelectionLink> getLinks() {
         return _links;
     }
 

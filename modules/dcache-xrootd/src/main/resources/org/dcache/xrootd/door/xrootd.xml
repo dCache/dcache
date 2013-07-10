@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:annotation-config/>
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
@@ -11,24 +16,27 @@
 
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool cell stub</description>
-    <property name="timeout" value="${xrootdPoolTimeout}"/>
+    <property name="timeout" value="${xrootd.service.pool.timeout}"/>
+    <property name="timeoutUnit" value="${xrootd.service.pool.timeout.unit}"/>
   </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager cell stub</description>
-    <property name="timeout" value="${xrootdPoolManagerTimeout}"/>
-    <property name="destination" value="${poolmanager}"/>
+    <property name="destination" value="${xrootd.service.poolmanager}"/>
+    <property name="timeout" value="${xrootd.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${xrootd.service.poolmanager.timeout.unit}"/>
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
     <description>Billing communication stub</description>
-    <property name="destination" value="${billing}"/>
+    <property name="destination" value="${xrootd.service.billing}"/>
   </bean>
 
   <bean id="gPlazma-stub" class="org.dcache.cells.CellStub">
     <description>gPlazma communication stub</description>
-    <property name="destination" value="${gplazma}" />
-    <property name="timeout" value="30000" />
+    <property name="destination" value="${xrootd.service.gplazma}"/>
+    <property name="timeout" value="${xrootd.service.gplazma.timeout}"/>
+    <property name="timeoutUnit" value="${xrootd.service.gplazma.timeout.unit}"/>
   </bean>
 
   <bean id="scheduled-thread-pool"
@@ -50,9 +58,9 @@
         class="org.jboss.netty.handler.execution.MemoryAwareThreadPoolExecutor"
         destroy-method="shutdown">
     <description>Thread pool for xrootd request processing</description>
-    <constructor-arg value="${xrootdThreads}"/>
-    <constructor-arg value="${xrootdMaxChannelMemorySize}"/>
-    <constructor-arg value="${xrootdMaxTotalMemorySize}"/>
+    <constructor-arg value="${xrootd.threads}"/>
+    <constructor-arg value="${xrootd.max-channel-memory-size}"/>
+    <constructor-arg value="${xrootd.max-total-memory-size}"/>
   </bean>
 
   <bean id="accept-thread-pool"
@@ -77,21 +85,22 @@
   <bean id="server" class="org.dcache.xrootd.door.NettyXrootdServer"
         init-method="init">
     <description>Netty based Xrootd service</description>
-    <property name="port" value="${xrootdPort}"/>
-    <property name="backlog" value="${xrootdBacklog}"/>
+    <property name="port" value="${xrootd.net.port}"/>
+    <property name="address" value="${xrootd.net.listen}"/>
+    <property name="backlog" value="${xrootd.net.backlog}"/>
     <property name="requestExecutor" ref="request-thread-pool"/>
     <property name="channelFactory" ref="channel-factory"/>
     <property name="connectionTracker" ref="connection-tracker"/>
     <property name="door" ref="door"/>
     <property name="channelHandlerFactories" ref="channelhandler-factories"/>
-    <property name="rootPath" value="${xrootdRootPath}"/>
+    <property name="rootPath" value="${xrootd.root}"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
     <description>PNFS manager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${pnfsmanager}"/>
+        <constructor-arg value="${xrootd.service.pnfsmanager}"/>
       </bean>
     </constructor-arg>
   </bean>
@@ -106,7 +115,7 @@
   <bean id="channelhandler-factories"
         class="org.dcache.xrootd.spring.GplazmaAwareChannelHandlerFactoryFactoryBean">
       <description>Factory for channel handlers</description>
-      <property name="plugins" value="${xrootdPlugins}"/>
+      <property name="plugins" value="${xrootd.plugins}"/>
       <property name="loginStrategy" ref="loginstrategy"/>
       <property name="anonymousLoginStrategy" ref="anonymous-loginstrategy"/>
   </bean>
@@ -116,18 +125,19 @@
     <property name="poolStub" ref="pool-stub"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
     <property name="billingStub" ref="billing-stub"/>
-    <property name="writePaths" value="${xrootdWritePaths}"/>
-    <property name="readPaths" value="${xrootdReadPaths}"/>
+    <property name="writePaths" value="${xrootd.authz.write-paths}"/>
+    <property name="readPaths" value="${xrootd.authz.read-paths}"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="ioQueue" value="${xrootdIoQueue}"/>
-    <property name="moverTimeout" value="${xrootdMoverTimeout}"/>
+    <property name="ioQueue" value="${xrootd.mover.queue}"/>
+    <property name="moverTimeout" value="${xrootd.mover.timeout}"/>
+    <property name="moverTimeoutUnit" value="${xrootd.mover.timeout.unit}"/>
     <property name="executor" ref="scheduled-thread-pool"/>
     <property name="dirlistTimeoutExecutor" ref="dirlist-timeout-executor" />
   </bean>
 
   <bean id="anonymous-loginstrategy" class="org.dcache.auth.AnonymousLoginStrategy">
     <description>Login strategy used for unauthenticated login</description>
-    <property name="user" value="${xrootdUser}"/>
+    <property name="user" value="${xrootd.authz.user}"/>
   </bean>
 
   <bean id="loginstrategy" class="org.dcache.services.login.RemoteLoginStrategy">
@@ -140,15 +150,17 @@
         destroy-method="stop">
     <description>Notifies LoginBroker </description>
     <property name="executor" ref="scheduled-thread-pool"/>
-    <property name="updateTime" value="${loginBrokerUpdateTime}"/>
-    <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+    <property name="updateTime" value="${xrootd.service.loginbroker.update-period}"/>
+    <property name="updateTimeUnit" value="${xrootd.service.loginbroker.update-period.unit}"/>
+    <property name="updateThreshold" value="${xrootd.service.loginbroker.update-threshold}"/>
     <property name="protocolEngine" value="org.dcache.xrootd.door.XrootdDoor"/>
-    <property name="protocolVersion" value="2.4"/>
-    <property name="protocolFamily" value="root"/>
-    <property name="port" value="${xrootdPort}"/>
+    <property name="protocolVersion" value="${xrootd.service.loginbroker.version}"/>
+    <property name="protocolFamily" value="${xrootd.service.loginbroker.family}"/>
+    <property name="port" value="${xrootd.net.port}"/>
+    <property name="address" value="${webdav.net.listen}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${loginBroker}"/>
+        <constructor-arg value="${xrootd.service.loginbroker}"/>
       </bean>
     </property>
   </bean>

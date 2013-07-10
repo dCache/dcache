@@ -10,8 +10,8 @@
   </bean>
 
   <bean id="login-stub" class="org.dcache.cells.CellStub">
-    <description>Login cell communication stub</description>
-    <property name="destination" value="${gplazma}"/>
+    <description>Login serviceunication stub</description>
+    <property name="destination" value="${dcache.service.gplazma}"/>
     <property name="timeout"     value="30000"/>
   </bean>
 
@@ -28,12 +28,12 @@
   </bean>
 
   <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
-    <property name="port"               value="${port}"/>
-    <property name="hostKeyPrivate"     value="${hostKeyPrivate}"/>
-    <property name="hostKeyPublic"      value="${hostKeyPublic}"/>
-    <property name="authorizedKeyList"  value="${authorizedKeyList}"/>
-    <property name="historyFile"    value="${historyFilePath}"/>
+    <property name="port"               value="${admin.ssh2AdminPort}"/>
+    <property name="hostKeyPrivate"     value="${admin.dsaHostKeyPrivate}"/>
+    <property name="hostKeyPublic"      value="${admin.dsaHostKeyPublic}"/>
+    <property name="authorizedKeyList"  value="${admin.authorizedKey2}"/>
+    <property name="historyFile"    value="${adminHistoryFile}"/>
     <property name="loginStrategy"      ref="login-strategy"/>
-    <property name="adminGroupId"         value="${adminGroupID}"/>
+    <property name="adminGroupId"         value="${admin.ssh2.gid}"/>
   </bean>
 </beans>

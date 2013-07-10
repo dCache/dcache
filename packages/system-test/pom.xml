@@ -1,0 +1,128 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.dcache</groupId>
+    <artifactId>packaging</artifactId>
+    <version>2.7.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>system-test</artifactId>
+  <packaging>pom</packaging>
+
+  <name>System tests</name>
+
+  <properties>
+      <skel>${project.basedir}/../../skel</skel>
+      <filtered-skel>${project.build.directory}/filtered-skel</filtered-skel>
+  </properties>
+
+  <dependencies>
+      <dependency>
+          <groupId>org.dcache</groupId>
+          <artifactId>dcache-plugin-hsqldb</artifactId>
+          <version>${project.version}</version>
+          <type>zip</type>
+      </dependency>
+  </dependencies>
+
+  <build>
+      <finalName>dcache</finalName>
+      <plugins>
+          <plugin>
+              <!-- ant is used rather than the maven resources plugin,
+                   because ant allows us to preserve the lastmodified
+                   time of the files it copies. -->
+              <artifactId>maven-antrun-plugin</artifactId>
+              <executions>
+                  <execution>
+                      <phase>prepare-package</phase>
+                      <configuration>
+                          <target>
+                              <selector id="binary.files">
+                                  <or>
+                                      <filename name="**/*.gif" />
+                                      <filename name="**/*.jpg" />
+                                      <filename name="**/*.png" />
+                                      <filename name="**/*.jar" />
+                                      <filename name="**/*.ico" />
+                                  </or>
+                              </selector>
+                              <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
+                                  <fileset dir="${skel}">
+                                      <not>
+                                          <selector refid="binary.files" />
+                                      </not>
+                                  </fileset>
+                                  <filterset>
+                                      <filtersfile file="${project.basedir}/src/main/assembly/filter.properties" />
+                                      <filter token="project.version" value="${project.version}" />
+                                  </filterset>
+                              </copy>
+                              <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
+                                  <fileset dir="${skel}">
+                                      <selector refid="binary.files" />
+                                  </fileset>
+                              </copy>
+                              <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
+                                  <fileset dir="${project.basedir}/src/main/skel" />
+                              </copy>
+                          </target>
+                      </configuration>
+                      <goals>
+                          <goal>run</goal>
+                      </goals>
+                  </execution>
+              </executions>
+          </plugin>
+
+          <plugin>
+              <artifactId>maven-assembly-plugin</artifactId>
+              <configuration>
+                  <descriptors>
+                      <descriptor>src/main/assembly/assembly.xml</descriptor>
+                  </descriptors>
+                  <formats>
+                      <format>dir</format>
+                  </formats>
+                  <appendAssemblyId>false</appendAssemblyId>
+                  <attach>false</attach>
+              </configuration>
+              <executions>
+                  <execution>
+                      <id>make-assembly</id>
+                      <phase>package</phase>
+                      <goals>
+                          <goal>single</goal>
+                      </goals>
+                  </execution>
+              </executions>
+          </plugin>
+
+          <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>exec-maven-plugin</artifactId>
+              <version>1.2.1</version>
+              <configuration>
+                  <workingDirectory>${project.build.directory}/${project.build.finalName}</workingDirectory>
+              </configuration>
+              <executions>
+                  <execution>
+                      <id>populate</id>
+                      <phase>package</phase>
+                      <goals>
+                          <goal>exec</goal>
+                      </goals>
+                      <configuration>
+                          <executable>/bin/sh</executable>
+                          <arguments>
+                            <argument>-c</argument>
+                            <argument>bin/populate 2&gt;&amp;1</argument>
+                          </arguments>
+                      </configuration>
+                  </execution>
+              </executions>
+          </plugin>
+      </plugins>
+  </build>
+</project>

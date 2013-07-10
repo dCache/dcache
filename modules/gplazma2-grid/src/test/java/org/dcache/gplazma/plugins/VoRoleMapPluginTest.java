@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import java.security.Principal;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -30,14 +29,13 @@ public class VoRoleMapPluginTest
     private LineSource _source;
     private VoRoleMapFileMaker _content;
     private Set<Principal> _principals;
-    private Set<Principal> _authorizedPrincipals;
 
     @Test(expected=NullPointerException.class)
     public void shouldThrowNPEWhenGivenNullArgs() throws AuthenticationException
     {
         givenVoRoleMapFile().thatIsEmpty();
 
-        whenMapPluginCalledWith(null, null);
+        whenMapPluginCalledWith((Set<Principal>) null);
     }
 
 
@@ -56,9 +54,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, hasPrimaryFqan("/acme"));
         assertThat(_principals, hasPrimaryGroupName("acme01"));
         assertThat(_principals, not(hasGroupName("acme01")));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
     }
 
 
@@ -77,9 +72,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, hasPrimaryFqan("/acme"));
         assertThat(_principals, hasPrimaryGroupName("acme01"));
         assertThat(_principals, not(hasGroupName("acme01")));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
     }
 
 
@@ -102,9 +94,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, hasPrimaryFqan("/acme"));
         assertThat(_principals, hasPrimaryGroupName("acme01"));
         assertThat(_principals, not(hasGroupName("acme01")));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
     }
 
 
@@ -124,9 +113,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, hasPrimaryFqan("/acme/Role=genius"));
         assertThat(_principals, hasFqan("/acme"));
         assertThat(_principals, hasGroupName("acme01")); // FIXME should be primaryGroupName?
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasFqan("/acme"));
     }
 
 
@@ -177,9 +163,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, not(hasGroupName("acme01")));
         assertThat(_principals, not(hasPrimaryGroupName("acme02")));
         assertThat(_principals, not(hasGroupName("acme02")));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
     }
 
 
@@ -201,9 +184,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, not(hasGroupName("acme01")));
         assertThat(_principals, not(hasPrimaryGroupName("acme02")));
         assertThat(_principals, not(hasGroupName("acme02")));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
     }
 
 
@@ -227,10 +207,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, not(hasGroupName("genius01")));
         assertThat(_principals, not(hasPrimaryGroupName("acme01")));
         assertThat(_principals, hasGroupName("acme01"));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme/Role=genius"));
-        assertThat(_authorizedPrincipals, hasFqan("/acme"));
     }
 
 
@@ -254,10 +230,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, not(hasGroupName("acme01")));
         assertThat(_principals, not(hasPrimaryGroupName("genius01")));
         assertThat(_principals, hasGroupName("genius01"));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
-        assertThat(_authorizedPrincipals, hasFqan("/acme/Role=genius"));
     }
 
 
@@ -275,9 +247,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, hasPrimaryFqan("/acme"));
         assertThat(_principals, hasPrimaryGroupName("acme01"));
         assertThat(_principals, not(hasGroupName("acme01")));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
     }
 
 
@@ -294,9 +263,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, hasDn("/O=ACME/CN=Wile E Coyote"));
         assertThat(_principals, hasPrimaryFqan("/acme"));
         assertThat(_principals, hasPrimaryGroupName("acme01"));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
     }
 
 
@@ -315,10 +281,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, hasPrimaryFqan("/acme/Role=genius"));
         assertThat(_principals, hasFqan("/acme"));
         assertThat(_principals, hasGroupName("acme01")); // FIXME should be primaryGroupName
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasFqan("/acme"));
-        assertThat(_authorizedPrincipals, not(hasPrimaryFqan("/acme/Role=genius")));
     }
 
 
@@ -342,10 +304,6 @@ public class VoRoleMapPluginTest
         assertThat(_principals, not(hasGroupName("acme01")));
         assertThat(_principals, not(hasPrimaryGroupName("genius01")));
         assertThat(_principals, hasGroupName("genius01"));
-
-        assertThat(_authorizedPrincipals, hasDn("/O=ACME/CN=Wile E Coyote"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/acme"));
-        assertThat(_authorizedPrincipals, hasFqan("/acme/Role=genius"));
     }
 
     @Test
@@ -360,8 +318,8 @@ public class VoRoleMapPluginTest
                 .withFqan("/cms"));
 
         assertThat(_principals, hasPrimaryGroupName("cms001"));
-        assertThat(_authorizedPrincipals, hasDn("/DC=es/DC=irisgrid/O=ciemat/CN=antonio-delgado-peris"));
-        assertThat(_authorizedPrincipals, hasPrimaryFqan("/cms"));
+        assertThat(_principals, hasDn("/DC=es/DC=irisgrid/O=ciemat/CN=antonio-delgado-peris"));
+        assertThat(_principals, hasPrimaryFqan("/cms"));
     }
 
 
@@ -410,14 +368,12 @@ public class VoRoleMapPluginTest
             throws AuthenticationException
     {
         Set<Principal> principals = Sets.newHashSet(maker.build());
-        whenMapPluginCalledWith(principals, new HashSet<Principal>());
+        whenMapPluginCalledWith(principals);
     }
 
-    private void whenMapPluginCalledWith(Set<Principal> principals,
-            Set<Principal> authorizedPrincipals) throws AuthenticationException
+    private void whenMapPluginCalledWith(Set<Principal> principals) throws AuthenticationException
     {
         _principals = principals;
-        _authorizedPrincipals = authorizedPrincipals;
 
         VOMapLineParser parser = new VOMapLineParser();
 
@@ -426,7 +382,7 @@ public class VoRoleMapPluginTest
                 parser);
 
         GPlazmaMappingPlugin plugin = new VoRoleMapPlugin(map);
-        plugin.map(_principals, _authorizedPrincipals);
+        plugin.map(_principals);
     }
 
     private VoRoleMapFileMaker givenVoRoleMapFile()

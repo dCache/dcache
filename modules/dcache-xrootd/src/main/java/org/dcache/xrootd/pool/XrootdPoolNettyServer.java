@@ -10,7 +10,6 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -42,9 +41,10 @@ public class XrootdPoolNettyServer
     /**
      * Used to generate channel-idle events for the pool handler
      */
-    private Timer _timer;
+    private final Timer _timer;
 
     private final long _clientIdleTimeout;
+    private final int _maxFrameSize;
 
     private int _numberClientConnections;
     private List<ChannelHandlerFactory> _plugins;
@@ -53,11 +53,13 @@ public class XrootdPoolNettyServer
                                  int memoryPerConnection,
                                  int maxMemory,
                                  long clientIdleTimeout,
+                                 int maxFrameSize,
                                  List<ChannelHandlerFactory> plugins) {
         this(threadPoolSize,
              memoryPerConnection,
              maxMemory,
              clientIdleTimeout,
+             maxFrameSize,
              plugins,
              -1);
     }
@@ -66,11 +68,14 @@ public class XrootdPoolNettyServer
                                  int memoryPerConnection,
                                  int maxMemory,
                                  long clientIdleTimeout,
+                                 int maxFrameSize,
                                  List<ChannelHandlerFactory> plugins,
                                  int socketThreads) {
         super("xrootd", threadPoolSize, memoryPerConnection, maxMemory, socketThreads);
         _clientIdleTimeout = clientIdleTimeout;
+        _maxFrameSize = maxFrameSize;
         _plugins = plugins;
+        _timer = new HashedWheelTimer();
 
         String range = System.getProperty("org.globus.tcp.port.range");
         PortRange portRange =
@@ -78,19 +83,15 @@ public class XrootdPoolNettyServer
         setPortRange(portRange);
     }
 
-    @Override
-    protected synchronized void startServer() throws IOException
+    public int getMaxFrameSize()
     {
-        _timer = new HashedWheelTimer();
-        super.startServer();
+        return _maxFrameSize;
     }
 
-    @Override
-    protected synchronized void stopServer()
+    public void shutdown()
     {
-        super.stopServer();
+        stopServer();
         _timer.stop();
-        _timer = null;
     }
 
     @Override

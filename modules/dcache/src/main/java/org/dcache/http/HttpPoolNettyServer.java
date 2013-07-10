@@ -13,7 +13,6 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.vehicles.HttpProtocolInfo;
@@ -39,7 +38,7 @@ public class HttpPoolNettyServer
     private final static PortRange DEFAULT_PORTRANGE =
         new PortRange(20000, 25000);
 
-    private Timer _timer;
+    private final Timer _timer;
 
     private final long _clientIdleTimeout;
 
@@ -68,6 +67,7 @@ public class HttpPoolNettyServer
 
         _clientIdleTimeout = clientIdleTimeout;
         _chunkSize = chunkSize;
+        _timer = new HashedWheelTimer();
 
         String range = System.getProperty("org.globus.tcp.port.range");
         PortRange portRange =
@@ -75,19 +75,10 @@ public class HttpPoolNettyServer
         setPortRange(portRange);
     }
 
-    @Override
-    protected synchronized void startServer() throws IOException
+    public void shutdown()
     {
-        _timer = new HashedWheelTimer();
-        super.startServer();
-    }
-
-    @Override
-    protected synchronized void stopServer()
-    {
-        super.stopServer();
+        stopServer();
         _timer.stop();
-        _timer = null;
     }
 
     @Override

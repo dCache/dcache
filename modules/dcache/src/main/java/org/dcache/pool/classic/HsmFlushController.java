@@ -24,7 +24,6 @@ import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
 import diskCacheV111.vehicles.PoolFlushGainControlMessage;
 
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
@@ -145,14 +144,19 @@ public class HsmFlushController
     }
 
     public long flushStorageClass(String hsm, String storageClass, int maxCount)
+            throws IllegalArgumentException
     {
         return flushStorageClass(hsm, storageClass, maxCount, null);
     }
 
     private long flushStorageClass(String hsm, String storageClass, int maxCount,
                                    StorageClassInfoFlushable callback)
+            throws IllegalArgumentException
     {
-        StorageClassInfo info = _storageQueue.getStorageClassInfoByName(hsm, storageClass);
+        StorageClassInfo info = _storageQueue.getStorageClassInfo(hsm, storageClass);
+        if (info == null) {
+            throw new IllegalArgumentException("No such storage class: " + storageClass + "@" + hsm);
+        }
         LOGGER.info("Flushing {}", info);
         return info.submit(_storageHandler, maxCount, callback);
     }
@@ -174,7 +178,7 @@ public class HsmFlushController
     public synchronized Reply messageArrived(PoolFlushDoFlushMessage msg)
     {
         PrivateFlush flush = new PrivateFlush(msg);
-        _flushExecutor.execute(flush);
+        _flushExecutor.execute(new FireAndForgetTask(flush));
         return flush;
     }
 
@@ -223,18 +227,15 @@ public class HsmFlushController
             try {
                 long flushId = flushStorageClass(hsm, storageClass, _flush.getMaxFlushCount(), this);
                 _flush.setFlushId(flushId);
+            } catch (IllegalArgumentException e) {
+                LOGGER.error("Private flush failed for {}: {}", composed, e.toString());
+                _flush.setFailed(576, e);
             } catch (RuntimeException e) {
-                LOGGER.error("Private flush failed for " + composed, e);
+                LOGGER.error("Private flush failed for " + composed + ". Please report to support@dcache.org", e);
                 _flush.setFailed(576, e);
             }
             if (_flush.getReplyRequired()) {
-                try {
-                    send(_flush);
-                } catch (NoRouteToCellException e) {
-                    LOGGER.error("Failed to send reply: {}", e.getMessage());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+                reply(_flush);
             }
         }
 
@@ -247,13 +248,7 @@ public class HsmFlushController
                 _flush.setCellInfo((PoolCellInfo) getCellInfo());
                 _flush.setFlushInfos(_storageQueue.getFlushInfos());
                 _flush.setResult(requests, failed);
-                try {
-                    send(_flush);
-                } catch (NoRouteToCellException e) {
-                    LOGGER.error("Failed to send reply: {}", e.getMessage());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+                reply(_flush);
             }
         }
     }
@@ -337,7 +332,7 @@ public class HsmFlushController
         boolean isBinary;
 
         @Override
-        public Serializable call() throws Exception
+        public Serializable call()
         {
             long now = System.currentTimeMillis();
             if (!isBinary) {
@@ -395,7 +390,7 @@ public class HsmFlushController
         int count = 0;
 
         @Override
-        public String call() throws Exception
+        public String call() throws IllegalArgumentException
         {
             long id = flushStorageClass(hsm, storageClass, count);
             return "Flush initiated (id=" + id + ")";
@@ -410,7 +405,7 @@ public class HsmFlushController
         PnfsId pnfsId;
 
         @Override
-        public String call() throws Exception
+        public String call() throws CacheException, InterruptedException
         {
             _storageHandler.store(pnfsId, null);
             return "Flush Initiated";

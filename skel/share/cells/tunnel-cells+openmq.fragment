@@ -1,6 +1,6 @@
 onerror shutdown
 check -strong dcache.paths.share
-check -strong broker.domain
+check -strong dcache.broker.domain
 check -strong domain.name
 
 #
@@ -14,17 +14,17 @@ exec file:${dcache.paths.share}/cells/tunnel-openmq.fragment
 ##############################################################
 
 onerror continue
-eval ${domain.name} ${broker.domain} ==
+eval ${domain.name} ${dcache.broker.domain} ==
 set env is_broker ${rc}
 onerror shutdown
 
 define env lmd.exe endDefine
-  check -strong broker.host
-  check -strong broker.port
+  check -strong dcache.broker.host
+  check -strong dcache.broker.port
 
   exec file:${dcache.paths.share}/cells/lmd.fragment
   create dmg.cells.services.LocationManager lm \
-    "${broker.host} ${broker.port} -clientPort=${broker.client.port}"
+    "${dcache.broker.host} ${dcache.broker.port} -clientPort=${dcache.broker.client.port}"
 endDefine
 
 exec env lmd.exe -ifok=is_broker

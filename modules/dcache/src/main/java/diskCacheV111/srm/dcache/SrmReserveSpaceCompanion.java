@@ -221,12 +221,12 @@ public final class SrmReserveSpaceCompanion
 
         Reserve reserve =
                 new Reserve(
-                user,
                 sizeInBytes,
                 retentionPolicy,
                 accessLatency,
                 spaceReservationLifetime,
                 description);
+        reserve.setSubject(user.toSubject());
         spaceManagerStub.send(reserve, Reserve.class,
                 new ThreadManagerMessageCallback(companion));
     }

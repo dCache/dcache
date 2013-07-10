@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.replicaManager.ReplicaDbV1.DbIterator;
@@ -39,16 +40,10 @@ import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
-  private final static String _svnId = "$Id$";
-
+public class ReplicaManagerV2 extends DCacheCoreControllerV2
+{
   private final static Logger _log =
       LoggerFactory.getLogger(ReplicaManagerV2.class);
-
-  private boolean _debug;
-  public boolean getDebugRM ( )          { return _debug; }
-  public void    setDebugRM( boolean d ) { _debug = d; }
-  public void    setDebug2 ( boolean d ) { _debug = d; super.setDebug(d); }
 
   private String _jdbcUrl = "jdbc:postgresql://localhost/replicas";
   private String _driver = "org.postgresql.Driver";
@@ -101,7 +96,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       String group = args.getOpt("resilientGroupName");
       if( group != null && (! group.equals("")) ) {
           _resilientPoolGroupName = group;
-          _log.warn("resilientGroupName=" + group + "\n");
+          _log.info("resilientGroupName={}", group);
       }else{
         _log.warn("Argument 'resilientGroupName' is not defined, use default settings:"
                 + " _resilientPoolGroupName={}", _resilientPoolGroupName);
@@ -320,46 +315,46 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     String delayDBStartTO = _args.getOpt("delayDBStartTO");
     if (delayDBStartTO != null) {
-      _delayDBStartTO = Integer.parseInt(delayDBStartTO) * 1000;
+        _delayDBStartTO = TimeUnit.valueOf(_args.getOpt("delayDBStartTOUnit")).toMillis(Integer.parseInt(delayDBStartTO));
       _log.info("Set _delayDBStartTO=" + _delayDBStartTO + " ms");
     }
 
     String delayAdjStartTO = _args.getOpt("delayAdjStartTO");
     if (delayAdjStartTO != null) {
-      _delayAdjStartTO = Integer.parseInt(delayAdjStartTO) * 1000;
+      _delayAdjStartTO = TimeUnit.valueOf(_args.getOpt("delayAdjStartTOUnit")).toMillis(Integer.parseInt(delayAdjStartTO));
       _log.info("Set _delayAdjStartTO=" + _delayAdjStartTO + " ms");
     }
 
     String waitDBUpdateTO = _args.getOpt("waitDBUpdateTO");
     if (waitDBUpdateTO != null) {
-      long timeout = Integer.parseInt(waitDBUpdateTO) * 1000L;
+      long timeout = TimeUnit.valueOf(_args.getOpt("waitDBUpdateTOUnit")).toMillis(Integer.parseInt(waitDBUpdateTO));
       _adj.setWaitDBUpdateTO(timeout);
       _log.info("Set waitDBUpdateTO=" + timeout + " ms");
     }
 
     String waitReplicateTO = _args.getOpt("waitReplicateTO");
     if (waitReplicateTO != null) {
-      long timeout = Integer.parseInt(waitReplicateTO) * 1000L;
+      long timeout = TimeUnit.valueOf(_args.getOpt("waitReplicateTOUnit")).toMillis(Integer.parseInt(waitReplicateTO));
       _adj.setWaitReplicateTO(timeout);
       _log.info("Set waitReplicateTO=" + timeout + " ms");
     }
 
     String waitReduceTO = _args.getOpt("waitReduceTO");
     if (waitReduceTO != null) {
-      long timeout = Integer.parseInt(waitReduceTO) * 1000L;
+      long timeout = TimeUnit.valueOf(_args.getOpt("waitReduceTOUnit")).toMillis(Integer.parseInt(waitReduceTO));
       _adj.setWaitReduceTO(timeout);
       _log.info("Set waitReduceTO=" + timeout + " ms");
     }
     String poolWatchDogPeriod = _args.getOpt("poolWatchDogPeriod");
     if (poolWatchDogPeriod != null) {
-      long timeout = Integer.parseInt(poolWatchDogPeriod) * 1000L;
+      long timeout = TimeUnit.valueOf(_args.getOpt("poolWatchDogPeriodUnit")).toMillis(Integer.parseInt(poolWatchDogPeriod));
       _watchPools.setPeriod(timeout);
       _log.info("Set poolWatchDogPeriod=" + timeout + " ms");
     }
 
     String sExcludedFilesExpirationTO = _args.getOpt("excludedFilesExpirationTO");
     if (sExcludedFilesExpirationTO != null) {
-      long timeout = Integer.parseInt(sExcludedFilesExpirationTO) * 1000L;
+      long timeout = TimeUnit.valueOf(_args.getOpt("excludedFilesExpirationTOUnit")).toMillis(Integer.parseInt(sExcludedFilesExpirationTO));
       _watchPools.setExcludedExpiration(timeout);
       _log.info("Set excludedFilesExpirationTO=" + timeout + " ms");
     }
@@ -396,16 +391,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 // Instantiate classes
     _args = getArgs();
 
-    {
-      String argDebug = _args.getOpt("debug");
-      if(argDebug != null) {
-        _debug = Boolean.valueOf(argDebug);
-      }
-    }
-    setDebug ( _debug ); // Set DCCC debug level the same
-//    if ( _debug )
-//      _cliDebug = new ReplicaManagerCLIDebug();
-
     parseDBArgs();
 
     _log.debug("Setup database with: URL="+_jdbcUrl+" driver="+_driver+" user="+_user+" passwd=********");
@@ -423,9 +408,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     _adj        = new Adjuster( _repMin, _repMax) ;
     _watchPools = new WatchPools();
-
-    _log.warn("ReplicaManager   version: " + _svnId );
-    _log.warn("DCacheController version: " + super.getSvnId() );
 
     _log.info("Parse arguments");
     parseArgs();
@@ -511,13 +493,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   @Override
   public void getInfo(PrintWriter pw) {
-    pw.println("       Version : " + _svnId);
     super.getInfo( pw );
 
     synchronized (_dbLock) {
       pw.println(" initDb Active : " + _initDbActive);
     }
-    pw.println(" debug : " + getDebugRM() );
     pw.println(" enableSameHostReplica : " + getEnableSameHostReplica() );
     pw.println(" XXcheckPoolHost : " + getCheckPoolHost() );
   }
@@ -1739,23 +1719,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //=== System ===
     //--------------------------------------------------------------------------
 
-    // set / unset debug printout
-    public static final String hh_debug = "true | false";
-    public String ac_debug_$_1(Args args) {
-      String cmd = args.argv(0);
-
-      if ( cmd.equalsIgnoreCase("true") ) {
-        setDebug2 ( true );
-        _log.info("debug true" );
-        return "debug true";
-      }else if ( cmd.equalsIgnoreCase("false") ) {
-        setDebug2 ( false );
-        _log.info("debug false" );
-        return "debug false";
-      }
-      _log.info("Wrong argument '" +cmd +"'");
-      return "wrong argument";
-    }
 
     // enable / disable same host replication (test environment / production)
     public static final String hh_enable_same_host_replication = "true | false";
@@ -2719,7 +2682,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       }
 
       // DEBUG - check
-      if (_debug) {
+      if (_log.isDebugEnabled()) {
         StringBuilder sb = new StringBuilder();
         sb.append(printCacheLocation(pnfsId)).append("\n");
         _log.debug( "Pool list in DB before "
@@ -2863,7 +2826,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     String detailString = msg.getDetailMessage();
 
-    if (_debug) {
+    if (_log.isDebugEnabled()) {
       int pState = msg.getPoolState();
       PoolV2Mode pMode = msg.getPoolMode();
       int detailCode = msg.getDetailCode();

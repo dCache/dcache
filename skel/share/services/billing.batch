@@ -6,7 +6,7 @@ check -strong cell.name
 check -strong billingLogsDir
 check billingDisableTxt
 check -strong billingToDb
-check poolManager
+check -strong dcache.service.poolmanager
 check poolConnectTimeout
 
 # Additional params, if 'billingToDb' is 'yes'
@@ -37,27 +37,4 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -profiles=db-${billingToDb} \
         -export \
         -billingCellName=${cell.name}.alias \
-        -billingLogsDir=${billingLogsDir} \
-        -printMode=2 \
-        -billingDisableTxt=${billingDisableTxt} \
-        -dbAccess=${billingInfoAccess} \
-        -dbAccessProperties=${billingInfoAccessPropertiesFile} \
-        -dbAccessMaxInsertsBeforeCommit=${billingMaxInsertsBeforeCommit} \
-        -dbAccessMaxTimeBeforeCommit=${billingMaxTimeBeforeCommitInSecs} \
-        -dbUrl=${db.url} \
-        -dbDriver=${db.driver} \
-        -dbUser=${db.user} \
-        -dbPass=${db.password} \
-        -pgPass=${db.password.file} \
-        -db.connections.partition-count=${db.connections.partition-count} \
-        -db.connections.max-per-partition=${db.connections.max-per-partition} \
-        -db.connections.min-per-partition=${db.connections.min-per-partition} \
-        -billingChangelog=${db.schema.changelog} \
-        -shouldUpdate=${db.schema.auto} \
-        -poolManager=${poolManager} \
-        -poolConnectTimeout=${poolConnectTimeout} \
-        -generatePlots=${generatePlots} \
-        -plotsDir=${httpd.static-content.plots} \
-        -plotsProperties=${billingPlotPropertiesFile} \
-        -plotsTimeout=${billingPlotsTimeoutInMins} \
-        -exportType=${billingPlotsExportType}"
+        -printMode=2"

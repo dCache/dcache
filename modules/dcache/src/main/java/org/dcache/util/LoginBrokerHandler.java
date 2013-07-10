@@ -22,6 +22,10 @@ import dmg.util.Args;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Utility class to periodically register a door in a login broker.
  */
@@ -32,13 +36,14 @@ public class LoginBrokerHandler
     private final static Logger _log =
         LoggerFactory.getLogger(LoginBrokerHandler.class);
 
-    private static final long EAGER_UPDATE_TIME = 1;
+    private static final long EAGER_UPDATE_TIME = SECONDS.toMillis(1);
 
     private CellPath _loginBroker;
     private String _protocolFamily;
     private String _protocolVersion;
     private String _protocolEngine;
-    private long   _brokerUpdateTime = 5 * 60;
+    private long   _brokerUpdateTime = MINUTES.toMillis(5);
+    private TimeUnit _brokerUpdateTimeUnit = MILLISECONDS;
     private long _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
     private double _brokerUpdateThreshold = 0.1;
     private LoadProvider _load = new FixedLoad(0.0);
@@ -83,7 +88,7 @@ public class LoginBrokerHandler
                                 _protocolFamily,
                                 _protocolVersion,
                                 _protocolEngine);
-        info.setUpdateTime(_brokerUpdateTime * 1000);
+        info.setUpdateTime(_brokerUpdateTimeUnit.toMillis(_brokerUpdateTime));
         info.setHosts(_hosts);
         info.setPort(_port);
         info.setLoad(_load.getLoad());
@@ -99,7 +104,7 @@ public class LoginBrokerHandler
 
     private void eagerUpdates()
     {
-        if(_currentBrokerUpdateTime != EAGER_UPDATE_TIME) {
+        if (_currentBrokerUpdateTime != EAGER_UPDATE_TIME) {
             _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
             rescheduleTask();
         }
@@ -107,8 +112,9 @@ public class LoginBrokerHandler
 
     private void normalUpdates()
     {
-        if(_currentBrokerUpdateTime != _brokerUpdateTime) {
-            _currentBrokerUpdateTime = _brokerUpdateTime;
+        long millis = _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime);
+        if (_currentBrokerUpdateTime != millis) {
+            _currentBrokerUpdateTime = millis;
             rescheduleTask();
         }
     }
@@ -255,6 +261,16 @@ public class LoginBrokerHandler
         return _brokerUpdateTime;
     }
 
+    public synchronized void setUpdateTimeUnit(TimeUnit unit)
+    {
+        _brokerUpdateTimeUnit = unit;
+    }
+
+    public synchronized TimeUnit getUpdateTimeUnit()
+    {
+        return _brokerUpdateTimeUnit;
+    }
+
     public synchronized void setExecutor(ScheduledExecutorService executor)
     {
         _executor = executor;
@@ -292,7 +308,7 @@ public class LoginBrokerHandler
                 }
             };
         _task = _executor.scheduleWithFixedDelay(command, 0, _currentBrokerUpdateTime,
-                                                 TimeUnit.SECONDS);
+                                                 SECONDS);
     }
 
     /**

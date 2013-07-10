@@ -1,6 +1,0 @@
-
-check -strong kpwdFile
-
-create diskCacheV111.admin.PAMAuthentificator gsi-pam \
-             " -users=class:diskCacheV111.admin.UserMetaDataProviderFnal \
-               -kpwd-file=${kpwdFile}"

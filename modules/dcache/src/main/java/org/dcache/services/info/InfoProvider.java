@@ -2,47 +2,35 @@ package org.dcache.services.info;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
-import org.dcache.util.Version;
-
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.Args;
 
-import org.dcache.cells.AbstractCell;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
-import org.dcache.services.info.base.StateExhibitor;
-import org.dcache.services.info.base.StateMaintainer;
 import org.dcache.services.info.base.StateObservatory;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.conduits.Conduit;
-import org.dcache.services.info.conduits.XmlConduit;
 import org.dcache.services.info.gathers.DataGatheringScheduler;
 import org.dcache.services.info.gathers.MessageHandlerChain;
-import org.dcache.services.info.secondaryInfoProviders.LinkSpaceMaintainer;
-import org.dcache.services.info.secondaryInfoProviders.LinkgroupTotalSpaceMaintainer;
-import org.dcache.services.info.secondaryInfoProviders.NormalisedAccessSpaceMaintainer;
-import org.dcache.services.info.secondaryInfoProviders.PoolgroupSpaceWatcher;
-import org.dcache.services.info.secondaryInfoProviders.PoolsSummaryMaintainer;
-import org.dcache.services.info.secondaryInfoProviders.ReservationByDescMaintainer;
-import org.dcache.services.info.serialisation.PrettyPrintTextSerialiser;
 import org.dcache.services.info.serialisation.SimpleTextSerialiser;
 import org.dcache.services.info.serialisation.StateSerialiser;
 import org.dcache.services.info.serialisation.XmlSerialiser;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
-public class InfoProvider extends AbstractCell {
-
+public class InfoProvider  implements CellCommandListener, CellInfoProvider,
+               CellMessageReceiver
+{
 	private static Logger _log = LoggerFactory.getLogger(InfoProvider.class);
 
 	private static final String ADMIN_INTERFACE_OK = "Done.";
@@ -51,8 +39,7 @@ public class InfoProvider extends AbstractCell {
 	private static final String TOPLEVEL_DIRECTORY_LABEL = "(top)";
 
 
-	/** The name of the serialiser we use by default: must exist as key in _availableSerialisers */
-	private static final String DEFAULT_SERIALISER_NAME = SimpleTextSerialiser.NAME;
+    private String _defaultSerialiser = SimpleTextSerialiser.NAME;
 
 	private Map<String,Conduit> _conduits;
 	private DataGatheringScheduler _scheduler;
@@ -60,10 +47,8 @@ public class InfoProvider extends AbstractCell {
 	private StateSerialiser _currentSerialiser;
 	private Map<String,StateSerialiser> _availableSerialisers;
 	private StatePath _startSerialisingFrom;
-
-	private final State _state = new State();
-    private final StateObservatory _observatory = _state;
-    private final StateUpdateManager _sum;
+    private State _state;
+    private StateObservatory _observatory;
 
     /**
      * Provide information for the info command.
@@ -91,94 +76,68 @@ public class InfoProvider extends AbstractCell {
         _state.getInfo( pw);
     }
 
-
-    /**
-     * Create a new cell with specified name and taking the supplied arguments
-     * @param cellName
-     * @param args
-     * @throws InterruptedException
-     * @throws ExecutionException
-     */
-    public InfoProvider( String cellName, String args) throws InterruptedException, ExecutionException {
-        super( cellName, args);
-
-        StateMaintainer maintainer =  new StateMaintainer( _state, getNucleus());
-        maintainer.setCellEndpoint(this);
-        _sum = maintainer;
-
-        doInit();
+    @Override
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
-    @Override
-    public void init() {
-		_log.info( "InfoProvider starting...");
-        _state.setStateUpdateManager( _sum);
 
-        StateExhibitor exhibitor = _state;
+    @Required
+    public void setState(State state)
+    {
+        _state = state;
+    }
 
-        /**
-         *
-         * Build our list of possible serialisers.
-         */
-        _availableSerialisers = new HashMap<>();
-        addSerialiser( new XmlSerialiser( exhibitor));
-        addSerialiser( new SimpleTextSerialiser( exhibitor));
-        addSerialiser( new PrettyPrintTextSerialiser( exhibitor));
-        _currentSerialiser = _availableSerialisers.get( DEFAULT_SERIALISER_NAME);
+    @Required
+    public void setStateObservatory(StateObservatory observatory)
+    {
+        _observatory = observatory;
+    }
 
-        buildMessageHandlerChain();
-        startDgaScheduler( exhibitor);
-        addDefaultConduits( exhibitor);
-        addDefaultWatchers();
-        startConduits();
-	}
+    @Required
+    public void setDataGatheringScheduler(DataGatheringScheduler scheduler)
+    {
+        _scheduler = scheduler;
+    }
 
-	/**
-	 * Called from the Cell's finalize() method.
-	 */
-	@Override
-        public void cleanUp() {
-            stopConduits();
-            _scheduler.shutdown();
+    @Required
+    public void setSerialisers(Iterable<StateSerialiser> serialisers)
+    {
+        Map<String,StateSerialiser> available = new HashMap<>();
 
-            _sum.shutdown();
+        for (StateSerialiser serialiser : serialisers) {
+            available.put(serialiser.getName(), serialiser);
         }
 
+        _availableSerialisers = available;
 
-	/**
-	 *    C O N D U I T S
-	 */
+        if (_defaultSerialiser != null) {
+            _currentSerialiser = _availableSerialisers.get(_defaultSerialiser);
+        }
+    }
 
+    @Required
+    public void setDefaultSerialiser(String name)
+    {
+        _defaultSerialiser = name;
 
-	/**
-	 *  Start all known conduits
-	 */
-	void startConduits() {
-		for( Conduit conduit : _conduits.values()) {
-                    conduit.enable();
-                }
-	}
-
-
-	/**
-	 *   Initialise conduits list with default options.
-	 */
-	void addDefaultConduits( StateExhibitor exhibitor) {
-		_conduits = new HashMap<>();
-
-		Conduit con = new XmlConduit( exhibitor);
-		_conduits.put( con.toString(), con);
-	}
+        if (_availableSerialisers != null) {
+            _currentSerialiser = _availableSerialisers.get(name);
+        }
+    }
 
 
-	/**
-	 * Stop any started conduits.
-	 */
-	void stopConduits() {
-		for( Conduit conduit : _conduits.values()) {
-                    conduit.disable();
-                }
-	}
+    @Required
+    public void setConduits(Iterable<Conduit> conduits)
+    {
+        _conduits = new HashMap<>();
+
+        for (Conduit conduit : conduits) {
+            _conduits.put(conduit.toString(), conduit);
+        }
+    }
+
 
 
 	/**
@@ -225,97 +184,39 @@ public class InfoProvider extends AbstractCell {
 
 
 
-	/**
-	 *    D A T A---G A T H E R I N G   A C T I V I T Y
-	 */
+    @Required
+    public void setMessageHandlerChain(MessageHandlerChain mhc)
+    {
+            _msgHandlerChain = mhc;
+    }
 
 
+    public synchronized InfoGetSerialisedDataMessage messageArrived(InfoGetSerialisedDataMessage message)
+    {
+        _log.trace("Received InfoGetSerialisedDataMessage.");
 
-	/**
-	 *  Start the synchronous collection of dCache state: Data-Gathering Activity.
-	 *  This requires that MessageHandlerChain has already been initialised.
-	 */
-	void startDgaScheduler( StateExhibitor exhibitor)
-	{
-	    _scheduler = new DataGatheringScheduler( _sum);
+        StateSerialiser serialiser = _availableSerialisers.get(XmlSerialiser.NAME);
 
-	    _scheduler.addActivity( exhibitor, _msgHandlerChain, _msgHandlerChain);
+        if (serialiser == null) {
+            _log.error("Couldn't find the xmlSerialiser");
+            // Really, we should propagate this back as an Exception.
+            message.setData(null);
+            return message;
+        }
 
-        Thread ict = new Thread( _scheduler);
-        ict.setName("DGA-Scheduler");
-        ict.start();
-	}
+        String data;
 
+        if (message.isCompleteDump()) {
+            data = serialiser.serialise();
+        } else {
+            StatePath path = StatePath.buildFromList(message.getPathElements());
+            data = serialiser.serialise(path);
+        }
 
-	/**
-	 * Instantiate our MessageHandlerChain and populate it with a default
-	 * set of MessageHandler subclass instances.
-	 */
-	private void buildMessageHandlerChain() {
-		_msgHandlerChain = new MessageHandlerChain( _sum, this);
+        message.setData(data);
 
-		_msgHandlerChain.addDefaultHandlers();
-	}
-
-
-	/**
-	 * The method called when this cell receives a new message.  We devolve all
-	 * responsibility for processing this CellMessage to our MessageHandlerChain
-	 * instance.
-	 */
-	@Override
-    public synchronized void messageArrived( CellMessage msg ) {
-
-		if( msg.getMessageObject() instanceof InfoGetSerialisedDataMessage) {
-			addSerialisedDataToMsg( (InfoGetSerialisedDataMessage) msg.getMessageObject());
-
-	    	msg.revertDirection();
-    		try {
-				super.sendMessage(msg);
-			} catch (NoRouteToCellException e) {
-				// This can happen if the querying cell dies whilst we are preparing the serialised output.
-				_log.warn("can't send reply message to "+ msg.getDestinationPath() + " : " + e.getMessage());
-			}
-
-			return;
-		}
-
-		_log.debug( "Unable to handle incoming message: {}", msg);
-	}
-
-	/**
-	 * Override the CellAdapter default sendMessage() so we simply display
-	 * an error message if we get an exception.
-	 */
-	@Override
-    public void sendMessage( CellMessage msg) {
-		try {
-			super.sendMessage(msg);
-		} catch( NoRouteToCellException e) {
-			_log.info( "Cannot route message to cell, refraining from delivering msg.", e);
-		}
-	}
-
-
-
-	/**
-	 *   S E R I A L I S E R S
-	 */
-	private void addSerialiser( StateSerialiser serialiser) {
-		_availableSerialisers.put( serialiser.getName(), serialiser);
-	}
-
-	/**
-	 *   S T A T E   W A T C H E R S
-	 */
-	private void addDefaultWatchers() {
-	    _observatory.addStateWatcher(new PoolgroupSpaceWatcher());
-	    _observatory.addStateWatcher(new PoolsSummaryMaintainer());
-	    _observatory.addStateWatcher(new LinkgroupTotalSpaceMaintainer());
-	    _observatory.addStateWatcher(new LinkSpaceMaintainer());
-	    _observatory.addStateWatcher(new NormalisedAccessSpaceMaintainer());
-	    _observatory.addStateWatcher(new ReservationByDescMaintainer());
-	}
+        return message;
+    }
 
 
 	/**
@@ -710,34 +611,4 @@ public class InfoProvider extends AbstractCell {
 			return "Name matching multiple Watchers, all now disabled.";
 		}
 	}
-
-
-	/**
-	 * Satisfy an incoming request for serialised dCache state.
-	 *
-	 * @param msg the Message (Vehicle) requesting the data.
-	 */
-	private void addSerialisedDataToMsg( InfoGetSerialisedDataMessage msg) {
-
-		if( _log.isInfoEnabled()) {
-                    _log.info("Received InfoGetSerialisedDataMessage.");
-                }
-
-		StateSerialiser xmlSerialiser = _availableSerialisers.get( XmlSerialiser.NAME);
-		String data;
-
-		if( xmlSerialiser != null) {
-
-			data = msg.isCompleteDump() ? xmlSerialiser.serialise() : xmlSerialiser.serialise( StatePath.buildFromList( msg.getPathElements()));
-
-		} else {
-			_log.error("Couldn't find the xmlSerialiser");
-
-			// Really, we should propagate this back as an Exception.
-			data = null;
-		}
-
-		msg.setData( data);
-	}
-
 }

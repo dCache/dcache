@@ -33,8 +33,8 @@ public class DefaultMappingStrategy implements MappingStrategy
     }
 
     /**
-     * Devegates execution of the
-     * {@link GPlazmaMappingPlugin#map(SessionID, Set<Principal>, Set<Principal>) GPlazmaMappingPlugin.map}
+     * Delegates execution of the
+     * {@link GPlazmaMappingPlugin#map(Set<Principal>) GPlazmaMappingPlugin.map}
      * methods of the plugins supplied by
      * {@link GPlazmaStrategy#setPlugins(List<GPlazmaPluginElement<T>>) GPlazmaStrategy.setPlugins}
      *  to
@@ -42,17 +42,15 @@ public class DefaultMappingStrategy implements MappingStrategy
      * by providing anonymous implementation of the
      * {@link PluginCaller#call(GPlazmaPlugin) PluginCaller}
      * interface.
-     * @param sessionID
+     * @param monitor
      * @param principals
-     * @param authorizedPrincipals
      * @throws AuthenticationException
      * @see PAMStyleStrategy
      * @see PluginCaller
      */
     @Override
     public synchronized void map(final LoginMonitor monitor,
-            final Set<Principal> principals,
-            final Set<Principal> authorizedPrincipals)
+            final Set<Principal> principals)
             throws AuthenticationException
     {
         pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>()
@@ -61,22 +59,21 @@ public class DefaultMappingStrategy implements MappingStrategy
             public void call(GPlazmaPluginElement<GPlazmaMappingPlugin> pe)
                     throws AuthenticationException
             {
-                monitor.mapPluginBegins(pe.getName(), pe.getControl(),
-                        principals, authorizedPrincipals);
+                monitor.mapPluginBegins(pe.getName(), pe.getControl(), principals);
 
                 GPlazmaMappingPlugin plugin = pe.getPlugin();
 
                 Result result = Result.FAIL;
                 String error = null;
                 try {
-                    plugin.map(principals, authorizedPrincipals);
+                    plugin.map(principals);
                     result = Result.SUCCESS;
                 } catch(AuthenticationException e) {
                     error = e.getMessage();
                     throw e;
                 } finally {
                     monitor.mapPluginEnds(pe.getName(), pe.getControl(), result,
-                            error, principals, authorizedPrincipals);
+                            error, principals);
                 }
             }
         });

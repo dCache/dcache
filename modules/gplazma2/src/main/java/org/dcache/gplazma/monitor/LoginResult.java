@@ -1,5 +1,7 @@
 package org.dcache.gplazma.monitor;
 
+import com.google.common.collect.Sets;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -260,10 +262,10 @@ public class LoginResult
         private final Set<T> _before;
         private final Set<T> _after;
 
-        SetDiff(Set<T> before, Set<T> after)
+        SetDiff(Iterable<T> before, Iterable<T> after)
         {
-            _before = new HashSet<>(before);
-            _after = new HashSet<>(after);
+            _before = Sets.newHashSet(before);
+            _after = Sets.newHashSet(after);
         }
 
         public Set<T> getBefore()
@@ -397,32 +399,21 @@ public class LoginResult
      */
     public static class MapPluginResult extends PAMPluginResult
     {
-        private SetDiff<Principal> _identified;
-        private SetDiff<Principal> _authorized;
+        private SetDiff<Principal> _principals;
 
         MapPluginResult(String name, ConfigurationItemControl control)
         {
             super(name, control);
         }
 
-        public void setIdentified(Set<Principal> before, Set<Principal> after)
+        public void setPrincipals(Iterable<Principal> before, Iterable<Principal> after)
         {
-            _identified = new SetDiff<>(before, after);
+            _principals = new SetDiff<>(before, after);
         }
 
-        public void setAuthorized(Set<Principal> before, Set<Principal> after)
+        public SetDiff<Principal> getPrincipals()
         {
-            _authorized = new SetDiff<>(before, after);
-        }
-
-        public SetDiff<Principal> getIdentified()
-        {
-            return _identified;
-        }
-
-        public SetDiff<Principal> getAuthorized()
-        {
-            return _authorized;
+            return _principals;
         }
     }
 

@@ -1,16 +1,19 @@
 package org.dcache.gplazma.plugins;
 
+import org.globus.gsi.jaas.GlobusPrincipal;
+
+import javax.security.auth.kerberos.KerberosPrincipal;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-import javax.security.auth.kerberos.KerberosPrincipal;
+
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.globus.gsi.jaas.GlobusPrincipal;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
@@ -46,7 +49,7 @@ public class MutatorPlugin implements GPlazmaMappingPlugin {
     }
 
     @Override
-    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) {
+    public void map(Set<Principal> principals) {
         Set<Principal> mutated = new HashSet<>();
         for (Principal p : filter(principals, instanceOf(inPrincipal))) {
             try {

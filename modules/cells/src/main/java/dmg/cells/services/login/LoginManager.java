@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellEvent;
@@ -278,9 +279,9 @@ public class       LoginManager
      private String _loginBroker;
      private String _protocolFamily;
      private String _protocolVersion;
-     private long   _brokerUpdateTime   = 5*60 ;
+     private long   _brokerUpdateTime;
      private long   _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
-     private double _brokerUpdateOffset = 0.1 ;
+     private double _brokerUpdateOffset;
      private LoginBrokerInfo _info;
      private double _currentLoad;
      private final Thread _thread;
@@ -290,8 +291,8 @@ public class       LoginManager
         _loginBroker = loginBroker;
         _protocolFamily    = _args.getOption("protocolFamily", _protocol) ;
         _protocolVersion = _args.getOption("protocolVersion", "1.0") ;
-        _brokerUpdateTime = _args.getLongOption("brokerUpdateTime", _brokerUpdateTime) * 1000 ;
-        _brokerUpdateOffset =  _args.getDoubleOption("brokerUpdateOffset", _brokerUpdateOffset) ;
+        _brokerUpdateTime = TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")).toMillis(_args.getLongOption("brokerUpdateTime"));
+        _brokerUpdateOffset =  _args.getDoubleOption("brokerUpdateOffset");
 
         _info = new LoginBrokerInfo(
                      _nucleus.getCellName() ,
@@ -826,7 +827,7 @@ public void cleanUp(){
                          currentChildHash = _childCount;
                      }
                      _log.info("New connection : " + currentChildHash);
-                     if ((_maxLogin > 0) && (currentChildHash > _maxLogin)) {
+                     if ((_maxLogin > -1) && (currentChildHash >= _maxLogin)) {
                          _connectionDeniedCounter++;
                          _log.warn("Connection denied " + currentChildHash + " > " + _maxLogin);
                          _logSocketIO.warn("number of allowed logins exceeded.");

@@ -20,7 +20,6 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
@@ -52,14 +51,12 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
 
     private final static Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private final SshServer _server;
-    private ScheduledExecutorService _executer;
     // UniversalSpringCell injected parameters
     private String _hostKeyPrivate;
     private String _hostKeyPublic;
     private File _authorizedKeyList;
     private int _port;
     private int _adminGroupId;
-    private CommandFactory _commandFactory;
     private File _historyFile;
     private LoginStrategy _loginStrategy;
     // Cell Functionality
@@ -135,9 +132,9 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
     }
 
     public void setServerShellFactory(String userName) {
-        _commandFactory = new CommandFactory(userName, _cellEndPoint,
+        CommandFactory factory = new CommandFactory(userName, _cellEndPoint,
                 _historyFile);
-        _server.setShellFactory(_commandFactory);
+        _server.setShellFactory(factory);
     }
 
     public void configureAuthentication() {
@@ -255,12 +252,12 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
                     }
                 }
             } catch (FileNotFoundException e) {
-                _log.error("The authorized_keys2 file was not found. "
-                        + "Please check if it exists in: {}",
-                        _authorizedKeyList);
+                _log.debug("File not found: {}", _authorizedKeyList);
+                return false;
             } catch (IOException e) {
-                _log.error("There was an error reading lines from the "
-                        + "authorized_keys2 file");
+                _log.error("Failed to read {}: {}", _authorizedKeyList,
+                        e.getMessage());
+                return false;
             } catch (IllegalArgumentException e) {
                 _log.warn("One of the keys in {} is of an unknown type: {}",
                         _authorizedKeyList, e.getMessage());
@@ -271,8 +268,8 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
                 _log.warn("The cryptographic algorithm of one of the "
                         + "keys in {} is not known.", _authorizedKeyList);
             }
-            _log.warn("Could not find key: " + key.toString() + "in {}.",
-                    _authorizedKeyList);
+            _log.debug("User {} failed authenticate since supplied {} not in {}",
+                    userName, key.getAlgorithm(), _authorizedKeyList);
             return false;
         }
     }

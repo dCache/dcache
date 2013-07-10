@@ -5,7 +5,7 @@
 # The cns service is silently embedded in the broker and in that case
 # the cell.name variable is not defined.
 onerror continue
-set env -c cell.name cns
+set env -c cell.name ${cns.cell.name}
 
 onerror shutdown
 
@@ -18,39 +18,20 @@ define env cns-none.exe end
 end
 
 define env cns-amq.exe end
-  check -strong broker.amq.url
+  check -strong cns.broker.amq.url
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/cells/cns-amq.xml \
-      -cellClass=TopoCell \
-      -amqUrl=${broker.amq.url} \
-     "
+     "classpath:org/dcache/cells/cns-amq.xml -cellClass=TopoCell"
 end
 
 define env cns-openmq.exe end
-  check -strong broker.openmq.host
-  check -strong broker.openmq.port
-  check -strong broker.openmq.reconnect.interval
+  check -strong cns.broker.openmq.host
+  check -strong cns.broker.openmq.port
+  check -strong cns.broker.openmq.reconnect-interval
+  check -strong cns.broker.openmq.reconnect-interval.unit
 
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/cells/cns-openmq.xml \
-      -cellClass=TopoCell \
-      -broker.openmq.host=${broker.openmq.host} \
-      -broker.openmq.port=${broker.openmq.port} \
-      -broker.openmq.reconnect.interval=${broker.openmq.reconnect.interval} \
-     "
-end
-
-define env cns-embedded-jms.exe end
-  exec env cns-amq.exe
-end
-
-define env cns-hybrid.exe end
-  exec env cns-amq.exe
-end
-
-define env cns-jms.exe end
-  exec env cns-amq.exe
+     "classpath:org/dcache/cells/cns-openmq.xml -cellClass=TopoCell"
 end
 
 define env cns-amq-embedded.exe end
@@ -65,4 +46,4 @@ define env cns-cells+openmq.exe end
   exec env cns-openmq.exe
 end
 
-exec env cns-${broker.scheme}.exe
+exec env cns-${cns.broker.scheme}.exe

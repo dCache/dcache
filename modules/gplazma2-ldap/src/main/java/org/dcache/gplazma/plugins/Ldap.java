@@ -90,8 +90,6 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     /**
      * Create a NIS identity plugin.
      *
-     * @param args an array of {@link String} where first element is the NIS
-     * server name and second is the NIS domain name.
      * @throws NamingException
      */
     public Ldap(Properties properties) throws NamingException {
@@ -115,7 +113,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     }
 
     @Override
-    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals) throws AuthenticationException {
         Principal principal =
                 find(principals, instanceOf(UserNamePrincipal.class), null);
         if (principal != null) {
@@ -125,15 +123,14 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                         getSimplSearchControls(UID_NUMBER_ATTRIBUTE, GID_NUMBER_ATTRIBUTE));
                 if (sResult.hasMore()) {
                     Attributes userAttr = sResult.next().getAttributes();
-                    authorizedPrincipals.add(principal);
-                    authorizedPrincipals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
-                    authorizedPrincipals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
+                    principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
+                    principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
 
                     NamingEnumeration<SearchResult> groupResult = _ctx.search(groupOU,
                             new BasicAttributes(MEMBER_UID_ATTRIBUTE, principal.getName()));
                     while (groupResult.hasMore()) {
                         SearchResult result = groupResult.next();
-                        authorizedPrincipals.add(
+                        principals.add(
                                 new GidPrincipal((String) result.getAttributes().get(GID_NUMBER_ATTRIBUTE).get(), false));
                     }
                 }
@@ -268,13 +265,12 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         System.out.println(ldap.reverseMap(new UidPrincipal(111111111)));
         System.out.println(ldap.reverseMap(new GidPrincipal(222222222, false)));
 
-        Set<Principal> in = new HashSet<>();
-        Set<Principal> out = new HashSet<>();
+        Set<Principal> principals = new HashSet<>();
         Set<Object> attrs = new HashSet<>();
-        in.add(new UserNamePrincipal("tigran"));
-        ldap.map(in, out);
-        ldap.session(out, attrs);
-        System.out.println(out);
+        principals.add(new UserNamePrincipal("tigran"));
+        ldap.map(principals);
+        ldap.session(principals, attrs);
+        System.out.println(principals);
         System.out.println(attrs);
     }
 }

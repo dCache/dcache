@@ -1,41 +1,11 @@
 # Starts the gPlazma login cell
 
-define env startLogin.exe enddefine
-  onerror shutdown
-  check -strong cell.name
-  check -strong gplazmaPolicy
-  check -strong gPlazmaNumberOfSimultaneousRequests
-  check -strong gplazma.configuration.file
-  check -strong pnfsmanager
-
-  create org.dcache.cells.UniversalSpringCell "${cell.name}" \
-    "classpath:org/dcache/services/login/gplazma.xml \
-     -export -monitor \
-     -num-simultaneous-requests=${gPlazmaNumberOfSimultaneousRequests} \
-     -gplazmaPolicy=${gplazmaPolicy} \
-     -gplazmaConfig=${gplazma.configuration.file} \
-     -messageExecutor=message-thread-pool \
-     -pnfsmanager=${pnfsmanager} \
-  "
-enddefine
-
-define env killLogin.exe enddefine
-  say -level=esay "You have configured this domain to host the central 'gplazma' service in"
-  say -level=esay "addition to a door with embedded gPlazma.  This is a misconfiguration: the"
-  say -level=esay "embedded gPlazma is not needed if the 'gplazma' service is also running in"
-  say -level=esay "this domain."
-  say -level=esay ""
-  say -level=esay "To fix this problem either remove the 'useGPlazmaAuthorizationModule=true'"
-  say -level=esay "line or move the 'gplazma' service to a different domain."
-  say -level=esay ""
-  say -level=esay "Killing embedded gPlazma to allow the 'gplazma' server to run."
-  kill ${cell.name}
-enddefine
-
-# If there is a gPlazma instance already running, kill it.
-onerror continue
-test -i ${cell.name}
-exec env killLogin.exe -ifok
 onerror shutdown
+check -strong cell.name
+check -strong gplazma.cell.limits.threads
+check -strong gplazma.configuration.file
+check -strong gplazma.service.pnfsmanager
 
-exec env startLogin.exe
+create org.dcache.cells.UniversalSpringCell "${cell.name}" \
+   "classpath:org/dcache/services/login/gplazma.xml \
+     -export=${gplazma.cell.export} -monitor -messageExecutor=message-thread-pool"

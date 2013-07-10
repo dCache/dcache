@@ -2,6 +2,7 @@ package org.dcache.services.info.gathers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,6 +14,8 @@ import dmg.cells.nucleus.UOID;
 import org.dcache.commons.util.NDC;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This thread is responsible for scheduling various data-gathering activity.
@@ -33,7 +36,6 @@ public class DataGatheringScheduler implements Runnable {
 	private final List<RegisteredActivity> _activity = new ArrayList<>();
 	private static Logger _logSched = LoggerFactory.getLogger(DataGatheringScheduler.class);
 	private static Logger _logRa = LoggerFactory.getLogger(RegisteredActivity.class);
-
 
 	/**
 	 * Class holding a periodically repeated DataGatheringActivity
@@ -186,11 +188,53 @@ public class DataGatheringScheduler implements Runnable {
 		}
 	}
 
-	private final StateUpdateManager _sum;
+	private StateUpdateManager _sum;
+        private StateExhibitor _exhibitor;
+        private MessageSender _sender;
+        private MessageMetadataRepository<UOID> _repository;
+        private Thread _thread;
 
-	public DataGatheringScheduler( StateUpdateManager sum) {
+        public synchronized void start()
+        {
+            checkState(_thread == null, "DataGatheringScheduler already started");
+
+            ServiceLoader<DgaFactoryService> loader = ServiceLoader.load(DgaFactoryService.class);
+            for (DgaFactoryService ds : loader) {
+                for (Schedulable dga : ds.createDgas(_exhibitor, _sender,
+                        _sum, _repository)) {
+                    _activity.add(new RegisteredActivity(dga));
+                }
+            }
+
+            _thread = new Thread(this);
+            _thread.setName("DGA-Scheduler");
+            _thread.start();
+        }
+
+
+        @Required
+        public void setStateUpdateManager(StateUpdateManager sum)
+        {
 	    _sum = sum;
-	}
+        }
+
+        @Required
+        public void setStateExhibitor(StateExhibitor exhibitor)
+        {
+            _exhibitor = exhibitor;
+        }
+
+        @Required
+        public void setMessageSender(MessageSender sender)
+        {
+            _sender = sender;
+        }
+
+        @Required
+        public void setMessageMetadataRepository(MessageMetadataRepository<UOID> repository)
+        {
+            _repository = repository;
+        }
 
 	/**
 	 * Main loop for this thread triggering DataGatheringActivity.
@@ -223,20 +267,6 @@ public class DataGatheringScheduler implements Runnable {
 
 		_logSched.debug("DGA Scheduler thread shutting down.");
 	}
-
-	/**
-	 * Add a new data-gathering activity.
-	 * @param dga  The activity to add.
-	 */
-	public void addActivity( Schedulable dga) {
-		RegisteredActivity pa = new RegisteredActivity( dga);
-
-		synchronized( _activity) {
-			_activity.add( pa);
-			_activity.notify(); // Wake up thread to recalculate its sleep-time.
-		}
-	}
-
 
 	/**
 	 * Search through out list of activity and find the one that matches this name.
@@ -394,19 +424,4 @@ public class DataGatheringScheduler implements Runnable {
 
 		return activityList;
 	}
-
-
-	/**
-	 * Add hard-coded, default activity
-	 */
-	public void addActivity( StateExhibitor exhibitor, MessageSender sender, MessageMetadataRepository<UOID> msgMetaRepo) {
-		ServiceLoader<DgaFactoryService> loader = ServiceLoader.load(DgaFactoryService.class);
-		for (DgaFactoryService ds : loader) {
-		    for(Schedulable dga : ds.createDgas(exhibitor, sender, _sum, msgMetaRepo)) {
-		        addActivity(dga);
-		    }
-		}
-	}
-
-
 }

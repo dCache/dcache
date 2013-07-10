@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+            http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <description>Imported configuration data</description>
@@ -11,18 +11,20 @@
 
     <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
         <description>Pool manager cell stub</description>
-        <property name="timeout" value="${poolManagerTimeout}"/>
-        <property name="destination" value="${poolManager}"/>
+        <property name="timeout" value="${nfs.service.poolmanager.timeout}"/>
+        <property name="timeoutUnit" value="${nfs.service.poolmanager.timeout.unit}"/>
+        <property name="destination" value="${nfs.service.poolmanager}"/>
     </bean>
 
     <bean id="pool-stub" class="org.dcache.cells.CellStub">
         <description>Pool communication stub</description>
-        <property name="timeout" value="${poolTimeout}"/>
+        <property name="timeout" value="${nfs.service.pool.timeout}"/>
+        <property name="timeoutUnit" value="${nfs.service.pool.timeout.unit}"/>
     </bean>
 
     <bean id="billing-stub" class="org.dcache.cells.CellStub">
         <description>Billing communication stub</description>
-        <property name="destination" value="${billing}"/>
+        <property name="destination" value="${nfs.service.billing}"/>
     </bean>
 
     <bean id="scheduled-thread-pool"
@@ -35,10 +37,10 @@
 
     <bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource"
           destroy-method="close">
-        <property name="driverClass" value="${chimera.db.driver}"/>
-        <property name="jdbcUrl" value="${chimera.db.url}"/>
-        <property name="username" value="${chimera.db.user}"/>
-        <property name="password" value="${chimera.db.password}"/>
+        <property name="driverClass" value="${db.driver}"/>
+        <property name="jdbcUrl" value="${db.url}"/>
+        <property name="username" value="${db.user}"/>
+        <property name="password" value="${db.password}"/>
         <property name="idleConnectionTestPeriodInMinutes" value="60"/>
         <property name="idleMaxAgeInMinutes" value="240"/>
         <property name="maxConnectionsPerPartition" value="30"/>
@@ -52,7 +54,7 @@
     <bean id="fileSystem" class="org.dcache.chimera.DCacheAwareJdbcFs">
         <description>Chimera Filesystem</description>
         <constructor-arg ref="dataSource" />
-        <constructor-arg value="${chimera.db.dialect}" />
+        <constructor-arg value="${nfs.db.dialect}" />
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="poolManagerStub" ref="poolManagerStub"/>
     </bean>
@@ -70,15 +72,16 @@
         <description>PNFS manager client module</description>
         <constructor-arg>
             <bean class="dmg.cells.nucleus.CellPath">
-                <constructor-arg value="${pnfsManager}"/>
+                <constructor-arg value="${nfs.service.pnfsmanager}"/>
             </bean>
         </constructor-arg>
     </bean>
 
     <bean id="login-stub" class="org.dcache.cells.CellStub">
         <description>Login cell communication stub</description>
-        <property name="destination" value="${gplazma}"/>
-        <property name="timeout" value="3000"/>
+        <property name="destination" value="${nfs.service.gplazma}"/>
+        <property name="timeout" value="${nfs.service.gplazma.timeout}"/>
+        <property name="timeoutUnit" value="${nfs.service.gplazma.timeout.unit}"/>
     </bean>
 
     <bean id="identity-strategy" class="org.dcache.services.login.RemoteLoginStrategy">
@@ -105,19 +108,29 @@
         destroy-method="stop">
         <description>Notifies LoginBroker </description>
         <property name="executor" ref="scheduled-thread-pool"/>
-        <property name="updateTime" value="${loginBrokerUpdateTime}"/>
-        <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+        <property name="updateTime" value="${nfs.service.loginbroker.update-period}"/>
+        <property name="updateTimeUnit" value="${nfs.service.loginbroker.update-period.unit}"/>
+        <property name="updateThreshold" value="${nfs.service.loginbroker.update-threshold}"/>
         <property name="protocolEngine" value="org.dcache.chimera.nfsv41.door.NFSv41Door"/>
-        <property name="protocolVersion" value="nfs4.1"/>
-        <property name="protocolFamily" value="file"/>
-        <property name="port" value="${nfs.port}"/>
+        <property name="protocolVersion" value="${nfs.service.loginbroker.version}"/>
+        <property name="protocolFamily" value="${nfs.service.loginbroker.family}"/>
+        <property name="port" value="${nfs.net.port}"/>
         <property name="loginBroker">
             <bean class="dmg.cells.nucleus.CellPath">
-                <constructor-arg value="${loginBroker}"/>
+                <constructor-arg value="${nfs.service.loginbroker}"/>
             </bean>
         </property>
     </bean>
 
-    <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"/>
+    <beans  profile="portmap-true">
+        <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"/>
+    </beans>
 
+    <beans  profile="portmap-false">
+        <!--
+            as other rpc services depend on rpcbind,
+            crreate a place holder to keep depemdency happy
+        -->
+        <bean id="rpcbind" class="java.lang.Object"/>
+    </beans>
 </beans>

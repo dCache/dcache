@@ -3,8 +3,8 @@ package diskCacheV111.poolManager;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
@@ -13,8 +13,8 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 class UGroup implements Serializable, SelectionUnitGroup {
     private static final long serialVersionUID = 8169708306745935858L;
     private final String _name;
-    final Map<String, Link> _linkList = new HashMap<>();
-    final Map<String, Unit> _unitList = new HashMap<>(); // !!!
+    final Map<String, Link> _linkList = new ConcurrentHashMap<>();
+    final Map<String, Unit> _unitList = new ConcurrentHashMap<>(); // !!!
     // DCache,
     // STore,
     // Net

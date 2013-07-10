@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xsi:schemaLocation="http://www.springframework.org/schema/jee
+                        http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
+                        http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    <jee:jndi-lookup id="serviceCellEndpoint" jndi-name="java:comp/env/serviceCellEndpoint"/>
+    <jee:jndi-lookup id="adminGid" jndi-name="java:comp/env/adminGid"/>
+    <jee:jndi-lookup id="gPlazmaName" jndi-name="java:comp/env/gPlazmaName"/>
+    <jee:jndi-lookup id="dCacheInstanceName" jndi-name="java:comp/env/dCacheInstanceName"/>
+    <jee:jndi-lookup id="loginBrokerName" jndi-name="java:comp/env/loginBrokerName"/>
+    <jee:jndi-lookup id="pnfsManagerName" jndi-name="java:comp/env/pnfsManagerName"/>
+    <jee:jndi-lookup id="poolManagerName" jndi-name="java:comp/env/poolManagerName"/>
+    <jee:jndi-lookup id="srmSpaceManagerEnabled" jndi-name="java:comp/env/srmSpaceManagerEnabled"/>
+    <jee:jndi-lookup id="collectorTimeout" jndi-name="java:comp/env/collectorTimeout"/>
+    <jee:jndi-lookup id="transfersCollectorUpdate" jndi-name="java:comp/env/transfersCollectorUpdate"/>
+    <jee:jndi-lookup id="generatePlots" jndi-name="java:comp/env/generatePlots"/>
+    <jee:jndi-lookup id="plotsDir" jndi-name="java:comp/env/plotsDir"/>
+    <jee:jndi-lookup id="imageType" jndi-name="java:comp/env/imageType"/>
+    <jee:jndi-lookup id="billingCellPath" jndi-name="billingCell"/>
+    <jee:jndi-lookup id="webadmin.billing-plot.refresh-threshold" jndi-name="java:comp/env/webadmin.billing-plot.refresh-threshold"/>
+    <jee:jndi-lookup id="webadmin.billing-plot.width" jndi-name="java:comp/env/webadmin.billing-plot.width"/>
+    <jee:jndi-lookup id="webadmin.billing-plot.height" jndi-name="java:comp/env/webadmin.billing-plot.height"/>
+    <jee:jndi-lookup id="webadmin.billing-plot.default-style" jndi-name="java:comp/env/webadmin.billing-plot.default-style"/>
+    <jee:jndi-lookup id="webadmin.billing-plot.default-scale" jndi-name="java:comp/env/webadmin.billing-plot.default-scale"/>
+    <jee:jndi-lookup id="alarmsXMLPath " jndi-name="java:comp/env/alarmsXMLPath"/>
+    <jee:jndi-lookup id="alarmsDbDriver" jndi-name="java:comp/env/alarmsDbDriver"/>
+    <jee:jndi-lookup id="alarmsDbUrl" jndi-name="java:comp/env/alarmsDbUrl"/>
+    <jee:jndi-lookup id="alarmsDbUser" jndi-name="java:comp/env/alarmsDbUser"/>
+    <jee:jndi-lookup id="alarmsDbPass" jndi-name="java:comp/env/alarmsDbPass"/>
+    <jee:jndi-lookup id="alarmsPropertiesPath" jndi-name="java:comp/env/alarmsPropertiesPath"/>
+    <jee:jndi-lookup id="alarmsDefinitionsPath" jndi-name="java:comp/env/alarmsDefinitionsPath"/>
+    <jee:jndi-lookup id="alarmsCleanerEnabled" jndi-name="java:comp/env/alarmsCleanerEnabled"/>
+    <jee:jndi-lookup id="alarmsCleanerSleepInterval" jndi-name="java:comp/env/alarmsCleanerSleepInterval"/>
+    <jee:jndi-lookup id="alarmsCleanerDeleteThreshold" jndi-name="java:comp/env/alarmsCleanerDeleteThreshold"/>
+    <jee:jndi-lookup id="pqpEnabled" jndi-name="java:comp/env/pqpEnabled"/>
+    <jee:jndi-lookup id="pqpRefreshInterval" jndi-name="java:comp/env/pqpRefreshInterval"/>
+    <jee:jndi-lookup id="pqpRefreshIntervalUnit" jndi-name="java:comp/env/pqpRefreshIntervalUnit"/>
+    <jee:jndi-lookup id="rrdImgType" jndi-name="java:comp/env/rrdImgType"/>
+    <jee:jndi-lookup id="rrdImgHeight" jndi-name="java:comp/env/rrdImgHeight"/>
+    <jee:jndi-lookup id="rrdImgWidth" jndi-name="java:comp/env/rrdImgWidth"/>
+    <jee:jndi-lookup id="rrdLabelSpan" jndi-name="java:comp/env/rrdLabelSpan"/>
+    <jee:jndi-lookup id="rrdLabelUnit" jndi-name="java:comp/env/rrdLabelUnit"/>
+    <jee:jndi-lookup id="rrdLabelUnitCount" jndi-name="java:comp/env/rrdLabelUnitCount"/>
+    <jee:jndi-lookup id="rrdMajorUnit" jndi-name="java:comp/env/rrdMajorUnit"/>
+    <jee:jndi-lookup id="rrdMajorUnitCount" jndi-name="java:comp/env/rrdMajorUnitCount"/>
+    <jee:jndi-lookup id="rrdMinorUnit" jndi-name="java:comp/env/rrdMinorUnit"/>
+    <jee:jndi-lookup id="rrdMinorUnitCount" jndi-name="java:comp/env/rrdMinorUnitCount"/>
+    <jee:jndi-lookup id="rrdRightMarginInSteps" jndi-name="java:comp/env/rrdRightMarginInSteps"/>
+    <jee:jndi-lookup id="rrdSimpleDateFormat" jndi-name="java:comp/env/rrdSimpleDateFormat"/>
+    <jee:jndi-lookup id="rrdSpanSize" jndi-name="java:comp/env/rrdSpanSize"/>
+    <jee:jndi-lookup id="rrdSpanUnit" jndi-name="java:comp/env/rrdSpanUnit"/>
+    <jee:jndi-lookup id="rrdStepSize" jndi-name="java:comp/env/rrdStepSize"/>
+    <jee:jndi-lookup id="rrdStepUnit" jndi-name="java:comp/env/rrdStepUnit"/>
+    <jee:jndi-lookup id="rrdVersion" jndi-name="java:comp/env/rrdVersion"/>
+    <jee:jndi-lookup id="rrdYLabel" jndi-name="java:comp/env/rrdYLabel"/>
+    <jee:jndi-lookup id="rrdHeartbeatFactor" jndi-name="java:comp/env/rrdHeartbeatFactor"/>
+
+    <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="destination" value=""/>
+        <property name="timeout" value="4000"/>
+    </bean>
+
+    <bean id="BillingCellStub" class="org.dcache.cells.CellStub">
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="destination" ref="billingCellPath"/>
+        <property name="timeout" value="60000"/>
+    </bean>
+
+    <bean id="PoolMonitorCollectorCellStub" class="org.dcache.cells.CellStub">
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="destination" ref="poolManagerName"/>
+        <property name="timeout" value="4000"/>
+    </bean>
+
+    <bean id="ActiveTransfersCollectorCellStub" class="org.dcache.cells.CellStub">
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="destination" value=""/>
+        <property name="timeout" ref="collectorTimeout"/>
+    </bean>
+
+    <bean id="CellStatusCollectorCellStub" class="org.dcache.cells.CellStub">
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="destination" value=""/>
+        <property name="timeout" ref="collectorTimeout"/>
+    </bean>
+
+    <bean id="SpaceTokenCollectorCellStub" class="org.dcache.cells.CellStub">
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="destination" value="SrmSpaceManager"/>
+        <property name="timeout" ref="collectorTimeout"/>
+    </bean>
+
+    <bean id="RestoreHandlerCollectorCellStub" class="org.dcache.cells.CellStub">
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="destination" ref="poolManagerName"/>
+        <property name="timeout" ref="collectorTimeout"/>
+    </bean>
+
+    <bean id="FastConstantBackoff" class="org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory">
+        <property name="maxDelay" value="10"/>
+        <property name="maxUnit" value="SECONDS"/>
+        <property name="minDelay" value="10"/>
+        <property name="minUnit" value="SECONDS"/>
+        <property name="quitAtMaxDelay" value="false"/>
+    </bean>
+
+    <bean id="ExponentialBackoff" class="org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory">
+        <property name="maxDelay" value="1"/>
+        <property name="maxUnit" value="HOURS"/>
+        <property name="minDelay" value="10"/>
+        <property name="minUnit" value="SECONDS"/>
+        <property name="quitAtMaxDelay" value="false"/>
+    </bean>
+
+    <bean id="TransfersConstantBackoff" class="org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory">
+        <property name="maxDelay" ref="transfersCollectorUpdate"/>
+        <property name="maxUnit" value="SECONDS"/>
+        <property name="minDelay" ref="transfersCollectorUpdate"/>
+        <property name="minUnit" value="SECONDS"/>
+        <property name="quitAtMaxDelay" value="false"/>
+    </bean>
+
+    <bean id="RoundRobinDbSettings" class="org.dcache.webadmin.model.dataaccess.util.RrdSettings" init-method="initialize">
+        <property name="baseDirectory" ref="plotsDir"/>
+        <property name="imgType" ref="rrdImgType"/>
+        <property name="imgHeight" ref="rrdImgHeight"/>
+        <property name="imgWidth" ref="rrdImgWidth"/>
+        <property name="labelSpan" ref="rrdLabelSpan"/>
+        <property name="labelUnit" ref="rrdLabelUnit"/>
+        <property name="labelUnitCount" ref="rrdLabelUnitCount"/>
+        <property name="majorUnit" ref="rrdMajorUnit"/>
+        <property name="majorUnitCount" ref="rrdMajorUnitCount"/>
+        <property name="minorUnit" ref="rrdMinorUnit"/>
+        <property name="minorUnitCount" ref="rrdMinorUnitCount"/>
+        <property name="rightMarginInSteps" ref="rrdRightMarginInSteps"/>
+        <property name="simpleDateFormat" ref="rrdSimpleDateFormat"/>
+        <property name="spanSize" ref="rrdSpanSize"/>
+        <property name="spanUnit" ref="rrdSpanUnit"/>
+        <property name="stepSize" ref="rrdStepSize"/>
+        <property name="stepUnit" ref="rrdStepUnit"/>
+        <property name="version" ref="rrdVersion"/>
+        <property name="yLabel" ref="rrdYLabel"/>
+        <property name="heartbeatFactor" ref="rrdHeartbeatFactor"/>
+    </bean>
+
+    <bean id="RrdPoolInfoAgent" class="org.dcache.webadmin.model.dataaccess.util.RrdPoolInfoAgent">
+        <property name="settings" ref="RoundRobinDbSettings"/>
+        <property name="refreshInterval" ref="pqpRefreshInterval"/>
+        <property name="timeUnit" ref="pqpRefreshIntervalUnit"/>
+    </bean>
+
+    <bean id="BillingPlotProperties" class="org.dcache.services.billing.plots.util.PlotProperties">
+        <property name="properties">
+            <map>
+                <entry key="plot.type.BYTES_READ" value="bytes_rd"/>
+                <entry key="plot.type.BYTES_WRITTEN" value="bytes_wr"/>
+                <entry key="plot.type.BYTES_P2P" value="bytes_p2p"/>
+                <entry key="plot.type.TRANSFERS_READ" value="transfers_rd"/>
+                <entry key="plot.type.TRANSFERS_WRITTEN" value="transfers_wr"/>
+                <entry key="plot.type.TRANSFERS_P2P" value="transfers_p2p"/>
+                <entry key="plot.type.CONNECTION_TIME" value="time"/>
+                <entry key="plot.type.CACHE_HITS" value="hits"/>
+                <entry key="time.ext.DAILY" value="_dy"/>
+                <entry key="time.ext.WEEKLY" value="_wk"/>
+                <entry key="time.ext.MONTHLY" value="_mo"/>
+                <entry key="time.ext.YEARLY" value="_yr"/>
+                <entry key="plot.width" value-ref="webadmin.billing-plot.width"/>
+                <entry key="plot.height" value-ref="webadmin.billing-plot.height"/>
+                <entry key="refresh.threshold.in.minutes" value-ref="webadmin.billing-plot.refresh-threshold"/>
+            </map>
+        </property>
+    </bean>
+
+    <!-- JAIDA; implements both the histogram factory and the plot generator -->
+    <bean id="PlotGenerator" class="org.dcache.services.billing.plots.jaida.JaidaTimeFramePlotGenerator"/>
+
+    <bean id="BillingService" class="org.dcache.webadmin.controller.impl.StandardBillingService"
+        destroy-method="shutDown">
+        <constructor-arg ref="webadmin.billing-plot.default-style"/>
+        <constructor-arg ref="webadmin.billing-plot.default-scale"/>
+        <property name="cell" ref="BillingCellStub"/>
+        <property name="plotProperties" ref="BillingPlotProperties"/>
+        <property name="plotsDir" ref="plotsDir"/>
+        <property name="imgType" ref="imageType"/>
+        <property name="factory" ref="PlotGenerator"/>
+        <property name="generator" ref="PlotGenerator"/>
+    </bean>
+
+    <bean id="PageInfoCache" class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache" init-method="init" destroy-method="stop">
+        <constructor-arg>
+            <list>
+                <bean id="ActiveTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector"
+                    init-method="initialize">
+                    <property name="cellStub" ref="ActiveTransfersCollectorCellStub"/>
+                    <property name="name" value="Active Transfers Collector"/>
+                    <property name="sleepInterval" ref="transfersCollectorUpdate"/>
+                    <property name="algorithmFactory" ref="TransfersConstantBackoff"/>
+                    <property name="loginBrokerName" ref="loginBrokerName"/>
+                </bean>
+                <bean id="CellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector"
+                    init-method="initialize">
+                    <property name="cellStub" ref="CellStatusCollectorCellStub"/>
+                    <property name="name" value="Cellstatus Collector"/>
+                    <property name="sleepInterval" value="10000"/>
+                    <property name="algorithmFactory" ref="FastConstantBackoff"/>
+                    <property name="loginBrokerName" ref="loginBrokerName"/>
+                    <property name="pnfsManagerName" ref="pnfsManagerName"/>
+                    <property name="poolManagerName" ref="poolManagerName"/>
+                    <property name="gPlazmaName" ref="gPlazmaName"/>
+                </bean>
+                <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector"
+                    init-method="initialize">
+                    <property name="cellStub" ref="PoolMonitorCollectorCellStub"/>
+                    <property name="name" value="PoolMonitor Collector"/>
+                    <property name="sleepInterval" value="10000"/>
+                    <property name="algorithmFactory" ref="ExponentialBackoff"/>
+                    <property name="plottingEnabled" ref="pqpEnabled"/>
+                    <property name="rrdAgent" ref="RrdPoolInfoAgent"/>
+                </bean>
+                <bean id="SpaceTokenCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.SpaceTokenCollector"
+                    init-method="initialize">
+                    <property name="spaceManagerEnabled" ref="srmSpaceManagerEnabled"/>
+                    <property name="cellStub" ref="SpaceTokenCollectorCellStub"/>
+                    <property name="name" value="SpaceToken Collector"/>
+                    <property name="sleepInterval" value="10000"/>
+                    <property name="algorithmFactory" ref="ExponentialBackoff"/>
+                </bean>
+                <bean id="RestoreHandlerCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.RestoreHandlerCollector"
+                    init-method="initialize">
+                    <property name="cellStub" ref="RestoreHandlerCollectorCellStub"/>
+                    <property name="name" value="RestoreHandler Collector"/>
+                    <property name="poolManagerName" ref="poolManagerName"/>
+                    <property name="sleepInterval" value="10000"/>
+                    <property name="algorithmFactory" ref="ExponentialBackoff"/>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean id="CommandSenderFactory" class="org.dcache.webadmin.model.dataaccess.communication.impl.CellCommandSenderFactory">
+        <property name="poolCellStub" ref="PoolCellStub"/>
+    </bean>
+
+    <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
+        <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
+        <property name="pageCache" ref="PageInfoCache"/>
+        <property name="alarmsXMLPath" ref="alarmsXMLPath"/>
+        <property name="alarmsDbDriver" ref="alarmsDbDriver"/>
+        <property name="alarmsDbUrl" ref="alarmsDbUrl"/>
+        <property name="alarmsDbUser" ref="alarmsDbUser"/>
+        <property name="alarmsDbPass" ref="alarmsDbPass"/>
+        <property name="alarmsPropertiesPath" ref="alarmsPropertiesPath"/>
+        <property name="alarmsCleanerEnabled" ref="alarmsCleanerEnabled"/>
+        <property name="alarmsCleanerSleepInterval" ref="alarmsCleanerSleepInterval"/>
+        <property name="alarmsCleanerDeleteThreshold" ref="alarmsCleanerDeleteThreshold"/>
+    </bean>
+
+    <bean id="PoolSpaceService" class="org.dcache.webadmin.controller.impl.StandardPoolSpaceService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="PoolQueuesService" class="org.dcache.webadmin.controller.impl.StandardPoolQueuesService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="PoolGroupService" class="org.dcache.webadmin.controller.impl.StandardPoolGroupService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="InfoService" class="org.dcache.webadmin.controller.impl.StandardInfoService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="CellsService" class="org.dcache.webadmin.controller.impl.StandardCellsService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="PoolAdminService" class="org.dcache.webadmin.controller.impl.StandardPoolAdminService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="CellAdminService" class="org.dcache.webadmin.controller.impl.StandardCellAdminService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="LinkGroupsService" class="org.dcache.webadmin.controller.impl.StandardLinkGroupsService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="ActiveTransfersService" class="org.dcache.webadmin.controller.impl.StandardActiveTransfersService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="TapeTransfersService" class="org.dcache.webadmin.controller.impl.StandardTapeTransfersService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="PoolSelectionSetupService" class="org.dcache.webadmin.controller.impl.StandardPoolSelectionSetupService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="AlarmDisplayService" class="org.dcache.webadmin.controller.impl.StandardAlarmDisplayService" destroy-method="shutDown">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+        <property name="definitions" ref="alarmsDefinitionsPath"/>
+    </bean>
+
+    <bean id="ThumbnailPanelProvider" class="org.dcache.webadmin.controller.util.ThumbnailPanelProvider">
+        <constructor-arg ref="plotsDir"/>
+        <constructor-arg ref="rrdImgHeight"/>
+        <constructor-arg ref="rrdImgWidth"/>
+    </bean>
+
+    <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
+        <property name="poolSpaceService" ref="PoolSpaceService"/>
+        <property name="poolQueuesService" ref="PoolQueuesService"/>
+        <property name="poolGroupService" ref="PoolGroupService"/>
+        <property name="infoService" ref="InfoService"/>
+        <property name="cellsService" ref="CellsService"/>
+        <property name="poolAdminService" ref="PoolAdminService"/>
+        <property name="cellAdminService" ref="CellAdminService"/>
+        <property name="linkGroupsService" ref="LinkGroupsService"/>
+        <property name="activeTransfersService" ref="ActiveTransfersService"/>
+        <property name="poolSelectionSetupService" ref="PoolSelectionSetupService"/>
+        <property name="tapeTransfersService" ref="TapeTransfersService"/>
+        <property name="alarmDisplayService" ref="AlarmDisplayService"/>
+        <property name="billingService" ref="BillingService"/>
+        <property name="thumbnailPanelProvider" ref="ThumbnailPanelProvider"/>
+        <property name="cellEndpoint" ref="serviceCellEndpoint"/>
+        <property name="adminGid" ref="adminGid"/>
+        <property name="dcacheName" ref="dCacheInstanceName"/>
+        <property name="authDestination" ref="gPlazmaName"/>
+        <property name="generatePlots" ref="generatePlots"/>
+        <property name="poolQueuePlotsEnabled" ref="pqpEnabled"/>
+    </bean>
+</beans>

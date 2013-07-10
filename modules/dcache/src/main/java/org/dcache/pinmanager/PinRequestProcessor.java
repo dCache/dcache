@@ -14,6 +14,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 
 import diskCacheV111.poolManager.RequestContainerV5;
@@ -100,6 +101,7 @@ public class PinRequestProcessor
     private CellStub _poolManagerStub;
     private CheckStagePermission _checkStagePermission;
     private long _maxLifetime;
+    private TimeUnit _maxLifetimeUnit;
 
     private PoolMonitor _poolMonitor;
 
@@ -156,14 +158,25 @@ public class PinRequestProcessor
         return _maxLifetime;
     }
 
+    public void setMaxLifetimeUnit(TimeUnit unit)
+    {
+        _maxLifetimeUnit = unit;
+    }
+
+    public TimeUnit getMaxLifetimeUnit()
+    {
+        return _maxLifetimeUnit;
+    }
+
     private void enforceLifetimeLimit(PinManagerPinMessage message)
     {
         if (_maxLifetime > -1) {
+            long maxLifetime = _maxLifetimeUnit.toMillis(_maxLifetime);
             long requestedLifetime = message.getLifetime();
             if (requestedLifetime == -1) {
-                message.setLifetime(_maxLifetime);
+                message.setLifetime(maxLifetime);
             } else {
-                message.setLifetime(Math.min(_maxLifetime, requestedLifetime));
+                message.setLifetime(Math.min(maxLifetime, requestedLifetime));
             }
         }
     }

@@ -6,8 +6,10 @@
 onerror shutdown
 
 check -strong cell.name
-check -strong srmSpaceManagerEnabled
-check -strong poolmanager
+check -strong dcache.enable.spacemanager
+check -strong dcache.service.poolmanager
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.spacemanager
 check -strong srmPoolManagerTimeout
 check -strong srmPoolTimeout
 check -strong srmPnfsTimeout
@@ -27,14 +29,14 @@ check db.password.file
 #
 #  ----  Usage of Srm Space Manager
 #
-#   If srmSpaceManagerEnabled is on we need to use SrmSpaceManager
+#   If dcache.enable.spacemanager is on we need to use SrmSpaceManager
 #   as both poolManager and poolProxy
 #
 onerror continue
 
 define env srmSpaceManagerOn.exe endExe
-  set env -c remoteTransferManagerPoolProxy        "SrmSpaceManager"
-  set env -c remoteTransferManagerPoolManager      "SrmSpaceManager"
+  set env -c remoteTransferManagerPoolProxy        "${dcache.service.spacemanager}"
+  set env -c remoteTransferManagerPoolManager      "${dcache.service.spacemanager}"
   set env -c srmImplicitSpaceManagerEnabled true
   set env -c srmSpaceReservationStrict true
 endExe
@@ -44,13 +46,13 @@ define env srmSpaceManagerOff.exe endExe
   set env srmSpaceReservationStrict false
 endExe
 
-eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
+eval ${dcache.enable.spacemanager} true ==
 set env srmSpaceManagerIsOn ${rc}
 exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
 exec env srmSpaceManagerOff.exe -ifnotok=srmSpaceManagerIsOn
 
-set env -c remoteTransferManagerPoolProxy ${poolmanager}
-set env -c remoteTransferManagerPoolManager ${poolmanager}
+set env -c remoteTransferManagerPoolProxy ${dcache.service.poolmanager}
+set env -c remoteTransferManagerPoolManager ${dcache.service.poolmanager}
 
 #
 #
@@ -74,7 +76,7 @@ create diskCacheV111.services.RemoteTransferManager ${cell.name} \
         -doDbLog=${srmDbLogEnabled} \
         -poolManager=${remoteTransferManagerPoolManager} \
         -poolProxy=${remoteTransferManagerPoolProxy} \
-        -pnfsManager=PnfsManager \
+        -pnfsManager=${dcache.service.pnfsmanager} \
         -maxNumberOfDeleteRetries=1 \
 "
 #

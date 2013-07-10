@@ -1,7 +1,6 @@
 package org.dcache.services.billing.db;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,8 +18,6 @@ import org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo;
  */
 public abstract class BaseBillingInfoAccessTest extends TestCase {
 
-    protected static final Logger logger = Logger
-                    .getLogger(BaseBillingInfoAccessTest.class);
     private static final String URL = "jdbc:hsqldb:mem:billing_test";
     private static final String DRIVER = "org.hsqldb.jdbcDriver";
     private static final String USER = "sa";
@@ -64,6 +61,8 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
         properties.setProperty("datanucleus.connectionPool.minIdle", "1");
         properties.setProperty("datanucleus.connectionPool.maxActive", "1");
         properties.setProperty("datanucleus.connectionPool.maxWait", "60");
+        properties.setProperty("datanucleus.connectionPool.minPoolSize", "1");
+        properties.setProperty("datanucleus.connectionPool.maxPoolSize", "5");
         properties.setProperty("datanucleus.autoCreateSchema", "true");
         properties.setProperty("datanucleus.autoCreateTables", "true");
         properties.setProperty("datanucleus.autoCreateColumns", "true");

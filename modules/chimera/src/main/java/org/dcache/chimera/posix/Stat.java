@@ -196,6 +196,73 @@ public class Stat {
         return sb.toString();
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 79 * hash + this._dev;
+        hash = 79 * hash + this._ino;
+        hash = 79 * hash + this._mode;
+        hash = 79 * hash + this._nlink;
+        hash = 79 * hash + this._uid;
+        hash = 79 * hash + this._gid;
+        hash = 79 * hash + this._rdev;
+        hash = 79 * hash + (int) (this._size ^ (this._size >>> 32));
+        hash = 79 * hash + (int) (this._atime ^ (this._atime >>> 32));
+        hash = 79 * hash + (int) (this._mtime ^ (this._mtime >>> 32));
+        hash = 79 * hash + (int) (this._ctime ^ (this._ctime >>> 32));
+        hash = 79 * hash + this._blksize;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Stat other = (Stat) obj;
+        if (this._dev != other._dev) {
+            return false;
+        }
+        if (this._ino != other._ino) {
+            return false;
+        }
+        if (this._mode != other._mode) {
+            return false;
+        }
+        if (this._nlink != other._nlink) {
+            return false;
+        }
+        if (this._uid != other._uid) {
+            return false;
+        }
+        if (this._gid != other._gid) {
+            return false;
+        }
+        if (this._rdev != other._rdev) {
+            return false;
+        }
+        if (this._size != other._size) {
+            return false;
+        }
+        if (this._atime != other._atime) {
+            return false;
+        }
+        if (this._mtime != other._mtime) {
+            return false;
+        }
+        if (this._ctime != other._ctime) {
+            return false;
+        }
+        if (this._blksize != other._blksize) {
+            return false;
+        }
+        return true;
+    }
+
+
     public static void main(String[] args) {
 
         Stat stat = new Stat();

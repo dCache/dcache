@@ -33,6 +33,7 @@ import dmg.util.Args;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.util.GSSUtils;
+import org.dcache.util.Crypto;
 
 import static org.dcache.util.Files.checkDirectory;
 import static org.dcache.util.Files.checkFile;
@@ -41,14 +42,15 @@ import static org.dcache.util.Files.checkFile;
 
 class GsiTunnel extends GssTunnel  {
 
-    private final static Logger _log = LoggerFactory.getLogger(GsiTunnel.class);
+    private static final Logger _log = LoggerFactory.getLogger(GsiTunnel.class);
 
     private ExtendedGSSContext _e_context;
 
-    private final static String SERVICE_KEY = "service_key";
-    private final static String SERVICE_CERT = "service_cert";
-    private final static String SERVICE_TRUSTED_CERTS = "service_trusted_certs";
-    private final static String SERVICE_VOMS_DIR = "service_voms_dir";
+    private static final String SERVICE_KEY = "service_key";
+    private static final String SERVICE_CERT = "service_cert";
+    private static final String SERVICE_TRUSTED_CERTS = "service_trusted_certs";
+    private static final String SERVICE_VOMS_DIR = "service_voms_dir";
+    private static final String CIPHER_FLAGS = "ciphers";
 
     private final Args _arguments;
     private PKIVerifier _pkiVerifier;
@@ -69,6 +71,7 @@ class GsiTunnel extends GssTunnel  {
             String service_cert = _arguments.getOption(SERVICE_CERT);
             String service_trusted_certs = _arguments.getOption(SERVICE_TRUSTED_CERTS);
             String service_voms_dir = _arguments.getOption(SERVICE_VOMS_DIR);
+
             /* Unfortunately, we can't rely on GlobusCredential to provide
              * meaningful error messages so we catch some obvious problems
              * early.
@@ -98,6 +101,8 @@ class GsiTunnel extends GssTunnel  {
             GSSManager manager = ExtendedGSSManager.getInstance();
             _e_context = (ExtendedGSSContext) manager.createContext(cred);
             _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
+            _e_context.setBannedCiphers(
+                    Crypto.getBannedCipherSuitesFromConfigurationValue(_arguments.getOption(CIPHER_FLAGS)));
             _context = _e_context;
             // do not use channel binding with GSIGSS
             super.useChannelBinding(false);

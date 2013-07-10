@@ -85,6 +85,7 @@ import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.ReleaseSpaceCallbacks;
+import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -452,6 +453,29 @@ public final class PutFileRequest extends FileRequest {
         addDebugHistoryEvent("run method is executed");
         try {
             if (getFileId() == null && getParentFileId() == null) {
+                // [SRM 2.2, 5.5.2, t)] Upon srmPrepareToPut, SURL entry is inserted to the name space, and any
+                // methods that access the SURL such as srmLs, srmBringOnline and srmPrepareToGet must return
+                // SRM_FILE_BUSY at the file level. If another srmPrepareToPut or srmCopy is requested on
+                // the same SURL, SRM_FILE_BUSY must be returned if the SURL can be overwritten, otherwise
+                // SRM_DUPLICATION_ERROR must be returned at the file level.
+                for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, getSurl())) {
+                    if (request != this) {
+                        if (!((PutRequest) getRequest()).isOverwrite()) {
+                            setStateAndStatusCode(
+                                    State.FAILED,
+                                    "SURL exists already",
+                                    TStatusCode.SRM_DUPLICATION_ERROR);
+                        } else {
+                            setStateAndStatusCode(
+                                    State.FAILED,
+                                    "The requested file is being used by another client.",
+                                    TStatusCode.SRM_FILE_BUSY);
+                        }
+                        return;
+                    }
+                }
+
+
                 addDebugHistoryEvent("selecting transfer protocol");
                 // if we can not read this path for some reason
                 //(not in ftp root for example) this will throw exception
@@ -589,6 +613,12 @@ public final class PutFileRequest extends FileRequest {
         }
 
         super.stateChanged(oldState);
+    }
+
+    @Override
+    public boolean isTouchingSurl(URI surl)
+    {
+        return surl.equals(getSurl());
     }
 
     /**

@@ -12,6 +12,7 @@ import java.lang.reflect.Constructor;
 import java.net.URISyntaxException;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
@@ -57,6 +58,14 @@ public class ResponseEngineHandler extends AbstractHandler {
 
     public HttpResponseEngine getEngine() {
         return engine;
+    }
+
+    public CellInfoProvider getCellInfoProvider() {
+        if (engine instanceof CellInfoProvider) {
+            return (CellInfoProvider) engine;
+        } else {
+            return null;
+        }
     }
 
     public void initialize(HttpServiceCell cell) throws Exception {

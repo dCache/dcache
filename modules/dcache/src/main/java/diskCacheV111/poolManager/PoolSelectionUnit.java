@@ -39,7 +39,7 @@ public interface PoolSelectionUnit  {
        * Get a defensive copy of the pools defined accessible through this link.
        * @return collection of pools
        */
-      public Collection<SelectionPool> pools() ;
+      public Collection<SelectionPool> getPools() ;
       public String  getTag() ;
       public LinkReadWritePreferences getPreferences();
       public Collection<SelectionPoolGroup> getPoolGroupsPointingTo();
@@ -152,7 +152,7 @@ public interface PoolSelectionUnit  {
    public interface SelectionLinkGroup extends SelectionEntity{
 	   public void add(SelectionLink link);
 	   public boolean remove(SelectionLink link);
-	   Collection<SelectionLink> links();
+	   Collection<SelectionLink> getLinks();
 	   void attribute(String attribute, String value, boolean replace);
 	   Set<String> attribute(String attribute);
 	   void removeAttribute(String attribute, String value);
@@ -191,14 +191,15 @@ public interface PoolSelectionUnit  {
    public String getNetIdentifier( String address ) throws UnknownHostException;
    public String getProtocolUnit( String protocolUnitName ) ;
    public SelectionLinkGroup getLinkGroupByName(String linkGroupName) throws NoSuchElementException ;
-   public String [] getLinkGroups();
-   public String [] getLinksByGroupName(String linkGroupName) throws NoSuchElementException ;
    public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup) throws NoSuchElementException;
    public Collection<SelectionPool> getAllDefinedPools( boolean enabledOnly ) ;
-   public Collection<SelectionPoolGroup> getPoolGroups();
    public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName);
    public Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws NoSuchElementException;
-   public Collection<SelectionLink> getLinks();
-   public Collection<SelectionUnit> getSelectionUnits();
-   public Collection<SelectionUnitGroup> getUnitGroups();
+
+   public Map<String, SelectionLink> getLinks();
+   public Map<String, SelectionPool> getPools();
+   public Map<String, SelectionPoolGroup> getPoolGroups();
+   public Map<String, SelectionLinkGroup> getLinkGroups();
+   public Map<String, SelectionUnit> getSelectionUnits();
+   public Map<String, SelectionUnitGroup> getUnitGroups();
 }

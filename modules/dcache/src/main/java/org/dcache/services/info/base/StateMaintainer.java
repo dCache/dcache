@@ -2,20 +2,21 @@ package org.dcache.services.info.base;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
 
+import org.dcache.cells.CellMessageSender;
 import org.dcache.commons.util.NDC;
 import org.dcache.util.FireAndForgetTask;
 
@@ -24,14 +25,14 @@ import org.dcache.util.FireAndForgetTask;
  * StateUpdate objects independently of whichever Thread created them. It is
  * also responsible for purging those metrics that have expired.
  */
-public class StateMaintainer implements StateUpdateManager {
+public class StateMaintainer implements StateUpdateManager, CellMessageSender {
 
     private static final Logger _log = LoggerFactory.getLogger( StateMaintainer.class);
 
     private static final boolean CANCEL_RUNNING_METRIC_EXPUNGE = false;
 
     /** Our scheduler */
-    final private ScheduledExecutorService _scheduler;
+    private ScheduledExecutorService _scheduler;
 
     /** The number of pending requests, queued up in the scheduler */
     final private AtomicInteger _pendingRequestCount = new AtomicInteger();
@@ -50,21 +51,24 @@ public class StateMaintainer implements StateUpdateManager {
     private ScheduledFuture<?> _metricExpiryFuture;
     private Date _metricExpiryDate;
 
-    /**
-     * Create a new StateMaintainer with a link to some StateCaretaker
-     *
-     * @param caretaker
-     *            the StateCaretaker that will undertake the business logic
-     *            of updating dCache state.
-     */
-    public StateMaintainer( final StateCaretaker caretaker, final ThreadFactory threadFactory) {
+    @Required
+    public void setCaretaker(StateCaretaker caretaker)
+    {
         _caretaker = caretaker;
-        _scheduler = Executors.newSingleThreadScheduledExecutor( threadFactory);
     }
 
-    public void setCellEndpoint(final CellEndpoint endpoint) {
-        _domainName = endpoint.getCellInfo().getDomainName();
-        _cellName = endpoint.getCellInfo().getCellName();
+    @Required
+    public void setExecutor(ScheduledExecutorService executor)
+    {
+        _scheduler = executor;
+    }
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        CellInfo info = endpoint.getCellInfo();
+        _domainName = info.getDomainName();
+        _cellName = info.getCellName();
     }
 
     /**

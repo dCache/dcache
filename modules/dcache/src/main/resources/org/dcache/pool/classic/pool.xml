@@ -9,23 +9,9 @@
 
   <context:annotation-config/>
 
-
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
     <property name="location" value="arguments:"/>
-    <property name="properties">
-      <value>
-        workerThreads=5
-        messageThreads=5
-        messageThreadsMax=50
-        messageThreadsKeepAliveTime=60
-        messageThreadsQueueMax=1000
-        callbackThreads=5
-        callbackThreadsMax=50
-        callbackThreadsKeepAliveTime=60
-        callbackThreadsQueueMax=1000
-      </value>
-    </property>
   </bean>
 
     <!--
@@ -50,14 +36,14 @@
   <bean id="lock" class="org.dcache.util.LockFile"
         init-method="acquire" destroy-method="release">
     <description>Pool lock</description>
-    <constructor-arg value="${pooldir}/lock"/>
+    <constructor-arg value="${pool.path}/lock"/>
   </bean>
 
   <bean id="replica-state-policy"
         class="org.dcache.pool.classic.LFSReplicaStatePolicyFactory"
         factory-method="createInstance">
     <description>Defines the state of new replicas</description>
-    <constructor-arg value="${lfs}"/>
+    <constructor-arg value="${pool.lfs}"/>
   </bean>
 
   <bean id="pool-mode" class="diskCacheV111.pools.PoolV2Mode">
@@ -67,21 +53,22 @@
   <bean id="pool" class="org.dcache.pool.classic.PoolV4"
         init-method="init">
     <description>Main pool component</description>
-    <constructor-arg index="0" value="${poolname}"/>
-    <constructor-arg index="1" value="${arguments}"/>
+    <constructor-arg index="0" value="${pool.name}"/>
 
     <property name="baseDir"
-              value="${pooldir}"/>
+              value="${pool.path}"/>
     <property name="version"
               value="4"/>
     <property name="poolUpDestination"
-              value="${poolupDestination}"/>
+              value="${pool.destination.heartbeat}"/>
     <property name="allowCleaningPreciousFiles"
-              value="${allowCleaningPreciousFiles}"/>
-    <property name="replicateOnArrival"
-              value="${replicateOnArrival}"/>
+              value="${pool.enable.remove-precious-files-on-delete}"/>
+    <property name="replicationNotificationDestination"
+              value="${pool.destination.replicate}"/>
+    <property name="replicationIp"
+              value="${pool.destination.replicate.ip}"/>
     <property name="tags"
-              value="${tags}"/>
+              value="${pool.tags}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
@@ -93,9 +80,9 @@
     <property name="account" ref="account"/>
     <property name="replicaStatePolicy" ref="replica-state-policy"/>
     <property name="volatile"
-              value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
+              value="#{ '${pool.lfs}' == 'volatile' or '${pool.lfs}' == 'transient' }"/>
     <property name="hasTapeBackend"
-              value="#{ '${lfs}' == 'none' }"/>
+              value="#{ '${pool.lfs}' == 'none' }"/>
     <property name="transferServices" ref="transfer-services" />
     <property name="ioQueueManager" ref="io-queue-manager" />
     <property name="poolMode" ref="pool-mode"/>
@@ -104,27 +91,23 @@
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
     <description>PNFS manager client module</description>
-    <constructor-arg>
-      <bean class="dmg.cells.nucleus.CellPath">
-        <constructor-arg value="${pnfsmanager}"/>
-      </bean>
-    </constructor-arg>
-    <constructor-arg value="${poolname}"/>
+    <constructor-arg ref="pnfsStub"/>
+    <constructor-arg value="${pool.name}"/>
   </bean>
 
   <bean id="file-store" class="org.dcache.pool.repository.FlatFileStore">
     <description>Store for pool files</description>
-    <constructor-arg value="${pooldir}"/>
+    <constructor-arg value="${pool.path}"/>
   </bean>
 
-  <bean id="meta-store" class="${metaDataRepository}"
+  <bean id="meta-store" class="${pool.plugins.meta}"
         destroy-method="close">
     <description>Store for pool meta data</description>
     <constructor-arg ref="file-store"/>
-    <constructor-arg value="${pooldir}"/>
+    <constructor-arg value="${pool.path}"/>
   </bean>
 
-  <bean id="sweeper" class="${sweeper}">
+  <bean id="sweeper" class="${pool.plugins.sweeper}">
     <description>Pool garbage collector</description>
     <property name="repository" ref="rep"/>
     <property name="account" ref="account"/>
@@ -136,13 +119,13 @@
     <description>Repository manager</description>
     <property name="executor" ref="workerThreadPool"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="periodicChecks" value="${checkRepository}"/>
+    <property name="periodicChecks" value="${pool.enable.repository-check}"/>
     <property name="account" ref="account"/>
     <property name="allocator" ref="allocator"/>
     <property name="spaceSweeperPolicy" ref="sweeper"/>
     <property name="volatile"
-              value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
-    <property name="maxDiskSpaceString" value="${maxDiskSpace}"/>
+              value="#{ '${pool.lfs}' == 'volatile' or '${pool.lfs}' == 'transient' }"/>
+    <property name="maxDiskSpaceString" value="${pool.size}"/>
     <property name="metaDataStore">
       <bean class="org.dcache.pool.repository.ConsistentStore">
         <constructor-arg ref="csm"/>
@@ -150,7 +133,7 @@
         <constructor-arg ref="file-store"/>
         <constructor-arg ref="meta-store"/>
         <constructor-arg ref="replica-state-policy"/>
-        <property name="poolName" value="${poolname}"/>
+        <property name="poolName" value="${pool.name}"/>
        </bean>
     </property>
   </bean>
@@ -166,7 +149,7 @@
     <property name="pnfs" ref="pnfs"/>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
-    <property name="scrubberStateFile" value="${pooldir}/scrubber.state"/>
+    <property name="scrubberStateFile" value="${pool.path}/scrubber.state"/>
   </bean>
 
   <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
@@ -177,28 +160,20 @@
   <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">
     <description>HSM flush queue manager</description>
     <constructor-arg ref="rep"/>
-    <constructor-arg value="${poolname}"/>
   </bean>
 
   <bean id="hsmset" class="diskCacheV111.util.HsmSet">
     <description>HSM backend manager</description>
   </bean>
 
-  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2"
-        destroy-method="shutdown">
+  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2">
     <description>HSM integration module</description>
-    <constructor-arg ref="rep"/>
-    <constructor-arg ref="pnfs"/>
-    <constructor-arg ref="hsmset"/>
-    <constructor-arg ref="csm"/>
-    <property name="flushMessageTarget" value="${flushMessageTarget}"/>
+    <property name="repository" ref="rep"/>
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="hsms" ref="hsmset"/>
+    <property name="checksumModule" ref="csm"/>
+    <property name="flushMessageTarget" value="${pool.destination.flush-notification}"/>
     <property name="billingStub" ref="billing-stub"/>
-  </bean>
-
-  <bean id="storage-interpreter" class="org.dcache.pool.classic.HsmStorageInterpreter">
-    <description>HSM module user interface</description>
-    <constructor-arg ref="storagehandler"/>
-    <constructor-arg ref="pnfs"/>
   </bean>
 
   <bean id="jtm" class="org.dcache.pool.classic.JobTimeoutManager"
@@ -214,24 +189,27 @@
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
       <description>Billing communication stub</description>
-      <property name="destination" value="${billing}"/>
+      <property name="destination" value="${pool.service.billing}"/>
   </bean>
 
   <bean id="pnfsStub" class="org.dcache.cells.CellStub">
     <description>PNFS manager cell stub</description>
-    <property name="timeout" value="300000"/>
-    <property name="destination" value="PnfsManager"/>
+      <property name="destination" value="${pool.service.pnfsmanager}"/>
+      <property name="timeout" value="${pool.service.pnfsmanager.timeout}"/>
+      <property name="timeoutUnit" value="${pool.service.pnfsmanager.timeout.unit}"/>
   </bean>
 
   <bean id="poolStub" class="org.dcache.cells.CellStub">
     <description>Pool cell stub</description>
-    <property name="timeout" value="60000"/>
+    <property name="timeout" value="${pool.service.pool.timeout}"/>
+    <property name="timeoutUnit" value="${pool.service.pool.timeout.unit}"/>
   </bean>
 
   <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
     <description>Pool manager cell stub</description>
-    <property name="timeout" value="120000"/>
-    <property name="destination" value="PoolManager"/>
+      <property name="destination" value="${pool.service.poolmanager}"/>
+      <property name="timeout" value="${pool.service.poolmanager.timeout}"/>
+      <property name="timeoutUnit" value="${pool.service.poolmanager.timeout.unit}"/>
   </bean>
 
   <bean id="workerThreadPool"
@@ -239,7 +217,7 @@
         factory-method="newScheduledThreadPool"
         destroy-method="shutdown">
     <description>Thread pool for background tasks</description>
-    <constructor-arg value="${workerThreads}"/>
+    <constructor-arg value="${pool.limits.worker-threads}"/>
     <property name="executeExistingDelayedTasksAfterShutdownPolicy"
               value="false"/>
     <property name="continueExistingPeriodicTasksAfterShutdownPolicy"
@@ -250,13 +228,13 @@
         class="java.util.concurrent.ThreadPoolExecutor"
         destroy-method="shutdown">
     <description>Thread pool for message processing</description>
-    <constructor-arg value="${messageThreads}"/>
-    <constructor-arg value="${messageThreadsMax}"/>
-    <constructor-arg value="${messageThreadsKeepAliveTime}"/>
-    <constructor-arg value="#{ T(java.util.concurrent.TimeUnit).SECONDS }"/>
+    <constructor-arg value="${pool.cell.limits.message.threads.min}"/>
+    <constructor-arg value="${pool.cell.limits.message.threads.max}"/>
+    <constructor-arg value="${pool.cell.limits.message.threads.max-idle-time}"/>
+    <constructor-arg value="${pool.cell.limits.message.threads.max-idle-time.unit}"/>
     <constructor-arg>
       <bean class="java.util.concurrent.ArrayBlockingQueue">
-        <constructor-arg value="${messageThreadsQueueMax}"/>
+        <constructor-arg value="${pool.cell.limits.message.queue.max}"/>
       </bean>
     </constructor-arg>
   </bean>
@@ -265,21 +243,22 @@
         class="java.util.concurrent.ThreadPoolExecutor"
         destroy-method="shutdown">
     <description>Thread pool for message callbacks</description>
-    <constructor-arg value="${callbackThreads}"/>
-    <constructor-arg value="${callbackThreadsMax}"/>
-    <constructor-arg value="${callbackThreadsKeepAliveTime}"/>
-    <constructor-arg value="#{ T(java.util.concurrent.TimeUnit).SECONDS }"/>
+    <constructor-arg value="${pool.cell.limits.callback.threads.min}"/>
+    <constructor-arg value="${pool.cell.limits.callback.threads.max}"/>
+    <constructor-arg value="${pool.cell.limits.callback.threads.max-idle-time}"/>
+    <constructor-arg value="${pool.cell.limits.callback.threads.max-idle-time.unit}"/>
     <constructor-arg>
       <bean class="java.util.concurrent.ArrayBlockingQueue">
-        <constructor-arg value="${callbackThreadsQueueMax}"/>
+        <constructor-arg value="${pool.cell.limits.callback.queue.max}"/>
       </bean>
     </constructor-arg>
   </bean>
 
   <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
     <description>Pin manager cell stub</description>
-    <property name="timeout" value="120000"/>
-    <property name="destination" value="PinManager"/>
+      <property name="destination" value="${pool.service.pinmanager}"/>
+      <property name="timeout" value="${pool.service.pinmanager.timeout}"/>
+      <property name="timeoutUnit" value="${pool.service.pinmanager.timeout.unit}"/>
   </bean>
 
 
@@ -330,7 +309,7 @@
           destroy-method="shutdown">
     <description>Requests IO manager</description>
     <constructor-arg ref="jtm" />
-    <constructor-arg value="p2p,${poolIoQueue}" />
+    <constructor-arg value="p2p,${pool.queues}" />
   </bean>
 
   <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverProtocolTransferService"
@@ -344,7 +323,7 @@
   <bean id="nfs-transfer-service" class="org.dcache.chimera.nfsv41.mover.NfsTransferService"
         init-method="init" destroy-method="shutdown" depends-on="rep">
       <description>NFSv4.1 transfer service</description>
-      <property name="enableGss" value="${nfs.rpcsec_gss}" />
+      <property name="enableGss" value="${pool.mover.nfs.rpcsec_gss}" />
       <property name="postTransferService" ref="post-transfer-service"/>
   </bean>
 
@@ -352,14 +331,16 @@
       <description>Xrootd transfer service</description>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="faultListener" ref="pool"/>
-      <property name="diskThreads" value="${xrootd-mover-disk-threads}"/>
-      <property name="maxMemoryPerConnection" value="${xrootd-mover-max-memory-per-connection}"/>
-      <property name="maxMemory" value="${xrootd-mover-max-memory}"/>
-      <property name="clientIdleTimeout" value="${xrootd-mover-idle-client-timeout}"/>
-      <property name="socketThreads" value="${xrootd-mover-socket-threads}"/>
+      <property name="diskThreads" value="${pool.mover.xrootd.disk-threads}"/>
+      <property name="maxMemoryPerConnection" value="${pool.mover.xrootd.memory-per-connection}"/>
+      <property name="maxMemory" value="${pool.mover.xrootd.memory}"/>
+      <property name="clientIdleTimeout" value="${pool.mover.xrootd.timeout.idle}"/>
+      <property name="clientIdleTimeoutUnit" value="${pool.mover.xrootd.timeout.idle.unit}"/>
+      <property name="socketThreads" value="${pool.mover.xrootd.socket-threads}"/>
+      <property name="maxFrameSize" value="${pool.mover.xrootd.frame-size}"/>
       <property name="plugins">
           <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
-              <property name="plugins" value="${xrootd-plugins}"/>
+              <property name="plugins" value="${pool.mover.xrootd.plugins}"/>
           </bean>
       </property>
   </bean>
@@ -369,20 +350,22 @@
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="checksumModule" ref="csm"/>
       <property name="faultListener" ref="pool"/>
-      <property name="diskThreads" value="${http-mover-disk-threads}"/>
-      <property name="maxMemoryPerConnection" value="${http-mover-max-memory-per-connection}"/>
-      <property name="maxMemory" value="${http-mover-max-memory}"/>
-      <property name="chunkSize" value="${http-mover-chunk-size}"/>
-      <property name="clientIdleTimeout" value="#{1000 * ${http-mover-client-idle-timeout}}"/>
-      <property name="socketThreads" value="${http-mover-socket-threads}"/>
-      <property name="connectTimeout" value="#{1000 * ${http-mover-connect-timeout}}"/>
+      <property name="diskThreads" value="${pool.mover.http.disk-threads}"/>
+      <property name="maxMemoryPerConnection" value="${pool.mover.http.memory-per-connection}"/>
+      <property name="maxMemory" value="${pool.mover.http.memory}"/>
+      <property name="chunkSize" value="${pool.mover.http.chunk-size}"/>
+      <property name="clientIdleTimeout" value="${pool.mover.http.timeout.idle}"/>
+      <property name="clientIdleTimeoutUnit" value="${pool.mover.http.timeout.idle.unit}"/>
+      <property name="socketThreads" value="${pool.mover.http.socket-threads}"/>
+      <property name="connectTimeout" value="${pool.mover.http.timeout.connect}"/>
+      <property name="connectTimeoutUnit" value="${pool.mover.http.timeout.connect.unit}"/>
   </bean>
 
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
         init-method="init" destroy-method="shutdown">
       <description>Post processing execution service</description>
       <property name="billingStub" ref="billing-stub"/>
-      <property name="poolName" value="${poolname}"/>
+      <property name="poolName" value="${pool.name}"/>
       <property name="faultListener" ref="pool"/>
       <property name="checksumModule" ref="csm"/>
   </bean>

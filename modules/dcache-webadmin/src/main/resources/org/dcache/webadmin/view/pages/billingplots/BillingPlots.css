@@ -1,0 +1,32 @@
+@CHARSET "UTF-8";
+
+h2 {
+    text-align: center;
+}
+
+.plots td, th {
+    width: 20%;
+}
+
+td {
+    text-align: center;
+}
+
+tr:nth-child(odd) {
+    background: #d2dddd;
+}
+
+tr:nth-child(even) {
+    background: #789498;
+}
+
+.options table {
+	width: 25%;
+	margin-right: auto;
+}
+
+.plots table {
+	margin-left: auto;
+    margin-right: auto;
+	width: 100%;
+}

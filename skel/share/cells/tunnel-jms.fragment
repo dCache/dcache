@@ -1,6 +1,0 @@
-# jms is a deprecated name
-
-say -level=2 "broker.scheme=jms is deprecated"
-
-exec file:${dcache.paths.share}/cells/tunnel-amq.fragment
-

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <changeSet author="behrmann" id="13" dbms="hsqldb">
+        <!-- A BEFORE DELETE trigger on t_inodes would have been easier, but hsqldb
+             does not allow data manipulation statements in BEFORE triggers. -->
+        <createProcedure>
+            CREATE TRIGGER tgr_locationinfo_trash AFTER DELETE ON t_locationinfo
+              REFERENCING OLD ROW old
+              FOR EACH ROW WHEN (NOT EXISTS (SELECT 1 FROM t_inodes WHERE ipnfsid = old.ipnfsid))
+              INSERT INTO t_locationinfo_trash
+                VALUES (old.ipnfsid, old.itype, old.ilocation, old.ipriority, old.ictime, old.iatime, old.istate)
+        </createProcedure>
+    </changeSet>
+</databaseChangeLog>

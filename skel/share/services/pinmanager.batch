@@ -8,37 +8,27 @@ check -strong db.schema.auto
 check -strong db.schema.changelog
 check db.password
 check db.password.file
-check -strong pinManagerMaxPinDuration
-check -strong pinManagerMaxActiveJdbcConnections
-check -strong pinManagerMaxIdleJdbcConnections
+check -strong pinmanager.max-pin-duration
+check -strong pinmanager.expiration-period
+check -strong pinmanager.db.connections.max-per-partition
+check -strong pinmanager.db.connections.min-per-partition
+check -strong pinmanager.service.poolmanager
+check -strong pinmanager.service.poolmanager.timeout
+check -strong pinmanager.service.poolmanager.timeout.unit
+check -strong pinmanager.service.pnfsmanager
+check -strong pinmanager.service.pnfsmanager.timeout
+check -strong pinmanager.service.pnfsmanager.timeout.unit
+check -strong pinmanager.cell.threads.min
+check -strong pinmanager.cell.threads.max
+check -strong pinmanager.cell.threads.max-idle-time
+check -strong pinmanager.cell.threads.max-idle-time.unit
+check -strong pinmanager.cell.queue.max
 
-exec file:${dcache.paths.share}/cells/stage.fragment doors
-
-check stageConfigurationFilePath
+exec file:${dcache.paths.share}/cells/stage.fragment pinmanager doors
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
        "classpath:org/dcache/pinmanager/pinmanager.xml \
-        -export  \
+        -export \
         -callbackExecutor=message-thread-pool \
         -messageExecutor=message-thread-pool \
-        -jdbcDriver=${db.driver} \
-        -jdbcUrl=${db.url} \
-        -dbUser=${db.user} \
-        -dbPass=${db.password} \
-        -pgPass=${db.password.file} \
-        -db.schema.auto=${db.schema.auto} \
-        -db.schema.changelog=${db.schema.changelog} \
-        -maxPinDuration=${pinManagerMaxPinDuration} \
-        -maxActiveJdbcConnections=${pinManagerMaxActiveJdbcConnections} \
-        -maxJdbcConnectionsWaitSec=${pinManagerMaxJdbcConnectionsWaitSec} \
-        -maxIdleJdbcConnections=${pinManagerMaxIdleJdbcConnections} \
-        -stageConfigurationFilePath=${stageConfigurationFilePath} \
-        -expirationFrequency=60000 \
-        -pnfsManager=PnfsManager \
-        -poolManager=PoolManager \
-        -pinManagerPolicy=org.dcache.services.pinmanager1.SimplePinManagerPolicyImpl \
-        -threadsCore=20 \
-        -threadsMax=200 \
-        -threadsKeepAliveTime=60 \
-        -threadsQueueMax=1000 \
        "

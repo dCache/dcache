@@ -1,17 +1,17 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.Sets;
-import java.security.Principal;
-import java.util.NoSuchElementException;
-import java.util.Properties;
-import java.util.Set;
-import org.dcache.auth.LoginNamePrincipal;
-import org.dcache.auth.UserNamePrincipal;
 import org.junit.Test;
 
-import static com.google.common.collect.Iterables.find;
+import java.security.Principal;
+import java.util.Properties;
+import java.util.Set;
+
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.UserNamePrincipal;
+
 import static com.google.common.base.Predicates.instanceOf;
-import static org.junit.Assert.*;
+import static com.google.common.collect.Iterables.find;
 
 public class MutatorPluginTest {
 
@@ -56,46 +56,11 @@ public class MutatorPluginTest {
         prop.setProperty(MutatorPlugin.OUT_OPTION, "username");
 
         MutatorPlugin mutator = new MutatorPlugin(prop);
-        Set<Principal> in = Sets.newHashSet((Principal) new LoginNamePrincipal("myname"));
-        Set<Principal> out = Sets.newHashSet();
+        Set<Principal> principals = Sets.newHashSet((Principal) new LoginNamePrincipal("myname"));
 
-        mutator.map(in, out);
+        mutator.map(principals);
 
         // will throw exception if no  match
-        find(in, instanceOf(UserNamePrincipal.class));
-    }
-
-    @Test(expected = NoSuchElementException.class)
-    public void testNoOriginalPrincipalLeak() throws Exception {
-        Properties prop = new Properties();
-
-        prop.setProperty(MutatorPlugin.IN_OPTION, "org.dcache.auth.LoginNamePrincipal");
-        prop.setProperty(MutatorPlugin.OUT_OPTION, "username");
-
-        MutatorPlugin mutator = new MutatorPlugin(prop);
-        Set<Principal> in = Sets.newHashSet((Principal) new LoginNamePrincipal("myname"));
-        Set<Principal> out = Sets.newHashSet();
-
-        mutator.map(in, out);
-
-        // sould throw exception
-        find(out, instanceOf(LoginNamePrincipal.class));
-    }
-
-    @Test(expected = NoSuchElementException.class)
-    public void testNoProducedPrincipalLeak() throws Exception {
-        Properties prop = new Properties();
-
-        prop.setProperty(MutatorPlugin.IN_OPTION, "org.dcache.auth.LoginNamePrincipal");
-        prop.setProperty(MutatorPlugin.OUT_OPTION, "username");
-
-        MutatorPlugin mutator = new MutatorPlugin(prop);
-        Set<Principal> in = Sets.newHashSet((Principal) new LoginNamePrincipal("myname"));
-        Set<Principal> out = Sets.newHashSet();
-
-        mutator.map(in, out);
-
-        // sould throw exception
-        find(out, instanceOf(UserNamePrincipal.class));
+        find(principals, instanceOf(UserNamePrincipal.class));
     }
 }

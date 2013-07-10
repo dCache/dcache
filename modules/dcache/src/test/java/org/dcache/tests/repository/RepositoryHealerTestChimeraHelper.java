@@ -39,6 +39,9 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         ds.setJdbcUrl("jdbc:hsqldb:mem:chimeramem");
         ds.setUsername("sa");
         ds.setPassword("");
+        ds.getConfig().setMaxConnectionsPerPartition(3); // seems to require >= 3
+        ds.getConfig().setMinConnectionsPerPartition(1);
+        ds.getConfig().setPartitionCount(1);
 
         _conn = ds.getConnection();
 

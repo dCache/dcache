@@ -1,0 +1,306 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.dcache</groupId>
+        <artifactId>packaging</artifactId>
+        <version>2.7.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>dcache-fhs</artifactId>
+    <packaging>pom</packaging>
+
+    <name>dCache FHS layout</name>
+
+    <properties>
+        <modules>${project.basedir}/..</modules>
+        <skel>${project.basedir}/../../skel</skel>
+        <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
+        <fhs.outputDirectory>${project.build.directory}</fhs.outputDirectory>
+        <fhs.finalName>${project.build.finalName}</fhs.finalName>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- The files in our skel directory need some
+                             variable substitution.
+
+                             The assembly plugin however only supports
+                             ${} substitution and that conflicts with
+                             shell variables and dCache configuration
+                             properties.
+
+                             Therefore we use the resource plugin to
+                             make a filtered copy of the skel and use
+                             those files in the assembly whenever we
+                             need a filtered file. -->
+                        <id>copy-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${filtered-skel}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${skel}</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                            <delimiters>
+                                <delimiter>@</delimiter>
+                            </delimiters>
+                            <useDefaultDelimiters>false</useDefaultDelimiters>
+                            <filters>
+                                <filter>${project.basedir}/src/main/assembly/filter.properties</filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <!-- Chimera SQL files are in another
+                                     artifact. We need to unpack them to
+                                     make them available to the
+                                     assembly. -->
+                                <artifactItem>
+                                    <groupId>org.dcache</groupId>
+                                    <artifactId>chimera</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/chimera-sql</outputDirectory>
+                                    <includes>org/dcache/chimera/sql/*</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <formats>
+                        <format>dir</format>
+                    </formats>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <attach>false</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>fhs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/fhs.xml</descriptor>
+                            </descriptors>
+                            <outputDirectory>${fhs.outputDirectory}</outputDirectory>
+                            <finalName>${fhs.finalName}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>rpm</id>
+
+            <properties>
+                <build.id>1</build.id>
+                <local.version></local.version>
+                <build.number>${build.id}${local.version}</build.number>
+
+                <Timestamp>${maven.build.timestamp}</Timestamp>
+                <Version>${rpm.version}</Version>
+                <Release>${build.number}</Release>
+
+                <maven.build.timestamp.format>EEE MMM dd yyyy</maven.build.timestamp.format>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>regex-property</id>
+                                <goals>
+                                    <goal>regex-property</goal>
+                                </goals>
+                                <configuration>
+                                    <name>rpm.version</name>
+                                    <value>${project.version}</value>
+                                    <regex>-</regex>
+                                    <replacement></replacement>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>rpm</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/rpm.xml</descriptor>
+                                    </descriptors>
+                                    <outputDirectory>${fhs.outputDirectory}</outputDirectory>
+                                    <finalName>${fhs.finalName}</finalName>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>specs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/spec.xml</descriptor>
+                                    </descriptors>
+                                    <finalName>SPECS</finalName>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <executable>rpmbuild</executable>
+                            <workingDirectory>${project.build.directory}</workingDirectory>
+                            <arguments>
+                                <argument>-bb</argument>
+                                <argument>--define</argument>
+                                <argument>_topdir ${project.build.directory}</argument>
+                                <argument>--buildroot</argument>
+                                <argument>${fhs.outputDirectory}/${fhs.finalName}</argument>
+                                <argument>SPECS/dcache-server.spec</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>deb</id>
+
+            <properties>
+                <build.id>1</build.id>
+                <local.version></local.version>
+                <build.number>${build.id}${local.version}</build.number>
+
+                <Version>${deb.version}-${build.number}</Version>
+                <MaintainerName>The dCache team</MaintainerName>
+                <MaintainerMail>support@dcache.org</MaintainerMail>
+                <PackageName>dcache</PackageName>
+                <Timestamp>${maven.build.timestamp}</Timestamp>
+                <maven.build.timestamp.format>EEE, dd MMM yyyy HH:mm:ss Z</maven.build.timestamp.format>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>regex-property</id>
+                                <goals>
+                                    <goal>regex-property</goal>
+                                </goals>
+                                <configuration>
+                                    <name>deb.version</name>
+                                    <value>${project.version}</value>
+                                    <regex>-</regex>
+                                    <replacement>~</replacement>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>deb</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/deb.xml</descriptor>
+                                    </descriptors>
+                                    <outputDirectory>${fhs.outputDirectory}</outputDirectory>
+                                    <finalName>${fhs.finalName}</finalName>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <executable>dpkg-buildpackage</executable>
+                            <workingDirectory>${fhs.outputDirectory}/${fhs.finalName}</workingDirectory>
+                            <arguments>
+                                <argument>-rfakeroot</argument>
+                                <argument>-uc</argument>
+                                <argument>-A</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

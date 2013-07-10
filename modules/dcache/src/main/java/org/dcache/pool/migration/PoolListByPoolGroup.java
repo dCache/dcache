@@ -5,22 +5,24 @@ import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 
 import org.dcache.cells.CellStub;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 class PoolListByPoolGroup
     extends PoolListFromPoolManager
 {
     private final CellStub _poolManager;
-    private final String _poolGroup;
+    private final Iterable<String> _poolGroups;
 
-    public PoolListByPoolGroup(CellStub poolManager, String poolGroup)
+    public PoolListByPoolGroup(CellStub poolManager, Iterable<String> poolGroups)
     {
-        _poolManager = poolManager;
-        _poolGroup = poolGroup;
+        _poolManager = checkNotNull(poolManager);
+        _poolGroups = checkNotNull(poolGroups);
     }
 
     @Override
     public void refresh()
     {
-        _poolManager.send(new PoolManagerGetPoolsByPoolGroupMessage(_poolGroup),
+        _poolManager.send(new PoolManagerGetPoolsByPoolGroupMessage(_poolGroups),
                           PoolManagerGetPoolsMessage.class,
                           this);
     }
@@ -28,7 +30,7 @@ class PoolListByPoolGroup
     @Override
     public String toString()
     {
-        return String.format("pool group %s, %d pools",
-                             _poolGroup, _pools.size());
+        return String.format("pool groups %s, %d pools",
+                             _poolGroups, _pools.size());
     }
 }

@@ -186,7 +186,7 @@ public class NFSv4MoverHandler {
                 .withMaxPort(portRange.getUpper())
                 .withTCP()
                 .withoutAutoPublish()
-                .withSameThreadIoStrategy()
+                .withWorkerThreadIoStrategy()
                 .build();
 
         final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<>();
@@ -282,5 +282,9 @@ public class NFSv4MoverHandler {
 
     public void shutdown() throws IOException {
         _rpcService.stop();
+    }
+
+    NFSServerV41 getNFSServer() {
+        return _embededDS;
     }
 }

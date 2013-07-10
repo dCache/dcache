@@ -27,8 +27,7 @@ public class InfoGetSerialisedDataMessage  extends Message {
 	 * which is XML.
 	 */
 	public InfoGetSerialisedDataMessage() {
-		super( true);
-		_pathElements = null;
+            this(null);
 	}
 
 	/**
@@ -36,6 +35,7 @@ public class InfoGetSerialisedDataMessage  extends Message {
 	 * @param pathElements a list of elements, excluding the initial "dCache".
 	 */
 	public InfoGetSerialisedDataMessage( List <String> pathElements) {
+		super( true);
 		_pathElements = pathElements;
 	}
 

@@ -125,7 +125,6 @@ public class JdbcConnectionPool
         ds.setPassword(pass);
         ds.setIdleConnectionTestPeriodInMinutes(60);
         ds.setIdleMaxAgeInMinutes(240);
-        ds.setMaxConnectionsPerPartition(30);
         ds.setMaxConnectionsPerPartition(10);
         ds.setPartitionCount(3);
         ds.setAcquireIncrement(5);

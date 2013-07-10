@@ -1,0 +1,290 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'optparse'
+require 'ostruct'
+require 'fileutils'
+require 'tempfile'
+require 'ansi'
+require 'etc'
+
+include ANSI::Code
+
+@globusUrlCopy = 'globus-url-copy'
+@srmcp = 'srmcp'
+@srmls = 'srmls'
+@srmrm = 'srmrm'
+@srmmv = 'srmmv'
+@srmmkdir = 'srmmkdir'
+@srmrmdir = 'srmrmdir'
+@srmcheck = 'srm-check-permissions'
+@arccp = 'arccp'
+@arcrm = 'arcrm'
+@arcls = 'arcls'
+@xrdcp = 'xrdcp'
+@dccp = 'dccp'
+@curl = 'curl'
+
+@unique = Time.now.to_i
+@count = 0
+
+def makeTempName
+  "test-#{@unique}-#{@count += 1}"
+end
+
+def run(*args)
+  s = *args.join(' ')
+  puts yellow { s }
+  begin
+    print faint
+    if not system(s)
+      raise "Failed with exit code #{$?}"
+    end
+  ensure
+    print reset
+  end
+end
+
+def gridftp(source, dest, *args)
+  tmp1 = makeTempName
+  tmp2 = makeTempName
+  run(@globusUrlCopy, args,
+      "file:#{source}", "gsiftp://#{@options.host}/#{@options.dir}/#{tmp1}");
+  run(@globusUrlCopy, args,
+      "gsiftp://#{@options.host}/#{@options.dir}/#{tmp1}", "gsiftp://#{@options.host}/#{@options.dir}/#{tmp2}");
+  run(@globusUrlCopy, args,
+      "gsiftp://#{@options.host}/#{@options.dir}/#{tmp2}", "file:#{dest}");
+end
+
+def srmcp(source, dest, *args)
+  tmp = makeTempName
+
+  run(@srmmkdir, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}")
+  run(@srmcp, args,
+      "file:///#{source}",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/a")
+  run(@srmcp, args,
+      "gsiftp://#{@options.host}/#{@options.dir}/#{tmp}/a",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/b")
+  run(@srmcp, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/b",
+      "gsiftp://#{@options.host}/#{@options.dir}/#{tmp}/c")
+  run(@srmcp, args,
+      "http://#{@options.host}:2880/#{@options.dir}/#{tmp}/c",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/d")
+  run(@srmcp, args, '-pushmode=false',
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/d",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/e")
+  run(@srmcp, args, '-pushmode=true',
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/e",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/f")
+  run(@srmmv, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/f",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g")
+  run(@srmcp, args, '-streams_num=1',
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g",
+      "file:///#{dest}")
+  run(@srmls, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/a")
+  run(@srmcheck, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/a")
+  run(@srmrm, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/a",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/b",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/c",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/d",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/e",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g")
+  run(@srmmkdir, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/dir1")
+  run(@srmmkdir, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/dir1/dir11")
+  run(@srmmkdir, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/dir2")
+  run(@srmrmdir, args, '-recursive',
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}")
+end
+
+def arc(source, dest, *args)
+  tmp1 = makeTempName
+  tmp2 = makeTempName
+  tmp3 = makeTempName
+  tmp4 = makeTempName
+
+  run(@arccp, '-p', args,
+      "#{source}",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp1}")
+  run(@arccp, args,
+      "gsiftp://#{@options.host}/#{@options.dir}/#{tmp1}",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp2}")
+  run(@arccp, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp2}",
+      "gsiftp://#{@options.host}/#{@options.dir}/#{tmp3}")
+  run(@arccp, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp3}",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp4}")
+  run(@arccp, '-p', args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp4}",
+      "#{dest}")
+  run(@arcls,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp1}")
+  run(@arcrm,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp1}")
+end
+
+def xrootd(source, dest, *args)
+  tmp1 = makeTempName
+
+  run(@xrdcp, args,
+      "#{source}",
+      "root://#{@options.host}/#{@options.dir}/#{tmp1}")
+  run(@xrdcp, args,
+      "root://#{@options.host}/#{@options.dir}/#{tmp1}",
+      "#{dest}")
+end
+
+def dcap(source, dest, *args)
+  tmp1 = makeTempName
+
+  run(@dccp, "-A", args,
+      "#{source}",
+      "dcap://#{@options.host}:22125/#{@options.dir}/#{tmp1}")
+  run(@dccp, args,
+      "dcap://#{@options.host}:22125/#{@options.dir}/#{tmp1}",
+      "#{dest}")
+end
+
+def gsidcap(source, dest, *args)
+  tmp1 = makeTempName
+
+  run(@dccp, "-A", args,
+      "#{source}",
+      "gsidcap://#{@options.host}:22128/#{@options.dir}/#{tmp1}")
+  run(@dccp, args,
+      "gsidcap://#{@options.host}:22128/#{@options.dir}/#{tmp1}",
+      "#{dest}")
+end
+
+def http(source, dest, *args)
+  tmp1 = makeTempName
+  run(@curl, args, "-s", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-s", "-L", "-o", dest, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+end
+
+def test(transfer, *args)
+  tmp = Tempfile.new('dcache.test')
+  begin
+    start = Time.now
+
+    File.delete(tmp.path)
+    method(transfer).call(@options.file, tmp.path, *args)
+
+    if FileUtils.compare_file(@options.file, tmp.path)
+      puts "#{green { "Passed" }} #{blue { "#{Time.now - start}s" }}"
+    else
+      puts red { "Failed: #{@options.file} and #{tmp.path} are not identical" }
+    end
+  rescue => error
+    puts red { error }
+  ensure
+    puts
+    tmp.close
+  end
+end
+
+# Customised parser for command line options
+def OptionParser.parse(args)
+  options = OpenStruct.new
+  options.file = '/bin/bash'
+  options.host = 'localhost'
+  options.dir = 'disk'
+  options.includes = []
+  options.excludes = []
+  options.tests = {
+    :gridftp => [ [ :gridftp ],
+                  [ :gridftp, '-p 1' ],
+                  [ :gridftp, '-p 10' ],
+                  [ :gridftp, '-p 100' ],
+                  [ :gridftp, '-g2' ],
+                  [ :gridftp, '-g2', '-p 1' ],
+                  [ :gridftp, '-g2', '-p 10' ],
+                  [ :gridftp, '-g2', '-p -100' ] ],
+    :xrootd => [ [ :xrootd ] ],
+    :dcap => [ [ :dcap ] ],
+    :gsidcap => [ [ :gsidcap ] ],
+    :srmcp => [ [ :srmcp, '-1' ],
+                [ :srmcp, '-2' ]
+              ],
+    :arc => [ [ :arc ] ],
+    :http => [ [ :http ] ]
+  }
+
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: #{$0} [options]"
+
+    opts.on("-f", "--file FILE", "Input file") do |value|
+      options.file = value
+    end
+
+    opts.on("-H", "--host HOST", "Target host") do |value|
+      options.host = value
+    end
+
+    opts.on("-d", "--dir PATH", "Target directory") do |value|
+      options.dir = value
+    end
+
+    opts.on("-n", "No predefined tests") do |value|
+      options.tests.each_key { |key| options.tests[key] = [ [ key ] ] }
+    end
+
+    opts.on("--[no-]srm", "Test SRM") do |value|
+      (value ? options.includes : options.excludes ) << :srmcp
+    end
+
+    opts.on("--[no-]dcap", "Test DCAP") do |value|
+      (value ? options.includes : options.excludes ) << :dcap
+    end
+
+    opts.on("--[no-]gsidcap", "Test GSIDCAP") do |value|
+      (value ? options.includes : options.excludes ) << :gsidcap
+    end
+
+    opts.on("--[no-]gridftp", "Test GridFTP") do |value|
+      (value ? options.includes : options.excludes ) << :gridftp
+    end
+
+    opts.on("--[no-]xrootd", "Test XROOTD") do |value|
+      (value ? options.includes : options.excludes ) << :xrootd
+    end
+
+    opts.on("--[no-]arc", "Test ARC client") do |value|
+      (value ? options.includes : options.excludes ) << :arc
+    end
+
+    opts.on("--[no-]http", "Test HTTP") do |value|
+      (value ? options.includes : options.excludes ) << :http
+    end
+
+    opts.on("-h", "--help", "Show this message") do |value|
+      puts parser
+      exit
+    end
+  end
+
+  parser.parse!(args)
+
+  if ! options.includes.empty? then
+    options.tests.delete_if { |key, value| ! options.includes.include?(key) }
+  end
+  options.tests.delete_if { |key, value| options.excludes.include?(key) }
+
+  options
+end
+
+@options = OptionParser.parse(ARGV)
+@options.tests.values.flatten(1).each do |method, *args|
+  test(method, *(args + ARGV))
+end

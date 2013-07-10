@@ -14,7 +14,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.Formats;
 
@@ -140,24 +139,14 @@ public class RepositoryInterpreter
 
         final DelayedReply reply = new DelayedReply();
         Thread task = new Thread() {
-                void reply(Serializable o)
-                    throws InterruptedException
-                {
-                    try {
-                        reply.send(o);
-                    } catch (NoRouteToCellException e) {
-                        _log.error("Failed to send reply for 'rep ls': " + e);
-                    }
-                }
-
                 @Override
                 public void run()
                 {
                     try {
                         try {
-                            reply(list());
+                            reply.reply(list());
                         } catch (CacheException | RuntimeException e) {
-                            reply(e);
+                            reply.reply(e);
                         }
                     } catch (InterruptedException e) {
                         _log.warn("Interrupted while listing: " + e);

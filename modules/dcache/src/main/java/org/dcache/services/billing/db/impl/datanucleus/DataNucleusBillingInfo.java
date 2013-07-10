@@ -1,5 +1,65 @@
+/*
+COPYRIGHT STATUS:
+Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
+software are sponsored by the U.S. Department of Energy under Contract No.
+DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
+non-exclusive, royalty-free license to publish or reproduce these documents
+and software for U.S. Government purposes.  All documents and software
+available from this server are protected under the U.S. and Foreign
+Copyright Laws, and FNAL reserves all rights.
+
+Distribution of the software available from this server is free of
+charge subject to the user following the terms of the Fermitools
+Software Legal Information.
+
+Redistribution and/or modification of the software shall be accompanied
+by the Fermitools Software Legal Information  (including the copyright
+notice).
+
+The user is asked to feed back problems, benefits, and/or suggestions
+about the software to the Fermilab Software Providers.
+
+Neither the name of Fermilab, the  URA, nor the names of the contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+DISCLAIMER OF LIABILITY (BSD):
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL FERMILAB,
+OR THE URA, OR THE U.S. DEPARTMENT of ENERGY, OR CONTRIBUTORS BE LIABLE
+FOR  ANY  DIRECT, INDIRECT,  INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
+
+Liabilities of the Government:
+
+This software is provided by URA, independent from its Prime Contract
+with the U.S. Department of Energy. URA is acting independently from
+the Government and in its own private capacity and is not acting on
+behalf of the U.S. Government, nor as its contractor nor its agent.
+Correspondingly, it is understood and agreed that the U.S. Government
+has no connection to this software and in no manner whatsoever shall
+be liable for nor assume any responsibility or obligation for any claim,
+cost, or damages arising out of or resulting from the use of the software
+available from this server.
+
+Export Control:
+
+All documents and software available from this server are subject to U.S.
+export control laws.  Anyone downloading information from this server is
+obligated to secure any necessary Government licenses before exporting
+documents or software obtained from this server.
+ */
 package org.dcache.services.billing.db.impl.datanucleus;
 
+import com.google.common.base.Strings;
 import org.datanucleus.FetchPlan;
 
 import javax.jdo.JDOHelper;
@@ -32,19 +92,90 @@ import org.dcache.services.billing.db.impl.BaseBillingInfoAccess;
  */
 public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
 
-    public static final String DEFAULT_PROPERTIES = "org/dcache/services/billing/db/datanucleus.properties";
+    public static final String DEFAULT_PROPERTIES
+        = "org/dcache/services/billing/db/datanucleus.properties";
 
     private PersistenceManagerFactory pmf;
     private PersistenceManager insertManager;
 
-    /*
-     * (non-Javadoc)
-     *
-     * Initializes DataNucleus factory and in-memory object caching.
-     *
-     * @see
-     * org.dcache.billing.AbstractBillingInfoAccess#initialize(java.lang.String)
-     */
+    private static Query createQuery(PersistenceManager pm, Class<?> type,
+                    String filter, String parameters) {
+        Query query = pm.newQuery(type);
+
+        if (filter != null) {
+            query.setFilter(filter);
+        }
+
+        if (parameters != null) {
+            query.declareParameters(parameters);
+        }
+
+        query.addExtension("datanucleus.rdbms.query.resultSetType",
+                        "scroll-insensitive");
+        query.addExtension("datanucleus.query.resultCacheType", "none");
+        query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
+        return query;
+    }
+
+    private static void rollbackIfActive(Transaction tx) {
+        if (tx != null && tx.isActive()) {
+            tx.rollback();
+        }
+    }
+
+    @Override
+    public <T> Collection<T> get(Class<T> type) throws BillingQueryException {
+        return get(type, null, null, (Object) null);
+    }
+
+    @Override
+    public <T> Collection<T> get(Class<T> type, String filter, Object... values)
+                    throws BillingQueryException {
+        return get(type, filter, null, values);
+    }
+
+    @Override
+    public <T> Collection<T> get(Class<T> type, String filter,
+                    String parameters, Object... values)
+                    throws BillingQueryException {
+        if (!isRunning()) {
+            return null;
+        }
+        PersistenceManager readManager = pmf.getPersistenceManager();
+        Transaction tx = readManager.currentTransaction();
+        try {
+            tx.begin();
+            Query query = createQuery(readManager, type, filter, parameters);
+            logger.trace("created query {}", query);
+            Collection<T> c = (values == null ? ((Collection<T>) query.execute())
+                            : ((Collection<T>) query.executeWithArray(values)));
+            logger.trace("collection size = {}", c.size());
+            Collection<T> detached = readManager.detachCopyAll(c);
+            logger.trace("got detatched collection {}", detached);
+            tx.commit();
+            logger.trace("successfully executed {}",
+                            "get: {}, {}. {}. {}",
+                            type, filter, parameters,
+                            values == null ? null : Arrays.asList(values) );
+            return detached;
+        } catch (Exception t) {
+            String message = "get: " + type + ", " + filter + ", " + parameters
+                            + ", " + Arrays.asList(values);
+            printSQLException(message, t);
+            throw new BillingQueryException(t);
+        } finally {
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                /*
+                 * closing is necessary in order to avoid memory leak in the
+                 * persistence manager factory
+                 */
+                readManager.close();
+            }
+        }
+    }
+
     @Override
     public void initializeInternal() throws BillingInitializationException {
         addJdbcDNProperties();
@@ -61,66 +192,24 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                 }
 
             } else {
-                ClassLoader classLoader = Thread.currentThread()
-                                .getContextClassLoader();
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
                 URL resource = classLoader.getResource(DEFAULT_PROPERTIES);
                 if (resource == null) {
-                    throw new FileNotFoundException("Cannot run BillingInfoCell"
-                                    +"; cannot find resource " + DEFAULT_PROPERTIES);
+                    throw new FileNotFoundException(
+                                    "Cannot run BillingInfoCell"
+                                                    + "; cannot find resource "
+                                                    + DEFAULT_PROPERTIES);
                 }
                 properties.load(resource.openStream());
             }
             pmf = JDOHelper.getPersistenceManagerFactory(properties);
-        } catch (Throwable t) {
+        } catch (Exception t) {
             throw new BillingInitializationException(t);
         }
     }
 
-    /**
-     * From injection, but will be overwritten by any properties set in the
-     * .properties resource or file.
-     */
-    private void addJdbcDNProperties() {
-        if (jdbcDriver != null && !"".equals(jdbcDriver)) {
-            properties.setProperty("datanucleus.ConnectionDriverName",
-                jdbcDriver);
-        }
-        if (jdbcUrl != null && !"".equals(jdbcUrl)) {
-            properties.setProperty("datanucleus.ConnectionURL", jdbcUrl);
-        }
-        if (jdbcUser != null && !"".equals(jdbcUser)) {
-            properties.setProperty("datanucleus.ConnectionUserName", jdbcUser);
-        }
-        if (jdbcPassword != null && !"".equals(jdbcPassword)) {
-            properties.setProperty("datanucleus.ConnectionPassword",
-                jdbcPassword);
-        }
-
-        // datanucleus currently doesn't support setting the partition count
-        // so the default value is used.  This is '1' (from the
-        // /bonecp-default-config.xml file in bonecp-<version>.jar)
-        setPropertyIfValueSet(properties, "datanucleus.connectionPool.minPoolSize",
-                minConnectionsPerPartition);
-        setPropertyIfValueSet(properties, "datanucleus.connectionPool.maxPoolSize",
-                maxConnectionsPerPartition);
-    }
-
-    private void setPropertyIfValueSet(Properties properties, String key, int value)
-    {
-        if(value != DUMMY_VALUE) {
-            properties.setProperty(key, String.valueOf(value));
-        }
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.services.billing.db.IBillingInfoAccess#put(java.lang.Object)
-     */
     @Override
-    public <T> void put(T data)
-    {
+    public <T> void put(T data) throws BillingQueryException {
         if (!isRunning()) {
             return;
         }
@@ -128,7 +217,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             Transaction tx = null;
             try {
                 if (insertManager == null) {
-                    logger.debug("put, new write manager ...");
+                    logger.trace("put, new write manager ...");
                     insertManager = pmf.getPersistenceManager();
                 }
                 tx = insertManager.currentTransaction();
@@ -138,146 +227,32 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                 }
                 insertManager.makePersistent(data);
                 insertCount++;
-            } catch (Throwable e) {
-                printSQLException("put " + data, e);
-                rollbackIfActive(tx);
+
+            } catch (Exception e) {
+                if (tx != null) {
+                    tx.rollback();
+                }
+                printSQLException("put failed for " + data, e);
+                throw new BillingQueryException(e);
+            } catch (Throwable t) {
+                if (tx != null) {
+                    tx.rollback();
+                }
+                throw t;
             }
+            /*
+             * we do not rollback active transactions under finally{...} because
+             * the transaction normally remains open until the committer thread
+             * closes it
+             */
         }
+
         doCommitIfNeeded(false);
     }
 
-    /*
-     * (non-Javadoc) Runs DataNucleus transaction if threshold is reached or
-     * force is true.
-     *
-     * @see
-     * org.dcache.billing.impl.AbstractBillingInfoAccess#doCommitIfNeeded(boolean
-     * )
-     */
-    @Override
-    protected void doCommitIfNeeded(boolean force) {
-        synchronized (this) {
-            logger.debug("doCommitIfNeeded, count={}", insertCount);
-            if (force || insertCount >= maxInsertsBeforeCommit) {
-                Transaction tx = null;
-                try {
-                    if (insertManager != null) {
-                        logger.debug("committing {} cached objects",
-                                        insertCount);
-                        tx = insertManager.currentTransaction();
-                        tx.commit();
-                    }
-                } catch (Throwable t) {
-                    printSQLException("committing  " + insertCount
-                                    + " cached objects", t);
-                    rollbackIfActive(tx);
-                } finally {
-                    /*
-                     * closing is necessary in order to avoid memory leaks
-                     */
-                    if (insertManager != null) {
-                        insertManager.close();
-                        insertManager = null;
-                    }
-                    insertCount = 0;
-                }
-            }
-        }
-    }
-
-    /*
-     * Returns detached copy of query result. (non-Javadoc)
-     *
-     * @see
-     * org.dcache.services.billing.db.IBillingInfoAccess#get(java.lang.Class,
-     * java.lang.String, java.lang.String, java.lang.Object[])
-     */
-    @Override
-    public <T> Collection<T> get(Class<T> type, String filter,
-                    String parameters, Object... values)
-                                    throws BillingQueryException {
-        if (!isRunning()) {
-            return null;
-        }
-        PersistenceManager readManager = pmf.getPersistenceManager();
-        Transaction tx = readManager.currentTransaction();
-        try {
-            tx.begin();
-            Query query = createQuery(readManager, type, filter, parameters);
-            logger.debug("created query {}", query);
-            Collection<T> c = (values == null ? ((Collection<T>) query
-                            .execute()) : ((Collection<T>) query
-                                            .executeWithArray(values)));
-            logger.debug("got collection {}", c);
-            Collection<T> detached = readManager.detachCopyAll(c);
-            logger.debug("got detatched collection {}", detached);
-            tx.commit();
-            logger.debug("successfully executed {}",
-                            "get: {}, {}. {}. {}",
-                            new Object[] { type, filter, parameters,
-                            values == null ? null: Arrays.asList(values) });
-            return detached;
-        } catch (Throwable t) {
-            String message = "get: " + type + ", " + filter + ", " + parameters
-                            + ", " + Arrays.asList(values);
-            printSQLException(message, t);
-            throw new BillingQueryException(message, t);
-        } finally {
-            rollbackIfActive(tx);
-            /*
-             * closing is necessary in order to avoid memory leak in the
-             * persistence manager factory
-             */
-            readManager.close();
-        }
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#get(java.lang.Class)
-     */
-    @Override
-    public <T> Collection<T> get(Class<T> type) throws BillingQueryException {
-        return get(type, null, null, (Object) null);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#get(java.lang.Class,
-     * java.lang.String, java.lang.Object[])
-     */
-    @Override
-    public <T> Collection<T> get(Class<T> type, String filter, Object... values)
-                    throws BillingQueryException {
-        return get(type, filter, null, values);
-    }
-
-    /*
-     * Close the daemon (super), then shut down the thread and close the
-     * manager. (non-Javadoc)
-     *
-     * @see org.dcache.billing.AbstractBillingInfoAccess#close()
-     */
-    @Override
-    public void close() {
-        super.close();
-        if (pmf != null) {
-            synchronized (this) {
-                if (insertManager != null) {
-                    insertManager.close();
-                }
-            }
-            pmf.close();
-        }
-    }
-
-    /*
+    /**
      * Does bulk deletes. Properties file must set
      * <code>datanucleus.query.jdoql.allowAll=true</code> (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#removeAll(java.lang.Class)
      */
     @Override
     public <T> long remove(Class<T> type) throws BillingQueryException {
@@ -286,7 +261,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
-        logger.debug("remove all instances of {}", type);
+        logger.trace("remove all instances of {}", type);
         long removed;
         try {
             tx.begin();
@@ -294,29 +269,28 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                             + type.getName());
             removed = (Long) query.execute();
             tx.commit();
-            logger.debug("successfully removed " + removed
+            logger.trace("successfully removed " + removed
                             + " entries of type " + type);
             return removed;
-        } catch (Throwable t) {
-            String message = "remove all instances of " + type;
-            printSQLException(message, t);
-            throw new BillingQueryException(message, t);
+        } catch (Exception t) {
+            printSQLException("remove all instances of " + type, t);
+            throw new BillingQueryException(t);
         } finally {
-            rollbackIfActive(tx);
-            /*
-             * closing is necessary in order to avoid memory leak in the
-             * persistence manager factory
-             */
-            deleteManager.close();
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                /*
+                 * closing is necessary in order to avoid memory leak in the
+                 * persistence manager factory
+                 */
+                deleteManager.close();
+            }
         }
     }
 
-    /*
+    /**
      * NB: This form of delete will only work if identity-type is NOT
      * "nondurable". Currently unused. (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#remove(java.lang.Class,
-     * java.lang.String, java.lang.Object[])
      */
     @Override
     public <T> long remove(Class<T> type, String filter, Object... values)
@@ -324,12 +298,9 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         return remove(type, filter, null, values);
     }
 
-    /*
+    /**
      * NB: This form of delete will only work if identity-type is NOT
      * "nondurable". Currently unused. (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#remove(java.lang.Class,
-     * java.lang.String, java.lang.String, java.lang.Object[])
      */
     @Override
     public <T> long remove(Class<T> type, String filter, String parameters,
@@ -349,90 +320,131 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                 removed = query.deletePersistentAll(values);
             }
             tx.commit();
-            logger.debug("successfully removed {} entries of type {}", removed,
+            logger.trace("successfully removed {} entries of type {}", removed,
                             type);
             return removed;
-        } catch (Throwable t) {
+        } catch (Exception t) {
             String message = "remove: " + type + ", " + filter + ", "
                             + parameters + ", " + Arrays.asList(values);
             printSQLException(message, t);
-            throw new BillingQueryException(message, t);
+            throw new BillingQueryException(t);
         } finally {
-            rollbackIfActive(tx);
-            /*
-             * closing is necessary in order to avoid memory leak in the
-             * persistence manager factory
-             */
-            deleteManager.close();
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                /*
+                 * closing is necessary in order to avoid memory leak in the
+                 * persistence manager factory
+                 */
+                deleteManager.close();
+            }
         }
+    }
+
+    @Override
+    public void setPropertiesPath(String propetiesPath) {
+        propertiesPath = propetiesPath;
+    }
+
+    @Override
+    protected void doCommitIfNeeded(boolean force) throws BillingQueryException {
+        synchronized (this) {
+            logger.trace("doCommitIfNeeded, count={}", insertCount);
+            if (force || insertCount >= maxInsertsBeforeCommit) {
+                Transaction tx = null;
+                try {
+                    if (insertManager != null) {
+                        logger.trace("committing {} cached objects",
+                                        insertCount);
+                        tx = insertManager.currentTransaction();
+                        tx.commit();
+                    }
+                } catch (Exception t) {
+                    printSQLException("committing  " + insertCount
+                                    + " cached objects", t);
+                    throw new BillingQueryException(t);
+                } finally {
+                    try {
+                        rollbackIfActive(tx);
+                    } finally {
+                        /*
+                         * closing is necessary in order to avoid memory leaks
+                         */
+                        if (insertManager != null) {
+                            insertManager.close();
+                            insertManager = null;
+                        }
+                        insertCount = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * From injection, but will be overwritten by any properties set in the
+     * .properties resource or file.
+     */
+    private void addJdbcDNProperties() {
+        if (jdbcDriver != null && !"".equals(jdbcDriver)) {
+            properties.setProperty("datanucleus.ConnectionDriverName",
+                            jdbcDriver);
+        }
+        if (!Strings.isNullOrEmpty(jdbcUrl)) {
+            properties.setProperty("datanucleus.ConnectionURL", jdbcUrl);
+        }
+        if (!Strings.isNullOrEmpty(jdbcUser)) {
+            properties.setProperty("datanucleus.ConnectionUserName", jdbcUser);
+        }
+        if (!Strings.isNullOrEmpty(jdbcPassword)) {
+            properties.setProperty("datanucleus.ConnectionPassword",
+                            jdbcPassword);
+        }
+
+        // datanucleus currently doesn't support setting the partition count
+        // so the default value is used. This is '1' (from the
+        // /bonecp-default-config.xml file in bonecp-<version>.jar)
+        setPropertyIfValueSet(properties,
+                        "datanucleus.connectionPool.minPoolSize",
+                        minConnectionsPerPartition);
+        setPropertyIfValueSet(properties,
+                        "datanucleus.connectionPool.maxPoolSize",
+                        maxConnectionsPerPartition);
     }
 
     /**
      * Tries to extract embedded messages from SQL exceptions.
-     *
-     * @param message
-     * @param t
      */
     private void printSQLException(String message, Throwable t) {
-        if (t == null) {
+        printSQLException(new StringBuilder(message), t);
+    }
+
+    private void printSQLException(StringBuilder message, Throwable t) {
+        if (!logger.isTraceEnabled()) {
             return;
         }
-        if (t instanceof SQLException) {
+
+        if (t == null) {
+            logger.trace(message.toString());
+        } else if (t instanceof SQLException) {
             SQLException e = (SQLException) t;
-            logger.error(e.getMessage());
-            logger.error("Error code: {}", e.getErrorCode());
-            logger.error("SQL state: {}", e.getSQLState());
-        } else {
-            logger.error(message, t);
-        }
-        printSQLException(message, t.getCause());
-    }
-
-    /**
-     * Convenience method.
-     *
-     * @param pm
-     * @param type
-     * @param filter
-     * @param parameters
-     * @return appropriate Query
-     */
-    private static Query createQuery(PersistenceManager pm, Class<?> type,
-                    String filter, String parameters) {
-        if (parameters == null) {
-            if (filter == null) {
-                return pm.newQuery(type);
-            }
-            return pm.newQuery(type, filter);
-        }
-        Query query = pm.newQuery(type);
-        query.setFilter(filter);
-        query.declareParameters(parameters);
-        query.addExtension("datanucleus.rdbms.query.resultSetType",
-                        "scroll-insensitive");
-        query.addExtension("datanucleus.query.resultCacheType", "none");
-        query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
-        return query;
-    }
-
-    /**
-     * Convenience method.
-     *
-     * @param tx
-     *            transaction
-     */
-    private static void rollbackIfActive(Transaction tx) {
-        if (tx != null && tx.isActive()) {
-            tx.rollback();
+            message.append("(")
+                   .append(e.getClass())
+                   .append(": ")
+                   .append(e.getMessage())
+                   .append("; Error code ")
+                   .append(e.getErrorCode())
+                   .append("; SQL state ")
+                   .append(e.getSQLState())
+                   .append(")");
+            printSQLException(message, t.getCause());
         }
     }
 
-    /**
-     * @param propetiesPath
-     *            the propetiesPath to set
-     */
-    @Override
-    public void setPropertiesPath(String propetiesPath) {
-        this.propertiesPath = propetiesPath;
+    private void setPropertyIfValueSet(Properties properties, String key,
+                    int value) {
+        if (value != DUMMY_VALUE) {
+            properties.setProperty(key, String.valueOf(value));
+        }
     }
 }

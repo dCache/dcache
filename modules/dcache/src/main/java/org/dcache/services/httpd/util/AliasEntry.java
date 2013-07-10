@@ -6,9 +6,9 @@ import org.eclipse.jetty.webapp.WebAppContext;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.util.Map;
 
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.Args;
 import dmg.util.HttpResponseEngine;
 
@@ -162,7 +162,7 @@ public class AliasEntry {
                                 + entry.getSpecificString() + ")";
                 break;
             case WEBAPP:
-                handler = createWebAppContext(alias, specific, args, cell);
+                handler = createWebAppContext(alias, specific, new Args(args.argv(3)), cell);
                 entry = new AliasEntry(alias, aliasType, handler, args.toString());
                 entry.statusMessage = alias + " -> " + TYPE_WEBAPP + "(" + args + ")";
                 break;
@@ -223,27 +223,24 @@ public class AliasEntry {
     private final AliasType type;
     private final Handler handler;
     private final String spec;
+    private final CellInfoProvider info;
 
     private String onError;
     private String overwrite;
     private String intFailureMsg;
     private String statusMessage;
-    private Method getInfo;
 
-    private AliasEntry(String name, AliasType type, Handler handler, String spec) {
+    private AliasEntry(String name, AliasType type, Handler handler, String spec)
+    {
         this.name = name;
         this.type = type;
         this.handler = handler;
         this.spec = spec;
 
         if (handler instanceof ResponseEngineHandler) {
-            try {
-                final HttpResponseEngine engine
-                    = ((ResponseEngineHandler) handler).getEngine();
-                getInfo = engine.getClass().getMethod("getInfo",
-                                new Class[] { PrintWriter.class });
-            } catch (final Exception e) {
-            }
+            info = ((ResponseEngineHandler) handler).getCellInfoProvider();
+        } else {
+            info = null;
         }
     }
 
@@ -252,15 +249,10 @@ public class AliasEntry {
     }
 
     public void getInfo(PrintWriter pw) {
-        if (getInfo == null) {
+        if (info == null) {
             pw.println(toString());
-            return;
-        }
-
-        try {
-            getInfo.invoke(handler, pw);
-        } catch (final Exception e) {
-            pw.println("Exception : " + e);
+        } else {
+            info.getInfo(pw);
         }
     }
 

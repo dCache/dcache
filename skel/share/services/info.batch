@@ -3,4 +3,14 @@
 ##
 
 onerror shutdown
-create  org.dcache.services.info.InfoProvider ${cell.name} "-export"
+
+check -strong cell.name
+check -strong info.cell.export
+check -strong info.net.port
+check -strong info.net.listen
+check -strong info.net.backlog
+
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
+     "classpath:org/dcache/services/info/info.xml \
+      -export=${info.cell.export}"
+

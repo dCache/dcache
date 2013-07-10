@@ -1,28 +1,61 @@
 onerror shutdown
 
 check -strong cell.name
-check -strong name
-check -strong path
-check -strong ftp.proxy.on-passive
-check -strong maxDiskSpace
-check poolIoQueue
-check -strong checkRepository
-check -strong gsiftpAllowMmap
-check -strong metaDataRepository
-check -strong gsiftpReadAhead
-check -strong allowCleaningPreciousFiles
-check -strong poolupDestination
-check -strong pnfsmanager
-check -strong flushMessageTarget
-check -strong sweeper
-check -strong xrootdMoverDiskThreads
-check xrootdMoverSocketThreads
-check -strong xrootdMoverMaxMemoryPerConnection
-check -strong xrootdMoverMaxMemory
-check -strong xrootdMoverMaxFrameSize
-check replicateOnArrival
-check -strong lfs
-check tags
+check -strong pool.name
+check -strong pool.path
+check -strong pool.size
+check -strong pool.lfs
+check pool.queues
+check pool.tags
+check -strong pool.cell.limits.message.threads.min
+check -strong pool.cell.limits.message.threads.max
+check -strong pool.cell.limits.message.threads.max-idle-time
+check -strong pool.cell.limits.message.threads.max-idle-time.unit
+check -strong pool.cell.limits.message.queue.max
+check -strong pool.cell.limits.callback.threads.min
+check -strong pool.cell.limits.callback.threads.max
+check -strong pool.cell.limits.callback.threads.max-idle-time
+check -strong pool.cell.limits.callback.threads.max-idle-time.unit
+check -strong pool.cell.limits.callback.queue.max
+check -strong pool.limits.worker-threads
+check -strong pool.enable.repository-check
+check -strong pool.enable.remove-precious-files-on-delete
+check -strong pool.plugins.meta
+check -strong pool.plugins.sweeper
+check -strong pool.mover.ftp.allow-incoming-connections
+check -strong pool.mover.ftp.mmap
+check -strong pool.mover.ftp.read-ahead
+check -strong pool.mover.xrootd.disk-threads
+check -strong pool.mover.xrootd.memory-per-connection
+check -strong pool.mover.xrootd.memory
+check -strong pool.mover.xrootd.timeout.idle
+check -strong pool.mover.xrootd.frame-size
+check pool.mover.xrootd.plugins
+check pool.mover.xrootd.socket-threads
+check -strong pool.mover.http.disk-threads
+check -strong pool.mover.http.memory-per-connection
+check -strong pool.mover.http.memory
+check -strong pool.mover.http.timeout.idle
+check -strong pool.mover.http.timeout.connect
+check -strong pool.mover.http.chunk-size
+check pool.mover.http.socket-threads
+check -strong pool.mover.nfs.rpcsec_gss
+check -strong pool.service.pool.timeout
+check -strong pool.service.pool.timeout.unit
+check -strong pool.service.poolmanager
+check -strong pool.service.poolmanager.timeout
+check -strong pool.service.poolmanager.timeout.unit
+check -strong pool.service.pnfsmanager
+check -strong pool.service.pnfsmanager.timeout
+check -strong pool.service.pnfsmanager.timeout.unit
+check -strong pool.service.pinmanager
+check -strong pool.service.pinmanager.timeout
+check -strong pool.service.pinmanager.timeout.unit
+check -strong pool.service.billing
+check -strong pool.destination.heartbeat
+check -strong pool.destination.flush-notification
+check pool.destination.replicate
+check pool.destination.replicate.ip
 
 define context PoolDefaults endDefine
    set heartbeat 30
@@ -58,42 +91,13 @@ endDefine
 
 create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
-    -export -cellClass=Pool -poolname=\"${name}\" -pooldir=\"${path}\" \
-    -maxDiskSpace=\"${maxDiskSpace}\" \
-    -setupClass=pool -setupFile=\"${path}/setup\" \
-    -poolIoQueue=\"${poolIoQueue}\" \
-    -checkRepository=\"${checkRepository}\" \
-    -ftpProxyPassive=\"${ftp.proxy.on-passive}\" \
-    -allowMmap=\"${gsiftpAllowMmap}\" \
-    -metaDataRepository=\"${metaDataRepository}\" \
-    -gsiftpReadAhead=\"${gsiftpReadAhead}\" \
-    -allowCleaningPreciousFiles=\"${allowCleaningPreciousFiles}\" \
-    -poolupDestination=\"${poolupDestination}\" \
-    -pnfsmanager=\"${pnfsmanager}\" \
-    -billing=billing \
-    -flushMessageTarget=\"${flushMessageTarget}\" \
-    -sweeper=\"${sweeper}\" \
-    -xrootd-mover-disk-threads=\"${xrootdMoverDiskThreads}\" \
-    -xrootd-mover-socket-threads=\"${xrootdMoverSocketThreads}\" \
-    -xrootd-mover-max-memory-per-connection=\"${xrootdMoverMaxMemoryPerConnection}\" \
-    -xrootd-mover-max-memory=\"${xrootdMoverMaxMemory}\" \
-    -xrootd-mover-max-frame-size=\"${xrootdMoverMaxFrameSize}\" \
-    -xrootd-mover-idle-client-timeout=\"${xrootd.mover.timeout.idle}\" \
-    -xrootd-plugins=\"${xrootdPlugins}\" \
-    -http-mover-disk-threads=\"${httpMoverDiskThreads}\" \
-    -http-mover-socket-threads=\"${httpMoverSocketThreads}\" \
-    -http-mover-max-memory-per-connection=\"${httpMoverConnectionMaxMemory}\" \
-    -http-mover-max-memory=\"${httpMoverMaxMemory}\" \
-    -http-mover-client-idle-timeout=\"${httpMoverClientIdleTimeout}\" \
-    -http-mover-connect-timeout=\"${httpMoverConnectTimeout}\" \
-    -http-mover-chunk-size=\"${httpMoverChunkSize}\" \
+    -export -cellClass=Pool \
+    -setupClass=pool -setupFile=\"${pool.path}/setup\" \
+    -ftpProxyPassive=\"${pool.mover.ftp.allow-incomming-connections}\" \
+    -allowMmap=\"${pool.mover.ftp.mmap}\" \
     -callbackExecutor=callbackThreadPool \
     -messageExecutor=messageThreadPool \
-    -replicateOnArrival=\"${replicateOnArrival}\" \
-    -lfs=\"${lfs}\" \
-    -waitForFiles=\"${waitForFiles}\" \
-    -tags=\"${tags}\" \
-    -nfs.rpcsec_gss=\"${nfs.rpcsec_gss}\" \
+    -waitForFiles=\"${pool.cell.wait-for-files}\" \
 "
 
 

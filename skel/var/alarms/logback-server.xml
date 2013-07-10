@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <configuration>
-    <appender name="LOGBACK" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="SERVER" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${alarms.dir}/server.log</File>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
@@ -15,7 +15,7 @@
         </triggeringPolicy>
 
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>%relative %-5level %logger - %message%n</Pattern>
+            <Pattern>%d{dd MMM yyyy HH:mm:ss} %-5level %logger - %message%n</Pattern>
         </layout>
     </appender>
 
@@ -33,8 +33,31 @@
         </triggeringPolicy>
 
         <encoder>
-            <pattern>%d{dd MMM yyyy HH:mm:ss} %m%n</pattern>
+            <pattern>%-5level %d{dd MMM yyyy HH:mm:ss} \(%X{host}\)\(%X{cells.cell}\)\(%X{cells.domain}\) %m%n</pattern>
         </encoder>
+    </appender>
+
+    <!--
+        if you wish alarms to be sent as email, you will need to provide host,
+        to and from information below (note the possibility of multiple 'to's),
+        and then include the appender in the root logger.
+    -->
+    <appender name="ALARM_MAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+        <!-- this filter ensures that only events sent marked as ALARM
+             are received by this appender -->
+        <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
+        <smtpHost></smtpHost>
+        <to></to>
+        <to></to>
+        <from></from>
+        <subject>dCache Alarm</subject>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%-5level %d{dd MMM yyyy HH:mm:ss} \(%X{host}\)\(%X{cells.cell}\)\(%X{cells.domain}\) %m%n</pattern>
+        </layout>
+        <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTrackerImpl">
+            <!-- send just one log entry per email -->
+            <bufferSize>1</bufferSize>
+        </cyclicBufferTracker>
     </appender>
 
     <!-- stores all received events; adds alarm metadata on the basis of either
@@ -59,34 +82,16 @@
         <!-- <appender-ref ref="ALARM_MAIL"/> -->
     </appender>
 
-    <!--
-        if you wish alarms to be sent as email, you will need to provide host,
-        to and from information below (note the possibility of multiple 'to's),
-        and then include the appender in the root logger.
-    -->
-    <appender name="ALARM_MAIL" class="ch.qos.logback.classic.net.SMTPAppender">
-        <!-- this filter ensures that only events sent marked as ALARM
-             are received by this appender -->
-        <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
-        <smtpHost></smtpHost>
-        <to></to>
-        <to></to>
-        <from></from>
-        <subject>dCache Alarm</subject>
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern>%d{dd MMM yyyy HH:mm:ss} \(%X{cells.cell}\) [%X{org.dcache.ndc}] %m%n</pattern>
-        </layout>
-        <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTrackerImpl">
-            <!-- send just one log entry per email -->
-            <bufferSize>1</bufferSize>
-        </cyclicBufferTracker>
-    </appender>
-
-     <logger name="ch.qos.logback" additivity="false">
-         <appender-ref ref="LOGBACK"/>
+    <logger name="ch.qos.logback" additivity="false" level="warn">
+         <appender-ref ref="SERVER"/>
     </logger>
 
-    <root level="warn">
-        <appender-ref ref="STORE"/>
+    <!-- do not change the name of this logger (used internally) -->
+    <logger name="domain" additivity="false">
+         <appender-ref ref="SERVER"/>
+    </logger>
+
+    <root level="${alarms.server.log.level}">
+         <appender-ref ref="STORE"/>
     </root>
 </configuration>

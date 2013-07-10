@@ -78,8 +78,6 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
 
     /**
      * Create a NIS identity plugin.
-     * @param args an array of {@link String} where first element is the NIS
-     * server name and second is the NIS domain name.
      * @throws NamingException
      */
     public Nis(Properties properties) throws NamingException {
@@ -96,20 +94,19 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
     }
 
     @Override
-    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    public void map(Set<Principal> principals) throws AuthenticationException {
         Principal principal =
                 find(principals, instanceOf(UserNamePrincipal.class), null);
         if (principal != null) {
             try {
                 Attributes userAttr = _ctx.getAttributes(NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
-                authorizedPrincipals.add(principal);
-                authorizedPrincipals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
-                authorizedPrincipals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
+                principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
+                principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
                 NamingEnumeration<SearchResult> groupResult =_ctx.search(NISMAP_GROUP_BY_NAME,
                         new BasicAttributes(MEMBER_UID_ATTRIBUTE, principal.getName()));
                 while (groupResult.hasMore()) {
                     SearchResult result = groupResult.next();
-                    authorizedPrincipals.add(
+                    principals.add(
                             new GidPrincipal((String) result.getAttributes().get(GID_NUMBER_ATTRIBUTE).get(), false));
                 }
             } catch (NamingException e) {

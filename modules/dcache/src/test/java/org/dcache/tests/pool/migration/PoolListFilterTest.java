@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import org.dcache.pool.migration.PoolListFilter;
@@ -29,14 +30,14 @@ import static org.junit.Assert.fail;
 public class PoolListFilterTest
 {
     private final PoolManagerPoolInformation POOL1 =
-        createPool("pool1", 0.5, 0.5);
+        createPool("pool1");
     private final PoolManagerPoolInformation POOL2 =
-        createPool("pool2", 0.5, 0.5);
+        createPool("pool2");
     private final PoolManagerPoolInformation POOL3 =
-        createPool("pool3", Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+        createPool("pool3");
 
     private final PoolManagerPoolInformation SOURCE =
-        createPool("source", 0.5, 0.5);
+        createPool("source");
 
     private SymbolTable symbols;
 
@@ -147,14 +148,11 @@ public class PoolListFilterTest
         PoolList list = new PoolList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list,
-                         null, "source.spaceCost<target.spaceCost",
+                         null, "source.name=='source'",
                          null, "true",
                          SOURCE);
         List<PoolManagerPoolInformation> result = filter.getPools();
-        assertEquals(2, result.size());
-        assertContainsPool(POOL1, result);
-        assertContainsPool(POOL2, result);
-        assertDoesNotContainPool(POOL3, result);
+        assertEquals(0, result.size());
     }
 
     @Test
@@ -202,13 +200,9 @@ public class PoolListFilterTest
     }
 
     private static PoolManagerPoolInformation
-        createPool(String name, double spaceCost, double cpuCost)
+        createPool(String name)
     {
-        PoolManagerPoolInformation info =
-            new PoolManagerPoolInformation(name);
-        info.setSpaceCost(spaceCost);
-        info.setCpuCost(cpuCost);
-        return info;
+        return new PoolManagerPoolInformation(name, new PoolCostInfo(name));
     }
 
     private static Set<Pattern> createPatterns(String glob)

@@ -73,5 +73,5 @@ public interface IBackoffAlgorithmFactory {
      *
      * @return a valid, initialized algorithm
      */
-    IBackoffAlgorithm getAlgorithm() throws IllegalArgumentException;
+    IBackoffAlgorithm getAlgorithm();
 }

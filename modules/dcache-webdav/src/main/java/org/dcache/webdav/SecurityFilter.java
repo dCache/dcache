@@ -14,6 +14,8 @@ import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
@@ -56,13 +58,12 @@ public class SecurityFilter implements Filter
     private final Logger _log = LoggerFactory.getLogger(SecurityFilter.class);
     private static final String X509_CERTIFICATE_ATTRIBUTE =
         "javax.servlet.request.X509Certificate";
-    public static final String USER_ROOT_DIRECTORY="org.dcache.user.root";
-    public static final String USER_HOME_DIRECTORY="org.dcache.user.home";
 
     private String _realm;
     private boolean _isReadOnly;
     private boolean _isBasicAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
+    private FsPath _rootPath = new FsPath();
 
     @Override
     public void process(final FilterChain filterChain,
@@ -90,18 +91,9 @@ public class SecurityFilter implements Filter
             if (!isAuthorizedMethod(request.getMethod(), login)) {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
-            /*
-             * Add user root and home directory to request
-             */
-            for (LoginAttribute attribute: login.getLoginAttributes()) {
-                if (attribute instanceof RootDirectory) {
-                    request.getAttributes().put(USER_ROOT_DIRECTORY,
-                                                new FsPath(((RootDirectory) attribute).getRoot()));
-                } else if (attribute instanceof HomeDirectory) {
-                    request.getAttributes().put(USER_HOME_DIRECTORY,
-                                                new FsPath(((HomeDirectory) attribute).getHome()));
-                }
-            }
+
+            checkRootPath(request, login);
+
             /* Add the origin of the request to the subject. This
              * ought to be processed in the LoginStrategy, but our
              * LoginStrategies currently do not process the Origin.
@@ -127,12 +119,52 @@ public class SecurityFilter implements Filter
                             return null;
                         }
                 });
+        } catch (RedirectException e) {
+            manager.getResponseHandler().respondRedirect(response, request, e.getUrl());
         } catch (PermissionDeniedCacheException e) {
-            _log.warn("Login failed for " + subject);
+            _log.warn("{} for path {} and {}", e.getMessage(), request.getAbsolutePath(), subject);
             manager.getResponseHandler().respondUnauthorised(new EmptyResource(request), response, request);
         } catch (CacheException e) {
             _log.error("Internal server error: " + e);
             manager.getResponseHandler().respondServerError(request, response, e.getMessage());
+        }
+    }
+
+    /**
+     * Verifies that the request is within the root directory of the given user.
+     *
+     * @throws RedirectException If the request should be redirected
+     * @throws PermissionDeniedCacheException If the request is denied
+     * @throws CacheException If the request fails
+     */
+    private void checkRootPath(Request request, LoginReply login) throws CacheException
+    {
+        FsPath userRoot = new FsPath();
+        FsPath userHome = new FsPath();
+        for (LoginAttribute attribute: login.getLoginAttributes()) {
+            if (attribute instanceof RootDirectory) {
+                userRoot = new FsPath(((RootDirectory) attribute).getRoot());
+            } else if (attribute instanceof HomeDirectory) {
+                userHome = new FsPath(((HomeDirectory) attribute).getHome());
+            }
+        }
+
+        String path = request.getAbsolutePath();
+        FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
+        if (!fullPath.startsWith(userRoot)) {
+            if (!path.equals("/")) {
+                throw new PermissionDeniedCacheException("Permission denied");
+            }
+
+            try {
+                FsPath redirectFullPath = new FsPath(userRoot, userHome);
+                String redirectPath = _rootPath.relativize(redirectFullPath).toString();
+                URI uri = new URI(request.getAbsoluteUrl());
+                URI redirect = new URI(uri.getScheme(), uri.getAuthority(), redirectPath, null, null);
+                throw new RedirectException(null, redirect.toString());
+            } catch (URISyntaxException e) {
+                throw new CacheException(e.getMessage(), e);
+            }
         }
     }
 
@@ -236,5 +268,15 @@ public class SecurityFilter implements Filter
     public void setLoginStrategy(LoginStrategy loginStrategy)
     {
         _loginStrategy = loginStrategy;
+    }
+
+    public String getRootPath()
+    {
+        return _rootPath.toString();
+    }
+
+    public void setRootPath(String path)
+    {
+        _rootPath = new FsPath(path);
     }
 }

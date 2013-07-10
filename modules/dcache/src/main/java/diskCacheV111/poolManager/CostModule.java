@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.vehicles.PoolCostCheckable;
 
 import dmg.cells.nucleus.CellMessage;
 
@@ -27,21 +26,7 @@ public interface CostModule {
 
    public boolean isActive() ;
 
-   /**
-    * Obtain the cost information for transferring a file of the given size
-    * for the named pool.
-    * <p>
-    * If the pool is not known or the CostModule value is not valid and updates
-    * are switched off then null is returned.
-    * @param poolName the name of the pool
-    * @param filesize the length of the file to be transferred.
-    * @return a PoolCostCheckable object that describes the costs of
-    * transferring a file of the given size involving the named pool or null
-    * if the pool is unknown or updates are switched off.
-    */
-   public PoolCostCheckable getPoolCost( String poolName , long filesize ) ;
-
-   /**
+    /**
     * Obtain the PoolCostInfo associated with the named pool.  If the pool is unknown
     * then null is returned.
     * @param poolName the name of a pool

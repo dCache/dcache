@@ -3,6 +3,10 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+  <preConditions>
+    <dbms type="postgresql"/>
+  </preConditions>
+
   <changeSet id="6.0.0" author="litvinse" context="billing">
     <preConditions onFail="MARK_RAN">
       <and>
@@ -40,7 +44,6 @@
       <column name="transaction"/>
     </createIndex>
   </changeSet>
-
   <changeSet id="6.0.1" author="litvinse" context="billing">
     <preConditions onFail="MARK_RAN">
       <and>
@@ -66,7 +69,6 @@
       <column name="transaction"/>
     </createIndex>
   </changeSet>
-
   <changeSet id="6.0.2" author="litvinse" context="billing">
     <preConditions onFail="MARK_RAN">
       <and>
@@ -92,8 +94,6 @@
       <column name="storageclass"/>
     </createIndex>
   </changeSet>
-
-
   <changeSet id="6.0.3" author="litvinse" context="billing">
     <preConditions onFail="MARK_RAN">
       <and>
@@ -113,5 +113,229 @@
       <column name="transaction"/>
     </createIndex>
   </changeSet>
-
+  <changeSet id="6.1.0" author="arossi" context="billing">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="p2p" tableName="billinginfo"/>
+            </not>
+        </preConditions>
+        <comment>add p2p column to billinginfo</comment>
+        <addColumn tableName="billinginfo"><column name="p2p" type="boolean"/></addColumn>
+    </changeSet>
+    <changeSet id="6.1.1" author="arossi" context="billing">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="billinginfo_p2p_idx"/>
+            </not>
+        </preConditions>
+        <comment>read optimization</comment>
+        <createIndex indexName="billinginfo_p2p_idx" tableName="billinginfo">
+            <column name="p2p"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="6.1.2" author="arossi" context="billing">
+        <preConditions onError="WARN" onFail="WARN">
+            <sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
+        </preConditions>
+        <comment>
+            modify the billinginfo aggregate read/write trigger functions
+            to filter out pool-to-pool transfers
+        </comment>
+        <sql splitStatements="false">
+            DROP TRIGGER tgr_update_billinginfo_rd_daily ON billinginfo;
+        </sql>
+        <sql splitStatements="false">
+            DROP TRIGGER tgr_update_billinginfo_wr_daily ON billinginfo;
+        </sql>
+        <sql splitStatements="false">
+            DROP FUNCTION f_update_billinginfo_rd_daily();
+        </sql>
+        <sql splitStatements="false">
+            DROP FUNCTION f_update_billinginfo_wr_daily();
+        </sql>
+        <sql splitStatements="false">
+            CREATE OR REPLACE FUNCTION f_update_billinginfo_rd_daily()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                IF (NEW.isNew = 'f'
+                    AND (NEW.p2p = 'f' OR NEW.p2p is null)
+                    AND NEW.errorcode = 0) THEN
+                    UPDATE billinginfo_rd_daily
+                    SET count=count+1,size=size+NEW.fullsize,
+                        transferred=transferred+NEW.transfersize
+                    WHERE date(date) = date(NEW.datestamp);
+                    IF NOT FOUND THEN
+                        INSERT INTO billinginfo_rd_daily
+                                    (date,count,size,transferred)
+                             VALUES (date(NEW.datestamp),
+                                    1,
+                                    NEW.fullsize, NEW.transfersize);
+                    END IF;
+                END IF;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">
+            CREATE OR REPLACE FUNCTION f_update_billinginfo_wr_daily()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                IF (NEW.isNew = 't'
+                    AND (NEW.p2p = 'f' OR NEW.p2p is null)
+                    AND NEW.errorcode = 0) THEN
+                    UPDATE billinginfo_wr_daily
+                    SET count=count+1,
+                        size=size+NEW.fullsize,
+                        transferred=transferred+NEW.transfersize
+                    WHERE date(date) = date(NEW.datestamp);
+                    IF NOT FOUND THEN
+                        INSERT INTO billinginfo_wr_daily
+                                    (date,count,size,transferred)
+                             VALUES (date(NEW.datestamp),
+                                    1,
+                                    NEW.fullsize, NEW.transfersize);
+                    END IF;
+                END IF;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+    </changeSet>
+    <changeSet id="6.1.3" author="arossi" context="billing">
+        <comment>trigger to populate daily tables</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER tgr_update_billinginfo_rd_daily AFTER
+            INSERT ON billinginfo FOR EACH ROW EXECUTE
+            PROCEDURE f_update_billinginfo_rd_daily();
+        </sql>
+    </changeSet>
+    <changeSet id="6.1.4" author="arossi" context="billing">
+        <comment>trigger to populate daily tables</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER tgr_update_billinginfo_wr_daily AFTER
+            INSERT ON billinginfo FOR EACH ROW EXECUTE
+            PROCEDURE f_update_billinginfo_wr_daily();
+        </sql>
+    </changeSet>
+    <changeSet id="6.2.0" author="arossi" context="billing">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="billinginfo_p2p_daily"/>
+            </not>
+        </preConditions>
+        <comment>
+            create new aggregate table for pool-to-pool transfers
+        </comment>
+        <comment>coarse-grained aggregate table populated by by trigger</comment>
+        <createTable tableName="billinginfo_p2p_daily">
+            <column name="date" type="timestamp"/>
+            <column name="count" type="bigint"/>
+            <column name="size" type="bigint"/>
+            <column name="transferred" type="bigint"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="6.2.1" author="arossi" context="billing">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="billinginfo_p2p_daily_date_idx"/>
+            </not>
+        </preConditions>
+        <comment>read optimization</comment>
+        <createIndex indexName="billinginfo_p2p_daily_date_idx"
+            tableName="billinginfo_p2p_daily">
+            <column name="date"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="6.2.2" author="arossi" context="billing">
+        <preConditions onError="WARN" onFail="WARN">
+            <sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
+        </preConditions>
+        <comment>trigger function to populate daily tables</comment>
+        <sql splitStatements="false">
+            CREATE OR REPLACE FUNCTION f_update_billinginfo_p2p_daily()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                IF (NEW.p2p = 't'
+                    AND NEW.errorcode = 0) THEN
+                    UPDATE billinginfo_p2p_daily
+                    SET count=count+1,
+                        size=size+NEW.fullsize,
+                        transferred=transferred+NEW.transfersize
+                    WHERE date(date) = date(NEW.datestamp);
+                    IF NOT FOUND THEN
+                        INSERT INTO billinginfo_p2p_daily
+                                    (date,count,size,transferred)
+                             VALUES (date(NEW.datestamp),
+                                    1,
+                                    NEW.fullsize, NEW.transfersize);
+                    END IF;
+                END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+    </changeSet>
+    <changeSet id="6.2.3" author="arossi" context="billing">
+        <preConditions onError="CONTINUE" onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from pg_trigger where tgname='tgr_update_billinginfo_p2p_daily'
+            </sqlCheck>
+        </preConditions>
+        <comment>trigger to populate daily tables</comment>
+        <sql splitStatements="false">
+            CREATE TRIGGER tgr_update_billinginfo_p2p_daily AFTER
+            INSERT ON billinginfo FOR EACH ROW EXECUTE
+            PROCEDURE f_update_billinginfo_p2p_daily();
+        </sql>
+    </changeSet>
+    <changeSet id="6.3" author="arossi" context="billing">
+        <comment>daily views (for scalability) modified to take into account p2p</comment>
+        <sql splitStatements="false">
+            CREATE OR REPLACE VIEW billinginfo_rd_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+                   count(*) AS count,
+                   sum(fullsize) AS size,
+                   sum(transfersize) AS transferred
+            FROM billinginfo
+            WHERE errorcode = 0::numeric
+                AND isnew = 'f'
+                AND (p2p = 'f' OR p2p is NULL)
+                AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+        <sql splitStatements="false">
+            CREATE OR REPLACE VIEW billinginfo_wr_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+                   count(*) AS count,
+                   sum(fullsize) AS size,
+                   sum(transfersize) AS transferred
+            FROM billinginfo
+            WHERE errorcode = 0::numeric
+                AND isnew = 't'
+                AND (p2p = 'f' OR p2p is NULL)
+                AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+        <sql splitStatements="false">
+            CREATE OR REPLACE VIEW billinginfo_p2p_hourly
+            AS
+            SELECT date_trunc('hour', datestamp) AS date,
+                   count(*) AS count,
+                   sum(fullsize) AS size,
+                   sum(transfersize) AS transferred
+            FROM billinginfo
+            WHERE errorcode = 0::numeric
+                AND p2p = 't'
+                AND datestamp > current_timestamp - interval '24 hours'
+            GROUP BY date_trunc('hour', datestamp)
+            ORDER BY date_trunc('hour', datestamp);
+        </sql>
+    </changeSet>
 </databaseChangeLog>

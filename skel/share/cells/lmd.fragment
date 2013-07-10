@@ -1,16 +1,16 @@
-check -strong broker.port
-check -strong broker.domain
-check broker.cells.config
+check -strong dcache.broker.port
+check -strong dcache.broker.domain
+check dcache.broker.cells.config
 
 define context lmd.defaults endDefine
-  define ${broker.domain}
-  listen ${broker.domain} -port=${broker.messaging.port}
+  define ${dcache.broker.domain}
+  listen ${dcache.broker.domain} -port=${dcache.broker.messaging.port}
 
   define *
-  defaultroute * ${broker.domain}
-  connect * ${broker.domain}
+  defaultroute * ${dcache.broker.domain}
+  connect * ${dcache.broker.domain}
 endDefine
 
 create dmg.cells.services.LocationManager lmd \
-       "!lmd.defaults ${broker.port} -strict=no -noclient -setup=${broker.cells.config}"
+       "!lmd.defaults ${dcache.broker.port} -strict=no -noclient -setup=${dcache.broker.cells.config}"
 #

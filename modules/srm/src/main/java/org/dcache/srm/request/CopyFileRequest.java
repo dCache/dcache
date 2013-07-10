@@ -1063,7 +1063,13 @@ public final class CopyFileRequest extends FileRequest {
 		}
 	}
 
-	public void remoteFileRequestDone(URI SURL,String remoteRequestId,String remoteFileId) {
+    @Override
+    public boolean isTouchingSurl(URI surl)
+    {
+        return surl.equals(getFrom_surl()) || surl.equals(getTo_surl());
+    }
+
+    public void remoteFileRequestDone(URI SURL,String remoteRequestId,String remoteFileId) {
 		try {
 			logger.debug("setting remote file status to Done, SURL="+SURL+" remoteRequestId="+remoteRequestId+
 			    " remoteFileId="+remoteFileId);

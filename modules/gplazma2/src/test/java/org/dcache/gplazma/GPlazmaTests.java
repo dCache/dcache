@@ -305,24 +305,16 @@ public class GPlazmaTests {
    }
 
     /**
-     * Configuration is same as in testLogin, but without mapping
-     * should fail in the check of presence authorized principals
+     * Configuration is same as in testLogin, but without mapping.
      * @throws AuthenticationException
      */
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testLoginWithoutMapping() throws AuthenticationException {
-        //configuration
-        Configuration config = newConfiguration (
-            AUTH_CONFIG_ITEM,
-            ACCOUNT_CONFIG_ITEM,
-            SESSION_CONFIG_ITEM);
-
-        assertFalse(CheckUIDAccountPlugin.isCalled());
-
-        // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
-
-        Assert.assertNotNull(result);
+        Configuration config = newConfiguration(
+                AUTH_CONFIG_ITEM,
+                ACCOUNT_CONFIG_ITEM,
+                SESSION_CONFIG_ITEM);
+        runLoginAssertions(config);
    }
     /**
      * Configuration is same as in testLogin, but without authentication

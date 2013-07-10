@@ -1,10 +1,8 @@
 package org.dcache.poolmanager;
 
 import com.google.common.base.Function;
-import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 
 import java.io.IOException;
@@ -18,34 +16,26 @@ import diskCacheV111.pools.CostCalculatable;
 import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CostException;
-import diskCacheV111.util.DestinationCostException;
-import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.SourceCostException;
 
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.transform;
 
 /**
- * Partition that provides classic dCache pool selection semantics.
- *
+ * Legacy partition that provided the classic dCache pool selection semantics. Now
+ * it only serves as a base class for WassPartition containing old code that is
+ * expected to be replaced in the future.
  */
-public class ClassicPartition extends Partition
+public abstract class ClassicPartition extends Partition
 {
     private static final long serialVersionUID = 8239030345609342048L;
-
-    static final String TYPE = "classic";
-
-    private static final double MAX_WRITE_COST = 1000000.0;
 
     public enum SameHost { NEVER, BESTEFFORT, NOTCHECKED }
 
     /**
      * COSTFACTORS
-     *
+     *u
      *   spacecostfactor   double
      *   cpucostfactor     double
      *
@@ -71,7 +61,7 @@ public class ClassicPartition extends Partition
      *      halt   |  suspend system
      *    fallback |  Allow fallback in Permission matrix on high load
      */
-    private final static Map<String,String> DEFAULTS =
+    private static final Map<String,String> DEFAULTS =
         ImmutableMap.<String,String>builder()
         .put("max-copies", "3")
         .put("p2p", "0.0")
@@ -106,21 +96,6 @@ public class ClassicPartition extends Partition
      * Order by performance cost.
      */
     protected transient Ordering<PoolCost> _byPerformanceCost;
-
-    /**
-     * Order by linear combination of performance cost and space cost.
-     */
-    protected transient Ordering<PoolCost> _byFullCost;
-
-    public ClassicPartition()
-    {
-        this(NO_PROPERTIES);
-    }
-
-    public ClassicPartition(Map<String,String> inherited)
-    {
-        this(inherited, NO_PROPERTIES);
-    }
 
     protected ClassicPartition(Map<String,String> inherited,
                                Map<String,String> properties)
@@ -167,55 +142,6 @@ public class ClassicPartition extends Partition
     }
 
     @Override
-    protected Partition create(Map<String,String> inherited,
-                               Map<String,String> properties)
-    {
-        return new ClassicPartition(inherited, properties);
-    }
-
-    @Override
-    public String getType()
-    {
-        return TYPE;
-    }
-
-    @Override
-    public PoolInfo selectWritePool(CostModule cm,
-                                    List<PoolInfo> pools,
-                                    FileAttributes attributes,
-                                    long preallocated)
-        throws CacheException
-    {
-        checkState(!pools.isEmpty());
-
-        /* Randomise order of pools with equal cost. In particular
-         * important when performance cost factor and space cost
-         * factor are 0.
-         */
-        Collections.shuffle(pools);
-
-        /* We use the cheapest pool according to the combined space
-         * and performance cost.
-         */
-        PoolCost best =
-            _byFullCost.min(transform(pools, toPoolCost(preallocated)));
-
-        /* Note that
-         *
-         *    !(bestCost  <= MAX_WRITE_COST)  != (bestCost > MAX_WRITE_COST)
-         *
-         * when using floating point arithmetic!
-         */
-        double cost = getWeightedFullCost(best);
-        if (!(cost <= MAX_WRITE_COST)) {
-            throw new CacheException(21, "Best pool <" + best.pool.getName() +
-                                     "> too high : " + cost);
-        }
-
-        return best.pool;
-    }
-
-    @Override
     public PoolInfo selectReadPool(CostModule cm,
                                    List<PoolInfo> pools,
                                    FileAttributes attributes)
@@ -238,7 +164,7 @@ public class ClassicPartition extends Partition
         for (PoolInfo pool: pools) {
             CostCalculatable calculatable =
                 new CostCalculationV5(pool.getCostInfo());
-            calculatable.recalculate(0);
+            calculatable.recalculate();
 
             double cost =
                 Math.abs(_performanceCostFactor *
@@ -268,7 +194,7 @@ public class ClassicPartition extends Partition
 
         CostCalculatable calculatable =
             new CostCalculationV5(bestPool.getCostInfo());
-        calculatable.recalculate(0);
+        calculatable.recalculate();
         double cost = calculatable.getPerformanceCost();
         boolean isPanicCostExceeded = isPanicCostExceeded(cost);
         boolean isFallbackCostExceeded = isFallbackCostExceeded(cost);
@@ -283,158 +209,6 @@ public class ClassicPartition extends Partition
         }
 
         return bestPool;
-    }
-
-    @Override
-    public P2pPair selectPool2Pool(CostModule cm,
-                                   List<PoolInfo> src,
-                                   List<PoolInfo> dst,
-                                   FileAttributes attributes,
-                                   boolean force)
-        throws CacheException
-    {
-        checkState(!src.isEmpty());
-        checkState(!dst.isEmpty());
-
-        /* The maximum number of replicas can be limited.
-         */
-        if (src.size() >= _maxPnfsFileCopies) {
-            throw new PermissionDeniedCacheException("P2P denied: already too many copies (" + src.size() + ")");
-        }
-
-        /* Randomise order of pools with equal cost. In particular
-         * important when performance cost factor and space cost
-         * factor are 0.
-         */
-        Collections.shuffle(src);
-        Collections.shuffle(dst);
-
-        /* Source pools are only selected by performance cost, because
-         * we will only read from the pool
-         */
-        List<PoolCost> sources =
-            _byPerformanceCost.sortedCopy(transform(src, toPoolCost(0)));
-        if (!force && isAlertCostExceeded(sources.get(0).performanceCost)) {
-            throw new SourceCostException("P2P denied: All source pools are too busy (performance cost > " + _alertCostCut + ")");
-        }
-
-        /* The target pool must be below specified cost limits;
-         * otherwise we woulnd't be able to read the file afterwards
-         * without triggering another p2p.
-         */
-        double maxTargetCost =
-            (_slope > 0.01)
-            ? _slope * sources.get(0).performanceCost
-            : getCurrentCostCut(cm);
-        Iterable<PoolCost> unsortedDestinations =
-            transform(dst, toPoolCost(attributes.getSize()));
-        if (!force && maxTargetCost > 0.0) {
-            unsortedDestinations =
-                filter(unsortedDestinations,
-                       performanceCostIsBelow(maxTargetCost));
-        }
-
-        List<PoolCost> destinations =
-            _byFullCost.sortedCopy(unsortedDestinations);
-
-        if (destinations.isEmpty()) {
-            throw new DestinationCostException("P2P denied: All destination pools are too busy (performance cost > " + maxTargetCost + ")");
-        }
-
-        /* Loop over all (source,destination) combinations and find
-         * the most appropriate for source.host != destination.host.
-         */
-        PoolCost sourcePool = null;
-        PoolCost destinationPool = null;
-        PoolCost bestEffortSourcePool = null;
-        PoolCost bestEffortDestinationPool = null;
-        outer: for (PoolCost source: sources) {
-            for (PoolCost destination: destinations) {
-                if (_allowSameHostCopy == SameHost.NOTCHECKED) {
-                    // we take the pair with the least cost without
-                    // further hostname checking
-                    sourcePool = source;
-                    destinationPool = destination;
-                    break outer;
-                }
-
-                // save the pair with the least cost for later reuse
-                if (bestEffortSourcePool == null) {
-                    bestEffortSourcePool = source;
-                }
-                if (bestEffortDestinationPool == null) {
-                    bestEffortDestinationPool = destination;
-                }
-
-                if (source.host != null && !source.host.equals(destination.host)) {
-                    // we take the first src/dest-pool pair not
-                    // residing on the same host
-                    sourcePool = source;
-                    destinationPool = destination;
-                    break outer;
-                }
-            }
-        }
-
-        if (sourcePool == null || destinationPool == null) {
-            // ok, we could not find a pair on different hosts, what now?
-            switch (_allowSameHostCopy) {
-            case BESTEFFORT:
-                sourcePool = bestEffortSourcePool;
-                destinationPool = bestEffortDestinationPool;
-                break;
-            case NEVER:
-                throw new PermissionDeniedCacheException("P2P denied: sameHostCopy is 'never' and no matching pool found");
-            default:
-                throw new RuntimeException("P2P denied: coding error, bad state");
-            }
-        }
-
-        return new P2pPair(sourcePool.pool, destinationPool.pool);
-    }
-
-    @Override
-    public PoolInfo selectStagePool(CostModule cm,
-                                    List<PoolInfo> pools,
-                                    String previousPool,
-                                    String previousHost,
-                                    FileAttributes attributes)
-        throws CacheException
-    {
-        checkState(!pools.isEmpty());
-
-        /* Randomise order of pools with equal cost. In particular
-         * important when performance cost factor and space cost
-         * factor are 0.
-         */
-        Collections.shuffle(pools);
-
-        /* We order by full cost, except that we place the previously
-         * used pool or pools on the same host last.
-         */
-        List<Ordering<PoolCost>> order = Lists.newArrayListWithCapacity(3);
-        if (previousPool != null) {
-            order.add(thisPoolLast(previousPool));
-        }
-        if (previousHost != null && _allowSameHostRetry != SameHost.NOTCHECKED) {
-            order.add(thisHostLast(previousHost));
-        }
-        order.add(_byFullCost);
-
-        long size = attributes.getSize();
-        PoolCost best =
-            Ordering.compound(order).min(transform(pools, toPoolCost(size)));
-
-        if (_allowSameHostRetry == SameHost.NEVER &&
-            previousHost != null && previousHost.equals(best.host)) {
-            throw new CacheException(150 , "No cheap candidates available for stage");
-        }
-
-        if (isFallbackCostExceeded(best.performanceCost)) {
-            throw new CostException("Cost limit exceeded",
-                                    null, true, false);
-        }
-        return best.pool;
     }
 
     /**
@@ -487,27 +261,19 @@ public class ClassicPartition extends Partition
     {
         final PoolInfo pool;
         final double performanceCost;
-        final double spaceCost;
         final String host;
 
         public PoolCost(PoolInfo pool, CostCalculatable cost)
         {
-            this(pool, cost.getPerformanceCost(), cost.getSpaceCost());
+            this(pool, cost.getPerformanceCost());
         }
 
-        public PoolCost(PoolInfo pool, double performanceCost, double spaceCost)
+        public PoolCost(PoolInfo pool, double performanceCost)
         {
             this.pool = pool;
             this.performanceCost = performanceCost;
-            this.spaceCost = spaceCost;
             this.host = pool.getHostName();
         }
-    }
-
-    protected double getWeightedFullCost(PoolCost cost)
-    {
-        return Math.abs(cost.spaceCost) * _spaceCostFactor +
-            Math.abs(cost.performanceCost) * _performanceCostFactor;
     }
 
     protected double getWeightedPerformanceCost(PoolCost cost)
@@ -515,13 +281,13 @@ public class ClassicPartition extends Partition
         return Math.abs(cost.performanceCost) * _performanceCostFactor;
     }
 
-    protected Function<PoolInfo,PoolCost> toPoolCost(final long filesize) {
+    protected Function<PoolInfo,PoolCost> toPoolCost() {
         return new Function<PoolInfo,PoolCost>() {
             @Override
             public PoolCost apply(PoolInfo pool) {
                 CostCalculatable calculatable =
                     new CostCalculationV5(pool.getCostInfo());
-                calculatable.recalculate(filesize);
+                calculatable.recalculate();
                 return new PoolCost(pool, calculatable);
             }
         };
@@ -537,43 +303,6 @@ public class ClassicPartition extends Partition
         };
     }
 
-
-    protected Ordering<PoolCost> thisPoolLast(final String name)
-    {
-        return new Ordering<PoolCost>() {
-            @Override
-            public int compare(PoolCost a, PoolCost b) {
-                if (!a.pool.getName().equals(b.pool.getName())) {
-                    if (a.pool.getName().equals(name)) {
-                        return 1;
-                    }
-                    if (b.pool.getName().equals(name)) {
-                        return -1;
-                    }
-                }
-                return 0;
-            }
-        };
-    }
-
-    protected Ordering<PoolCost> thisHostLast(final String host)
-    {
-        return new Ordering<PoolCost>() {
-            @Override
-            public int compare(PoolCost a, PoolCost b) {
-                if (!Objects.equal(a.host, b.host)) {
-                    if (Objects.equal(a.host, host)) {
-                        return 1;
-                    }
-                    if (Objects.equal(b.host, host)) {
-                        return -1;
-                    }
-                }
-                return 0;
-            }
-        };
-    }
-
     private void initTransientFields()
     {
         _byPerformanceCost =
@@ -583,16 +312,6 @@ public class ClassicPartition extends Partition
                 public int compare(PoolCost cost1, PoolCost cost2) {
                     return Double.compare(getWeightedPerformanceCost(cost1),
                                           getWeightedPerformanceCost(cost2));
-                }
-            };
-
-        _byFullCost =
-            new Ordering<PoolCost>()
-            {
-                @Override
-                public int compare(PoolCost cost1, PoolCost cost2) {
-                    return Double.compare(getWeightedFullCost(cost1),
-                                          getWeightedFullCost(cost2));
                 }
             };
     }

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:annotation-config/>
+
+  <bean id="properties"
+        class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="arguments:"/>
+  </bean>
+
+  <bean id="info" class="org.dcache.services.info.InfoProvider">
+      <description>support for CLI</description>
+
+      <property name="state" ref="state"/>
+      <property name="stateObservatory" ref="state"/>
+      <property name="messageHandlerChain" ref="message-handler-chain"/>
+      <property name="dataGatheringScheduler" ref="data-gathering-scheduler"/>
+      <property name="conduits">
+          <list>
+              <bean class="org.dcache.services.info.conduits.XmlConduit"
+                    init-method="enable" destroy-method="disable">
+                  <property name="serialiser">
+                      <bean class="org.dcache.services.info.serialisation.XmlSerialiser">
+                          <property name="stateExhibitor" ref="state"/>
+                      </bean>
+                  </property>
+                  <property name="port" value="${info.net.port}"/>
+                  <property name="backlog" value="${info.net.backlog}"/>
+                  <property name="bindAddress" value="${info.net.listen}"/>
+              </bean>
+          </list>
+      </property>
+
+      <property name="defaultSerialiser"
+                value="#{ T(org.dcache.services.info.serialisation.SimpleTextSerialiser).NAME }"/>
+
+      <property name="serialisers">
+          <list>
+              <bean class="org.dcache.services.info.serialisation.XmlSerialiser">
+                  <property name="stateExhibitor" ref="state"/>
+              </bean>
+
+              <bean class="org.dcache.services.info.serialisation.SimpleTextSerialiser">
+                  <property name="stateExhibitor" ref="state"/>
+              </bean>
+
+              <bean class="org.dcache.services.info.serialisation.PrettyPrintTextSerialiser">
+                  <property name="stateExhibitor" ref="state"/>
+              </bean>
+          </list>
+      </property>
+  </bean>
+
+
+  <bean id="data-gathering-scheduler" class="org.dcache.services.info.gathers.DataGatheringScheduler"
+        init-method="start" destroy-method="shutdown">
+      <property name="stateUpdateManager" ref="state-update-manager"/>
+      <property name="messageMetadataRepository" ref="message-handler-chain"/>
+      <property name="messageSender" ref="message-handler-chain"/>
+      <property name="stateExhibitor" ref="state"/>
+  </bean>
+
+
+
+  <bean id="state-update-manager"
+        class="org.dcache.services.info.base.StateMaintainer"
+        destroy-method="shutdown">
+      <description>component to handle updates</description>
+
+      <property name="caretaker" ref="state"/>
+      <property name="executor">
+          <bean class="java.util.concurrent.Executors"
+                factory-method="newSingleThreadScheduledExecutor"/>
+      </property>
+  </bean>
+
+
+  <bean id="state" class="org.dcache.services.info.base.State">
+      <description>information about dCache</description>
+
+      <property name="stateUpdateManager" ref="state-update-manager"/>
+
+      <property name="stateWatchers">
+          <list>
+              <bean class="org.dcache.services.info.secondaryInfoProviders.PoolgroupSpaceWatcher"/>
+              <bean class="org.dcache.services.info.secondaryInfoProviders.PoolsSummaryMaintainer"/>
+              <bean class="org.dcache.services.info.secondaryInfoProviders.LinkgroupTotalSpaceMaintainer"/>
+              <bean class="org.dcache.services.info.secondaryInfoProviders.LinkSpaceMaintainer"/>
+              <bean class="org.dcache.services.info.secondaryInfoProviders.NormalisedAccessSpaceMaintainer"/>
+              <bean class="org.dcache.services.info.secondaryInfoProviders.ReservationByDescMaintainer"/>
+          </list>
+      </property>
+  </bean>
+
+
+  <bean id="message-handler-chain"
+        class="org.dcache.services.info.gathers.MessageHandlerChain">
+      <description>handle replies to DGA queries</description>
+
+      <property name="handlers">
+          <!-- Set the handlers for replies that are a subclass of Message -->
+          <list>
+              <bean class="org.dcache.services.info.gathers.LinkgroupListMsgHandler">
+                  <constructor-arg ref="state-update-manager"/>
+              </bean>
+              <bean class="org.dcache.services.info.gathers.LinkgroupDetailsMsgHandler">
+                  <constructor-arg ref="state-update-manager"/>
+              </bean>
+              <bean class="org.dcache.services.info.gathers.SrmSpaceDetailsMsgHandler">
+                  <constructor-arg ref="state-update-manager"/>
+              </bean>
+          </list>
+      </property>
+  </bean>
+
+</beans>

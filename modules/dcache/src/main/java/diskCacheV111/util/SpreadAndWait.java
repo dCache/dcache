@@ -1,72 +1,74 @@
 // $Id: SpreadAndWait.java,v 1.6 2007-07-08 17:02:48 tigran Exp $
 package diskCacheV111.util;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellPath;
 
-public class SpreadAndWait implements CellMessageAnswerable {
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
 
-	private final CellEndpoint _endpoint;
-	private final long _timeout;
+public class SpreadAndWait<T extends Serializable>
+{
+	private final CellStub _stub;
+        private final Map<CellPath,T> _replies = new HashMap<>();
+        private int _pending;
 
-	private int _pending;
+        public SpreadAndWait(CellStub stub)
+        {
+            _stub = stub;
+        }
 
-	private final List<CellMessage> _replies = new ArrayList<>();
+	public synchronized void send(final CellPath destination, Class<? extends T> type, Serializable msg)  {
+            _stub.send(destination, msg, type,
+                    new AbstractMessageCallback<T>()
+                    {
+                        @Override
+                        public void success(T answer)
+                        {
+                            SpreadAndWait.this.success(destination, answer);
+                        }
 
-	public SpreadAndWait(CellEndpoint endpoint, long timeout) {
-
-            _endpoint = endpoint;
-		_timeout = timeout;
+                        @Override
+                        public void failure(int rc, Object error)
+                        {
+                            SpreadAndWait.this.failure();
+                        }
+                    });
+            _pending++;
 	}
 
-	public synchronized void send(CellMessage msg)  {
-		_endpoint.sendMessage(msg, this, _timeout);
-		_pending++;
-	}
+        private synchronized void success(CellPath destination, T answer)
+        {
+            _pending--;
+            _replies.put(destination, answer);
+            notifyAll();
+        }
 
-	public synchronized void waitForReplies() throws InterruptedException {
+        private synchronized void failure()
+        {
+            _pending--;
+            notifyAll();
+        }
+
+        public synchronized void waitForReplies() throws InterruptedException {
 		while (_pending > 0) {
                     wait();
                 }
 	}
 
-	@Override
-        public synchronized void answerArrived(CellMessage request, CellMessage answer) {
-		_pending--;
-		_replies.add(answer);
-		notifyAll();
-	}
-
-	@Override
-        public synchronized void exceptionArrived(CellMessage request, Exception exception) {
-		_pending--;
-		notifyAll();
-	}
-
-	@Override
-        public synchronized void answerTimedOut(CellMessage request) {
-		_pending--;
-		notifyAll();
-	}
-
-	public Iterator<CellMessage> getReplies() {
-		return _replies.iterator();
+	public Map<CellPath, T> getReplies() {
+		return Collections.unmodifiableMap(_replies);
 	}
 
 	public int getReplyCount() {
 		return _replies.size();
 	}
 
-	public List<CellMessage> getReplyList() {
-		return _replies;
-	}
-
-	public synchronized CellMessage next() throws InterruptedException {
+	public synchronized Serializable next() throws InterruptedException {
 		//
 		// pending replies what
 		// yes == 0 wait

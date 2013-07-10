@@ -204,7 +204,7 @@ public class SendAlarm {
             sourceHost = arg;
 
             arg = uri.getPath();
-            if (arg == null) {
+            if (arg == null || arg.isEmpty()) {
                 arg = DEFAULT_SOURCE_PATH;
             }
 
@@ -267,6 +267,11 @@ public class SendAlarm {
         lc.reset();
         lc.putProperty("remote.server.host", host);
         lc.putProperty("remote.server.port", port);
+        /*
+         * Allow all levels to be sent.  The remote server will be set
+         * to intercept only messages sent at the defined dcache.log.remote.level.
+         */
+        lc.putProperty("remote.log.level", Level.DEBUG.toString());
 
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(lc);
@@ -291,7 +296,7 @@ public class SendAlarm {
         }
         message.append(INDENT)
                .append("('dcache send' automatically provides destination uri")
-               .append(" based on alarms.server.host and alarms.server.port)")
+               .append(" based on dcache.log.server.host and dcache.log.server.port)")
                .append(LBRK);
         System.out.println(message);
     }
@@ -306,6 +311,10 @@ public class SendAlarm {
             logger.error(alarmArgs.marker, alarmArgs.message);
         } else if (Level.WARN.equals(alarmArgs.level)) {
             logger.warn(alarmArgs.marker, alarmArgs.message);
+        } else if (Level.INFO.equals(alarmArgs.level)) {
+            logger.info(alarmArgs.marker, alarmArgs.message);
+        } else if (Level.DEBUG.equals(alarmArgs.level)) {
+            logger.debug(alarmArgs.marker, alarmArgs.message);
         }
     }
 }

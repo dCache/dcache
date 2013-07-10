@@ -19,13 +19,13 @@
         <class name="PnfsStorageInfo"  identity-type="nondurable">
             <inheritance strategy="complete-table"/>
         </class>
-        <class name="BaseDaily"  identity-type="nondurable">
+        <class name="BaseEntry"  identity-type="nondurable">
             <inheritance strategy="complete-table"/>
         </class>
-        <class name="SizeDaily"  identity-type="nondurable">
+        <class name="SizeEntry"  identity-type="nondurable">
             <inheritance strategy="complete-table"/>
         </class>
-        <class name="TransferDaily"  identity-type="nondurable">
+        <class name="TransferredEntry"  identity-type="nondurable">
             <inheritance strategy="complete-table"/>
         </class>
         <class name="StorageData" table="storageinfo"/>
@@ -41,12 +41,14 @@
         <class name="DcacheReadsHourly" table="billinginfo_rd_hourly"/>
         <class name="DcacheWritesHourly" table="billinginfo_wr_hourly"/>
         <class name="DcacheTimeHourly" table="billinginfo_tm_hourly"/>
+        <class name="PoolToPoolTransfersHourly" table="billinginfo_p2p_hourly"/>
         <class name="HSMReadsHourly" table="storageinfo_rd_hourly"/>
         <class name="HSMWritesHourly" table="storageinfo_wr_hourly"/>
         <class name="HitsDaily" table="hitinfo_daily"/>
         <class name="DcacheReadsDaily" table="billinginfo_rd_daily"/>
         <class name="DcacheWritesDaily" table="billinginfo_wr_daily"/>
         <class name="DcacheTimeDaily" table="billinginfo_tm_daily"/>
+        <class name="PoolToPoolTransfersDaily" table="billinginfo_p2p_daily"/>
         <class name="HSMReadsDaily" table="storageinfo_rd_daily"/>
         <class name="HSMWritesDaily" table="storageinfo_wr_daily"/>
     </package>

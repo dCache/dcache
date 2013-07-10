@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -105,6 +106,8 @@ public class XrootdTransferService
     private int maxMemoryPerConnection;
     private int maxMemory;
     private long clientIdleTimeout;
+    private TimeUnit clientIdleTimeoutUnit;
+    private int maxFrameSize;
     private Integer socketThreads;
     private List<ChannelHandlerFactory> plugins;
 
@@ -167,6 +170,17 @@ public class XrootdTransferService
         return clientIdleTimeout;
     }
 
+    public TimeUnit getClientIdleTimeoutUnit()
+    {
+        return clientIdleTimeoutUnit;
+    }
+
+    @Required
+    public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit)
+    {
+        this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
+    }
+
     public void setSocketThreads(String socketThreads)
     {
         this.socketThreads = Strings.isNullOrEmpty(socketThreads) ? null : Integer.parseInt(socketThreads);
@@ -183,29 +197,45 @@ public class XrootdTransferService
         this.plugins = plugins;
     }
 
+    @Required
+    public void setMaxFrameSize(int maxFrameSize)
+    {
+        this.maxFrameSize = maxFrameSize;
+    }
+
     public List<ChannelHandlerFactory> getPlugins()
     {
         return plugins;
     }
 
     @PostConstruct
-    private synchronized void init() throws Exception
+    public synchronized void init()
     {
         if (socketThreads == null) {
             server = new XrootdPoolNettyServer(
                     diskThreads,
                     maxMemoryPerConnection,
                     maxMemory,
-                    clientIdleTimeout,
+                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
+                    maxFrameSize,
                     plugins);
         } else {
             server = new XrootdPoolNettyServer(
                     diskThreads,
                     maxMemoryPerConnection,
                     maxMemory,
-                    clientIdleTimeout,
+                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
+                    maxFrameSize,
                     plugins,
                     socketThreads);
+        }
+    }
+
+    @PreDestroy
+    public synchronized void shutdown()
+    {
+        if (server != null) {
+            server.shutdown();
         }
     }
 

@@ -139,7 +139,7 @@ public class   CellAdapter
             _definedSetup = null;
         }
 
-        if (_args.hasOption("export")) {
+        if (_args.hasOption("export") && (_args.getOption("export").isEmpty() || Boolean.parseBoolean(_args.getOption("export")))) {
             export();
         }
 

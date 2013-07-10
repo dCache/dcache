@@ -17,6 +17,7 @@
             FROM "billinginfo"
             WHERE "errorcode" = 0
             AND "isnew" = false
+            AND ("p2p" = false OR "p2p" is null)
             AND "datestamp" > date_sub(current_timestamp, interval 24 hour)
             GROUP BY trunc("datestamp", 'HH24')
             ORDER BY trunc("datestamp", 'HH24');
@@ -30,6 +31,20 @@
             FROM "billinginfo"
             WHERE "errorcode" = 0
             AND "isnew" = true
+            AND ("p2p" = false OR "p2p" is null)
+            AND "datestamp" > date_sub(current_timestamp, interval 24 hour)
+            GROUP BY trunc("datestamp", 'HH24')
+            ORDER BY trunc("datestamp", 'HH24');
+        </sql>
+        <sql splitStatements="false">CREATE VIEW "billinginfo_p2p_hourly"
+            AS
+            SELECT trunc("datestamp", 'HH24') AS "date",
+            count(*) AS "count",
+            sum("fullsize") AS "size",
+            sum("transfersize") AS "transferred"
+            FROM "billinginfo"
+            WHERE "errorcode" = 0
+            AND "p2p" = true
             AND "datestamp" > date_sub(current_timestamp, interval 24 hour)
             GROUP BY trunc("datestamp", 'HH24')
             ORDER BY trunc("datestamp", 'HH24');

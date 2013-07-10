@@ -146,10 +146,8 @@ import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 
-import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.util.Args;
@@ -2843,9 +2841,8 @@ public final class Storage
         _log.debug("srmGetSpaceTokens ("+description+")");
         guardSpaceManagerEnabled();
         AuthorizationRecord duser = (AuthorizationRecord) user;
-        GetSpaceTokens getTokens =
-            new GetSpaceTokens(duser,
-                               description);
+        GetSpaceTokens getTokens = new GetSpaceTokens(description);
+        getTokens.setSubject(duser.toSubject());
         try {
             getTokens = _spaceManagerStub.sendAndWait(getTokens);
         } catch (TimeoutCacheException e) {

@@ -1707,7 +1707,7 @@ class FsSqlDriver {
             SqlHelper.tryToClose(ps);
         }
     }
-    private static final String sqlSetTag = "UPDATE t_tags_inodes SET ivalue=?, isize=? WHERE itagid=?";
+    private static final String sqlSetTag = "UPDATE t_tags_inodes SET ivalue=?, isize=?, imtime=? WHERE itagid=?";
 
     int setTag(Connection dbConnection, FsInode inode, String tagName, byte[] data, int offset, int len) throws SQLException, ChimeraFsException {
 
@@ -1728,7 +1728,8 @@ class FsSqlDriver {
             stSetTag = dbConnection.prepareStatement(sqlSetTag);
             stSetTag.setBinaryStream(1, new ByteArrayInputStream(data, offset, len), len);
             stSetTag.setLong(2, len);
-            stSetTag.setString(3, tagId);
+            stSetTag.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            stSetTag.setString(4, tagId);
             stSetTag.executeUpdate();
 
         } finally {

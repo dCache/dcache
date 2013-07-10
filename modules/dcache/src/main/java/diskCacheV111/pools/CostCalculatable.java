@@ -6,5 +6,5 @@ public interface CostCalculatable {
 
     public double getSpaceCost() ;
     public double getPerformanceCost() ;
-    public void   recalculate( long filesize ) ;
+    public void   recalculate();
 }

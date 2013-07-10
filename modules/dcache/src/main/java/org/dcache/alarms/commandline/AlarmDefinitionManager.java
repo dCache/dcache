@@ -180,7 +180,14 @@ public class AlarmDefinitionManager {
 
     static void printError(Throwable t) {
         if (t != null) {
-            System.err.println(t.getMessage());
+            if (t instanceof NullPointerException) {
+                /*
+                 * a bug, shouldn't happen
+                 */
+                t.printStackTrace();
+            } else {
+                System.err.println(t.getMessage());
+            }
             t = t.getCause();
         }
         while (t != null) {
@@ -205,7 +212,9 @@ public class AlarmDefinitionManager {
 
             try {
                 definition.validate();
+
                 Element alarmType = definition.toElement();
+                printDefinition(alarmType, outputter);
 
                 if (proceedWith("Add/Update definition", reader)) {
                     update(alarmType, outputter, rootNode, xmlFile);
@@ -357,7 +366,9 @@ public class AlarmDefinitionManager {
 
         while (true) {
             try {
-                String input = getInput("hit return to skip", reader);
+                String input = getInput("hit return to skip, "
+                                + AlarmDefinition.RM
+                                + " to remove value", reader);
                 if (input == null) {
                     return;
                 }

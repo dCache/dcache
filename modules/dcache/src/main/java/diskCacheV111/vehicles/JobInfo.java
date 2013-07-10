@@ -6,9 +6,11 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import diskCacheV111.util.JobScheduler;
-
 public class JobInfo implements Serializable {
+
+    private static final SimpleDateFormat __format =
+            new SimpleDateFormat( "MM/dd-HH:mm:ss" ) ;
+    private static final long serialVersionUID = 5209798222006083955L;
 
    private final String _client;
    private final long   _clientId;
@@ -17,15 +19,7 @@ public class JobInfo implements Serializable {
    private final String _status;
    private final long   _jobId;
 
-   public JobInfo( JobScheduler.Job job ){
-       this(job, "<unknown>", 0);
-   }
-
-   public JobInfo( JobScheduler.Job job, String clientName , long clientId ){
-       this(job.getSubmitTime(), job.getStartTime(), job.getStatusString(), job.getJobId(), clientName, clientId);
-   }
-
-   public JobInfo(long submitTime, long startTime, String status, int id, String clientName , long clientId ){
+    public JobInfo(long submitTime, long startTime, String status, int id, String clientName , long clientId ){
       _submitTime = submitTime ;
       _startTime  = startTime;
       _status     = status;
@@ -39,10 +33,6 @@ public class JobInfo implements Serializable {
    public long   getSubmitTime(){ return _submitTime ; }
    public String getStatus(){ return _status  ;}
    public long   getJobId(){ return _jobId ; }
-   private final static SimpleDateFormat __format =
-        new SimpleDateFormat( "MM/dd-HH:mm:ss" ) ;
-
-   private static final long serialVersionUID = 5209798222006083955L;
 
    public String toString(){
       StringBuilder sb = new StringBuilder();

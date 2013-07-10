@@ -103,9 +103,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.FQAN;
-import org.dcache.auth.GroupList;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
@@ -2752,33 +2750,25 @@ public final class Manager
                 return Collections.emptySet();
         }
 
-        public long[] getSpaceTokens(AuthorizationRecord authRecord,
+        public long[] getSpaceTokens(Subject subject,
                                      String description) throws SQLException {
 
                 Set<Space> spaces = new HashSet<>();
                 if (description==null) {
-                        String voGroup=authRecord.getVoGroup();
-                        String voRole=authRecord.getVoRole();
-                        spaces.addAll(findSpacesByVoGroupAndRole(voGroup, voRole));
-
-                        for (GroupList groupList : authRecord.getGroupLists()) {
-                                String attribute = groupList.getAttribute();
-                                Set<Space> foundSpaces;
-                                if( FQAN.isValid( attribute)) {
-                                        FQAN fqan = new FQAN( attribute);
-                                        foundSpaces = findSpacesByVoGroupAndRole( fqan.getGroup(), fqan.getRole());
-                                } else {
-                                        foundSpaces = findSpacesByVoGroupAndRole( attribute, "");
-                                }
-                                spaces.addAll(foundSpaces);
+                    for (String s : Subjects.getFqans(subject)) {
+                        if (s != null) {
+                            FQAN fqan = new FQAN(s);
+                            spaces.addAll(findSpacesByVoGroupAndRole(fqan.getGroup(), fqan.getRole()));
                         }
+                    }
+                    spaces.addAll(findSpacesByVoGroupAndRole(Subjects.getUserName(subject), ""));
                 }
                 else {
                         Set<Space> foundSpaces=manager.selectPrepared(
-                                                                      spaceReservationIO,
-                                                                      SELECT_SPACE_TOKENS_BY_DESCRIPTION,
-                                                                      SpaceState.RESERVED.getStateId(),
-                                                                      description);
+                                spaceReservationIO,
+                                SELECT_SPACE_TOKENS_BY_DESCRIPTION,
+                                SpaceState.RESERVED.getStateId(),
+                                description);
                         if (foundSpaces!=null) {
                                 spaces.addAll(foundSpaces);
                         }
@@ -3506,21 +3496,31 @@ public final class Manager
 
             Message message = (Message) cellMessage.getMessageObject();
 
-            if (message instanceof PoolMgrSelectPoolMsg) {
-
-                forwardToPoolmanager(cellMessage);
-
-            } else if (message instanceof PoolFileFlushedMessage ||
+            if (message instanceof PoolFileFlushedMessage ||
                     message instanceof PoolRemoveFilesMessage ||
                     message instanceof PnfsDeleteEntryNotificationMessage) {
 
                 // Simply ignore these notification messages
 
-            } else if (message.getReplyRequired()) {
+            } else if (message instanceof Reserve
+                    || message instanceof GetSpaceTokensMessage
+                    || message instanceof GetSpaceTokenIdsMessage
+                    || message instanceof GetLinkGroupsMessage
+                    || message instanceof GetLinkGroupNamesMessage
+                    || message instanceof GetLinkGroupIdsMessage
+                    || message instanceof Release
+                    || message instanceof Use
+                    || message instanceof CancelUse
+                    || message instanceof GetSpaceMetaData
+                    || message instanceof GetSpaceTokens
+                    || message instanceof ExtendLifetime
+                    || message instanceof GetFileSpaceTokensMessage ) {
 
                 returnFailedResponse("SpaceManager is disabled in configuration",
                         message, cellMessage);
 
+            } else {
+                forwardToPoolmanager(cellMessage);
             }
         }
 
@@ -3618,12 +3618,10 @@ public final class Manager
                                 markFileDeleted(msg);
                         }
                         else {
-                                logger.error("unknown message, type {} " +
-                                        "value {}",
-                                        spaceMessage.getClass().getName(),
-                                        spaceMessage);
-                                super.messageArrived(cellMessage);
-                                return;
+                            if (!spaceMessage.isReply()) {
+                                forwardToPoolmanager(cellMessage);
+                            }
+                            return;
                         }
                 }
                 catch(SpaceException se) {
@@ -4032,8 +4030,8 @@ public final class Manager
                 long spaceToken = release.getSpaceToken();
                 Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
                 Space space = getSpace(spaceToken);
-                AuthorizationRecord authRecord =  release.getAuthRecord();
-                authorizationPolicy.checkReleasePermission(authRecord, space);
+                Subject subject =  release.getSubject();
+                authorizationPolicy.checkReleasePermission(subject, space);
                 if(spaceToReleaseInBytes == null) {
                         updateSpaceState(spaceToken,SpaceState.RELEASED);
                 }
@@ -4053,7 +4051,7 @@ public final class Manager
                         throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
                 }
 
-                long reservationId = reserveSpace(reserve.getAuthRecord(),
+                long reservationId = reserveSpace(reserve.getSubject(),
                                                   reserve.getSizeInBytes(),
                                                   (reserve.getAccessLatency()==null?
                                                    defaultLatency:reserve.getAccessLatency()),
@@ -4071,7 +4069,7 @@ public final class Manager
                                        long size,
                                        AccessLatency latency,
                                        RetentionPolicy policy,
-                                       AuthorizationRecord authRecord,
+                                       Subject subject,
                                        ProtocolInfo protocolInfo,
                                        FileAttributes fileAttributes)
                 throws SQLException,
@@ -4089,7 +4087,7 @@ public final class Manager
                 if (files!=null&&files.isEmpty()==false) {
                         throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
                 }
-                long reservationId = reserveSpace(authRecord,
+                long reservationId = reserveSpace(subject,
                                                   sizeInBytes,
                                                   latency,
                                                   policy,
@@ -4114,15 +4112,13 @@ public final class Manager
                 throws SQLException, SpaceException{
                 logger.debug("useSpace({})", use);
                 long reservationId = use.getSpaceToken();
+                Subject subject = use.getSubject();
                 long sizeInBytes = use.getSizeInBytes();
-                String voGroup = use.getAuthRecord().getVoGroup();
-                String voRole = use.getAuthRecord().getVoRole();
                 String pnfsPath = use.getPnfsName();
                 PnfsId pnfsId = use.getPnfsId();
                 long lifetime = use.getLifetime();
                 long fileId = useSpace(reservationId,
-                                       voGroup,
-                                       voRole,
+                                       subject,
                                        sizeInBytes,
                                        lifetime,
                                        pnfsPath,
@@ -4579,7 +4575,7 @@ public final class Manager
                                                description);
         }
 
-        private long reserveSpace(AuthorizationRecord authRecord,
+        private long reserveSpace(Subject subject,
                                   long sizeInBytes,
                                   AccessLatency latency ,
                                   RetentionPolicy policy,
@@ -4590,8 +4586,8 @@ public final class Manager
                                   PnfsId pnfsId)
                 throws SQLException,
                        SpaceException {
-                logger.debug("reserveSpace( ar={}, sz={}, latency={}, " +
-                        "policy={}, lifetime={}, description={}", authRecord,
+                logger.debug("reserveSpace( subject={}, sz={}, latency={}, " +
+                        "policy={}, lifetime={}, description={}", subject.getPrincipals(),
                         sizeInBytes, latency, policy, lifetime, description);
                 boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
                 logger.debug("policy is {}, needHsmBackup is {}", policy, needHsmBackup);
@@ -4609,7 +4605,7 @@ public final class Manager
                 for (LinkGroup linkGroup : linkGroups) {
                         try {
                                 VOInfo voInfo =
-                                        authorizationPolicy.checkReservePermission(authRecord,
+                                        authorizationPolicy.checkReservePermission(subject,
                                                                                    linkGroup);
                                 linkGroupNameVoInfoMap.put(linkGroup.getName(),voInfo);
                         }
@@ -4743,6 +4739,33 @@ public final class Manager
                 }
         }
 
+        private long useSpace(long reservationId,
+                              Subject subject,
+                              long sizeInBytes,
+                              long lifetime,
+                              String pnfsPath,
+                              PnfsId pnfsId)
+                throws SQLException, SpaceException
+        {
+            String effectiveGroup;
+            String effectiveRole;
+            String primaryFqan = Subjects.getPrimaryFqan(subject);
+            if (primaryFqan != null) {
+                FQAN fqan = new FQAN(primaryFqan);
+                effectiveGroup = fqan.getGroup();
+                effectiveRole = fqan.getRole();
+            } else {
+                effectiveGroup = Subjects.getUserName(subject);
+                effectiveRole = null;
+            }
+            return useSpace(reservationId,
+                    effectiveGroup,
+                    effectiveRole,
+                    sizeInBytes,
+                    lifetime,
+                    pnfsPath,
+                    null);
+        }
 
         private long useSpace(long reservationId,
                               String voGroup,
@@ -4799,17 +4822,19 @@ public final class Manager
         }
 
         public void selectPool(CellMessage cellMessage,
-                               boolean isReply )
-                throws Exception{
-                PoolMgrSelectPoolMsg selectPool = (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
-                logger.debug("selectPool({})", selectPool);
+                               boolean isReply)
+                throws Exception {
+                PoolMgrSelectPoolMsg selectPool =
+                        (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
+                logger.trace("selectPool({})", selectPool);
                 String pnfsPath = selectPool.getPnfsPath();
                 PnfsId pnfsId   = selectPool.getPnfsId();
-                if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
-                        logger.debug("selectPool: pnfsPath is null");
+                if( !(selectPool instanceof PoolMgrSelectWritePoolMsg) ||
+                    pnfsPath == null) {
                         if(!isReply) {
-                                logger.debug("just forwarding the message to {}", poolManager);
-                                cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
+                                logger.trace("just forwarding the message to {}",
+                                             poolManager);
+                                cellMessage.getDestinationPath().add(new CellPath(poolManager));
                                 cellMessage.nextDestination() ;
                                 sendMessage(cellMessage) ;
                         }
@@ -4817,126 +4842,94 @@ public final class Manager
                 }
                 PoolMgrSelectWritePoolMsg selectWritePool = (PoolMgrSelectWritePoolMsg) selectPool;
                 File file = null;
-                try {
-                        logger.debug("selectPool: getFiles({})", pnfsPath);
-                        Set<File> files = getFiles(pnfsPath);
-                        for (File f: files) {
-                                if (f.getPnfsId()==null) {
-                                        file=f;
-                                        break;
+                FileAttributes fileAttributes = selectPool.getFileAttributes();
+                if (!isReply) {
+                        /*
+                         * message on the way to PoolManager
+                         *
+                         */
+                        try {
+                                logger.trace("selectPool: getFiles({})", pnfsPath);
+                                Set<File> files = getFiles(pnfsPath);
+                                for (File f: files) {
+                                        if (f.getPnfsId()==null) {
+                                                file=f;
+                                                break;
+                                        }
                                 }
                         }
-                }
-                catch (Exception e) {
-                        logger.info("failed to find pool: {}", e.getMessage());
-                }
-                FileAttributes fileAttributes = selectPool.getFileAttributes();
-                if(file==null) {
-                        AccessLatency al = fileAttributes.getAccessLatency();
-                        RetentionPolicy rp = fileAttributes.getRetentionPolicy();
-                        String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
-                        ProtocolInfo protocolInfo = selectWritePool.getProtocolInfo();
-                        Subject subject = selectWritePool.getSubject();
-                        AuthorizationRecord authRecord;
-                        if (Subjects.getFqans(subject).isEmpty()&&
-                            Subjects.getUserName(subject)==null) {
-                                authRecord=null;
+                        catch (Exception e) {
+                                /*
+                                 * this is expected for implicit space reservations
+                                 */
+                                logger.trace("failed to find file: {}", e.getMessage());
                         }
-                        else {
-                                authRecord = new AuthorizationRecord(subject);
-                        }
+                        if(file==null) {
+                                /*
+                                 * we are here in case of implicit space reservations
+                                 *
+                                 */
+                                AccessLatency al = fileAttributes.getAccessLatency();
+                                RetentionPolicy rp = fileAttributes.getRetentionPolicy();
+                                String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
+                                ProtocolInfo protocolInfo = selectWritePool.getProtocolInfo();
+                                Subject subject = selectWritePool.getSubject();
 
-                        if (defaultSpaceToken==null) {
-                                if(reserveSpaceForNonSRMTransfers && authRecord != null) {
-                                        logger.debug("selectPool: file is " +
-                                                "not found, no prior " +
-                                                "reservations for this file, " +
-                                                "calling reserveAndUseSpace()");
+                                if (defaultSpaceToken==null) {
+                                        boolean hasIdentity =
+                                            !Subjects.getFqans(subject).isEmpty() || Subjects.getUserName(subject) != null;
+                                        if(reserveSpaceForNonSRMTransfers && hasIdentity) {
+                                                logger.trace("selectPool: file is " +
+                                                             "not found, no prior " +
+                                                             "reservations for this file, " +
+                                                             "calling reserveAndUseSpace()");
 
-                                        file = reserveAndUseSpace(pnfsPath,
-                                                                  null, //  selectWritePool.getPnfsId(),
-                                                                  selectWritePool.getPreallocated(),
-                                                                  al,
-                                                                  rp,
-                                                                  authRecord,
-                                                                  protocolInfo,
-                                                                  fileAttributes);
-                                        logger.debug("selectPool: file is " +
-                                                "not found, reserveAndUseSpace() " +
-                                                "returned {}", file);
+                                                file = reserveAndUseSpace(pnfsPath,
+                                                                          selectWritePool.getPnfsId(),
+                                                                          selectWritePool.getPreallocated(),
+                                                                          al,
+                                                                          rp,
+                                                                          subject,
+                                                                          protocolInfo,
+                                                                          fileAttributes);
+                                                logger.trace("selectPool: file is " +
+                                                             "not found, reserveAndUseSpace() " +
+                                                             "returned {}", file);
+                                        }
+                                        else {
+                                                logger.trace("selectPool: file is " +
+                                                             "not found, no prior " +
+                                                             "reservations for this file " +
+                                                             "reserveSpaceForNonSRMTransfers={} " +
+                                                             "subject={}",
+                                                             reserveSpaceForNonSRMTransfers,
+                                                             subject.getPrincipals());
+                                                forwardToPoolmanager(cellMessage);
+                                                return;
+                                        }
                                 }
                                 else {
-                                        logger.debug("selectPool: file is " +
-                                                "not found, no prior " +
-                                                "reservations for this file " +
-                                                "reserveSpaceForNonSRMTransfers={} " +
-                                                "authrecord={}",
-                                                reserveSpaceForNonSRMTransfers,
-                                                authRecord != null ? authRecord : "none");
-                                        if(!isReply) {
-                                            forwardToPoolmanager(cellMessage);
-                                        }
-                                        return;
+                                        logger.trace("selectPool: file is not " +
+                                                     "found, found default space " +
+                                                     "token, calling useSpace()");
+                                        long lifetime    = 1000*60*60;
+                                        long spaceToken = Long.parseLong(defaultSpaceToken);
+                                        long fileId     = useSpace(spaceToken,
+                                                                   subject,
+                                                                   selectWritePool.getPreallocated(),
+                                                                   lifetime,
+                                                                   pnfsPath,
+                                                                   selectWritePool.getPnfsId());
+                                        file = getFile(fileId);
                                 }
                         }
                         else {
-                                logger.debug("selectPool: file is not " +
-                                        "found, found default space " +
-                                        "token, calling useSpace()");
-                                String voGroup   = null;
-                                String voRole    = null;
-                                long lifetime    = 1000*60*60;
-                                if(authRecord != null) {
-                                    voGroup = authRecord.getVoGroup();
-                                    voRole = authRecord.getVoRole();
-                                }
-                                long spaceToken = Long.parseLong(defaultSpaceToken);
-                                long fileId     = useSpace(spaceToken,
-                                                           voGroup,
-                                                           voRole,
-                                                           selectWritePool.getPreallocated(),
-                                                           lifetime,
-                                                           pnfsPath,
-                                                           selectWritePool.getPnfsId());
-                                file = getFile(fileId);
-                        }
-                }
-                else {
-                        if (isReply&&selectWritePool.getReturnCode()==0) {
-                                logger.debug("selectPool: file is not null, " +
-                                        "calling updateSpaceFile()");
+                                /*
+                                 * This takes care of records created by SRM before
+                                 * transfer has started
+                                 */
                                 updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
                         }
-                }
-                if (isReply&&selectWritePool.getReturnCode()!=0) {
-                        Connection connection = null;
-                        try {
-                                connection = connection_pool.getConnection();
-                                connection.setAutoCommit(false);
-                                removePnfsIdOfFileInSpace(connection,file.getId(),null);
-                                connection.commit();
-                                connection_pool.returnConnection(connection);
-                                connection = null;
-                        }
-                        catch(SQLException sqle) {
-                                logger.error("failed to remove file {}: {}",
-                                        file, sqle.getMessage());
-                                if (connection!=null) {
-                                        try {
-                                                connection.rollback();
-                                        }
-                                        catch (SQLException e) {}
-                                        connection_pool.returnFailedConnection(connection);
-                                        connection = null;
-                                }
-                        }
-                        finally {
-                                if(connection != null) {
-                                        connection_pool.returnConnection(connection);
-                                }
-                        }
-                }
-                if(!isReply) {
                         long spaceId     = file.getSpaceId();
                         Space space      = getSpace(spaceId);
                         long linkGroupid = space.getLinkGroupId();
@@ -4946,23 +4939,56 @@ public final class Manager
                         StorageInfo storageInfo = selectWritePool.getStorageInfo();
                         storageInfo.setKey("SpaceToken",Long.toString(spaceId));
                         if (fileAttributes.getSize() == 0 && file.getSizeInBytes() > 1) {
-                            fileAttributes.setSize(file.getSizeInBytes());
+                                fileAttributes.setSize(file.getSizeInBytes());
                         }
-                        //
-                        // add Space Token description
-                        //
                         if (space.getDescription()!=null) {
                                 storageInfo.setKey("SpaceTokenDescription",space.getDescription());
                         }
                         cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
                         cellMessage.nextDestination() ;
-                        logger.debug("selectPool: found linkGroup = {}, " +
-                                "forwarding message", linkGroupName);
+                        logger.trace("selectPool: found linkGroup = {}, " +
+                                     "forwarding message", linkGroupName);
                         sendMessage(cellMessage) ;
+                }
+                else {
+                        /*
+                         * received reply from PoolManager
+                         *
+                         */
+                        if (selectWritePool.getReturnCode()!=0) {
+                                file = getFile(pnfsId);
+                                Connection connection = null;
+                                try {
+                                        connection = connection_pool.getConnection();
+                                        connection.setAutoCommit(false);
+                                        removePnfsIdOfFileInSpace(connection,file.getId(),null);
+                                        connection.commit();
+                                        connection_pool.returnConnection(connection);
+                                        connection = null;
+                                }
+                                catch(SQLException sqle) {
+                                        logger.error("failed to remove file {}: {}",
+                                                     file, sqle.getMessage());
+                                        if (connection!=null) {
+                                                try {
+                                                        connection.rollback();
+                                                }
+                                                catch (SQLException e) {}
+                                                connection_pool.returnFailedConnection(connection);
+                                                connection = null;
+                                        }
+                                }
+                                finally {
+                                        if(connection != null) {
+                                                connection_pool.returnConnection(connection);
+                                        }
+                                }
+                        }
                 }
         }
 
-        private void forwardToPoolmanager(CellMessage cellMessage)
+
+    private void forwardToPoolmanager(CellMessage cellMessage)
         {
             logger.debug("just forwarding the message to {}", poolManager);
             cellMessage.getDestinationPath().add(new CellPath(poolManager));
@@ -5062,7 +5088,7 @@ public final class Manager
         public void getSpaceTokens(GetSpaceTokens gst) throws Exception{
                 String description = gst.getDescription();
 
-                long [] tokens = getSpaceTokens(gst.getAuthRecord(), description);
+                long [] tokens = getSpaceTokens(gst.getSubject(), description);
                 gst.setSpaceToken(tokens);
         }
 

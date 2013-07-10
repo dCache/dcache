@@ -76,9 +76,9 @@ public class      CostCalculationV5
 
     }
     @Override
-    public void recalculate( long filesize ){
-
-       filesize = 3 * Math.max( filesize , 50 * 1000 * 1000 ) ;
+    public void recalculate()
+    {
+       long filesize = 3 * 50 * 1000 * 1000;
 
        long lru = _space.getLRUSeconds() ;
 

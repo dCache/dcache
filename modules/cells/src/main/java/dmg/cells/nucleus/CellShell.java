@@ -324,29 +324,7 @@ public class      CellShell
           return super.command(c);
       }
    }
-   public Object binCommand( String c ){
-      Args args = new Args( c ) ;
-      if( args.argc() == 0 ) {
-          return "";
-      }
-      String cs = args.argv(0) ;
-       switch (cs) {
-       case ".getroutes":
-           return _nucleus.getRoutingList();
-       case ".getcelltunnelinfos":
-           return _nucleus.getCellTunnelInfos();
-       case ".getcellinfos":
-           List<String> list = _nucleus.getCellNames();
-           CellInfo[] info = new CellInfo[list.size()];
-           for (int i = 0; i < list.size(); i++) {
-               info[i] = _nucleus.getCellInfo(list.get(i));
-           }
-           return info;
-       default:
-           return null;
-       }
 
-   }
    ////////////////////////////////////////////////////////////
    //
    //  version
@@ -375,8 +353,9 @@ public class      CellShell
    public Object ac_getroutes( Args args ){
        return _nucleus.getRoutingList() ;
    }
-   public Object ac_getcelltunnelinfos( Args args ){
-       return _nucleus.getCellTunnelInfos() ;
+   public CellTunnelInfo[] ac_getcelltunnelinfos( Args args ){
+       List<CellTunnelInfo> cellTunnelInfos = _nucleus.getCellTunnelInfos();
+       return cellTunnelInfos.toArray(new CellTunnelInfo[cellTunnelInfos.size()]);
    }
    public Object ac_getcellinfo_$_1( Args args ) throws CommandException {
       CellInfo info = _nucleus.getCellInfo( args.argv(0) ) ;
@@ -699,13 +678,7 @@ public class      CellShell
                         response = e;
                     }
 
-
-                    try {
-                        future.send(response);
-                    } catch (NoRouteToCellException | SerializationException e){
-                        _log.error("problem sending result of 'kill {}' " +
-                                "command: {}", cell, e.getMessage());
-                    }
+                    future.reply(response);
                 } catch (InterruptedException e) {
                     // Do nothing, dCache is shutting down.
                 }
@@ -815,7 +788,8 @@ public class      CellShell
    //
     public static final String hh_create = "<cellClass> <cellName> [<Arguments>]";
     public String ac_create_$_2_3(Args args)
-        throws Throwable
+            throws ClassNotFoundException, NoSuchMethodException, InstantiationException,
+                   IllegalAccessException, CommandThrowableException
     {
         try {
             Cell cell;
@@ -843,7 +817,7 @@ public class      CellShell
 
             return "created : " + cell;
         } catch (InvocationTargetException e) {
-            throw e.getTargetException();
+            throw new CommandThrowableException(e.getTargetException().getMessage(), e.getTargetException());
         }
     }
    ////////////////////////////////////////////////////////////

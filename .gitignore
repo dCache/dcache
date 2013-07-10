@@ -1,0 +1,37 @@
+##  Ignore maven-generated directories and their contents.
+/modules/*/target/
+/packages/*/target/
+/plugins/*/target/
+
+## Ignore Eclipse-generated files and directories
+/.project
+/.classpath
+/.settings/
+/modules/*/.project
+/modules/*/.classpath
+/modules/*/.settings/
+/packages/*/.project
+/packages/*/.classpath
+/packages/*/.settings/
+/plugins/*/.project
+/plugins/*/.classpath
+/plugins/*/.settings/
+
+## Ignore IntelliJ-generated files and directories
+##
+##     There is a *.iml file wherever there is a pom.xml file.  The .idea
+##     directory is in the root of the aggregating project.
+##
+## See also:
+##
+##     http://devnet.jetbrains.com/docs/DOC-1186
+##
+/*.iml
+/modules/*/*.iml
+/packages/*/*.iml
+/plugins/*/*.iml
+/.idea/
+
+
+## Ignore Mac generated files, wherever they are
+.DS_Store

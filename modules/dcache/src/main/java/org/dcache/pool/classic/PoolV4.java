@@ -3,6 +3,7 @@
 package org.dcache.pool.classic;
 
 import com.google.common.base.Throwables;
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -180,12 +181,15 @@ public class PoolV4
 
     private ReplicaStatePolicy _replicaStatePolicy;
 
+    private CellPath _replicationManager;
+    private InetAddress _replicationIp;
+
     private boolean _running;
     private double _breakEven = 0.7;
     private double _moverCostFactor = 0.5;
     private TransferServices _transferServices;
 
-    public PoolV4(String poolName, String args)
+    public PoolV4(String poolName)
     {
         _poolName = poolName;
 
@@ -218,9 +222,24 @@ public class PoolV4
     }
 
     @Required
-    public void setReplicateOnArrival(String replicate)
+    public void setReplicationNotificationDestination(String address)
     {
-        _replicationHandler.init(replicate.equals("") ? "on" : replicate);
+        _replicationManager = (!address.isEmpty()) ? new CellPath(address) : null;
+    }
+
+    @Required
+    public void setReplicationIp(String address)
+    {
+        if (!address.isEmpty()) {
+            _replicationIp = InetAddresses.forString(address);
+        } else {
+            try {
+                _replicationIp = InetAddress.getLocalHost();
+            } catch (UnknownHostException ee) {
+                _replicationIp = InetAddress.getLoopbackAddress();
+
+            }
+        }
     }
 
     @Required
@@ -439,9 +458,14 @@ public class PoolV4
                     _repository.load();
                     enablePool();
                     _flushingThread.start();
+                } catch (RuntimeException e) {
+                    _log.error("Repository reported a problem. Please report this to support@dcache.org.", e);
+                    _log.warn("Pool not enabled {}", _poolName);
+                    disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
+                            666, "Init failed: " + e.getMessage());
                 } catch (Throwable e) {
-                    _log.error("Repository reported a problem : " + e.getMessage());
-                    _log.warn("Pool not enabled " + _poolName);
+                    _log.error("Repository reported a problem: " + e.getMessage());
+                    _log.warn("Pool not enabled {}", _poolName);
                     disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                                 666, "Init failed: " + e.getMessage());
                 }
@@ -791,19 +815,6 @@ public class PoolV4
     private class ReplicationHandler
         extends AbstractStateChangeListener
     {
-        private boolean _enabled;
-        private CellPath _replicationManager = new CellPath("PoolManager");
-        private String _destinationHostName;
-        private String _destinationMode = "keep";
-        private boolean _replicateOnRestore;
-
-        //
-        // replicationManager,Hostname,modeOfDestFile
-        //
-        private ReplicationHandler()
-        {
-        }
-
         @Override
         public void stateChanged(StateChangeEvent event)
         {
@@ -822,74 +833,29 @@ public class PoolV4
             }
         }
 
-        public void init(String vars)
-        {
-            if (_destinationHostName == null) {
-                try {
-                    _destinationHostName = InetAddress.getLocalHost()
-                        .getHostAddress();
-                } catch (UnknownHostException ee) {
-                    _destinationHostName = "localhost";
-                }
-            }
-            if ((vars == null) || vars.equals("off")) {
-                _enabled = false;
-                return;
-            } else if (vars.equals("on")) {
-                _enabled = true;
-                return;
-            }
-            _enabled = true;
-
-            String[] args = vars.split(",");
-            if (args.length > 0 && !args[0].equals("")) {
-                _replicationManager = new CellPath(args[0]);
-            }
-            _destinationHostName = ((args.length > 1) && !args[1].equals("")) ? args[1]
-                : _destinationHostName;
-            _destinationMode = ((args.length > 2) && !args[2].equals("")) ? args[2]
-                : _destinationMode;
-
-            if (_destinationHostName.equals("*")) {
-                try {
-                    _destinationHostName = InetAddress.getLocalHost()
-                        .getHostAddress();
-                } catch (UnknownHostException ee) {
-                    _destinationHostName = "localhost";
-                }
-            }
-        }
-
         @Override
         public String toString()
         {
-            StringBuilder sb = new StringBuilder();
-
-            if (_enabled) {
-                sb.append("{Mgr=").append(_replicationManager).append(",Host=")
-                    .append(_destinationHostName).append(",DestMode=")
-                    .append(_destinationMode).append("}");
+            if (_replicationManager != null) {
+                return "{Mgr=" + _replicationManager + ",Host=" + _replicationIp + "}";
             } else {
-                sb.append("Disabled");
+                return "Disabled";
             }
-            return sb.toString();
         }
 
         private void initiateReplication(PnfsId id, String source)
         {
-            if ((!_enabled)
-                || (source.equals("restore") && !_replicateOnRestore)) {
-                return;
-            }
-            try {
-                _initiateReplication(_repository.getEntry(id), source);
-            } catch (InterruptedException e) {
-                _log.error("Problem in sending replication request: " + e);
-                Thread.currentThread().interrupt();
-            } catch (CacheException e) {
-                _log.error("Problem in sending replication request: " + e);
-            } catch (NoRouteToCellException e) {
-                _log.error("Problem in sending replication request: " + e.getMessage());
+            if (_replicationManager != null) {
+                try {
+                    _initiateReplication(_repository.getEntry(id), source);
+                } catch (InterruptedException e) {
+                    _log.error("Problem in sending replication request: " + e);
+                    Thread.currentThread().interrupt();
+                } catch (CacheException e) {
+                    _log.error("Problem in sending replication request: " + e);
+                } catch (NoRouteToCellException e) {
+                    _log.error("Problem in sending replication request: " + e.getMessage());
+                }
             }
         }
 
@@ -907,11 +873,13 @@ public class PoolV4
             attributes.setStorageInfo(storageInfo);
             attributes.setLocations(Collections.singleton(_poolName));
             attributes.setSize(fileAttributes.getSize());
+            attributes.setAccessLatency(fileAttributes.getAccessLatency());
+            attributes.setRetentionPolicy(fileAttributes.getRetentionPolicy());
 
             PoolMgrReplicateFileMsg req =
                 new PoolMgrReplicateFileMsg(attributes,
                                             new DCapProtocolInfo("DCap", 3, 0,
-                                                  new InetSocketAddress(_destinationHostName, 2222)));
+                                                    new InetSocketAddress(_replicationIp, 2222)));
             req.setReplyRequired(false);
             sendMessage(new CellMessage(_replicationManager, req));
         }
@@ -976,14 +944,7 @@ public class PoolV4
                     }
                 }
 
-                try {
-                    send(_message);
-                } catch (NoRouteToCellException e) {
-                    _log.error("Failed to send reply: " + e.getMessage());
-                } catch (InterruptedException e) {
-                    _log.error("Failed to send reply: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+                reply(_message);
             }
         }
     }
@@ -1039,14 +1000,7 @@ public class PoolV4
                     _message.setReply(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, error);
                 }
 
-                try {
-                    send(_message);
-                } catch (NoRouteToCellException e) {
-                    _log.error("Cannot send P2P reply: " + e.getMessage());
-                } catch (InterruptedException e) {
-                    _log.error("Cannot send P2P reply: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+                reply(_message);
             }
         }
     }
@@ -1515,12 +1469,12 @@ public class PoolV4
         info.setQueueSizes(_ioQueue.getActiveJobs() - p2pQueue.getActiveJobs(),
                            _ioQueue.getMaxActiveJobs() - p2pQueue.getMaxActiveJobs(),
                            _ioQueue.getQueueSize() - p2pQueue.getQueueSize(),
-                           _storageHandler.getFetchScheduler().getActiveJobs(),
-                           _suppressHsmLoad ? 0 : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
-                           _storageHandler.getFetchScheduler().getQueueSize(),
-                           _storageHandler.getStoreScheduler().getActiveJobs(),
-                           _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler().getMaxActiveJobs(),
-                           _storageHandler.getStoreScheduler().getQueueSize());
+                           _storageHandler.getActiveFetchJobs(),
+                           _suppressHsmLoad ? 0 : _storageHandler.getMaxActiveFetchJobs(),
+                           _storageHandler.getFetchQueueSize(),
+                           _storageHandler.getActiveStoreJobs(),
+                           _suppressHsmLoad ? 0 : _storageHandler.getMaxActiveStoreJobs(),
+                           _storageHandler.getStoreQueueSize());
         return info;
     }
 
@@ -1693,10 +1647,17 @@ public class PoolV4
         return _pnfs.getPathByPnfsId(new PnfsId(args.argv(0)));
     }
 
-    public static final String hh_set_replication = "off|on|<mgr>,<host>,<destMode>";
-    public String ac_set_replication_$_1(Args args)
+    public static final String hh_set_replication = "[-off] [<mgr> [<host>]]";
+    public String ac_set_replication_$_0_2(Args args)
     {
-        setReplicateOnArrival(args.argv(0));
+        if (args.hasOption("off")) {
+            setReplicationNotificationDestination("");
+        } else if (args.argc() > 0) {
+            setReplicationNotificationDestination(args.argv(0));
+            if (args.argc() > 1) {
+                setReplicationIp(args.argv(1));
+            }
+        }
         return _replicationHandler.toString();
     }
 
@@ -1943,7 +1904,9 @@ public class PoolV4
         return sb.toString();
     }
 
-    public Object ac_mover_ls_$_0_1(Args args) throws NoSuchElementException {
+    public Object ac_mover_ls_$_0_1(Args args)
+            throws NoSuchElementException, NumberFormatException
+    {
         String queueName = args.getOpt("queue");
         boolean binary = args.hasOption("binary");
 
@@ -1976,6 +1939,7 @@ public class PoolV4
     }
 
     public Object ac_p2p_ls_$_0_1(Args args)
+            throws NoSuchElementException, NumberFormatException
     {
         IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
 

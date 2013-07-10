@@ -16,7 +16,6 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +46,7 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolCheckFileCostMessage;
+import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
@@ -1777,14 +1776,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                         if( _checkStrict ){
 
-                            SpreadAndWait controller = new SpreadAndWait( _cell, 10000 ) ;
-
+                            SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(new CellStub(_cell, null, 10000));
                             for( String pool: result ){
 
                                 _log.debug("Sending query to pool {}", pool);
-                                PoolCheckFileCostMessage request =
-                                    new PoolCheckFileCostMessage( pool , _fileAttributes.getPnfsId() , 0L ) ;
-                                controller.send( new CellMessage( new CellPath(pool) , request ) );
+                                PoolCheckFileMessage request =
+                                    new PoolCheckFileMessage(pool, _fileAttributes.getPnfsId());
+                                controller.send(new CellPath(pool), PoolCheckFileMessage.class, request);
                             }
                             controller.waitForReplies() ;
                             int numberOfReplies = controller.getReplyCount() ;
@@ -1794,17 +1792,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                         CacheException(4, "File not cached");
                             }
 
-                            Iterator<CellMessage> iterate = controller.getReplies() ;
                             int found = 0 ;
-                            while( iterate.hasNext() ){
-                                CellMessage msg = iterate.next() ;
-                                Object obj = msg.getMessageObject() ;
-                                if( ! ( obj instanceof PoolCheckFileCostMessage ) ){
-                                    _log.error("Unexpected reply from PoolCheckFileCostMessage: {}",
-                                               obj.getClass().getName());
-                                    continue ;
-                                }
-                                PoolCheckFileCostMessage reply = (PoolCheckFileCostMessage)obj ;
+                            for (PoolCheckFileMessage reply: controller.getReplies().values()) {
                                 if( reply.getHave() ){
                                     _log.debug("pool {}: ok",
                                                reply.getPoolName());
@@ -1878,7 +1867,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if (_passive) {
                 _clientSocketAddress = new InetSocketAddress(_clientAddress, port);
             } else {
-                _clientSocketAddress = new InetSocketAddress(st.nextToken(), port);
+                String hostname = st.nextToken();
+
+                _clientSocketAddress = new InetSocketAddress(hostname, port);
+
+                if (_clientSocketAddress.isUnresolved()) {
+                    _log.debug("Client sent unresolvable hostname {}", hostname);
+                    throw new CacheException("Unknown host: " + hostname);
+                }
             }
 
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _clientSocketAddress  ) ;

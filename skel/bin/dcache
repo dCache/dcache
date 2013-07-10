@@ -210,7 +210,7 @@ dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 # display dCache package version
 showVersion()
 {
-    "$JAVA" -cp "$(getProperty dcache.paths.classpath)" org.dcache.util.Version
+    CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.util.Version
 }
 
 #  print either the user a PID is running as (if $1 is non-empty)
@@ -317,9 +317,9 @@ checkForHeapDumpFiles()
 poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
 {
     classpath=$(getProperty dcache.paths.classpath "$1" "$2")
-    path=$(getProperty path "$1" "$2")
-    src=$(getProperty metaDataRepository "$1" "$2")
-    name=$(getProperty name "$1" "$2")
+    path=$(getProperty pool.path "$1" "$2")
+    src=$(getProperty pool.plugins.meta "$1" "$2")
+    name=$(getProperty pool.name "$1" "$2")
 
     if [ "$(printSimpleDomainStatus "$1")" != "stopped" ]; then
         fail 1 "Domain '$1' has to be stopped before pool '$name'
@@ -330,7 +330,7 @@ poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
         fail 2 "Cannot convert pool '$name', as it is already of type $src."
     fi
 
-    CLASSPATH="$classpath" "$JAVA" org.dcache.pool.repository.MetaDataStoreCopyTool "$path" "$src" "$3"
+    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataStoreCopyTool "$path" "$src" "$3"
 
     printp ""\
            "The pool meta data database of '$name' was converted from
@@ -345,9 +345,9 @@ poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
 poolDumpYaml() # $1 = domain, $2 = cell
 {
     classpath=$(getProperty dcache.paths.classpath "$1" "$2")
-    path=$(getProperty path "$1" "$2")
-    type=$(getProperty metaDataRepository "$1" "$2")
-    CLASSPATH="$classpath" "$JAVA" org.dcache.pool.repository.MetaDataStoreYamlTool "$path" "$type"
+    path=$(getProperty pool.path "$1" "$2")
+    type=$(getProperty pool.plugins.meta "$1" "$2")
+    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataStoreYamlTool "$path" "$type"
 }
 
 if [ $# -eq 0 ]; then
@@ -587,9 +587,9 @@ case "$1" in
                         for cell in $(getProperty domain.cells "$domain"); do
                             service=$(getProperty domain.service "$domain" "$cell")
                             if [ "$service" = "pool" ]; then
-                                name=$(getProperty name "$domain" "$cell")
-                                path=$(getProperty path "$domain" "$cell")
-                                meta=$(getProperty metaDataRepository "$domain" "$cell")
+                                name=$(getProperty pool.name "$domain" "$cell")
+                                path=$(getProperty pool.path "$domain" "$cell")
+                                meta=$(getProperty pool.plugins.meta "$domain" "$cell")
                                 case "$meta" in
                                     org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository)
                                         meta=db
@@ -777,17 +777,17 @@ case "$1" in
         checkForPkcs8HostKey
 
         if [ $# -eq 0 ]; then
-            CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile
+            CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.auth.KAuthFile
         else
             command="$1"
             shift
 
-            kpwdFile="$(getProperty kpwdFile)"
+            kpwdFile="$(getProperty gplazma.kpwd.file)"
             if [ ! -e "$kpwdFile" ]; then
                 touch "$kpwdFile"
             fi
 
-            CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile "$command" "$(getProperty kpwdFile)" "$@"
+            CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.auth.KAuthFile "$command" "$(getProperty gplazma.kpwd.file)" "$@"
         fi
         ;;
 
@@ -795,14 +795,14 @@ case "$1" in
         . ${lib}/utils.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
-        broker_domain=$(getProperty broker.domain)
+        broker_domain=$(getProperty dcache.broker.domain)
         (
             printf "DOMAIN\tCELL\tSERVICE\tPROTO\tPORT\n"
             for domain in $(getProperty dcache.domains); do
                 if [ "$domain" = "$broker_domain" ]; then
-                    prop_prefix=broker.net.ports
+                    prop_prefix=dcache.broker.net.ports
                 else
-                    prop_prefix=non-broker.net.ports
+                    prop_prefix=dcache.non-broker.net.ports
                 fi
 
                 for port in $(getProperty "${prop_prefix}.tcp" "$domain"); do
@@ -829,9 +829,9 @@ case "$1" in
 
         for domain in $(getProperty dcache.domains); do
 	    if [ "$domain" = "$broker_domain" ]; then
-                prop_prefix=broker.net.ports
+                prop_prefix=dcache.broker.net.ports
 	    else
-                prop_prefix=non-broker.net.ports
+                prop_prefix=dcache.non-broker.net.ports
 	    fi
 
 	    for port in $(getProperty "${prop_prefix}.tcp" "$domain") \

@@ -61,7 +61,9 @@ public class PrettyPrintTextSerialiserTests {
     @Before
     public void setUp() {
         _exhibitor = new TestStateExhibitor();
-        _serialiser = new PrettyPrintTextSerialiser(_exhibitor);
+        PrettyPrintTextSerialiser serialiser = new PrettyPrintTextSerialiser();
+        serialiser.setStateExhibitor(_exhibitor);
+        _serialiser = serialiser;
         _expectedResultStringWriter = new StringWriter();
         _expectedResult = new PrintWriter( _expectedResultStringWriter);
     }

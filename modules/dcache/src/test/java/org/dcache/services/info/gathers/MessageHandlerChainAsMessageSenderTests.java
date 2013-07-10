@@ -31,29 +31,6 @@ import static org.junit.Assert.*;
 public class MessageHandlerChainAsMessageSenderTests {
 
     /**
-     * A small class that implements StateUpdateManager and fails if anything
-     * is called.
-     */
-    static class CactusStateUpdateManager implements StateUpdateManager {
-        @Override
-        public int countPendingUpdates() {
-            fail( "call to countPentingUpdates in SUM");
-            return 0;
-        }
-
-        @Override
-        public void enqueueUpdate( StateUpdate pendingUpdate) {
-            fail( "call to enqueueUpdate in SUM");
-        }
-
-        @Override
-        public void shutdown()
-        {
-            fail( "call to shutdown in SUM");
-        }
-    }
-
-    /**
      * A simple test CellMessageAnswerable that fails if any of the methods
      * are called.
      */
@@ -143,8 +120,9 @@ public class MessageHandlerChainAsMessageSenderTests {
     public void setUp()
     {
         _endpoint = new MessageCollectingCellEndpoint();
-        _sender =
-                new MessageHandlerChain( new CactusStateUpdateManager(), _endpoint);
+        MessageHandlerChain mhc = new MessageHandlerChain();
+        mhc.setCellEndpoint(_endpoint);
+        _sender = mhc;
     }
 
     @Test

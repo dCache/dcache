@@ -28,8 +28,7 @@ import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.collect.Iterables.find;
-import static com.google.common.collect.Iterables.get;
+import static com.google.common.collect.Iterables.*;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
@@ -83,7 +82,7 @@ public class AuthzDbPlugin
 
     /**
      * package visible constructor for testing purposes
-     * @param authzMapCache map of usernames to user information (e.q. uid/gid)
+     * @param map map of usernames to user information (e.q. uid/gid)
      */
     AuthzDbPlugin(SourceBackedPredicateMap<String,UserAuthzInformation> map,
                   ImmutableList<PrincipalType> uidOrder,
@@ -157,8 +156,7 @@ public class AuthzDbPlugin
     }
 
     @Override
-    public void map(Set<Principal> principals,
-                    Set<Principal> authorizedPrincipals)
+    public void map(Set<Principal> principals)
         throws AuthenticationException
     {
         /* Classify input principals.
@@ -216,27 +214,32 @@ public class AuthzDbPlugin
         checkAuthentication(loginGid == null || gids.contains(loginGid),
                 "not authorized to use GID: " + loginGid);
 
-        /* Pick a UID and user name to authorize.
+        /* Pick a UID and user name.
          */
         UserAuthzInformation user =
             getEntity(_uidOrder, loginUid, null, loginName, userName, primaryGroup);
-        authorizedPrincipals.add(new UidPrincipal(user.getUid()));
+        principals.add(new UidPrincipal(user.getUid()));
         if (user.getUsername() != null) {
-            authorizedPrincipals.add(new UserNamePrincipal(user.getUsername()));
+            // If UID is not based on user name but on some other principle, then it
+            // may be that the UserNamePrincipal is inconsistent with the UID. Since
+            // space manager uses user name for authorization, we replace the principal
+            // with the on matching the selected UID.
+            removeIf(principals, instanceOf(UserNamePrincipal.class));
+            principals.add(new UserNamePrincipal(user.getUsername()));
         }
 
-        /* Pick a GID to authorize.
+        /* Pick a primary GID.
          */
         UserAuthzInformation group =
             getEntity(_gidOrder, null, loginGid, loginName, userName, primaryGroup);
         long primaryGid = group.getGids()[0];
-        authorizedPrincipals.add(new GidPrincipal(primaryGid, true));
+        principals.add(new GidPrincipal(primaryGid, true));
 
-        /* Add remaining gids.
+        /* Add remaining GIDs.
          */
         for (long gid: gids) {
             if (gid != primaryGid) {
-                authorizedPrincipals.add(new GidPrincipal(gid, false));
+                principals.add(new GidPrincipal(gid, false));
             }
         }
     }

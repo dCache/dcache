@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -113,7 +114,7 @@ public class MigrationModule
                CellMessageReceiver
 {
     private final static PoolManagerPoolInformation DUMMY_POOL =
-        new PoolManagerPoolInformation("pool", 0.0, 0.0);
+        new PoolManagerPoolInformation("pool", new PoolCostInfo("pool"));
 
     public final static String CONSTANT_TARGET = "target";
     public final static String CONSTANT_SOURCE = "source";
@@ -443,8 +444,6 @@ public class MigrationModule
                         "true. The expression may refer to the following constants:\n" +
                         "source.name/target.name:\n" +
                         "    pool name\n" +
-                        "source.spaceCost/target.spaceCost:\n" +
-                        "    space cost\n" +
                         "source.cpuCost/target.cpuCost:\n" +
                         "    cpu cost\n" +
                         "source.free/target.free:\n" +
@@ -478,14 +477,12 @@ public class MigrationModule
                         "refreshed. The default is 300 seconds.")
         int refresh = 300;
 
-        @Option(name="select", values={"proportional", "best", "random"},
+        @Option(name="select", values={"proportional", "random"},
                 category="Target options",
                 usage = "Determines how a pool is selected from the set of target pools:\n" +
                         "proportional:\n" +
                         "    selects a pool with a probability proportional\n" +
                         "    to the free space.\n" +
-                        "best:\n" +
-                        "    selects the pool with the lowest space cost.\n" +
                         "random:\n" +
                         "    selects a pool randomly.\n" +
                         "The default is 'proportional'.")
@@ -508,8 +505,6 @@ public class MigrationModule
                         "    the number of bytes remaining to be transferred.\n" +
                         "source.name:\n" +
                         "    pool name\n" +
-                        "source.spaceCost:\n" +
-                        "    space cost\n" +
                         "source.cpuCost:\n" +
                         "    cpu cost\n" +
                         "source.free:\n" +
@@ -543,9 +538,7 @@ public class MigrationModule
         @Argument(metaVar="target")
         String[] targets;
 
-        private RefreshablePoolList
-        createPoolList(String type,
-                       List<String> targets)
+        private RefreshablePoolList createPoolList(String type, List<String> targets)
         {
             CellStub poolManager = _context.getPoolManagerStub();
 
@@ -553,11 +546,7 @@ public class MigrationModule
             case "pool":
                 return new PoolListByNames(poolManager, targets);
             case "pgroup":
-                if (targets.size() != 1) {
-                    throw new IllegalArgumentException(targets.toString() +
-                            ": Only one target supported for -type=pgroup");
-                }
-                return new PoolListByPoolGroup(poolManager, targets.get(0));
+                return new PoolListByPoolGroup(poolManager, targets);
             case "link":
                 if (targets.size() != 1) {
                     throw new IllegalArgumentException(targets.toString() +
@@ -569,16 +558,11 @@ public class MigrationModule
             }
         }
 
-        private PoolSelectionStrategy
-        createPoolSelectionStrategy(double spaceCost,
-                                    double cpuCost,
-                                    String type)
+        private PoolSelectionStrategy createPoolSelectionStrategy(String type)
         {
             switch (type) {
             case "proportional":
                 return new ProportionalPoolSelectionStrategy();
-            case "best":
-                return new BestPoolSelectionStrategy(spaceCost, cpuCost);
             case "random":
                 return new RandomPoolSelectionStrategy();
             default:
@@ -813,7 +797,7 @@ public class MigrationModule
                     new JobDefinition(createFilters(),
                             createCacheEntryMode(sourceMode),
                             createCacheEntryMode(targetMode),
-                            createPoolSelectionStrategy(1.0, 0.0, select),
+                            createPoolSelectionStrategy(select),
                             createComparator(order),
                             sourceList,
                             poolList,

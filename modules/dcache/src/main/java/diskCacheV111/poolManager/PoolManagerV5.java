@@ -19,13 +19,13 @@ import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
@@ -52,12 +52,12 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
@@ -86,7 +86,7 @@ public class PoolManagerV5
     private PoolMonitor _poolMonitor;
 
     private CostModule   _costModule  ;
-    private CellPath     _poolStatusRelayPath;
+    private CellStub _broadcast;
     private PnfsHandler _pnfsHandler;
 
     private RequestContainerV5 _requestContainer ;
@@ -124,12 +124,9 @@ public class PoolManagerV5
         _requestContainer = requestContainer;
     }
 
-    public void setPoolStatusRelayPath(CellPath poolStatusRelayPath)
+    public void setBroadcastStub(CellStub stub)
     {
-        _poolStatusRelayPath =
-            (poolStatusRelayPath.hops() == 0)
-            ? null
-            : poolStatusRelayPath;
+        _broadcast = stub;
     }
 
     public void setQuotaManager(String quotaManager)
@@ -325,16 +322,12 @@ public class PoolManagerV5
         return "'set timeout pool' is obsolete";
     }
 
-    public final static String hh_getpoolsbylink =
-        "<linkName> [-size=<filesize>]";
+    public static final String hh_getpoolsbylink = "<linkName>";
     public String ac_getpoolsbylink_$_1(Args args)
-        throws NumberFormatException
     {
-       String sizeString = args.getOpt("size");
-       long size = (sizeString == null) ? 50000000L : Long.parseLong(sizeString);
        String link = args.argv(0);
        StringBuilder sb = new StringBuilder();
-       for (PoolCostCheckable pool: _poolMonitor.queryPoolsByLinkName(link, size)) {
+       for (PoolCostInfo pool: _poolMonitor.queryPoolsByLinkName(link)) {
            sb.append(pool).append("\n");
        }
        return sb.toString();
@@ -421,23 +414,14 @@ public class PoolManagerV5
     private void sendPoolStatusRelay( String poolName , int status ,
                                       PoolV2Mode poolMode ,
                                       int statusCode , String statusMessage ){
-
-       if( _poolStatusRelayPath == null ) {
-           return;
-       }
-
-       try{
-
+       try {
           PoolStatusChangedMessage msg = new PoolStatusChangedMessage( poolName , status ) ;
           msg.setPoolMode( poolMode ) ;
           msg.setDetail( statusCode , statusMessage ) ;
-          _log.info("sendPoolStatusRelay : "+msg);
-          sendMessage(
-               new CellMessage( _poolStatusRelayPath , msg )
-                     ) ;
-
+          _log.trace("sendPoolStatusRelay: {}", msg);
+          _broadcast.send(msg);
        }catch(Exception ee ){
-          _log.warn("Failed to send poolStatus changed message : "+ee ) ;
+          _log.warn("Failed to send poolStatus changed message: {}", ee.toString());
        }
     }
 
@@ -478,7 +462,7 @@ public class PoolManagerV5
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
         List<PoolInfo> pools =
-            _costModule.getPoolInfo(transform(link.pools(), getName));
+            _costModule.getPoolInfo(transform(link.getPools(), getName));
         if (pools.isEmpty()) {
             throw new CacheException(57, "No appropriate pools found for link: " + linkName);
         }
@@ -495,11 +479,9 @@ public class PoolManagerV5
     {
         List<PoolManagerPoolInformation> pools = new ArrayList<>();
         for (String name: msg.getPoolNames()) {
-            try {
-                pools.add(_poolMonitor.getPoolInformation(name));
-            } catch (NoSuchElementException e) {
-                /* Don't include a pool that doesn't exist.
-                 */
+            PoolManagerPoolInformation pool = _poolMonitor.getPoolInformation(name);
+            if (pool != null) {
+                pools.add(pool);
             }
         }
         msg.setPools(pools);
@@ -526,7 +508,11 @@ public class PoolManagerV5
         messageArrived(PoolManagerGetPoolsByPoolGroupMessage msg)
     {
         try {
-            msg.setPools(_poolMonitor.getPoolsByPoolGroup(msg.getPoolGroup()));
+            List<PoolManagerPoolInformation> pools = new ArrayList<>();
+            for (String poolGroup : msg.getPoolGroups()) {
+                pools.addAll(_poolMonitor.getPoolsByPoolGroup(poolGroup));
+            }
+            msg.setPools(pools);
             msg.setSucceeded();
         } catch (NoSuchElementException e) {
             Collection<PoolManagerPoolInformation> empty =
@@ -720,18 +706,12 @@ public class PoolManagerV5
                 _message.setSucceeded();
 
                 _log.info("Select link group handler finished after {} ms",
-                          (System.currentTimeMillis() - started));
+                        (System.currentTimeMillis() - started));
             } catch (Exception e) {
                 _message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.getMessage());
             } finally {
-                try {
-                    send(_message);
-                } catch (NoRouteToCellException e) {
-                    _log.error("Failed to send reply: " + e.getMessage());
-                } catch (InterruptedException e) {
-                    _log.warn("Link group selection handler was interrupted");
-                }
+                reply(_message);
             }
         }
 
@@ -824,7 +804,7 @@ public class PoolManagerV5
                    .selectWritePool(_request.getPreallocated());
 
               _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
-                        System.currentTimeMillis() - started);
+                      System.currentTimeMillis() - started);
               requestSucceeded(pool);
 
            }catch(CacheException ce ){
@@ -837,11 +817,7 @@ public class PoolManagerV5
         protected void requestFailed(int errorCode, String errorMessage)
         {
             _request.setFailed(errorCode, errorMessage);
-            try {
-                send(_request);
-            } catch (Exception e) {
-                _log.warn("Exception requestFailed : " + e, e);
-            }
+            reply(_request);
         }
 
         protected void requestSucceeded(PoolInfo pool)
@@ -849,13 +825,9 @@ public class PoolManagerV5
             _request.setPoolName(pool.getName());
             _request.setPoolAddress(pool.getAddress());
             _request.setSucceeded();
-            try {
-                send(_request);
-                if (!_request.getSkipCostUpdate()) {
-                    _costModule.messageArrived(_envelope);
-                }
-            } catch (Exception e) {
-                _log.warn("Exception in requestSucceeded : " + e, e);
+            reply(_request);
+            if (!_request.getSkipCostUpdate()) {
+                _costModule.messageArrived(_envelope);
             }
         }
     }

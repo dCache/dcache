@@ -4,9 +4,9 @@
 
 onerror shutdown
 check -strong port
-check listen
-check -strong hostCertificateRefreshPeriod
-check -strong trustAnchorRefreshPeriod
+check srm.net.listen
+check -strong grid.hostcert.refresh
+check -strong grid.ca.refresh
 check -strong srmClientTransport
 check -strong srmHost
 check -strong localSrmHosts
@@ -113,15 +113,23 @@ check -strong srmSizeOfSingleRemoveBatch
 
 check -strong srmUserCredentialsDirectory
 
-check -strong pnfsmanager
-check -strong poolmanager
-check -strong gplazma
+check -strong dcache.service.pnfsmanager
+check -strong dcache.service.poolmanager
+check -strong dcache.service.gplazma
 
-check -strong srmLoginBrokerUpdatePeriod
+check -strong srm.service.loginbroker
+check -strong srm.service.loginbroker.update-period
+check -strong srm.service.loginbroker.update-period.unit
+check -strong srm.service.loginbroker.update-threshold
+check -strong srm.service.loginbroker.version
+check -strong srm.service.loginbroker.family
+
+check -strong srm.lookup.loginbroker
+check -strong srm.lookup.period
+check -strong srm.lookup.timeout
+check -strong srm.lookup.population-size
 
 check -strong srmPoolManagerTimeout
-
-check -strong srmNumberOfDoorsInRandomSelection
 
 check -strong srmKeepRequestHistoryPeriod
 
@@ -139,14 +147,12 @@ check -strong srmCleanPendingRequestsOnRestart
 check -strong srmClientDNSLookup
 
 check -strong srmGracefulShutdown
-check -strong loginBrokerUpdateTime
-check -strong loginBrokerUpdateThreshold
 
 check -strong srmCustomGetHostByAddr
 check -strong srmIgnoreClientProtocolOrder
 check -strong srmImplicitSpaceManagerEnabled
 check -strong srmSpaceReservationStrict
-check -strong srmSpaceManagerEnabled
+check -strong dcache.enable.spacemanager
 
 check qosPluginClass
 check qosConfigFile
@@ -159,15 +165,7 @@ check -strong grid.hostcert.key
 check -strong grid.hostcert.cert
 check -strong grid.ca.path
 
-
-# The 'spaceManagerEnabled' environment variable is a sanitised
-# version of 'srmSpaceManagerEnabled'.  It is always set and is either
-# 'true' or 'false'.
-
-onerror continue
-define env srmSpaceManagerOn.exe endExe
-  set env spaceManagerEnabled true
-endExe
+check srm.security.ciphers
 
 #
 # Force space manager related settings to off if space manager is
@@ -176,169 +174,14 @@ endExe
 define env srmSpaceManagerOff.exe endExe
   set env srmImplicitSpaceManagerEnabled false
   set env srmSpaceReservationStrict false
-  set env spaceManagerEnabled false
 endExe
 
-eval ${srmSpaceManagerEnabled} true == ${srmSpaceManagerEnabled} on == || ${srmSpaceManagerEnabled} yes == || ${srmSpaceManagerEnabled} enabled == ||
-set env srmSpaceManagerIsOn ${rc}
-exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
-exec env srmSpaceManagerOff.exe -ifnotok=srmSpaceManagerIsOn
+eval ${dcache.enable.spacemanager} true ==
+exec env srmSpaceManagerOff.exe -ifnotok
 onerror shutdown
 
 
-
-
 exec file:${dcache.paths.share}/cells/threadmanager.fragment
-exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-   "classpath:diskCacheV111/srm/srm.xml \
-        -export \
-        -srmName=${cell.name} \
-        -srmPort=${port} \
-        -srmSslPort=${srm.ssl.port} \
-        -listen=${listen} \
-        -srmHost=${srmHost} \
-        -localSrmHosts=${localSrmHosts} \
-        -srmTimeout=${srmTimeout} \
-        -srmPnfsManager=${pnfsmanager} \
-        -srmPnfsTimeout=${srmPnfsTimeout} \
-        -srmPoolManager=${poolmanager} \
-        -srmPoolManagerTimeout=${srmPoolManagerTimeout} \
-        -pnfsSrmPath=${pnfsSrmPath} \
-        -xrootdRootPath=${xrootdRootPath} \
-        -httpRootPath=${webdavRootPath} \
-        -srmImplicitSpaceManagerEnabled=${srmImplicitSpaceManagerEnabled} \
-        -srmSpaceReservationStrict=${srmSpaceReservationStrict} \
-        -srmUserCredentialsDirectory=${srmUserCredentialsDirectory} \
-        -srmBufferSize=${srmBufferSize} \
-        -srmTcpBufferSize=${srmTcpBufferSize} \
-        -parallelStreams=${parallelStreams} \
-        -srmDebug=${srmDebug} \
-        -srmGetLifeTime=${srmGetLifeTime} \
-        -srmBringOnlineLifeTime=${srmBringOnlineLifeTime} \
-        -srmPutLifeTime=${srmPutLifeTime} \
-        -srmCopyLifeTime=${srmCopyLifeTime} \
-        -srmGetReqThreadQueueSize=${srmGetReqThreadQueueSize} \
-        -srmGetReqThreadPoolSize=${srmGetReqThreadPoolSize} \
-        -srmGetReqMaxWaitingRequests=${srmGetReqMaxWaitingRequests} \
-        -srmGetReqReadyQueueSize=${srmGetReqReadyQueueSize} \
-        -srmGetReqMaxReadyRequests=${srmGetReqMaxReadyRequests} \
-        -srmGetReqMaxNumberOfRetries=${srmGetReqMaxNumberOfRetries} \
-        -srmGetReqRetryTimeout=${srmGetReqRetryTimeout} \
-        -srmGetReqMaxNumOfRunningBySameOwner=${srmGetReqMaxNumOfRunningBySameOwner} \
-        -srmGetReqSwitchToAsynchronousModeDelay=${srmGetReqSwitchToAsynchronousModeDelay} \
-        -srmGetRequestHistoryDatabaseEnabled=${srmGetRequestHistoryDatabaseEnabled} \
-        -srmGetKeepRequestHistoryPeriod=${srmGetKeepRequestHistoryPeriod} \
-        -srmGetExpiredRequestRemovalPeriod=${srmGetExpiredRequestRemovalPeriod} \
-        -srmGetStoreCompletedRequestsOnly=${srmGetStoreCompletedRequestsOnly} \
-        -srmGetDatabaseEnabled=\"${srmGetDatabaseEnabled}\" \
-        -srmGetCleanPendingRequestsOnRestart=${srmGetCleanPendingRequestsOnRestart}\
-        -srmBringOnlineReqThreadQueueSize=${srmBringOnlineReqThreadQueueSize} \
-        -srmBringOnlineReqThreadPoolSize=${srmBringOnlineReqThreadPoolSize} \
-        -srmBringOnlineReqMaxWaitingRequests=${srmBringOnlineReqMaxWaitingRequests} \
-        -srmBringOnlineReqReadyQueueSize=${srmBringOnlineReqReadyQueueSize} \
-        -srmBringOnlineReqMaxReadyRequests=${srmBringOnlineReqMaxReadyRequests} \
-        -srmBringOnlineReqMaxNumberOfRetries=${srmBringOnlineReqMaxNumberOfRetries} \
-        -srmBringOnlineReqRetryTimeout=${srmBringOnlineReqRetryTimeout} \
-        -srmBringOnlineReqMaxNumOfRunningBySameOwner=${srmBringOnlineReqMaxNumOfRunningBySameOwner} \
-        -srmBringOnlineReqSwitchToAsynchronousModeDelay=${srmBringOnlineReqSwitchToAsynchronousModeDelay} \
-        -srmBringOnlineRequestHistoryDatabaseEnabled=${srmBringOnlineRequestHistoryDatabaseEnabled} \
-        -srmBringOnlineKeepRequestHistoryPeriod=${srmBringOnlineKeepRequestHistoryPeriod} \
-        -srmBringOnlineExpiredRequestRemovalPeriod=${srmBringOnlineExpiredRequestRemovalPeriod} \
-        -srmBringOnlineStoreCompletedRequestsOnly=${srmBringOnlineStoreCompletedRequestsOnly} \
-        -srmBringOnlineDatabaseEnabled=\"${srmBringOnlineDatabaseEnabled}\" \
-        -srmBringOnlineCleanPendingRequestsOnRestart=${srmBringOnlineCleanPendingRequestsOnRestart}\
-        -srmPutReqThreadQueueSize=${srmPutReqThreadQueueSize} \
-        -srmPutReqThreadPoolSize=${srmPutReqThreadPoolSize} \
-        -srmPutReqMaxWaitingRequests=${srmPutReqMaxWaitingRequests} \
-        -srmPutReqReadyQueueSize=${srmPutReqReadyQueueSize} \
-        -srmPutReqMaxReadyRequests=${srmPutReqMaxReadyRequests} \
-        -srmPutReqMaxNumberOfRetries=${srmPutReqMaxNumberOfRetries} \
-        -srmPutReqRetryTimeout=${srmPutReqRetryTimeout} \
-        -srmPutReqMaxNumOfRunningBySameOwner=${srmPutReqMaxNumOfRunningBySameOwner} \
-        -srmPutReqSwitchToAsynchronousModeDelay=${srmPutReqSwitchToAsynchronousModeDelay} \
-        -srmPutRequestHistoryDatabaseEnabled=${srmPutRequestHistoryDatabaseEnabled} \
-        -srmPutKeepRequestHistoryPeriod=${srmPutKeepRequestHistoryPeriod} \
-        -srmPutExpiredRequestRemovalPeriod=${srmPutExpiredRequestRemovalPeriod} \
-        -srmPutStoreCompletedRequestsOnly=${srmPutStoreCompletedRequestsOnly} \
-        -srmPutDatabaseEnabled=\"${srmPutDatabaseEnabled}\" \
-        -srmPutCleanPendingRequestsOnRestart=${srmPutCleanPendingRequestsOnRestart}\
-        -srmCopyReqThreadQueueSize=${srmCopyReqThreadQueueSize} \
-        -srmCopyReqThreadPoolSize=${srmCopyReqThreadPoolSize} \
-        -srmCopyReqMaxWaitingRequests=${srmCopyReqMaxWaitingRequests} \
-        -srmCopyReqMaxNumberOfRetries=${srmCopyReqMaxNumberOfRetries} \
-        -srmCopyReqRetryTimeout=${srmCopyReqRetryTimeout} \
-        -srmCopyReqMaxNumOfRunningBySameOwner=${srmCopyReqMaxNumOfRunningBySameOwner} \
-        -srmCopyRequestHistoryDatabaseEnabled=${srmCopyRequestHistoryDatabaseEnabled} \
-        -srmCopyKeepRequestHistoryPeriod=${srmCopyKeepRequestHistoryPeriod} \
-        -srmCopyExpiredRequestRemovalPeriod=${srmCopyExpiredRequestRemovalPeriod} \
-        -srmCopyStoreCompletedRequestsOnly=${srmCopyStoreCompletedRequestsOnly} \
-        -srmCopyDatabaseEnabled=\"${srmCopyDatabaseEnabled}\" \
-        -srmCopyCleanPendingRequestsOnRestart=${srmCopyCleanPendingRequestsOnRestart}\
-        -RecursiveDirectoryCreation=${RecursiveDirectoryCreation} \
-        -AdvisoryDelete=${AdvisoryDelete} \
-        -jdbcUrl=${db.url} \
-        -jdbcDriver=${db.driver} \
-        -srmDbUser=${db.user} \
-        -srmDbPassword=${db.password} \
-        -srmPasswordFile=${db.password.file}   \
-        -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
-        -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
-        -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
-        -srmLoginBroker=srm-LoginBroker \
-        -protocolFamily=SRM \
-        -protocolVersion=1.1.1 \
-        -srmLoginBrokerUpdatePeriod=${srmLoginBrokerUpdatePeriod} \
-        -srmNumberOfDoorsInRandomSelection=${srmNumberOfDoorsInRandomSelection} \
-        -overwriteEnabled=${overwriteEnabled} \
-        -srmOverwriteByDefault=${srmOverwriteByDefault} \
-        -srmCustomGetHostByAddr=${srmCustomGetHostByAddr} \
-        -srmIgnoreClientProtocolOrder=${srmIgnoreClientProtocolOrder}\
-        -srmSizeOfSingleRemoveBatch=${srmSizeOfSingleRemoveBatch}\
-        -srmLsMaxNumberOfEntries=${srmLsMaxNumberOfEntries}\
-        -srmLsMaxNumberOfLevels=${srmLsMaxNumberOfLevels}\
-        -srmLsRequestThreadQueueSize=${srmLsRequestThreadQueueSize}\
-        -srmLsRequestThreadPoolSize=${srmLsRequestThreadPoolSize}\
-        -srmLsRequestMaxWaitingRequests=${srmLsRequestMaxWaitingRequests}\
-        -srmLsRequestMaxNumberOfRetries=${srmLsRequestMaxNumberOfRetries}\
-        -srmLsRequestRetryTimeout=${srmLsRequestRetryTimeout}\
-        -srmLsRequestMaxNumberOfRunningBySameOwner=${srmLsRequestMaxNumberOfRunningBySameOwner}\
-        -srmLsRequestSwitchToAsynchronousModeDelay=${srmLsRequestSwitchToAsynchronousModeDelay}\
-        -srmLsRequestHistoryDatabaseEnabled=${srmLsRequestHistoryDatabaseEnabled} \
-        -srmLsKeepRequestHistoryPeriod=${srmLsKeepRequestHistoryPeriod} \
-        -srmLsExpiredRequestRemovalPeriod=${srmLsExpiredRequestRemovalPeriod} \
-        -srmLsStoreCompletedRequestsOnly=${srmLsStoreCompletedRequestsOnly} \
-        -srmLsDatabaseEnabled=\"${srmLsDatabaseEnabled}\" \
-        -srmLsCleanPendingRequestsOnRestart=${srmLsCleanPendingRequestsOnRestart}\
-        -srmReserveRequestHistoryDatabaseEnabled=${srmReserveRequestHistoryDatabaseEnabled} \
-        -srmReserveKeepRequestHistoryPeriod=${srmReserveKeepRequestHistoryPeriod} \
-        -srmReserveExpiredRequestRemovalPeriod=${srmReserveExpiredRequestRemovalPeriod} \
-        -srmReserveStoreCompletedRequestsOnly=${srmReserveStoreCompletedRequestsOnly} \
-        -srmReserveDatabaseEnabled=\"${srmReserveDatabaseEnabled}\" \
-        -srmReserveCleanPendingRequestsOnRestart=${srmReserveCleanPendingRequestsOnRestart}\
-        -srmClientDNSLookup=${srmClientDNSLookup}\
-        -srmJettyConnectorAcceptors=${srmJettyConnectorAcceptors}\
-        -srmJettyConnectorMaxIdleTime=${srmJettyConnectorMaxIdleTime}\
-        -srmJettyConnectorLowResourceMaxIdleTime=${srmJettyConnectorLowResourceMaxIdleTime}\
-        -srmJettyConnectorBackLog=${srmJettyConnectorBackLog}\
-        -srmJettyThreadsMax=${srmJettyThreadsMax}\
-        -srmJettyThreadsMin=${srmJettyThreadsMin}\
-        -srmJettyThreadsMaxIdleTime=${srmJettyThreadsMaxIdleTime}\
-        -srmJettyThreadsMaxQueued=${srmJettyThreadsMaxQueued}\
-        -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod}\
-        -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod}\
-        -srmClientTransport=${srmClientTransport} \
-        -srmGracefulShutdown=\"${srmGracefulShutdown}\" \
-        -srmPinOnlineFiles=\"${srmPinOnlineFiles}\" \
-        -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
-        -loginBrokerUpdateThreshold=\"${loginBrokerUpdateThreshold}\" \
-        -dcache.paths.share=\"${dcache.paths.share}\" \
-        -qosPluginClass=\"${qosPluginClass}\" \
-        -qosConfigFile=\"${qosConfigFile}\" \
-        -service-key=${grid.hostcert.key} \
-        -service-cert=${grid.hostcert.cert} \
-        -service-trusted-certs=${grid.ca.path} \
-        -gplazma=${gplazma} \
-        -spaceManagerEnabled=${spaceManagerEnabled} \
-"
+   "classpath:diskCacheV111/srm/srm.xml -export"

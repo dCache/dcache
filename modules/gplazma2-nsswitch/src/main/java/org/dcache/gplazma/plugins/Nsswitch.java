@@ -42,7 +42,7 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
     private final LibC _libc;
 
     /**
-     * Create an instance of {@link Nss} gplazma plugin.
+     * Create an instance of {@link Nsswitch} gplazma plugin.
      *
      * @param properties
      * @throws UnsatisfiedLinkError if unable to load system libraries.
@@ -51,22 +51,33 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
         _libc = (LibC) Native.loadLibrary("c", LibC.class);
     }
 
-    @Override
-    public void map(Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+    Nsswitch(LibC libc) {
+        _libc = libc;
+    }
+
+    private __password findPasswordRecord(Set<Principal> principals) {
         for (UserNamePrincipal principal: filter(principals, UserNamePrincipal.class)) {
             __password p = _libc.getpwnam(principal.getName());
             if (p != null) {
-                authorizedPrincipals.add(principal);
-                authorizedPrincipals.add(new UidPrincipal(p.uid));
-                authorizedPrincipals.add(new GidPrincipal(p.gid, true));
-                int[] gids = groupsOf(p);
-                for (int id : gids) {
-                    authorizedPrincipals.add(new GidPrincipal(id, false));
-                }
-                return;
+                return p;
             }
         }
-        throw new AuthenticationException("no mapping");
+        return null;
+    }
+
+    @Override
+    public void map(Set<Principal> principals) throws AuthenticationException {
+        __password p = findPasswordRecord(principals);
+        if (p != null) {
+            principals.add(new UidPrincipal(p.uid));
+            principals.add(new GidPrincipal(p.gid, true));
+            int[] gids = groupsOf(p);
+            for (int id : gids) {
+                principals.add(new GidPrincipal(id, false));
+            }
+        } else {
+            throw new AuthenticationException("no mapping");
+        }
     }
 
     /**

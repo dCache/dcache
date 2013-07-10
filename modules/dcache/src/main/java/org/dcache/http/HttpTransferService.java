@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -32,6 +33,7 @@ import java.net.URISyntaxException;
 import java.nio.channels.CompletionHandler;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -84,11 +86,13 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
     private FaultListener faultListener;
     private ChecksumModule checksumModule;
     private long connectTimeout;
+    private TimeUnit connectTimeoutUnit;
     private int diskThreads;
     private int maxMemoryPerConnection;
     private int maxMemory;
     private int chunkSize;
     private long clientIdleTimeout;
+    private TimeUnit clientIdleTimeoutUnit;
     private Integer socketThreads;
 
     private HttpPoolNettyServer server;
@@ -121,6 +125,17 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
     public void setConnectTimeout(long connectTimeout)
     {
         this.connectTimeout = connectTimeout;
+    }
+
+    public TimeUnit getConnectTimeoutUnit()
+    {
+        return connectTimeoutUnit;
+    }
+
+    @Required
+    public void setConnectTimeoutUnit(TimeUnit connectTimeoutUnit)
+    {
+        this.connectTimeoutUnit = connectTimeoutUnit;
     }
 
     public int getDiskThreads()
@@ -178,6 +193,17 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
         this.clientIdleTimeout = clientIdleTimeout;
     }
 
+    public TimeUnit getClientIdleTimeoutUnit()
+    {
+        return clientIdleTimeoutUnit;
+    }
+
+    @Required
+    public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit)
+    {
+        this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
+    }
+
     public String getSocketThreads()
     {
         return (socketThreads == null) ? null : String.valueOf(socketThreads);
@@ -189,21 +215,29 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
     }
 
     @PostConstruct
-    public void init()
+    public synchronized void init()
     {
         if (socketThreads == null) {
             server = new HttpPoolNettyServer(diskThreads,
                     maxMemoryPerConnection,
                     maxMemory,
                     chunkSize,
-                    clientIdleTimeout);
+                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout));
         } else {
             server = new HttpPoolNettyServer(diskThreads,
                     maxMemoryPerConnection,
                     maxMemory,
                     chunkSize,
-                    clientIdleTimeout,
+                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
                     socketThreads);
+        }
+    }
+
+    @PreDestroy
+    public synchronized void shutdown()
+    {
+        if (server != null) {
+            server.shutdown();
         }
     }
 
@@ -234,7 +268,7 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
             {
                 UUID uuid = UUID.randomUUID();
                 MoverChannel<HttpProtocolInfo> channel = autoclose(mover.open());
-                setCancellable(server.register(channel, uuid, connectTimeout, this));
+                setCancellable(server.register(channel, uuid, connectTimeoutUnit.toMillis(connectTimeout), this));
                 sendAddressToDoor(mover, server.getServerAddress().getPort(), uuid);
             }
 

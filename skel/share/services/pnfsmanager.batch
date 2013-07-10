@@ -2,57 +2,32 @@
 
 onerror shutdown
 
-check -strong hsmStorageInfoExtractor
-check -strong pnfsInheritFileOwnership
-check -strong DefaultRetentionPolicy
-check -strong DefaultAccessLatency
-check -strong pnfsFolding
-check -strong pnfsNumberOfListThreads
-check -strong pnfsNumberOfThreadGroups
-check -strong pnfsNumberOfThreads
-check -strong pnfsListChunkSize
-check -strong pnfsLogSlowThreshold
-check -strong pnfsQueueMaxSize
-check -strong defaultPnfsServer
+check -strong pnfsmanager.plugins.storage-info-extractor
+check -strong pnfsmanager.inherit-file-ownership
+check -strong pnfsmanager.full-path-permission-check
+check -strong pnfsmanager.default-retention-policy
+check -strong pnfsmanager.default-access-latency
+check -strong pnfsmanager.folding
+check -strong pnfsmanager.limits.threads-per-group
+check -strong pnfsmanager.limits.thread-groups
+check -strong pnfsmanager.limits.list-threads
+check -strong pnfsmanager.limits.list-chunk-size
+check -strong pnfsmanager.limits.log-slow-threshold
+check -strong pnfsmanager.limits.queue-length
 check -strong cell.name
-check -strong aclEnabled
+check -strong pnfsmanager.acl
+check -strong pnfsmanager.db.dialect
 check -strong db.user
 check -strong db.url
 check -strong db.driver
-check -strong chimera.db.dialect
 check db.password
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \
         -export \
-        -extractor=${hsmStorageInfoExtractor} \
         -cmRelay=broadcast \
-        -threads=${pnfsNumberOfThreads} \
-        -threadGroups=${pnfsNumberOfThreadGroups} \
-        -listThreads=${pnfsNumberOfListThreads} \
-        -directoryListLimit=${pnfsListChunkSize} \
-        -logSlowThreshold=${pnfsLogSlowThreshold} \
         -pnfsDeleteRelay=SrmSpaceManager \
-        -queueMaxSize=${pnfsQueueMaxSize} \
-        -default=${defaultPnfsServer} \
-        -DefaultAccessLatency=${DefaultAccessLatency} \
-        -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
-        -aclEnabled=${aclEnabled} \
         -cachelocation-threads=0 \
-        -folding=${pnfsFolding} \
-        -db.user=${db.user} \
-        -db.password=${db.password} \
-        -db.url=${db.url} \
-        -db.driver=${db.driver} \
-        -db.dialect=${chimera.db.dialect} \
-        -db.schema.auto=${db.schema.auto} \
-        -db.schema.changelog=${db.schema.changelog} \
-        -db.connections.max-per-partition=${db.connections.max-per-partition} \
-        -db.connections.min-per-partition=${db.connections.min-per-partition} \
-        -db.connections.partition-count=${db.connections.partition-count} \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
-        -inheritFileOwnership=${pnfsInheritFileOwnership} \
-        -verifyAllLookups=${pnfsVerifyAllLookups} \
-        -atime.gap=${atime.gap} \
        "

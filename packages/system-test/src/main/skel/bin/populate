@@ -1,0 +1,130 @@
+#!/bin/sh
+
+set -e
+
+uid=$(id -u)
+gid=1000
+username=$(id -u -n)
+
+bin/dcache stop
+
+if [ ! -f etc/dcache.kpwd ]; then
+    if [ -f ~/.globus/usercert.pem ]; then
+        DN=$(openssl x509 -in ~/.globus/usercert.pem -subject -noout | sed -e 's/subject= *//')
+        bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r / -f / \
+            -w read-write -p password -s "$DN" "$username"
+
+        bin/dcache kpwd dcmapadd "$DN" "$username"
+    fi
+
+    bin/dcache kpwd dcuseradd -u 0 -g 0 -h / -r / -f / \
+                              -w read-write -p dickerelch admin
+fi
+
+chimera() {
+    echo "chimera $@"
+    bin/chimera-cli "$@"
+}
+
+if [ ! -d var/db ]; then
+    bin/dcache database update
+
+    chimera writetag / OSMTemplate "StoreName test"
+    chimera writetag / sGroup "default"
+    chimera chmod / 555
+
+    chimera mkdir /tape
+    chimera writetag /tape sGroup "tape"
+    chimera writetag /tape RetentionPolicy CUSTODIAL
+    chimera writetag /tape AccessLatency NEARLINE
+    chimera chown /tape $uid:$gid
+
+    chimera mkdir /disk
+    chimera writetag /disk sGroup "disk"
+    chimera chown /disk $uid:$gid
+
+    chimera mkdir /resilient
+    chimera writetag /resilient sGroup "resilient"
+    chimera chown /resilient $uid:$gid
+    chimera writetag /resilient RetentionPolicy CUSTODIAL
+
+    chimera mkdir /reserved
+    chimera writetag /reserved sGroup "reserved"
+    chimera chown /reserved $uid:$gid
+
+    chimera mkdir /public
+    chimera chmod /public 777
+    chimera writetag /public sGroup "public"
+    chimera chown /public $uid:$gid
+
+    chimera mkdir /private
+    chimera chmod /private 700
+    chimera writetag /private sGroup "private"
+    chimera chown /private $uid:$gid
+else
+    bin/dcache database update
+fi
+
+if [ ! -f etc/hostcert.p12 ]; then
+    bin/dcache import hostcert
+fi
+
+if [ ! -f etc/certificates.jks ]; then
+    bin/dcache import cacerts
+fi
+
+if [ ! -f etc/linkgroup.conf ]; then
+    cat > etc/linkgroup.conf <<EOF
+LinkGroup sm-group
+$username
+EOF
+fi
+
+if [ -f ~/.globus/dcache-systemtest-hostcert.pem ]; then
+    cp ~/.globus/dcache-systemtest-hostcert.pem etc/grid-security/hostcert.pem
+    cp ~/.globus/dcache-systemtest-hostkey.pem etc/grid-security/hostkey.pem
+    ## WORK-AROUND: we're using assemble maven plugin.  This doesn't allow files to be overwritten.
+    ##              As the VCS-supplied CA certificates are copied before the system- and user- trust
+    ##              stores and the generated host certificate's CA certificates and VCS-supplied
+    ##              CA certificate have the same hash (=> same filename), dCache's trust-store will
+    ##              have the VCS-supplied CA certificate.  This means that dCache won't trust the CA
+    ##              of its host certificate.  To fix this, we copy the CA certificates manually.
+    cp ~/.globus/dcache-systemtest-certificates/* etc/grid-security/certificates
+else
+    echo
+    echo "INFO: using VCS-supplied credentials.  These should work, but Globus native clients on some"
+    echo "      platforms will fail.  Use 'hostCredentials --generate' command to generate a host-"
+    echo "      specific credential if you have this problem."
+fi
+
+
+function compare()
+{
+    rc=0
+    cmp -s "$1" "$2" || rc=$?
+    if [ $rc == 1 ]; then
+	echo
+	echo "WARNING: files $1 and $2 are different."
+	echo "         This difference can cause authentication problems, so should be resolved."
+    fi
+}
+
+warn_missing_trust=0
+for path in etc/grid-security/certificates/*; do
+    file=$(basename $path)
+
+    if [ ! -f ~/.globus/certificates/$file -a ! -f /etc/grid-security/certificates/$file ]; then
+	if [ $warn_missing_trust = 0 ]; then
+	    echo
+	    echo "WARNING: not all certificates dCache trusts are trusted by YOU.  This can cause authentication"
+	    echo "         problems when trying to use dCache.  To solve this problem use the 'hostCredentials --install'"
+	    echo "         command."
+	    warn_missing_trust=1
+	fi
+	continue
+    fi
+
+    compare $path ~/.globus/certificates/$file
+    compare $path /etc/grid-security/certificates/$file
+done
+

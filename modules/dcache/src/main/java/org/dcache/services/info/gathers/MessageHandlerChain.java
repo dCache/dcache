@@ -20,7 +20,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.cells.nucleus.UOID;
 
-import org.dcache.services.info.base.StateUpdateManager;
+import org.dcache.cells.CellMessageSender;
 
 
 /**
@@ -34,7 +34,9 @@ import org.dcache.services.info.base.StateUpdateManager;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class MessageHandlerChain implements MessageMetadataRepository<UOID>, MessageSender, CellMessageAnswerable {
+public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
+        MessageSender, CellMessageAnswerable, CellMessageSender
+{
 
 	/** The period between successive flushes of ancient metadata, in milliseconds */
 	private static final long METADATA_FLUSH_THRESHOLD = 3600000; // 1 hour
@@ -49,28 +51,18 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 
 	private List<MessageHandler> _messageHandler = new LinkedList<>();
 
-	private final CellEndpoint _endpoint;
+	private CellEndpoint _endpoint;
 
-	final private StateUpdateManager _sum;
-
-	public MessageHandlerChain( StateUpdateManager sum, CellEndpoint endpoint) {
-		_sum = sum;
-		_endpoint = endpoint;
-	}
-
-	/**
-	 * Add a new MessageHandler to the list.
-	 * @param handler a new handler to add to the list.
-	 */
-	public void addMessageHandler( MessageHandler handler) {
-	    _log.debug( "Adding MessageHandler " + handler.getClass().getCanonicalName());
-		_messageHandler.add(handler);
-	}
+        @Override
+        public void setCellEndpoint(CellEndpoint endpoint)
+        {
+            _endpoint = endpoint;
+        }
 
 	/**
 	 * @return a simple array of registered MessageHandlers subclass types.
 	 */
-	public String[] listMessageHandlers() {
+	public synchronized String[] listMessageHandlers() {
 		int i=0;
 		String[] msgHandlers = new String[_messageHandler.size()];
 
@@ -131,14 +123,11 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	}
 
 
-	/**
-	 * Add a standard set of handlers for reply Messages
-	 */
-	public void addDefaultHandlers() {
-		addMessageHandler( new LinkgroupListMsgHandler( _sum));
-		addMessageHandler( new LinkgroupDetailsMsgHandler( _sum));
-		addMessageHandler( new SrmSpaceDetailsMsgHandler( _sum));
-	}
+    public synchronized void setHandlers(List<MessageHandler> handlers)
+    {
+        _messageHandler.clear();
+        _messageHandler.addAll(handlers);
+    }
 
 
 	/**
@@ -254,10 +243,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
             return;
         }
 
-        for( MessageHandler mh : _messageHandler) {
-            if (mh.handleMessage((Message) messagePayload, getMetricTTL(request
-                    .getLastUOID()))) {
-                return;
+        synchronized (this) {
+            for( MessageHandler mh : _messageHandler) {
+                if (mh.handleMessage((Message) messagePayload,
+                        getMetricTTL(request.getLastUOID()))) {
+                    return;
+                }
             }
         }
     }

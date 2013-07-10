@@ -1,11 +1,11 @@
 onerror continue
 
-eval ${domain.name} ${broker.domain} ==
+eval ${domain.name} ${dcache.broker.domain} ==
 exec file:${dcache.paths.share}/cells/lmd.fragment -ifok
 
 onerror shutdown
 
 create dmg.cells.services.RoutingManager  RoutingMgr
 create dmg.cells.services.LocationManager lm \
-      "${broker.host} ${broker.port} -clientPort=${broker.client.port}"
+      "${dcache.broker.host} ${dcache.broker.port} -clientPort=${dcache.broker.client.port}"
 

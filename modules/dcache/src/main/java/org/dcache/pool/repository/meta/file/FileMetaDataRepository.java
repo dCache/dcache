@@ -106,8 +106,8 @@ public class FileMetaDataRepository
             return
                 new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
         } catch (IOException e) {
-            throw new RepositoryException("Failed to create new entry: "
-                                          + e.getMessage());
+            throw new RepositoryException(
+                    "Failed to create new entry " + id + ": " + e.getMessage(), e);
         }
     }
 
@@ -115,8 +115,8 @@ public class FileMetaDataRepository
     public MetaDataRecord create(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException
     {
+        PnfsId id = entry.getPnfsId();
         try {
-            PnfsId id = entry.getPnfsId();
             File controlFile = new File(_metadir, id.toString());
             File siFile = new File(_metadir, "SI-" + id.toString());
             File dataFile = _fileStore.get(id);
@@ -137,8 +137,8 @@ public class FileMetaDataRepository
 
             return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile, entry);
         } catch (IOException e) {
-            throw new RepositoryException("Failed to create new entry: "
-                                          + e.getMessage());
+            throw new RepositoryException(
+                    "Failed to create new entry " + id + ": " + e.getMessage(), e);
         }
     }
 
@@ -155,7 +155,10 @@ public class FileMetaDataRepository
                 return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
             }
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to read meta data for " + id);
+            throw new DiskErrorCacheException(
+                    "Failed to read meta data for " + id + ": " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Failed to read meta data for " + id, e);
         }
         return null;
     }
@@ -184,7 +187,7 @@ public class FileMetaDataRepository
 
             return true;
 	} catch (IOException e) {
-            _log.error("Failed to touch " + tmp + ": " + e.getMessage());
+            _log.error("Failed to touch " + tmp + ": " + e.getMessage(), e);
             return false;
 	}
     }

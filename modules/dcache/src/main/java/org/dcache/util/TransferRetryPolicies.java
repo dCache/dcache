@@ -30,11 +30,15 @@ public final class TransferRetryPolicies
      * Transfer} to start a transfer with in given timeout. No retries
      * performed in case of errors.
      *
-     * @param timeout
+     * @param millis
      * @return policy
      */
-    public static TransferRetryPolicy tryOncePolicy(long timeout) {
-        return new TransferRetryPolicy(1, 0, timeout, MOVER_TIMEOUT);
+    public static TransferRetryPolicy tryOncePolicy(long millis) {
+        return new TransferRetryPolicy(1, 0, millis, MOVER_TIMEOUT);
+    }
+
+    public static TransferRetryPolicy tryOncePolicy(long timeout, TimeUnit unit) {
+        return tryOncePolicy(unit.toMillis(timeout));
     }
 
     /**
@@ -42,11 +46,15 @@ public final class TransferRetryPolicies
      * Transfer} to start a transfer with in given timeout. Request
      * will be retried on any recoverable error.
      *
-     * @param timeout
+     * @param millis
      * @return policy
      */
-    public static TransferRetryPolicy tryTillTimeout(long timeout) {
+    public static TransferRetryPolicy tryTillTimeout(long millis) {
         return new TransferRetryPolicy(Integer.MAX_VALUE, RETRY_PERIOD,
-                                       timeout, MOVER_TIMEOUT);
+                                       millis, MOVER_TIMEOUT);
+    }
+
+    public static TransferRetryPolicy tryTillTimeout(long timeout, TimeUnit unit) {
+        return tryTillTimeout(unit.toMillis(timeout));
     }
 }

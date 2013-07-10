@@ -5,7 +5,6 @@ package diskCacheV111.replicaManager ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +13,6 @@ import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,7 +43,6 @@ import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
-import diskCacheV111.vehicles.PoolCheckMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolQueryRepositoryMsg;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
@@ -61,6 +58,7 @@ import dmg.cells.nucleus.UOID;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
+import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -111,8 +109,6 @@ import org.dcache.vehicles.FileAttributes;
   */
 
 abstract public class DCacheCoreControllerV2 extends CellAdapter {
-   private final static String _svnId = "$Id$";
-
    private final static Logger _log =
        LoggerFactory.getLogger(DCacheCoreControllerV2.class);
 
@@ -270,16 +266,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        _log.debug("commandArrived - call super cse=[" + cse + "], str = ["+str+"]");
        return super.commandArrived(str, cse);
    }
-
-   public String getSvnId() {
-    return( _svnId );
-   }
-
-   @Override
-   public void getInfo(PrintWriter pw) {
-    pw.println("       Version : " + getSvnId() );
-   }
-
 
    //
    // task feature
@@ -1654,18 +1640,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            return new ArrayList<>(confirmed); // return empty List
        }
 
-       SpreadAndWait controller = new SpreadAndWait( this , _TO_GetCacheLocationList ) ;
+       SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(new CellStub(this, null, _TO_GetCacheLocationList));
 
 //       _log.debug("getCacheLocationList: SpreadAndWait to " + assumed.size() +" pools");
 
-       PoolCheckFileMessage query;
        for (Object pool : assumed) {
            String poolName = pool.toString();
-           query = new PoolCheckFileMessage(poolName, pnfsId);
-           CellMessage cellMessage2Pool = new CellMessage(new CellPath(poolName), query);
-
+           PoolCheckFileMessage query = new PoolCheckFileMessage(poolName, pnfsId);
            try {
-               controller.send(cellMessage2Pool);
+               controller.send(new CellPath(poolName), PoolCheckFileMessage.class, query);
            } catch (Exception eeee) {
                _log.warn("Problem sending query to " + query
                        .getPoolName() + " " + eeee);
@@ -1679,11 +1662,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        // Copy certanly 'confirmed' pools to another map
        // instead of dropping 'not have' pools from the original map
 
-       for( Iterator<CellMessage> i = controller.getReplies() ; i.hasNext() ; ){
-          query = (PoolCheckFileMessage) (i.next()).getMessageObject() ;
-	  _log.debug("getCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
-          if( query.getHave() ) {
-              confirmed.add(query.getPoolName());
+       for (PoolCheckFileMessage reply: controller.getReplies().values()) {
+	  _log.trace("getCacheLocationList : PoolCheckFileMessage={}", reply);
+          if (reply.getHave()) {
+              confirmed.add(reply.getPoolName());
           }
        }
 
@@ -1709,16 +1691,14 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            return new ArrayList<>(confirmed); // return empty List
        }
 
-       SpreadAndWait controller = new SpreadAndWait(this, _TO_GetCacheLocationList);
+       SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(new CellStub(this, null, _TO_GetCacheLocationList));
 
-       PoolCheckFileMessage query;
        for (Object pool : assumed) {
            String poolName = pool.toString();
-           query = new PoolCheckFileMessage(poolName, pnfsId);
-           CellMessage cellMessage2Pool = new CellMessage(new CellPath(poolName), query);
+           PoolCheckFileMessage query = new PoolCheckFileMessage(poolName, pnfsId);
 
            try {
-               controller.send(cellMessage2Pool);
+               controller.send(new CellPath(poolName), PoolCheckFileMessage.class, query);
            } catch (Exception ex) {
                _log.warn("Problem sending query to " + query
                        .getPoolName() + " " + ex);
@@ -1732,12 +1712,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        // Copy certanly 'confirmed' pools to another map
        // instead of dropping 'not have' pools from the original map
 
-       for (Iterator<CellMessage> i = controller.getReplies(); i.hasNext(); ) {
-           query = (PoolCheckFileMessage) (i.next()).
-                   getMessageObject();
-	   _log.debug("confirmCacheLocationList : PoolCheckFileMessage=" +query); // DEBUG pool tags
-           if (query.getHave()) {
-               confirmed.add(query.getPoolName());
+       for (PoolCheckFileMessage reply: controller.getReplies().values()) {
+	   _log.trace("confirmCacheLocationList : PoolCheckFileMessage={}", reply);
+           if (reply.getHave()) {
+               confirmed.add(reply.getPoolName());
            }
        }
        return new ArrayList<>(confirmed);
@@ -1849,9 +1827,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    protected String getPoolHost( String poolName )
            throws InterruptedException, NoRouteToCellException {
 
-       PoolCheckMessage msg = new PoolCheckMessage(poolName);
-
-       msg.setReplyRequired(true);
        CellMessage      cellMessage = new CellMessage( new CellPath(poolName) , "xgetcellinfo" ) ;
 
        CellMessage answer;

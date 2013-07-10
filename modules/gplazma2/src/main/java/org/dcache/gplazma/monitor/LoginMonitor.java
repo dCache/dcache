@@ -51,11 +51,10 @@ public interface LoginMonitor
     public void mapBegins(Set<Principal> principals);
 
     public void mapPluginBegins(String name, ConfigurationItemControl control,
-            Set<Principal> principals, Set<Principal> authorizedPrincipals);
+            Set<Principal> principals);
 
     public void mapPluginEnds(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Principal> principals,
-            Set<Principal> authorizedPrincipals);
+            Result result, String error, Set<Principal> principals);
 
     public void mapEnds(Set<Principal> principals, Result result);
 

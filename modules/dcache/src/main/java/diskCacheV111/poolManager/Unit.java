@@ -3,17 +3,17 @@ package diskCacheV111.poolManager;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 
 class Unit implements Serializable, SelectionUnit {
     private static final long serialVersionUID = -2534629882175347637L;
-    String _name;
-    int _type;
-    Map<String, UGroup> _uGroupList = new HashMap<>();
+    private final String _name;
+    private final int _type;
+    final Map<String, UGroup> _uGroupList = new ConcurrentHashMap<>();
 
     Unit(String name, int type) {
         _name = name;
@@ -29,14 +29,8 @@ class Unit implements Serializable, SelectionUnit {
         return getName();
     }
 
-    private String getType() {
-        switch (_type) {
-            case PoolSelectionUnitV2.STORE: return "Store";
-            case PoolSelectionUnitV2.DCACHE: return "DCache";
-            case PoolSelectionUnitV2.PROTOCOL: return "Protocol";
-            case PoolSelectionUnitV2.NET: return "Net";
-        }
-        return "Unknown";
+    public int getType() {
+        return _type;
     }
 
     @Override
@@ -46,12 +40,18 @@ class Unit implements Serializable, SelectionUnit {
 
     @Override
     public String getUnitType() {
-        return getType();
+        switch (_type) {
+        case PoolSelectionUnitV2.STORE: return "Store";
+        case PoolSelectionUnitV2.DCACHE: return "DCache";
+        case PoolSelectionUnitV2.PROTOCOL: return "Protocol";
+        case PoolSelectionUnitV2.NET: return "Net";
+        }
+        return "Unknown";
     }
 
     @Override
     public String toString() {
-        return _name + "  (type=" + getType() + ";canonical=" + getCanonicalName() + ";uGroups=" + _uGroupList.size() + ")";
+        return _name + "  (type=" + getUnitType() + ";canonical=" + getCanonicalName() + ";uGroups=" + _uGroupList.size() + ")";
     }
 
 }

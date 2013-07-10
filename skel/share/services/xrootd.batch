@@ -5,53 +5,39 @@
 onerror shutdown
 
 check -strong cell.name
-check -strong port
-check -strong xrootdPoolTimeout
-check -strong xrootdThreads
-check -strong xrootdBacklog
-check -strong xrootdMaxChannelMemorySize
-check -strong xrootdRootPath
-check -strong xrootdPoolManagerTimeout
-check -strong xrootdMoverTimeout
-check -strong xrootdAuthzPlugin
-check -strong xrootdUser
-check -strong poolmanager
-check -strong pnfsmanager
-check -strong loginBrokerUpdateTime
-check -strong loginBrokerUpdateThreshold
+check -strong xrootd.net.port
+check -strong xrootd.net.listen
+check -strong xrootd.net.backlog
+check -strong xrootd.threads
+check -strong xrootd.max-channel-memory-size
+check -strong xrootd.max-total-memory-size
+check -strong xrootd.root
+check -strong xrootd.service.pool.timeout
+check -strong xrootd.service.pool.timeout.unit
+check -strong xrootd.service.poolmanager
+check -strong xrootd.service.poolmanager.timeout
+check -strong xrootd.service.poolmanager.timeout.unit
+check -strong xrootd.service.pnfsmanager
+check -strong xrootd.service.gplazma
+check -strong xrootd.service.gplazma.timeout
+check -strong xrootd.service.gplazma.timeout.unit
+check -strong xrootd.service.billing
+check -strong xrootd.service.loginbroker
+check -strong xrootd.service.loginbroker.update-period
+check -strong xrootd.service.loginbroker.update-period.unit
+check -strong xrootd.service.loginbroker.update-threshold
+check -strong xrootd.service.loginbroker.version
+check -strong xrootd.service.loginbroker.family
 
-check xrootdAllowedReadPaths
-check xrootdAllowedWritePaths
-check xrootdIoQueue
-check loginBroker
+check -strong xrootd.mover.timeout
+check -strong xrootd.mover.queue
+check -strong xrootd.plugins
+check -strong xrootd.authz.user
+check -strong xrootd.authz.read-paths
+check -strong xrootd.authz.write-paths
 
 onerror continue
 
-exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
-
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-       "classpath:org/dcache/xrootd/door/xrootd.xml -export\
-       -cellClass=XrootdDoor \
-       -xrootdPort=${port} \
-       -xrootdPoolTimeout=${xrootdPoolTimeout} \
-       -xrootdThreads=${xrootdThreads} \
-       -xrootdBacklog=${xrootdBacklog} \
-       -xrootdMaxChannelMemorySize=${xrootdMaxChannelMemorySize} \
-       -xrootdMaxTotalMemorySize=${xrootdMaxTotalMemorySize} \
-       -xrootdRootPath=${xrootdRootPath} \
-       -xrootdReadPaths=${xrootdAllowedReadPaths} \
-       -xrootdWritePaths=${xrootdAllowedWritePaths} \
-       -xrootdUser=${xrootdUser} \
-       -xrootdPoolManagerTimeout=${xrootdPoolManagerTimeout} \
-       -xrootdMoverTimeout=${xrootdMoverTimeout} \
-       -xrootdPlugins=${xrootdPlugins} \
-       -xrootdIoQueue=${xrootdIoQueue} \
-       -gplazma=${gplazma} \
-       -poolmanager=${poolmanager} \
-       -pnfsmanager=${pnfsmanager} \
-       -billing=billing \
-       -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
-       -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
-       -loginBroker=${loginBroker} \
-       "
+       "classpath:org/dcache/xrootd/door/xrootd.xml -export -cellClass=XrootdDoor"
 

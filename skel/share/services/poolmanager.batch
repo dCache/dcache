@@ -2,19 +2,19 @@
 
 onerror shutdown
 
-check -strong dcache.paths.share
 check -strong cell.name
-check -strong dcache.paths.config
-check -strong selectionUnit
-check -strong costCalculator
-check -strong threadPool
-check -strong quotaManager
-check -strong poolStatusRelay
-check -strong pnfsmanager
+check -strong poolmanager.plugins.selection-unit
+check -strong poolmanager.plugins.thread-pool
+check -strong poolmanager.plugins.quota-manager
+check -strong poolmanager.service.broadcast
+check -strong poolmanager.service.pnfsmanager
+check -strong poolmanager.service.billing
+check -strong poolmanager.service.pool.timeout
+check -strong poolmanager.service.pool.timeout.unit
 check poolmanager.setup.file
 
 # External settings
-exec -shell file:${dcache.paths.share}/cells/stage.fragment PoolManager
+exec file:${dcache.paths.share}/cells/stage.fragment poolmanager PoolManager
 
 # default configuration for selection unit:
 #     all pools added into default pool group
@@ -68,12 +68,4 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -export \
     -cellClass=PoolManager \
     -replyObject \
-    -selectionUnit=\"${selectionUnit}\" \
-    -costCalculator=\"${costCalculator}\" \
-    -pnfsManager=\"${pnfsmanager}\" \
-    -threadPool=\"${threadPool}\" \
-    -quotaManager=\"${quotaManager}\" \
-    -poolStatusRelay=\"${poolStatusRelay}\" \
-    -stageConfigurationFilePath=\"${stageConfigurationFilePath}\" \
-    -hitInfoMessages=${poolmanager.cache-hit-messages.enabled} \
    "

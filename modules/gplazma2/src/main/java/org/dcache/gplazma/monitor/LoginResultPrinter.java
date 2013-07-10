@@ -746,8 +746,7 @@ public class LoginResultPrinter
     private void printPluginBehaviour(MapPluginResult plugin, boolean isLast)
     {
         String prefix = isLast ? " |        " : " |   |    ";
-        printPrincipalsDiff(prefix, plugin.getIdentified());
-        printPrincipalsDiff(prefix, plugin.getAuthorized());
+        printPrincipalsDiff(prefix, plugin.getPrincipals());
     }
 
     private void printPluginBehaviour(AccountPluginResult plugin, boolean isLast)
