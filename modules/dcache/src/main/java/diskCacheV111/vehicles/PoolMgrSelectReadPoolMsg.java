@@ -90,9 +90,9 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
         _context = context;
     }
 
-    public void setContext(int retryCounter, String previousStageHost)
+    public void setContext(int retryCounter, String previousStageHost, String previousStagePool)
     {
-        setContext(new Context(retryCounter, previousStageHost));
+        setContext(new Context(retryCounter, previousStageHost, previousStagePool));
     }
 
     /**
@@ -104,17 +104,20 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
     {
         private final int _retryCounter;
         private final String _previousStageHost;
+        private final String _previousStagePool;
 
         public Context()
         {
             _retryCounter = 0;
             _previousStageHost = null;
+            _previousStagePool = null;
         }
 
-        public Context(int retryCounter, String previousStageHost)
+        public Context(int retryCounter, String previousStageHost, String previousStagePool)
         {
             _retryCounter = retryCounter;
             _previousStageHost = previousStageHost;
+            _previousStagePool = previousStagePool;
         }
 
         public int getRetryCounter()
@@ -125,6 +128,11 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
         public String getPreviousStageHost()
         {
             return _previousStageHost;
+        }
+
+        public String getPreviousStagePool()
+        {
+            return _previousStagePool;
         }
     }
 }
