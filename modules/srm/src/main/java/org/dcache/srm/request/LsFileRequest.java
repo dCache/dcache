@@ -17,6 +17,7 @@ import java.util.List;
 import diskCacheV111.srm.RequestFileStatus;
 
 import org.dcache.srm.FileMetaData;
+import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
@@ -168,13 +169,23 @@ public final class LsFileRequest extends FileRequest {
                                 t0=System.currentTimeMillis();
                         }
 
-                        metaDataPathDetail =
-                                getMetaDataPathDetail(surl,
-                                                      0,
-                                                      parent.getOffset(),
-                                                      parent.getCount(),
-                                                      parent.getNumOfLevels(),
-                                                      parent.getLongFormat());
+                        if (SRM.getSRM().isFileBusy(surl)) {
+                            // [SRM 2.2, 4.4.3] client requests for a file which there is an active
+                            // srmPrepareToPut (no srmPutDone is yet called) request for.
+                            metaDataPathDetail = new TMetaDataPathDetail();
+                            metaDataPathDetail.setPath(getPath(surl));
+                            metaDataPathDetail.setType(TFileType.FILE);
+                            metaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
+                                    "The requested SURL is being used by another client."));
+                        } else {
+                            metaDataPathDetail =
+                                    getMetaDataPathDetail(surl,
+                                                          0,
+                                                          parent.getOffset(),
+                                                          parent.getCount(),
+                                                          parent.getNumOfLevels(),
+                                                          parent.getLongFormat());
+                        }
                         if (logger.isDebugEnabled()) {
                                 logger.debug("LsFileRequest.run(), TOOK "+(System.currentTimeMillis()-t0));
                         }
@@ -239,7 +250,13 @@ public final class LsFileRequest extends FileRequest {
                 super.stateChanged(oldState);
         }
 
-        @Override
+    @Override
+    public boolean isTouchingSurl(URI surl)
+    {
+        return surl.equals(getSurl());
+    }
+
+    @Override
         public TReturnStatus getReturnStatus() {
                 TReturnStatus returnStatus = new TReturnStatus();
                 State state = getState();

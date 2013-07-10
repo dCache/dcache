@@ -76,6 +76,7 @@ package org.dcache.srm.request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
@@ -299,6 +300,8 @@ public abstract class FileRequest extends Job {
     public QOSTicket getQOSTicket() {
         return qosTicket;
     }
+
+    public abstract boolean isTouchingSurl(URI surl);
 
    /**
      * @param newLifetime  new lifetime in millis

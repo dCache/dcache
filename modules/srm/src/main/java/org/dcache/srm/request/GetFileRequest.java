@@ -83,6 +83,7 @@ import diskCacheV111.srm.RequestFileStatus;
 
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PinCallbacks;
+import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -439,6 +440,17 @@ public final class GetFileRequest extends FileRequest {
         logger.debug("run()");
         try {
             if(getPinId() == null) {
+                // [ SRM 2.2, 5.2.2, g)] The file request must fail with an error SRM_FILE_BUSY
+                // if srmPrepareToGet requests for files which there is an active srmPrepareToPut
+                // (no srmPutDone is yet called) request for.
+                //
+                // [ SRM 2.2, 5.1.3] SRM_FILE_BUSY: client requests for a file which there is an
+                // active srmPrepareToPut (no srmPutDone is yet called) request for.
+                if (SRM.getSRM().isFileBusy(surl)) {
+                    setStateAndStatusCode(State.FAILED, "The requested SURL is being used by another client.",
+                            TStatusCode.SRM_FILE_BUSY);
+                }
+
                 pinFile();
                 if(getPinId() == null) {
                     setState(State.ASYNCWAIT, "pinning file");
@@ -502,6 +514,12 @@ public final class GetFileRequest extends FileRequest {
         }
 
         super.stateChanged(oldState);
+    }
+
+    @Override
+    public boolean isTouchingSurl(URI surl)
+    {
+        return surl.equals(getSurl());
     }
 
     @Override
