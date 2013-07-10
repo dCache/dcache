@@ -913,7 +913,7 @@ public class CellNucleus implements ThreadFactory
     CellRoutingTable getRoutingTable() { return __cellGlue.getRoutingTable(); }
     CellRoute [] getRoutingList() { return __cellGlue.getRoutingList(); }
     //
-    CellTunnelInfo [] getCellTunnelInfos() { return __cellGlue.getCellTunnelInfos(); }
+    List<CellTunnelInfo> getCellTunnelInfos() { return __cellGlue.getCellTunnelInfos(); }
     //
 
     public Writer createErrorLogWriter()

@@ -1,12 +1,16 @@
 package dmg.cells.nucleus ;
 
 import dmg.util.CollectionFactory;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,11 +33,9 @@ import org.slf4j.LoggerFactory;
 class CellGlue {
 
    private final String    _cellDomainName      ;
-   private final Map<String, CellNucleus> _cellList =
-       CollectionFactory.newConcurrentHashMap();
+    private final ConcurrentMap<String, CellNucleus> _cellList = Maps.newConcurrentMap();
+    private final Set<CellNucleus> _killedCells = Collections.newSetFromMap(Maps.<CellNucleus, Boolean>newConcurrentMap());
    private final Map<String,List<CellEventListener>> _cellEventListener =
-       CollectionFactory.newConcurrentHashMap();
-   private final Map<String, CellNucleus> _killedCellList =
        CollectionFactory.newConcurrentHashMap();
    private final Map<String, Object> _cellContext =
        CollectionFactory.newConcurrentHashMap();
@@ -87,16 +89,12 @@ class CellGlue {
    }
    ThreadGroup getMasterThreadGroup(){return _masterThreadGroup ; }
 
-   synchronized void addCell( String name , CellNucleus cell )
-        throws IllegalArgumentException {
-
-      if(  _killedCellList.get( name ) != null )
-         throw new IllegalArgumentException( "Name Mismatch ( cell " + name + " exist  )" ) ;
-      if(  _cellList.get( name ) != null )
-         throw new IllegalArgumentException( "Name Mismatch ( cell " + name + " exist )" ) ;
-
-      _cellList.put( name , cell ) ;
-
+   void addCell(String name, CellNucleus cell)
+        throws IllegalArgumentException
+   {
+      if (_cellList.putIfAbsent(name, cell) != null) {
+          throw new IllegalArgumentException("Name Mismatch ( cell " + name + " exist )");
+      }
       sendToAll( new CellEvent( name , CellEvent.CELL_CREATED_EVENT ) ) ;
    }
 
@@ -259,50 +257,36 @@ class CellGlue {
    }
    CellRoutingTable getRoutingTable(){ return _routingTable ; }
    CellRoute [] getRoutingList(){ return _routingTable.getRoutingList() ; }
-   synchronized CellTunnelInfo [] getCellTunnelInfos(){
 
-      List<CellTunnelInfo> v = new ArrayList<CellTunnelInfo>() ;
-
+   List<CellTunnelInfo> getCellTunnelInfos()
+   {
+      List<CellTunnelInfo> v = new ArrayList<CellTunnelInfo>();
       for( CellNucleus cellNucleus : _cellList.values() ){
-
          Cell c = cellNucleus.getThisCell() ;
-
          if( c instanceof CellTunnel ){
             v.add( ((CellTunnel)c).getCellTunnelInfo() ) ;
          }
       }
-
-      return v.toArray( new CellTunnelInfo[v.size()] ) ;
-
+      return v;
    }
 
-    synchronized List<String> getCellNames()
+    List<String> getCellNames()
     {
-        int size = _cellList.size() + _killedCellList.size();
-        List<String> allCells = new ArrayList<String>(size);
-        allCells.addAll(_cellList.keySet());
-        allCells.addAll(_killedCellList.keySet());
-        return allCells;
+        return new ArrayList<String>(_cellList.keySet());
     }
 
    int getUnique(){ return _uniqueCounter.incrementAndGet() ; }
 
-   CellInfo getCellInfo( String name ){
-      CellNucleus nucleus = _cellList.get( name ) ;
-      if( nucleus == null ){
-         nucleus = _killedCellList.get( name ) ;
-         if( nucleus == null )return null ;
-      }
-      return nucleus._getCellInfo() ;
+   CellInfo getCellInfo(String name) {
+       CellNucleus nucleus = getCell(name);
+       return (nucleus == null) ? null : nucleus._getCellInfo();
    }
-   Thread [] getThreads( String name ){
-      CellNucleus nucleus = _cellList.get( name ) ;
-      if( nucleus == null ){
-         nucleus = _killedCellList.get( name ) ;
-         if( nucleus == null )return null ;
-      }
-      return nucleus.getThreads() ;
+
+   Thread [] getThreads(String name) {
+       CellNucleus nucleus = getCell(name);
+       return (nucleus == null) ? null : nucleus.getThreads();
    }
+
    private void sendToAll( CellEvent event ){
       //
       // inform our event listener
@@ -392,10 +376,10 @@ class CellGlue {
    void   kill( CellNucleus sender , String cellName )
           throws IllegalArgumentException {
       CellNucleus nucleus =  _cellList.get( cellName ) ;
-      if(  nucleus == null )
+      if(  nucleus == null || _killedCells.contains(nucleus)) {
          throw new IllegalArgumentException( "Cell Not Found : "+cellName  ) ;
+      }
       _kill( sender , nucleus , 0 ) ;
-
    }
 
    /**
@@ -405,11 +389,6 @@ class CellGlue {
    void threadGroupList(String cellName)
    {
        CellNucleus nucleus =  _cellList.get(cellName);
-
-       if(nucleus == null ) {
-           nucleus = _killedCellList.get(cellName);
-       }
-
        if(nucleus != null) {
            nucleus.threadGroupList();
        } else {
@@ -427,11 +406,7 @@ class CellGlue {
      */
     CellNucleus getCell(String cellName)
     {
-        CellNucleus nucleus = _cellList.get(cellName);
-        if (nucleus == null) {
-            nucleus = _killedCellList.get(cellName);
-        }
-        return nucleus;
+        return _cellList.get(cellName);
     }
 
     /**
@@ -464,10 +439,11 @@ class CellGlue {
         }
     }
 
-   synchronized void destroy( CellNucleus nucleus ){
-       String name = nucleus.getCellName() ;
-       _killedCellList.remove( name ) ;
-       say( "destroy : sendToAll : killed"+name ) ;
+   synchronized void destroy(CellNucleus nucleus)
+   {
+       _cellList.remove(nucleus.getCellName());
+       _killedCells.remove(nucleus);
+       say("destroy : sendToAll : killed " + nucleus.getCellName());
        notifyAll();
 //
 //        CELL_DIED_EVENT moved to _kill. Otherwise
@@ -478,31 +454,24 @@ class CellGlue {
        return ;
    }
 
-    private synchronized void _kill(CellNucleus source,
-                                    CellNucleus destination,
-                                    long to)
+    private void _kill(CellNucleus source, final CellNucleus destination, long to)
     {
-        CellPath sourceAddr = new CellPath(source.getCellName(),
-                                           getCellDomainName());
-        final KillEvent killEvent = new KillEvent(sourceAddr, to);
         String cellToKill = destination.getCellName();
-        final CellNucleus destNucleus = _cellList.remove(cellToKill);
-
-        if (destNucleus == null) {
+        if (!_killedCells.add(destination)) {
             esay("Warning : (name not found in _kill) " + cellToKill);
             return;
         }
 
-        _cellEventListener.remove(cellToKill);
+        CellPath sourceAddr = new CellPath(source.getCellName(), getCellDomainName());
+        final KillEvent killEvent = new KillEvent(sourceAddr, to);
         sendToAll(new CellEvent(cellToKill, CellEvent.CELL_DIED_EVENT));
-        _killedCellList.put(cellToKill, destNucleus);
 
         Runnable command = new Runnable()
         {
             @Override
             public void run()
             {
-                destNucleus.shutdown(killEvent);
+                destination.shutdown(killEvent);
             }
         };
         try {
@@ -594,6 +563,9 @@ class CellGlue {
          //  now we try to find the destination cell in our domain
          //
          CellNucleus destNucleus = _cellList.get( cellName ) ;
+         if (destNucleus != null && _killedCells.contains(destNucleus)) {
+             destNucleus = null;
+         }
          if( domainName.equals( _cellDomainName ) ){
             if( cellName.equals("*") ){
                   say( "sendMessagex : * detected ; skipping destination" );
