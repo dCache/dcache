@@ -138,6 +138,6 @@ public class XmlEntityLayoutPrinter implements LayoutPrinter {
 
     private static String entityValueFrom( String s)
     {
-        return s.replace("&","&amp;").replace("\"", "&quot;").replace("'", "&apos;").replace("<", "&lt;");
+        return s.replace("&","&amp;").replace("\"", "&quot;").replace("'", "&apos;").replace("<", "&lt;").replace("%", "&#37;");
     }
 }
