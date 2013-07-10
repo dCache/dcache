@@ -24,7 +24,7 @@ public class UnixfsUser implements SRMUser
   private int gid = -1;
 
   private static final long serialVersionUID = -1244019880191669699L;
-  
+
   /** Creates a new instance of User. */
   public UnixfsUser(String name, String root, int uid, int gid) {
       synchronized(UnixfsUser.class) {
@@ -40,12 +40,12 @@ public class UnixfsUser implements SRMUser
     this.uid  = uid;
     this.gid  = gid;
   }
-  
-  
+
+
  public long getId() { return id; }
- 
+
  public int getPriority() { return 0; }
-  
+
   /** */
   public String getName() {  return name; }
   /** */
@@ -86,6 +86,10 @@ public class UnixfsUser implements SRMUser
 
     public String getVoGroup() {
         return name;
+    }
+
+    public boolean isReadOnly() {
+        return false;
     }
 }
 

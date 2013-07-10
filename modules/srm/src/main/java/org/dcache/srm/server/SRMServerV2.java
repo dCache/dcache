@@ -258,6 +258,17 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                         requestCredential,
                         (String) null,
                         userCred.context);
+                    if ((requestName.equals("srmRmdir") ||
+                         requestName.equals("srmMkdir") ||
+                         requestName.equals("srmPrepareToPut") ||
+                         requestName.equals("srmRm") ||
+                         requestName.equals("srmMv") ||
+                         requestName.equals("srmSetPermission")) &&
+                        user.isReadOnly()) {
+                        return getFailedResponse(capitalizedRequestName,
+                                                 TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                                                 "Session is read-only");
+                    }
                 } catch (SRMAuthorizationException sae) {
                     log.info("SRM Authorization failed: {}", sae.getMessage());
                     return getFailedResponse(capitalizedRequestName,
