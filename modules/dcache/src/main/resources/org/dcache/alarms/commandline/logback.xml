@@ -14,7 +14,7 @@
     <root level="off">
     </root>
 
-    <logger name="Commandline" level="warn" additivity="false">
+    <logger name="Commandline" level="${remote.log.level}" additivity="false">
         <appender-ref ref="stdout"/>
         <appender-ref ref="remote"/>
     </logger>
