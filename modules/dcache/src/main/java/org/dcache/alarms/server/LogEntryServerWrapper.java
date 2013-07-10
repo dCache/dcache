@@ -96,6 +96,7 @@ public class LogEntryServerWrapper {
     private String url;
     private String user;
     private String pass;
+    private String level;
     private Integer port;
 
     private SimpleSocketServer server;
@@ -114,6 +115,10 @@ public class LogEntryServerWrapper {
 
     public void setDriver(String driver) {
         this.driver = driver;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
     }
 
     public void setPass(String pass) {
@@ -174,6 +179,7 @@ public class LogEntryServerWrapper {
         loggerContext.putProperty("alarms.store.db.pass", pass);
         loggerContext.putProperty("alarms.store.db.properties", properties);
         loggerContext.putProperty("alarms.definitions.path", definitionsPath);
+        loggerContext.putProperty("alarms.server.log.level", level);
 
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(loggerContext);
