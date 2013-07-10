@@ -7,9 +7,11 @@
 
 onerror shutdown
 
-check -strong missing-files.thread-count
+check -strong cell.name
+check -strong missing-files.cell.export
+check -strong missing-files.limits.threads
 
-check missing-files.plugin.list
+check missing-files.plugins
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-     "classpath:org/dcache/missingfiles/missingfiles.xml -export"
+     "classpath:org/dcache/missingfiles/missingfiles.xml -export=${missing-files.cell.export}"

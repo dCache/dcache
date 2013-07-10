@@ -49,7 +49,7 @@ check -strong webdav.overwrite
 check -strong webdav.service.missing-files
 check -strong webdav.service.missing-files.timeout
 check -strong webdav.service.missing-files.timeout.unit
-check -strong webdav.service.missing-files.enabled
+check -strong webdav.enable.missing-files
 
 check webdav.net.internal
 check webdav.mover.queue
@@ -102,5 +102,5 @@ exec env verify-${webdav.authn.protocol}.exe
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
-    -profiles=connector-${webdav.authn.protocol},missing-files-${webdav.service.missing-files.enabled} \
+    -profiles=connector-${webdav.authn.protocol},missing-files-${webdav.enable.missing-files} \
     -export -cellClass=WebDAVDoor"
