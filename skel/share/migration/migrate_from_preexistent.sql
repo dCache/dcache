@@ -24,7 +24,7 @@ INSERT into storageinfo_wr_daily (size, count, date)
  SELECT fullsize, count, date from en_wr_daily ;
 
 INSERT into billinginfo_tm_daily (maximum, minimum, totaltime, count, date)
- SELECT max, min, avg*count, count, date from dc_tm_daily;
+ SELECT 1000*max, 1000*min, 1000*avg*count, count, date from dc_tm_daily;
 
 INSERT into costinfo_daily (totalcost, count, date)
  SELECT mean*count, count, date from cost_daily;
