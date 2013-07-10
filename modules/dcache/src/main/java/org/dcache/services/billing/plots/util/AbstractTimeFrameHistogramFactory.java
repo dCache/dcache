@@ -18,7 +18,7 @@ import org.dcache.services.billing.plots.exceptions.TimeFrameFactoryInitializati
  * @author arossi
  */
 public abstract class AbstractTimeFrameHistogramFactory implements
-ITimeFrameHistogramFactory {
+                ITimeFrameHistogramFactory {
 
     protected IBillingInfoAccess access;
 
@@ -29,14 +29,14 @@ ITimeFrameHistogramFactory {
 
     protected <T extends IPlotData> Collection<IPlotData> getCoarseGrainedPlotData(
                     Class<T> clzz, TimeFrame timeFrame)
-                                    throws BillingQueryException {
+                    throws BillingQueryException {
         return getPlotData(clzz, "date >= date1 && date <= date2",
                         "java.util.Date date1, java.util.Date date2",
                         timeFrame.getLow(), timeFrame.getHigh());
     }
 
-    protected <T extends IPlotData> Collection<IPlotData> getViewData(Class<T> clzz)
-                                    throws BillingQueryException {
+    protected <T extends IPlotData> Collection<IPlotData> getViewData(
+                    Class<T> clzz) throws BillingQueryException {
         Collection<T> c = (Collection<T>) access.get(clzz);
         Collection<IPlotData> plotData = new ArrayList<IPlotData>();
         plotData.addAll(c);

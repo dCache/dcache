@@ -1,5 +1,6 @@
 package org.dcache.services.billing.plots.util;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -158,5 +159,5 @@ public interface ITimeFramePlot {
     /**
      * implementation-specific callout
      */
-    void plot();
+    void plot() throws IOException;
 }
