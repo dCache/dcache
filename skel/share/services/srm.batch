@@ -180,6 +180,7 @@ define env srmSpaceManagerOff.exe endExe
   set env srmSpaceReservationStrict false
 endExe
 
+onerror continue
 eval ${dcache.enable.spacemanager} true ==
 exec env srmSpaceManagerOff.exe -ifnotok
 onerror shutdown
