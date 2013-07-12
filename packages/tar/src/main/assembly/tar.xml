@@ -89,5 +89,14 @@
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
         </fileSet>
+
+        <fileSet>
+            <!-- Create empty var/tmp dirctory -->
+            <directory>src/main/assembly</directory>
+            <outputDirectory>/var/tmp</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
     </fileSets>
 </assembly>
