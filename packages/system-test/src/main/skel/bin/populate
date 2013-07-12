@@ -21,6 +21,14 @@ if [ ! -f etc/dcache.kpwd ]; then
                               -w read-write -p dickerelch admin
 fi
 
+if [ ! -f etc/admin/authorized_keys2 ]; then
+    for pubkey in id_rsa.pub id_dsa.pub; do
+        if [ -f ~/.ssh/$pubkey ]; then
+            cat ~/.ssh/$pubkey >> etc/admin/authorized_keys2
+        fi
+    done
+fi
+
 chimera() {
     echo "chimera $@"
     bin/chimera-cli "$@"
