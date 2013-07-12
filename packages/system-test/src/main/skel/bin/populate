@@ -92,20 +92,20 @@ if [ -f ~/.globus/dcache-systemtest-hostcert.pem ]; then
     cp ~/.globus/dcache-systemtest-certificates/* etc/grid-security/certificates
 else
     echo
-    echo "INFO: using VCS-supplied credentials.  These should work, but Globus native clients on some"
-    echo "      platforms will fail.  Use 'hostCredentials --generate' command to generate a host-"
-    echo "      specific credential if you have this problem."
+    echo "INFO: using VCS-supplied credentials.  These should work, but Globus native"
+    echo "      clients on some platforms will fail.  Use 'hostCredentials --generate'"
+    echo "      command to generate a host-specific credential if you have this problem."
 fi
 
 
-function compare()
-{
+compare() {
     rc=0
     cmp -s "$1" "$2" || rc=$?
-    if [ $rc == 1 ]; then
+    if [ $rc -eq 1 ]; then
 	echo
 	echo "WARNING: files $1 and $2 are different."
-	echo "         This difference can cause authentication problems, so should be resolved."
+	echo "         This difference can cause authentication problems, so should be"
+	echo "         resolved."
     fi
 }
 
@@ -116,9 +116,9 @@ for path in etc/grid-security/certificates/*; do
     if [ ! -f ~/.globus/certificates/$file -a ! -f /etc/grid-security/certificates/$file ]; then
 	if [ $warn_missing_trust = 0 ]; then
 	    echo
-	    echo "WARNING: not all certificates dCache trusts are trusted by YOU.  This can cause authentication"
-	    echo "         problems when trying to use dCache.  To solve this problem use the 'hostCredentials --install'"
-	    echo "         command."
+	    echo "WARNING: not all certificates dCache trusts are trusted by YOU.  This can cause"
+	    echo "         authentication problems when trying to use dCache.  To solve this"
+	    echo "         problem use the 'hostCredentials --install' command."
 	    warn_missing_trust=1
 	fi
 	continue
