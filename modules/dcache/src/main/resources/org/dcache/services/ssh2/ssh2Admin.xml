@@ -32,8 +32,11 @@
     <property name="hostKeyPrivate"     value="${admin.dsaHostKeyPrivate}"/>
     <property name="hostKeyPublic"      value="${admin.dsaHostKeyPublic}"/>
     <property name="authorizedKeyList"  value="${admin.authorizedKey2}"/>
-    <property name="historyFile"    value="${adminHistoryFile}"/>
+    <property name="historyFile"        value="${adminHistoryFile}"/>
     <property name="loginStrategy"      ref="login-strategy"/>
-    <property name="adminGroupId"         value="${admin.ssh2.gid}"/>
+    <property name="adminGroupId"       value="${admin.ssh2.gid}"/>
+    <property name="useColors">
+          <value type="java.lang.Boolean">${admin.colors.enable}</value>
+      </property>
   </bean>
 </beans>

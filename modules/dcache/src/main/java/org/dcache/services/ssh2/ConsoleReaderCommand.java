@@ -63,7 +63,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private boolean _useColors;
 
     public ConsoleReaderCommand(String username, CellEndpoint cellEndpoint,
-            File historyFile) {
+            File historyFile, boolean useColor) {
+        _useColors = useColor;
         _userAdminShell = new UserAdminShell(username, cellEndpoint,
                 cellEndpoint.getArgs());
         if (historyFile != null && historyFile.isFile()) {

@@ -61,6 +61,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
     private LoginStrategy _loginStrategy;
     // Cell Functionality
     private CellEndpoint _cellEndPoint;
+    private boolean  _useColors;
 
     public Ssh2Admin() {
         _server = SshServer.setUpDefaultServer();
@@ -133,7 +134,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
 
     public void setServerShellFactory(String userName) {
         CommandFactory factory = new CommandFactory(userName, _cellEndPoint,
-                _historyFile);
+                _historyFile, _useColors);
         _server.setShellFactory(factory);
     }
 
@@ -219,6 +220,14 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
         } catch (IOException ioe) {
             throw new RuntimeException("Ssh2 server was interrupted while starting: ", ioe);
         }
+    }
+
+    public void setUseColors(boolean useColors) {
+        this._useColors = useColors;
+    }
+
+    public boolean getUseColors() {
+        return _useColors;
     }
 
     private class AdminPasswordAuthenticator implements PasswordAuthenticator {
