@@ -86,7 +86,8 @@ dbpass=$(getProperty chimera.db.password)
 
 classpath=$(printLimitedClassPath chimera bonecp \
     guava slf4j-api dcache-common logback-classic \
-    logback-core logback-console-config)
+    logback-core logback-console-config \
+    $(getProperty chimera.db.jar))
 
 quickJava -Xbootclasspath/a:$classpath \
     -Dlog=${DCACHE_LOG:-warn} \
