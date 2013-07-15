@@ -35,8 +35,6 @@
     <property name="historyFile"        value="${adminHistoryFile}"/>
     <property name="loginStrategy"      ref="login-strategy"/>
     <property name="adminGroupId"       value="${admin.ssh2.gid}"/>
-    <property name="useColors">
-          <value type="java.lang.Boolean">${admin.colors.enable}</value>
-      </property>
+    <property name="useColors"          value="${admin.colors.enable}"/>
   </bean>
 </beans>
