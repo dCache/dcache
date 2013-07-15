@@ -63,7 +63,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private boolean _useColors;
 
     public ConsoleReaderCommand(String username, CellEndpoint cellEndpoint,
-            File historyFile) {
+            File historyFile, boolean useColor) {
+        _useColors = useColor;
         _userAdminShell = new UserAdminShell(username, cellEndpoint,
                 cellEndpoint.getArgs());
         if (historyFile != null && historyFile.isFile()) {
@@ -105,7 +106,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void start(Environment env) throws IOException {
-        _useColors = env.getEnv().containsKey(Environment.ENV_TERM);
         _console = new ConsoleReader(_in, _outWriter, null, new ConsoleReaderTerminal(env));
         _adminShellThread = new Thread(this);
         _adminShellThread.start();

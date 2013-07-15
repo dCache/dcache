@@ -12,17 +12,19 @@ public class CommandFactory implements Factory<Command> {
     private final CellEndpoint _cellEndpoint;
     private final String _userName;
     private final File _historyFile;
+    private final boolean _useColor;
 
     public CommandFactory(String username, CellEndpoint cellEndpoint,
-            File historyFile) {
+            File historyFile, boolean useColor) {
         _cellEndpoint = cellEndpoint;
         _userName = username;
         _historyFile = historyFile;
+        _useColor = useColor;
     }
 
     @Override
     public Command create() {
         return new ConsoleReaderCommand(_userName, _cellEndpoint,
-                _historyFile);
+                _historyFile, _useColor);
     }
 }
