@@ -17,8 +17,14 @@ if [ ! -f etc/dcache.kpwd ]; then
         bin/dcache kpwd dcmapadd "$DN" "$username"
     fi
 
-    bin/dcache kpwd dcuseradd -u 0 -g 0 -h / -r / -f / \
-                              -w read-write -p dickerelch admin
+    if which htpasswd; then
+      htpasswd -b -c etc/htpasswd admin dickerelch
+      echo "version 2.1" >> etc/grid-security/storage-authzdb
+      echo "authorize admin read-write 0 0 / / /" >> etc/grid-security/storage-authzdb
+    else
+      bin/dcache kpwd dcuseradd -u 0 -g 0 -h / -r / -f / \
+                                -w read-write -p dickerelch admin
+    fi
 fi
 
 if [ ! -f etc/admin/authorized_keys2 ]; then
