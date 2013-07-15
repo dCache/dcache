@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import diskCacheV111.vehicles.Message;
 
@@ -49,7 +49,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
 
 	private static final Logger _log = LoggerFactory.getLogger( MessageHandlerChain.class);
 
-	private List<MessageHandler> _messageHandler = new LinkedList<>();
+        private final List<MessageHandler> _messageHandler = new LinkedList<>();
 
 	private CellEndpoint _endpoint;
 
@@ -62,16 +62,21 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
 	/**
 	 * @return a simple array of registered MessageHandlers subclass types.
 	 */
-	public synchronized String[] listMessageHandlers() {
-		int i=0;
-		String[] msgHandlers = new String[_messageHandler.size()];
+	public String[] listMessageHandlers()
+        {
+            int i=0;
+            String[] msgHandlers;
 
-		for( MessageHandler mh : _messageHandler) {
-                    msgHandlers[i++] = mh.getClass()
-                            .getSimpleName(); // We're assuming only one instance per Class
+            synchronized (_messageHandler) {
+                msgHandlers = new String[_messageHandler.size()];
+
+                for( MessageHandler mh : _messageHandler) {
+                    // We're assuming only one instance per Class
+                    msgHandlers[i++] = mh.getClass().getSimpleName();
                 }
+            }
 
-		return msgHandlers;
+            return msgHandlers;
 	}
 
 
@@ -123,10 +128,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
 	}
 
 
-    public synchronized void setHandlers(List<MessageHandler> handlers)
+    public void setHandlers(List<MessageHandler> handlers)
     {
-        _messageHandler.clear();
-        _messageHandler.addAll(handlers);
+        synchronized (_messageHandler) {
+            _messageHandler.clear();
+            _messageHandler.addAll(handlers);
+        }
     }
 
 
@@ -149,7 +156,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
         }
     }
 
-    private final Map<UOID,MessageMetadata> _msgMetadata = new HashMap<>();
+    private final Map<UOID,MessageMetadata> _msgMetadata = new ConcurrentHashMap<>();
     private Date _nextFlushOldMetadata;
 
     @Override
@@ -158,29 +165,30 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     }
 
     @Override
-    public long getMetricTTL( UOID messageId) {
+    public long getMetricTTL( UOID messageId)
+    {
         flushOldMetadata();
 
-        if( _log.isDebugEnabled()) {
-            _log.debug("Querying for metric ttl stored against message-ID " + messageId);
-        }
+        _log.debug("Querying for metric ttl stored against message-ID {}",
+                messageId);
 
-        if( !_msgMetadata.containsKey( messageId)) {
-            throw new IllegalArgumentException("No metadata recorded for message " + messageId);
-        }
+        MessageMetadata metadata = _msgMetadata.get(messageId);
 
-        MessageMetadata metadata = _msgMetadata.get( messageId);
+        if (metadata == null) {
+            throw new IllegalArgumentException("No metadata recorded for " +
+                    "message " + messageId);
+        }
 
         return metadata._ttl;
     }
 
     @Override
-    public void remove( UOID messageId) {
-        if( !_msgMetadata.containsKey( messageId)) {
-            throw new IllegalArgumentException("No metadata recorded for message " + messageId);
+    public void remove( UOID messageId)
+    {
+        if (_msgMetadata.remove(messageId) == null) {
+            throw new IllegalArgumentException("No metadata recorded for " +
+                    "message " + messageId);
         }
-
-        _msgMetadata.remove( messageId);
     }
 
 
@@ -243,7 +251,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
             return;
         }
 
-        synchronized (this) {
+        synchronized (_messageHandler) {
             for( MessageHandler mh : _messageHandler) {
                 if (mh.handleMessage((Message) messagePayload,
                         getMetricTTL(request.getLastUOID()))) {
