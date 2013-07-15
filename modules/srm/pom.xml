@@ -28,6 +28,16 @@
       <artifactId>axisg</artifactId>
     </dependency>
 
+    <!-- SRM doesn't depend on jetty-server, but jetty-server has a
+         dependency on the Jetty-supplied 'javax.servlet'.  The latter
+         conflicts with javax.servlet:servlet-api when both appear in
+         the same classpath.  As 'servlet-api' is excluded, we include
+         'jetty-server' here to pull in 'javax.servlet' -->
+    <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-server</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.jglobus</groupId>
       <artifactId>ssl-proxies</artifactId>
@@ -78,10 +88,6 @@
     <dependency>
         <groupId>org.jdom</groupId>
         <artifactId>jdom</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
