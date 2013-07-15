@@ -59,6 +59,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
     private int _adminGroupId;
     private File _historyFile;
     private LoginStrategy _loginStrategy;
+    private boolean _useColors;
     // Cell Functionality
     private CellEndpoint _cellEndPoint;
 
