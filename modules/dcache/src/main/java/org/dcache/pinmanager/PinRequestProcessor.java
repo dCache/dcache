@@ -505,21 +505,21 @@ public class PinRequestProcessor
     private Date getExpirationTimeForNameSpaceLookup()
     {
         long now = System.currentTimeMillis();
-        long timeout = _pnfsStub.getTimeout();
+        long timeout = _pnfsStub.getTimeoutInMillis();
         return new Date(now + 2 * (timeout + RETRY_DELAY));
     }
 
     private Date getExpirationTimeForPoolSelection()
     {
         long now = System.currentTimeMillis();
-        long timeout = _poolManagerStub.getTimeout();
+        long timeout = _poolManagerStub.getTimeoutInMillis();
         return new Date(now + 2 * (timeout + RETRY_DELAY));
     }
 
     private Date getExpirationTimeForSettingFlag()
     {
         long now = System.currentTimeMillis();
-        long timeout = _poolStub.getTimeout();
+        long timeout = _poolStub.getTimeoutInMillis();
         return new Date(now + 2 * timeout);
     }
 

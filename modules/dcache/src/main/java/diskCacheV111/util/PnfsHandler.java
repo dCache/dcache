@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
@@ -27,7 +28,6 @@ import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
@@ -49,7 +49,7 @@ public class PnfsHandler
     implements CellMessageSender
 {
     private final String _poolName;
-    private static final long DEFAULT_PNFS_TIMEOUT = 30 * 60 * 1000L;
+    private static final long DEFAULT_PNFS_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
 
     private final CellStub _cellStub;
 
@@ -63,6 +63,7 @@ public class PnfsHandler
         CellStub stub = new CellStub();
         stub.setDestinationPath(path);
         stub.setTimeout(DEFAULT_PNFS_TIMEOUT);
+        stub.setTimeoutUnit(TimeUnit.MILLISECONDS);
         stub.setRetryOnNoRouteToCell(true);
         return stub;
     }
@@ -394,7 +395,7 @@ public class PnfsHandler
     * @return Value of property __pnfsTimeout.
     */
    public long getPnfsTimeout() {
-       return _cellStub.getTimeout();
+       return _cellStub.getTimeoutInMillis();
    }
 
    /**
@@ -403,6 +404,7 @@ public class PnfsHandler
     */
    public void setPnfsTimeout(long pnfsTimeout) {
        _cellStub.setTimeout(pnfsTimeout);
+       _cellStub.setTimeoutUnit(TimeUnit.MILLISECONDS);
    }
 
    public String getPnfsFlag(PnfsId pnfsId, String flag)

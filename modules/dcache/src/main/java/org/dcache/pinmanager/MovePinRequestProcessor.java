@@ -106,7 +106,7 @@ public class MovePinRequestProcessor
         pin.setState(PINNING);
         pin.setPool(pool);
         pin.setSticky("PinManager-" + UUID.randomUUID().toString());
-        pin.setExpirationTime(new Date(now + 2 * _poolStub.getTimeout()));
+        pin.setExpirationTime(new Date(now + 2 * _poolStub.getTimeoutInMillis()));
         return _dao.storePin(pin);
     }
 

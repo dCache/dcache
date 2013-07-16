@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.util.CacheException;
@@ -107,7 +106,7 @@ public class CellStatusCollector extends Collector {
             _cellStub.send(status.getCellPath(), "xgetcellinfo",
                     CellInfo.class, callback);
         }
-        doneSignal.await(_cellStub.getTimeout(), TimeUnit.MILLISECONDS);
+        doneSignal.await(_cellStub.getTimeout(), _cellStub.getTimeoutUnit());
         _log.debug("Queries finished or timeouted");
     }
 

@@ -108,7 +108,7 @@ public class Task
     /** Time in milliseconds between pings. */
     public long getPingPeriod()
     {
-        return _pool.getTimeout() * 2;
+        return _pool.getTimeoutInMillis() * 2;
     }
 
     /**
@@ -117,7 +117,7 @@ public class Task
      */
     public long getNoResponseTimeout()
     {
-        return _pool.getTimeout() * 2;
+        return _pool.getTimeoutInMillis() * 2;
     }
 
     /**
@@ -126,7 +126,7 @@ public class Task
      */
     public long getTaskDeadTimeout()
     {
-        return _pool.getTimeout();
+        return _pool.getTimeoutInMillis();
     }
 
     /**

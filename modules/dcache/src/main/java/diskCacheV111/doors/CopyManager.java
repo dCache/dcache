@@ -113,7 +113,8 @@ public class CopyManager extends AbstractCell
         if (timeout <= 0) {
             return "Error, pool timeout should be greater than 0";
         }
-        _poolStub.setTimeout(timeout * 1000);
+        _poolStub.setTimeout(timeout);
+        _poolStub.setTimeoutUnit(TimeUnit.SECONDS);
         return "set pool timeout to " + timeout +  " seconds";
     }
 
@@ -124,7 +125,8 @@ public class CopyManager extends AbstractCell
         if (timeout <= 0) {
             return "Error, pool manger timeout should be greater than 0";
         }
-        _poolManagerStub.setTimeout(timeout * 1000);
+        _poolManagerStub.setTimeout(timeout);
+        _poolManagerStub.setTimeoutUnit(TimeUnit.SECONDS);
         return "set pool manager timeout to "+ timeout +  " seconds";
     }
 
@@ -195,10 +197,10 @@ public class CopyManager extends AbstractCell
                   getMaxTransfers());
         pw.printf("PoolManager  : %s\n",
                   _poolManagerStub.getDestinationPath());
-        pw.printf("PoolManager timeout : %d seconds\n",
-                  _poolManagerStub.getTimeout() / 1000);
-        pw.printf("Pool timeout  : %d seconds\n",
-                  _poolStub.getTimeout() / 1000);
+        pw.printf("PoolManager timeout : %d %s\n",
+                  _poolManagerStub.getTimeout(), _poolManagerStub.getTimeoutUnit());
+        pw.printf("Pool timeout  : %d %s\n",
+                  _poolStub.getTimeout(), _poolStub.getTimeoutUnit());
         pw.printf("Mover timeout  : %d seconds",
                   _moverTimeout / 1000);
     }
@@ -411,11 +413,11 @@ public class CopyManager extends AbstractCell
 
                 _target.setProtocolInfo(createTargetProtocolInfo(_target));
                 _target.setLength(_source.getLength());
-                _target.selectPoolAndStartMover("pp", new TransferRetryPolicy(1, 0, _poolManagerStub.getTimeout(), _poolStub.getTimeout()));
+                _target.selectPoolAndStartMover("pp", new TransferRetryPolicy(1, 0, _poolManagerStub.getTimeoutInMillis(), _poolStub.getTimeoutInMillis()));
                 _target.waitForRedirect(_moverTimeout);
 
                 _source.setProtocolInfo(createSourceProtocolInfo(_target.getRedirect(), _target.getSessionId()));
-                _source.selectPoolAndStartMover("p2p", new TransferRetryPolicy(1, 0, _poolManagerStub.getTimeout(), _poolStub.getTimeout()));
+                _source.selectPoolAndStartMover("p2p", new TransferRetryPolicy(1, 0, _poolManagerStub.getTimeoutInMillis(), _poolStub.getTimeoutInMillis()));
 
                 if (!_source.waitForMover(_moverTimeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
