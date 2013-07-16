@@ -172,15 +172,16 @@ public class LogEntryServerWrapper {
         LoggerContext loggerContext
             = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.reset();
+
         loggerContext.putProperty("alarms.dir", f.getAbsolutePath());
-        loggerContext.putProperty("alarms.store.path", path);
-        loggerContext.putProperty("alarms.store.db.driver", driver);
-        loggerContext.putProperty("alarms.store.db.url", url);
-        loggerContext.putProperty("alarms.store.db.user", user);
-        loggerContext.putProperty("alarms.store.db.pass", pass);
-        loggerContext.putProperty("alarms.store.db.properties", properties);
+        loggerContext.putProperty("alarms.db.xml.path", path);
+        loggerContext.putProperty("alarms.db.driver", driver);
+        loggerContext.putProperty("alarms.db.url", url);
+        loggerContext.putProperty("alarms.db.user", user);
+        loggerContext.putProperty("alarms.db.password", pass);
+        loggerContext.putProperty("alarms.db.config.path", properties);
         loggerContext.putProperty("alarms.definitions.path", definitionsPath);
-        loggerContext.putProperty("alarms.server.log.level", level);
+        loggerContext.putProperty("alarms.log.root-level", level);
 
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(loggerContext);

@@ -18,15 +18,15 @@
         init-method="startUp" destroy-method="shutDown">
         <property name="port" value="${dcache.log.server.port}"/>
         <property name="baseDir" value="${alarms.dir}"/>
-        <property name="configFile" value="${alarms.server.config}"/>
-        <property name="path" value="${alarms.store.path}"/>
-        <property name="driver" value="${alarms.store.db.driver}"/>
-        <property name="url" value="${alarms.store.db.url}"/>
-        <property name="user" value="${alarms.store.db.user}"/>
-        <property name="pass" value="${alarms.store.db.pass}"/>
-        <property name="properties" value="${alarms.store.db.properties}"/>
+        <property name="configFile" value="${alarms.log.config.path}"/>
+        <property name="path" value="${alarms.db.xml.path}"/>
+        <property name="driver" value="${alarms.db.driver}"/>
+        <property name="url" value="${alarms.db.url}"/>
+        <property name="user" value="${alarms.db.user}"/>
+        <property name="pass" value="${alarms.db.password}"/>
+        <property name="properties" value="${alarms.db.config.path}"/>
         <property name="definitions" value="${alarms.definitions.path}"/>
-        <property name="level" value="${alarms.server.log.level}"/>
+        <property name="level" value="${alarms.log.root-level}"/>
     </bean>
 
     <beans profile="rdbms">
@@ -34,13 +34,13 @@
             <description>Database schema manager</description>
             <property name="dataSource">
                 <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                    <property name="driverClassName" value="${alarms.store.db.driver}"/>
-                    <property name="url" value="${alarms.store.db.url}"/>
-                    <property name="username" value="${alarms.store.db.user}"/>
-                    <property name="password" value="{alarms.store.db.pass}"/>
+                    <property name="driverClassName" value="${alarms.db.driver}"/>
+                    <property name="url" value="${alarms.db.url}"/>
+                    <property name="username" value="${alarms.db.user}"/>
+                    <property name="password" value="${alarms.db.password}"/>
                 </bean>
             </property>
-            <property name="changeLog" value="classpath:${alarms.store.db.changelog}"/>
+            <property name="changeLog" value="classpath:${alarms.db.schema.changelog}"/>
         </bean>
     </beans>
 </beans>
