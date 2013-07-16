@@ -249,7 +249,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         _poolStub = new CellStub();
         _poolStub.setCellEndpoint(this);
         _poolStub.setTimeout(_replyTimeout);
-        _poolStub.setTimeoutUnit(_recoverTimerUnit);
+        _poolStub.setTimeoutUnit(_replyTimeoutUnit);
 
         _broadcastRegistration = new BroadcastRegistrationTask();
         _broadcastRegistration.setTarget(new CellPath(getCellName(), getCellDomainName()));

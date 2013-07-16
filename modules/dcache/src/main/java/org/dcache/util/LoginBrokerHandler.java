@@ -270,6 +270,7 @@ public class LoginBrokerHandler
     public synchronized void setUpdateTimeUnit(TimeUnit unit)
     {
         _brokerUpdateTimeUnit = unit;
+        rescheduleTask();
     }
 
     public synchronized TimeUnit getUpdateTimeUnit()

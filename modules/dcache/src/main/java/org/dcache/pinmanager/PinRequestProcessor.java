@@ -158,6 +158,7 @@ public class PinRequestProcessor
         return _maxLifetime;
     }
 
+    @Required
     public void setMaxLifetimeUnit(TimeUnit unit)
     {
         _maxLifetimeUnit = unit;
@@ -171,12 +172,12 @@ public class PinRequestProcessor
     private void enforceLifetimeLimit(PinManagerPinMessage message)
     {
         if (_maxLifetime > -1) {
-            long maxLifetime = _maxLifetimeUnit.toMillis(_maxLifetime);
+            long millis = _maxLifetimeUnit.toMillis(_maxLifetime);
             long requestedLifetime = message.getLifetime();
             if (requestedLifetime == -1) {
-                message.setLifetime(maxLifetime);
+                message.setLifetime(millis);
             } else {
-                message.setLifetime(Math.min(maxLifetime, requestedLifetime));
+                message.setLifetime(Math.min(millis, requestedLifetime));
             }
         }
     }

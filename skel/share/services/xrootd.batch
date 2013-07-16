@@ -30,6 +30,7 @@ check -strong xrootd.service.loginbroker.version
 check -strong xrootd.service.loginbroker.family
 
 check -strong xrootd.mover.timeout
+check -strong xrootd.mover.timeout.unit
 check -strong xrootd.mover.queue
 check -strong xrootd.plugins
 check -strong xrootd.authz.user

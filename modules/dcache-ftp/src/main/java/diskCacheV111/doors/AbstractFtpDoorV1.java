@@ -420,8 +420,7 @@ public abstract class AbstractFtpDoorV1
 
     @Option(
         name = "poolManagerTimeout",
-        defaultValue = "1500",
-        unit = "seconds"
+        defaultValue = "1500"
     )
     protected int _poolManagerTimeout;
 
@@ -433,8 +432,7 @@ public abstract class AbstractFtpDoorV1
 
     @Option(
         name = "pnfsTimeout",
-        defaultValue = "60",
-        unit = "seconds"
+        defaultValue = "60"
     )
     protected int _pnfsTimeout;
 
@@ -446,8 +444,7 @@ public abstract class AbstractFtpDoorV1
 
     @Option(
         name = "poolTimeout",
-        defaultValue = "300",
-        unit = "seconds"
+        defaultValue = "300"
     )
     protected int _poolTimeout;
 
@@ -572,10 +569,16 @@ public abstract class AbstractFtpDoorV1
     @Option(
         name = "perfMarkerPeriod",
         description = "Performance marker period",
-        defaultValue = "90",
-        unit = "seconds"
+        defaultValue = "90"
     )
     protected long _performanceMarkerPeriod;
+
+    @Option(
+            name = "perfMarkerPeriodUnit",
+            description = "Performance marker period unit",
+            defaultValue = "SECONDS"
+    )
+    protected TimeUnit _performanceMarkerPeriodUnit;
 
     protected final int _sleepAfterMoverKill = 1; // seconds
 
@@ -908,7 +911,7 @@ public abstract class AbstractFtpDoorV1
             reply("150 Opening BINARY data connection for " + _path, false);
 
             if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
-                long period = _performanceMarkerPeriod * 1000;
+                long period = _performanceMarkerPeriodUnit.toMillis(_performanceMarkerPeriod);
                 long timeout = period / 2;
                 _perfMarkerTask =
                     new PerfMarkerTask(getPoolAddress(), getMoverId(), timeout);
@@ -1205,10 +1208,10 @@ public abstract class AbstractFtpDoorV1
 
         _readRetryPolicy =
             new TransferRetryPolicy(_maxRetries, _retryWait * 1000,
-                                    Long.MAX_VALUE, _poolTimeout * 1000);
+                                    Long.MAX_VALUE, _poolTimeoutUnit.toMillis(_poolTimeout));
         _writeRetryPolicy =
             new TransferRetryPolicy(MAX_RETRIES_WRITE, 0,
-                                    Long.MAX_VALUE, _poolTimeout * 1000);
+                                    Long.MAX_VALUE, _poolTimeoutUnit.toMillis(_poolTimeout));
 
         adminCommandListener = new AdminCommandListener();
         addCommandListener(adminCommandListener);
