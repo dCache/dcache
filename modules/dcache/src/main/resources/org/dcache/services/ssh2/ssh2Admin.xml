@@ -27,14 +27,18 @@
     <property name="anonymousAccess" value="NONE"/>
   </bean>
 
+  <bean id="shell-factory" class="org.dcache.services.ssh2.CommandFactory">
+    <property name="historyFile" value="${adminHistoryFile}"/>
+    <property name="useColor" value="${admin.colors.enable}"/>
+  </bean>
+
   <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
     <property name="port"               value="${admin.ssh2AdminPort}"/>
     <property name="hostKeyPrivate"     value="${admin.dsaHostKeyPrivate}"/>
     <property name="hostKeyPublic"      value="${admin.dsaHostKeyPublic}"/>
     <property name="authorizedKeyList"  value="${admin.authorizedKey2}"/>
-    <property name="historyFile"        value="${adminHistoryFile}"/>
     <property name="loginStrategy"      ref="login-strategy"/>
     <property name="adminGroupId"       value="${admin.ssh2.gid}"/>
-    <property name="useColors"          value="${admin.colors.enable}"/>
+    <property name="serverShellFactory" ref="shell-factory"/>
   </bean>
 </beans>
