@@ -2,29 +2,39 @@ package org.dcache.services.ssh2;
 
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.server.Command;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.File;
 
 import dmg.cells.nucleus.CellEndpoint;
 
-public class CommandFactory implements Factory<Command> {
+import org.dcache.cells.CellMessageSender;
 
-    private final CellEndpoint _cellEndpoint;
-    private final String _userName;
-    private final File _historyFile;
-    private final boolean _useColor;
+public class CommandFactory implements Factory<Command>, CellMessageSender
+{
+    private CellEndpoint _endpoint;
+    private File _historyFile;
+    private boolean _useColor;
 
-    public CommandFactory(String username, CellEndpoint cellEndpoint,
-            File historyFile, boolean useColor) {
-        _cellEndpoint = cellEndpoint;
-        _userName = username;
+    @Required
+    public void setHistoryFile(File historyFile)
+    {
         _historyFile = historyFile;
+    }
+
+    @Required
+    public void setUseColor(boolean useColor)
+    {
         _useColor = useColor;
     }
 
     @Override
+    public void setCellEndpoint(CellEndpoint endpoint) {
+        _endpoint = endpoint;
+    }
+
+    @Override
     public Command create() {
-        return new ConsoleReaderCommand(_userName, _cellEndpoint,
-                _historyFile, _useColor);
+        return new ConsoleReaderCommand(_endpoint, _historyFile, _useColor);
     }
 }

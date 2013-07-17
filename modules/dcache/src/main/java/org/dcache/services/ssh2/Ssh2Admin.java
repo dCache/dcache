@@ -3,12 +3,15 @@ package org.dcache.services.ssh2;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import org.apache.sshd.SshServer;
+import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
+import org.apache.sshd.server.Command;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
 
@@ -46,9 +49,8 @@ import static org.dcache.util.Files.checkFile;
  *
  * @author bernardt
  */
-public class Ssh2Admin implements CellCommandListener, CellMessageSender,
-        CellLifeCycleAware {
-
+public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
+{
     private final static Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private final SshServer _server;
     // UniversalSpringCell injected parameters
@@ -57,11 +59,7 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
     private File _authorizedKeyList;
     private int _port;
     private int _adminGroupId;
-    private File _historyFile;
     private LoginStrategy _loginStrategy;
-    private boolean _useColors;
-    // Cell Functionality
-    private CellEndpoint _cellEndPoint;
 
     public Ssh2Admin() {
         _server = SshServer.setUpDefaultServer();
@@ -73,14 +71,6 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
 
     public void setLoginStrategy(LoginStrategy loginStrategy) {
         _loginStrategy = loginStrategy;
-    }
-
-    public File getHistoryFile() {
-        return _historyFile;
-    }
-
-    public void setHistoryFile(File historyFile) {
-        _historyFile = historyFile;
     }
 
     public void setPort(int port) {
@@ -126,16 +116,10 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
         _authorizedKeyList = authorizedKeyList;
     }
 
-    @Override
-    public void setCellEndpoint(CellEndpoint endpoint) {
-        _cellEndPoint = endpoint;
-        _log.debug("CellEndpoint set to: {}", _cellEndPoint);
-    }
-
-    public void setServerShellFactory(String userName) {
-        CommandFactory factory = new CommandFactory(userName, _cellEndPoint,
-                _historyFile, _useColors);
-        _server.setShellFactory(factory);
+    @Required
+    public void setServerShellFactory(Factory<Command> shellCommand)
+    {
+        _server.setShellFactory(shellCommand);
     }
 
     public void configureAuthentication() {
@@ -154,20 +138,16 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
                     ((UnionLoginStrategy) _loginStrategy).getLoginStrategies());
             LoginReply loginReply = _loginStrategy.login(subject);
             Subject authenticatedSubject = loginReply.getSubject();
-            String authenticatedUsername =  Subjects.getDisplayName(authenticatedSubject);
             _log.debug("All pricipals returned by login: {}", authenticatedSubject.getPrincipals());
             if (Subjects.hasGid(authenticatedSubject, _adminGroupId)) {
-                setServerShellFactory(authenticatedUsername);
                 return true;
             } else {
-
                 long[] userGids = Subjects.getGids(authenticatedSubject);
-                _log.warn("User: " + authenticatedUsername
-                        + " has GID(s): " + Arrays.toString(userGids) + "."
-                        + " In order to have login rights this list should"
-                        + " include GID " + _adminGroupId + ". Add GID "
-                        + _adminGroupId + " to the user's GID list to grant"
-                        + " login rights.");
+                _log.warn("User: {} has GID(s): {}. In order to have login " +
+                        "rights this list should include GID {}. Add GID {} " +
+                        "to the user's GID list to grant login rights.",
+                        Subjects.getDisplayName(authenticatedSubject),
+                        Arrays.toString(userGids), _adminGroupId, _adminGroupId);
                 return false;
             }
         } catch (PermissionDeniedCacheException e) {
@@ -222,14 +202,6 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
         }
     }
 
-    public void setUseColors(boolean useColors) {
-        this._useColors = useColors;
-    }
-
-    public boolean getUseColors() {
-        return _useColors;
-    }
-
     private class AdminPasswordAuthenticator implements PasswordAuthenticator {
 
         @Override
@@ -256,7 +228,6 @@ public class Ssh2Admin implements CellCommandListener, CellMessageSender,
                     if (decodedKey.equals(key)) {
                         _log.debug("Key found! Decoded Key:"
                                 + " {}, SshReceivedKey: {}", decodedKey, key);
-                        setServerShellFactory(userName);
                         return true;
                     }
                 }
