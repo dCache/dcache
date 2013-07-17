@@ -20,6 +20,7 @@ import org.dcache.acl.enums.Who;
 import org.dcache.chimera.posix.Stat;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class BasicTest extends ChimeraTestCaseHelper {
 
@@ -57,6 +58,18 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
+    public void testMkDirInSetGidDir() throws Exception {
+
+        FsInode dir1 = _rootInode.mkdir("junit", 1, 2, 02755);
+        FsInode dir2 = dir1.mkdir("test", 1, 3, 0755);
+
+        assertEquals("owner is not respected", dir2.stat().getUid(), 1);
+        assertEquals("setgid is not respected", dir2.stat().getGid(), 2);
+        assertEquals("setgid is not respected",
+                dir2.stat().getMode() & UnixPermission.S_PERMS, 02755);
+    }
+
+    @Test
     public void testCreateFile() throws Exception {
         FsInode base = _rootInode.mkdir("junit");
         Stat stat = base.stat();
@@ -85,6 +98,25 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals("creare pemissions are not respected",
                 file2.stat().getMode() & UnixPermission.S_PERMS, mode2);
 
+    }
+
+    @Test
+    public void testCreateFilePermissionAndOwnerOnSetGidDirectory() throws Exception {
+        FsInode base = _rootInode.mkdir("junit", 1, 2, 02775);
+        int mode1 = 0644;
+        int mode2 = 0755;
+        FsInode file1 = base.create("testCreateFilePermission1", 0, 0, mode1);
+        FsInode file2 = base.create("testCreateFilePermission2", 0, 0, mode2);
+
+        assertEquals("owner is not respected", file1.stat().getUid(), 0);
+        assertEquals("setgid is not respected", file1.stat().getGid(), 2);
+        assertEquals("create pemissions are not respected",
+                file1.stat().getMode() & UnixPermission.S_PERMS, mode1);
+
+        assertEquals("owner is not respected", file2.stat().getUid(), 0);
+        assertEquals("setgid is not respected", file2.stat().getGid(), 2);
+        assertEquals("create pemissions are not respected",
+                file2.stat().getMode() & UnixPermission.S_PERMS, mode2);
     }
 
     @Test // (expected=FileExistsChimeraFsException.class)

@@ -35,8 +35,19 @@ public class UnixPermission {
     /**
      * permission mask
      */
-    static public final int S_PERMS = 00777; // permission mask
+    static public final int S_PERMS = 07777; // permission mask
     static public final int s_ISTICKY = 01000; // sticky bit
+
+    /**
+     * Set UID bit
+     */
+    static public final int S_ISUID  = 04000;
+
+    /**
+     * Set GID bit
+     */
+    static public final int S_ISGID = 02000;
+
     /**
      * Unix domain socket
      */
@@ -116,7 +127,13 @@ public class UnixPermission {
             modeString[2] = 'w';
         }
         if ((_mode & S_IXUSR) == S_IXUSR) {
-            modeString[3] = 'x';
+            if ((_mode & S_ISUID) == S_ISUID) {
+                modeString[3] = 's';
+            } else {
+                modeString[3] = 'x';
+            }
+        } else if ((_mode & S_ISUID) == S_ISUID) {
+            modeString[3] = 'S';
         }
 
         // GROUP
@@ -127,8 +144,15 @@ public class UnixPermission {
             modeString[5] = 'w';
         }
         if ((_mode & S_IXGRP) == S_IXGRP) {
-            modeString[6] = 'x';
+            if ((_mode & S_ISGID) == S_ISGID) {
+                modeString[6] = 's';
+            } else {
+                modeString[6] = 'x';
+            }
+        } else if ((_mode & S_ISGID) == S_ISGID) {
+            modeString[6] = 'S';
         }
+
 
         // OTHERS
         if ((_mode & S_IROTH) == S_IROTH) {
