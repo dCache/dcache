@@ -1,7 +1,16 @@
 package org.dcache.pool.repository.v5;
 
+import org.apache.log4j.NDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.repository.Account;
@@ -24,6 +33,12 @@ class CheckHealthTask implements Runnable
      */
     private MetaDataStore _metaDataStore;
 
+    /**
+     * Command string to execute periodically to check the health of the file system,
+     * disk array, host, etc.
+     */
+    private String[] _commands = {};
+
     public void setRepository(CacheRepositoryV5 repository)
     {
         _repository = repository;
@@ -37,6 +52,11 @@ class CheckHealthTask implements Runnable
     public void setMetaDataStore(MetaDataStore store)
     {
         _metaDataStore = store;
+    }
+
+    public void setCommand(String s)
+    {
+        _commands = new Scanner(s).scan();
     }
 
     @Override
@@ -57,11 +77,61 @@ class CheckHealthTask implements Runnable
 
             if (!checkSpaceAccounting()) {
                 LOGGER.error("Marking pool read-only due to accounting errors. This is a bug. Please report it to support@dcache.org.");
-                _repository.fail(FaultAction.READONLY,
-                        "Accounting errors detected");
+                _repository.fail(FaultAction.READONLY, "Accounting errors detected");
             }
 
             adjustFreeSpace();
+        }
+
+        checkHealthCommand();
+    }
+
+    private void checkHealthCommand()
+    {
+        if (_commands.length > 0) {
+            NDC.push("health-check");
+            try {
+                ProcessBuilder builder = new ProcessBuilder(_commands);
+                builder.redirectErrorStream(true);
+                Process process = builder.start();
+                try {
+                    StringBuilder output = new StringBuilder();
+                    try (InputStream in = process.getInputStream()) {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                        String line = reader.readLine();
+                        while (line != null) {
+                            output.append(line).append('\n');
+                            line = reader.readLine();
+                        }
+                    }
+                    int code = process.waitFor();
+                    switch (code) {
+                    case 0:
+                        if (output.length() > 0) {
+                            LOGGER.debug("{}", output);
+                        }
+                        break;
+                    case 1:
+                        _repository.fail(FaultAction.READONLY, "Health check command failed with exit code 1");
+                        if (output.length() > 0) {
+                            LOGGER.warn("{}", output);
+                        }
+                    default:
+                        _repository.fail(FaultAction.DISABLED, "Health check command failed with exit code " + code);
+                        if (output.length() > 0) {
+                            LOGGER.warn("{}", output);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    LOGGER.debug("Health check command was interrupted");
+                    process.destroy();
+                }
+            } catch (IOException e) {
+                LOGGER.error("Failed to launch health check command '{}': {}",
+                        Arrays.toString(_commands), e.getMessage());
+            } finally {
+                NDC.pop();
+            }
         }
     }
 
@@ -150,4 +220,163 @@ class CheckHealthTask implements Runnable
             }
         }
     }
+
+    /**
+     * Scanner for parsing strings of white space separated
+     * words. Characters may be escaped with a backslash and character
+     * sequences may be quoted.
+     */
+    static class Scanner
+    {
+        private final CharSequence _line;
+        private int _position;
+
+        public Scanner(CharSequence line)
+        {
+            _line = line;
+        }
+
+        private char peek()
+        {
+            return isEof() ? (char) 0 : _line.charAt(_position);
+        }
+
+        private char readChar()
+        {
+            char c = peek();
+            _position++;
+            return c;
+        }
+
+        private boolean isEof()
+        {
+            return (_position >= _line.length());
+        }
+
+        private boolean isWhitespace()
+        {
+            return Character.isWhitespace(peek());
+        }
+
+        private void scanWhitespace()
+        {
+            while (isWhitespace()) {
+                readChar();
+            }
+        }
+
+        public String[] scan()
+        {
+            List<String> arguments = new ArrayList<>();
+            scanWhitespace();
+            while (!isEof()) {
+                arguments.add(scanWord());
+                scanWhitespace();
+            }
+            return arguments.toArray(new String[arguments.size()]);
+        }
+
+        /**
+         * Scans the next word. A word is a sequence of non-white
+         * space characters and escaped or quoted white space
+         * characters. The unescaped and unquoted word is returned.
+         */
+        private String scanWord()
+        {
+            StringBuilder word = new StringBuilder();
+            while (!isEof() && !isWhitespace()) {
+                scanWordElement(word);
+            }
+            return word.toString();
+        }
+
+        /**
+         * Scans the next element of a word. Elements of a word are
+         * non-white space characters, escaped characters and quoted
+         * strings. The unescaped and unquoted element is added to word.
+         */
+        private void scanWordElement(StringBuilder word)
+        {
+            if (!isEof() && !isWhitespace()) {
+                switch (peek()) {
+                case '\'':
+                    scanSingleQuotedString(word);
+                    break;
+                case '"':
+                    scanDoubleQuotedString(word);
+                    break;
+                case '\\':
+                    scanEscapedCharacter(word);
+                    break;
+                default:
+                    word.append(readChar());
+                    break;
+                }
+            }
+        }
+
+        /**
+         * Scans a single quoted string. Escaped characters are not
+         * recognized. The unquoted string is added to word.
+         */
+        private void scanSingleQuotedString(StringBuilder word)
+        {
+            if (readChar() != '\'') {
+                throw new IllegalStateException("Parse failure");
+            }
+
+            while (!isEof()) {
+                char c = readChar();
+                switch (c) {
+                case '\'':
+                    return;
+                default:
+                    word.append(c);
+                    break;
+                }
+            }
+        }
+
+        /**
+         * Scans a double quoted string. Escaped characters are
+         * recognized. The unquoted and unescaped string is added to
+         * word.
+         */
+        private void scanDoubleQuotedString(StringBuilder word)
+        {
+            if (readChar() != '"') {
+                throw new IllegalStateException("Parse failure");
+            }
+
+            while (!isEof()) {
+                switch (peek()) {
+                case '\\':
+                    scanEscapedCharacter(word);
+                    break;
+                case '"':
+                    readChar();
+                    return;
+                default:
+                    word.append(readChar());
+                    break;
+                }
+            }
+        }
+
+        /**
+         * Scans a backslash escaped character. The escaped character
+         * without the escape symbol is added to word.
+         */
+        private void scanEscapedCharacter(StringBuilder word)
+        {
+            if (readChar() != '\\') {
+                throw new IllegalStateException("Parse failure");
+            }
+
+            if (!isEof()) {
+                word.append(readChar());
+            }
+        }
+    }
+
 }

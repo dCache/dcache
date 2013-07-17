@@ -390,6 +390,7 @@
       <property name="repository" ref="rep"/>
       <property name="account" ref="account"/>
       <property name="metaDataStore" ref="meta-store"/>
+      <property name="command" value="${pool.check-health-command}"/>
     </bean>
 
     <task:scheduled-tasks scheduler="healthcheck-scheduler">
