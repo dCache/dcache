@@ -4,9 +4,15 @@
 
 onerror shutdown
 
+check -strong alarms.cell.name
 check -strong dcache.log.server.port
-check -strong alarms.server.config
-check -strong alarms.store.db.type
+check -strong alarms.log.config.path
+check -strong alarms.db.type
+check -strong alarms.db.url
+check -strong alarms.log.root-level
+check -strong alarms.definitions.path
+check alarms.dir
+check alarms.db.xml.path
 
 define env dontStartService.exe enddefine
     say -level=esay "You have configured this domain to host the alarms service together with one"
@@ -21,7 +27,7 @@ enddefine
 
 define env startService.exe enddefine
   create org.dcache.cells.UniversalSpringCell ${cell.name} \
-        "classpath:org/dcache/alarms/server/alarms.xml -profiles=${alarms.store.db.type}"
+        "classpath:org/dcache/alarms/server/alarms.xml -profiles=${alarms.db.type}"
 enddefine
 
 onerror continue

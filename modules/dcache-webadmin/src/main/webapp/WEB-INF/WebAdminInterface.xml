@@ -10,7 +10,7 @@
     <jee:jndi-lookup id="adminGid" jndi-name="java:comp/env/adminGid"/>
     <jee:jndi-lookup id="gPlazmaName" jndi-name="java:comp/env/gPlazmaName"/>
     <jee:jndi-lookup id="dCacheInstanceName" jndi-name="java:comp/env/dCacheInstanceName"/>
-    <jee:jndi-lookup id="loginBrokerName" jndi-name="java:comp/env/loginBrokerName"/>
+    <jee:jndi-lookup id="loginBrokerNames" jndi-name="java:comp/env/loginBrokerNames"/>
     <jee:jndi-lookup id="pnfsManagerName" jndi-name="java:comp/env/pnfsManagerName"/>
     <jee:jndi-lookup id="poolManagerName" jndi-name="java:comp/env/poolManagerName"/>
     <jee:jndi-lookup id="srmSpaceManagerEnabled" jndi-name="java:comp/env/srmSpaceManagerEnabled"/>
@@ -199,7 +199,7 @@
                     <property name="name" value="Active Transfers Collector"/>
                     <property name="sleepInterval" ref="transfersCollectorUpdate"/>
                     <property name="algorithmFactory" ref="TransfersConstantBackoff"/>
-                    <property name="loginBrokerName" ref="loginBrokerName"/>
+                    <property name="loginBrokerNames" ref="loginBrokerNames"/>
                 </bean>
                 <bean id="CellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector"
                     init-method="initialize">
@@ -207,7 +207,7 @@
                     <property name="name" value="Cellstatus Collector"/>
                     <property name="sleepInterval" value="10000"/>
                     <property name="algorithmFactory" ref="FastConstantBackoff"/>
-                    <property name="loginBrokerName" ref="loginBrokerName"/>
+                    <property name="loginBrokerNames" ref="loginBrokerNames"/>
                     <property name="pnfsManagerName" ref="pnfsManagerName"/>
                     <property name="poolManagerName" ref="poolManagerName"/>
                     <property name="gPlazmaName" ref="gPlazmaName"/>

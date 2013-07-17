@@ -726,7 +726,7 @@ public class Transfer implements Comparable<Transfer>
     public void selectPool()
         throws CacheException, InterruptedException
     {
-        selectPool(_poolManager.getTimeout());
+        selectPool(_poolManager.getTimeoutInMillis());
     }
 
     /**
@@ -798,7 +798,7 @@ public class Transfer implements Comparable<Transfer>
     public void startMover(String queue)
             throws CacheException, InterruptedException
     {
-        startMover(queue, _pool.getTimeout());
+        startMover(queue, _pool.getTimeoutInMillis());
     }
 
     /**

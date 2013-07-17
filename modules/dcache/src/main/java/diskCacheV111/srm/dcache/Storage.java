@@ -109,7 +109,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.poolManager.CostModule;
@@ -155,9 +154,7 @@ import dmg.util.Args;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellCommandListener;
@@ -171,8 +168,6 @@ import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.pinmanager.PinManagerExtendPinMessage;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.services.login.CachingLoginStrategy;
-import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.CopyCallbacks;
@@ -237,12 +232,9 @@ public final class Storage
 
     /* these are the  protocols
      * that are not suitable for either put or get */
-    private static final String[] SRM_PUT_NOT_SUPPORTED_PROTOCOLS
-        = { "http" };
-    private static final String[] SRM_GET_NOT_SUPPORTED_PROTOCOLS
-        = {};
-    private static final String[] SRM_PREFERED_PROTOCOLS
-        = { "gsiftp", "gsidcap" };
+    private String[] srmPutNotSupportedProtocols;
+    private String[] srmGetNotSupportedProtocols;
+    private String[] srmPreferredProtocols;
 
     private final static String SFN_STRING = "SFN=";
 
@@ -366,6 +358,39 @@ public final class Storage
     public void setSrm(SRM srm)
     {
         this.srm = srm;
+    }
+
+    public String[] getSrmPutNotSupportedProtocols()
+    {
+        return srmPutNotSupportedProtocols;
+    }
+
+    @Required
+    public void setSrmPutNotSupportedProtocols(String[] srmPutNotSupportedProtocols)
+    {
+        this.srmPutNotSupportedProtocols = srmPutNotSupportedProtocols;
+    }
+
+    public String[] getSrmGetNotSupportedProtocols()
+    {
+        return srmGetNotSupportedProtocols;
+    }
+
+    @Required
+    public void setSrmGetNotSupportedProtocols(String[] srmGetNotSupportedProtocols)
+    {
+        this.srmGetNotSupportedProtocols = srmGetNotSupportedProtocols;
+    }
+
+    public String[] getSrmPreferredProtocols()
+    {
+        return srmPreferredProtocols;
+    }
+
+    @Required
+    public void setSrmPreferredProtocols(String[] srmPreferredProtocols)
+    {
+        this.srmPreferredProtocols = srmPreferredProtocols;
     }
 
     public void setPinOnlineFiles(boolean value)
@@ -1014,12 +1039,12 @@ public final class Storage
 
     public String selectGetProtocol(String[] protocols)
             throws SRMException {
-        return selectProtocolFor(protocols, SRM_GET_NOT_SUPPORTED_PROTOCOLS);
+        return selectProtocolFor(protocols, srmGetNotSupportedProtocols);
     }
 
     public String selectPutProtocol(String[] protocols)
             throws SRMException {
-        return selectProtocolFor(protocols, SRM_PUT_NOT_SUPPORTED_PROTOCOLS);
+        return selectProtocolFor(protocols, srmPutNotSupportedProtocols);
     }
 
     private String selectProtocolFor(String[] protocols, String[] excludes)
@@ -1038,7 +1063,7 @@ public final class Storage
           * are out there in the wild
           */
          if(ignoreClientProtocolOrder) {
-             for (String protocol : SRM_PREFERED_PROTOCOLS) {
+             for (String protocol : srmPreferredProtocols) {
                  if (available_protocols.contains(protocol)) {
                      return protocol;
                  }
@@ -1072,16 +1097,6 @@ public final class Storage
             protocols.remove("http");
         }
         return protocols.toArray(new String[protocols.size()]);
-    }
-
-    public String selectGetHost(String protocol,String fileId)
-    throws SRMException {
-        return this.selectHost(protocol);
-    }
-
-    public String selectPutHost(String protocol)
-    throws SRMException {
-        return this.selectHost(protocol);
     }
 
     @Override
@@ -1336,7 +1351,7 @@ public final class Storage
     }
 
 
-    public String selectHost(String protocol)
+    private String selectHost(String protocol)
         throws SRMException
     {
         _log.debug("selectHost("+protocol+")");

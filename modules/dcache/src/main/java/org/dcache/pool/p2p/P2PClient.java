@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
@@ -288,7 +289,7 @@ public class P2PClient
             pw.println("  Interface  : " + e.getMessage());
         }
         pw.println("  Max Active : " + _maxActive);
-        pw.println("Pnfs Timeout : " + (_pnfs.getTimeout() / 1000L) + " seconds ");
+        pw.println("Pnfs Timeout : " + _pnfs.getTimeout() + " " + _pnfs.getTimeoutUnit());
     }
 
     @Override
@@ -296,7 +297,7 @@ public class P2PClient
     {
         pw.println("#\n#  Pool to Pool (P2P) [$Revision$]\n#");
         pw.println("pp set max active " + _maxActive);
-        pw.println("pp set pnfs timeout " + (_pnfs.getTimeout() / 1000L));
+        pw.println("pp set pnfs timeout " + (_pnfs.getTimeoutInMillis() / 1000L));
         if (_interface != null) {
             pw.println("pp interface " + _interface.getHostAddress());
         }
@@ -306,7 +307,8 @@ public class P2PClient
     public synchronized String ac_pp_set_pnfs_timeout_$_1(Args args)
     {
         long timeout = Long.parseLong(args.argv(0));
-        _pnfs.setTimeout(timeout * 1000L);
+        _pnfs.setTimeout(timeout);
+        _pnfs.setTimeoutUnit(TimeUnit.SECONDS);
         return "Pnfs timeout set to " + timeout + " seconds";
     }
 

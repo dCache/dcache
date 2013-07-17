@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.services.space.message.CancelUse;
 import diskCacheV111.services.space.message.ExtendLifetime;
@@ -272,7 +273,8 @@ public final class Manager
                 _poolManagerStub=new CellStub();
                 _poolManagerStub.setDestination(poolManager);
                 _poolManagerStub.setCellEndpoint(this);
-                _poolManagerStub.setTimeout(_poolManagerTimeout*1000L);
+                _poolManagerStub.setTimeout(_poolManagerTimeout);
+                _poolManagerStub.setTimeoutUnit(TimeUnit.SECONDS);
                 dbinit();
                 (updateLinkGroups = new Thread(this,"UpdateLinkGroups")).start();
                 (expireSpaceReservations = new Thread(this,"ExpireThreadReservations")).start();

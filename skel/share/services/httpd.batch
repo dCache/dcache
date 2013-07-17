@@ -69,7 +69,7 @@ define context webadmin.exe endDefine
      "-adminGid=${webadminAdminGid} \
      -gPlazmaName=${dcache.service.gplazma} \
      -dCacheInstanceName=${webadminDCacheInstanceName}  \
-     -loginBrokerName=${dcache.service.loginbroker} \
+     -loginBrokerNames=${dcache.service.loginbroker} \
      -pnfsManagerName=${dcache.service.pnfsmanager} \
      -poolManagerName=${dcache.service.poolmanager} \
      -srmSpaceManagerEnabled=${dcache.enable.spacemanager} \
@@ -207,7 +207,7 @@ endDefine
 
 create diskCacheV111.cells.TransferObserverV1 TransferObserver \
               "default \
-               -loginBroker=LoginBroker \
+               -loginBroker=${dcache.service.loginbroker} \
                -update=60"
 
 
@@ -227,7 +227,7 @@ create diskCacheV111.cells.WebCollectorV3 collector \
     "PnfsManager \
      PoolManager \
      gPlazma \
-     -loginBroker=LoginBroker,srm-LoginBroker \
+     -loginBroker=${dcache.service.loginbroker} \
      -replyObject"
 
 # The http service cell provides the web interface

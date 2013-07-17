@@ -67,12 +67,12 @@
          originally sent with one.
          for further information, see the dCache Book -->
     <appender name="STORE" class="org.dcache.alarms.logback.LogEntryAppender">
-        <storePath>${alarms.store.path}</storePath>
-        <url>${alarms.store.db.url}</url>
-        <user>${alarms.store.db.user}</user>
-        <pass>${alarms.store.db.pass}</pass>
-        <driver>${alarms.store.db.driver}</driver>
-        <propertiesPath>${alarms.store.db.properties}</propertiesPath>
+        <storePath>${alarms.db.xml.path}</storePath>
+        <url>${alarms.db.url}</url>
+        <user>${alarms.db.user}</user>
+        <pass>${alarms.db.password}</pass>
+        <driver>${alarms.db.driver}</driver>
+        <propertiesPath>${alarms.db.config.path}</propertiesPath>
         <definitionsPath>${alarms.definitions.path}</definitionsPath>
         <!-- it would be normal to comment this out if you are using an RDBMS
              and not running periodic deletes -->
@@ -91,7 +91,7 @@
          <appender-ref ref="SERVER"/>
     </logger>
 
-    <root level="${alarms.server.log.level}">
+    <root level="${alarms.log.root-level}">
          <appender-ref ref="STORE"/>
     </root>
 </configuration>

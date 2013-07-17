@@ -2,6 +2,8 @@
 //
 package  dmg.cells.services.login ;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -212,7 +214,7 @@ public class       LoginManager
 
          String loginBroker = _args.getOpt("loginBroker");
           if ( loginBroker != null) {
-              _loginBrokerHandler = new LoginBrokerHandler(loginBroker);
+              _loginBrokerHandler = new LoginBrokerHandler(Splitter.on(",").omitEmptyStrings().split(loginBroker));
               addCommandListener(_loginBrokerHandler);
 
               if (_maxLogin < 0) {
@@ -276,7 +278,7 @@ public class       LoginManager
 
      private static final long EAGER_UPDATE_TIME = 1000;
 
-     private String _loginBroker;
+     private String[] _loginBrokers;
      private String _protocolFamily;
      private String _protocolVersion;
      private long   _brokerUpdateTime;
@@ -286,9 +288,9 @@ public class       LoginManager
      private double _currentLoad;
      private final Thread _thread;
 
-     private LoginBrokerHandler(String loginBroker){
+     private LoginBrokerHandler(Iterable<String> loginBrokers){
 
-        _loginBroker = loginBroker;
+        _loginBrokers = Iterables.toArray(loginBrokers, String.class);
         _protocolFamily    = _args.getOption("protocolFamily", _protocol) ;
         _protocolVersion = _args.getOption("protocolVersion", "1.0") ;
         _brokerUpdateTime = TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")).toMillis(_args.getLongOption("brokerUpdateTime"));
@@ -391,21 +393,24 @@ public class       LoginManager
         _info.setHosts(hosts);
         _info.setPort(_listenThread.getListenPort());
         _info.setLoad(_currentLoad);
-        try {
-           sendMessage(new CellMessage(new CellPath(_loginBroker),_info));
-           _currentBrokerUpdateTime = _brokerUpdateTime;
-        } catch (NoRouteToCellException ee) {
-            _log.info("Failed to register with LoginBroker: {}",
-                      ee.getMessage());
-            _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
+
+        _currentBrokerUpdateTime = _brokerUpdateTime;
+        for (String loginBroker: _loginBrokers) {
+            try {
+                sendMessage(new CellMessage(new CellPath(loginBroker),_info));
+            } catch (NoRouteToCellException ee) {
+                _log.info("Failed to register with LoginBroker: {}",
+                        ee.getMessage());
+                _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
+            }
         }
      }
      public void getInfo( PrintWriter pw ){
-        if( _loginBroker == null ){
+        if( _loginBrokers == null ){
            pw.println( "    Login Broker : DISABLED" ) ;
            return ;
         }
-        pw.println( "    LoginBroker      : "+_loginBroker ) ;
+        pw.println( "    LoginBroker      : "+ _loginBrokers) ;
         pw.println( "    Protocol Family  : "+_protocolFamily ) ;
         pw.println( "    Protocol Version : "+_protocolVersion ) ;
         pw.println( "    Update Time      : "+(_brokerUpdateTime/1000)+" seconds" ) ;

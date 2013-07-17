@@ -111,6 +111,14 @@ public class CellStub
     }
 
     /**
+     * Returns the communication timeout in milliseconds of the stub.
+     */
+    public long getTimeoutInMillis()
+    {
+        return _timeoutUnit.toMillis(_timeout);
+    }
+
+    /**
      * Set the value of the retryOnNoRouteCell property, which
      * determines whether to retry on failure to route the message to
      * the destination.
@@ -159,7 +167,7 @@ public class CellStub
     public <T extends Message> T sendAndWait(T msg)
         throws CacheException, InterruptedException
     {
-        return sendAndWait(msg, _timeout);
+        return sendAndWait(msg, getTimeoutInMillis());
     }
 
     /**
@@ -238,7 +246,7 @@ public class CellStub
                                                   Class<T> type)
        throws CacheException, InterruptedException
     {
-       return sendAndWait(path, msg, type, _timeout);
+       return sendAndWait(path, msg, type, getTimeoutInMillis());
     }
 
 
@@ -384,7 +392,7 @@ public class CellStub
         }
         _endpoint.sendMessage(new CellMessage(destination, message),
                               new CellCallback<>(type, callback),
-                              _timeout);
+                              getTimeoutInMillis());
     }
 
     /**

@@ -1,6 +1,8 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +14,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.util.CacheException;
@@ -35,8 +36,7 @@ public class CellStatusCollector extends Collector {
 
 //    After 2 days a cell is considered removed and will no longer be queried
     private static final long CONSIDERED_REMOVED_TIME_MS = 172800000;
-    private static final String SRM_LOGINBROKER_CELLNAME = "srm-LoginBroker";
-    private String _loginBrokerName;
+    private String[] _loginBrokerNames;
     private String _pnfsManagerName;
     private String _poolManagerName;
     private String _gPlazmaName;
@@ -90,8 +90,9 @@ public class CellStatusCollector extends Collector {
 
     private Set<CellAddressCore> getTargetCells() throws InterruptedException {
         Set<CellAddressCore> targetCells = new HashSet<>();
-        addLoginBrokerTargets(targetCells, _loginBrokerName);
-        addLoginBrokerTargets(targetCells, SRM_LOGINBROKER_CELLNAME);
+        for (String broker : _loginBrokerNames) {
+            addLoginBrokerTargets(targetCells, broker);
+        }
         targetCells.addAll(getPoolCells());
         addStandardNames(targetCells);
         return targetCells;
@@ -105,7 +106,7 @@ public class CellStatusCollector extends Collector {
             _cellStub.send(status.getCellPath(), "xgetcellinfo",
                     CellInfo.class, callback);
         }
-        doneSignal.await(_cellStub.getTimeout(), TimeUnit.MILLISECONDS);
+        doneSignal.await(_cellStub.getTimeout(), _cellStub.getTimeoutUnit());
         _log.debug("Queries finished or timeouted");
     }
 
@@ -155,8 +156,8 @@ public class CellStatusCollector extends Collector {
         return removables;
     }
 
-    public void setLoginBrokerName(String loginBrokerName) {
-        _loginBrokerName = loginBrokerName;
+    public void setLoginBrokerNames(String loginBrokerNames) {
+        _loginBrokerNames = Iterables.toArray(Splitter.on(",").omitEmptyStrings().split(loginBrokerNames), String.class);
     }
 
     public void setPnfsManagerName(String pnfsManagerName) {
