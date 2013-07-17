@@ -150,7 +150,6 @@ public class CacheRepositoryV5
     private SpaceSweeperPolicy _sweeper;
 
     private PnfsHandler _pnfs;
-    private boolean _checkRepository = true;
     private boolean _volatile;
 
     /**
@@ -219,20 +218,6 @@ public class CacheRepositoryV5
         _pnfs = pnfs;
     }
 
-    public synchronized boolean getPeriodicChecks()
-    {
-        return _checkRepository;
-    }
-
-    /**
-     * Enables or disables periodic consistency checks.
-     */
-    public synchronized void setPeriodicChecks(boolean enable)
-    {
-        assertUninitialized();
-        _checkRepository = enable;
-    }
-
     public synchronized boolean getVolatile()
     {
         return _volatile;
@@ -293,6 +278,11 @@ public class CacheRepositoryV5
         if (_state == State.OPEN) {
             updateAccountSize();
         }
+    }
+
+    public synchronized State getState()
+    {
+        return _state;
     }
 
     @Override
@@ -411,13 +401,6 @@ public class CacheRepositoryV5
         }
 
         _log.info("Done generating inventory");
-
-        if (getPeriodicChecks()) {
-            CheckHealthTask task = new CheckHealthTask(this);
-            task.setAccount(_account);
-            task.setMetaDataStore(_store);
-            _executor.scheduleWithFixedDelay(task, 0, 60, TimeUnit.SECONDS);
-        }
     }
 
     @Override
@@ -733,7 +716,6 @@ public class CacheRepositoryV5
     public void getInfo(PrintWriter pw)
     {
         pw.println("State             : " + _state);
-        pw.println("Check Repository  : " + getPeriodicChecks());
 
         SpaceRecord space = getSpaceRecord();
         long total = space.getTotalSpace();

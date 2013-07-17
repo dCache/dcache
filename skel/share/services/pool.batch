@@ -91,7 +91,7 @@ endDefine
 
 create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
-    -export -cellClass=Pool \
+    -export -cellClass=Pool -profiles=healthcheck-${pool.enable.repository-check} \
     -setupClass=pool -setupFile=\"${pool.path}/setup\" \
     -ftpProxyPassive=\"${pool.mover.ftp.allow-incomming-connections}\" \
     -allowMmap=\"${pool.mover.ftp.mmap}\" \

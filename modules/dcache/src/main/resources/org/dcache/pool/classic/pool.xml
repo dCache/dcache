@@ -2,10 +2,13 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context
-           http://www.springframework.org/schema/context/spring-context.xsd">
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/task
+           http://www.springframework.org/schema/task/spring-task.xsd">
 
   <context:annotation-config/>
 
@@ -119,7 +122,6 @@
     <description>Repository manager</description>
     <property name="executor" ref="workerThreadPool"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="periodicChecks" value="${pool.enable.repository-check}"/>
     <property name="account" ref="account"/>
     <property name="allocator" ref="allocator"/>
     <property name="spaceSweeperPolicy" ref="sweeper"/>
@@ -381,4 +383,19 @@
         </map>
       </property>
   </bean>
+
+  <beans profile="healthcheck-true">
+    <bean id="healthcheck" class="org.dcache.pool.repository.v5.CheckHealthTask">
+      <description>Periodic task for checking pool health</description>
+      <property name="repository" ref="rep"/>
+      <property name="account" ref="account"/>
+      <property name="metaDataStore" ref="meta-store"/>
+    </bean>
+
+    <task:scheduled-tasks scheduler="healthcheck-scheduler">
+      <task:scheduled ref="healthcheck" method="run" fixed-delay="60000"/>
+    </task:scheduled-tasks>
+
+    <task:scheduler id="healthcheck-scheduler"/>
+  </beans>
 </beans>
