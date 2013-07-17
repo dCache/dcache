@@ -2,39 +2,44 @@
 
 onerror shutdown
 
-check -strong cell.name
+check -strong billing.cell.name
 check -strong billingLogsDir
-check billingDisableTxt
-check -strong billingToDb
+check -strong billing.enable.text
+check -strong billing.enable.db
 check -strong dcache.service.poolmanager
-check poolConnectTimeout
+check -strong billing.service.poolmanager.timeout
+check -strong billing.text.dir
+check billing.text.flat-dir
 
-# Additional params, if 'billingToDb' is 'yes'
+# Additional params, if 'billing.enable.db' is true
 define env billingToDb.exe endExe
   onerror shutdown
 
-  check -strong db.url
-  check -strong db.driver
-  check -strong db.user
-  check db.password
-  check db.password.file
-  check -strong db.schema.changelog
-  check -strong db.schema.auto
-
-  check -strong billingInfoAccess
-  check billingInfoAccessPropertiesFile
-  check billingMaxInsertsBeforeCommit
-  check billingMaxTimeBeforeCommitInSecs
+  check -strong billing.db.url
+  check -strong billing.db.driver
+  check -strong billing.db.host
+  check -strong billing.db.user
+  check -strong billing.db.schema.changelog
+  check -strong billing.db.schema.auto
+  check billing.db.name
+  check billing.db.password
+  check billing.db.password.file
+  check billing.db.config.path
+  check billing.db.inserts.max-before-commit
+  check billing.db.inserts.timeout-before-commit
+  check billing.db.connections.max-per-partition
+  check billing.db.connections.min-per-partition
+  check billing.db.schema.auto
+  check billing.db.schema.changelog
 endExe
 
 onerror continue
-eval ${billingToDb} yes ==
+eval ${billing.enable.db} true ==
 exec env billingToDb.exe -ifok
 onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
         "classpath:org/dcache/services/billing/cells/billing.xml \
-        -profiles=db-${billingToDb} \
+        -profiles=db-${billing.enable.db} \
         -export \
-        -billingCellName=${cell.name}.alias \
-        -printMode=2"
+        -billingCellName=${cell.name}.alias"

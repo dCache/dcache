@@ -1,5 +1,7 @@
 package org.dcache.services.billing.cells;
 
+import com.google.common.base.CaseFormat;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -34,6 +36,7 @@ import dmg.util.Args;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
+import org.dcache.commons.util.Strings;
 
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.Iterables.transform;
@@ -75,8 +78,8 @@ public final class BillingCell
     private Map<String,Object> _environment;
     private CellStub _poolManagerStub;
     private File _logsDir;
-    private int _printMode;
-    private boolean _disableTxt;
+    private boolean _enableText;
+    private boolean _flatTextDir;
 
     public BillingCell()
     {
@@ -135,7 +138,7 @@ public final class BillingCell
         }
         _log.info(output);
 
-        if (!_disableTxt) {
+        if (_enableText) {
             String ext = getFilenameExtension(new Date(info.getTimestamp()));
             logInfo(output, ext);
             if (info.getResultCode() != 0) {
@@ -150,13 +153,15 @@ public final class BillingCell
 
         _log.info(output);
 
-        if (!_disableTxt) {
+        if (_enableText) {
             logInfo(output, getFilenameExtension(now));
         }
     }
 
     private String getFormattedMessage(InfoMessage msg) {
-        String property = "billing.format." + msg.getClass().getSimpleName();
+        String type = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN,
+                                                msg.getClass().getSimpleName());
+        String property = "billing.format." + type;
         Object format = _environment.get(property);
         if (format == null) {
             return msg.toString();
@@ -281,7 +286,7 @@ public final class BillingCell
 
     private String getFilenameExtension(Date dateOfEvent)
     {
-        if (_printMode == 0) {
+        if (_flatTextDir) {
             _currentDbFile = _logsDir;
             return _fileNameFormat.format(dateOfEvent);
         } else {
@@ -392,12 +397,12 @@ public final class BillingCell
         _logsDir = dir;
     }
 
-    public void setPrintMode(int printMode) {
-        _printMode = printMode;
+    public void setFlatTextDir(boolean flatTextDir) {
+        _flatTextDir = flatTextDir;
     }
 
     @Required
-    public void setDisableTxt(boolean disableTxt) {
-        _disableTxt = disableTxt;
+    public void setEnableTxt(boolean enableText) {
+        _enableText = enableText;
     }
 }

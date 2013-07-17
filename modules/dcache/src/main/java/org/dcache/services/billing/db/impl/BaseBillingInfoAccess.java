@@ -59,10 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.impl;
 
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
@@ -78,21 +80,17 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
 
     protected static final int DUMMY_VALUE = -1;
 
-    protected static final String MAX_INSERTS_PROPERTY
-        = "dbAccessMaxInsertsBeforeCommit";
-    protected static final String MAX_TIMEOUT_PROPERTY
-        = "dbAccessMaxTimeBeforeCommit";
-
     /**
      * Daemon which periodically flushes to the persistent store.
      */
     protected class TimedCommitter extends Thread {
         @Override
         public void run() {
+            long sleep = maxTimeBeforeCommitUnit.toMillis(maxTimeBeforeCommit);
             while (isRunning()) {
                 try {
                     logger.trace("TimedCommitter thread sleeping");
-                    Thread.sleep(maxTimeBeforeCommit * 1000L);
+                    Thread.sleep(sleep);
                     logger.trace("TimedCommitter thread calling doCommitIfNeeded");
                 } catch (InterruptedException ignored) {
                     logger.trace("TimedCommitter thread sleep interrupted");
@@ -145,6 +143,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     protected int insertCount;
     protected int maxInsertsBeforeCommit = 1;
     protected int maxTimeBeforeCommit;
+    protected TimeUnit maxTimeBeforeCommitUnit = TimeUnit.SECONDS;
 
     private Thread flushD;
     private boolean running;
@@ -160,6 +159,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
 
         logger.trace("maxInsertsBeforeCommit {}", maxInsertsBeforeCommit);
         logger.trace("maxTimeBeforeCommit {}", maxTimeBeforeCommit);
+        logger.trace("maxTimeBeforeCommitUnit {}", maxTimeBeforeCommitUnit);
 
         /*
          * if using delayed commits, run a flush thread
@@ -234,6 +234,11 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
 
     public void setMaxTimeBeforeCommit(int maxTimeBeforeCommit) {
         this.maxTimeBeforeCommit = maxTimeBeforeCommit;
+    }
+
+    public void setMaxTimeBeforeCommitUnit(TimeUnit timeUnit) {
+        Preconditions.checkNotNull(timeUnit);
+        this.maxTimeBeforeCommitUnit = timeUnit;
     }
 
     public void setPropertiesPath(String propetiesPath) {
