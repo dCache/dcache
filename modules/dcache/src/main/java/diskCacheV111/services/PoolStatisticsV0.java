@@ -426,7 +426,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       list = resortFileList( list , -1 ) ;
 
-      long [] counter      = null ;
+      long [] counter      = new long[12] ;
       long [] total        = new long[12] ;
       long [] lastInMonth  = new long[12] ;
 
@@ -451,7 +451,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                   st.nextToken() ;
                   String key =  _dayOfCalendar.format( new Date( Long.parseLong( st.nextToken() ) ) ) ;
-                  counter = new long[12] ;
                   for( int  j = 0 ; j < counter.length ; j++ ){
                       counter[j] = Long.parseLong(st.nextToken()) ;
                   }
@@ -489,7 +488,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       list = resortFileList( list , -1  ) ;
 
-      long [] counter      = null ;
+      long [] counter      = new long[12] ;
       long [] total        = new long[12] ;
       long [] lastInMonth  = new long[12] ;
 
@@ -513,7 +512,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                   st.nextToken() ;
                   String key =  _monthOfCalendar.format( new Date( Long.parseLong( st.nextToken() ) ) ) ;
-                  counter = new long[12] ;
                   for( int  j = 0 ; j < counter.length ; j++ ){
                       counter[j] = Long.parseLong(st.nextToken()) ;
                   }
@@ -550,7 +548,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       list = resortFileList( list , -1  ) ;
 
-      long [] counter     = null ;
+      long [] counter     = new long[12] ;
       long [] total       = new long[12] ;
       long [] lastInYear  = new long[12] ;
 
@@ -574,7 +572,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                   st.nextToken() ;
                   String key =  _yearOfCalendar.format( new Date( Long.parseLong( st.nextToken() ) ) ) ;
-                  counter = new long[12] ;
                   for( int  j = 0 ; j < counter.length ; j++ ){
                       counter[j] = Long.parseLong(st.nextToken()) ;
                   }
