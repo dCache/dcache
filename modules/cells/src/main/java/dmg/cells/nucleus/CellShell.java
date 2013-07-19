@@ -600,12 +600,50 @@ public class      CellShell
           " Syntax : kill <cellName>\n"+
           "          Starts the killl mechanism on the specified cell\n"+
           "         and removes it from the cell list\n" ;
-   public String ac_kill_$_1( Args args )
+   public Reply ac_kill_$_1( Args args )
          throws IllegalArgumentException, InterruptedException
    {
-      _nucleus.kill( args.argv(0) );
-      _nucleus.join(args.argv(0), 0);
-      return "\n" ;
+       // The killing of a cell requires delivery of a message to the targeted
+       // cell.  If CellShell is running in the targeted shell then the call
+       // to _nucleus.join will never return unless we free up the
+       // message-processing thread by returning from this method.  We return a
+       // delayed reply to achieve this while also not delivering the reply
+       // until after the cell has terminated.
+       final DelayedReply future = new DelayedReply();
+       final String cell = args.argv(0);
+
+       Thread thread = new Thread("kill " + cell + " command") {
+           @Override
+           public void run()
+           {
+               Serializable response = "";
+               try {
+                   try {
+                       _nucleus.kill(cell);
+                       _nucleus.join(cell, 0);
+                   } catch (IllegalArgumentException e) {
+                       response = e;
+                   }
+
+                   try {
+                       future.send(response);
+                   } catch (NoRouteToCellException e) {
+                       _log.error("problem sending result of 'kill {}' " +
+                               "command: {}", cell, e.getMessage());
+                   } catch (SerializationException e) {
+                       _log.error("problem sending result of 'kill {}' " +
+                               "command: {}", cell, e.getMessage());
+                   }
+               } catch (InterruptedException e) {
+                   // Do nothing. dCache is shutting down.
+               }
+           }
+       };
+
+       thread.setDaemon(true);
+       thread.start();
+
+       return future;
    }
    ////////////////////////////////////////////////////////////
    //
