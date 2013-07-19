@@ -85,6 +85,7 @@
     <property name="door" ref="door"/>
     <property name="authenticationFactory" ref="${xrootdAuthNPlugin}-factory"/>
     <property name="authorizationFactory" ref="authorization-factory"/>
+    <property name="rootPath" value="${xrootdRootPath}"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -142,7 +143,6 @@
   <bean id="none-loginstrategy" class="org.dcache.auth.AnonymousLoginStrategy">
     <description>Login strategy used for unauthenticated login</description>
     <property name="user" value="${xrootdUser}"/>
-    <property name="rootPath" value="${xrootdRootPath}"/>
   </bean>
 
   <bean id="gsi-loginstrategy" class="org.dcache.services.login.RemoteLoginStrategy">
