@@ -2,6 +2,8 @@ package org.dcache.xrootd2.door;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
+
+import diskCacheV111.util.FsPath;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelFactory;
@@ -41,6 +43,7 @@ public class NettyXrootdServer
     private AuthorizationFactory _authorizationFactory;
     private ChannelFactory _channelFactory;
     private ConnectionTracker _connectionTracker;
+    private FsPath _rootPath;
 
     /**
      * Switch Netty to slf4j for logging.
@@ -85,6 +88,11 @@ public class NettyXrootdServer
         _door = door;
     }
 
+    public int getBacklog()
+    {
+        return _backlog;
+    }
+
     @Required
     public void setAuthenticationFactory(AbstractAuthenticationFactory factory)
     {
@@ -105,6 +113,20 @@ public class NettyXrootdServer
     public AuthorizationFactory getAuthorizationFactory()
     {
         return _authorizationFactory;
+    }
+
+    public String getRootPath()
+    {
+        return (_rootPath == null) ? null : _rootPath.toString();
+    }
+
+    /**
+     * Sets the root path of the name space exported by this xrootd door.
+     */
+    @Required
+    public void setRootPath(String s)
+    {
+        _rootPath = new FsPath(s);
     }
 
     public void init()
@@ -128,6 +150,7 @@ public class NettyXrootdServer
                     pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                     pipeline.addLast("executor", new ExecutionHandler(_requestExecutor));
                     pipeline.addLast("redirector", new XrootdRedirectHandler(_door,
+                                                                             _rootPath,
                                                                              _authenticationFactory,
                                                                              _authorizationFactory));
                     return pipeline;

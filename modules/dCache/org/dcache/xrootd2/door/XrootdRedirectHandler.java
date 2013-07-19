@@ -103,7 +103,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
     /** empty subject before login has been called */
     private Subject _subject = new Subject();
-    private FsPath _rootPath = new FsPath();
+    private FsPath _userRootPath = new FsPath();
+    private final FsPath _rootPath;
 
     /**
      * The set of threads which currently process an xrootd request
@@ -114,10 +115,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         Collections.synchronizedSet(new HashSet<Thread>());
 
     public XrootdRedirectHandler(XrootdDoor door,
+                                 FsPath rootPath,
                                  AbstractAuthenticationFactory authnFactory,
                                  AuthorizationFactory authzFactory)
     {
         _door = door;
+        _rootPath = rootPath;
         _authenticationFactory = authnFactory;
         _authorizationFactory = authzFactory;
     }
@@ -296,13 +299,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                     XrootdProtocol.kXR_delete;
 
                 transfer =
-                    _door.write(remoteAddress, authPath, checksum, uuid,
-                                createDir, overwrite, localAddress, _subject,
-                                _rootPath);
+                    _door.write(remoteAddress, createFullPath(authPath), checksum, uuid,
+                                createDir, overwrite, localAddress, _subject);
             } else {
                 transfer =
-                    _door.read(remoteAddress, authPath, checksum, uuid,
-                               localAddress, _subject, _rootPath);
+                    _door.read(remoteAddress, createFullPath(authPath), checksum, uuid,
+                               localAddress, _subject);
             }
 
             // ok, open was successful
@@ -383,7 +385,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                             req.getOpaque(),
                                             localAddress);
 
-            FileMetaData meta = _door.getFileMetaData(path, _subject, _rootPath);
+            FileMetaData meta = _door.getFileMetaData(createFullPath(path), _subject);
             FileStatus fs = convertToFileStatus(meta); // FIXME
             respond(ctx, event, new StatResponse(req.getStreamID(), fs));
         } catch (CacheException e) {
@@ -442,20 +444,19 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
 
         try {
-            String[] paths = req.getPaths();
+            FsPath[] paths = new FsPath[req.getPaths().length];
             String[] opaques = req.getOpaques();
-            String[] authPaths = new String[paths.length];
             for (int i = 0; i < paths.length; i++) {
-                authPaths[i] = checkOperationPermission(req.getRequestID(),
+                String authPath = checkOperationPermission(req.getRequestID(),
                                                         FilePerm.READ,
-                                                        paths[i],
+                                                        req.getPaths()[i],
                                                         opaques[i],
                                                         localAddress);
+                paths [i] = createFullPath(authPath);
             }
 
-            FileMetaData[] allMetas = _door.getMultipleFileMetaData(authPaths,
-                                                                    _subject,
-                                                                    _rootPath);
+            FileMetaData[] allMetas = _door.getMultipleFileMetaData(paths,
+                                                                    _subject);
 
             int[] flags = new int[allMetas.length];
             for (int i = 0; i < allMetas.length; i++) {
@@ -516,7 +517,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                        req.getOpaque(),
                                                        localAddress);
 
-            _door.deleteFile(authPath, _subject, _rootPath);
+            _door.deleteFile(createFullPath(authPath), _subject);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
                 respondWithError(ctx, e, req,
@@ -563,7 +564,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                        req.getOpaque(),
                                                        localAddress);
 
-            _door.deleteDirectory(authPath, _subject, _rootPath);
+            _door.deleteDirectory(createFullPath(authPath), _subject);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
             respondWithError(ctx, e, req,
@@ -614,10 +615,9 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                        req.getOpaque(),
                                                        localAddress);
 
-            _door.createDirectory(authPath,
+            _door.createDirectory(createFullPath(authPath),
                                   req.shouldMkPath(),
-                                  _subject,
-                                  _rootPath);
+                                  _subject);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
             respondWithError(ctx, e, req,
@@ -687,7 +687,9 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                              req.getOpaque(),
                                                              localAddress);
 
-            _door.moveFile(authSourcePath, authTargetPath, _subject, _rootPath);
+            _door.moveFile(createFullPath(authSourcePath),
+                           createFullPath(authTargetPath),
+                           _subject);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
             respondWithError(ctx, e, req,
@@ -748,8 +750,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             _log.info("Listing directory {}", authPath);
             MessageCallback<PnfsListDirectoryMessage> callback =
                 new ListCallback(request, context, event);
-            _door.listPath(authPath, _subject, _rootPath, callback);
-
+            _door.listPath(createFullPath(authPath), _subject, callback);
+        } catch (PermissionDeniedCacheException e) {
+            respondWithError(context, event, request,
+                             XrootdProtocol.kXR_ServerError,
+                             String.format("Internal server error! (%s)",
+                                           e.getMessage()));
         } catch (CacheException ce) {
 
             respondWithError(context, event, request,
@@ -1090,11 +1096,13 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         boolean isReadOnly = false;
 
+        _userRootPath = new FsPath();
+
         for (LoginAttribute attribute : reply.getLoginAttributes()) {
             if (attribute instanceof ReadOnly) {
                 isReadOnly = ((ReadOnly) attribute).isReadOnly();
             } else if (attribute instanceof RootDirectory) {
-                _rootPath = new FsPath(((RootDirectory) attribute).getRoot());
+                _userRootPath = new FsPath(((RootDirectory) attribute).getRoot());
             }
         }
 
@@ -1102,4 +1110,15 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _subject = reply.getSubject();
         _hasLoggedIn = true;
     }
+
+    private FsPath createFullPath(String path)
+            throws PermissionDeniedCacheException
+    {
+        FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
+        if (!fullPath.startsWith(_userRootPath)) {
+            throw new PermissionDeniedCacheException("Permission denied");
+        }
+        return fullPath;
+    }
 }
+
