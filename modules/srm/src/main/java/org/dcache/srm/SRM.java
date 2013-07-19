@@ -270,7 +270,9 @@ public class SRM {
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
         SchedulerFactory.initSchedulerFactory(config, name);
-        JobStorageFactory.initJobStorageFactory(new DatabaseJobStorageFactory(configuration));
+        DatabaseJobStorageFactory afactory = new DatabaseJobStorageFactory(configuration);
+        JobStorageFactory.initJobStorageFactory(afactory);
+        afactory.loadExistingJobs();
 
         host = java.net.InetAddress.getLocalHost();
 
