@@ -1,4 +1,4 @@
-package org.dcache.pool.migration;
+package org.dcache.poolmanager;
 
 import org.junit.Test;
 
@@ -6,10 +6,10 @@ import diskCacheV111.pools.PoolCostInfo;
 
 import static org.junit.Assert.assertEquals;
 
-public class ProportionalPoolSelectionStrategyTest
+public class WeightedAvailableSpaceSelectionTest
 {
-    private final ProportionalPoolSelectionStrategy strategy =
-        new ProportionalPoolSelectionStrategy();
+    private final WeightedAvailableSpaceSelection wass =
+        new WeightedAvailableSpaceSelection(1.0, 1.0);
 
     public void checkAvailable(long expected,
                                long free,
@@ -21,7 +21,7 @@ public class ProportionalPoolSelectionStrategyTest
         PoolCostInfo info = new PoolCostInfo("pool");
         info.setSpaceUsage(free + removable, free, 0, removable, lru);
         info.getSpaceInfo().setParameter(breakeven, gap);
-        assertEquals(expected, (long) strategy.getAvailable(info.getSpaceInfo()));
+        assertEquals(expected, (long) wass.getAvailable(info.getSpaceInfo(), 0));
     }
 
     @Test
