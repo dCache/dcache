@@ -1,5 +1,3 @@
-// $Id: PoolCostInfo.java,v 1.7 2007-07-26 13:43:32 tigran Exp $
-
 package diskCacheV111.pools ;
 
 import com.google.common.collect.Maps;
@@ -16,10 +14,12 @@ public class PoolCostInfo implements Serializable {
 
     private static final long serialVersionUID = 5181562551679185500L;
 
-    private PoolQueueInfo _store, _restore,
-                          _mover, _p2p,
-                          _p2pClient;
-    private Map<String, NamedPoolQueueInfo>           _extendedMoverHash;
+    private PoolQueueInfo _store;
+    private PoolQueueInfo _restore;
+    private PoolQueueInfo _mover;
+    private PoolQueueInfo _p2p;
+    private PoolQueueInfo _p2pClient;
+    private final Map<String, NamedPoolQueueInfo> _extendedMoverHash = new HashMap<>();
     private final String  _defaultQueueName;
     private PoolSpaceInfo _space;
     private final String  _poolName ;
@@ -108,13 +108,7 @@ public class PoolCostInfo implements Serializable {
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
 
     public Map<String, NamedPoolQueueInfo> getMoverQueues() {
-        Map<String, NamedPoolQueueInfo> moverQueues;
-        if (_extendedMoverHash != null) {
-            moverQueues = Maps.newHashMap(_extendedMoverHash);
-        } else {
-            moverQueues = Maps.newHashMap();
-        }
-
+        Map<String, NamedPoolQueueInfo> moverQueues = Maps.newHashMap(_extendedMoverHash);
         if (_store != null) {
             moverQueues.put("Stores", new NamedPoolQueueInfo("Stores", _store));
         }
@@ -185,7 +179,6 @@ public class PoolCostInfo implements Serializable {
         public long getPreciousSpace(){ return _precious ; }
         public long getRemovableSpace(){ return _removable ; }
         public long getUsedSpace(){ return _total - _free ; }
-        public long getPinnedSpace(){ return _total - _free - _precious - _removable ; }
         public long getGap(){ return _gap ; }
         public double getBreakEven(){ return _breakEven ; }
         public long getLRUSeconds(){ return _lru ; }
@@ -207,11 +200,9 @@ public class PoolCostInfo implements Serializable {
     }
 
     public void
-        setQueueSizes(int moverActive, int moverMaxActive, int moverQueued,
-                      int restoreActive, int restoreMaxActive, int restoreQueued,
+        setQueueSizes(int restoreActive, int restoreMaxActive, int restoreQueued,
                       int storeActive, int storeMaxActive, int storeQueued)
     {
-        _mover = new PoolQueueInfo(moverActive, moverMaxActive, moverQueued, 0, 0);
         _restore = new PoolQueueInfo(restoreActive, restoreMaxActive,
                                      restoreQueued, 0,
                                      restoreActive + restoreQueued);
@@ -226,10 +217,17 @@ public class PoolCostInfo implements Serializable {
         NamedPoolQueueInfo info =
             new NamedPoolQueueInfo(name, moverActive, moverMaxActive,
                                    moverQueued, moverReaders, moverWriters);
-        if (_extendedMoverHash == null) {
-            _extendedMoverHash = new HashMap<>();
-        }
         _extendedMoverHash.put(name, info);
+        if (_mover == null) {
+            _mover = new PoolQueueInfo(moverActive, moverMaxActive, moverQueued, moverReaders, moverWriters);
+        } else {
+            _mover = new PoolQueueInfo(
+                    _mover.getActive() + moverActive,
+                    _mover.getMaxActive() + moverMaxActive,
+                    _mover.getQueued() + moverQueued,
+                    _mover.getReaders() + moverReaders,
+                    _mover.getWriters() + moverWriters);
+        }
     }
 
     public Map<String,NamedPoolQueueInfo> getExtendedMoverHash()
@@ -265,57 +263,33 @@ public class PoolCostInfo implements Serializable {
         return _moverCostFactor;
     }
 
-    public int getWriters()
-    {
-        int writers = 0;
-        if (_store != null) {
-            writers += _store.getWriters();
-        }
-        if (_restore != null) {
-            writers += _restore.getWriters();
-        }
-        if (_p2p != null) {
-            writers += _p2p.getWriters();
-        }
-        if (_p2pClient != null) {
-            writers += _p2pClient.getWriters();
-        }
-        if (_extendedMoverHash != null) {
-            for (PoolQueueInfo info: _extendedMoverHash.values()) {
-                writers += info.getWriters();
-            }
-        } else {
-            if (_mover != null) {
-                writers += _mover.getWriters();
-            }
-        }
-        return writers;
-    }
-
     @Override
     public String toString() {
-       StringBuilder sb = new StringBuilder() ;
-
-       sb.append(_poolName).append("={R={").append(_restore.toString()).
-          append("};S={").append(_store.toString()).
-          append("};M={").append(_mover.toString()) ;
-       if( _p2p != null ) {
-           sb.append("};PS={").append(_p2p.toString());
-       }
-       if( _p2pClient != null ) {
-           sb.append("};PC={").append(_p2pClient.toString());
-       }
-       sb.append("};SP={").append(_space.toString()).append("};");
-       if( _extendedMoverHash != null ){
-           sb.append("XM={");
-           for( PoolQueueInfo namedPoolQueueInfo : _extendedMoverHash.values() ){
-               sb.append( namedPoolQueueInfo.toString() ).append(";");
-           }
-           sb.append("};");
-       }
-       sb.append("}");
-
-       return sb.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append(_poolName).append("={");
+        if (_restore != null) {
+            sb.append("R={").append(_restore).append("};");
+        }
+        if (_store != null) {
+            sb.append("S={").append(_store).append("};");
+        }
+        if (_mover != null) {
+            sb.append("M={").append(_mover).append("};");
+        }
+        if (_p2p != null) {
+           sb.append("PS={").append(_p2p).append("};");
+        }
+        if (_p2pClient != null) {
+           sb.append("PC={").append(_p2pClient).append("};");
+        }
+        sb.append("SP={").append(_space.toString()).append("};");
+        sb.append("XM={");
+        for( PoolQueueInfo namedPoolQueueInfo : _extendedMoverHash.values() ){
+            sb.append( namedPoolQueueInfo.toString() ).append(";");
+        }
+        sb.append("};");
+        sb.append("}");
+        return sb.toString();
     }
 
     private void readObject(ObjectInputStream stream)

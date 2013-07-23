@@ -14,6 +14,7 @@ import java.util.Set;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 
+import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 
@@ -318,12 +319,13 @@ public class XMLDataGathererHelper {
                 POOL1_P2PCLIENT._max, POOL1_P2PCLIENT._queued);
         info.setP2pServerQueueSizes(POOL1_P2PSERVER._active,
                 POOL1_P2PSERVER._max, POOL1_P2PSERVER._queued);
-        info.setQueueSizes(POOL1_MOVERS._active,
-                POOL1_MOVERS._max, POOL1_MOVERS._queued,
+        info.setQueueSizes(
                 POOL1_RESTORES._active,
                 POOL1_RESTORES._max, POOL1_RESTORES._queued,
                 POOL1_STORES._active,
                 POOL1_STORES._max, POOL1_STORES._queued);
+        info.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE,
+                POOL1_MOVERS._active, POOL1_MOVERS._max, POOL1_MOVERS._queued, 0, 0);
         Pool pool1 = new Pool(info, sPool);
         return pool1;
     }

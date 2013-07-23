@@ -167,14 +167,8 @@ public class WeightedAvailableSpaceSelection implements Serializable
         if (info.getP2pClientQueue() != null) {
             writers += info.getP2pClientQueue().getWriters();
         }
-        if (info.getExtendedMoverHash() != null) {
-            for (PoolCostInfo.PoolQueueInfo queue: info.getExtendedMoverHash().values()) {
-                writers += queue.getWriters();
-            }
-        } else {
-            if (info.getMoverQueue() != null) {
-                writers += info.getMoverQueue().getWriters();
-            }
+        for (PoolCostInfo.PoolQueueInfo queue : info.getExtendedMoverHash().values()) {
+            writers += queue.getWriters();
         }
         return writers;
     }
