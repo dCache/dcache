@@ -98,7 +98,16 @@ public class SchedulerFactory {
         copyRequestScheduler.start();
         schedulerMap.put(CopyRequest.class,copyRequestScheduler);
 
-        Scheduler reserveSpaceScheduler = new Scheduler("reserve_space" + name);
+        Scheduler reserveSpaceScheduler = new Scheduler("reserve_space_" + name);
+        reserveSpaceScheduler.setMaxThreadQueueSize(config.getReserveSpaceReqTQueueSize());
+        reserveSpaceScheduler.setThreadPoolSize(config.getReserveSpaceThreadPoolSize());
+        reserveSpaceScheduler.setMaxWaitingJobNum(config.getReserveSpaceMaxWaitingRequests());
+        reserveSpaceScheduler.setMaxReadyQueueSize(config.getReserveSpaceReadyQueueSize());
+        reserveSpaceScheduler.setMaxReadyJobs(config.getReserveSpaceMaxReadyJobs());
+        reserveSpaceScheduler.setMaxNumberOfRetries(config.getReserveSpaceMaxNumOfRetries());
+        reserveSpaceScheduler.setRetryTimeout(config.getReserveSpaceRetryTimeout());
+        reserveSpaceScheduler.setMaxRunningByOwner(config.getReserveSpaceMaxRunningBySameOwner());
+        reserveSpaceScheduler.setPriorityPolicyPlugin(config.getReserveSpacePriorityPolicyPlugin());
         reserveSpaceScheduler.start();
         schedulerMap.put(ReserveSpaceRequest.class,reserveSpaceScheduler);
     }

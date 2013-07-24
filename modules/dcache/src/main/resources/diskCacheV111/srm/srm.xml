@@ -62,50 +62,58 @@
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
-    <property name="destination" value="${dcache.service.poolmanager}"/>
-    <property name="timeout" value="#{ ${srmPoolManagerTimeout} * 1000}"/>
+    <property name="destination" value="${srm.service.poolmanager}"/>
+    <property name="timeout" value="${srm.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${srm.service.poolmanager.timeout.unit}"/>
   </bean>
 
   <bean id="gplazma-stub" class="org.dcache.cells.CellStub">
     <description>gPlazma communication stub</description>
-    <property name="destination" value="${dcache.service.gplazma}"/>
-    <property name="timeout" value="30000"/>
+    <property name="destination" value="${srm.service.gplazma}"/>
+    <property name="timeout" value="${srm.service.gplazma.timeout}" />
+    <property name="timeoutUnit" value="${srm.service.gplazma.timeout.unit}" />
   </bean>
 
   <bean id="space-manager-stub" class="org.dcache.cells.CellStub">
     <description>Space manager communication stub</description>
-    <property name="destination" value="SrmSpaceManager"/>
-    <property name="timeout" value="#{ 3 * 60 * 1000 }"/>
+    <property name="destination" value="${srm.service.spacemanager}" />
+    <property name="timeout" value="${srm.service.spacemanager.timeout}"  />
+    <property name="timeoutUnit" value="${srm.service.spacemanager.timeout.unit}"  />
   </bean>
 
   <bean id="transfer-manager-stub" class="org.dcache.cells.CellStub">
     <description>Transfer manager communication stub</description>
-    <property name="destination" value="RemoteTransferManager"/>
-    <property name="timeout" value="#{ 24 * 60 * 60 * 1000}"/>
+    <property name="destination" value="${srm.service.transfermanager}" />
+    <property name="timeout" value="${srm.service.transfermanager.timeout}" />
+    <property name="timeoutUnit" value="${srm.service.transfermanager.timeout.unit}" />
   </bean>
 
   <bean id="copy-manager-stub" class="org.dcache.cells.CellStub">
     <description>Copy manager communication stub</description>
-    <property name="destination" value="CopyManager"/>
-    <property name="timeout" value="#{ 24 * 60 * 60 * 1000}"/>
+    <property name="destination" value="${srm.service.copymanager}" />
+    <property name="timeout" value="${srm.service.copymanager.timeout}" />
+    <property name="timeoutUnit" value="${srm.service.copymanager.timeout.unit}" />
   </bean>
 
   <bean id="pin-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pin manager communication stub</description>
-    <property name="destination" value="PinManager"/>
-    <property name="timeout" value="#{ 60 * 60 * 1000}"/>
+    <property name="destination" value="${srm.service.pinmanager}" />
+    <property name="timeout" value="${srm.service.pinmanager.timeout}" />
+    <property name="timeoutUnit" value="${srm.service.pinmanager.timeout.unit}" />
   </bean>
 
   <bean id="login-broker-stub" class="org.dcache.cells.CellStub">
     <description>Login broker communication stub</description>
-    <property name="destination" value="${srm.lookup.loginbroker}"/>
-    <property name="timeout" value="#{ ${srm.lookup.timeout} * 1000 }"/>
+    <property name="destination" value="${srm.service.lookup-loginbroker}"/>
+    <property name="timeout" value="${srm.service.lookup-loginbroker.timeout}" />
+    <property name="timeoutUnit" value="${srm.service.lookup-loginbroker.timeout.unit}" />
   </bean>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
     <description>PNFS manager communication stub</description>
-    <property name="destination" value="${dcache.service.pnfsmanager}"/>
-    <property name="timeout" value="#{ ${srmPnfsTimeout} * 1000 }"/>
+    <property name="destination" value="${srm.service.pnfsmanager}"/>
+    <property name="timeout" value="${srm.service.pnfsmanager.timeout}"/>
+    <property name="timeoutUnit" value="${srm.service.pnfsmanager.timeout.unit}"/>
     <property name="retryOnNoRouteToCell" value="true"/>
   </bean>
 
@@ -136,7 +144,7 @@
     <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
     <property name="protocolVersion" value="${srm.service.loginbroker.version}"/>
     <property name="protocolFamily" value="${srm.service.loginbroker.family}"/>
-    <property name="port" value="${port}"/>
+    <property name="port" value="${srm.net.port}"/>
     <property name="loginBrokers" value="${srm.service.loginbroker}"/>
   </bean>
 
@@ -144,10 +152,10 @@
       <constructor-arg>
           <bean class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
               <description>Persistence manager for authentication</description>
-              <constructor-arg value="${db.url}"/>
-              <constructor-arg value="${db.driver}"/>
-              <constructor-arg value="${db.user}"/>
-              <constructor-arg value="${db.password}"/>
+	      <constructor-arg value="${srm.db.url}"/>
+	      <constructor-arg value="${srm.db.driver}"/>
+	      <constructor-arg value="${srm.db.user}"/>
+	      <constructor-arg value="${srm.db.password}"/>
           </bean>
       </constructor-arg>
   </bean>
@@ -158,9 +166,9 @@
               <property name="cellStub" ref="gplazma-stub"/>
           </bean>
       </constructor-arg>
-      <constructor-arg value="1000"/> <!-- Cache size -->
-      <constructor-arg value="${srmAuthzCacheLifetime}"/>
-      <constructor-arg value="#{T(java.util.concurrent.TimeUnit).SECONDS}"/>
+      <constructor-arg value="${srm.service.gplazma.cache.size}"/> <!-- Cache size -->
+      <constructor-arg value="${srm.service.gplazma.cache.timeout}"/>
+      <constructor-arg value="#{T(java.util.concurrent.TimeUnit).valueOf('${srm.service.gplazma.cache.timeout.unit}')}"/>
   </bean>
 
   <bean id="authorization" class="diskCacheV111.srm.dcache.DCacheAuthorization">
@@ -185,17 +193,19 @@
     <property name="isSpaceManagerEnabled"
               value="${dcache.enable.spacemanager}"/>
     <property name="loginBrokerUpdatePeriod"
-              value="${srm.lookup.period}"/>
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.service.lookup-loginbroker.period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.service.lookup-loginbroker.period.unit}'))}" />
     <property name="numberOfDoorsInRandomSelection"
-              value="${srm.lookup.population-size}"/>
+              value="${srm.service.lookup-loginbroker.population-size}"/>
     <property name="useCustomGetHostByAddress"
-              value="${srmCustomGetHostByAddr}"/>
+              value="${srm.enable.custom-get-host-by-address}"/>
     <property name="ignoreClientProtocolOrder"
-              value="${srmIgnoreClientProtocolOrder}"/>
-    <property name="httpRootPath" value="${webdavRootPath}"/>
-    <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
+              value="${srm.enable.ignore-client-protocol-order}"/>
+    <property name="httpRootPath" value="${srm.service.webdav.root}"/>
+    <property name="xrootdRootPath" value="${srm.service.xrootd.root}"/>
     <property name="configuration" ref="config"/>
-    <property name="pinOnlineFiles" value="${srmPinOnlineFiles}"/>
+    <property name="pinOnlineFiles" value="${srm.enable.pin-online-files}"/>
     <property name="srmPutNotSupportedProtocols" value="${srm.protocols.disallowed.put}"/>
     <property name="srmGetNotSupportedProtocols" value="${srm.protocols.disallowed.get}"/>
     <property name="srmPreferredProtocols" value="${srm.protocols.preferred}"/>
@@ -204,199 +214,259 @@
 
   <bean id="config" class="org.dcache.srm.util.Configuration" depends-on="storage">
     <description>SRM configuration</description>
-    <property name="port" value="${port}"/>
-    <property name="timeout" value="${srmTimeout}"/>
-    <property name="srmHost" value="${srmHost}"/>
-    <property name="srmHostsAsArray" value="${localSrmHosts}"/>
+    <property name="port" value="${srm.net.port}"/>
+    <property name="timeout"
+	      value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+		     ${srm.limits.external-copy-script.timeout},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.external-copy-script.timeout.unit}'))}" />
+    <property name="srmHost" value="${srm.net.host}"/>
+    <property name="srmHostsAsArray" value="${srm.net.local-hosts}"/>
     <property name="sizeOfSingleRemoveBatch"
-              value="${srmSizeOfSingleRemoveBatch}"/>
+              value="${srm.limits.rm.single-remove-batch.size}"/>
     <property name="maxNumberOfLsEntries"
-              value="${srmLsMaxNumberOfEntries}"/>
+              value="${srm.limits.request.ls.entries.max}"/>
     <property name="maxNumberOfLsLevels"
-              value="${srmLsMaxNumberOfLevels}"/>
-    <property name="authzCacheLifetime" value="${srmAuthzCacheLifetime}"/>
-    <property name="srm_root" value="${pnfsSrmPath}"/>
-    <property name="buffer_size" value="${srmBufferSize}"/>
-    <property name="tcp_buffer_size" value="${srmTcpBufferSize}"/>
-    <property name="parallel_streams" value="${parallelStreams}"/>
-    <property name="debug" value="${srmDebug}"/>
+              value="${srm.limits.request.ls.levels.max}"/>
+    <property name="authzCacheLifetime"
+	      value="#{T(java.util.concurrent.TimeUnit).
+		     SECONDS.convert(
+		     ${srm.service.gplazma.cache.timeout},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.service.gplazma.cache.timeout.unit}'))}" />
+    <property name="srm_root" value="${srm.root}"/>
+    <property name="buffer_size" value="${srm.limits.transfer-buffer.size}"/>
+    <property name="tcp_buffer_size" value="${srm.limits.transfer-tcp-buffer.size}"/>
+    <property name="parallel_streams" value="${srm.limits.parallel-streams}"/>
+    <property name="debug" value="${srm.enable.external-copy-script.debug}"/>
     <property name="gsiftpclinet" value="globus-url-copy"/>
-    <property name="getLifetime" value="${srmGetLifeTime}"/>
-    <property name="bringOnlineLifetime" value="${srmBringOnlineLifeTime}"/>
-    <property name="putLifetime" value="${srmPutLifeTime}"/>
-    <property name="copyLifetime" value="${srmCopyLifeTime}"/>
+    <property name="getLifetime"
+	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.get.lifetime},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.get.lifetime.unit}'))}" />
+    <property name="bringOnlineLifetime"
+	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.bring-online.lifetime},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.bring-online.lifetime.unit}'))}" />
+    <property name="putLifetime"
+	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.put.lifetime},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.put.lifetime.unit}'))}" />
+    <property name="copyLifetime"
+	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.copy.lifetime},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.copy.lifetime.unit}'))}" />
     <property name="recursiveDirectoryCreation"
-              value="${RecursiveDirectoryCreation}"/>
-    <property name="advisoryDelete" value="${AdvisoryDelete}"/>
+              value="${srm.enable.recursive-directory-creation}"/>
+    <property name="advisoryDelete" value="${srm.enable.advisory-delete}"/>
     <property name="reserve_space_implicitely"
-              value="${srmImplicitSpaceManagerEnabled}"/>
+              value="${srm.enable.space-reservation.implicit}"/>
     <property name="space_reservation_strict"
-              value="${srmSpaceReservationStrict}"/>
+              value="${srm.enable.space-reservation.strict}"/>
 
-    <property name="jdbcUrl" value="${db.url}"/>
-    <property name="jdbcClass" value="${db.driver}"/>
-    <property name="jdbcUser" value="${db.user}"/>
-    <property name="jdbcPass" value="${db.password}"/>
-    <property name="jdbcPwdfile" value="${db.password.file}"/>
+    <property name="jdbcUrl"     value="${srm.db.url}"/>
+    <property name="jdbcClass"   value="${srm.db.driver}"/>
+    <property name="jdbcUser"    value="${srm.db.user}"/>
+    <property name="jdbcPass"    value="${srm.db.password}"/>
+    <property name="jdbcPwdfile" value="${srm.db.password.file}"/>
 
-    <property name="getReqTQueueSize" value="${srmGetReqThreadQueueSize}"/>
-    <property name="getThreadPoolSize" value="${srmGetReqThreadPoolSize}"/>
-    <property name="getMaxWaitingRequests" value="${srmGetReqMaxWaitingRequests}"/>
-    <property name="getReadyQueueSize" value="${srmGetReqReadyQueueSize}"/>
-    <property name="getMaxReadyJobs" value="${srmGetReqMaxReadyRequests}"/>
+    <property name="getReqTQueueSize" value="${srm.limits.request.get.scheduler.thread.queue.size}"/>
+    <property name="getThreadPoolSize" value="${srm.limits.request.get.scheduler.thread.pool.size}"/>
+    <property name="getMaxWaitingRequests" value="${srm.limits.request.get.scheduler.waiting.max}"/>
+    <property name="getReadyQueueSize" value="${srm.limits.request.get.scheduler.ready-queue.size}"/>
+    <property name="getMaxReadyJobs" value="${srm.limits.request.get.scheduler.ready.max}"/>
     <property name="getMaxNumOfRetries"
-              value="${srmGetReqMaxNumberOfRetries}"/>
-    <property name="getRetryTimeout" value="${srmGetReqRetryTimeout}"/>
+              value="${srm.limits.request.get.scheduler.retries.max}"/>
+    <property name="getRetryTimeout"
+ 	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.get.scheduler.retry-timeout},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.get.scheduler.retry-timeout.unit}'))}" />
     <property name="getMaxRunningBySameOwner"
-              value="${srmGetReqMaxNumOfRunningBySameOwner}"/>
+              value="${srm.limits.request.get.scheduler.same-owner-running.max}"/>
     <property name="getSwitchToAsynchronousModeDelay"
-              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime('${srmGetReqSwitchToAsynchronousModeDelay}')}"/>
-
+              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
+		     '${srm.limits.request.get.switch-to-async-mode.delay}',
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.get.switch-to-async-mode.delay.unit}'))}"/>
     <property name="bringOnlineReqTQueueSize"
-              value="${srmBringOnlineReqThreadQueueSize}"/>
+              value="${srm.limits.request.bring-online.scheduler.thread.queue.size}"/>
     <property name="bringOnlineThreadPoolSize"
-              value="${srmBringOnlineReqThreadPoolSize}"/>
+              value="${srm.limits.request.bring-online.scheduler.thread.pool.size}"/>
     <property name="bringOnlineMaxWaitingRequests"
-              value="${srmBringOnlineReqMaxWaitingRequests}"/>
+              value="${srm.limits.request.bring-online.scheduler.waiting.max}"/>
     <property name="bringOnlineReadyQueueSize"
-              value="${srmBringOnlineReqReadyQueueSize}"/>
+              value="${srm.limits.request.bring-online.scheduler.ready-queue.size}"/>
     <property name="bringOnlineMaxReadyJobs"
-              value="${srmBringOnlineReqMaxReadyRequests}"/>
+              value="${srm.limits.request.bring-online.scheduler.ready.max}"/>
     <property name="bringOnlineMaxNumOfRetries"
-              value="${srmBringOnlineReqMaxNumberOfRetries}"/>
+              value="${srm.limits.request.bring-online.scheduler.retries.max}"/>
     <property name="bringOnlineRetryTimeout"
-              value="${srmBringOnlineReqRetryTimeout}"/>
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.bring-online.scheduler.retry-timeout},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.bring-online.scheduler.retry-timeout.unit}'))}" />
     <property name="bringOnlineMaxRunningBySameOwner"
-              value="${srmBringOnlineReqMaxNumOfRunningBySameOwner}"/>
+              value="${srm.limits.request.bring-online.scheduler.same-owner-running.max}"/>
     <property name="bringOnlineSwitchToAsynchronousModeDelay"
-              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime('${srmBringOnlineReqSwitchToAsynchronousModeDelay}')}"/>
-
-    <property name="lsReqTQueueSize" value="${srmLsRequestThreadQueueSize}"/>
-    <property name="lsThreadPoolSize" value="${srmLsRequestThreadPoolSize}"/>
-    <property name="lsMaxWaitingRequests" value="${srmLsRequestMaxWaitingRequests}"/>
+              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
+		     '${srm.limits.request.bring-online.switch-to-async-mode.delay}',
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.bring-online.switch-to-async-mode.delay.unit}'))}"/>
+    <property name="lsReqTQueueSize" value="${srm.limits.request.ls.scheduler.thread.queue.size}"/>
+    <property name="lsThreadPoolSize" value="${srm.limits.request.ls.scheduler.thread.pool.size}"/>
+    <property name="lsMaxWaitingRequests" value="${srm.limits.request.ls.scheduler.waiting.max}"/>
     <property name="lsMaxNumOfRetries"
-              value="${srmLsRequestMaxNumberOfRetries}"/>
+              value="${srm.limits.request.ls.scheduler.retries.max}"/>
     <property name="lsRetryTimeout"
-              value="${srmLsRequestRetryTimeout}"/>
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.ls.scheduler.retry-timeout},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.ls.scheduler.retry-timeout.unit}'))}" />
     <property name="lsMaxRunningBySameOwner"
-              value="${srmLsRequestMaxNumberOfRunningBySameOwner}"/>
+              value="${srm.limits.request.ls.scheduler.same-owner-running.max}"/>
     <property name="lsSwitchToAsynchronousModeDelay"
-              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime('${srmLsRequestSwitchToAsynchronousModeDelay}')}"/>
-
-    <property name="putReqTQueueSize" value="${srmPutReqThreadQueueSize}"/>
-    <property name="putThreadPoolSize" value="${srmPutReqThreadPoolSize}"/>
-    <property name="putMaxWaitingRequests" value="${srmPutReqMaxWaitingRequests}"/>
-    <property name="putReadyQueueSize" value="${srmPutReqReadyQueueSize}"/>
-    <property name="putMaxReadyJobs" value="${srmPutReqMaxReadyRequests}"/>
-    <property name="putMaxNumOfRetries" value="${srmPutReqMaxNumberOfRetries}"/>
-    <property name="putRetryTimeout" value="${srmPutReqRetryTimeout}"/>
-    <property name="putMaxRunningBySameOwner" value="${srmPutReqMaxNumOfRunningBySameOwner}"/>
+              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
+		     '${srm.limits.request.ls.switch-to-async-mode.delay}',
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.ls.switch-to-async-mode.delay.unit}'))}"/>
+    <property name="putReqTQueueSize" value="${srm.limits.request.put.scheduler.thread.queue.size}"/>
+    <property name="putThreadPoolSize" value="${srm.limits.request.put.scheduler.thread.pool.size}"/>
+    <property name="putMaxWaitingRequests" value="${srm.limits.request.put.scheduler.waiting.max}"/>
+    <property name="putReadyQueueSize" value="${srm.limits.request.put.scheduler.ready-queue.size}"/>
+    <property name="putMaxReadyJobs" value="${srm.limits.request.put.scheduler.ready.max}"/>
+    <property name="putMaxNumOfRetries" value="${srm.limits.request.put.scheduler.retries.max}"/>
+    <property name="putRetryTimeout"
+	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.put.scheduler.retry-timeout},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.put.scheduler.retry-timeout.unit}'))}" />
+    <property name="putMaxRunningBySameOwner" value="${srm.limits.request.put.scheduler.same-owner-running.max}"/>
     <property name="putSwitchToAsynchronousModeDelay"
-              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime('${srmPutReqSwitchToAsynchronousModeDelay}')}"/>
-
-    <property name="copyReqTQueueSize" value="${srmCopyReqThreadQueueSize}"/>
-    <property name="copyThreadPoolSize" value="${srmCopyReqThreadPoolSize}"/>
-    <property name="copyMaxWaitingRequests" value="${srmCopyReqMaxWaitingRequests}"/>
-    <property name="copyMaxNumOfRetries" value="${srmCopyReqMaxNumberOfRetries}"/>
-    <property name="copyRetryTimeout" value="${srmCopyReqRetryTimeout}"/>
+              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
+		     '${srm.limits.request.put.switch-to-async-mode.delay}',
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.put.switch-to-async-mode.delay.unit}'))}"/>
+    <property name="copyReqTQueueSize" value="${srm.limits.request.copy.scheduler.thread.queue.size}"/>
+    <property name="copyThreadPoolSize" value="${srm.limits.request.copy.scheduler.thread.pool.size}"/>
+    <property name="copyMaxWaitingRequests" value="${srm.limits.request.copy.scheduler.waiting.max}"/>
+    <property name="copyMaxNumOfRetries" value="${srm.limits.request.copy.scheduler.retries.max}"/>
+    <property name="copyRetryTimeout"
+	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.request.copy.scheduler.retry-timeout},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.copy.scheduler.retry-timeout.unit}'))}" />
     <property name="copyMaxRunningBySameOwner"
-              value="${srmCopyReqMaxNumOfRunningBySameOwner}"/>
+              value="${srm.limits.request.copy.scheduler.same-owner-running.max}"/>
 
     <property name="maxQueuedJdbcTasksNum"
-              value="${srmMaxNumberOfJdbcTasksInQueue}"/>
+              value="${srm.limits.db.queue.size}"/>
     <property name="jdbcExecutionThreadNum"
-              value="${srmJdbcExecutionThreadNum}"/>
+              value="${srm.limits.db.thread.pool.size}"/>
     <property name="credentialsDirectory"
-              value="${srmUserCredentialsDirectory}"/>
-    <property name="overwrite" value="${overwriteEnabled}"/>
-    <property name="overwrite_by_default" value="${srmOverwriteByDefault}"/>
-    <property name="clientDNSLookup" value="${srmClientDNSLookup}"/>
+              value="${srm.user.credentials.directory}"/>
+    <property name="overwrite" value="${srm.enable.overwrite}"/>
+    <property name="overwrite_by_default" value="${srm.enable.overwrite-by-default}"/>
+    <property name="clientDNSLookup" value="${srm.enable.client.dns.lookup}"/>
     <property name="gsissl" value="true"/>
-    <property name="clientTransportByName" value="${srmClientTransport}"/>
-    <property name="qosPluginClass" value="${qosPluginClass}"/>
-    <property name="qosConfigFile" value="${qosConfigFile}"/>
+    <property name="clientTransportByName" value="${srm.client-transport}"/>
+    <property name="qosPluginClass" value="${srm.plugins.qos.class}"/>
+    <property name="qosConfigFile" value="${srm.plugins.qos.config.file}"/>
 
     <property name="storage" ref="storage"/>
     <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
     <property name="authorization" ref="authorization"/>
 
     <property name="databaseParametersForList.databaseEnabled"
-              value="${srmLsDatabaseEnabled}"/>
+              value="${srm.request.ls.enable.database}"/>
     <property name="databaseParametersForList.expiredRequestRemovalPeriod"
-              value="${srmLsExpiredRequestRemovalPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+		     ${srm.limits.request.ls.remove-expired-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.ls.remove-expired-period.unit}'))}" />
     <property name="databaseParametersForList.keepRequestHistoryPeriod"
-              value="${srmLsKeepRequestHistoryPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+		     ${srm.limits.request.ls.keep-history-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.ls.keep-history-period.unit}'))}" />
     <property name="databaseParametersForList.requestHistoryDatabaseEnabled"
-              value="${srmLsRequestHistoryDatabaseEnabled}"/>
+              value="${srm.request.ls.enable.history-database}"/>
     <property name="databaseParametersForList.cleanPendingRequestsOnRestart"
-              value="${srmLsCleanPendingRequestsOnRestart}"/>
+              value="${srm.request.ls.enable.clean-pending-on-restart}"/>
     <property name="databaseParametersForList.storeCompletedRequestsOnly"
-              value="${srmLsStoreCompletedRequestsOnly}"/>
+              value="${srm.request.ls.enable.store-complete-only}"/>
 
     <property name="databaseParametersForGet.databaseEnabled"
-              value="${srmGetDatabaseEnabled}"/>
+              value="${srm.request.get.enable.database}"/>
     <property name="databaseParametersForGet.expiredRequestRemovalPeriod"
-              value="${srmGetExpiredRequestRemovalPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+		     ${srm.limits.request.get.remove-expired-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.get.remove-expired-period.unit}'))}" />
     <property name="databaseParametersForGet.keepRequestHistoryPeriod"
-              value="${srmGetKeepRequestHistoryPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+		     ${srm.limits.request.get.keep-history-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.get.keep-history-period.unit}'))}" />
     <property name="databaseParametersForGet.requestHistoryDatabaseEnabled"
-              value="${srmGetRequestHistoryDatabaseEnabled}"/>
+              value="${srm.request.get.enable.history-database}"/>
     <property name="databaseParametersForGet.cleanPendingRequestsOnRestart"
-              value="${srmGetCleanPendingRequestsOnRestart}"/>
+              value="${srm.request.get.enable.clean-pending-on-restart}"/>
     <property name="databaseParametersForGet.storeCompletedRequestsOnly"
-              value="${srmGetStoreCompletedRequestsOnly}"/>
+              value="${srm.request.get.enable.store-complete-only}"/>
 
     <property name="databaseParametersForPut.databaseEnabled"
-              value="${srmPutDatabaseEnabled}"/>
+              value="${srm.request.put.enable.database}"/>
     <property name="databaseParametersForPut.expiredRequestRemovalPeriod"
-              value="${srmPutExpiredRequestRemovalPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+		     ${srm.limits.request.put.remove-expired-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.put.remove-expired-period.unit}'))}" />
     <property name="databaseParametersForPut.keepRequestHistoryPeriod"
-              value="${srmPutKeepRequestHistoryPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+		     ${srm.limits.request.put.remove-expired-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.put.remove-expired-period.unit}'))}" />
     <property name="databaseParametersForPut.requestHistoryDatabaseEnabled"
-              value="${srmPutRequestHistoryDatabaseEnabled}"/>
+              value="${srm.request.put.enable.history-database}"/>
     <property name="databaseParametersForPut.cleanPendingRequestsOnRestart"
-              value="${srmPutCleanPendingRequestsOnRestart}"/>
+              value="${srm.request.put.enable.clean-pending-on-restart}"/>
     <property name="databaseParametersForPut.storeCompletedRequestsOnly"
-              value="${srmPutStoreCompletedRequestsOnly}"/>
+              value="${srm.request.put.enable.store-complete-only}"/>
 
     <property name="databaseParametersForCopy.databaseEnabled"
-              value="${srmCopyDatabaseEnabled}"/>
+              value="${srm.request.copy.enable.database}"/>
     <property name="databaseParametersForCopy.expiredRequestRemovalPeriod"
-              value="${srmCopyExpiredRequestRemovalPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+		     ${srm.limits.request.copy.remove-expired-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.copy.remove-expired-period.unit}'))}" />
     <property name="databaseParametersForCopy.keepRequestHistoryPeriod"
-              value="${srmCopyKeepRequestHistoryPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+		     ${srm.limits.request.copy.keep-history-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.copy.keep-history-period.unit}'))}" />
     <property name="databaseParametersForCopy.requestHistoryDatabaseEnabled"
-              value="${srmCopyRequestHistoryDatabaseEnabled}"/>
+              value="${srm.request.copy.enable.history-database}"/>
     <property name="databaseParametersForCopy.cleanPendingRequestsOnRestart"
-              value="${srmCopyCleanPendingRequestsOnRestart}"/>
+              value="${srm.request.copy.enable.clean-pending-on-restart}"/>
     <property name="databaseParametersForCopy.storeCompletedRequestsOnly"
-              value="${srmCopyStoreCompletedRequestsOnly}"/>
+              value="${srm.request.copy.enable.store-complete-only}"/>
 
     <property name="databaseParametersForBringOnline.databaseEnabled"
-              value="${srmBringOnlineDatabaseEnabled}"/>
+              value="${srm.request.bring-online.enable.database}"/>
     <property name="databaseParametersForBringOnline.expiredRequestRemovalPeriod"
-              value="${srmBringOnlineExpiredRequestRemovalPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+		     ${srm.limits.request.bring-online.remove-expired-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.bring-online.remove-expired-period.unit}'))}"/>
     <property name="databaseParametersForBringOnline.keepRequestHistoryPeriod"
-              value="${srmBringOnlineKeepRequestHistoryPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+		     ${srm.limits.request.bring-online.keep-history-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.bring-online.keep-history-period.unit}'))}" />
     <property name="databaseParametersForBringOnline.requestHistoryDatabaseEnabled"
-              value="${srmBringOnlineRequestHistoryDatabaseEnabled}"/>
+              value="${srm.request.bring-online.enable.history-database}"/>
     <property name="databaseParametersForBringOnline.cleanPendingRequestsOnRestart"
-              value="${srmBringOnlineCleanPendingRequestsOnRestart}"/>
+              value="${srm.request.bring-online.enable.clean-pending-on-restart}"/>
     <property name="databaseParametersForBringOnline.storeCompletedRequestsOnly"
-              value="${srmBringOnlineStoreCompletedRequestsOnly}"/>
+              value="${srm.request.bring-online.enable.store-complete-only}"/>
 
     <property name="databaseParametersForReserve.databaseEnabled"
-              value="${srmReserveDatabaseEnabled}"/>
+              value="${srm.request.reserve-space.enable.database}"/>
     <property name="databaseParametersForReserve.expiredRequestRemovalPeriod"
-              value="${srmReserveExpiredRequestRemovalPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+		     ${srm.limits.request.reserve-space.remove-expired-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.reserve-space.remove-expired-period.unit}'))}" />
     <property name="databaseParametersForReserve.keepRequestHistoryPeriod"
-              value="${srmReserveKeepRequestHistoryPeriod}"/>
+              value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+		     ${srm.limits.request.reserve-space.keep-history-period},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.request.reserve-space.keep-history-period.unit}'))}" />
     <property name="databaseParametersForReserve.requestHistoryDatabaseEnabled"
-              value="${srmReserveRequestHistoryDatabaseEnabled}"/>
+              value="${srm.request.reserve-space.enable.history-database}"/>
     <property name="databaseParametersForReserve.cleanPendingRequestsOnRestart"
-              value="${srmReserveCleanPendingRequestsOnRestart}"/>
+              value="${srm.request.reserve-space.enable.clean-pending-on-restart}"/>
     <property name="databaseParametersForReserve.storeCompletedRequestsOnly"
-              value="${srmReserveStoreCompletedRequestsOnly}"/>
+              value="${srm.request.reserve-space.enable.store-complete-only}"/>
   </bean>
 
 
@@ -412,11 +482,14 @@
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
         init-method="start" destroy-method="stop">
     <description>Thread pool used by Jetty for request processing</description>
-    <property name="maxIdleTimeMs" value="${srmJettyThreadsMaxIdleTime}"/>
-    <property name="maxThreads" value="${srmJettyThreadsMax}"/>
-    <property name="minThreads" value="${srmJettyThreadsMin}"/>
+    <property name="maxIdleTimeMs"
+	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${srm.limits.jetty.threads.idle-time.max},
+		     T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.jetty.threads.idle-time.max.unit}'))}" />
+    <property name="maxThreads" value="${srm.limits.jetty.threads.max}"/>
+    <property name="minThreads" value="${srm.limits.jetty.threads.min}"/>
     <property name="name" value="jetty-srm"/>
-    <property name="maxQueued" value="${srmJettyThreadsMaxQueued}"/>
+    <property name="maxQueued" value="${srm.limits.jetty.threads.queued.max}"/>
   </bean>
 
   <bean id="banned-ciphers" class="org.dcache.util.Crypto"
@@ -428,7 +501,7 @@
         init-method="start" destroy-method="stop">
     <description>Jetty server hosting the SRM web application</description>
 
-    <property name="gracefulShutdown" value="${srmGracefulShutdown}"/>
+    <property name="gracefulShutdown" value="${srm.limits.jetty.graceful-shutdown}"/>
     <property name="threadPool" ref="thread-pool"/>
 
     <property name="connectors">
@@ -480,56 +553,68 @@
     <bean id="gsi-connector"
           class="org.dcache.util.JettyGSIConnector">
         <description>synchronous GSI connector</description>
-        <property name="port" value="${port}"/>
+        <property name="port" value="${srm.net.port}"/>
         <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
-
-        <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
-        <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+        <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
+        <property name="maxIdleTime"
+		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+			 ${srm.limits.jetty-connector.idle-time.max},
+			 T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.jetty-connector.idle-time.max.unit}'))}" />
         <property name="lowResourceMaxIdleTime"
-                  value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
-        <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
-
-        <property name="hostCertificatePath" value="${grid.hostcert.cert}"/>
-        <property name="hostKeyPath" value="${grid.hostcert.key}"/>
-        <property name="caCertificatePath" value="${grid.ca.path}"/>
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+			 ${srm.limits.jetty-connector.low-resource.max.idle-time},
+			 T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.jetty-connector.low-resource.max.idle-time.unit}'))}" />
+        <property name="acceptQueueSize" value="${srm.limits.jetty-connector.backlog}"/>
+        <property name="hostCertificatePath" value="${srm.authn.hostcert.cert}"/>
+        <property name="hostKeyPath" value="${srm.authn.hostcert.key}"/>
+        <property name="caCertificatePath" value="${srm.authn.capath}"/>
         <property name="autoFlush" value="true"/>
         <property name="encrypt" value="true"/>
         <property name="requireClientAuth" value="true"/>
         <property name="acceptNoClientCerts" value="false"/>
         <property name="gssMode" value="gsi"/>
-        <property name="handshakeTimeout" value="10000" />
-        <property name="hostCertRefreshInterval" value="${grid.hostcert.refresh}" />
-        <property name="hostCertRefreshIntervalUnit" value="SECONDS" />
-        <property name="trustAnchorRefreshInterval" value="${grid.ca.refresh}" />
-        <property name="trustAnchorRefreshIntervalUnit" value="SECONDS" />
+        <property name="handshakeTimeout"
+		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+			 ${srm.limits.jetty-connector.handshake.timeout},
+			 T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.jetty-connector.handshake.timeout.unit}'))}" />
+        <property name="hostCertRefreshInterval" value="${srm.authn.hostcert.refresh}" />
+        <property name="hostCertRefreshIntervalUnit" value="${srm.authn.hostcert.refresh.unit}" />
+        <property name="trustAnchorRefreshInterval" value="${srm.authn.capath.refresh}" />
+        <property name="trustAnchorRefreshIntervalUnit" value="${srm.authn.capath.refresh.unit}" />
         <property name="excludeCipherSuites" ref="banned-ciphers"/>
     </bean>
 
     <bean id="ssl-connector"
           class="org.dcache.util.JettyGSIConnector">
         <description>synchronous SSL connector</description>
-        <property name="port" value="${srm.ssl.port}"/>
+        <property name="port" value="${srm.net.ssl-port}"/>
         <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
-
-        <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
-        <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
+        <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
+        <property name="maxIdleTime"
+		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+			 ${srm.limits.jetty-connector.idle-time.max},
+			 T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.jetty-connector.idle-time.max.unit}'))}" />
         <property name="lowResourceMaxIdleTime"
-                  value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
-        <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
-
-        <property name="hostCertificatePath" value="${grid.hostcert.cert}"/>
-        <property name="hostKeyPath" value="${grid.hostcert.key}"/>
-        <property name="caCertificatePath" value="${grid.ca.path}"/>
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+			 ${srm.limits.jetty-connector.low-resource.max.idle-time},
+			 T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.jetty-connector.low-resource.max.idle-time.unit}'))}" />
+        <property name="acceptQueueSize" value="${srm.limits.jetty-connector.backlog}"/>
+        <property name="hostCertificatePath" value="${srm.authn.hostcert.cert}"/>
+        <property name="hostKeyPath" value="${srm.authn.hostcert.key}"/>
+        <property name="caCertificatePath" value="${srm.authn.capath}"/>
         <property name="autoFlush" value="true"/>
         <property name="encrypt" value="true"/>
         <property name="requireClientAuth" value="true"/>
         <property name="acceptNoClientCerts" value="false"/>
         <property name="gssMode" value="ssl"/>
-        <property name="handshakeTimeout" value="10000" />
-        <property name="hostCertRefreshInterval" value="${grid.hostcert.refresh}" />
-        <property name="hostCertRefreshIntervalUnit" value="SECONDS" />
-        <property name="trustAnchorRefreshInterval" value="${grid.ca.refresh}" />
-        <property name="trustAnchorRefreshIntervalUnit" value="SECONDS" />
+        <property name="handshakeTimeout"
+		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+			 ${srm.limits.jetty-connector.handshake.timeout},
+			 T(java.util.concurrent.TimeUnit).valueOf('${srm.limits.jetty-connector.handshake.timeout.unit}'))}" />
+        <property name="hostCertRefreshInterval" value="${srm.authn.hostcert.refresh}" />
+        <property name="hostCertRefreshIntervalUnit" value="${srm.authn.hostcert.refresh.unit}" />
+        <property name="trustAnchorRefreshInterval" value="${srm.authn.capath.refresh}" />
+        <property name="trustAnchorRefreshIntervalUnit" value="${srm.authn.capath.refresh.unit}" />
         <property name="excludeCipherSuites" ref="banned-ciphers"/>
     </bean>
 

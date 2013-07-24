@@ -3,119 +3,163 @@
 #
 
 onerror shutdown
-check -strong port
+
+check -strong srm.net.port
+check -strong srm.net.ssl-port
+check -strong srm.net.host
+check -strong srm.net.local-hosts
 check srm.net.listen
-check -strong grid.hostcert.refresh
-check -strong grid.ca.refresh
-check -strong srmClientTransport
-check -strong srmHost
-check -strong localSrmHosts
 
-check -strong db.driver
-check -strong db.url
-check -strong db.user
-check db.password
-check db.password.file
+check -strong srm.authn.capath
+check -strong srm.authn.capath.refresh
+check -strong srm.authn.capath.refresh.unit
 
-check -strong srmAuthzCacheLifetime
-check -strong parallelStreams
+check -strong srm.authn.hostcert.key
+check -strong srm.authn.hostcert.cert
+check -strong srm.authn.hostcert.refresh
+check -strong srm.authn.hostcert.refresh.unit
 
-check -strong srmTimeout
-check -strong srmBufferSize
-check -strong srmTcpBufferSize
-check -strong srmDebug
+check -strong srm.client-transport
 
-check -strong srmJettyConnectorAcceptors
-check -strong srmJettyConnectorMaxIdleTime
-check -strong srmJettyConnectorLowResourceMaxIdleTime
-check -strong srmJettyConnectorBackLog
-check -strong srmJettyThreadsMax
-check -strong srmJettyThreadsMin
-check -strong srmJettyThreadsMaxIdleTime
-check -strong srmJettyThreadsMaxQueued
+check -strong srm.db.driver
+check -strong srm.db.url
+check -strong srm.db.user
+check srm.db.password
+check srm.db.password.file
 
-check -strong srmGetReqThreadQueueSize
-check -strong srmGetReqThreadPoolSize
-check -strong srmGetReqMaxWaitingRequests
-check -strong srmGetReqReadyQueueSize
-check -strong srmGetReqMaxReadyRequests
-check -strong srmGetReqMaxNumberOfRetries
-check -strong srmGetReqRetryTimeout
-check -strong srmGetReqMaxNumOfRunningBySameOwner
-check -strong srmGetReqSwitchToAsynchronousModeDelay
+check -strong srm.service.gplazma.cache.size
+check -strong srm.service.gplazma.cache.timeout
+check -strong srm.service.gplazma.cache.timeout.unit
 
-check -strong srmBringOnlineReqThreadQueueSize
-check -strong srmBringOnlineReqThreadPoolSize
-check -strong srmBringOnlineReqMaxWaitingRequests
-check -strong srmBringOnlineReqReadyQueueSize
-check -strong srmBringOnlineReqMaxReadyRequests
-check -strong srmBringOnlineReqMaxNumberOfRetries
-check -strong srmBringOnlineReqRetryTimeout
-check -strong srmBringOnlineReqMaxNumOfRunningBySameOwner
-check -strong srmBringOnlineReqSwitchToAsynchronousModeDelay
+check -strong srm.limits.db.thread.pool.size
+check -strong srm.limits.db.queue.size
 
-check -strong srmPutReqThreadQueueSize
-check -strong srmPutReqThreadPoolSize
-check -strong srmPutReqMaxWaitingRequests
-check -strong srmPutReqReadyQueueSize
-check -strong srmPutReqMaxReadyRequests
-check -strong srmPutReqMaxNumberOfRetries
-check -strong srmPutReqRetryTimeout
-check -strong srmPutReqMaxNumOfRunningBySameOwner
-check -strong srmPutReqSwitchToAsynchronousModeDelay
+check -strong srm.limits.parallel-streams
 
-check -strong srmCopyReqThreadQueueSize
-check -strong srmCopyReqThreadPoolSize
-check -strong srmCopyReqMaxWaitingRequests
-check -strong srmCopyReqMaxNumberOfRetries
-check -strong srmCopyReqRetryTimeout
-check -strong srmCopyReqMaxNumOfRunningBySameOwner
+check -strong srm.limits.external-copy-script.timeout
+check -strong srm.limits.external-copy-script.timeout.unit
+check -strong srm.limits.transfer-buffer.size
+check -strong srm.limits.transfer-tcp-buffer.size
+check -strong srm.enable.external-copy-script.debug
 
+check -strong srm.limits.jetty-connector.acceptors
+check -strong srm.limits.jetty-connector.idle-time.max
+check -strong srm.limits.jetty-connector.idle-time.max.unit
+check -strong srm.limits.jetty-connector.low-resource.max.idle-time
+check -strong srm.limits.jetty-connector.low-resource.max.idle-time.unit
+check -strong srm.limits.jetty-connector.backlog
+check -strong srm.limits.jetty.graceful-shutdown
+check -strong srm.limits.jetty.threads.max
+check -strong srm.limits.jetty.threads.min
+check -strong srm.limits.jetty.threads.idle-time.max
+check -strong srm.limits.jetty.threads.idle-time.max.unit
+check -strong srm.limits.jetty.threads.queued.max
 
-check -strong srmLsMaxNumberOfEntries
-check -strong srmLsMaxNumberOfLevels
-check -strong srmLsRequestThreadQueueSize
-check -strong srmLsRequestThreadPoolSize
-check -strong srmLsRequestMaxWaitingRequests
-check -strong srmLsRequestMaxNumberOfRetries
-check -strong srmLsRequestRetryTimeout
-check -strong srmLsRequestMaxNumberOfRunningBySameOwner
-check -strong srmLsRequestSwitchToAsynchronousModeDelay
+check -strong srm.limits.request.scheduler.thread.queue.size
+check -strong srm.limits.request.scheduler.thread.pool.size
+check -strong srm.limits.request.scheduler.waiting.max
+check -strong srm.limits.request.scheduler.ready-queue.size
+check -strong srm.limits.request.scheduler.ready.max
+check -strong srm.limits.request.scheduler.retries.max
+check -strong srm.limits.request.scheduler.retry-timeout
+check -strong srm.limits.request.scheduler.retry-timeout.unit
+check -strong srm.limits.request.scheduler.same-owner-running.max
+check -strong srm.limits.request.remove-expired-period
+check -strong srm.limits.request.remove-expired-period.unit
+check -strong srm.limits.request.switch-to-async-mode.delay
+check -strong srm.limits.request.switch-to-async-mode.delay.unit
 
-check -strong srmGetLifeTime
-check -strong srmBringOnlineLifeTime
-check -strong srmPutLifeTime
-check -strong srmCopyLifeTime
+check -strong srm.limits.request.bring-online.scheduler.thread.queue.size
+check -strong srm.limits.request.bring-online.scheduler.thread.pool.size
+check -strong srm.limits.request.bring-online.scheduler.waiting.max
+check -strong srm.limits.request.bring-online.scheduler.ready-queue.size
+check -strong srm.limits.request.bring-online.scheduler.ready.max
+check -strong srm.limits.request.bring-online.scheduler.retries.max
+check -strong srm.limits.request.bring-online.scheduler.retry-timeout
+check -strong srm.limits.request.bring-online.scheduler.retry-timeout.unit
+check -strong srm.limits.request.bring-online.scheduler.same-owner-running.max
+check -strong srm.limits.request.bring-online.switch-to-async-mode.delay
+check -strong srm.limits.request.bring-online.switch-to-async-mode.delay.unit
 
-check -strong pnfsSrmPath
-check -strong xrootdRootPath
-check -strong webdavRootPath
+check -strong srm.limits.request.get.scheduler.thread.queue.size
+check -strong srm.limits.request.get.scheduler.thread.pool.size
+check -strong srm.limits.request.get.scheduler.waiting.max
+check -strong srm.limits.request.get.scheduler.ready-queue.size
+check -strong srm.limits.request.get.scheduler.ready.max
+check -strong srm.limits.request.get.scheduler.retries.max
+check -strong srm.limits.request.get.scheduler.retry-timeout
+check -strong srm.limits.request.get.scheduler.retry-timeout.unit
+check -strong srm.limits.request.get.scheduler.same-owner-running.max
+check -strong srm.limits.request.get.switch-to-async-mode.delay
+check -strong srm.limits.request.get.switch-to-async-mode.delay.unit
 
-check -strong srmPoolTimeout
-check -strong srmPnfsTimeout
-check -strong srmMoverTimeout
-check -strong remoteCopyMaxTransfers
-check -strong remoteHttpMaxTransfers
-check -strong remoteGsiftpMaxTransfers
-check remoteGsiftpIoQueue
+check -strong srm.limits.request.copy.scheduler.thread.queue.size
+check -strong srm.limits.request.copy.scheduler.thread.pool.size
+check -strong srm.limits.request.copy.scheduler.waiting.max
+check -strong srm.limits.request.copy.scheduler.retries.max
+check -strong srm.limits.request.copy.scheduler.retry-timeout
+check -strong srm.limits.request.copy.scheduler.retry-timeout.unit
+check -strong srm.limits.request.copy.scheduler.same-owner-running.max
 
-check -strong srmDbLogEnabled
+check -strong srm.limits.request.ls.entries.max
+check -strong srm.limits.request.ls.levels.max
+check -strong srm.limits.request.ls.scheduler.thread.queue.size
+check -strong srm.limits.request.ls.scheduler.thread.pool.size
+check -strong srm.limits.request.ls.scheduler.waiting.max
+check -strong srm.limits.request.ls.scheduler.retries.max
+check -strong srm.limits.request.ls.scheduler.retry-timeout
+check -strong srm.limits.request.ls.scheduler.retry-timeout.unit
+check -strong srm.limits.request.ls.scheduler.same-owner-running.max
+check -strong srm.limits.request.ls.switch-to-async-mode.delay
 
-check -strong RecursiveDirectoryCreation
-check -strong AdvisoryDelete
+check -strong srm.limits.request.put.scheduler.thread.queue.size
+check -strong srm.limits.request.put.scheduler.thread.pool.size
+check -strong srm.limits.request.put.scheduler.waiting.max
+check -strong srm.limits.request.put.scheduler.ready-queue.size
+check -strong srm.limits.request.put.scheduler.ready.max
+check -strong srm.limits.request.put.scheduler.retries.max
+check -strong srm.limits.request.put.scheduler.retry-timeout
+check -strong srm.limits.request.put.scheduler.retry-timeout.unit
+check -strong srm.limits.request.put.scheduler.same-owner-running.max
+check -strong srm.limits.request.put.switch-to-async-mode.delay
 
-check -strong overwriteEnabled
-check -strong srmOverwriteByDefault
+check -strong srm.limits.request.reserve-space.scheduler.thread.queue.size
+check -strong srm.limits.request.reserve-space.scheduler.thread.pool.size
+check -strong srm.limits.request.reserve-space.scheduler.waiting.max
+check -strong srm.limits.request.reserve-space.scheduler.ready-queue.size
+check -strong srm.limits.request.reserve-space.scheduler.ready.max
+check -strong srm.limits.request.reserve-space.scheduler.retries.max
+check -strong srm.limits.request.reserve-space.scheduler.retry-timeout
+check -strong srm.limits.request.reserve-space.scheduler.retry-timeout.unit
+check -strong srm.limits.request.reserve-space.scheduler.same-owner-running.max
 
-check -strong srmPinOnlineFiles
+check -strong srm.limits.request.get.lifetime
+check -strong srm.limits.request.get.lifetime.unit
+check -strong srm.limits.request.bring-online.lifetime
+check -strong srm.limits.request.bring-online.lifetime.unit
+check -strong srm.limits.request.put.lifetime
+check -strong srm.limits.request.put.lifetime.unit
+check -strong srm.limits.request.copy.lifetime
+check -strong srm.limits.request.copy.lifetime.unit
+check -strong srm.limits.request.keep-history-period
+check -strong srm.limits.request.keep-history-period.unit
 
-check -strong srmSizeOfSingleRemoveBatch
+check -strong srm.limits.rm.single-remove-batch.size
 
-check -strong srmUserCredentialsDirectory
+check -strong srm.root
+check -strong srm.service.xrootd.root
+check -strong srm.service.webdav.root
 
-check -strong dcache.service.pnfsmanager
-check -strong dcache.service.poolmanager
-check -strong dcache.service.gplazma
+check -strong srm.service.gplazma
+check -strong srm.service.gplazma.timeout
+check -strong srm.service.gplazma.timeout.unit
+
+check -strong srm.service.lookup-loginbroker
+check -strong srm.service.lookup-loginbroker.timeout
+check -strong srm.service.lookup-loginbroker.timeout.unit
+check -strong srm.service.lookup-loginbroker.period
+check -strong srm.service.lookup-loginbroker.period.unit
+check -strong srm.service.lookup-loginbroker.population-size
 
 check -strong srm.service.loginbroker
 check -strong srm.service.loginbroker.update-period
@@ -124,46 +168,36 @@ check -strong srm.service.loginbroker.update-threshold
 check -strong srm.service.loginbroker.version
 check -strong srm.service.loginbroker.family
 
-check -strong srm.lookup.loginbroker
-check -strong srm.lookup.period
-check -strong srm.lookup.timeout
-check -strong srm.lookup.population-size
+check -strong srm.service.pnfsmanager
+check -strong srm.service.pnfsmanager.timeout
+check -strong srm.service.pnfsmanager.timeout.unit
 
-check -strong srmPoolManagerTimeout
+check -strong srm.service.poolmanager
+check -strong srm.service.poolmanager.timeout
+check -strong srm.service.poolmanager.timeout.unit
 
-check -strong srmKeepRequestHistoryPeriod
 
-check -strong srmExpiredRequestRemovalPeriod
+check -strong srm.enable.advisory-delete
+check -strong srm.enable.client.dns.lookup
+check -strong srm.enable.custom-get-host-by-address
+check -strong srm.enable.ignore-client-protocol-order
+check -strong srm.enable.overwrite
+check -strong srm.enable.overwrite-by-default
+check -strong srm.enable.pin-online-files
+check -strong srm.enable.recursive-directory-creation
+check -strong srm.enable.spacemanager
+check -strong srm.enable.space-reservation.implicit
+check -strong srm.enable.space-reservation.strict
 
-check -strong srmRequestHistoryDatabaseEnabled
+check -strong srm.user.credentials.directory
 
-check -strong srmJdbcExecutionThreadNum
-check -strong srmMaxNumberOfJdbcTasksInQueue
-check -strong srmStoreCompletedRequestsOnly
-check -strong srmDatabaseEnabled
+check -strong srm.request.enable.store-complete-only
+check -strong srm.request.enable.database
+check -strong srm.request.enable.history-database
+check -strong srm.request.enable.clean-pending-on-restart
 
-check -strong srmCleanPendingRequestsOnRestart
-
-check -strong srmClientDNSLookup
-
-check -strong srmGracefulShutdown
-
-check -strong srmCustomGetHostByAddr
-check -strong srmIgnoreClientProtocolOrder
-check -strong srmImplicitSpaceManagerEnabled
-check -strong srmSpaceReservationStrict
-check -strong dcache.enable.spacemanager
-
-check qosPluginClass
-check qosConfigFile
-
-check -strong dcache.paths.share
-
-check -strong srm.ssl.port
-
-check -strong grid.hostcert.key
-check -strong grid.hostcert.cert
-check -strong grid.ca.path
+check srm.plugins.qos.class
+check srm.plugins.qos.config.file
 
 check srm.protocols.disallowed.get
 check srm.protocols.disallowed.put
@@ -171,13 +205,16 @@ check srm.protocols.preferred
 
 check srm.security.ciphers
 
+check -strong dcache.paths.share
+
 #
 # Force space manager related settings to off if space manager is
 # disabled.
 #
 define env srmSpaceManagerOff.exe endExe
-  set env srmImplicitSpaceManagerEnabled false
-  set env srmSpaceReservationStrict false
+  set env srm.enable.space-reservation.implicit false
+  set env srm.enable.space-reservation.strict false
+  set env srm.enable.spacemanager false
 endExe
 
 onerror continue

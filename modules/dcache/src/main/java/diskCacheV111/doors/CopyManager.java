@@ -71,17 +71,20 @@ public class CopyManager extends AbstractCell
         Args args = getArgs();
         _localAddr = new InetSocketAddress(InetAddress.getLocalHost(), 0);
 
-        _moverTimeout = args.getLongOption("mover_timeout") * 1000;
+        _moverTimeout = TimeUnit.MILLISECONDS.convert(args.getLongOption("mover_timeout"),
+                                                      TimeUnit.valueOf(args.getOpt("mover_timeout_unit")));
         _maxTransfers = args.getIntOption("max_transfers");
 
         _pnfs = new PnfsHandler(this, new CellPath("PnfsManager"));
         _poolManagerStub =
             new CellStub(this,
                          new CellPath(args.getOpt("poolManager")),
-                         args.getLongOption("pool_manager_timeout") * 1000);
+                         args.getLongOption("pool_manager_timeout"),
+                         TimeUnit.valueOf(args.getOpt("pool_manager_timeout_unit")));
         _poolStub =
             new CellStub(this, null,
-                         args.getLongOption("pool_timeout") * 1000);
+                         args.getLongOption("pool_timeout"),
+                         TimeUnit.valueOf(args.getOpt("pool_timeout_unit")));
     }
 
     public final static String hh_set_max_transfers = "<#max transfers>";

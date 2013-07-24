@@ -1142,14 +1142,14 @@ public class      CellShell
          }
          if( value == null ) {
              throw new
-                     CommandException(1, "variable not define : " + varName);
+                     CommandException(1, "variable is not defined : " + varName);
          }
 
          if( strong ){
              String strValue = value.toString() ;
              if( strValue.trim().equals("") ) {
                  throw new
-                         CommandException(2, "variable defined but empty : " + varName);
+                         CommandException(2, "variable is defined but empty : " + varName);
              }
          }
       }
@@ -1206,7 +1206,7 @@ public class      CellShell
       }
 
       if (input == null) {
-          throw new CommandException("Variable not defined: " + varName);
+          throw new CommandException("Variable is not defined: " + varName);
       }
 
       try {
@@ -1994,7 +1994,7 @@ public class      CellShell
         } else if (scheme.equals("env")) {
             Object o = _environment.get(ssp);
             if (o == null) {
-                throw new IOException("Variable not defined: " + ssp);
+                throw new IOException("Variable is not defined: " + ssp);
             }
             return new StringReader(o.toString());
         } else if (scheme.equals("cell")) {

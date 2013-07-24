@@ -109,6 +109,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.poolManager.CostModule;
@@ -209,7 +210,6 @@ import org.dcache.util.list.DirectoryListSource;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -244,7 +244,7 @@ public final class Storage
      * loops.
      */
     private final static long TRANSIENT_FAILURE_DELAY =
-        MILLISECONDS.toMillis(10);
+        TimeUnit.MILLISECONDS.toMillis(10);
     private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
@@ -458,6 +458,11 @@ public final class Storage
     public static long parseTime(String s)
     {
         return s.equals(INFINITY) ? Long.MAX_VALUE : Long.parseLong(s);
+    }
+
+    public static long parseTime(String s, TimeUnit unit)
+    {
+        return s.equals(INFINITY) ? Long.MAX_VALUE : TimeUnit.MILLISECONDS.convert(Long.parseLong(s),unit);
     }
 
     @Required
