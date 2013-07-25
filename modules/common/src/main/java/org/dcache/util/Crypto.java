@@ -1,8 +1,11 @@
 package org.dcache.util;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static java.util.Arrays.asList;
@@ -16,6 +19,20 @@ public class Crypto
     {
         DISABLE_BROKEN_DH,
         DISABLE_EC
+    }
+
+    private static final Splitter CIPHER_FLAG_SPLITTER =
+            Splitter.on(",").omitEmptyStrings().trimResults();
+
+    private static String VERSION = System.getProperty("java.version");
+
+    private Crypto()
+    {
+    }
+
+    static void setJavaVersion(String version)
+    {
+        VERSION = version;
     }
 
     /* The following is a list of cipher suites that are problematic
@@ -267,23 +284,22 @@ public class Crypto
      */
     public static String[] getBannedCipherSuitesFromConfigurationValue(String value)
     {
-        String[] values = value.split(",");
-        CipherFlag[] flags = new CipherFlag[values.length];
-        for (int i = 0; i < values.length; i++) {
-            flags[i] = CipherFlag.valueOf(values[i]);
+        List<String> values = Lists.newArrayList(CIPHER_FLAG_SPLITTER.split(value));
+        CipherFlag[] flags = new CipherFlag[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            flags[i] = CipherFlag.valueOf(values.get(i));
         }
         return getBannedCipherSuites(flags);
     }
 
     public static String[] getBannedCipherSuites(CipherFlag[] flags)
     {
-        String version = System.getProperty("java.version");
         Set<String> banned = new HashSet<>();
         for (CipherFlag flag : flags) {
             switch (flag) {
             case DISABLE_BROKEN_DH:
-                if (version.startsWith("1.7.0_")) {
-                    Integer update = Ints.tryParse(version.substring(6));
+                if (VERSION.startsWith("1.7.0_")) {
+                    Integer update = Ints.tryParse(VERSION.substring(6));
                     if (update != null && update > 5) {
                         banned.addAll(asList(DH_CIPHERS));
                     }
