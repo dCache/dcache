@@ -105,7 +105,7 @@ public class SrmMkdir {
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
 		response.setReturnStatus(returnStatus);
 		if(request==null) {
-		return getFailedResponse(" null request passed to SrmRm()");
+		return getFailedResponse("null request passed to srmMkdir()");
 		}
 		org.apache.axis.types.URI surl = request.getSURL();
 		try {

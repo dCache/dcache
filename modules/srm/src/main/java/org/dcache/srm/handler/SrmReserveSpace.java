@@ -169,7 +169,7 @@ public class SrmReserveSpace {
                 accessLatency,
                 description,
                client_host);
-
+           reserveRequest.applyJdc();
             reserveRequest.schedule();
          return reserveRequest.getSrmReserveSpaceResponse();
        }

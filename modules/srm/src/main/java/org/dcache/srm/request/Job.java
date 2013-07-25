@@ -114,8 +114,9 @@ import org.dcache.srm.util.JDC;
 
 
 /**
- *
- * @author  timur
+ * The base class for all scheduled activity within SRM.  An instance of this
+ * class represents either a complete SRM operation (Request), or an individual
+ * file within an operation (FileRequest).
  */
 public abstract class Job  {
 
@@ -1232,10 +1233,11 @@ public abstract class Job  {
         this.retryTimer = retryTimer;
     }
 
-    public void applyJdc()
+    public JDC applyJdc()
     {
-        jdc.apply();
-        JDC.push(String.valueOf(id));
+        JDC current = jdc.apply();
+        JDC.appendToSession(String.valueOf(id));
+        return current;
     }
 
     /**

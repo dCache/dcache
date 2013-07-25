@@ -133,12 +133,8 @@ public class SrmStatusOfReserveSpaceRequest {
                         TStatusCode.SRM_INVALID_REQUEST);
             }
             ReserveSpaceRequest request = ReserveSpaceRequest.getRequest(requestId);
-            if(request == null) {
-                return getFailedResponse(
-                        "srmStatusOfReserveSpaceRequest: reserve space request for token="+
-                        requestIdStr+" not found",
-                        TStatusCode.SRM_INVALID_REQUEST);
-            }
+            request.applyJdc();
+
             SrmStatusOfReserveSpaceRequestResponse resp = request.getSrmStatusOfReserveSpaceRequestResponse();
             return resp;
        }

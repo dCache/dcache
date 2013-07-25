@@ -2,37 +2,59 @@ package org.dcache.srm.util;
 
 import org.slf4j.MDC;
 
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.dcache.commons.util.NDC;
+
+import static com.google.common.base.Strings.nullToEmpty;
+import static diskCacheV111.util.Base64.byteArrayToBase64;
 
 /**
  * The SRM Job/request Diagnostic Context, a utility class for working
- * with the Log4j NDC and MDC.
- *
- * Notice that the MDC is automatically inherited by child threads
- * upon creation. Thus the session identifier is inherited. The same
- * is not true for the NDC, which needs to be explicitly
- * copied. Special care must be taken when using shared thread pools,
- * as this can span several cells. For those the MDC should be
- * initialised per task, not per thread.
+ * with dCache NDC.
  *
  * The class serves two purposes:
  *
- * - It contains a number of static methods for manipulating the MDC
- *   and NDC.
+ * - It contains a number of static methods for manipulating the NDC.
  *
- * - JDC instances capture the Job related MDC values and the NDC.
+ * - JDC instances capture the Job related NDC values.
  *   These can be applied to other threads. This is useful when using
  *   worker threads that should inherit the context of the task
  *   creation point.
+ *
+ * This class provides AutoCloseable, which allows the try-with-resource
+ * pattern; for example, to temporarily restore a captured context (e.g., when
+ * processing scheduled activity from thread-pool):
+ *
+ *     try (JDC ignored = otherJdc.apply()) {
+ *         // logging now with otherJdc context
+ *     }
+ *     // logging now with origin context
+ *
+ * or, when creating a new session ID:
+ *
+ *     try (JDC ignored = JDC.createSession("my-session")) {
+ *        // logging now with session.
+ *     }
+ *     // logging with original context
+ *
+ * or simply to roll-back any potential changes to the context:
+ *
+ *     try (JDC ignored = new JDC()) {
+ *         // activity that could modify JDC
+ *     }
+ *     // logging now with original context
  */
-public class JDC
+public class JDC implements AutoCloseable
 {
+    // FIXME this value must be the same as dmg.cells.nucleus.CDC.MDC_SESSION
+    // as the mapping JDC --> CDC currently requires this coincidence.
     public final static String MDC_SESSION = "cells.session";
 
-    private final static String DELIM = ":";
-    private final static long THREE_YEARS = 3*365*24*3600*1000;
-
-    private static long _last;
+    private static final String _epoc = createEpocString() + ":";
+    private static final AtomicLong _id = new AtomicLong();
 
     private final NDC _ndc;
     private final String _session;
@@ -60,25 +82,26 @@ public class JDC
         }
     }
 
-    /**
-     * Applies the srm job diagnostic context to the calling thread.  If
-     * <code>clone</code> is false, then the <code>apply</code> can
-     * only be called once for this JDC. If <code>clone</code> is
-     * true, then the JDC may be applied several times, however the
-     * operation is more expensive.
-     */
-    public void apply()
+
+    @Override
+    public void close()
     {
-        setMdc(MDC_SESSION, _session);
-        if (_ndc == null) {
-            NDC.clear();
-        } else {
-            NDC.set(_ndc);
-        }
+        apply();
     }
 
     /**
-     * Returns the session identifier stored in the MDC of the calling
+     * Applies the saved context to the calling thread.
+     */
+    public JDC apply()
+    {
+        JDC jdc = new JDC();
+        setMdc(MDC_SESSION, _session);
+        NDC.set(_ndc);
+        return jdc;
+    }
+
+    /**
+     * Returns this session's identifier.  The value is bound to the current
      * thread.
      */
     static public String getSession()
@@ -87,47 +110,81 @@ public class JDC
     }
 
     /**
-     * Sets the session in the JDC for the calling thread.
+     * Sets a session identifier.  If session has not been set then the
+     * session is pushed onto the NDC.  If the session has already been set
+     * then the existing NDC value is updated with the new session identifier.
      *
-     * @param session Session identifier.
+     * @param id Session identifier.
      */
-    static public void setSession(String session)
+    static public void setSession(String id)
     {
-        setMdc(MDC_SESSION, session);
+        Deque<String> items = new LinkedList<>();
+
+        String oldId = MDC.get(MDC_SESSION);
+        if (oldId != null) {
+            String popped = NDC.pop();
+
+            while (popped != null && !popped.equals(oldId)) {
+                items.push(popped);
+                popped = NDC.pop();
+            }
+        }
+
+        NDC.push(id);
+
+        while (items.peek() != null) {
+            NDC.push(items.pop());
+        }
+
+        setMdc(MDC_SESSION, id);
     }
 
     /**
-     * Creates the session in the JDC for the calling thread.
+     * Creates a session identifier and pushes this onto the NDC.
+     * The ID has two parts: {@literal <SRM REQUEST>:<SRM OPERATION>}, where
+     * {@literal <SRM REQUEST>} identifies a specific SOAP interaction and
+     * {@literal <SRM OPERATION>} identifies an operation that may span multiple
+     * {@literal <SRM REQUEST>}s.  For example, uploading a single file will
+     * have exactly one {@literal <SRM OPERATION>} but multiple
+     * {@literal <SRM REQUEST>}s, consisting of exactly one
+     * {@literal srmPrepareToPut} request, zero or more
+     * {@literal srmStatusOfPutRequest} requests and exactly one
+     * {@literal srmPutDone} request.
      *
-     * @param prefix Prefix for the newly created session identifier.
+     * By making this distinction explicit in the Session-ID format, an admin
+     * may search for session IDs that match the complete session-ID when
+     * looking for information about a specific SRM request, or for the
+     * {@literal <SRM OPERATION>}-part when looking for all SRM requests for a
+     * specific SRM operation.
+     *
+     * @param request Information identifying the SRM request
+     * @return a JDC capturing the previous context
      */
-    static public void createSession(String prefix)
+    static public JDC createSession(String request)
     {
-        setSession(prefix + createUniq());
-        NDC.push(getSession());
-    }
-
-    static public String createUniq()
-    {
-        _last = Math.max(_last + 1, System.currentTimeMillis());
-        return Long.toString(_last % THREE_YEARS);
-    }
-
-    static public void push(String jid)
-    {
-        assert getSession() != null;
-
-        setSession(getSession() + DELIM + jid);
-        NDC.pop();
-        NDC.push(getSession());
+        JDC current = new JDC();
+        setSession(_epoc + Long.toString(_id.incrementAndGet()) + ":" + request);
+        return current;
     }
 
     /**
-     * Clears all cells related MDC entries and the NDC.
+     * Add {@literal <SRM OPERATION>} information to the session ID.
+     * The new session ID is a combination of the existing session ID (if any)
+     * and the suffix.  The NDC is updated accordingly.
      */
-    static public void clear()
+    static public void appendToSession(String suffix)
     {
-        MDC.remove(MDC_SESSION);
-        NDC.clear();
+        setSession(nullToEmpty(getSession()) + ":" + suffix);
+    }
+
+    static private String createEpocString()
+    {
+        long time = System.currentTimeMillis();
+        byte hash1 = (byte)(time ^ (time >>> 8) ^ (time >>> 24) ^ (time >>> 40)
+                ^ (time >>> 56));
+        byte hash2 = (byte)((time >>> 16) ^ (time >>> 32) ^ (time >>> 48));
+        String id = byteArrayToBase64(new byte[] {hash1, hash2});
+        int idx = id.indexOf('=');
+        return idx == -1 ? id : id.substring(0, idx);
     }
 }

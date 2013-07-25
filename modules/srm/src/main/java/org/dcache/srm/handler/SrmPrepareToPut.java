@@ -273,6 +273,7 @@ public class SrmPrepareToPut {
                     retentionPolicy,
                     accessLatency,
                     request.getUserRequestDescription());
+	    r.applyJdc();
 	    if (request.getStorageSystemInfo()!=null) {
 		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) {
 			    if (request.getStorageSystemInfo().getExtraInfoArray().length>0) {

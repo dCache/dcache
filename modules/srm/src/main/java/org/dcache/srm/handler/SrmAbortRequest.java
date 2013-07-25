@@ -23,6 +23,7 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -130,6 +131,7 @@ public class SrmAbortRequest {
         }
 
         Job job = Job.getJob(requestId, Job.class);
+        job.applyJdc();
 
         if(job instanceof ContainerRequest) {
             // FIXME we do this to make the srm update the status of the request if it changed

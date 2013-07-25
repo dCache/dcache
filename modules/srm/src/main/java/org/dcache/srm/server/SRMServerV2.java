@@ -214,24 +214,26 @@ public class SRMServerV2 implements ISRM  {
 
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
         long startTimeStamp = System.currentTimeMillis();
-        JDC.createSession("v2:"+requestName+":");
-
         Class<?> requestClass = request.getClass();
-        //count requests of each type
-        try {
+        // requestName values all start "srm".  This is redundant, so may
+        // be removed when creating the session id.  The initial character is
+        // converted to lowercase, so "srmPrepareToPut" becomes "prepareToPut".
+        try (JDC ignored = JDC.createSession("srm2:" +
+                Character.toLowerCase(requestName.charAt(3)) +
+                requestName.substring(4))) {
+            //count requests of each type
             srmServerCounters.incrementRequests(requestClass);
             String capitalizedRequestName =
                     Character.toUpperCase(requestName.charAt(0))+
                     requestName.substring(1);
             try {
-                log.debug("Entering SRMServerV2."+requestName+"()");
                 String authorizationID;
                 try {
                     Method getAuthorizationID =
                             requestClass.getMethod("getAuthorizationID",(Class[])null);
                     if(getAuthorizationID !=null) {
                         authorizationID = (String)getAuthorizationID.invoke(request,(Object[])null);
-                        log.debug("SRMServerV2."+requestName+"() : authorization id"+authorizationID);
+                        log.debug("authorization id {}", authorizationID);
                     }
                 } catch(Exception e){
                     log.error("getting authorization id failed",e);
@@ -249,7 +251,7 @@ public class SRMServerV2 implements ISRM  {
                         = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
                                         pkiVerifier);
                     String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
-                    log.debug("SRMServerV2."+requestName+"() : role is "+role);
+                    log.debug("role is "+role);
                     requestCredential = srmAuth.getRequestCredential(userCred,role);
                     user              = srmAuth.getRequestUser(requestCredential,
                                                                null,
@@ -273,7 +275,7 @@ public class SRMServerV2 implements ISRM  {
                             TStatusCode.SRM_AUTHENTICATION_FAILURE,
                             "SRM Authentication failed");
                 }
-                log.debug("About to call SRMServerV2"+requestName+"()");
+                log.debug("About to call handler");
                 Class<?> handlerClass;
                 Constructor<?> handlerConstructor;
                 Object handler;
@@ -327,7 +329,6 @@ public class SRMServerV2 implements ISRM  {
         } finally {
             srmServerGauges.update(requestClass,
                     System.currentTimeMillis() - startTimeStamp);
-            JDC.clear();
         }
     }
 

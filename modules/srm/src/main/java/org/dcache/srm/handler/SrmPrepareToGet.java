@@ -236,6 +236,7 @@ public class SrmPrepareToGet {
                     configuration.getGetMaxNumOfRetries(),
                     request.getUserRequestDescription(),
                     client_host);
+            r.applyJdc();
 
 	    if (request.getStorageSystemInfo()!=null) {
 		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) {

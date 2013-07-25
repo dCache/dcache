@@ -17,6 +17,7 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.sql.LsFileRequestStorage;
 import org.dcache.srm.request.sql.LsRequestStorage;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest;
 import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -115,6 +116,7 @@ public class SrmStatusOfLsRequest {
                                                  TStatusCode.SRM_FAILURE);
                 }
                 LsRequest request = Job.getJob(requestId, LsRequest.class);
+                request.applyJdc();
 
                 return request.getSrmStatusOfLsRequestResponse();
         }

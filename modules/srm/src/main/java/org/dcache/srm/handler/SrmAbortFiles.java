@@ -26,6 +26,7 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
@@ -149,6 +150,7 @@ public class SrmAbortFiles {
         }
 
         ContainerRequest request = Job.getJob(requestId, ContainerRequest.class);
+        request.applyJdc();
 
         URI[] surls;
         if(  srmAbortFilesRequest.getArrayOfSURLs() == null ){

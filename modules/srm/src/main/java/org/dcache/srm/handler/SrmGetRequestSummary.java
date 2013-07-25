@@ -22,6 +22,7 @@ import org.dcache.srm.request.Job;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfTRequestSummary;
 import org.dcache.srm.v2_2.SrmGetRequestSummaryRequest;
 import org.dcache.srm.v2_2.SrmGetRequestSummaryResponse;
@@ -130,8 +131,10 @@ public class SrmGetRequestSummary {
                 requestIds[i] = new Long(requestToken);
                 ContainerRequest request = Job.getJob(requestIds[i], ContainerRequest.class);
 
-                // FIXME we do this to make the srm update the status of the request if it changed
-                requestSummaries[i] = request.getRequestSummary();
+                try (JDC ignored = request.applyJdc()) {
+                    // FIXME we do this to make the srm update the status of the request if it changed
+                    requestSummaries[i] = request.getRequestSummary();
+                }
             } catch (NumberFormatException nfe){
                 requestSummaries[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_INVALID_REQUEST,

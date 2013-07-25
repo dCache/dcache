@@ -184,6 +184,7 @@ public class SrmCopy {
                     request.getUserRequestDescription(),
                     client_host,
                     overwriteMode);
+            r.applyJdc();
             if (request.getSourceStorageSystemInfo()!=null) {
                 if ( request.getSourceStorageSystemInfo().getExtraInfoArray()!=null) {
                     if (request.getSourceStorageSystemInfo().getExtraInfoArray().length>0) {

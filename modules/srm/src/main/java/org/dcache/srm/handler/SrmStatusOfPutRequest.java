@@ -145,6 +145,7 @@ public class SrmStatusOfPutRequest {
         }
 
         PutRequest putRequest = Job.getJob(requestId, PutRequest.class);
+        putRequest.applyJdc();
 
         if( statusOfPutRequestRequest.getArrayOfTargetSURLs() == null ){
             return putRequest.getSrmStatusOfPutRequestResponse();

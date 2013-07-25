@@ -177,6 +177,7 @@ public class SrmExtendFileLifeTime {
 
         ContainerRequest containerRequest = Job.getJob(requestId,
                 ContainerRequest.class);
+        containerRequest.applyJdc();
 
         long newLifetimeInMillis;
         long configMaximumLifetime;
@@ -288,12 +289,12 @@ public class SrmExtendFileLifeTime {
         throws SRMException, URISyntaxException
     {
         if(request==null) {
-            return getFailedResponse(" null request passed to SrmRm()",
+            return getFailedResponse("null request passed to srmExtendFileLifeTime()",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
         surls   =request.getArrayOfSURLs().getUrlArray();
         if (surls==null ) {
-            return getFailedResponse(" surls array is not defined",
+            return getFailedResponse("surls array is not defined",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
         newFileLifetime = request.getNewFileLifeTime();
