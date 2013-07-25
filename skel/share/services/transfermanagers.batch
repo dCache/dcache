@@ -29,12 +29,12 @@ check -strong transfermanagers.limits.remote-gsiftp.transfers.max
 
 check -strong transfermanagers.enable.log-to-database
 
-check -strong transfermanagers.db.driver
-check -strong transfermanagers.db.url
-check -strong transfermanagers.db.user
+check -strong db.driver
+check -strong db.url
+check -strong db.user
 
-check transfermanagers.db.password
-check transfermanagers.db.password.file
+check db.password
+check db.password.file
 
 check transfermanagers.limits.remote-gsiftp.io-queue
 
@@ -84,11 +84,11 @@ create diskCacheV111.services.RemoteTransferManager ${cell.name} \
         -mover_timeout_unit=${transfermanagers.service.mover.timeout.unit} \
         -max_transfers=${transfermanagers.limits.remote-gsiftp.transfers.max} \
         -io-queue=${transfermanagers.limits.remote-gsiftp.io-queue} \
-        -jdbcUrl=${transfermanagers.db.url} \
-        -jdbcDriver=${transfermanagers.db.driver} \
-        -dbUser=${transfermanagers.db.user} \
-        -dbPass=${transfermanagers.db.password} \
-        -pgPass=${transfermanagers.db.password.file}   \
+        -jdbcUrl=${db.url} \
+        -jdbcDriver=${db.driver} \
+        -dbUser=${db.user} \
+        -dbPass=${db.password} \
+        -pgPass=${db.password.file}   \
         -doDbLog=${transfermanagers.enable.log-to-database} \
         -poolManager=${remoteTransferManagerPoolManager} \
         -poolProxy=${remoteTransferManagerPoolProxy} \

@@ -21,11 +21,11 @@ check -strong srm.authn.hostcert.refresh.unit
 
 check -strong srm.client-transport
 
-check -strong srm.db.driver
-check -strong srm.db.url
-check -strong srm.db.user
-check srm.db.password
-check srm.db.password.file
+check -strong db.driver
+check -strong db.url
+check -strong db.user
+check db.password
+check db.password.file
 
 check -strong srm.service.gplazma.cache.size
 check -strong srm.service.gplazma.cache.timeout
