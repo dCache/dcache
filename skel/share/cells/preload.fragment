@@ -16,6 +16,14 @@ onerror shutdown
 
 exec file:${dcache.paths.share}/services/cns.batch -ifok=is_broker
 
+
+#
+# Instantiate cell access control manager in broker domain
+##############################################################
+
+exec file:${dcache.paths.share}/cells/acm.fragment -ifok=is_broker
+
+
 #
 # Instantiate any static information for info service
 ##############################################################

@@ -1,38 +1,35 @@
 # Starts admin door
 
 onerror shutdown
-check -strong knownUsersFile
-check -strong serverKeyFile
-check -strong hostKeyFile
-check -strong userPasswordFile
-check -strong AccessControlCell
-check -strong port
-check -strong admin.colors.enable
+check -strong ssh1.paths.known-users
+check -strong ssh1.paths.server-key
+check -strong ssh1.paths.host-key
+check -strong ssh1.paths.user-password
+check -strong ssh1.net.port
+check -strong ssh1.net.listen
+check -strong ssh1.enable.colors
 check -strong cell.name
-check adminHistoryFile
-check admin.net.listen
-
-
+check ssh1.paths.history
 
 define env failMissingServerKey.exe endDefine
-   say -level=esay "The server key file ${serverKeyFile} is missing.  Please generate it with:"
-   say -level=esay "     ssh-keygen -b 768 -t rsa1 -f ${serverKeyFile} -N \"\""
+   say -level=esay "The server key file ${ssh1.paths.server-key} is missing.  Please generate it with:"
+   say -level=esay "     ssh-keygen -b 768 -t rsa1 -f ${ssh1.paths.server-key} -N \"\""
    exit 1
 endDefine
 onerror continue
-test -f ${serverKeyFile}
+test -f ${ssh1.paths.server-key}
 set env have_server_key ${rc}
 onerror shutdown
 exec env failMissingServerKey.exe -ifnotok=have_server_key
 
 
 define env failMissingHostKey.exe endDefine
-   say -level=esay "The host key file ${hostKeyFile} is missing.  Please generate it with:"
-   say -level=esay "     ssh-keygen -b 1024 -t rsa1 -f ${hostKeyFile} -N \"\""
+   say -level=esay "The host key file ${ssh1.paths.host-key} is missing.  Please generate it with:"
+   say -level=esay "     ssh-keygen -b 1024 -t rsa1 -f ${ssh1.paths.host-key} -N \"\""
    exit 1
 endDefine
 onerror continue
-test -f ${hostKeyFile}
+test -f ${ssh1.paths.host-key}
 set env have_host_key ${rc}
 onerror shutdown
 exec env failMissingHostKey.exe -ifnotok=have_host_key
@@ -42,16 +39,15 @@ exec env failMissingHostKey.exe -ifnotok=have_host_key
 #
 #    hostKeyFile      - filename of the host SSH private key
 #    serverKeyFile    - filename of the server SSH private key
-#    knownHostsFile   - filename of rhosts-like authorised (like
-#                       ~/.rhosts)
+#    knownHostsFile   - filename of rhosts-like authorised (like ~/.rhosts)
 #    knownUsersFile   - filename of authorised users (like
 #                       ~/.ssh/authorized_keys, must be SSHv1 keys)
 #    userPasswordFile - how to authorise username/password logins
 #
-set context hostKeyFile "${hostKeyFile}"
-set context serverKeyFile "${serverKeyFile}"
-set context knownUsersFile "${knownUsersFile}"
-set context userPasswordFile "${userPasswordFile}"
+set context hostKeyFile "${ssh1.paths.host-key}"
+set context serverKeyFile "${ssh1.paths.server-key}"
+set context knownUsersFile "${ssh1.paths.known-users}"
+set context userPasswordFile "${ssh1.paths.user-password}"
 
 create dmg.cells.services.login.SshKeyManager    skm
 
@@ -65,12 +61,9 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
       "${port}  \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
-       -history=${adminHistoryFile} \
-       -listen=${admin.net.listen} \
-       -useColors=${admin.colors.enable} \
+       -history=${ssh1.paths.histor} \
+       -listen=${ssh1.net.listen} \
+       -useColors=${ssh1.enable.colors} \
        diskCacheV111.admin.UserAdminShell"
-
-create dmg.cells.services.login.user.AclCell ${AccessControlCell} \
-            "${dcache.paths.ssh-keys}/users -egpassword=${dcache.paths.config}/passwd"
 
 create diskCacheV111.admin.PAMAuthentificator pam " -syspassword=/etc/shadow"

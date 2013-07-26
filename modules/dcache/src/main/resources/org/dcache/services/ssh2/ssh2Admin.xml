@@ -16,8 +16,9 @@
 
   <bean id="login-stub" class="org.dcache.cells.CellStub">
     <description>Login serviceunication stub</description>
-    <property name="destination" value="${dcache.service.gplazma}"/>
-    <property name="timeout"     value="30000"/>
+    <property name="destination" value="${admin.service.gplazma}"/>
+    <property name="timeout"     value="${admin.service.gplazma.timeout}"/>
+    <property name="timeoutUnit" value="${admin.service.gplazma.timeout.unit}"/>
   </bean>
 
   <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
@@ -33,19 +34,19 @@
   </bean>
 
   <bean id="shell-factory" class="org.dcache.services.ssh2.ConsoleReaderFactory">
-    <property name="historyFile" value="${adminHistoryFile}"/>
-    <property name="useColor" value="${admin.colors.enable}"/>
+    <property name="historyFile" value="${admin.paths.history}"/>
+    <property name="useColor" value="${admin.enable.colors}"/>
   </bean>
 
   <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory"/>
 
   <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
-    <property name="port"               value="${admin.ssh2AdminPort}"/>
-    <property name="hostKeyPrivate"     value="${admin.dsaHostKeyPrivate}"/>
-    <property name="hostKeyPublic"      value="${admin.dsaHostKeyPublic}"/>
-    <property name="authorizedKeyList"  value="${admin.authorizedKey2}"/>
+    <property name="port"               value="${admin.net.port}"/>
+    <property name="hostKeyPrivate"     value="${admin.paths.dsa-host-key.private}"/>
+    <property name="hostKeyPublic"      value="${admin.paths.dsa-host-key.public}"/>
+    <property name="authorizedKeyList"  value="${admin.paths.authorized-keys}"/>
     <property name="loginStrategy"      ref="login-strategy"/>
-    <property name="adminGroupId"       value="${admin.ssh2.gid}"/>
+    <property name="adminGroupId"       value="${admin.authz.gid}"/>
     <property name="shellFactory"       ref="shell-factory"/>
     <property name="subsystemFactories">
       <list>
