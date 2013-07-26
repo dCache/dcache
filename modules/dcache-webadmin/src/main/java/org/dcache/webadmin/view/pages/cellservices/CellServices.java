@@ -20,14 +20,12 @@ import org.dcache.webadmin.view.panels.cellservices.CellServicesPanel;
 public class CellServices extends BasePage {
 
     private static final long serialVersionUID = -1276186550495981006L;
-    private List<CellServicesBean> _cellBeans;
     private static final Logger _log = LoggerFactory.getLogger(CellServices.class);
 
     public CellServices() {
         add(new FeedbackPanel("feedback"));
-        getCellServicesAction();
         CellServicesPanel cellServicesPanel = new CellServicesPanel("cellServicesPanel",
-                new PropertyModel(this, "_cellBeans"));
+                new PropertyModel(this, "cellBeans"));
         add(cellServicesPanel);
     }
 
@@ -35,14 +33,15 @@ public class CellServices extends BasePage {
         return getWebadminApplication().getCellsService();
     }
 
-    private void getCellServicesAction() {
+    public List<CellServicesBean> getCellBeans()
+    {
         try {
             _log.debug("getCellServicesAction called");
-            _cellBeans = getCellsService().getCellServicesBeans();
+            return getCellsService().getCellServicesBeans();
         } catch (CellsServiceException ex) {
             this.error(getStringResource("error.getCellsFailed") + ex.getMessage());
             _log.debug("getCellServicesAction failed {}", ex.getMessage());
-            _cellBeans = null;
+            return null;
         }
     }
 }
