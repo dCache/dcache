@@ -22,14 +22,12 @@ import org.dcache.webadmin.model.exceptions.NoSuchContextException;
  */
 public class StandardLinkGroupsDAO implements LinkGroupsDAO {
 
-    private final CommandSenderFactory _commandSenderFactory;
     private PageInfoCache _pageCache;
     private static final Logger _log = LoggerFactory.getLogger(StandardLinkGroupsDAO.class);
 
     public StandardLinkGroupsDAO(PageInfoCache pageCache,
             CommandSenderFactory commandSenderFactory) {
         _pageCache = pageCache;
-        _commandSenderFactory = commandSenderFactory;
     }
 
     @Override

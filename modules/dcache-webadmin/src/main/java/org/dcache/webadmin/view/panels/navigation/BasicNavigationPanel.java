@@ -1,8 +1,8 @@
 package org.dcache.webadmin.view.panels.navigation;
 
 import com.google.common.collect.Lists;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.authroles.authorization.strategies.role.Roles;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.list.ListItem;
@@ -92,7 +92,7 @@ public class BasicNavigationPanel extends BasePanel {
         }
 
         private void addAdminOnlyTooltip(ListItem item) {
-            item.add(new SimpleAttributeModifier("title", getStringResource(
+            item.add(new AttributeModifier("title", getStringResource(
                     "tooltip.AdminOnly").getObject()));
         }
 
@@ -117,7 +117,7 @@ public class BasicNavigationPanel extends BasePanel {
         }
 
         private void addActiveAttribute(ListItem item) {
-            item.add(new SimpleAttributeModifier("class", "active"));
+            item.add(new AttributeModifier("class", "active"));
         }
     }
 

@@ -106,7 +106,7 @@ public class QueryPanel extends Panel {
         add(parent.getRefreshButton());
     }
 
-    private void addAlarmsGroup(SortableDataProvider<LogEntry> provider) {
+    private void addAlarmsGroup(SortableDataProvider<LogEntry, String> provider) {
         IModel<Boolean> selectAlarmValue = new PropertyModel<>(provider,
                         "alarm");
         RadioGroup rgrp = new RadioGroup("selectgroup", selectAlarmValue);
@@ -116,7 +116,7 @@ public class QueryPanel extends Panel {
         add(rgrp);
     }
 
-    private void addDateFields(SortableDataProvider<LogEntry> provider) {
+    private void addDateFields(SortableDataProvider<LogEntry, String> provider) {
         DateTextField beginning = new DateTextField("beginDate",
                         new PropertyModel<Date>(provider, "after"), DATE);
         DatePicker dp = new DatePicker();
@@ -131,7 +131,7 @@ public class QueryPanel extends Panel {
         add(ending);
     }
 
-    private void addExpressionFields(SortableDataProvider<LogEntry> provider) {
+    private void addExpressionFields(SortableDataProvider<LogEntry, String> provider) {
         IModel<String> filterValue = new PropertyModel<>(provider, "expression");
         add(new TextField<>("filterField", filterValue));
         IModel<Boolean> regexValue = new PropertyModel<>(provider, "regex");
@@ -145,7 +145,7 @@ public class QueryPanel extends Panel {
         });
     }
 
-    private void addRangeFields(SortableDataProvider<LogEntry> provider) {
+    private void addRangeFields(SortableDataProvider<LogEntry, String> provider) {
         IModel<Integer> from = new PropertyModel<>(provider, "from");
         add(new TextField<Integer>("rangeFrom", from));
 
@@ -153,12 +153,12 @@ public class QueryPanel extends Panel {
         add(new TextField<Integer>("rangeTo", to));
     }
 
-    private void addSeverityChoice(SortableDataProvider<LogEntry> provider) {
+    private void addSeverityChoice(SortableDataProvider<LogEntry, String> provider) {
         IModel<String> choiceValue = new PropertyModel<>(provider, "severity");
         add(new DropDownChoice("levels", choiceValue, Severity.asList()));
     }
 
-    private void addShowClosed(SortableDataProvider<LogEntry> provider) {
+    private void addShowClosed(SortableDataProvider<LogEntry, String> provider) {
         IModel<Boolean> showClosedValue = new PropertyModel<>(provider,
                         "showClosed");
         add(new CheckBox("showClosed", showClosedValue) {
@@ -172,7 +172,7 @@ public class QueryPanel extends Panel {
     }
 
     private void addTypeAutoComplete(final AlarmsPage parent,
-                    final SortableDataProvider<LogEntry> provider) {
+                    final SortableDataProvider<LogEntry, String> provider) {
         IModel<String> filterValue = new PropertyModel<>(provider, "type");
 
         add(new DefaultCssAutoCompleteTextField("typeField", filterValue) {

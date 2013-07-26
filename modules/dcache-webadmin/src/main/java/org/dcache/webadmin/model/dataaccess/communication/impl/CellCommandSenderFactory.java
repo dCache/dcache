@@ -1,8 +1,5 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.dcache.cells.CellStub;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
@@ -15,7 +12,6 @@ import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
  */
 public class CellCommandSenderFactory implements CommandSenderFactory {
 
-    private static final Logger _log = LoggerFactory.getLogger(CellCommandSenderFactory.class);
     private CellStub _poolCellStub;
 
     @Override

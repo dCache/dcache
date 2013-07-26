@@ -1,6 +1,6 @@
 package org.dcache.webadmin.view.pages.pooladmin;
 
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.basic.MultiLineLabel;
 import org.apache.wicket.markup.html.form.Button;
@@ -177,7 +177,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     }
 
     private void addActiveAttribute(ListItem<?> item) {
-        item.add(new SimpleAttributeModifier("class", "active"));
+        item.add(new AttributeModifier("class", "active"));
     }
 
     private ListView<SelectableWrapper<PoolCommandBean>> buildPoolItemView(String id) {
