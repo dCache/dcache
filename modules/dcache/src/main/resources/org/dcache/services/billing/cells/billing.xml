@@ -30,6 +30,12 @@
     <property name="poolManagerStub" ref="poolmanager-stub"/>
   </bean>
 
+  <beans profile="db-false">
+    <bean id="histogram-request-receiver" class="org.dcache.services.billing.cells.receivers.NOPHistogramRequestReceiver">
+        <!-- no connection to database; returns failure on request -->
+    </bean>
+  </beans>
+
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-true">
     <bean id="jdbc-billing-info-access" class="org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo"

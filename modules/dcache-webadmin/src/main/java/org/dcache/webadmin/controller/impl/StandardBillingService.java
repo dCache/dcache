@@ -66,6 +66,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -73,6 +74,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.util.ServiceUnavailableException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.services.billing.histograms.ITimeFrameHistogramFactory;
@@ -307,7 +310,18 @@ public final class StandardBillingService implements IBillingService, Runnable {
     @Override
     public void run() {
         while(true) {
-            refresh();
+            try {
+                refresh();
+            } catch (UndeclaredThrowableException ute) {
+                Throwable cause = ute.getCause();
+                if (cause instanceof ServiceUnavailableException) {
+                    logger.error("The billing database has been disabled."
+                                    + "  To generate plots, please restart the service when"
+                                    + " the billing database is once again available");
+                    break;
+                }
+                throw ute;
+            }
 
             try {
                 Thread.sleep(timeout);
@@ -412,7 +426,9 @@ public final class StandardBillingService implements IBillingService, Runnable {
                         + imgType);
 
         String value = properties.getProperty(TimeFramePlotProperties.REFRESH_THRESHOLD);
-        timeout = TimeUnit.MINUTES.toMillis(Long.parseLong(value));
+        TimeUnit unit = TimeUnit.valueOf(properties.getProperty
+                        (TimeFramePlotProperties.REFRESH_THRESHOLD_UNIT));
+        timeout = unit.toMillis(Long.parseLong(value));
 
         value = properties.getProperty(TimeFramePlotProperties.POPUP_WIDTH);
         popupWidth = Integer.parseInt(value);

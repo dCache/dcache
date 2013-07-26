@@ -127,10 +127,13 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     public DataNucleusAlarmStore(String xmlPath, Properties properties,
-                    boolean enableCleaner, int cleanerSleepInterval,
-                    int cleanerDeleteThreshold) {
-        this.cleanerSleepInterval = TimeUnit.HOURS.toMillis(cleanerSleepInterval);
-        this.cleanerDeleteThreshold = TimeUnit.HOURS.toMillis(cleanerDeleteThreshold);
+                    boolean enableCleaner,
+                    int cleanerSleepInterval,
+                    TimeUnit sleepIntervalUnit,
+                    int cleanerDeleteThreshold,
+                    TimeUnit deleteThresholdUnit) {
+        this.cleanerSleepInterval = sleepIntervalUnit.toMillis(cleanerSleepInterval);
+        this.cleanerDeleteThreshold = deleteThresholdUnit.toMillis(cleanerDeleteThreshold);
 
         this.properties = properties;
         properties.put("javax.jdo.PersistenceManagerFactoryClass",

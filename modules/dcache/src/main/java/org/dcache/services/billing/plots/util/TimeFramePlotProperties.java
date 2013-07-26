@@ -99,7 +99,8 @@ public final class TimeFramePlotProperties {
     /**
      * Interval between plot generations.
      */
-    public static final String REFRESH_THRESHOLD = "refresh.threshold.in.minutes";
+    public static final String REFRESH_THRESHOLD = "refresh.threshold";
+    public static final String REFRESH_THRESHOLD_UNIT = "refresh.threshold.unit";
     public static final String PLOT_TITLE_COLOR = "plot.title.color";
     public static final String PLOT_TITLE_SIZE = "plot.title.size";
 

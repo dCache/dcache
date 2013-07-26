@@ -68,33 +68,39 @@ public class ResponseEngineHandler extends AbstractHandler {
         }
     }
 
-    public void initialize(HttpServiceCell cell) throws Exception {
-        final Class<? extends HttpResponseEngine> c = Class.forName(className).asSubclass(HttpResponseEngine.class);
+    public void initialize(HttpServiceCell cell)
+                    throws Exception {
+        final Class<? extends HttpResponseEngine> c
+            = Class.forName(className).asSubclass(HttpResponseEngine.class);
 
         /*
-         * find constructor: (a) <init>(CellNucleus nucleus, String [] args) (b)
-         * <init>(String [] args) (c) <init>()
+         * find constructor: (a) <init>(CellNucleus nucleus, String [] args)
+         *                   (b) <init>(String [] args)
+         *                   (c) <init>()
          */
         try {
             Class<?>[] argsClass = new Class<?>[2];
             argsClass[0] = CellEndpoint.class;
             argsClass[1] = String[].class;
-            Constructor<? extends HttpResponseEngine> constr = c.getConstructor(argsClass);
+            Constructor<? extends HttpResponseEngine> constr
+                = c.getConstructor(argsClass);
             Object[] args = new Object[2];
-            args[0] = cell;
+            args[0] = cell.getEndpoint();
             args[1] = this.args;
             engine = constr.newInstance(args);
         } catch (final Exception e) {
             try {
                 Class<?>[] argsClass = new Class<?>[1];
                 argsClass[0] = String[].class;
-                Constructor<? extends HttpResponseEngine> constr = c.getConstructor(argsClass);
+                Constructor<? extends HttpResponseEngine> constr
+                    = c.getConstructor(argsClass);
                 Object[] args = new Object[1];
                 args[0] = this.args;
                 engine = constr.newInstance(args);
             } catch (final Exception ee) {
                 Class<?>[] argsClass = new Class<?>[0];
-                Constructor<? extends HttpResponseEngine> constr = c.getConstructor(argsClass);
+                Constructor<? extends HttpResponseEngine> constr
+                    = c.getConstructor(argsClass);
                 engine = constr.newInstance();
             }
         }

@@ -57,60 +57,16 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package diskCacheV111.util;
 
-import java.io.Serializable;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
+public class ServiceUnavailableException extends CacheException {
+    private static final long serialVersionUID = -6709046265362004178L;
 
-import org.dcache.cells.CellStub;
-import org.dcache.services.billing.histograms.TimeFrame;
-import org.dcache.util.CacheExceptionFactory;
-import org.dcache.vehicles.billing.HistogramRequestMessage;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * Proxied client handler to the {@link ITimeFrameHistogramDataService} service.
- *
- * @author arossi
- */
-public class TimeFrameHistogramDataProxy implements InvocationHandler {
-
-    private static final Class[] ONE_PARAM = new Class[] { TimeFrame.class };
-    private static final Class[] TWO_PARAM = new Class[] { TimeFrame.class,
-                    Boolean.class };
-
-    private final CellStub cell;
-
-    public TimeFrameHistogramDataProxy(CellStub cell) {
-        checkNotNull(cell);
-        this.cell = cell;
+    public ServiceUnavailableException(String message, Throwable cause) {
+        super(CacheException.SERVICE_UNAVAILABLE, message, cause);
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-                    throws Throwable {
-        HistogramRequestMessage request = createRequestMessage(method, args);
-        request = cell.sendAndWait(request, HistogramRequestMessage.class);
-        int code = request.getReturnCode();
-        if (code != 0) {
-            throw CacheExceptionFactory.exceptionOf(code,
-                            String.valueOf(request.getErrorObject()));
-        }
-        return request.getReturnValue();
-    }
-
-    private static HistogramRequestMessage createRequestMessage(Method method, Object[] args) {
-        Class<Serializable>[] types;
-        Serializable[] serializable;
-        if (args.length == 1) {
-            types = ONE_PARAM;
-            serializable = new Serializable[]{(TimeFrame)args[0]};
-        } else {
-            types = TWO_PARAM;
-            serializable = new Serializable[]{(TimeFrame)args[0], (Boolean)args[1]};
-        }
-
-        return new HistogramRequestMessage(method.getName(), types, serializable);
+    public ServiceUnavailableException(String message) {
+        super(CacheException.SERVICE_UNAVAILABLE, message);
     }
 }

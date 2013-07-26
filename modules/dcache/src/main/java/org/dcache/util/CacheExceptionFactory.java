@@ -15,6 +15,7 @@ import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.ServiceUnavailableException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
 
@@ -69,6 +70,9 @@ public class CacheExceptionFactory {
                 return new FileInCacheException(message, cause);
             case FILE_CORRUPTED:
                 return new FileCorruptedCacheException(message, cause);
+            case SERVICE_UNAVAILABLE:
+                 return new ServiceUnavailableException(message, cause);
+
             /*
              * these do not have exception classes
              */

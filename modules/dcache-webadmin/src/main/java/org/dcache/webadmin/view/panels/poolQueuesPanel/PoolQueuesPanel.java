@@ -6,8 +6,6 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -25,7 +23,6 @@ public class PoolQueuesPanel extends BasePanel {
 
     private static final long serialVersionUID = -6513684957808201860L;
     private IModel<PoolGroupBean> _poolModel;
-    private static final Logger _log = LoggerFactory.getLogger(PoolQueuesPanel.class);
 
     public PoolQueuesPanel(String id, IModel<PoolGroupBean> model) {
         super(id);

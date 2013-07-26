@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
@@ -19,6 +20,8 @@ import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Factory class for the DAOs. The whole design with an factory is mainly
@@ -39,7 +42,9 @@ public class DAOFactoryImpl implements DAOFactory {
     private String _alarmsPropertiesPath;
     private boolean _alarmCleanerEnabled;
     private int _alarmCleanerSleepInterval;
+    private TimeUnit _alarmCleanerSleepIntervalUnit = TimeUnit.DAYS;
     private int _alarmCleanerDeleteThreshold;
+    private TimeUnit _alarmCleanerDeleteThresholdUnit = TimeUnit.DAYS;
 
     @Override
     public synchronized ILogEntryDAO getLogEntryDAO() {
@@ -50,7 +55,9 @@ public class DAOFactoryImpl implements DAOFactory {
                                                   getAlarmsProperties(),
                                                   _alarmCleanerEnabled,
                                                   _alarmCleanerSleepInterval,
-                                                  _alarmCleanerDeleteThreshold);
+                                                  _alarmCleanerSleepIntervalUnit,
+                                                  _alarmCleanerDeleteThreshold,
+                                                  _alarmCleanerDeleteThresholdUnit);
                 store.initialize();
                 _logEntryDAO = store;
             } catch (IOException t) {
@@ -97,6 +104,10 @@ public class DAOFactoryImpl implements DAOFactory {
         _alarmCleanerDeleteThreshold = alarmCleanerDeleteThreshold;
     }
 
+    public void setAlarmsCleanerDeleteThresholdUnit(TimeUnit timeUnit) {
+        _alarmCleanerDeleteThresholdUnit = checkNotNull(timeUnit);
+    }
+
     public void setAlarmsCleanerEnabled(boolean alarmCleanerEnabled) {
         _alarmCleanerEnabled = alarmCleanerEnabled;
     }
@@ -104,6 +115,10 @@ public class DAOFactoryImpl implements DAOFactory {
     public void setAlarmsCleanerSleepInterval(
                     int alarmCleanerSleepInterval) {
         _alarmCleanerSleepInterval = alarmCleanerSleepInterval;
+    }
+
+    public void setAlarmsCleanerSleepIntervalUnit(TimeUnit timeUnit) {
+        _alarmCleanerSleepIntervalUnit = checkNotNull(timeUnit);
     }
 
     public void setAlarmsDbDriver(String alarmsDbDriver) {

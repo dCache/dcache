@@ -36,7 +36,6 @@ import dmg.util.Args;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
-import org.dcache.commons.util.Strings;
 
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.Iterables.transform;
@@ -153,9 +152,10 @@ public final class BillingCell
 
         _log.info(output);
 
-        if (_enableText) {
-            logInfo(output, getFilenameExtension(now));
-        }
+        /*
+         * Removed writing these to the billing log.  We only
+         * want InfoMessages written there
+         */
     }
 
     private String getFormattedMessage(InfoMessage msg) {

@@ -50,7 +50,7 @@ public class DCacheServices extends BasePage {
     }
 
     private void enableOnlyInAuthenticatedMode(Link link) {
-        if (!getWebadminApplication().isAuthenticatedMode()) {
+        if (!getWebadminApplication().getAuthenticatedMode()) {
             link.setEnabled(false);
             link.add(new SimpleAttributeModifier("title", getStringResource(
                     AUTHMODE_ONLY_TOOLTIP_MESSAGE)));

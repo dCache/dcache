@@ -62,6 +62,7 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.SetupInfoMessage;
@@ -592,39 +593,41 @@ public class UniversalSpringCell
     public static final String hh_bean_ls = "# lists running beans";
     public String ac_bean_ls(Args args)
     {
-        final String format = "%-30s %s\n";
-        Formatter s = new Formatter(new StringBuilder());
-        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
-
-        s.format(format, "Bean", "Description");
-        s.format(format, "----", "-----------");
-        for (String name : getBeanNames()) {
-            if (!name.startsWith("org.springframework.")) {
-                try {
-                    BeanDefinition definition = factory.getBeanDefinition(name);
-                    String description = definition.getDescription();
-                    s.format(format, name,
-                            (description != null ? description : "-"));
-                } catch (NoSuchBeanDefinitionException e) {
-                    debug("Failed to query bean definition for " + name);
+        String format = "%-30s %s\n";
+        try (Formatter s = new Formatter(new StringBuilder())) {
+            ConfigurableListableBeanFactory factory = _context.getBeanFactory();
+            s.format(format, "Bean", "Description");
+            s.format(format, "----", "-----------");
+            for (String name : getBeanNames()) {
+                if (!name.startsWith("org.springframework.")) {
+                    try {
+                        BeanDefinition definition = factory.getBeanDefinition(name);
+                        String description = definition.getDescription();
+                        s.format(format, name,
+                                        (description != null ? description : "-"));
+                    } catch (NoSuchBeanDefinitionException e) {
+                        debug("Failed to query bean definition for " + name);
+                    }
                 }
             }
+
+            return s.toString();
         }
-        return s.toString();
     }
 
     public static final String hh_bean_dep = "# shows bean dependencies";
     public String ac_bean_dep(Args args)
     {
-        final String format = "%-30s %s\n";
-        Formatter s = new Formatter(new StringBuilder());
+        String format = "%-30s %s\n";
+        try (Formatter s = new Formatter(new StringBuilder())) {
+            s.format(format, "Bean", "Used by");
+            s.format(format, "----", "-------");
+            for (String name : getBeanNames()) {
+                s.format(format, name, Joiner.on(",").join(getDependentBeans(name)));
+            }
 
-        s.format(format, "Bean", "Used by");
-        s.format(format, "----", "-------");
-        for (String name : getBeanNames()) {
-            s.format(format, name, Joiner.on(",").join(getDependentBeans(name)));
+            return s.toString();
         }
-        return s.toString();
     }
 
     /**
@@ -1001,6 +1004,11 @@ public class UniversalSpringCell
         if (bean instanceof EnvironmentAware) {
             ((EnvironmentAware) bean).setEnvironment(_environment);
         }
+
+        if (bean instanceof DomainContextAware) {
+            ((DomainContextAware) bean).setDomainContext(getDomainContext());
+        }
+
         return bean;
     }
 
@@ -1095,18 +1103,6 @@ public class UniversalSpringCell
             }
 
             return environment;
-        }
-    }
-
-    /**
-     * Merges a map into a property set.
-     */
-    private void mergeProperties(Properties properties, Map<String,?> entries)
-    {
-        for (Map.Entry<String,?> e: entries.entrySet()) {
-            String key = e.getKey();
-            Object value = e.getValue();
-            properties.setProperty(key, value.toString());
         }
     }
 }
