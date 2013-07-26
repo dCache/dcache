@@ -99,10 +99,11 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import org.dcache.auth.SubjectWrapper;
 
-import static org.dcache.namespace.FileType.*;
+import static java.util.Arrays.asList;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.*;
 
-import org.dcache.auth.UserNamePrincipal;
+
 /**
  * This ResourceFactory exposes the dCache name space through the
  * Milton WebDAV framework.
@@ -170,7 +171,8 @@ public class DcacheResourceFactory
     private InetAddress _internalAddress;
     private String _path;
     private boolean _doRedirectOnRead = true;
-    private boolean _isOverwriteAllowed = false;
+    private boolean _doRedirectOnWrite = true;
+    private boolean _isOverwriteAllowed;
     private boolean _isAnonymousListingAllowed;
 
     private String _staticContentPath;
@@ -495,7 +497,6 @@ public class DcacheResourceFactory
         if (_log.isDebugEnabled()) {
             _log.debug("Resolving " + HttpManager.request().getAbsoluteUrl());
         }
-
         return getResource(getFullPath(path));
     }
 
@@ -509,6 +510,8 @@ public class DcacheResourceFactory
         if (!isAllowedPath(path)) {
             return null;
         }
+
+        FsPath requestPath = getRequestPath(path);
 
         try {
             PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
@@ -880,6 +883,16 @@ public class DcacheResourceFactory
     {
         return new FsPath(_rootPath, new FsPath(path));
     }
+
+    /**
+     * Convert a path within dCache's namespace into the corresponding
+     * path for a request.  This is the inverse of getFullPath.
+     */
+    private FsPath getRequestPath(FsPath internalPath)
+    {
+        return _rootPath.relativize(internalPath);
+    }
+
 
     /**
      * Returns true if access to path is allowed through the WebDAV

@@ -87,6 +87,7 @@
       <property name="readOnly" value="${webdavReadOnly}"/>
       <property name="loginStrategy" ref="login-strategy"/>
       <property name="enableBasicAuthentication" value="${webdavBasicAuthentication}"/>
+      <property name="rootPath" value="${webdavRootPath}"/>
   </bean>
 
 
