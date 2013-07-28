@@ -1,5 +1,7 @@
 package org.dcache.boot;
 
+import org.dcache.util.ConfigurationProperties;
+
 /**
  * Constants for property names used by the boot loader.
  */
@@ -29,5 +31,11 @@ public class Properties
 
     protected Properties()
     {
+    }
+
+    public static String getCellName(ConfigurationProperties properties)
+    {
+        String serviceType = properties.getValue(PROPERTY_DOMAIN_SERVICE);
+        return properties.getValue(serviceType + "." + PROPERTY_CELL_NAME);
     }
 }

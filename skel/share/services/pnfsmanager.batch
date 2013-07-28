@@ -14,7 +14,7 @@ check -strong pnfsmanager.limits.list-threads
 check -strong pnfsmanager.limits.list-chunk-size
 check -strong pnfsmanager.limits.log-slow-threshold
 check -strong pnfsmanager.limits.queue-length
-check -strong cell.name
+check -strong pnfsmanager.cell.name
 check -strong pnfsmanager.acl
 check -strong pnfsmanager.db.dialect
 check -strong db.user
@@ -22,7 +22,7 @@ check -strong db.url
 check -strong db.driver
 check db.password
 
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${pnfsmanager.cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \
         -export \
         -cmRelay=broadcast \

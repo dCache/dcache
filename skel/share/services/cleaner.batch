@@ -2,7 +2,7 @@
 
 onerror shutdown
 
-check -strong cell.name
+check -strong cleaner.cell.name
 check -strong cleaner.cell.export
 check -strong cleaner.service.pool.retry-period
 check -strong cleaner.service.pool.retry-period.unit
@@ -23,7 +23,7 @@ check -strong db.url
 check -strong db.driver
 check db.password
 
-create org.dcache.chimera.namespace.ChimeraCleaner ${cell.name} \
+create org.dcache.chimera.namespace.ChimeraCleaner ${cleaner.cell.name} \
         "-export=${cleaner.cell.export} \
          -refresh=${cleaner.limits.period} \
          -refreshUnit=${cleaner.limits.period.unit} \

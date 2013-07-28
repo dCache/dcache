@@ -1,6 +1,6 @@
 onerror shutdown
 
-check -strong cell.name
+check -strong pool.cell.name
 check -strong pool.name
 check -strong pool.path
 check -strong pool.size
@@ -90,7 +90,7 @@ define context PoolDefaults endDefine
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
 endDefine
 
-create org.dcache.cells.UniversalSpringCell "${cell.name}" \
+create org.dcache.cells.UniversalSpringCell "${pool.cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
     -export -cellClass=Pool -profiles=healthcheck-${pool.enable.repository-check} \
     -setupClass=pool -setupFile=\"${pool.path}/setup\" \

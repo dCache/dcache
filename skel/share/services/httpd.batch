@@ -10,7 +10,7 @@ onerror shutdown
 check -strong httpd.net.port
 check -strong dcache.paths.config
 check -strong dcache.paths.etc
-check -strong cell.name
+check -strong httpd.cell.name
 check -strong httpd.enable.authn
 check -strong httpd.enable.alarm-cleaner
 check -strong httpd.enable.plots.pool-queue
@@ -164,7 +164,7 @@ exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 
 ####################################################################
 
-define context ${cell.name}Setup endDefine
+define context ${httpd.cell.name}Setup endDefine
    set alias webadmin webapp ${httpd.container.webapps.dir}
    set alias <home> redirect webadmin
    set alias <default> context missing.html
@@ -279,5 +279,5 @@ create diskCacheV111.cells.WebCollectorV3 collector \
 ####################################################################
 
 onerror shutdown
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${httpd.cell.name} \
         "classpath:org/dcache/services/httpd/httpd.xml"

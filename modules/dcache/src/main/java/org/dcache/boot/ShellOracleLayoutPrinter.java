@@ -5,8 +5,6 @@ import java.io.PrintStream;
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ScopedConfigurationProperties;
 
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
-
 /**
  * Generates a shell function {@code getProperty} which serves as
  * an oracle for property values. The function takes three
@@ -43,7 +41,7 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
             out.println("        \"\")");
             out.println("          ;;"); // Fall through
             for (ConfigurationProperties service: domain.getServices()) {
-                String cellName = service.getValue(PROPERTY_CELL_NAME);
+                String cellName = Properties.getCellName(service);
                 if (cellName != null) {
                     out.append("        ").append(quoteForCase(cellName)).println(")");
                     compile(out, "          ", service, domain.properties());

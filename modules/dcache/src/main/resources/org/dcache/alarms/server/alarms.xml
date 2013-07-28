@@ -16,7 +16,7 @@
 
     <bean id="server" class="org.dcache.alarms.server.LogEntryServerWrapper"
         init-method="startUp" destroy-method="shutDown">
-        <property name="port" value="${dcache.log.server.port}"/>
+        <property name="port" value="${alarms.net.port}"/>
         <property name="baseDir" value="${alarms.dir}"/>
         <property name="configFile" value="${alarms.log.config.path}"/>
         <property name="path" value="${alarms.db.xml.path}"/>

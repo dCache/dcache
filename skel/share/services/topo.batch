@@ -6,7 +6,7 @@
 
 onerror shutdown
 
-check -strong cell.name
+check -strong topo.cell.name
 
 define env topo-cells.exe end
   check -strong topo.limits.refresh-period
@@ -14,7 +14,7 @@ define env topo-cells.exe end
   check -strong topo.service.system.timeout
   check -strong topo.service.system.timeout.unit
 
-  create org.dcache.cells.UniversalSpringCell ${cell.name} \
+  create org.dcache.cells.UniversalSpringCell ${topo.cell.name} \
      "classpath:org/dcache/services/topology/classic.xml -export -cellClass=TopoCell"
 end
 
@@ -24,7 +24,7 @@ define env topo-amq.exe end
   check -strong topo.service.system.timeout
   check -strong topo.service.system.timeout.unit
 
-  create org.dcache.cells.UniversalSpringCell ${cell.name} \
+  create org.dcache.cells.UniversalSpringCell ${topo.cell.name} \
      "classpath:org/dcache/services/topology/amq.xml -export -cellClass=TopoCell"
 end
 
@@ -34,7 +34,7 @@ define env topo-openmq.exe end
   check -strong topo.service.system.timeout
   check -strong topo.service.system.timeout.unit
 
-  create org.dcache.cells.UniversalSpringCell ${cell.name} \
+  create org.dcache.cells.UniversalSpringCell ${topo.cell.name} \
      "classpath:org/dcache/services/topology/openmq.xml -export -cellClass=TopoCell"
 end
 

@@ -475,7 +475,7 @@
     <description>SRM engine</description>
 
     <constructor-arg ref="config"/>
-    <constructor-arg value="${cell.name}"/>
+    <constructor-arg value="${srm.cell.name}"/>
   </bean>
 
 

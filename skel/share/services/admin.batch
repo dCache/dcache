@@ -1,6 +1,6 @@
 # Starts ssh2 Admin Interface
 
-check -strong cell.name
+check -strong admin.cell.name
 check -strong admin.net.port
 check -strong admin.paths.dsa-host-key.private
 check -strong admin.paths.dsa-host-key.public
@@ -19,5 +19,5 @@ set env have_server_key ${rc}
 onerror shutdown
 exec env failMissingServerKey.exe -ifnotok=have_server_key
 
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${admin.cell.name} \
     "classpath:org/dcache/services/ssh2/ssh2Admin.xml"

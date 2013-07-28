@@ -3,7 +3,7 @@
 #
 
 onerror shutdown
-check -strong cell.name
+check -strong webdav.cell.name
 check -strong webdav.net.port
 check -strong webdav.net.listen
 check -strong webdav.service.pnfsmanager
@@ -100,7 +100,7 @@ enddefine
 exec env verify-${webdav.authn.protocol}.exe
 
 onerror shutdown
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${webdav.cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
     -profiles=connector-${webdav.authn.protocol},missing-files-${webdav.enable.missing-files} \
     -export -cellClass=WebDAVDoor"

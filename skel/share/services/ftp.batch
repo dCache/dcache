@@ -4,7 +4,7 @@
 
 onerror shutdown
 
-check -strong cell.name
+check -strong ftp.cell.name
 check -strong ftp.implementation
 check -strong ftp.net.port
 check -strong ftp.net.port-range

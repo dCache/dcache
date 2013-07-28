@@ -8,7 +8,7 @@ check -strong ssh1.paths.user-password
 check -strong ssh1.net.port
 check -strong ssh1.net.listen
 check -strong ssh1.enable.colors
-check -strong cell.name
+check -strong ssh1.cell.name
 check ssh1.paths.history
 
 define env failMissingServerKey.exe endDefine
@@ -57,7 +57,7 @@ create dmg.cells.services.login.SshKeyManager    skm
 #       dmg.cells.services.StreamLoginCell \
 #       -prot=ssh -auth=dmg.cells.services.login.SshSAuth_X"
 
-create dmg.cells.services.login.LoginManager ${cell.name} \
+create dmg.cells.services.login.LoginManager ${ssh1.cell.name} \
       "${port}  \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \

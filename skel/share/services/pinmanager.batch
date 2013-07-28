@@ -1,6 +1,6 @@
 onerror shutdown
 
-check -strong cell.name
+check -strong pinmanager.cell.name
 check -strong db.driver
 check -strong db.url
 check -strong db.user
@@ -26,7 +26,7 @@ check -strong pinmanager.cell.queue.max
 
 exec file:${dcache.paths.share}/cells/stage.fragment pinmanager doors
 
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${pinmanager.cell.name} \
        "classpath:org/dcache/pinmanager/pinmanager.xml \
         -export \
         -callbackExecutor=message-thread-pool \

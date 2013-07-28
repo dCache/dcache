@@ -1,7 +1,8 @@
 onerror shutdown
+check -strong statistics.cell.name
 check -strong statistics.location
 
-create diskCacheV111.services.PoolStatisticsV0 ${cell.name}  \
+create diskCacheV111.services.PoolStatisticsV0 ${statistics.cell.name}  \
      "${statistics.location}  \
 #      -create  \
 #      -htmlBase=${statistics.location}  \

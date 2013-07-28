@@ -3,7 +3,7 @@
 #
 
 onerror shutdown
-check -strong cell.name
+check -strong nfs.cell.name
 check -strong nfs.net.port
 check -strong nfs.version
 check -strong nfs.service.loginbroker
@@ -37,6 +37,6 @@ check db.password
 check nfs.domain
 check nfs.mover.queue
 
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${nfs.cell.name} \
         "${nfs.cell.spring} -profiles=portmap-${nfs.enable.portmap}"
 

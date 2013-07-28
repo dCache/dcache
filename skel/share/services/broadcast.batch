@@ -3,7 +3,7 @@
 #  -----------------------------------------------------------------------
 
 onerror shutdown
-check -strong cell.name
+check -strong broadcast.cell.name
 check -strong broadcast.enable.replica
 check -strong broadcast.enable.spacemanager
 check -strong broadcast.service.replica
@@ -63,5 +63,5 @@ endDefine
 #
 #  ----  Startup
 #
-create dmg.cells.services.multicaster.BroadcastCell ${cell.name}  \
+create dmg.cells.services.multicaster.BroadcastCell ${broadcast.cell.name}  \
           "default -export"

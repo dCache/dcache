@@ -310,7 +310,7 @@ public class PythonOracleLayoutPrinterTests
         public DomainBuilder withService(String scope, String cellName)
         {
             _properties = _domain.createService(scope);
-            _properties.put(PROPERTY_CELL_NAME, cellName);
+            _properties.put(scope + "." + PROPERTY_CELL_NAME, cellName);
             return this;
         }
     }

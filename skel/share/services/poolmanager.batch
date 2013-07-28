@@ -2,7 +2,7 @@
 
 onerror shutdown
 
-check -strong cell.name
+check -strong poolmanager.cell.name
 check -strong poolmanager.plugins.selection-unit
 check -strong poolmanager.plugins.thread-pool
 check -strong poolmanager.plugins.quota-manager
@@ -61,7 +61,7 @@ define context poolmanager.defaults endDefine
 endDefine
 
 # Start PoolManager
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${poolmanager.cell.name} \
    "!poolmanager.defaults \
     classpath:diskCacheV111/poolManager/poolmanager.xml \
     -setupFile=${poolmanager.setup.file} \

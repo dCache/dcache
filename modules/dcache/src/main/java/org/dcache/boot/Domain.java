@@ -60,7 +60,7 @@ public class Domain
     {
         List<String> cells = new ArrayList<>();
         for (ScopedConfigurationProperties service: _services) {
-            String cellName = service.getValue(PROPERTY_CELL_NAME);
+            String cellName = Properties.getCellName(service);
             if (cellName != null) {
                 cells.add(cellName);
             }

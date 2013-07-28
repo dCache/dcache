@@ -6,7 +6,7 @@ check -strong billing.cell.name
 check -strong billingLogsDir
 check -strong billing.enable.text
 check -strong billing.enable.db
-check -strong dcache.service.poolmanager
+check -strong billing.service.poolmanager
 check -strong billing.service.poolmanager.timeout
 check -strong billing.text.dir
 check billing.text.flat-dir
@@ -38,8 +38,8 @@ eval ${billing.enable.db} true ==
 exec env billingToDb.exe -ifok
 onerror shutdown
 
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${billing.cell.name} \
         "classpath:org/dcache/services/billing/cells/billing.xml \
         -profiles=db-${billing.enable.db} \
         -export \
-        -billingCellName=${cell.name}.alias"
+        -billingCellName=${billing.cell.name}.alias"

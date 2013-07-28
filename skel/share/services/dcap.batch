@@ -6,7 +6,7 @@ onerror shutdown
 check -strong dcap.limits.clients
 check -strong dcap.mover.overwrite
 check -strong dcap.net.port
-check -strong cell.name
+check -strong dcap.cell.name
 check -strong dcap.service.poolmanager
 check -strong dcap.service.pnfsmanager
 check -strong dcap.service.gplazma
@@ -32,7 +32,7 @@ set env arguments-auth "-pswdfile=${dcap.authn.passwd} -authorization=required"
 set env arguments-gsi "-localOk -authorization=strong -socketfactory=\\\"javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,-service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -service_voms_dir='${dcap.authn.vomsdir}' -ciphers='${dcap.security.ciphers}'\\\""
 set env arguments-kerberos "-localOk -authorization=strong -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,'${dcap.authn.kerberos.service-principle-name}'"
 
-create dmg.cells.services.login.LoginManager ${cell.name} \
+create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
             "${dcap.net.port} diskCacheV111.doors.DCapDoor \
              -listen=${dcap.net.listen} \
              -export \

@@ -5,8 +5,6 @@ import java.io.PrintStream;
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ScopedConfigurationProperties;
 
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
-
 /**
  * Creates a Python declaration for a class that is an oracle for
  * consulting the value of dCache properties.  By executing the
@@ -17,7 +15,7 @@ import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
  * the python literal 'None' if it isn't defined.  The get method takes
  * one mandatory argument (the property name) and two optional ones: the
  * name of a domain and the name of a service (as provided by the
- * 'cell.name' property).
+ * '<service>.cell.name' property).
  *
  * Here is a simple python script that demonstrates these features.
  *
@@ -156,10 +154,8 @@ public class PythonOracleLayoutPrinter implements LayoutPrinter
         {
             IndentPrinter indent = out.indent();
 
-            for(ScopedConfigurationProperties service :
-                    domain.getServices()) {
-                String name = service.getValue(PROPERTY_CELL_NAME);
-
+            for(ScopedConfigurationProperties service : domain.getServices()) {
+                String name = Properties.getCellName(service);
                 if(name != null) {
                     out.println("'" + markup(name) + "' : {");
                     printProperties(indent, service, domain.properties());
