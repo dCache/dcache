@@ -15,6 +15,8 @@ check -strong httpd.enable.authn
 check -strong httpd.enable.alarm-cleaner
 check -strong httpd.enable.plots.pool-queue
 
+check httpd.statistics.location
+
 check -strong httpd.static-content.scripts
 check -strong httpd.static-content.docs
 check -strong httpd.static-content.images
@@ -142,18 +144,18 @@ exec env checkBillingPlotsProperties -ifok
 
 ####################################################################
 #  The following block defines the context set_alias_statistics to be either
-#  "set alias statistics directory ${statisticsLocation}" if
-#  ${statisticsLocation} exists and is a directory, or an empty string otherwise
+#  "set alias statistics directory ${httpd.statistics.location}" if
+#  ${httpd.statistics.location} exists and is a directory, or an empty string otherwise
 #
 define env defineStatisticsAlias.exe endDefine
-   set context set_alias_statistics "set alias statistics directory ${statisticsLocation}"
+   set context set_alias_statistics "set alias statistics directory ${httpd.statistics.location}"
 endDefine
 define env defineEmptyStatisticsAlias.exe endDefine
    set context set_alias_statistics ""
 endDefine
 
 onerror continue
-test -d ${statisticsLocation}
+test -d ${httpd.statistics.location}
 set env have_stats_loc ${rc}
 
 onerror shutdown
