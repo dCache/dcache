@@ -35,6 +35,8 @@ exec env enableGss -ifok
 set env -c secflavor nogss
 onerror shutdown
 
+exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
+
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
         "classpath:org/dcache/chimera/nfsv41/door/nfsv41-${secflavor}.xml \
        -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
