@@ -27,8 +27,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import diskCacheV111.movers.NetIFContainer;
+import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -43,21 +44,32 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
 
+import org.dcache.acl.enums.AccessType;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
+import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.namespace.PermissionHandler;
+import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.TransferRetryPolicy;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.util.FileStatus;
+
+import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -99,6 +111,15 @@ public class XrootdDoor
     private CellStub _poolManagerStub;
     private CellStub _billingStub;
 
+    private PoolMonitor _poolMonitor;
+
+    private final PermissionHandler _pdp =
+            new ChainedPermissionHandler
+                    (
+                            new ACLPermissionHandler(),
+                            new PosixPermissionHandler()
+                    );
+
     private int _moverTimeout = 180000;
     private TimeUnit _moverTimeoutUnit = TimeUnit.MILLISECONDS;
 
@@ -135,12 +156,18 @@ public class XrootdDoor
         _billingStub = stub;
     }
 
+    @Required
+    public void setPoolMonitor(PoolMonitor poolMonitor)
+    {
+        _poolMonitor = poolMonitor;
+    }
+
     /**
      * Converts a colon separated list of paths to a List of FsPath.
      */
     private List<FsPath> toFsPaths(String s)
     {
-        List<FsPath> list = new ArrayList();
+        List<FsPath> list = new ArrayList<>();
         for (String path: Splitter.on(":").omitEmptyStrings().split(s)) {
             list.add(new FsPath(path));
         }
@@ -252,7 +279,7 @@ public class XrootdDoor
     @Required
     public void setExecutor(ScheduledExecutorService executor)
     {
-        executor.scheduleAtFixedRate(new FireAndForgetTask(new PingMoversTask(_transfers.values())),
+        executor.scheduleAtFixedRate(new FireAndForgetTask(new PingMoversTask<>(_transfers.values())),
                                      PING_DELAY, PING_DELAY,
                                      TimeUnit.MILLISECONDS);
     }
@@ -760,32 +787,102 @@ public class XrootdDoor
         }
     }
 
-    public FileMetaData getFileMetaData(FsPath fullPath,
-                                        Subject subject) throws CacheException
+    private int getFileStatusFlags(Subject subject, FileAttributes attributes)
     {
-        PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
-        return new FileMetaData(pnfsHandler.getFileAttributes(fullPath.toString(),
-                                                              FileMetaData.getKnownFileAttributes()));
+        int flags = 0;
+        switch (attributes.getFileType()) {
+        case DIR:
+            boolean canListDir =
+                    _pdp.canListDir(subject, attributes) == AccessType.ACCESS_ALLOWED;
+            boolean canLookup =
+                    _pdp.canLookup(subject, attributes) == AccessType.ACCESS_ALLOWED;
+            boolean canCreateFile =
+                    _pdp.canCreateFile(subject, attributes) == AccessType.ACCESS_ALLOWED;
+            boolean canCreateDir =
+                    _pdp.canCreateSubDir(subject, attributes) == AccessType.ACCESS_ALLOWED;
+            flags |= kXR_isDir;
+            if (canLookup) {
+                flags |= kXR_xset;
+            }
+            if (canCreateFile || canCreateDir) {
+                flags |= kXR_writable;
+            }
+            if (canListDir) {
+                flags |= kXR_readable;
+            }
+            break;
+        case REGULAR:
+            boolean canReadFile =
+                    _pdp.canReadFile(subject, attributes)== AccessType.ACCESS_ALLOWED;
+            boolean canWriteFile =
+                    _pdp.canWriteFile(subject, attributes)== AccessType.ACCESS_ALLOWED;
+            if (canWriteFile) {
+                flags |= kXR_writable;
+            }
+            if (canReadFile) {
+                flags |= kXR_readable;
+            }
+            if (attributes.getStorageInfo().isCreatedOnly()) {
+                flags |= kXR_opscpend;
+            }
+            break;
+        default:
+            flags |= kXR_other;
+            break;
+        }
+        return flags;
     }
 
-    public FileMetaData[] getMultipleFileMetaData(FsPath[] allPaths,
-                                                  Subject subject)
-        throws CacheException
+    public FileStatus getFileStatus(FsPath fullPath, Subject subject, String clientHost) throws CacheException
     {
-        FileMetaData[] allMetas = new FileMetaData[allPaths.length];
+        /* Fetch file attributes.
+         */
+        PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
+        Set<FileAttribute> requestedAttributes = EnumSet.of(TYPE, SIZE, MODIFICATION_TIME, STORAGEINFO);
+        requestedAttributes.addAll(PoolMonitorV5.getRequiredAttributesForFileLocality());
+        requestedAttributes.addAll(_pdp.getRequiredAttributes());
 
+        FileAttributes attributes =
+                pnfsHandler.getFileAttributes(fullPath.toString(), requestedAttributes);
+
+        /* Determine file locality.
+         */
+        int flags = getFileStatusFlags(subject, attributes);
+        if (attributes.getFileType() != FileType.DIR) {
+            FileLocality locality =
+                    _poolMonitor.getFileLocality(attributes, clientHost);
+            switch (locality) {
+            case NEARLINE:
+            case LOST:
+            case UNAVAILABLE:
+                flags |= kXR_offline;
+            }
+        }
+
+        return new FileStatus(0, attributes.getSize(), flags, attributes.getModificationTime() / 1000);
+    }
+
+    public int[] getMultipleFileStatuses(FsPath[] allPaths, Subject subject) throws CacheException
+    {
+        PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
+        int[] flags = new int[allPaths.length];
         // TODO: Use SpreadAndWait
         for (int i = 0; i < allPaths.length; i++) {
             try {
-                allMetas[i] = getFileMetaData(allPaths[i], subject);
+                Set<FileAttribute> requestedAttributes = EnumSet.of(TYPE);
+                requestedAttributes.addAll(_pdp.getRequiredAttributes());
+                FileAttributes attributes =
+                        pnfsHandler.getFileAttributes(allPaths[i].toString(), requestedAttributes);
+                flags[i] = getFileStatusFlags(subject, attributes);
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.FILE_NOT_FOUND &&
-                    e.getRc() != CacheException.NOT_IN_TRASH) {
+                        e.getRc() != CacheException.NOT_IN_TRASH) {
                     throw e;
                 }
+                flags[i] = kXR_other;
             }
         }
-        return allMetas;
+        return flags;
     }
 
     /**

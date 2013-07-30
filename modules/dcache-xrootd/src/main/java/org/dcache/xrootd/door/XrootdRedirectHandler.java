@@ -18,10 +18,10 @@ import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.FileMetaData.Permissions;
+import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
@@ -54,7 +54,6 @@ import org.dcache.xrootd.protocol.messages.StatRequest;
 import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
-import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 
 import static com.google.common.collect.Iterables.transform;
@@ -206,13 +205,17 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
             return new RedirectResponse(req, address.getHostString(), address.getPort(), opaque, "");
         } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_FileNotOpen, "No such file");
+            throw new XrootdException(kXR_NotFound, "No such file");
         } catch (FileExistsCacheException e) {
             throw new XrootdException(kXR_Unsupported, "File already exists");
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
             throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+        } catch (FileIsNewCacheException e) {
+            throw new XrootdException(kXR_FileLockedr, "File is locked by upload");
+        } catch (NotFileCacheException e) {
+            throw new XrootdException(kXR_NotFile, "Not a file");
         } catch (CacheException e) {
             throw new XrootdException(kXR_ServerError,
                                       String.format("Failed to open file (%s [%d])",
@@ -234,12 +237,11 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     {
         String path = req.getPath();
         try {
-            FileMetaData meta = _door.getFileMetaData(createFullPath(path), req.getSubject());
-            FileStatus fs = convertToFileStatus(meta); // FIXME
-            return new StatResponse(req, fs);
+            String client =
+                    ((InetSocketAddress) event.getChannel().getRemoteAddress()).getAddress().getHostAddress();
+            return new StatResponse(req, _door.getFileStatus(createFullPath(path), req.getSubject(), client));
         } catch (FileNotFoundCacheException e) {
-            _log.info("No PnfsId found for path: {}", path);
-            return new StatResponse(req, FileStatus.FILE_NOT_FOUND);
+            throw new XrootdException(kXR_NotFound, "No such file");
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
@@ -259,25 +261,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         if (req.getPaths().length == 0) {
             throw new XrootdException(kXR_ArgMissing, "no paths specified");
         }
-
         try {
             FsPath[] paths = new FsPath[req.getPaths().length];
             for (int i = 0; i < paths.length; i++) {
                 paths[i] = createFullPath(req.getPaths()[i]);
             }
-
-            FileMetaData[] metas =
-                _door.getMultipleFileMetaData(paths, req.getSubject());
-            int[] flags = new int[metas.length];
-            for (int i = 0; i < metas.length; i++) {
-                if (metas[i] == null) {
-                    flags[i] = kXR_other;
-                } else {
-                    flags[i] = getFileStatusFlags(metas[i]);
-                }
-            }
-
-            return new StatxResponse(req, flags);
+            return new StatxResponse(req, _door.getMultipleFileStatuses(paths, req.getSubject()));
         } catch (TimeoutCacheException e) {
             throw new XrootdException(kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
@@ -312,6 +301,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             throw new XrootdException(kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
             throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+        } catch (FileNotFoundCacheException e) {
+            throw new XrootdException(kXR_NotFound, "No such file");
         } catch (CacheException e) {
             throw new XrootdException(kXR_ServerError,
                                       String.format("Failed to delete file (%s [%d])",
@@ -342,7 +333,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         } catch (PermissionDeniedCacheException e) {
             throw new XrootdException(kXR_NotAuthorized, e.getMessage());
         } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_FSError, e.getMessage());
+            throw new XrootdException(kXR_NotFound, e.getMessage());
         } catch (CacheException e) {
             throw new XrootdException(kXR_ServerError,
                                       String.format("Failed to delete directory " +
@@ -418,7 +409,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         } catch (PermissionDeniedCacheException e) {
             throw new XrootdException(kXR_NotAuthorized, e.getMessage());
         } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_FSError,
+            throw new XrootdException(kXR_NotFound,
                                       String.format("Source file does not exist (%s) ",
                                                     e.getMessage()));
         } catch (FileExistsCacheException e) {
@@ -571,34 +562,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _log.debug("mode to apply to open path: {}", s);
     }
 
-    private int getFileStatusFlags(FileMetaData meta)
-    {
-        int flags = 0;
-        if (meta.isDirectory()) {
-            flags |= kXR_isDir;
-        }
-        if (!meta.isRegularFile() && !meta.isDirectory()) {
-            flags |= kXR_other;
-        }
-        Permissions pm = meta.getWorldPermissions();
-        if (pm.canExecute()) {
-            flags |= kXR_xset;
-        }
-        if (pm.canRead()) {
-            flags |= kXR_readable;
-        }
-        if (pm.canWrite()) {
-            flags |= kXR_writable;
-        }
-        return flags;
-    }
-
-    private FileStatus convertToFileStatus(FileMetaData meta)
-    {
-        return new FileStatus(0, meta.getFileSize(), getFileStatusFlags(meta),
-                              meta.getLastModifiedTime() / 1000);
-    }
-
     /**
      * Callback responding to client depending on the list directory messages
      * it receives from Pnfs via the door.
@@ -626,7 +589,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
          * from PnfsManager.
          *
          * @param rc The error code of the message
-         * @param error Object describing the actual error that occured
+         * @param error Object describing the actual error that occurred
          */
         @Override
         public void failure(int rc, Object error)
@@ -645,6 +608,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                   kXR_NotAuthorized,
                                   "Permission to list that directory denied: " +
                                   error.toString()));
+                break;
+            case CacheException.FILE_NOT_FOUND:
+                respond(_context, _event,
+                        withError(_request, kXR_NotFound, "Path not found"));
                 break;
             default:
                 respond(_context, _event,
@@ -714,7 +681,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
     /**
      * Execute login strategy to make an user authorization decision.
-     * @param loginSubject
      */
     private void loggedIn(LoginEvent event)
     {
