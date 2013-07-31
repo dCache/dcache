@@ -931,17 +931,17 @@ case "$1" in
                     for domain in $(getProperty dcache.domains); do
                         for cell in $(getProperty domain.cells "$domain"); do
                             if hasDatabase "$domain" "$cell"; then
-                                host=$(getProperty db.host "$domain" "$cell")
-                                user=$(getProperty db.user "$domain" "$cell")
-                                changelog=$(getProperty db.schema.changelog "$domain" "$cell")
-                                database=$(getProperty db.name "$domain" "$cell")
-                                partitions=$(getProperty db.connections.partition-count "$domain" "$cell")
+                                host=$(getScopedProperty db.host "$domain" "$cell")
+                                user=$(getScopedProperty db.user "$domain" "$cell")
+                                changelog=$(getScopedProperty db.schema.changelog "$domain" "$cell")
+                                database=$(getScopedProperty db.name "$domain" "$cell")
+                                partitions=$(getScopedProperty db.connections.partition-count "$domain" "$cell")
                                 if [ "$partitions" = "" ]; then
                                     maxConnections=""
                                     minConnections=""
                                 else
-                                    maxConnections=$(( $partitions * $(getProperty db.connections.max-per-partition "$domain" "$cell") ))
-                                    minConnections=$(( $partitions * $(getProperty db.connections.min-per-partition "$domain" "$cell") ))
+                                    maxConnections=$(( $partitions * $(getScopedProperty db.connections.max-per-partition "$domain" "$cell") ))
+                                    minConnections=$(( $partitions * $(getScopedProperty db.connections.min-per-partition "$domain" "$cell") ))
                                     totalMaxConnections=$(( $totalMaxConnections + $maxConnections ))
                                     totalMinConnections=$(( $totalMinConnections + $minConnections ))
                                 fi
@@ -951,7 +951,7 @@ case "$1" in
                                 else
                                     manageable=No
                                 fi
-                                if [ "$(getProperty db.schema.auto "$domain" "$cell")" = "true" ]; then
+                                if [ "$(getScopedProperty db.schema.auto "$domain" "$cell")" = "true" ]; then
                                     auto=Yes
                                 else
                                     auto=No

@@ -17,10 +17,10 @@ check -strong pnfsmanager.limits.queue-length
 check -strong pnfsmanager.cell.name
 check -strong pnfsmanager.acl
 check -strong pnfsmanager.db.dialect
-check -strong db.user
-check -strong db.url
-check -strong db.driver
-check db.password
+check -strong pnfsmanager.db.user
+check -strong pnfsmanager.db.url
+check -strong pnfsmanager.db.driver
+check pnfsmanager.db.password
 
 create org.dcache.cells.UniversalSpringCell ${pnfsmanager.cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \

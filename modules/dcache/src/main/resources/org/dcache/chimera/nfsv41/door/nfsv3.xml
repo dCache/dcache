@@ -11,10 +11,10 @@
 
     <bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource"
           destroy-method="close">
-        <property name="driverClass" value="${db.driver}"/>
-        <property name="jdbcUrl" value="${db.url}"/>
-        <property name="username" value="${db.user}"/>
-        <property name="password" value="${db.password}"/>
+        <property name="driverClass" value="${nfs.db.driver}"/>
+        <property name="jdbcUrl" value="${nfs.db.url}"/>
+        <property name="username" value="${nfs.db.user}"/>
+        <property name="password" value="${nfs.db.password}"/>
         <property name="idleConnectionTestPeriodInMinutes" value="60"/>
         <property name="idleMaxAgeInMinutes" value="240"/>
         <property name="maxConnectionsPerPartition" value="30"/>

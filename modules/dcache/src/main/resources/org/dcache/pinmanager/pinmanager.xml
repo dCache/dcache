@@ -129,14 +129,14 @@
     <description>Database schema manager</description>
     <property name="dataSource">
       <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="driverClassName" value="${db.driver}"/>
-        <property name="url" value="${db.url}"/>
-        <property name="username" value="${db.user}"/>
-        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${db.password.file}', '${db.url}', '${db.user}', '${db.password}') }"/>
+        <property name="driverClassName" value="${pinmanager.db.driver}"/>
+        <property name="url" value="${pinmanager.db.url}"/>
+        <property name="username" value="${pinmanager.db.user}"/>
+        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }"/>
       </bean>
     </property>
-    <property name="changeLog" value="classpath:${db.schema.changelog}"/>
-    <property name="shouldUpdate" value="${db.schema.auto}"/>
+    <property name="changeLog" value="classpath:${pinmanager.db.schema.changelog}"/>
+    <property name="shouldUpdate" value="${pinmanager.db.schema.auto}"/>
   </bean>
 
   <bean id="pmf"
@@ -147,20 +147,20 @@
       <props>
         <prop key="javax.jdo.PersistenceManagerFactoryClass">
         org.datanucleus.api.jdo.JDOPersistenceManagerFactory</prop>
-        <prop key="javax.jdo.option.ConnectionURL">${db.url}</prop>
-        <prop key="javax.jdo.option.ConnectionUserName">${db.user}</prop>
-        <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${db.password.file}', '${db.url}', '${db.user}', '${db.password}') }</prop>
-        <prop key="javax.jdo.option.ConnectionDriverName">${db.driver}</prop>
+        <prop key="javax.jdo.option.ConnectionURL">${pinmanager.db.url}</prop>
+        <prop key="javax.jdo.option.ConnectionUserName">${pinmanager.db.user}</prop>
+        <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }</prop>
+        <prop key="javax.jdo.option.ConnectionDriverName">${pinmanager.db.driver}</prop>
         <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
         <prop key="datanucleus.connectionPoolingType">BoneCP</prop>
 
         <!-- BoneCP setMaxConnectionsPerPartition: maximum number of
              connections (per partition) -->
-        <prop key="datanucleus.connectionPool.maxPoolSize">${db.connections.max-per-partition}</prop>
+        <prop key="datanucleus.connectionPool.maxPoolSize">${pinmanager.db.connections.max-per-partition}</prop>
 
         <!-- BoneCP setMinConnectionsPerPartition: the minimum number of
              connections that will be contained in every partition -->
-        <prop key="datanucleus.connectionPool.minPoolSize">${db.connections.max-per-partition}</prop>
+        <prop key="datanucleus.connectionPool.minPoolSize">${pinmanager.db.connections.max-per-partition}</prop>
 
         <!-- BoneCP setStatementsCacheSize: the number of statements to
              cache -->

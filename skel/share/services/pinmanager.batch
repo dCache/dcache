@@ -1,13 +1,13 @@
 onerror shutdown
 
 check -strong pinmanager.cell.name
-check -strong db.driver
-check -strong db.url
-check -strong db.user
-check -strong db.schema.auto
-check -strong db.schema.changelog
-check db.password
-check db.password.file
+check -strong pinmanager.db.driver
+check -strong pinmanager.db.url
+check -strong pinmanager.db.user
+check -strong pinmanager.db.schema.auto
+check -strong pinmanager.db.schema.changelog
+check pinmanager.db.password
+check pinmanager.db.password.file
 check -strong pinmanager.max-pin-duration
 check -strong pinmanager.expiration-period
 check -strong pinmanager.db.connections.max-per-partition

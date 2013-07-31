@@ -5,10 +5,10 @@
 onerror shutdown
 
 check -strong replica.cell.name
-check -strong db.user
-check db.password
+check -strong replica.db.user
+check replica.db.password
 check replica.db.password.file
-check -strong db.driver
+check -strong replica.db.driver
 check -strong replica.poolgroup
 check -strong replica.limits.pool-watchdog-period
 check -strong replica.limits.pool-watchdog-period.unit
@@ -54,10 +54,10 @@ create diskCacheV111.replicaManager.ReplicaManagerV2 ${replica.cell.name} \
         -waitReplicateTOUnit=${replica.limits.wait-replicate-timeout.unit} \
         -waitReduceTO=${replica.limits.wait-reduce-timeout} \
         -waitReduceTOUnit=${replica.limits.wait-reduce-timeout.unit} \
-        -dbURL=${db.url} \
-        -jdbcDrv=${db.driver} \
-        -dbUser=${db.user} \
-        -dbPass=${db.password} \
+        -dbURL=${replica.db.url} \
+        -jdbcDrv=${replica.db.driver} \
+        -dbUser=${replica.db.user} \
+        -dbPass=${replica.db.password} \
         -pgPass=${replica.db.password.file}   \
         -XXcheckPoolHost=${replica.enable.check-pool-host} \
         -enableSameHostReplica=${replica.enable.same-host-replica} \
