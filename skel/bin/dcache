@@ -816,11 +816,11 @@ case "$1" in
                 for cell in $(getProperty domain.cells "$domain"); do
                     service=$(getProperty domain.service "$domain" "$cell")
 
-                    for port in $(getProperty net.ports.tcp "$domain" "$cell"); do
+                    for port in $(getScopedProperty net.ports.tcp "$domain" "$cell"); do
                         printf "${domain}\t${cell}\t${service}\tTCP\t$(echo $port | tr : -)\n"
                     done
 
-                    for port in $(getProperty net.ports.udp "$domain" "$cell"); do
+                    for port in $(getScopedProperty net.ports.udp "$domain" "$cell"); do
                         printf "${domain}\t${cell}\t${service}\tUDP\t$(echo $port | tr : -)\n"
                     done
                 done
@@ -845,8 +845,8 @@ case "$1" in
 	    done
 
 	    for cell in $(getProperty domain.cells "$domain"); do
-                for port in $(getProperty net.ports.tcp "$domain" "$cell") \
-		    $(getProperty net.ports.udp "$domain" "$cell"); do
+                for port in $(getScopedProperty net.ports.tcp "$domain" "$cell") \
+		    $(getScopedProperty net.ports.udp "$domain" "$cell"); do
 		    if [ "$port" = "0" ]; then
 			has_zero_ports=true
 			break 2

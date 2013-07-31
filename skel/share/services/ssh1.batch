@@ -52,13 +52,13 @@ set context userPasswordFile "${ssh1.paths.user-password}"
 create dmg.cells.services.login.SshKeyManager    skm
 
 #create dmg.cells.services.login.LoginManager slm \
-#      "${port}  \
+#      "${ssh1.net.port}  \
 #       -listen=${admin.net.listen} \
 #       dmg.cells.services.StreamLoginCell \
 #       -prot=ssh -auth=dmg.cells.services.login.SshSAuth_X"
 
 create dmg.cells.services.login.LoginManager ${ssh1.cell.name} \
-      "${port}  \
+      "${ssh1.net.port}  \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
        -history=${ssh1.paths.histor} \
