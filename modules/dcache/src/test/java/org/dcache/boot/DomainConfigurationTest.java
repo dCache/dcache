@@ -25,7 +25,7 @@ public class DomainConfigurationTest
     private final static String DEFAULTS =
         "a=1\n" +
         "b=${a}\n" +
-        "service1/c=2\n";
+        "c=2\n";
 
     private final static String CONFIGURATION =
         "a=2\n" +
@@ -84,7 +84,7 @@ public class DomainConfigurationTest
 
         assertPropertyEquals("1", "a", shell);
         assertPropertyEquals("1", "b", shell);
-        assertPropertyEquals(null, "c", shell);
+        assertPropertyEquals("2", "c", shell);
         assertPropertyEquals(DOMAIN_NAME, "domain.name", shell);
         assertPropertyEquals(SERVICE2_NAME, "domain.service", shell);
     }
@@ -100,7 +100,7 @@ public class DomainConfigurationTest
 
         assertPropertyEquals("2", "a", shell);
         assertPropertyEquals("2", "b", shell);
-        assertPropertyEquals("2", "c", shell);
+        assertPropertyEquals("1", "c", shell);
         assertPropertyEquals(DOMAIN_NAME, "domain.name", shell);
         assertPropertyEquals(SERVICE1_NAME, "domain.service", shell);
 

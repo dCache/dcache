@@ -181,20 +181,6 @@ public class PythonOracleLayoutPrinterTests
                 is("pool2 value"));
     }
 
-    @Test
-    public void shouldFindScopedProperty()
-    {
-        givenDefaults().with("pool/property.name", "pool default value");
-        givenDomain("domain 1").
-                withService("pool", "pool1");
-
-        whenOracleIsLoadedAndExec();
-
-        assertThat(serviceScopedProperty("domain 1", "pool1", "property.name"),
-                is("pool default value"));
-    }
-
-
     private void whenOracleIsLoadedAndExec()
     {
         ByteArrayOutputStream stored = new ByteArrayOutputStream();

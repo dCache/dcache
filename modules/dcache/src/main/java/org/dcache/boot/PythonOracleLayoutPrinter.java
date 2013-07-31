@@ -3,7 +3,6 @@ package org.dcache.boot;
 import java.io.PrintStream;
 
 import org.dcache.util.ConfigurationProperties;
-import org.dcache.util.ScopedConfigurationProperties;
 
 /**
  * Creates a Python declaration for a class that is an oracle for
@@ -154,7 +153,7 @@ public class PythonOracleLayoutPrinter implements LayoutPrinter
         {
             IndentPrinter indent = out.indent();
 
-            for(ScopedConfigurationProperties service : domain.getServices()) {
+            for(ConfigurationProperties service : domain.getServices()) {
                 String name = Properties.getCellName(service);
                 if(name != null) {
                     out.println("'" + markup(name) + "' : {");

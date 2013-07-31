@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.dcache.util.ConfigurationProperties;
-import org.dcache.util.ScopedConfigurationProperties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -133,7 +132,7 @@ public class LayoutTests {
     }
 
     private void assertDomainServicesSize( Domain domain, int expectedSize) {
-        List<ScopedConfigurationProperties> services = domain.getServices();
+        List<ConfigurationProperties> services = domain.getServices();
         assertEquals( expectedSize, services.size());
     }
 
