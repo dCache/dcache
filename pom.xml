@@ -89,6 +89,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>2.10.2</version>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${version.slf4j}</version>
@@ -803,6 +808,11 @@
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
             <version>1.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_2.10</artifactId>
+            <version>2.0.M6-SNAP28</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -822,14 +832,14 @@
                     <version>3.3</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.scala-tools</groupId>
-                    <artifactId>maven-scala-plugin</artifactId>
-                    <version>2.15.2</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>net.alchim31.maven</groupId>
+                    <artifactId>scala-maven-plugin</artifactId>
+                    <version>3.0.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1096,6 +1106,7 @@
         <module>modules/gplazma2-jaas</module>
         <module>modules/gplazma2-nis</module>
         <module>modules/gplazma2-nsswitch</module>
+        <module>modules/gplazma2-banfile</module>
         <module>modules/gplazma2-voms</module>
         <module>modules/gplazma2-kpwd</module>
         <module>modules/gplazma2-xacml</module>
