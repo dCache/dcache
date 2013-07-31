@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>banfile</name>
+        <class>org.dcache.gplazma.plugins.BanFilePlugin</class>
+    </plugin>
+</plugins>
