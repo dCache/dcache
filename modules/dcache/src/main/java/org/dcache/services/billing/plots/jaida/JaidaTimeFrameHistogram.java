@@ -37,8 +37,7 @@ public final class JaidaTimeFrameHistogram extends AbstractTimeFrameHistogram {
      * @see org.dcache.billing.statistics.util.ITimeFrameHistogram#setData()
      */
     @Override
-    public void setData(Collection<IPlotData> data, String field, Double dfactor)
-                    throws Throwable {
+    public void setData(Collection<IPlotData> data, String field, Double dfactor) {
         if (field != null) {
             if (dfactor != null) {
                 for (IPlotData d : data) {

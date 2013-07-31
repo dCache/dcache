@@ -80,6 +80,10 @@ public class TimeFrame {
         timeframe = Type.DAY;
     }
 
+    public String toString() {
+        return timeframe + "-" + timebin;
+    }
+
     /**
      * computes boundaries, number of bins and bin width.
      */
