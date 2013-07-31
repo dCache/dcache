@@ -1,5 +1,13 @@
 package org.dcache.services.billing.plots;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,8 +19,11 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
+import dmg.util.Args;
+
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
+import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogram;
 import org.dcache.services.billing.plots.util.ITimeFrameHistogramFactory;
 import org.dcache.services.billing.plots.util.ITimeFramePlot;
@@ -21,15 +32,6 @@ import org.dcache.services.billing.plots.util.TimeFrame;
 import org.dcache.services.billing.plots.util.TimeFrame.BinType;
 import org.dcache.services.billing.plots.util.TimeFrame.Type;
 import org.dcache.services.billing.plots.util.TimeFramePlotFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-
-import dmg.util.Args;
 
 /**
  * Generates historgrams (plot images) using an {@link IBillingAccessInfo}
@@ -38,7 +40,6 @@ import dmg.util.Args;
  * @author arossi
  */
 public class BillingHistory implements Runnable {
-
     /**
      * Adapted from {@link UniversalSpringCellApplicationContext}.<br>
      * <br>
@@ -46,7 +47,7 @@ public class BillingHistory implements Runnable {
      * Makes command-line arguments available to Spring bean configuration.
      */
     private class BillingHistoryApplicationContext extends
-    ClassPathXmlApplicationContext {
+                    ClassPathXmlApplicationContext {
 
         private BillingHistoryApplicationContext() {
             super(args.getOption(CONTEXT_LOCATION));
@@ -103,11 +104,12 @@ public class BillingHistory implements Runnable {
     }
 
     public static final String[] TYPE = { "bytes_rd", "bytes_wr",
-        "transfers_rd", "transfers_wr", "time", "hits", "cost" };
+                    "transfers_rd", "transfers_wr", "time", "hits", "cost" };
     public static final String[] EXT = { "_dy", "_wk", "_mo", "_yr" };
 
     protected static final String DEFAULT_SLEEP = "30";
-    protected static final String DEFAULT_PROPERTIES = "org/dcache/services/billing/plot/plot.properties";
+    protected static final String DEFAULT_PROPERTIES
+        = "org/dcache/services/billing/plot/plot.properties";
     protected static final String ACCESS_BEAN = "jdbc-billing-info-access";
 
     /**
@@ -159,7 +161,7 @@ public class BillingHistory implements Runnable {
         logger.debug("starting run ...");
         try {
             initialize();
-        } catch (Throwable t) {
+        } catch (Exception t) {
             logger.error("error intializing billing history thread; quitting ...",
                             t);
             return;
@@ -173,40 +175,52 @@ public class BillingHistory implements Runnable {
         setRunning(true);
 
         while (isRunning()) {
+            if (!plotDirF.exists()) {
+                plotDirF.mkdirs();
+            }
+
+            logger.debug("generating time frames ...");
+            generateTimeFrames();
+
+            logger.debug("generating plots ...");
+
+            String title = "";
+
             try {
-                if (!plotDirF.exists()) {
-                    plotDirF.mkdirs();
-                }
-
-                logger.debug("generating time frames ...");
-                generateTimeFrames();
-
-                logger.debug("generating plots ...");
                 for (int t = 0; t < timeFrame.length; t++) {
                     Date d = timeFrame[t].getLow();
-                    generateReadWritePlot(TYPE[0] + EXT[t], TITLE[0] + " ("
-                                    + TIME_DESC[t] + d + ")", timeFrame[t],
-                                    false, true);
-                    generateReadWritePlot(TYPE[1] + EXT[t], TITLE[1] + " ("
-                                    + TIME_DESC[t] + d + ")", timeFrame[t],
-                                    true, true);
-                    generateReadWritePlot(TYPE[2] + EXT[t], TITLE[2] + " ("
-                                    + TIME_DESC[t] + d + ")", timeFrame[t],
-                                    false, false);
-                    generateReadWritePlot(TYPE[3] + EXT[t], TITLE[3] + " ("
-                                    + TIME_DESC[t] + d + ")", timeFrame[t],
-                                    true, false);
-                    generateConnectionTimePlot(TYPE[4] + EXT[t], TITLE[4]
-                                    + " (" + TIME_DESC[t] + d + ")",
-                                    timeFrame[t]);
-                    generateHitsPlot(TYPE[5] + EXT[t], TITLE[5] + " ("
-                                    + TIME_DESC[t] + d + ")", timeFrame[t]);
-                    generateCostPlot(TYPE[6] + EXT[t], TITLE[6] + " ("
-                                    + TIME_DESC[t] + d + ")", timeFrame[t]);
+                    String fileName = TYPE[0] + EXT[t];
+                    title = TITLE[0] + " (" + TIME_DESC[t] + d + ")";
+                    generateReadWritePlot(fileName, title, timeFrame[t],
+                                          false, true);
+                    fileName = TYPE[1] + EXT[t];
+                    title = TITLE[1] + " (" + TIME_DESC[t] + d + ")";
+                    generateReadWritePlot(fileName, title, timeFrame[t],
+                                          true, true);
+                    fileName = TYPE[2] + EXT[t];
+                    title = TITLE[2] + " (" + TIME_DESC[t] + d + ")";
+                    generateReadWritePlot(fileName, title, timeFrame[t],
+                                          false, false);
+                    fileName = TYPE[3] + EXT[t];
+                    title = TITLE[3] + " (" + TIME_DESC[t] + d + ")";
+                    generateReadWritePlot(fileName, title, timeFrame[t],
+                                          true, false);
+                    fileName = TYPE[4] + EXT[t];
+                    title = TITLE[4] + " (" + TIME_DESC[t] + d + ")";
+                    generateConnectionTimePlot(fileName, title, timeFrame[t]);
+                    fileName = TYPE[5] + EXT[t];
+                    title = TITLE[5] + " (" + TIME_DESC[t] + d + ")";
+                    generateHitsPlot(fileName, title, timeFrame[t]);
+                    fileName = TYPE[6] + EXT[t];
+                    title = TITLE[6] + " (" + TIME_DESC[t] + d + ")";
+                    generateCostPlot(fileName, title, timeFrame[t]);
                 }
-            } catch (Throwable t) {
-                logger.error("error generating billing history plots; quitting ...",
-                                t);
+            } catch (Exception e) {
+                logger.error("while attempting to generate plot for {}: {}",
+                              title, extractFinalCause(e).getMessage());
+                logger.trace("error during plotting:", e);
+                logger.error("exiting plots ...");
+                setRunning(false);
                 return;
             }
 
@@ -214,24 +228,31 @@ public class BillingHistory implements Runnable {
                 logger.debug("sleeping ...");
                 Thread.sleep(timeout);
             } catch (InterruptedException ignored) {
+                break;
             }
         }
     }
 
+    private static Throwable extractFinalCause(Throwable e) {
+       Throwable t = e;
+       Throwable c = t.getCause();
+       while(c != null) {
+           t = c;
+           c = t.getCause();
+       }
+       return t;
+    }
+
     /**
      * Sets the properties for plotting and initializes db access.
-     *
-     * @throws Throwable
      */
-    private void initialize() throws Throwable {
+    private void initialize() throws Exception {
         logger.debug("initializing ...");
-        ClassLoader classLoader = Thread.currentThread()
-                        .getContextClassLoader();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         initializeProperties(classLoader);
         synchronizeProperties();
         initializeAccess(classLoader);
-        TimeFramePlotFactory plotFactory = TimeFramePlotFactory
-                        .getInstance(access);
+        TimeFramePlotFactory plotFactory = TimeFramePlotFactory.getInstance(access);
         String impl = properties.getProperty(ITimeFramePlot.FACTORY_TYPE);
         factory = plotFactory.create(impl, properties);
     }
@@ -335,7 +356,6 @@ public class BillingHistory implements Runnable {
      *
      * @param classLoader
      * @throws BillingInitializationException
-     * @throws Throwable
      */
     private void initializeAccess(ClassLoader classLoader)
                     throws NoSuchBeanDefinitionException,
@@ -363,11 +383,6 @@ public class BillingHistory implements Runnable {
 
     /**
      * Configures the boundaries and interval.
-     *
-     * @param high
-     * @param bin
-     * @param type
-     * @return timeframe
      */
     private TimeFrame getConfiguredTimeFrame(Calendar high, BinType bin,
                     Type type) {
@@ -378,125 +393,71 @@ public class BillingHistory implements Runnable {
         return timeFrame;
     }
 
-    /**
-     * For bytes and transfer count.
-     *
-     * @param fileName
-     * @param title
-     * @param timeFrame
-     * @param write
-     * @param size
-     */
     private void generateReadWritePlot(String fileName, String title,
-                    TimeFrame timeFrame, boolean write, boolean size) {
-        try {
-            ITimeFramePlot plot = factory.createPlot(fileName,
-                            new String[] { title });
-            logger.debug("generateReadWritePlot created ITimeFramePlot for "
-                            + fileName);
-            ITimeFrameHistogram[] histogram = createReadWriteHistograms(
-                            timeFrame, write, size);
-            logger.debug("generateReadWritePlot created histogram set for "
-                            + fileName);
-            PlotGridPosition pos = new PlotGridPosition(0, 0);
-            for (ITimeFrameHistogram h : histogram) {
-                plot.addHistogram(pos, h);
-            }
-            plot.plot();
-            logger.debug("generateReadWritePlot completed for " + fileName);
-        } catch (Throwable t) {
-            logger.error("could not generate " + fileName + " for "
-                            + timeFrame.getHigh(), t);
-        }
-    }
-
-    /**
-     * For dCache connection durations.
-     *
-     * @param fileName
-     * @param title
-     * @param timeFrame
-     */
-    private void generateConnectionTimePlot(String fileName, String title,
-                    TimeFrame timeFrame) {
-        try {
-            ITimeFramePlot plot = factory.createPlot(fileName,
-                            new String[] { title });
-            ITimeFrameHistogram[] histogram = factory
-                            .createDcConnectTimeHistograms(timeFrame);
-            PlotGridPosition pos = new PlotGridPosition(0, 0);
-            for (ITimeFrameHistogram h : histogram) {
-                plot.addHistogram(pos, h);
-            }
-            plot.plot();
-            logger.debug("generateConnectionTimePlot completed for " + fileName);
-        } catch (Throwable t) {
-            logger.error("could not generate " + fileName + " for "
-                            + timeFrame.getHigh(), t);
-        }
-    }
-
-    /**
-     * Cache hit counts.
-     *
-     * @param fileName
-     * @param title
-     * @param timeFrame
-     */
-    private void generateHitsPlot(String fileName, String title,
-                    TimeFrame timeFrame) {
-        try {
-            ITimeFramePlot plot = factory.createPlot(fileName,
-                            new String[] { title });
-            ITimeFrameHistogram[] histogram = factory
-                            .createHitHistograms(timeFrame);
-            PlotGridPosition pos = new PlotGridPosition(0, 0);
-            for (ITimeFrameHistogram h : histogram) {
-                plot.addHistogram(pos, h);
-            }
-            plot.plot();
-            logger.debug("generateHitsPlot completed for " + fileName);
-        } catch (Throwable t) {
-            logger.error("could not generate " + fileName + " for "
-                            + timeFrame.getHigh(), t);
-        }
-    }
-
-    /**
-     * Pool cost.
-     *
-     * @param fileName
-     * @param title
-     * @param timeFrame
-     */
-    private void generateCostPlot(String fileName, String title,
-                    TimeFrame timeFrame) {
-        try {
-            ITimeFramePlot plot = factory.createPlot(fileName,
-                            new String[] { title });
-            ITimeFrameHistogram h = factory.createCostHistogram(timeFrame);
-            PlotGridPosition pos = new PlotGridPosition(0, 0);
+                    TimeFrame timeFrame, boolean write, boolean size)
+                                    throws BillingQueryException, IOException {
+        ITimeFramePlot plot = factory.createPlot(fileName,
+                        new String[] { title });
+        logger.debug("generateReadWritePlot created ITimeFramePlot for {}",
+                        fileName);
+        ITimeFrameHistogram[] histogram
+            = createReadWriteHistograms(timeFrame, write, size);
+        logger.debug("generateReadWritePlot created histogram set for {}",
+                        fileName);
+        PlotGridPosition pos = new PlotGridPosition(0, 0);
+        for (ITimeFrameHistogram h : histogram) {
             plot.addHistogram(pos, h);
-            plot.plot();
-            logger.debug("generateCostPlot completed for " + fileName);
-        } catch (Throwable t) {
-            logger.error("could not generate " + fileName + " for "
-                            + timeFrame.getHigh(), t);
         }
+        plot.plot();
+        logger.debug("generateReadWritePlot completed for {}", fileName);
+    }
+
+    private void generateConnectionTimePlot(String fileName, String title,
+                    TimeFrame timeFrame) throws BillingQueryException, IOException {
+        ITimeFramePlot plot = factory.createPlot(fileName,
+                        new String[] { title });
+        ITimeFrameHistogram[] histogram
+            = factory.createDcConnectTimeHistograms(timeFrame);
+        PlotGridPosition pos = new PlotGridPosition(0, 0);
+        for (ITimeFrameHistogram h : histogram) {
+            plot.addHistogram(pos, h);
+        }
+        plot.plot();
+        logger.debug("generateConnectionTimePlot completed {}", fileName);
+    }
+
+    private void generateHitsPlot(String fileName, String title,
+                    TimeFrame timeFrame) throws BillingQueryException, IOException {
+        ITimeFramePlot plot = factory.createPlot(fileName,
+                        new String[] { title });
+        ITimeFrameHistogram[] histogram = factory.createHitHistograms(timeFrame);
+        PlotGridPosition pos = new PlotGridPosition(0, 0);
+        for (ITimeFrameHistogram h : histogram) {
+            plot.addHistogram(pos, h);
+        }
+        plot.plot();
+        logger.debug("generateHitsPlot completed {}", fileName);
+    }
+
+    private void generateCostPlot(String fileName, String title,
+                    TimeFrame timeFrame) throws BillingQueryException, IOException {
+        ITimeFramePlot plot = factory.createPlot(fileName,
+                        new String[] { title });
+        ITimeFrameHistogram h = factory.createCostHistogram(timeFrame);
+        PlotGridPosition pos = new PlotGridPosition(0, 0);
+        plot.addHistogram(pos, h);
+        plot.plot();
+        logger.debug("generateCostPlot completed {}", fileName);
     }
 
     /**
      * Auxiliary for histograms differentiating reads and writes.
      *
-     * @param timeFrame
-     * @param write
-     * @param size
      * @return pair of histograms (dCache, HSM)
-     * @throws Throwable
      */
     private ITimeFrameHistogram[] createReadWriteHistograms(
                     TimeFrame timeFrame, boolean write, boolean size)
-                                    throws Throwable {
+                                    throws BillingQueryException{
         if (size) {
             return new ITimeFrameHistogram[] {
                             factory.createDcBytesHistogram(timeFrame, write),
@@ -522,8 +483,7 @@ public class BillingHistory implements Runnable {
         this.running = running;
     }
 
-    public void close()
-    {
+    public void close() {
         access.close();
     }
 
