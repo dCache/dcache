@@ -20,7 +20,7 @@ define env dontStartService.exe enddefine
     say -level=esay "must be hosted in a domain by itself."
     say -level=esay ""
     say -level=esay "To fix this problem, either remove the alarms service or all other services"
-    say -level=esay "from the domain ${domain.name}."
+    say -level=esay "from the domain ${dcache.domain.name}."
     say -level=esay ""
     say -level=esay "The alarms service will not be started."
 enddefine
@@ -31,7 +31,7 @@ define env startService.exe enddefine
 enddefine
 
 onerror continue
-eval "${domain.cells}" "${alarms.cell.name}" ==
+eval "${dcache.domain.cells}" "${alarms.cell.name}" ==
 set env isUnique ${rc}
 onerror shutdown
 

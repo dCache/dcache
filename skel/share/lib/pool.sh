@@ -208,8 +208,8 @@ doForPoolOrFail() # $1 = name, $2 = function
     shift 2
 
     for domain in $(getProperty dcache.domains); do
-        for cell in $(getProperty domain.cells "$domain"); do
-            service=$(getProperty domain.service "$domain" "$cell")
+        for cell in $(getProperty dcache.domain.cells "$domain"); do
+            service=$(getProperty dcache.domain.service "$domain" "$cell")
             if [ "$service" = "pool" ]; then
                 if [ "$name" = $(getProperty pool.name "$domain" "$cell") ]; then
                     eval "$func" "$domain" "$cell" "$@" || fail $?

@@ -15,7 +15,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class LayoutTests {
 
-    private static final String PROPERTY_DOMAIN_NAME_KEY = "domain.name";
+    private static final String PROPERTY_DOMAIN_NAME_KEY = "dcache.domain.name";
 
     Layout _layout;
     LayoutStringBuffer _readerSource;

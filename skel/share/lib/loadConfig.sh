@@ -28,7 +28,7 @@ undefinedProperty()
 # the service name.
 getScopedProperty() # $1 = property, $2 = domain, $3 = cell
 {
-   getProperty "$(getProperty domain.service "$2" "$3").$1" "$2" "$3"
+   getProperty "$(getProperty dcache.domain.service "$2" "$3").$1" "$2" "$3"
 }
 
 findJava()

@@ -10,7 +10,7 @@ exec file:${dcache.paths.share}/cells/tunnel-${dcache.broker.scheme}.fragment
 ##############################################################
 
 onerror continue
-eval ${domain.name} ${dcache.broker.domain} ==
+eval ${dcache.domain.name} ${dcache.broker.domain} ==
 set env is_broker ${rc}
 onerror shutdown
 

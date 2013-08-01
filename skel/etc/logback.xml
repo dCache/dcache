@@ -75,7 +75,7 @@
   </appender>
 
   <appender name="events" class="ch.qos.logback.core.FileAppender">
-    <file>/tmp/events-${domain.name}.out</file>
+    <file>/tmp/events-${dcache.domain.name}.out</file>
     <encoder>
         <!-- Implements event based logging following the NetLogger format.
 

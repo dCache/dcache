@@ -1,7 +1,7 @@
 onerror shutdown
 check -strong dcache.paths.share
 check -strong dcache.broker.domain
-check -strong domain.name
+check -strong dcache.domain.name
 
 #
 # Instantiate regular OpenMQ support
@@ -14,7 +14,7 @@ exec file:${dcache.paths.share}/cells/tunnel-openmq.fragment
 ##############################################################
 
 onerror continue
-eval ${domain.name} ${dcache.broker.domain} ==
+eval ${dcache.domain.name} ${dcache.broker.domain} ==
 set env is_broker ${rc}
 onerror shutdown
 

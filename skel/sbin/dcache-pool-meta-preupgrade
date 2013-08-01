@@ -6,8 +6,8 @@
 @DCACHE_LOAD_CONFIG@
 
 for domain in $(getProperty dcache.domains); do
-    for cell in $(getProperty domain.cells "$domain"); do
-        service=$(getProperty domain.service "$domain" "$cell")
+    for cell in $(getProperty dcache.domain.cells "$domain"); do
+        service=$(getProperty dcache.domain.service "$domain" "$cell")
         if [ "$service" = "pool" -a $(getProperty metaDataRepository "$domain" "$cell") = "org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository" ]; then
             path=$(getProperty path "$domain" "$cell")
             echo "Preparing $path for upgrade"

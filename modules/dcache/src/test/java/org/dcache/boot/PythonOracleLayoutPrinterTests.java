@@ -13,7 +13,7 @@ import java.util.Properties;
 
 import org.dcache.util.ConfigurationProperties;
 
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
+import static org.dcache.boot.Properties.PROPERTY_CELL_NAME_SUFFIX;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -296,7 +296,7 @@ public class PythonOracleLayoutPrinterTests
         public DomainBuilder withService(String scope, String cellName)
         {
             _properties = _domain.createService(scope);
-            _properties.put(scope + "." + PROPERTY_CELL_NAME, cellName);
+            _properties.put(scope + "." + PROPERTY_CELL_NAME_SUFFIX, cellName);
             return this;
         }
     }

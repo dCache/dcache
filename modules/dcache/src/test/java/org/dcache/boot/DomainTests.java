@@ -14,7 +14,7 @@ public class DomainTests {
     private static final String DOMAIN_NAME = "domainName";
 
     // Domain always has a "domain.name" property who's value is the domain's name.
-    private static final String PROPERTY_DOMAIN_NAME_KEY = "domain.name";
+    private static final String PROPERTY_DOMAIN_NAME_KEY = "dcache.domain.name";
     private static final String PROPERTY_DOMAIN_NAME_VALUE = DOMAIN_NAME;
 
     Domain _domain;

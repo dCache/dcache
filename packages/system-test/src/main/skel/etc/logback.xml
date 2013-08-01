@@ -75,16 +75,16 @@
   </appender>
 
   <appender name="events" class="ch.qos.logback.core.FileAppender">
-    <file>${dcache.log.dir}/events-${domain.name}.out</file>
+    <file>${dcache.log.dir}/events-${dcache.domain.name}.out</file>
     <encoder>
       <pattern>ts=%d{yyyy-MM-dd}T%d{HH:mm:ss.SSS} %m%n</pattern>
     </encoder>
   </appender>
 
   <appender name="traceFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${dcache.log.dir}/trace-${domain.name}.out</file>
+    <file>${dcache.log.dir}/trace-${dcache.domain.name}.out</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-      <fileNamePattern>trace-${domain.name}.out.%i</fileNamePattern>
+      <fileNamePattern>trace-${dcache.domain.name}.out.%i</fileNamePattern>
       <minIndex>1</minIndex>
       <maxIndex>1</maxIndex>
     </rollingPolicy>
