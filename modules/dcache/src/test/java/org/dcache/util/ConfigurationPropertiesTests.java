@@ -150,16 +150,6 @@ public class ConfigurationPropertiesTests {
     }
 
     @Test
-    public void testIsScopedNotScoped() {
-        assertFalse(ConfigurationProperties.isScoped("foo"));
-    }
-
-    @Test
-    public void testIsScopedScoped() {
-        assertTrue(ConfigurationProperties.isScoped("foo/bar"));
-    }
-
-    @Test
     public void testNormalPropertyGet() {
         assertEquals( "testing normal property", NORMAL_PROPERTY_VALUE,
                 _properties.get( NORMAL_PROPERTY_NAME));

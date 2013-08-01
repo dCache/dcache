@@ -98,12 +98,16 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
     {
         out.append(indent).println("case \"$1\" in");
         for (String key: properties.stringPropertyNames()) {
-            String value = properties.getValue(key);
-            if (!value.equals(parentProperties.getValue(key))) {
-                out.append(indent).append("  ");
-                out.append(quoteForCase(key)).append(") echo \"");
-                out.append(quote(value.trim()));
-                out.println("\"; return;;");
+            ConfigurationProperties.AnnotatedKey annotatedKey = properties.getAnnotatedKey(key);
+            if (annotatedKey == null ||
+                    !annotatedKey.hasAnnotation(ConfigurationProperties.Annotation.DEPRECATED)) {
+                String value = properties.getValue(key);
+                if (!value.equals(parentProperties.getValue(key))) {
+                    out.append(indent).append("  ");
+                    out.append(quoteForCase(key)).append(") echo \"");
+                    out.append(quote(value.trim()));
+                    out.println("\"; return;;");
+                }
             }
         }
         out.append(indent).println("esac");
