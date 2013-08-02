@@ -1,6 +1,7 @@
 package dmg.util ;
 
-import java.util.Stack;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 /**
   *
@@ -66,107 +67,127 @@ public class Formats {
   private final static int RP_DOLLAR = 1 ;
   private final static int RP_OPENED = 2 ;
 
-    private static String replaceKeywords(String in, Replaceable cb, Stack<String> replaced)
+    /**
+     * Starting after the opening sequence of a placeholder ('$' followed by '{'), this method
+     * scans until the end of the placeholder ('}') and pushes a replacement sourced from
+     * {@code replaceable} to {@code out}.
+     *
+     * Handles both recursive, nested and incomplete placeholders.
+     *
+     * @param in Input sequence to scan
+     * @param pos Position of the first character of the key
+     * @param out Output sequence
+     * @param replaceable Source of replacements for placeholders
+     * @param stack Placeholders already replaced in the input sequence - prevents infinite recursion
+     * @return Position of the first character after the end of the placeholder
+     */
+    private static int replaceKey(char[] in, int pos, StringBuilder out, Replaceable replaceable, Deque<String> stack)
     {
-        StringBuilder key = null ;
-        StringBuilder out = new StringBuilder();
-        int state = RP_IDLE ;
-        int len   = in.length() ;
-        int braceCount = 0;
-        boolean startOfReference = false;
-
-        for( int i = 0 ; i < len ; i++ ){
-            char c = in.charAt(i) ;
-            switch( state ){
-            case RP_IDLE :
-                switch(c) {
-                case '$':
-                    state = RP_DOLLAR;
-                    break;
-                default:
-                    out.append(c);
-                }
-                break ;
-
-            case RP_DOLLAR :
-                switch(c) {
+        int mark = pos;
+        int length = in.length;
+        StringBuilder key = new StringBuilder(length);
+        char c1;
+        while (pos < length && (c1 = in[pos]) != '}') {
+            if (c1 != '$' || pos + 1 == length) {
+                /* Regular character */
+                pos++;
+            } else {
+                key.append(in, mark, pos - mark);
+                char c2 = in[pos + 1];
+                switch (c2) {
                 case '{':
-                    startOfReference=false;
-                    state = RP_OPENED ;
-                    braceCount = 0;
-                    key   = new StringBuilder();
+                    /* Nested placeholder */
+                    pos = replaceKey(in, pos + 2, key, replaceable, stack);
                     break;
-
                 case '$':
-                    out.append('$');
-                    state = RP_IDLE;
+                    /* Escaped $ symbol */
+                    key.append('$');
+                    pos += 2;
                     break;
-
                 default:
-                    out.append('$').append(c);
-                    state = RP_IDLE ;
-                }
-                break ;
-
-            case RP_OPENED :
-                switch(c) {
-                case '$':
-                    if(!startOfReference) {
-                        key.append(c);
-                    }
-                    startOfReference = !startOfReference;
-                    break;
-
-                case '{':
-                    key.append(c);
-                    if(startOfReference) {
-                        braceCount++;
-                        startOfReference=false;
-                    }
-                    break;
-
-                case '}':
-                    startOfReference=false;
-                    if(braceCount > 0) {
-                        braceCount--;
-                        key.append(c);
-                    } else {
-                        state = RP_IDLE;
-                        String keyName = replaceKeywords(key.toString(), cb, replaced);
-                        String keyValue = cb.getReplacement(keyName);
-
-                        if (keyValue == null || replaced.contains(keyName)) {
-                            out.append("${").append(keyName).append("}");
-                        } else {
-                            replaced.push(keyName);
-                            out.append(replaceKeywords(keyValue, cb, replaced));
-                            replaced.pop();
-                        }
-                    }
-                    break;
-
-                default:
-                    key.append(c);
+                    /* False alarm - sequence got no special meaning */
+                    key.append(c1).append(c2);
+                    pos += 2;
                     break;
                 }
+                mark = pos;
             }
         }
+        key.append(in, mark, pos - mark);
 
-        switch(state) {
-        case RP_DOLLAR:
-            out.append('$');
-            break;
-        case RP_OPENED:
+        if (pos < length) {
+            /* Complete placeholder */
+            pos++;
+
+            /* Lookup replacement value */
+            String keyName = key.toString();
+            String keyValue = replaceable.getReplacement(keyName);
+
+            /* Unless we already replaced in once in the current stack, replace any placeholders in the value */
+            if (keyValue == null || stack.contains(keyName)) {
+                out.append("${").append(keyName).append("}");
+            } else {
+                stack.push(keyName);
+                replaceKeywords(keyValue.toCharArray(), out, replaceable, stack);
+                stack.pop();
+            }
+        } else {
+            /* Incomplete placeholder - got to end of input sequence without closing curly brace */
             out.append("${").append(key);
-            break;
         }
 
-        return out.toString();
+        return pos;
+    }
+
+    /**
+     * Replaces placeholders in {@code in}, writing the result to {@code out}. Replacements for
+     * placeholders are sourced from {@code replaceable}.
+     *
+     * @param in Input sequence
+     * @param out Output sequence
+     * @param replaceable Source of replacements for placeholders
+     * @param stack Placeholders already replaced in the input sequence - prevents infinite recursion
+     * @return {@code out}
+     */
+    private static StringBuilder replaceKeywords(char[] in, StringBuilder out, Replaceable replaceable, Deque<String> stack)
+    {
+        int pos = 0;
+        int length = in.length;
+        int mark = 0;
+        while (pos < length) {
+            char c1 = in[pos];
+            if (c1 != '$' || pos + 1 == length) {
+                /* Regular character */
+                pos++;
+            } else {
+                out.append(in, mark, pos - mark);
+                char c2 = in[pos + 1];
+                switch (c2) {
+                case '{':
+                    /* Placeholder */
+                    pos = replaceKey(in, pos + 2, out, replaceable, stack);
+                    break;
+                case '$':
+                    /* Escaped $ symbol */
+                    out.append('$');
+                    pos += 2;
+                    break;
+                default:
+                    /* False alarm - sequence got no special meaning */
+                    out.append(c1).append(c2);
+                    pos += 2;
+                    break;
+                }
+                mark = pos;
+            }
+        }
+        out.append(in, mark, pos - mark);
+        return out;
     }
 
     public static String replaceKeywords(String in, Replaceable cb)
     {
-        return replaceKeywords(in, cb, new Stack<String>());
+        return replaceKeywords(in.toCharArray(), new StringBuilder(in.length()), cb, new ArrayDeque<String>()).toString();
     }
 
   public static boolean smatch( String pattern , String text ){
