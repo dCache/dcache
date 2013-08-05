@@ -203,7 +203,7 @@ check srm.protocols.disallowed.get
 check srm.protocols.disallowed.put
 check srm.protocols.preferred
 
-check srm.security.ciphers
+check srm.authn.ciphers
 
 check -strong dcache.paths.share
 

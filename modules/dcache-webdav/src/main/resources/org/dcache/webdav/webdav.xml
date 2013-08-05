@@ -211,7 +211,7 @@
 
     <bean id="banned-ciphers" class="org.dcache.util.Crypto"
           factory-method="getBannedCipherSuitesFromConfigurationValue">
-        <constructor-arg value="${webdav.security.ciphers}"/>
+        <constructor-arg value="${webdav.authn.ciphers}"/>
     </bean>
 
     <beans profile="connector-http">

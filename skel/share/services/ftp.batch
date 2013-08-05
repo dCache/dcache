@@ -39,7 +39,7 @@ check -strong ftp.authn.hostcert.cert
 check -strong ftp.authn.capath
 check -strong ftp.authn.kerberos.key-distribution-center-list
 check -strong ftp.authn.kerberos.service-principle-name
-check ftp.security.ciphers
+check ftp.authn.ciphers
 check ftp.transaction-log
 check ftp.net.listen
 check ftp.net.internal
@@ -89,5 +89,5 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -service-key=${ftp.authn.hostcert.key} \
    -service-cert=${ftp.authn.hostcert.cert} \
    -service-trusted-certs=${ftp.authn.capath} \
-   -gridftp.security.ciphers=\"${ftp.security.ciphers}\" \
+   -gridftp.security.ciphers=\"${ftp.authn.ciphers}\" \
    "

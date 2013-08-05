@@ -26,7 +26,7 @@
         <property name="keystorePassword" value="${httpd.authn.keystore.password}"/>
         <property name="truststore" value="${httpd.authn.truststore}"/>
         <property name="trustPassword" value="${httpd.authn.truststore.password}"/>
-        <property name="cipherFlags" value="${httpd.security.ciphers}"/>
+        <property name="cipherFlags" value="${httpd.authn.ciphers}"/>
         <property name="maxIdleTime" value="${httpd.limits.idle-time}"/>
         <property name="maxIdleTimeUnit" value="${httpd.limits.idle-time.unit}"/>
         <property name="maxThreads" value="${httpd.limits.threads}"/>

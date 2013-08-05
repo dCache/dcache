@@ -53,7 +53,7 @@ check -strong webdav.enable.missing-files
 
 check webdav.net.internal
 check webdav.mover.queue
-check webdav.security.ciphers
+check webdav.authn.ciphers
 
 define env verify-http.exe enddefine
 enddefine

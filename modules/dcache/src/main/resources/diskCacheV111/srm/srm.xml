@@ -492,7 +492,7 @@
 
   <bean id="banned-ciphers" class="org.dcache.util.Crypto"
         factory-method="getBannedCipherSuitesFromConfigurationValue">
-      <constructor-arg value="${srm.security.ciphers}"/>
+      <constructor-arg value="${srm.authn.ciphers}"/>
   </bean>
 
   <bean id="server" class="org.eclipse.jetty.server.Server"

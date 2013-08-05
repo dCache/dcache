@@ -271,17 +271,17 @@ checkForNonMigratedDcache()
 #  key through a 'openssl rsa' command that only alters the format.
 checkForPkcs8HostKey()
 {
-    if [ -r $(getProperty grid.hostcert.key) ] && \
-       grep "BEGIN PRIVATE KEY" $(getProperty grid.hostcert.key) >/dev/null; then
+    if [ -r $(getProperty dcache.authn.hostcert.key) ] && \
+       grep "BEGIN PRIVATE KEY" $(getProperty dcache.authn.hostcert.key) >/dev/null; then
 
-        printp "The file $(getProperty grid.hostcert.key) is in PKCS#8        \
+        printp "The file $(getProperty dcache.authn.hostcert.key) is in PKCS#8        \
                 format.  Unfortunately, dCache requires the private key to  \
                 be stored in PKCS#1 format.  The following two commands     \
                 will convert the hostkey.pem file into PKCS#1 format:"
         echo
-        echo "mv $(getProperty grid.hostcert.key) $(getProperty grid.hostcert.key)-pk8"
+        echo "mv $(getProperty dcache.authn.hostcert.key) $(getProperty dcache.authn.hostcert.key)-pk8"
         echo
-        echo "openssl rsa -in $(getProperty grid.hostcert.key)-pk8 -out $(getProperty grid.hostcert.key)"
+        echo "openssl rsa -in $(getProperty dcache.authn.hostcert.key)-pk8 -out $(getProperty dcache.authn.hostcert.key)"
         exit 1
     fi
 }
@@ -724,10 +724,10 @@ case "$1" in
             hostcert)
                 require openssl
 
-                opt_password="$(getProperty keyStorePassword)"
-                opt_out="$(getProperty keyStore)"
-                opt_hostcert="$(getProperty grid.hostcert.cert)"
-                opt_hostkey="$(getProperty grid.hostcert.key)"
+                opt_password="$(getProperty dcache.authn.keystore.password)"
+                opt_out="$(getProperty dcache.authn.keystore)"
+                opt_hostcert="$(getProperty dcache.authn.hostcert.cert)"
+                opt_hostkey="$(getProperty dcache.authn.hostcert.key)"
 
                 parseOptions "out password hostcert hostkey" "$@" || shift $?
 
@@ -747,9 +747,9 @@ case "$1" in
                         JRE. Please ensure that either keytool is in the path
                         or update JAVA_HOME."
 
-                opt_password="$(getProperty trustStorePassword)"
-                opt_out="$(getProperty trustStore)"
-                opt_cacerts="$(getProperty grid.ca.path)"
+                opt_password="$(getProperty dcache.authn.truststore.password)"
+                opt_out="$(getProperty dcache.authn.truststore)"
+                opt_cacerts="$(getProperty dcache.authn.capath)"
 
                 parseOptions "out password cacerts" "$@" || shift $?
 
