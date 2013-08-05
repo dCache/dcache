@@ -72,7 +72,7 @@ onerror shutdown
 #
 #
 
-create diskCacheV111.services.RemoteTransferManager ${transfersmanagers.cell.name} \
+create diskCacheV111.services.RemoteTransferManager ${transfermanagers.cell.name} \
         "default -export \
         -pool_manager_timeout=${transfermanagers.service.poolmanager.timeout} \
         -pool_manager_timeout_unit=${transfermanagers.service.poolmanager.timeout.unit} \
