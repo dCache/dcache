@@ -32,6 +32,8 @@ import dmg.util.PropertiesBackedReplaceable;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Sets;
 
 /**
  * The ConfigurationProperties class represents a set of dCache
@@ -304,6 +306,22 @@ public class ConfigurationProperties
                         + validValuesList);
             }
         }
+        if (key.hasAnnotation(Annotation.ANY_OF)) {
+            String anyOfParameter = key.getParameter(Annotation.ANY_OF);
+            Set<String> values = Sets.newHashSet(Splitter.on(',')
+                    .omitEmptyStrings()
+                    .trimResults().split(value));
+            Set<String> validValues = ImmutableSet.copyOf(anyOfParameter.split("\\|"));
+            values.removeAll(validValues);
+            if (!values.isEmpty()) {
+                String validValuesList = "\""
+                        + Joiner.on("\", \"").join(validValues) + "\"";
+                _problemConsumer.error("Property " + key.getPropertyName()
+                        + ": \"" + value
+                        + "\" is not a valid value. Must be a comma separated list of "
+                        + validValuesList);
+            }
+        }
     }
 
     private String deprecatedWarningInstructionsFor(String propertyName)
@@ -556,7 +574,8 @@ public class ConfigurationProperties
         ONE_OF("one-of", true),
         DEPRECATED("deprecated"),
         NOT_FOR_SERVICES("not-for-services"),
-        IMMUTABLE("immutable");
+        IMMUTABLE("immutable"),
+        ANY_OF("any-of", true);
 
         private static final Map<String,Annotation> ANNOTATION_LABELS =
                 new HashMap<>();
