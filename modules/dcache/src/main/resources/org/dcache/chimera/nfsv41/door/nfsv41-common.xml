@@ -131,6 +131,21 @@
         <property name="loginBrokers" value="${nfs.service.loginbroker}"/>
     </bean>
 
+    <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
+          init-method="init" destroy-method="destroy" depends-on="rpcbind">
+        <description>dCache implementation of NFSv4.1 MDS</description>
+        <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="billingStub" ref="billing-stub"/>
+        <property name="pnfsHandler" ref="pnfs"/>
+        <property name="fileSystemProvider" ref="fileSystem"/>
+        <property name="ioQueue" value="${nfs.mover.queue}" />
+        <property name="exportFile" ref="export" />
+        <property name="idMapper" ref="id-mapper" />
+        <property name="portNumber" value="${nfs.net.port}" />
+        <property name="versions" value="${nfs.version}" />
+        <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}" />
+    </bean>
+
     <beans  profile="portmap-true">
         <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"/>
     </beans>
@@ -142,4 +157,5 @@
         -->
         <bean id="rpcbind" class="java.lang.Object"/>
     </beans>
+
 </beans>

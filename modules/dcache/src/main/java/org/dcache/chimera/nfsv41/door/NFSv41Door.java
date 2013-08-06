@@ -4,6 +4,7 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 import org.glassfish.grizzly.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
+import java.util.Set;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractCellComponent;
@@ -64,7 +66,6 @@ import org.dcache.chimera.nfs.v4.NFS4Client;
 import org.dcache.chimera.nfs.v4.NFSServerV41;
 import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
 import org.dcache.chimera.nfs.v4.NFSv41Session;
-import org.dcache.chimera.nfs.v4.NfsIdMapping;
 import org.dcache.chimera.nfs.v4.RoundRobinStripingPattern;
 import org.dcache.chimera.nfs.v4.StripingPattern;
 import org.dcache.chimera.nfs.v4.xdr.device_addr4;
@@ -144,9 +145,12 @@ public class NFSv41Door extends AbstractCellComponent implements
     private int _port;
 
     /**
-     * Should we run nfs v3 server.
+     * nfs versions to run.
      */
-    boolean _enableV3;
+    private Set<String> _versions;
+
+    private final static String V3 = "3";
+    private final static String V41 = "4.1";
 
     /**
      * embedded nfs server
@@ -158,9 +162,9 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private  OncRpcSvc _rpcService;
 
-    private NfsIdMapping _idMapper;
+    private StrategyIdMapper _idMapper;
 
-    private GssSessionManager _gssSessionManager;
+    private boolean _enableRpcsecGss;
 
     private VirtualFileSystem _vfs;
 
@@ -168,12 +172,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
                                 NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
 
-    public void setGssSessionManager(GssSessionManager sessionManager) {
-        _gssSessionManager = sessionManager;
+    public void setEnableRpcsecGss(boolean enable) {
+        _enableRpcsecGss = enable;
     }
 
-    public void setIdMapper(NfsIdMapping idMapper)
-    {
+    public void setIdMapper(StrategyIdMapper idMapper)    {
         _idMapper = idMapper;
     }
     public void setPoolManagerStub(CellStub stub)
@@ -203,33 +206,44 @@ public class NFSv41Door extends AbstractCellComponent implements
         _port = port;
     }
 
-    public void setEnableV3(boolean enable) {
-        _enableV3 = enable;
+    public void setVersions(String[] versions) {
+        _versions = Sets.newHashSet(versions);
     }
 
     public void init() throws Exception {
 
         _cellName = getCellName();
         _domainName = getCellDomainName();
-        final NFSv41DeviceManager _dm = this;
 
         _rpcService = new OncRpcSvc(_port, IpProtocolType.TCP, true);
-        _rpcService.setGssSessionManager(_gssSessionManager);
-
-        _vfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
-        _nfs4 = new NFSServerV41( new MDSOperationFactory(),
-                _dm, _vfs, _idMapper, _exportFile);
-
-        MountServer ms = new MountServer(_exportFile, _vfs);
-
-        if(_enableV3) {
-            NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _vfs);
-            _rpcService.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+        if (_enableRpcsecGss) {
+            _rpcService.setGssSessionManager(new GssSessionManager(_idMapper));
         }
 
-        _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
+        _vfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
+
+        MountServer ms = new MountServer(_exportFile, _vfs);
         _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
         _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
+
+        for (String version : _versions) {
+            switch (version) {
+                case V3:
+                    NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _vfs);
+                    _rpcService.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+                    break;
+                case V41:
+                     final NFSv41DeviceManager _dm = this;
+                    _nfs4 = new NFSServerV41(new MDSOperationFactory(),
+                            _dm, _vfs, _idMapper, _exportFile);
+                    _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported NFS version: " + version);
+            }
+        }
+
+
         _rpcService.start();
 
     }
@@ -472,27 +486,29 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Override
     public void getInfo(PrintWriter pw) {
 
-        pw.println("NFSv4.1 door (MDS):");
-        pw.printf("  IO queue: %s\n", _ioQueue);
-        pw.println("  Known pools (DS):\n");
-        for(Map.Entry<String, PoolDS> ioDevice: _poolNameToIpMap.entrySet()) {
-            pw.println( String.format("    %s : [%s]", ioDevice.getKey(),ioDevice.getValue() ));
-        }
+        pw.println("NFS (" + _versions + ") door (MDS):");
+        if (_nfs4 != null) {
+            pw.printf("  IO queue: %s\n", _ioQueue);
+            pw.println("  Known pools (DS):\n");
+            for (Map.Entry<String, PoolDS> ioDevice : _poolNameToIpMap.entrySet()) {
+                pw.println(String.format("    %s : [%s]", ioDevice.getKey(), ioDevice.getValue()));
+            }
 
-        pw.println();
-        pw.println("  Known movers (layouts):");
-        for(Transfer io: _ioMessages.values()) {
-            pw.println( String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPool() ));
-        }
+            pw.println();
+            pw.println("  Known movers (layouts):");
+            for (Transfer io : _ioMessages.values()) {
+                pw.println(String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPool()));
+            }
 
-        pw.println();
-        pw.println("  Known clients:");
-        for (NFS4Client client : _nfs4.getClients()) {
-            pw.println( String.format("    %s", client ));
-            for (NFSv41Session session: client.sessions()) {
-                pw.println( String.format("        %s, max slot: %d/%d",
-                             session, session.getHighestSlot(), session.getHighestUsedSlot() ));
+            pw.println();
+            pw.println("  Known clients:");
+            for (NFS4Client client : _nfs4.getClients()) {
+                pw.println(String.format("    %s", client));
+                for (NFSv41Session session : client.sessions()) {
+                    pw.println(String.format("        %s, max slot: %d/%d",
+                            session, session.getHighestSlot(), session.getHighestUsedSlot()));
 
+                }
             }
         }
     }

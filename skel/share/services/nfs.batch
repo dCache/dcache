@@ -24,7 +24,6 @@ check -strong nfs.service.gplazma.timeout.unit
 check -strong nfs.service.billing
 check -strong nfs.enable.portmap
 check -strong nfs.export.file
-check -strong nfs.cell.spring
 check -strong nfs.idmap.cache.size
 check -strong nfs.idmap.cache.timeout
 check -strong nfs.idmap.cache.timeout.unit
@@ -38,5 +37,6 @@ check nfs.domain
 check nfs.mover.queue
 
 create org.dcache.cells.UniversalSpringCell ${nfs.cell.name} \
-        "${nfs.cell.spring} -profiles=portmap-${nfs.enable.portmap}"
+        "classpath:org/dcache/chimera/nfsv41/door/nfsv41-common.xml \
+            -profiles=portmap-${nfs.enable.portmap}"
 
