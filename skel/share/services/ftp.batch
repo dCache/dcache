@@ -30,7 +30,7 @@ check -strong ftp.service.pool.timeout.unit
 check -strong ftp.service.pnfsmanager.timeout
 check -strong ftp.service.pnfsmanager.timeout.unit
 check -strong ftp.delete-on-failure
-check -strong ftp.overwrite
+check -strong ftp.enable.overwrite
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
 check -strong ftp.authz.readonly
@@ -79,7 +79,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -io-queue=${ftp.mover.queue} \
    -stageConfigurationFilePath=${ftp.authz.staging} \
    -ftp-adapter-internal-interface=${ftp.net.internal} \
-   -overwrite=${ftp.overwrite} \
+   -overwrite=${ftp.enable.overwrite} \
    -proxyPassive=${ftp.proxy.on-passive} \
    -proxyActive=${ftp.proxy.on-active} \
    -tlog=${ftp.transaction-log} \

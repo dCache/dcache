@@ -199,7 +199,7 @@
                 </bean>
                 <bean id="SpaceTokenCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.SpaceTokenCollector"
                     init-method="initialize">
-                    <property name="spaceManagerEnabled" value="${httpd.enable.spacemanager}"/>
+                    <property name="spaceManagerEnabled" value="${httpd.enable.space-reservation}"/>
                     <property name="cellStub" ref="SpaceTokenCollectorCellStub"/>
                     <property name="name" value="SpaceToken Collector"/>
                     <property name="sleepInterval" value="${httpd.service.spacetoken-collector.period}"/>

@@ -145,7 +145,7 @@ check -strong srm.limits.request.copy.lifetime.unit
 check -strong srm.limits.request.keep-history-period
 check -strong srm.limits.request.keep-history-period.unit
 
-check -strong srm.limits.rm.single-remove-batch.size
+check -strong srm.limits.remove-batch-size
 
 check -strong srm.root
 check -strong srm.service.xrootd.root
@@ -154,13 +154,6 @@ check -strong srm.service.webdav.root
 check -strong srm.service.gplazma
 check -strong srm.service.gplazma.timeout
 check -strong srm.service.gplazma.timeout.unit
-
-check -strong srm.service.lookup-loginbroker
-check -strong srm.service.lookup-loginbroker.timeout
-check -strong srm.service.lookup-loginbroker.timeout.unit
-check -strong srm.service.lookup-loginbroker.period
-check -strong srm.service.lookup-loginbroker.period.unit
-check -strong srm.service.lookup-loginbroker.population-size
 
 check -strong srm.service.loginbroker
 check -strong srm.service.loginbroker.update-period
@@ -185,7 +178,7 @@ check -strong srm.enable.overwrite
 check -strong srm.enable.overwrite-by-default
 check -strong srm.enable.pin-online-files
 check -strong srm.enable.recursive-directory-creation
-check -strong srm.enable.spacemanager
+check -strong srm.enable.space-reservation
 check -strong srm.enable.space-reservation.implicit
 check -strong srm.enable.space-reservation.strict
 
@@ -202,6 +195,13 @@ check srm.plugins.qos.config.file
 check srm.protocols.disallowed.get
 check srm.protocols.disallowed.put
 check srm.protocols.preferred
+check -strong srm.protocols.loginbroker
+check -strong srm.protocols.loginbroker.timeout
+check -strong srm.protocols.loginbroker.timeout.unit
+check -strong srm.protocols.loginbroker.period
+check -strong srm.protocols.loginbroker.period.unit
+check -strong srm.protocols.population-size
+
 
 check srm.authn.ciphers
 
@@ -214,11 +214,11 @@ check -strong dcache.paths.share
 define env srmSpaceManagerOff.exe endExe
   set env srm.enable.space-reservation.implicit false
   set env srm.enable.space-reservation.strict false
-  set env srm.enable.spacemanager false
+  set env srm.enable.space-reservation false
 endExe
 
 onerror continue
-eval ${dcache.enable.spacemanager} true ==
+eval ${dcache.enable.space-reservation} true ==
 exec env srmSpaceManagerOff.exe -ifnotok
 onerror shutdown
 

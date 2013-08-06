@@ -138,7 +138,7 @@
       <property name="staticContentPath" value="${webdav.static-content.location}"/>
       <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
       <property name="redirectOnWriteEnabled" value="${webdav.redirect.on-write}"/>
-      <property name="overwriteAllowed" value="${webdav.overwrite}"/>
+      <property name="overwriteAllowed" value="${webdav.enable.overwrite}"/>
   </bean>
 
     <bean id="http-manager" class="org.dcache.webdav.HttpManagerFactory">

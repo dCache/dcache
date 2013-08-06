@@ -104,9 +104,9 @@
 
   <bean id="login-broker-stub" class="org.dcache.cells.CellStub">
     <description>Login broker communication stub</description>
-    <property name="destination" value="${srm.service.lookup-loginbroker}"/>
-    <property name="timeout" value="${srm.service.lookup-loginbroker.timeout}" />
-    <property name="timeoutUnit" value="${srm.service.lookup-loginbroker.timeout.unit}" />
+    <property name="destination" value="${srm.protocols.loginbroker}"/>
+    <property name="timeout" value="${srm.protocols.loginbroker.timeout}" />
+    <property name="timeoutUnit" value="${srm.protocols.loginbroker.timeout.unit}" />
   </bean>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
@@ -191,13 +191,13 @@
     <property name="pinManagerStub" ref="pin-manager-stub"/>
     <property name="gplazmaStub" ref="gplazma-stub"/>
     <property name="isSpaceManagerEnabled"
-              value="${dcache.enable.spacemanager}"/>
+              value="${dcache.enable.space-reservation}"/>
     <property name="loginBrokerUpdatePeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.service.lookup-loginbroker.period},
-		     '${srm.service.lookup-loginbroker.period.unit}')}" />
+		     ${srm.protocols.loginbroker.period},
+		     '${srm.protocols.loginbroker.period.unit}')}" />
     <property name="numberOfDoorsInRandomSelection"
-              value="${srm.service.lookup-loginbroker.population-size}"/>
+              value="${srm.protocols.population-size}"/>
     <property name="useCustomGetHostByAddress"
               value="${srm.enable.custom-get-host-by-address}"/>
     <property name="httpRootPath" value="${srm.service.webdav.root}"/>
@@ -220,7 +220,7 @@
     <property name="srmHost" value="${srm.net.host}"/>
     <property name="srmHostsAsArray" value="${srm.net.local-hosts}"/>
     <property name="sizeOfSingleRemoveBatch"
-              value="${srm.limits.rm.single-remove-batch.size}"/>
+              value="${srm.limits.remove-batch-size}"/>
     <property name="maxNumberOfLsEntries"
               value="${srm.limits.request.ls.entries.max}"/>
     <property name="maxNumberOfLsLevels"

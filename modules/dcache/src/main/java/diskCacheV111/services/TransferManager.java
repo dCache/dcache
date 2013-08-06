@@ -602,9 +602,7 @@ public abstract class TransferManager extends AbstractCell
 
 		// this is very approximate
 		// but we do not need hard real time
-		// note that the movertimeout is in seconds,
-		// so we need to multiply by 1000
-		_moverTimeoutTimer.schedule(task, _moverTimeout*1000L);
+		_moverTimeoutTimer.schedule(task, _moverTimeout);
 	}
 
 	public void stopTimer(long id)

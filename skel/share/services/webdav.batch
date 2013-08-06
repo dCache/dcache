@@ -45,7 +45,7 @@ check -strong webdav.static-content.location
 check -strong webdav.templates.html
 check -strong webdav.redirect.on-read
 check -strong webdav.redirect.on-write
-check -strong webdav.overwrite
+check -strong webdav.enable.overwrite
 check -strong webdav.service.missing-files
 check -strong webdav.service.missing-files.timeout
 check -strong webdav.service.missing-files.timeout.unit
