@@ -29,7 +29,7 @@ check -strong ftp.service.pool.timeout
 check -strong ftp.service.pool.timeout.unit
 check -strong ftp.service.pnfsmanager.timeout
 check -strong ftp.service.pnfsmanager.timeout.unit
-check -strong ftp.delete-on-failure
+check -strong ftp.enable.delete-on-failure
 check -strong ftp.enable.overwrite
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
@@ -75,7 +75,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -maxRetries=${ftp.limits.retries} \
    -maxStreamsPerClient=${ftp.limits.streams-per-client} \
    -defaultStreamsPerClient=1 \
-   -deleteOnConnectionClosed=${ftp.delete-on-failure} \
+   -deleteOnConnectionClosed=${ftp.enable.delete-on-failure} \
    -io-queue=${ftp.mover.queue} \
    -stageConfigurationFilePath=${ftp.authz.staging} \
    -ftp-adapter-internal-interface=${ftp.net.internal} \
