@@ -91,7 +91,7 @@ public class Subnet implements Serializable {
         }
 
         String[] net_mask = cidrPattern.split("/");
-        InetAddress subnetAddress = IPMatcher.convertToIPv4IfPossible(forString(net_mask[HOST_IP_INDEX]));
+        InetAddress subnetAddress = IPMatcher.tryConvertToIPv4(forString(net_mask[HOST_IP_INDEX]));
         int maskBitLength = subnetAddress instanceof Inet4Address ? 32 : 128;
 
         int cidrMask;
