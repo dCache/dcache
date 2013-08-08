@@ -1,7 +1,0 @@
-%_topdir @rpmTopDir@
-%_specdir @rpmSpecDir@
-%_rpmdir @rpmRpmDir@
-%_srpmdir @rpmSrpmDir@
-%_builddir @rpmBuildDir@
-%_sourcedir @rpmSourceDir@
-%_binary_payload  w5.bzdio

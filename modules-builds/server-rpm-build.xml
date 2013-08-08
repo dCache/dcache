@@ -7,57 +7,47 @@
     <target name="server.rpm" depends="install-server"
             description="Build the dcache-server-xxx.rpm">
 
-        <!--  timestamp for the changelog -->
-        <tstamp>
-            <format property="timestamp" pattern="EEE MMM dd yyyy"
-                    locale="en,UK"/>
-        </tstamp>
-
-        <!-- Create config files for RPM from Templates -->
-
-        <copy todir="${server.rpmTopDir}" overwrite="true">
-            <fileset dir="${rpmTemplateDir}">
-                <or>
-                    <filename name="rpm*.template" />
-                    <filename name="dcache-server.spec.template" />
-                </or>
+        <!-- Populate BUILDROOT with contents of RPM -->
+        <move todir="${server.rpm.buildroot}">
+            <fileset dir="${server.root.dir}">
+                <include name="**"/>
             </fileset>
-            <mapper type="glob" from="*.template" to="*" />
+        </move>
+
+        <mkdir dir="${server.rpm.buildroot}/etc/rc.d/init.d"/>
+        <copy file="${rpmTemplateDir}/dcache-server.init"
+              tofile="${server.rpm.buildroot}/etc/rc.d/init.d/dcache-server"/>
+        <copy file="${rpmTemplateDir}/dcache.bash-completion"
+              tofile="${server.rpm.buildroot}/etc/bash_completion.d/dcache"/>
+
+        <!-- Create spec file from template -->
+        <copy todir="${server.rpm.specdir}" overwrite="true">
+            <fileset dir="${rpmTemplateDir}">
+                <filename name="dcache-server.spec.template" />
+            </fileset>
+            <mapper type="glob" from="*.template" to="*"/>
             <filterset>
-                <filter token="Timestamp" value="${timestamp}" />
-
-                <filter token="rpmMacrosFile" value="${server.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
-                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
-                <!-- These are used in the rpmmacros file -->
-                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
-                <filter token="rpmTopDir" value="${server.rpmTopDir}" />
-                <filter token="rpmBuildDir" value="${server.rpmTopDir}" />
-
                 <filter token="Version" value="${version}" />
                 <filter token="Release" value="${build.number}" />
             </filterset>
         </copy>
 
-        <mkdir dir="${server.root.dir}/etc/rc.d/init.d"/>
-        <copy file="${rpmTemplateDir}/dcache-server.init"
-              tofile="${server.root.dir}/etc/rc.d/init.d/dcache-server"/>
-        <copy file="${rpmTemplateDir}/dcache.bash-completion"
-              tofile="${server.root.dir}/etc/bash_completion.d/dcache"/>
 
         <exec executable="rpmbuild" failonerror="true">
-            <!-- output="${buildDir}/rpm.log" -->
             <arg value="--buildroot" />
-            <arg file="${server.root.dir}" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${server.rpmRcFile}" />
-            <!-- some documentation claims that /usr/lib/rpm/rpmrc
-                                                            will always be parsed. But it currently isnt if not set here -->
+            <arg file="${server.rpm.buildroot}" />
+
+            <arg value="--define"/>
+            <arg value="_topdir ${server.rpm.topdir}"/>
+
+            <arg value="--define"/>
+            <arg value="_rpmdir ${server.rpm.rpmdir}"/>
+
+            <arg value="--define"/>
+            <arg value="_binary_payload w5.bzdio"/>
+
             <arg value="-bb" />
-            <arg file="${server.rpmTopDir}/dcache-server.spec" />
+            <arg file="${server.rpm.specdir}/dcache-server.spec" />
         </exec>
-
     </target>
-
 </project>
