@@ -8,7 +8,7 @@ check -strong xrootd.cell.name
 check -strong xrootd.net.port
 check -strong xrootd.net.listen
 check -strong xrootd.net.backlog
-check -strong xrootd.threads
+check -strong xrootd.limits.threads
 check -strong xrootd.max-channel-memory-size
 check -strong xrootd.max-total-memory-size
 check -strong xrootd.root

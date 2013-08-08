@@ -101,7 +101,7 @@ create org.dcache.cells.UniversalSpringCell "${pool.cell.name}" \
     -allowMmap=\"${pool.mover.ftp.mmap}\" \
     -callbackExecutor=callbackThreadPool \
     -messageExecutor=messageThreadPool \
-    -waitForFiles=\"${pool.cell.wait-for-files}\" \
+    -waitForFiles=\"${pool.wait-for-files}\" \
 "
 
 

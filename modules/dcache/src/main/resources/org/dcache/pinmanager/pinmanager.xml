@@ -83,8 +83,8 @@
       <property name="dao" ref="dao"/>
       <property name="executor" ref="scheduled-executor"/>
       <property name="stagePermission" ref="stage-permission"/>
-      <property name="maxLifetime" value="${pinmanager.max-pin-duration}"/>
-      <property name="maxLifetimeUnit" value="${pinmanager.max-pin-duration.unit}"/>
+      <property name="maxLifetime" value="${pinmanager.limits.pin-duration}"/>
+      <property name="maxLifetimeUnit" value="${pinmanager.limits.pin-duration.unit}"/>
       <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
@@ -99,7 +99,8 @@
       <property name="dao" ref="dao"/>
       <property name="poolStub" ref="pool-stub"/>
       <property name="authorizationPolicy" ref="pdp"/>
-      <property name="maxLifetime" value="${pinmanager.max-pin-duration}"/>
+      <property name="maxLifetime" value="${pinmanager.limits.pin-duration}"/>
+      <property name="maxLifetimeUnit" value="${pinmanager.limits.pin-duration.unit}"/>
       <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 

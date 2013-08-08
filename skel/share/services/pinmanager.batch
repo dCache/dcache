@@ -8,7 +8,8 @@ check -strong pinmanager.db.schema.auto
 check -strong pinmanager.db.schema.changelog
 check pinmanager.db.password
 check pinmanager.db.password.file
-check -strong pinmanager.max-pin-duration
+check -strong pinmanager.limits.pin-duration
+check -strong pinmanager.limits.pin-duration.unit
 check -strong pinmanager.expiration-period
 check -strong pinmanager.db.connections.max-per-partition
 check -strong pinmanager.db.connections.min-per-partition
