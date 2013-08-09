@@ -179,9 +179,8 @@ check -strong srm.service.poolmanager.timeout.unit
 
 
 check -strong srm.enable.advisory-delete
-check -strong srm.enable.client.dns.lookup
+check -strong srm.enable.client-dns-lookup
 check -strong srm.enable.custom-get-host-by-address
-check -strong srm.enable.ignore-client-protocol-order
 check -strong srm.enable.overwrite
 check -strong srm.enable.overwrite-by-default
 check -strong srm.enable.pin-online-files

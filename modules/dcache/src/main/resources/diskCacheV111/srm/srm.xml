@@ -200,8 +200,6 @@
               value="${srm.service.lookup-loginbroker.population-size}"/>
     <property name="useCustomGetHostByAddress"
               value="${srm.enable.custom-get-host-by-address}"/>
-    <property name="ignoreClientProtocolOrder"
-              value="${srm.enable.ignore-client-protocol-order}"/>
     <property name="httpRootPath" value="${srm.service.webdav.root}"/>
     <property name="xrootdRootPath" value="${srm.service.xrootd.root}"/>
     <property name="configuration" ref="config"/>
@@ -356,7 +354,7 @@
               value="${srm.user.credentials.directory}"/>
     <property name="overwrite" value="${srm.enable.overwrite}"/>
     <property name="overwrite_by_default" value="${srm.enable.overwrite-by-default}"/>
-    <property name="clientDNSLookup" value="${srm.enable.client.dns.lookup}"/>
+    <property name="clientDNSLookup" value="${srm.enable.client-dns-lookup}"/>
     <property name="gsissl" value="true"/>
     <property name="clientTransportByName" value="${srm.client-transport}"/>
     <property name="qosPluginClass" value="${srm.plugins.qos.class}"/>

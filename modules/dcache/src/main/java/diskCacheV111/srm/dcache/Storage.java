@@ -266,7 +266,6 @@ public final class Storage
     private SRM srm;
     private Configuration config;
     private Thread storageInfoUpdateThread;
-    private boolean ignoreClientProtocolOrder; //falseByDefault
     private boolean customGetHostByAddr; //falseByDefault
 
     private FsPath _xrootdRootPath;
@@ -411,11 +410,6 @@ public final class Storage
     public void setUseCustomGetHostByAddress(boolean value)
     {
         customGetHostByAddr = value;
-    }
-
-    public void setIgnoreClientProtocolOrder(boolean ignore)
-    {
-        ignoreClientProtocolOrder = ignore;
     }
 
     public void start() throws SQLException, CacheException, IOException,
@@ -1062,19 +1056,11 @@ public final class Storage
             throw new SRMException("can not find sutable put protocol");
         }
 
-         /*
-          *this is incorrect, need to select on basis of client's preferences
-          * But we need to continue doing this while old srmcp clients
-          * are out there in the wild
-          */
-         if(ignoreClientProtocolOrder) {
-             for (String protocol : srmPreferredProtocols) {
-                 if (available_protocols.contains(protocol)) {
-                     return protocol;
-                 }
-             }
-         }
-
+        for (String protocol : srmPreferredProtocols) {
+            if (available_protocols.contains(protocol)) {
+                return protocol;
+            }
+        }
 
         for (String protocol : protocols) {
             if (available_protocols.contains(protocol)) {
