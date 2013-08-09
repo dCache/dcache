@@ -84,6 +84,7 @@ import org.dcache.chimera.nfs.vfs.Inode;
 import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.util.NDC;
+import org.dcache.util.LoginBrokerHandler;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -94,6 +95,7 @@ import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.gss.GssSessionManager;
+import org.springframework.beans.factory.annotation.Required;
 
 public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
@@ -168,6 +170,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private VirtualFileSystem _vfs;
 
+    private LoginBrokerHandler _loginBrokerHandler;
+
     private final static TransferRetryPolicy RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
                                 NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
@@ -210,6 +214,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         _versions = Sets.newHashSet(versions);
     }
 
+    @Required
+    public void setLoginBrokerHandler(LoginBrokerHandler loginBrokerHandler) {
+        _loginBrokerHandler = loginBrokerHandler;
+    }
+
     public void init() throws Exception {
 
         _cellName = getCellName();
@@ -237,6 +246,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _nfs4 = new NFSServerV41(new MDSOperationFactory(),
                             _dm, _vfs, _idMapper, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
+                    _loginBrokerHandler.start();
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported NFS version: " + version);
@@ -249,6 +259,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     public void destroy() throws IOException {
+        _loginBrokerHandler.stop();
         _rpcService.stop();
     }
 

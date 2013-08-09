@@ -133,7 +133,7 @@ public class LoginBrokerHandler
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        if (_loginBrokers == null) {
+        if (_loginBrokers == null || _task == null) {
             pw.println("    Login Broker : DISABLED");
             return;
         }

@@ -116,9 +116,7 @@
         <property name="fallBackToNumeric" value="${nfs.idmap.legacy}" />
     </bean>
 
-    <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
-        init-method="start"
-        destroy-method="stop">
+    <bean id="lb" class="org.dcache.util.LoginBrokerHandler">
         <description>Notifies LoginBroker </description>
         <property name="executor" ref="scheduled-thread-pool"/>
         <property name="updateTime" value="${nfs.service.loginbroker.update-period}"/>
@@ -144,6 +142,7 @@
         <property name="portNumber" value="${nfs.net.port}" />
         <property name="versions" value="${nfs.version}" />
         <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}" />
+        <property name="loginBrokerHandler" ref="lb" />
     </bean>
 
     <beans  profile="portmap-true">
