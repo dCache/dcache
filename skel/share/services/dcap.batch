@@ -4,7 +4,6 @@
 
 onerror shutdown
 check -strong dcap.limits.clients
-check -strong dcap.mover.overwrite
 check -strong dcap.net.port
 check -strong dcap.cell.name
 check -strong dcap.service.poolmanager
@@ -20,6 +19,7 @@ check -strong dcap.authn.protocol
 check -strong dcap.authz.truncate
 check -strong dcap.authz.readonly
 check -strong dcap.authz.anonymous-operations
+check -strong dcap.authz.mover-queue-overwrite
 check dcap.authn.passwd
 check dcap.mover.queue
 check dcap.net.listen
@@ -58,7 +58,7 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -billing=\"${dcap.service.billing}\" \
              -stageConfigurationFilePath=\"${dcap.authz.staging}\" \
              -io-queue=${dcap.mover.queue} \
-             -io-queue-overwrite=${dcap.mover.overwrite} \
+             -io-queue-overwrite=${dcap.authz.mover-queue-overwrite} \
              -anonymous-access=${dcap.authz.anonymous-operations} \
              ${arguments-${dcap.authn.protocol}} \
              "
