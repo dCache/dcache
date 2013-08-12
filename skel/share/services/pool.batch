@@ -1,6 +1,7 @@
 onerror shutdown
 
 check -strong pool.cell.name
+check -strong pool.cell.export
 check -strong pool.name
 check -strong pool.path
 check -strong pool.size
@@ -95,7 +96,7 @@ endDefine
 
 create org.dcache.cells.UniversalSpringCell "${pool.cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
-    -export -cellClass=Pool -profiles=healthcheck-${pool.enable.repository-check} \
+    -export=${pool.cell.export} -cellClass=Pool -profiles=healthcheck-${pool.enable.repository-check} \
     -setupClass=pool -setupFile=\"${pool.path}/setup\" \
     -ftpProxyPassive=\"${pool.mover.ftp.allow-incomming-connections}\" \
     -allowMmap=\"${pool.mover.ftp.mmap}\" \

@@ -3,6 +3,7 @@
 onerror shutdown
 
 check -strong billing.cell.name
+check -strong billing.cell.export
 check -strong billingLogsDir
 check -strong billing.enable.text
 check -strong billing.enable.db
@@ -41,5 +42,5 @@ onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${billing.cell.name} \
         "classpath:org/dcache/services/billing/cells/billing.xml \
         -profiles=db-${billing.enable.db} \
-        -export \
+        -export=${billing.cell.export} \
         -billingCellName=${billing.cell.name}.alias"

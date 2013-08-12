@@ -6,6 +6,7 @@
 onerror shutdown
 
 check -strong transfermanagers.cell.name
+check -strong transfermanagers.cell.export
 
 check -strong transfermanagers.service.poolmanager
 check -strong transfermanagers.service.poolmanager.timeout
@@ -35,7 +36,7 @@ check transfermanagers.db.password.file
 check transfermanagers.mover.queue
 
 create diskCacheV111.services.RemoteTransferManager ${transfermanagers.cell.name} \
-        "default -export \
+        "default -export=${transfermanagers.cell.export} \
         -pool_manager_timeout=${transfermanagers.service.poolmanager.timeout} \
         -pool_manager_timeout_unit=${transfermanagers.service.poolmanager.timeout.unit} \
         -pool_timeout=${transfermanagers.service.pool.timeout} \
@@ -59,7 +60,7 @@ create diskCacheV111.services.RemoteTransferManager ${transfermanagers.cell.name
 "
 
 create diskCacheV111.doors.CopyManager CopyManager \
-       "default -export \
+       "default -export=${transfermanagers.cell.export} \
         -pool_manager_timeout=${transfermanagers.service.poolmanager.timeout} \
         -pool_manager_timeout_unit=${transfermanagers.service.poolmanager.timeout.unit} \
         -pool_timeout=${transfermanagers.service.pool.timeout} \

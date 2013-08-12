@@ -3,6 +3,7 @@
 onerror shutdown
 
 check -strong poolmanager.cell.name
+check -strong poolmanager.cell.export
 check -strong poolmanager.plugins.selection-unit
 check -strong poolmanager.plugins.thread-pool
 check -strong poolmanager.plugins.quota-manager
@@ -66,7 +67,7 @@ create org.dcache.cells.UniversalSpringCell ${poolmanager.cell.name} \
    "!poolmanager.defaults \
     classpath:diskCacheV111/poolManager/poolmanager.xml \
     -setupFile=${poolmanager.setup.file} \
-    -export \
+    -export=${poolmanager.cell.export} \
     -cellClass=PoolManager \
     -replyObject \
    "

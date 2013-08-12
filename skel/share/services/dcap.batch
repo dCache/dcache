@@ -6,6 +6,7 @@ onerror shutdown
 check -strong dcap.limits.clients
 check -strong dcap.net.port
 check -strong dcap.cell.name
+check -strong dcap.cell.export
 check -strong dcap.service.poolmanager
 check -strong dcap.service.pnfsmanager
 check -strong dcap.service.gplazma
@@ -35,7 +36,7 @@ set env arguments-kerberos "-localOk -authorization=strong -socketfactory=javatu
 create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
             "${dcap.net.port} diskCacheV111.doors.DCapDoor \
              -listen=${dcap.net.listen} \
-             -export \
+             -export=${dcap.cell.export} \
              -acceptErrorWait=60000 \
              -keepAlive=300 \
              -poolRetry=2700 \

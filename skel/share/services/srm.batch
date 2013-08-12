@@ -5,6 +5,7 @@
 onerror shutdown
 
 check -strong srm.cell.name
+check -strong srm.cell.export
 check -strong srm.net.port
 check -strong srm.net.ssl-port
 check -strong srm.net.host
@@ -226,4 +227,4 @@ onerror shutdown
 exec file:${dcache.paths.share}/cells/threadmanager.fragment
 
 create org.dcache.cells.UniversalSpringCell ${srm.cell.name} \
-   "classpath:diskCacheV111/srm/srm.xml -export"
+   "classpath:diskCacheV111/srm/srm.xml -export=${srm.cell.export}"

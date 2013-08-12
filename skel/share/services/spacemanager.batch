@@ -7,6 +7,7 @@ exec file:${dcache.paths.share}/cells/threadmanager.fragment
 
 onerror shutdown
 check -strong spacemanager.cell.name
+check -strong spacemanager.cell.export
 check -strong spacemanager.db.url
 check -strong spacemanager.db.driver
 check -strong spacemanager.db.user
@@ -20,7 +21,7 @@ check -strong spacemanager.service.pnfsmanager
 
 create diskCacheV111.services.space.Manager ${spacemanager.cell.name} \
        "default \
-        -export \
+        -export=${spacemanager.cell.export} \
         -jdbcUrl=${spacemanager.db.url} \
         -jdbcDriver=${spacemanager.db.driver} \
         -dbUser=${spacemanager.db.user} \
