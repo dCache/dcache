@@ -193,8 +193,8 @@ public class HsmFlushController
     {
         pw.println("#\n# Flushing Thread setup\n#");
         pw.println("flush set max active " + _maxActive);
-        pw.println("flush set interval " + _flushingInterval);
-        pw.println("flush set retry delay " + _retryDelayOnError);
+        pw.println("flush set interval " + TimeUnit.MILLISECONDS.toSeconds(_flushingInterval));
+        pw.println("flush set retry delay " + TimeUnit.MILLISECONDS.toSeconds(_retryDelayOnError));
     }
 
     @Override
