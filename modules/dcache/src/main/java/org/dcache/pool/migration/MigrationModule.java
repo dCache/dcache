@@ -30,11 +30,10 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
 
 import org.dcache.cells.AbstractCellComponent;
@@ -538,6 +537,9 @@ public class MigrationModule
         @Argument(metaVar="target")
         String[] targets;
 
+        @CommandLine
+        String commandLine;
+
         private RefreshablePoolList createPoolList(String type, List<String> targets)
         {
             CellStub poolManager = _context.getPoolManagerStub();
@@ -837,10 +839,7 @@ public class MigrationModule
             job.setConcurrency(concurrency);
             _jobs.put(id, job);
 
-            CellMessage envelope = CellAdapter.getThisMessage();
-            if (envelope != null) {
-                _commands.put(job, envelope.getMessageObject().toString());
-            }
+            _commands.put(job, commandLine);
             return getJobSummary(id);
         }
     }
