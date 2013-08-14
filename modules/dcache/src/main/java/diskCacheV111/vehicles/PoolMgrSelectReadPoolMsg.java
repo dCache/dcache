@@ -102,6 +102,8 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
      */
     public static class Context implements Serializable
     {
+        static final long serialVersionUID = 5542068315211674363L;
+
         private final int _retryCounter;
         private final String _previousStageHost;
         private final String _previousStagePool;
