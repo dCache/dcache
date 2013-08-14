@@ -1,26 +1,33 @@
 package dmg.cells.nucleus;
 
-import dmg.util.Pinboard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.FileNotFoundException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import dmg.util.BufferedLineWriter;
+import dmg.util.Pinboard;
 import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
 import dmg.util.logback.FilterThresholds;
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.RejectedExecutionException;
-import java.lang.reflect.*;
-import java.net.Socket;
-
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-import org.dcache.commons.util.NDC;
-
-import ch.qos.logback.classic.Level;
-
 
 /**
  *
@@ -56,8 +63,8 @@ public class CellNucleus implements ThreadFactory
     private final  Map<UOID, CellLock> _waitHash = new HashMap<UOID, CellLock>();
     private String _cellClass;
 
-    private volatile ExecutorService _callbackExecutor;
-    private volatile ExecutorService _messageExecutor;
+    private volatile ThreadPoolExecutor _callbackExecutor;
+    private volatile ThreadPoolExecutor _messageExecutor;
 
     private boolean _isPrivateCallbackExecutor = true;
     private boolean _isPrivateMessageExecutor = true;
@@ -133,8 +140,16 @@ public class CellNucleus implements ThreadFactory
             _threads = null;
         }
 
-        _callbackExecutor = Executors.newSingleThreadExecutor(this);
-        _messageExecutor = Executors.newSingleThreadExecutor(this);
+        _callbackExecutor =
+                new ThreadPoolExecutor(1, 1,
+                        0L, TimeUnit.MILLISECONDS,
+                        new LinkedBlockingQueue<Runnable>(),
+                        this);
+        _messageExecutor =
+                new ThreadPoolExecutor(1, 1,
+                        0L, TimeUnit.MILLISECONDS,
+                        new LinkedBlockingQueue<Runnable>(),
+                        this);
 
         _state = ACTIVE;
 
@@ -293,9 +308,17 @@ public class CellNucleus implements ThreadFactory
     public synchronized void setAsyncCallback(boolean asyncCallback)
     {
         if (asyncCallback) {
-            setCallbackExecutor(Executors.newCachedThreadPool(this));
+            setCallbackExecutor(
+                    new ThreadPoolExecutor(1, Integer.MAX_VALUE,
+                            60L, TimeUnit.SECONDS,
+                            new SynchronousQueue<Runnable>(),
+                            this));
         } else {
-            setCallbackExecutor(Executors.newSingleThreadExecutor(this));
+            setCallbackExecutor(
+                    new ThreadPoolExecutor(1, 1,
+                            0L, TimeUnit.MILLISECONDS,
+                            new LinkedBlockingQueue<Runnable>(),
+                            this));
         }
         _isPrivateCallbackExecutor = true;
     }
@@ -303,7 +326,7 @@ public class CellNucleus implements ThreadFactory
     /**
      * Executor used for message callbacks.
      */
-    public synchronized void setCallbackExecutor(ExecutorService executor)
+    public synchronized void setCallbackExecutor(ThreadPoolExecutor executor)
     {
         if (executor == null) {
             throw new IllegalArgumentException("null is not allowed");
@@ -318,7 +341,7 @@ public class CellNucleus implements ThreadFactory
     /**
      * Executor used for incoming message delivery.
      */
-    public synchronized void setMessageExecutor(ExecutorService executor)
+    public synchronized void setMessageExecutor(ThreadPoolExecutor executor)
     {
         if (executor == null) {
             throw new IllegalArgumentException("null is not allowed");
@@ -692,12 +715,7 @@ public class CellNucleus implements ThreadFactory
 
     int getEventQueueSize()
     {
-        if (_messageExecutor instanceof ThreadPoolExecutor) {
-            ThreadPoolExecutor executor =
-                (ThreadPoolExecutor) _messageExecutor;
-            return executor.getQueue().size();
-        }
-        return 0;
+        return _messageExecutor.getQueue().size();
     }
 
     void addToEventQueue(CellEvent ce) {
