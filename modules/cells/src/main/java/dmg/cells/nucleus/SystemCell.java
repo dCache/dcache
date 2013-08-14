@@ -280,6 +280,7 @@ public class      SystemCell
                 ((Reply)reply).deliver(this, msg);
             } else {
                 if (processed) {
+                    msg.setMessageObject( reply ) ;
                     sendMessage(msg);
                     _log.debug("Sending : {}", msg);
                 }
