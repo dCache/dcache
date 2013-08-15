@@ -59,7 +59,6 @@ public final class HttpBillingHistoryEngine extends BillingHistory implements
                 _log.warn("Interrupted while waiting for BillingHistory thread to terminate");
             }
         }
-        close();
     }
 
     @Override

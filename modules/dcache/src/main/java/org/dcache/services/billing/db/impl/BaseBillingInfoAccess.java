@@ -79,12 +79,13 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         logger.debug("maxInsertsBeforeCommit {}", maxInsertsBeforeCommit);
         logger.debug("maxTimeBeforeCommit {}", maxTimeBeforeCommit);
 
+        setRunning(true);
+
         /*
          * if using delayed commits, run a flush thread
          */
         if (maxTimeBeforeCommit > 0) {
             flushD = new TimedCommitter();
-            setRunning(true);
             flushD.start();
         }
     }
