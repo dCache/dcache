@@ -199,6 +199,7 @@
       <property name="destination" value="${pool.service.pnfsmanager}"/>
       <property name="timeout" value="${pool.service.pnfsmanager.timeout}"/>
       <property name="timeoutUnit" value="${pool.service.pnfsmanager.timeout.unit}"/>
+      <property name="rate" value="${pool.service.pnfsmanager.rate}"/>
   </bean>
 
   <bean id="poolStub" class="org.dcache.cells.CellStub">
