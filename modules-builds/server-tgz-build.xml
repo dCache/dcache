@@ -2,8 +2,7 @@
          xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
     <target name="server.tgz" depends="install-server" description="Build the dcache-server-xxx.tar">
-
-        <tar destfile="${distDir}/dcache-server-${version}-${build.number}.tgz" compression="gzip">
+        <tar destfile="${package.root.dir}/tgz/dcache-server-${version}-${build.number}.tar.gz" compression="gzip">
             <tarfileset dir="${package.root.dir}/server" filemode="755">
                 <include name="**/*.sh"/>
                 <include name="**/bin/*" />
@@ -18,6 +17,7 @@
         </tar>
     </target>
 
+
     <target name="server-fhs.tgz" description="Build the dcache-server-xxx.tar">
         <artifact:mvn pom="${maven.pom}"
                       mavenHome="${maven.home}"
@@ -29,5 +29,11 @@
             <arg value="modules/tar"/>
             <arg value="-DskipTests"/>
         </artifact:mvn>
+
+	<move todir="${package.root.dir}/tgz">
+	    <fileset dir="modules/tar/target">
+		<include name="*.tar.gz"/>
+	    </fileset>
+	</move>
     </target>
 </project>
