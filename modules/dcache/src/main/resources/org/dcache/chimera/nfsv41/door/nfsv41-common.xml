@@ -71,7 +71,7 @@
         <property name="poolManagerStub" ref="poolManagerStub"/>
     </bean>
 
-    <bean id="export" class="org.dcache.chimera.nfs.ExportFile">
+    <bean id="export" class="org.dcache.nfs.ExportFile">
         <description>NFS export file</description>
         <constructor-arg>
             <bean class="java.io.File">

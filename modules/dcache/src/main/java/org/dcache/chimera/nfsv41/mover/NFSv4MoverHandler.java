@@ -15,33 +15,33 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.dcache.auth.Subjects;
-import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
-import org.dcache.chimera.nfs.v4.NFSServerV41;
-import org.dcache.chimera.nfs.v4.NFSv4OperationFactory;
-import org.dcache.chimera.nfs.v4.OperationBIND_CONN_TO_SESSION;
-import org.dcache.chimera.nfs.v4.OperationCOMMIT;
-import org.dcache.chimera.nfs.v4.OperationCREATE_SESSION;
-import org.dcache.chimera.nfs.v4.OperationDESTROY_CLIENTID;
-import org.dcache.chimera.nfs.v4.OperationDESTROY_SESSION;
-import org.dcache.chimera.nfs.v4.OperationEXCHANGE_ID;
-import org.dcache.chimera.nfs.v4.OperationGETATTR;
-import org.dcache.chimera.nfs.v4.OperationILLEGAL;
-import org.dcache.chimera.nfs.v4.OperationPUTFH;
-import org.dcache.chimera.nfs.v4.OperationPUTROOTFH;
-import org.dcache.chimera.nfs.v4.OperationRECLAIM_COMPLETE;
-import org.dcache.chimera.nfs.v4.OperationSEQUENCE;
-import org.dcache.chimera.nfs.v4.SimpleIdMap;
-import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
-import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.xdr.nfsace4;
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
-import org.dcache.chimera.nfs.vfs.DirectoryEntry;
-import org.dcache.chimera.nfs.vfs.FsStat;
-import org.dcache.chimera.nfs.vfs.Inode;
-import org.dcache.chimera.nfs.vfs.Stat;
-import org.dcache.chimera.nfs.vfs.Stat.Type;
-import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
+import org.dcache.nfs.v4.AbstractNFSv4Operation;
+import org.dcache.nfs.v4.NFSServerV41;
+import org.dcache.nfs.v4.NFSv4OperationFactory;
+import org.dcache.nfs.v4.OperationBIND_CONN_TO_SESSION;
+import org.dcache.nfs.v4.OperationCOMMIT;
+import org.dcache.nfs.v4.OperationCREATE_SESSION;
+import org.dcache.nfs.v4.OperationDESTROY_CLIENTID;
+import org.dcache.nfs.v4.OperationDESTROY_SESSION;
+import org.dcache.nfs.v4.OperationEXCHANGE_ID;
+import org.dcache.nfs.v4.OperationGETATTR;
+import org.dcache.nfs.v4.OperationILLEGAL;
+import org.dcache.nfs.v4.OperationPUTFH;
+import org.dcache.nfs.v4.OperationPUTROOTFH;
+import org.dcache.nfs.v4.OperationRECLAIM_COMPLETE;
+import org.dcache.nfs.v4.OperationSEQUENCE;
+import org.dcache.nfs.v4.SimpleIdMap;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
+import org.dcache.nfs.v4.xdr.nfs_argop4;
+import org.dcache.nfs.v4.xdr.nfs_opnum4;
+import org.dcache.nfs.v4.xdr.nfsace4;
+import org.dcache.nfs.v4.xdr.stateid4;
+import org.dcache.nfs.vfs.DirectoryEntry;
+import org.dcache.nfs.vfs.FsStat;
+import org.dcache.nfs.vfs.Inode;
+import org.dcache.nfs.vfs.Stat;
+import org.dcache.nfs.vfs.Stat.Type;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
@@ -124,7 +124,7 @@ public class NFSv4MoverHandler {
         }
 
         @Override
-        public boolean remove(Inode parent, String path) throws IOException {
+        public void remove(Inode parent, String path) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

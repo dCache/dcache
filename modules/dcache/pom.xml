@@ -276,8 +276,8 @@
       </dependency>
 
     <dependency>
-        <groupId>org.dcache.chimera</groupId>
-        <artifactId>jpnfs</artifactId>
+        <groupId>org.dcache</groupId>
+        <artifactId>nfs4j-core</artifactId>
     </dependency>
 
   </dependencies>

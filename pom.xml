@@ -302,7 +302,7 @@
             <dependency>
                 <groupId>org.glassfish.grizzly</groupId>
                 <artifactId>grizzly-framework</artifactId>
-                <version>2.1.11</version>
+                <version>2.3.5</version>
             </dependency>
             <dependency>
                 <groupId>com.sleepycat</groupId>
@@ -780,22 +780,10 @@
                 <artifactId>jython</artifactId>
                 <version>2.5.3</version>
             </dependency>
-
-            <dependency>
-                <groupId>org.dcache</groupId>
-                <artifactId>oncrpc4j-core</artifactId>
-                <version>2.0.0</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.dcache.common</groupId>
-                        <artifactId>dcache-auth</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
         <dependency>
-            <groupId>org.dcache.chimera</groupId>
-            <artifactId>jpnfs</artifactId>
-            <version>0.5.6</version>
+            <groupId>org.dcache</groupId>
+            <artifactId>nfs4j-core</artifactId>
+            <version>0.6.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.chimera</groupId>
@@ -806,12 +794,12 @@
                     <artifactId>dcache-auth</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.dcache</groupId>
-                    <artifactId>oncrpc4j-spring</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>com.sun.jna</groupId>
                     <artifactId>jna</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.dcache.common</groupId>
+                    <artifactId>dcache-auth</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

@@ -7,16 +7,16 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import org.dcache.chimera.nfs.ChimeraNFSException;
-import org.dcache.chimera.nfs.nfsstat;
-import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
-import org.dcache.chimera.nfs.v4.CompoundContext;
-import org.dcache.chimera.nfs.v4.xdr.READ4res;
-import org.dcache.chimera.nfs.v4.xdr.READ4resok;
-import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.v4.AbstractNFSv4Operation;
+import org.dcache.nfs.v4.CompoundContext;
+import org.dcache.nfs.v4.xdr.READ4res;
+import org.dcache.nfs.v4.xdr.READ4resok;
+import org.dcache.nfs.v4.xdr.nfs_argop4;
+import org.dcache.nfs.v4.xdr.nfs_opnum4;
+import org.dcache.nfs.v4.xdr.nfs_resop4;
+import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.pool.repository.RepositoryChannel;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {

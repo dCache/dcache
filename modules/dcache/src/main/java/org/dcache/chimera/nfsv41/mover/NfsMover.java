@@ -24,7 +24,7 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;

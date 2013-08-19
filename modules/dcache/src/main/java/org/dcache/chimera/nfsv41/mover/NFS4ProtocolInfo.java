@@ -10,7 +10,7 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.nfs.v4.xdr.stateid4;
 
 public class NFS4ProtocolInfo implements IpProtocolInfo {
 
