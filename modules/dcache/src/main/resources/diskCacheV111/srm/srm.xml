@@ -52,12 +52,12 @@
        key=value1,value2,value3 : String[] {value1, value2, value3}
     -->
   <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
-      <property name="customEditors">
-          <map>
-              <entry key="java.lang.String[]"
-                     value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor" />
-          </map>
-      </property>
+    <property name="customEditors">
+      <map>
+        <entry key="java.lang.String[]"
+               value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor"/>
+      </map>
+    </property>
   </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
@@ -149,35 +149,35 @@
   </bean>
 
   <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
-      <constructor-arg>
-          <bean class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
-              <description>Persistence manager for authentication</description>
-	      <constructor-arg value="${srm.db.url}"/>
-	      <constructor-arg value="${srm.db.driver}"/>
-	      <constructor-arg value="${srm.db.user}"/>
-	      <constructor-arg value="${srm.db.password}"/>
-          </bean>
-      </constructor-arg>
+    <constructor-arg>
+      <bean class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
+        <description>Persistence manager for authentication</description>
+        <constructor-arg value="${srm.db.url}"/>
+        <constructor-arg value="${srm.db.driver}"/>
+        <constructor-arg value="${srm.db.user}"/>
+        <constructor-arg value="${srm.db.password}"/>
+      </bean>
+    </constructor-arg>
   </bean>
 
   <bean id="login-strategy" class="org.dcache.services.login.CachingLoginStrategy">
-      <constructor-arg>
-          <bean class="org.dcache.services.login.RemoteLoginStrategy">
-              <property name="cellStub" ref="gplazma-stub"/>
-          </bean>
-      </constructor-arg>
-      <constructor-arg value="${srm.service.gplazma.cache.size}"/> <!-- Cache size -->
-      <constructor-arg value="${srm.service.gplazma.cache.timeout}"/>
-      <constructor-arg value="${srm.service.gplazma.cache.timeout.unit}"/>
+    <constructor-arg>
+      <bean class="org.dcache.services.login.RemoteLoginStrategy">
+        <property name="cellStub" ref="gplazma-stub"/>
+      </bean>
+    </constructor-arg>
+    <constructor-arg value="${srm.service.gplazma.cache.size}"/> <!-- Cache size -->
+    <constructor-arg value="${srm.service.gplazma.cache.timeout}"/>
+    <constructor-arg value="${srm.service.gplazma.cache.timeout.unit}"/>
   </bean>
 
   <bean id="authorization" class="diskCacheV111.srm.dcache.DCacheAuthorization">
-      <constructor-arg ref="login-strategy"/>
-      <constructor-arg ref="auth-persistence-manager"/>
+    <constructor-arg ref="login-strategy"/>
+    <constructor-arg ref="auth-persistence-manager"/>
   </bean>
 
   <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
-         init-method="start" destroy-method="stop">
+        init-method="start" destroy-method="stop">
     <description>dCache plugin for SRM</description>
     <property name="directoryListSource" ref="list-handler"/>
     <property name="loginBrokerHandler" ref="lb"/>
@@ -194,8 +194,8 @@
               value="${dcache.enable.space-reservation}"/>
     <property name="loginBrokerUpdatePeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.protocols.loginbroker.period},
-		     '${srm.protocols.loginbroker.period.unit}')}" />
+                     ${srm.protocols.loginbroker.period},
+                     '${srm.protocols.loginbroker.period.unit}')}" />
     <property name="numberOfDoorsInRandomSelection"
               value="${srm.protocols.population-size}"/>
     <property name="useCustomGetHostByAddress"
@@ -214,9 +214,9 @@
     <description>SRM configuration</description>
     <property name="port" value="${srm.net.port}"/>
     <property name="timeout"
-	      value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
-		     ${srm.limits.external-copy-script.timeout},
-		     '${srm.limits.external-copy-script.timeout.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                     ${srm.limits.external-copy-script.timeout},
+                     '${srm.limits.external-copy-script.timeout.unit}')}" />
     <property name="srmHost" value="${srm.net.host}"/>
     <property name="srmHostsAsArray" value="${srm.net.local-hosts}"/>
     <property name="sizeOfSingleRemoveBatch"
@@ -226,10 +226,10 @@
     <property name="maxNumberOfLsLevels"
               value="${srm.limits.request.ls.levels.max}"/>
     <property name="authzCacheLifetime"
-	      value="#{T(java.util.concurrent.TimeUnit).
-		     SECONDS.convert(
-		     ${srm.service.gplazma.cache.timeout},
-		     '${srm.service.gplazma.cache.timeout.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).
+                     SECONDS.convert(
+                     ${srm.service.gplazma.cache.timeout},
+                     '${srm.service.gplazma.cache.timeout.unit}')}" />
     <property name="srm_root" value="${srm.root}"/>
     <property name="buffer_size" value="${srm.limits.transfer-buffer.size}"/>
     <property name="tcp_buffer_size" value="${srm.limits.transfer-tcp-buffer.size}"/>
@@ -237,21 +237,21 @@
     <property name="debug" value="${srm.enable.external-copy-script.debug}"/>
     <property name="gsiftpclinet" value="globus-url-copy"/>
     <property name="getLifetime"
-	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.get.lifetime},
-		     '${srm.limits.request.get.lifetime.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.request.get.lifetime},
+                     '${srm.limits.request.get.lifetime.unit}')}" />
     <property name="bringOnlineLifetime"
-	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.bring-online.lifetime},
-		     '${srm.limits.request.bring-online.lifetime.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.request.bring-online.lifetime},
+                     '${srm.limits.request.bring-online.lifetime.unit}')}" />
     <property name="putLifetime"
-	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.put.lifetime},
-		     '${srm.limits.request.put.lifetime.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.request.put.lifetime},
+                     '${srm.limits.request.put.lifetime.unit}')}" />
     <property name="copyLifetime"
-	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.copy.lifetime},
-		     '${srm.limits.request.copy.lifetime.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.request.copy.lifetime},
+                     '${srm.limits.request.copy.lifetime.unit}')}" />
     <property name="recursiveDirectoryCreation"
               value="${srm.enable.recursive-directory-creation}"/>
     <property name="advisoryDelete" value="${srm.enable.advisory-delete}"/>
@@ -260,10 +260,10 @@
     <property name="space_reservation_strict"
               value="${srm.enable.space-reservation.strict}"/>
 
-    <property name="jdbcUrl"     value="${srm.db.url}"/>
-    <property name="jdbcClass"   value="${srm.db.driver}"/>
-    <property name="jdbcUser"    value="${srm.db.user}"/>
-    <property name="jdbcPass"    value="${srm.db.password}"/>
+    <property name="jdbcUrl" value="${srm.db.url}"/>
+    <property name="jdbcClass" value="${srm.db.driver}"/>
+    <property name="jdbcUser" value="${srm.db.user}"/>
+    <property name="jdbcPass" value="${srm.db.password}"/>
     <property name="jdbcPwdfile" value="${srm.db.password.file}"/>
 
     <property name="getReqTQueueSize" value="${srm.limits.request.get.scheduler.thread.queue.size}"/>
@@ -274,15 +274,15 @@
     <property name="getMaxNumOfRetries"
               value="${srm.limits.request.get.scheduler.retries.max}"/>
     <property name="getRetryTimeout"
- 	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.get.scheduler.retry-timeout},
-		     '${srm.limits.request.get.scheduler.retry-timeout.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.request.get.scheduler.retry-timeout},
+                     '${srm.limits.request.get.scheduler.retry-timeout.unit}')}" />
     <property name="getMaxRunningBySameOwner"
               value="${srm.limits.request.get.scheduler.same-owner-running.max}"/>
     <property name="getSwitchToAsynchronousModeDelay"
               value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
-		     '${srm.limits.request.get.switch-to-async-mode.delay}',
-		     '${srm.limits.request.get.switch-to-async-mode.delay.unit}')}"/>
+                     '${srm.limits.request.get.switch-to-async-mode.delay}',
+                     '${srm.limits.request.get.switch-to-async-mode.delay.unit}')}"/>
     <property name="bringOnlineReqTQueueSize"
               value="${srm.limits.request.bring-online.scheduler.thread.queue.size}"/>
     <property name="bringOnlineThreadPoolSize"
@@ -297,14 +297,14 @@
               value="${srm.limits.request.bring-online.scheduler.retries.max}"/>
     <property name="bringOnlineRetryTimeout"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.bring-online.scheduler.retry-timeout},
-		     '${srm.limits.request.bring-online.scheduler.retry-timeout.unit}')}" />
+                     ${srm.limits.request.bring-online.scheduler.retry-timeout},
+                     '${srm.limits.request.bring-online.scheduler.retry-timeout.unit}')}" />
     <property name="bringOnlineMaxRunningBySameOwner"
               value="${srm.limits.request.bring-online.scheduler.same-owner-running.max}"/>
     <property name="bringOnlineSwitchToAsynchronousModeDelay"
               value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
-		     '${srm.limits.request.bring-online.switch-to-async-mode.delay}',
-		     '${srm.limits.request.bring-online.switch-to-async-mode.delay.unit}')}"/>
+                     '${srm.limits.request.bring-online.switch-to-async-mode.delay}',
+                     '${srm.limits.request.bring-online.switch-to-async-mode.delay.unit}')}"/>
     <property name="lsReqTQueueSize" value="${srm.limits.request.ls.scheduler.thread.queue.size}"/>
     <property name="lsThreadPoolSize" value="${srm.limits.request.ls.scheduler.thread.pool.size}"/>
     <property name="lsMaxWaitingRequests" value="${srm.limits.request.ls.scheduler.waiting.max}"/>
@@ -312,14 +312,14 @@
               value="${srm.limits.request.ls.scheduler.retries.max}"/>
     <property name="lsRetryTimeout"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.ls.scheduler.retry-timeout},
-		     '${srm.limits.request.ls.scheduler.retry-timeout.unit}')}" />
+                     ${srm.limits.request.ls.scheduler.retry-timeout},
+                     '${srm.limits.request.ls.scheduler.retry-timeout.unit}')}" />
     <property name="lsMaxRunningBySameOwner"
               value="${srm.limits.request.ls.scheduler.same-owner-running.max}"/>
     <property name="lsSwitchToAsynchronousModeDelay"
               value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
-		     '${srm.limits.request.ls.switch-to-async-mode.delay}',
-		     '${srm.limits.request.ls.switch-to-async-mode.delay.unit}')}"/>
+                     '${srm.limits.request.ls.switch-to-async-mode.delay}',
+                     '${srm.limits.request.ls.switch-to-async-mode.delay.unit}')}"/>
     <property name="putReqTQueueSize" value="${srm.limits.request.put.scheduler.thread.queue.size}"/>
     <property name="putThreadPoolSize" value="${srm.limits.request.put.scheduler.thread.pool.size}"/>
     <property name="putMaxWaitingRequests" value="${srm.limits.request.put.scheduler.waiting.max}"/>
@@ -327,22 +327,22 @@
     <property name="putMaxReadyJobs" value="${srm.limits.request.put.scheduler.ready.max}"/>
     <property name="putMaxNumOfRetries" value="${srm.limits.request.put.scheduler.retries.max}"/>
     <property name="putRetryTimeout"
-	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.put.scheduler.retry-timeout},
-		     '${srm.limits.request.put.scheduler.retry-timeout.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.request.put.scheduler.retry-timeout},
+                     '${srm.limits.request.put.scheduler.retry-timeout.unit}')}" />
     <property name="putMaxRunningBySameOwner" value="${srm.limits.request.put.scheduler.same-owner-running.max}"/>
     <property name="putSwitchToAsynchronousModeDelay"
               value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
-		     '${srm.limits.request.put.switch-to-async-mode.delay}',
-		     '${srm.limits.request.put.switch-to-async-mode.delay.unit}')}"/>
+                     '${srm.limits.request.put.switch-to-async-mode.delay}',
+                     '${srm.limits.request.put.switch-to-async-mode.delay.unit}')}"/>
     <property name="copyReqTQueueSize" value="${srm.limits.request.copy.scheduler.thread.queue.size}"/>
     <property name="copyThreadPoolSize" value="${srm.limits.request.copy.scheduler.thread.pool.size}"/>
     <property name="copyMaxWaitingRequests" value="${srm.limits.request.copy.scheduler.waiting.max}"/>
     <property name="copyMaxNumOfRetries" value="${srm.limits.request.copy.scheduler.retries.max}"/>
     <property name="copyRetryTimeout"
-	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.request.copy.scheduler.retry-timeout},
-		     '${srm.limits.request.copy.scheduler.retry-timeout.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.request.copy.scheduler.retry-timeout},
+                     '${srm.limits.request.copy.scheduler.retry-timeout.unit}')}" />
     <property name="copyMaxRunningBySameOwner"
               value="${srm.limits.request.copy.scheduler.same-owner-running.max}"/>
 
@@ -368,12 +368,12 @@
               value="${srm.request.ls.enable.database}"/>
     <property name="databaseParametersForList.expiredRequestRemovalPeriod"
               value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
-		     ${srm.limits.request.ls.remove-expired-period},
-		     '${srm.limits.request.ls.remove-expired-period.unit}')}" />
+                     ${srm.limits.request.ls.remove-expired-period},
+                     '${srm.limits.request.ls.remove-expired-period.unit}')}" />
     <property name="databaseParametersForList.keepRequestHistoryPeriod"
               value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
-		     ${srm.limits.request.ls.keep-history-period},
-		     '${srm.limits.request.ls.keep-history-period.unit}')}" />
+                     ${srm.limits.request.ls.keep-history-period},
+                     '${srm.limits.request.ls.keep-history-period.unit}')}" />
     <property name="databaseParametersForList.requestHistoryDatabaseEnabled"
               value="${srm.request.ls.enable.history-database}"/>
     <property name="databaseParametersForList.cleanPendingRequestsOnRestart"
@@ -385,12 +385,12 @@
               value="${srm.request.get.enable.database}"/>
     <property name="databaseParametersForGet.expiredRequestRemovalPeriod"
               value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
-		     ${srm.limits.request.get.remove-expired-period},
-		     '${srm.limits.request.get.remove-expired-period.unit}')}" />
+                     ${srm.limits.request.get.remove-expired-period},
+                     '${srm.limits.request.get.remove-expired-period.unit}')}" />
     <property name="databaseParametersForGet.keepRequestHistoryPeriod"
               value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
-		     ${srm.limits.request.get.keep-history-period},
-		     '${srm.limits.request.get.keep-history-period.unit}')}" />
+                     ${srm.limits.request.get.keep-history-period},
+                     '${srm.limits.request.get.keep-history-period.unit}')}" />
     <property name="databaseParametersForGet.requestHistoryDatabaseEnabled"
               value="${srm.request.get.enable.history-database}"/>
     <property name="databaseParametersForGet.cleanPendingRequestsOnRestart"
@@ -402,12 +402,12 @@
               value="${srm.request.put.enable.database}"/>
     <property name="databaseParametersForPut.expiredRequestRemovalPeriod"
               value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
-		     ${srm.limits.request.put.remove-expired-period},
-		     '${srm.limits.request.put.remove-expired-period.unit}')}" />
+                     ${srm.limits.request.put.remove-expired-period},
+                     '${srm.limits.request.put.remove-expired-period.unit}')}" />
     <property name="databaseParametersForPut.keepRequestHistoryPeriod"
               value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
-		     ${srm.limits.request.put.remove-expired-period},
-		     '${srm.limits.request.put.remove-expired-period.unit}')}" />
+                     ${srm.limits.request.put.remove-expired-period},
+                     '${srm.limits.request.put.remove-expired-period.unit}')}" />
     <property name="databaseParametersForPut.requestHistoryDatabaseEnabled"
               value="${srm.request.put.enable.history-database}"/>
     <property name="databaseParametersForPut.cleanPendingRequestsOnRestart"
@@ -419,12 +419,12 @@
               value="${srm.request.copy.enable.database}"/>
     <property name="databaseParametersForCopy.expiredRequestRemovalPeriod"
               value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
-		     ${srm.limits.request.copy.remove-expired-period},
-		     '${srm.limits.request.copy.remove-expired-period.unit}')}" />
+                     ${srm.limits.request.copy.remove-expired-period},
+                     '${srm.limits.request.copy.remove-expired-period.unit}')}" />
     <property name="databaseParametersForCopy.keepRequestHistoryPeriod"
               value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
-		     ${srm.limits.request.copy.keep-history-period},
-		     '${srm.limits.request.copy.keep-history-period.unit}')}" />
+                     ${srm.limits.request.copy.keep-history-period},
+                     '${srm.limits.request.copy.keep-history-period.unit}')}" />
     <property name="databaseParametersForCopy.requestHistoryDatabaseEnabled"
               value="${srm.request.copy.enable.history-database}"/>
     <property name="databaseParametersForCopy.cleanPendingRequestsOnRestart"
@@ -436,12 +436,12 @@
               value="${srm.request.bring-online.enable.database}"/>
     <property name="databaseParametersForBringOnline.expiredRequestRemovalPeriod"
               value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
-		     ${srm.limits.request.bring-online.remove-expired-period},
-		     '${srm.limits.request.bring-online.remove-expired-period.unit}')}"/>
+                     ${srm.limits.request.bring-online.remove-expired-period},
+                     '${srm.limits.request.bring-online.remove-expired-period.unit}')}"/>
     <property name="databaseParametersForBringOnline.keepRequestHistoryPeriod"
               value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
-		     ${srm.limits.request.bring-online.keep-history-period},
-		     '${srm.limits.request.bring-online.keep-history-period.unit}')}" />
+                     ${srm.limits.request.bring-online.keep-history-period},
+                     '${srm.limits.request.bring-online.keep-history-period.unit}')}" />
     <property name="databaseParametersForBringOnline.requestHistoryDatabaseEnabled"
               value="${srm.request.bring-online.enable.history-database}"/>
     <property name="databaseParametersForBringOnline.cleanPendingRequestsOnRestart"
@@ -453,12 +453,12 @@
               value="${srm.request.reserve-space.enable.database}"/>
     <property name="databaseParametersForReserve.expiredRequestRemovalPeriod"
               value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
-		     ${srm.limits.request.reserve-space.remove-expired-period},
-		     '${srm.limits.request.reserve-space.remove-expired-period.unit}')}" />
+                     ${srm.limits.request.reserve-space.remove-expired-period},
+                     '${srm.limits.request.reserve-space.remove-expired-period.unit}')}" />
     <property name="databaseParametersForReserve.keepRequestHistoryPeriod"
               value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
-		     ${srm.limits.request.reserve-space.keep-history-period},
-		     '${srm.limits.request.reserve-space.keep-history-period.unit}')}" />
+                     ${srm.limits.request.reserve-space.keep-history-period},
+                     '${srm.limits.request.reserve-space.keep-history-period.unit}')}" />
     <property name="databaseParametersForReserve.requestHistoryDatabaseEnabled"
               value="${srm.request.reserve-space.enable.history-database}"/>
     <property name="databaseParametersForReserve.cleanPendingRequestsOnRestart"
@@ -469,7 +469,7 @@
 
 
   <bean id="srm" class="org.dcache.srm.SRM" factory-method="getSRM"
-	destroy-method="stop" depends-on="config">
+        destroy-method="stop" depends-on="config">
     <description>SRM engine</description>
 
     <constructor-arg ref="config"/>
@@ -481,9 +481,9 @@
         init-method="start" destroy-method="stop">
     <description>Thread pool used by Jetty for request processing</description>
     <property name="maxIdleTimeMs"
-	      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${srm.limits.jetty.threads.idle-time.max},
-		     '${srm.limits.jetty.threads.idle-time.max.unit}')}" />
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.jetty.threads.idle-time.max},
+                     '${srm.limits.jetty.threads.idle-time.max.unit}')}" />
     <property name="maxThreads" value="${srm.limits.jetty.threads.max}"/>
     <property name="minThreads" value="${srm.limits.jetty.threads.min}"/>
     <property name="name" value="jetty-srm"/>
@@ -492,7 +492,7 @@
 
   <bean id="banned-ciphers" class="org.dcache.util.Crypto"
         factory-method="getBannedCipherSuitesFromConfigurationValue">
-      <constructor-arg value="${srm.authn.ciphers}"/>
+    <constructor-arg value="${srm.authn.ciphers}"/>
   </bean>
 
   <bean id="server" class="org.eclipse.jetty.server.Server"
@@ -503,10 +503,10 @@
     <property name="threadPool" ref="thread-pool"/>
 
     <property name="connectors">
-    <list>
-      <ref bean="gsi-connector" />
-      <ref bean="ssl-connector" />
-    </list>
+      <list>
+        <ref bean="gsi-connector"/>
+        <ref bean="ssl-connector"/>
+      </list>
     </property>
 
     <property name="handler">
@@ -525,20 +525,20 @@
                   <value>org.eclipse.jetty.webapp.TagLibConfiguration</value>
                 </list>
               </property>
-	      <property name="attributes">
+              <property name="attributes">
                 <bean class="org.eclipse.jetty.util.AttributesMap">
                   <constructor-arg>
                     <map>
                       <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_CONFIG }"
-			     value-ref="config"/>
+                             value-ref="config"/>
                       <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_STORAGE }"
-			     value-ref="storage"/>
+                             value-ref="storage"/>
                       <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_SRM }"
-			     value-ref="srm"/>
+                             value-ref="srm"/>
                     </map>
                   </constructor-arg>
                 </bean>
-	      </property>
+              </property>
             </bean>
 
             <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
@@ -548,72 +548,71 @@
     </property>
   </bean>
 
-    <bean id="gsi-connector"
-          class="org.dcache.util.JettyGSIConnector">
-        <description>synchronous GSI connector</description>
-        <property name="port" value="${srm.net.port}"/>
-        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
-        <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
-        <property name="maxIdleTime"
-		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-			 ${srm.limits.jetty-connector.idle-time.max},
-			 '${srm.limits.jetty-connector.idle-time.max.unit}')}" />
-        <property name="lowResourceMaxIdleTime"
-                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-			 ${srm.limits.jetty-connector.low-resource.max.idle-time},
-			 '${srm.limits.jetty-connector.low-resource.max.idle-time.unit}')}" />
-        <property name="acceptQueueSize" value="${srm.limits.jetty-connector.backlog}"/>
-        <property name="hostCertificatePath" value="${srm.authn.hostcert.cert}"/>
-        <property name="hostKeyPath" value="${srm.authn.hostcert.key}"/>
-        <property name="caCertificatePath" value="${srm.authn.capath}"/>
-        <property name="autoFlush" value="true"/>
-        <property name="encrypt" value="true"/>
-        <property name="requireClientAuth" value="true"/>
-        <property name="acceptNoClientCerts" value="false"/>
-        <property name="gssMode" value="gsi"/>
-        <property name="handshakeTimeout"
-		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-			 ${srm.limits.jetty-connector.handshake.timeout},
-			 '${srm.limits.jetty-connector.handshake.timeout.unit}')}" />
-        <property name="hostCertRefreshInterval" value="${srm.authn.hostcert.refresh}" />
-        <property name="hostCertRefreshIntervalUnit" value="${srm.authn.hostcert.refresh.unit}" />
-        <property name="trustAnchorRefreshInterval" value="${srm.authn.capath.refresh}" />
-        <property name="trustAnchorRefreshIntervalUnit" value="${srm.authn.capath.refresh.unit}" />
-        <property name="excludeCipherSuites" ref="banned-ciphers"/>
-    </bean>
+  <bean id="gsi-connector"
+        class="org.dcache.util.JettyGSIConnector">
+    <description>synchronous GSI connector</description>
+    <property name="port" value="${srm.net.port}"/>
+    <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
+    <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
+    <property name="maxIdleTime"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.jetty-connector.idle-time.max},
+                     '${srm.limits.jetty-connector.idle-time.max.unit}')}" />
+    <property name="lowResourceMaxIdleTime"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.jetty-connector.low-resource.max.idle-time},
+                     '${srm.limits.jetty-connector.low-resource.max.idle-time.unit}')}" />
+    <property name="acceptQueueSize" value="${srm.limits.jetty-connector.backlog}"/>
+    <property name="hostCertificatePath" value="${srm.authn.hostcert.cert}"/>
+    <property name="hostKeyPath" value="${srm.authn.hostcert.key}"/>
+    <property name="caCertificatePath" value="${srm.authn.capath}"/>
+    <property name="autoFlush" value="true"/>
+    <property name="encrypt" value="true"/>
+    <property name="requireClientAuth" value="true"/>
+    <property name="acceptNoClientCerts" value="false"/>
+    <property name="gssMode" value="gsi"/>
+    <property name="handshakeTimeout"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.jetty-connector.handshake.timeout},
+                     '${srm.limits.jetty-connector.handshake.timeout.unit}')}" />
+    <property name="hostCertRefreshInterval" value="${srm.authn.hostcert.refresh}" />
+    <property name="hostCertRefreshIntervalUnit" value="${srm.authn.hostcert.refresh.unit}" />
+    <property name="trustAnchorRefreshInterval" value="${srm.authn.capath.refresh}" />
+    <property name="trustAnchorRefreshIntervalUnit" value="${srm.authn.capath.refresh.unit}" />
+    <property name="excludeCipherSuites" ref="banned-ciphers"/>
+  </bean>
 
-    <bean id="ssl-connector"
-          class="org.dcache.util.JettyGSIConnector">
-        <description>synchronous SSL connector</description>
-        <property name="port" value="${srm.net.ssl-port}"/>
-        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
-        <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
-        <property name="maxIdleTime"
-		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-			 ${srm.limits.jetty-connector.idle-time.max},
-			 '${srm.limits.jetty-connector.idle-time.max.unit}')}" />
-        <property name="lowResourceMaxIdleTime"
-                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-			 ${srm.limits.jetty-connector.low-resource.max.idle-time},
-			 '${srm.limits.jetty-connector.low-resource.max.idle-time.unit}')}" />
-        <property name="acceptQueueSize" value="${srm.limits.jetty-connector.backlog}"/>
-        <property name="hostCertificatePath" value="${srm.authn.hostcert.cert}"/>
-        <property name="hostKeyPath" value="${srm.authn.hostcert.key}"/>
-        <property name="caCertificatePath" value="${srm.authn.capath}"/>
-        <property name="autoFlush" value="true"/>
-        <property name="encrypt" value="true"/>
-        <property name="requireClientAuth" value="true"/>
-        <property name="acceptNoClientCerts" value="false"/>
-        <property name="gssMode" value="ssl"/>
-        <property name="handshakeTimeout"
-		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-			 ${srm.limits.jetty-connector.handshake.timeout},
-			 '${srm.limits.jetty-connector.handshake.timeout.unit}')}" />
-        <property name="hostCertRefreshInterval" value="${srm.authn.hostcert.refresh}" />
-        <property name="hostCertRefreshIntervalUnit" value="${srm.authn.hostcert.refresh.unit}" />
-        <property name="trustAnchorRefreshInterval" value="${srm.authn.capath.refresh}" />
-        <property name="trustAnchorRefreshIntervalUnit" value="${srm.authn.capath.refresh.unit}" />
-        <property name="excludeCipherSuites" ref="banned-ciphers"/>
-    </bean>
-
+  <bean id="ssl-connector"
+        class="org.dcache.util.JettyGSIConnector">
+    <description>synchronous SSL connector</description>
+    <property name="port" value="${srm.net.ssl-port}"/>
+    <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
+    <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
+    <property name="maxIdleTime"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.jetty-connector.idle-time.max},
+                     '${srm.limits.jetty-connector.idle-time.max.unit}')}" />
+    <property name="lowResourceMaxIdleTime"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.jetty-connector.low-resource.max.idle-time},
+                     '${srm.limits.jetty-connector.low-resource.max.idle-time.unit}')}" />
+    <property name="acceptQueueSize" value="${srm.limits.jetty-connector.backlog}"/>
+    <property name="hostCertificatePath" value="${srm.authn.hostcert.cert}"/>
+    <property name="hostKeyPath" value="${srm.authn.hostcert.key}"/>
+    <property name="caCertificatePath" value="${srm.authn.capath}"/>
+    <property name="autoFlush" value="true"/>
+    <property name="encrypt" value="true"/>
+    <property name="requireClientAuth" value="true"/>
+    <property name="acceptNoClientCerts" value="false"/>
+    <property name="gssMode" value="ssl"/>
+    <property name="handshakeTimeout"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.limits.jetty-connector.handshake.timeout},
+                     '${srm.limits.jetty-connector.handshake.timeout.unit}')}" />
+    <property name="hostCertRefreshInterval" value="${srm.authn.hostcert.refresh}" />
+    <property name="hostCertRefreshIntervalUnit" value="${srm.authn.hostcert.refresh.unit}" />
+    <property name="trustAnchorRefreshInterval" value="${srm.authn.capath.refresh}" />
+    <property name="trustAnchorRefreshIntervalUnit" value="${srm.authn.capath.refresh.unit}" />
+    <property name="excludeCipherSuites" ref="banned-ciphers"/>
+  </bean>
 </beans>
