@@ -12,5 +12,11 @@
             <arg value="modules/tar"/>
             <arg value="-DskipTests"/>
         </artifact:mvn>
+
+	<move todir="${package.root.dir}/tgz">
+	    <fileset dir="modules/tar/target">
+		<include name="*.tar.gz"/>
+	    </fileset>
+	</move>
     </target>
 </project>

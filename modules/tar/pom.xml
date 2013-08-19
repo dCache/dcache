@@ -113,6 +113,12 @@
                       <goals>
                           <goal>single</goal>
                       </goals>
+                      <configuration>
+                          <finalName>${project.build.finalName}-1</finalName>
+                          <!-- The 'outputDirectory' parameter seems to be
+                               ignored, so we must use ant to move the tar.gz
+                               file into the correct location. -->
+                      </configuration>
                   </execution>
               </executions>
           </plugin>
