@@ -200,6 +200,18 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         }
     }
 
+    private static Handler createFieldHandler(Field field, CommandLine commandLine)
+    {
+        Class<?> type = field.getType();
+        if (type.isAssignableFrom(Args.class)) {
+            return new ArgsHandler(field);
+        } else if (type.isAssignableFrom(String.class)) {
+            return new CommandLineHandler(field);
+        } else {
+            throw new IllegalArgumentException("CommandLine annotation is only applicable to Args and String fields");
+        }
+    }
+
     private static List<Handler> createFieldHandlers(Class<? extends Callable<?>> clazz)
     {
         List<Handler> handlers = Lists.newArrayList();
@@ -213,6 +225,11 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                 Argument argument = field.getAnnotation(Argument.class);
                 if (argument != null) {
                     handlers.add(createFieldHandler(field, argument));
+                }
+
+                CommandLine commandLine = field.getAnnotation(CommandLine.class);
+                if (commandLine != null) {
+                    handlers.add(createFieldHandler(field, commandLine));
                 }
             }
         }
@@ -555,6 +572,55 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                 throw new IllegalArgumentException("Option " + _option.name() + " is required");
             }
             return null;
+        }
+    }
+
+    /**
+     * Assigns the entire Args object to a field.
+     */
+    private static class ArgsHandler extends FieldHandler
+    {
+        private ArgsHandler(Field field)
+        {
+            super(field);
+        }
+
+        @Override
+        protected Object getValue(Args args)
+        {
+            return args;
+        }
+
+        @Override
+        public int getMaxArguments()
+        {
+            return 0;
+        }
+    }
+
+    /**
+     * Assigns the command line to a field.
+     */
+    private static class CommandLineHandler extends FieldHandler
+    {
+        private final String command;
+
+        private CommandLineHandler(Field field)
+        {
+            super(field);
+            command = field.getDeclaringClass().getAnnotation(Command.class).name();
+        }
+
+        @Override
+        protected Object getValue(Args args)
+        {
+            return command + " " + args;
+        }
+
+        @Override
+        public int getMaxArguments()
+        {
+            return 0;
         }
     }
 
