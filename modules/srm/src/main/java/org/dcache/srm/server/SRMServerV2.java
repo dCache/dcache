@@ -70,6 +70,7 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
+import com.google.common.collect.ImmutableSet;
 import org.glite.voms.PKIVerifier;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.slf4j.Logger;
@@ -81,6 +82,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.Set;
 
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
@@ -175,8 +177,17 @@ import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.srm.v2_2.TStatusCode.*;
 
 public class SRMServerV2 implements ISRM  {
+
+    private static final Set<TStatusCode> FAILURES =
+            ImmutableSet.of(SRM_FAILURE, SRM_REQUEST_QUEUED, SRM_REQUEST_INPROGRESS, SRM_REQUEST_SUSPENDED,
+                    SRM_AUTHENTICATION_FAILURE, SRM_AUTHORIZATION_FAILURE, SRM_INVALID_REQUEST, SRM_INVALID_PATH,
+                    SRM_FILE_LIFETIME_EXPIRED, SRM_SPACE_LIFETIME_EXPIRED, SRM_EXCEED_ALLOCATION, SRM_NO_USER_SPACE,
+                    SRM_NO_FREE_SPACE, SRM_DUPLICATION_ERROR, SRM_NON_EMPTY_DIRECTORY, SRM_TOO_MANY_RESULTS,
+                    SRM_INTERNAL_ERROR, SRM_FATAL_INTERNAL_ERROR, SRM_NOT_SUPPORTED, SRM_ABORTED,
+                    SRM_REQUEST_TIMED_OUT, SRM_FILE_BUSY, SRM_FILE_LOST, SRM_FILE_UNAVAILABLE, SRM_CUSTOM_STATUS);
 
     public Logger log;
     private SrmAuthorizer srmAuth;
@@ -227,21 +238,6 @@ public class SRMServerV2 implements ISRM  {
                     Character.toUpperCase(requestName.charAt(0))+
                     requestName.substring(1);
             try {
-                String authorizationID;
-                try {
-                    Method getAuthorizationID =
-                            requestClass.getMethod("getAuthorizationID",(Class[])null);
-                    if(getAuthorizationID !=null) {
-                        authorizationID = (String)getAuthorizationID.invoke(request,(Object[])null);
-                        log.debug("authorization id {}", authorizationID);
-                    }
-                } catch(Exception e){
-                    log.error("getting authorization id failed",e);
-                    //do nothing here, just do not use authorizattion id in the following code
-                }
-
-
-
                 SRMUser user;
                 UserCredential userCred;
                 RequestCredential requestCredential;
@@ -251,19 +247,19 @@ public class SRMServerV2 implements ISRM  {
                         = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
                                         pkiVerifier);
                     String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
-                    log.debug("role is "+role);
+                    log.debug("role is {}", role);
                     requestCredential = srmAuth.getRequestCredential(userCred,role);
                     user              = srmAuth.getRequestUser(requestCredential,
                                                                null,
                                                                userCred.context);
-                    switch (requestName) {
-                    case "srmRmdir":
-                    case "srmMkdir":
-                    case "srmPrepareToPut":
-                    case "srmRm" :
-                    case "srmMv":
-                    case "srmSetPermission":
-                        if (user.isReadOnly()) {
+                    if (user.isReadOnly()) {
+                        switch (requestName) {
+                        case "srmRmdir":
+                        case "srmMkdir":
+                        case "srmPrepareToPut":
+                        case "srmRm" :
+                        case "srmMv":
+                        case "srmSetPermission":
                             return getFailedResponse(capitalizedRequestName,
                                                      TStatusCode.SRM_AUTHORIZATION_FAILURE,
                                                      "Session is read-only");
@@ -271,17 +267,17 @@ public class SRMServerV2 implements ISRM  {
                     }
                 } catch (SRMAuthorizationException sae) {
                     log.info("SRM Authorization failed: {}", sae.getMessage());
+                    srmServerCounters.incrementFailed(requestClass);
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_AUTHENTICATION_FAILURE,
                             "SRM Authentication failed");
                 }
-                log.debug("About to call handler");
-                Class<?> handlerClass;
+                log.debug("About to call {} handler", requestName);
                 Constructor<?> handlerConstructor;
                 Object handler;
                 Method handleGetResponseMethod;
                 try {
-                    handlerClass = Class.forName("org.dcache.srm.handler."+
+                    Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+
                             capitalizedRequestName);
                     handlerConstructor =
                             handlerClass.getConstructor(new Class[]{SRMUser.class,
@@ -296,28 +292,34 @@ public class SRMServerV2 implements ISRM  {
                             storage,
                             srm,
                             userCred.clientHost);
-                    handleGetResponseMethod = handlerClass.getMethod("getResponse",(Class[])null);
+                    handleGetResponseMethod = handlerClass.getMethod("getResponse");
                 } catch(ClassNotFoundException e) {
                     if( log.isDebugEnabled() ) {
-                        log.debug("handler discovery and dinamic load failed", e);
+                        log.debug("handler discovery and dynamic loading failed", e);
                     }else{
-                        log.info("handler discovery and dinamic load failed");
+                        log.info("handler discovery and dynamic loading failed");
                     }
+                    srmServerCounters.incrementFailed(requestClass);
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_NOT_SUPPORTED,
                             "can not find a handler, not implemented");
                 }
                 try {
-                    Object response = handleGetResponseMethod.invoke(handler,(Object[])null);
+                    Object response = handleGetResponseMethod.invoke(handler);
+                    if (isFailure(response)) {
+                        srmServerCounters.incrementFailed(requestClass);
+                    }
                     return response;
                 } catch(Exception e) {
                     log.error("handler invocation failed",e);
+                    srmServerCounters.incrementFailed(requestClass);
                     return getFailedResponse(capitalizedRequestName,
-                            TStatusCode.SRM_FAILURE,
+                            SRM_FAILURE,
                          "handler invocation failed"+ e.getMessage());
                 }
             } catch(Exception e) {
                 log.error(" handleRequest: ",e);
+                srmServerCounters.incrementFailed(requestClass);
                 try{
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_INTERNAL_ERROR,
@@ -330,6 +332,19 @@ public class SRMServerV2 implements ISRM  {
             srmServerGauges.update(requestClass,
                     System.currentTimeMillis() - startTimeStamp);
         }
+    }
+
+    private boolean isFailure(Object response)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        Method statusMethod = response.getClass().getMethod("getReturnStatus");
+        if (statusMethod != null && TReturnStatus.class.isAssignableFrom(statusMethod
+                .getReturnType())) {
+            TReturnStatus status = (TReturnStatus) statusMethod.invoke(response);
+            TStatusCode statusCode = status.getStatusCode();
+            return FAILURES.contains(statusCode);
+        }
+        return false;
     }
 
     private Object getFailedResponse(String capitalizedRequestName, TStatusCode statusCode, String errorMessage)
@@ -349,7 +364,7 @@ public class SRMServerV2 implements ISRM  {
         }
 	catch (NoSuchMethodException nsme) {
 		// A hack to handle SrmPingResponse which does not have "setReturnStatus" method
-		log.error("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
+		log.trace("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
 		if (capitalizedRequestName.equals("SrmPing")) {
 			Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+capitalizedRequestName);
 			Method getFailedRespose = handlerClass.getMethod("getFailedResponse",new Class[]{String.class});
@@ -357,7 +372,7 @@ public class SRMServerV2 implements ISRM  {
 		}
 	}
         catch(Exception e) {
-            log.error("getFailedResponse invocation failed",e);
+            log.trace("getFailedResponse invocation failed",e);
             Method setStatusCode = responseClass.getMethod("setStatusCode",new Class[]{TStatusCode.class});
             Method setExplanation = responseClass.getMethod("setExplanation",new Class[]{String.class});
             setStatusCode.invoke(response, statusCode);
