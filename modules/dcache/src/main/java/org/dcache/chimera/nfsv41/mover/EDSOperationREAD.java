@@ -51,8 +51,6 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             bb.rewind();
             int bytesReaded = fc.read(bb, offset);
 
-            moverBridge.getMover().setBytesTransferred(bytesReaded);
-
             res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();
             res.resok4.data = bb;

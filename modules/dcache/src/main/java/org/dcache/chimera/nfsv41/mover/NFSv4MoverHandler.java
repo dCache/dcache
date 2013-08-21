@@ -212,9 +212,9 @@ public class NFSv4MoverHandler {
      *
      * @param moverBridge
      */
-    public void addHandler(MoverBridge moverBridge) {
-        _log.debug("added io handler: {}", moverBridge);
-        _activeIO.put( moverBridge.getStateid() , moverBridge );
+    public void addHandler(stateid4 stateid, MoverBridge moverBridge) {
+        _log.debug("added io handler: {} for stateid {}", moverBridge, stateid);
+        _activeIO.put(stateid, moverBridge );
     }
 
     /**
@@ -222,9 +222,9 @@ public class NFSv4MoverHandler {
      *
      * @param moverBridge
      */
-    public void removeHandler(MoverBridge moverBridge) {
-        _log.debug("removing io handler: {}", moverBridge);
-        _activeIO.remove(moverBridge.getStateid());
+    public void removeHandler(stateid4 stateid) {
+        _log.debug("removing io handler for stateid {}", stateid);
+        _activeIO.remove(stateid);
     }
 
     private static class EDSNFSv4OperationFactory implements NFSv4OperationFactory {

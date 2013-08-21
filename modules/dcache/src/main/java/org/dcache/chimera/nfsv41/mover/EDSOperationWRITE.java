@@ -29,9 +29,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationWRITE.class.getName());
 
-     private final Map<stateid4, MoverBridge> _activeIO;
-     private static final int INC_SPACE = (50 * 1024 * 1024);
-
+    private final Map<stateid4, MoverBridge> _activeIO;
 
     public EDSOperationWRITE(nfs_argop4 args, Map<stateid4, MoverBridge> activeIO) {
         super(args, nfs_opnum4.OP_WRITE);
@@ -51,23 +49,16 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
                         "No mover associated with given stateid");
             }
 
-            if( moverBridge.getIoMode() != IoMode.WRITE ) {
+            if( moverBridge.getMover().getIoMode() != IoMode.WRITE ) {
                 throw new ChimeraNFSException(nfsstat.NFSERR_PERM, "an attempt to write without IO mode enabled");
             }
 
             long offset = _args.opwrite.offset.value.value;
-            int count = _args.opwrite.data.remaining();
 
             RepositoryChannel fc = moverBridge.getFileChannel();
 
-            if( offset + count > moverBridge.getAllocated() ) {
-                moverBridge.getAllocator().allocate(INC_SPACE);
-                moverBridge.setAllocated(moverBridge.getAllocated() + INC_SPACE);
-            }
             _args.opwrite.data.rewind();
             int bytesWritten = fc.write(_args.opwrite.data, offset);
-
-            moverBridge.getMover().setBytesTransferred(bytesWritten);
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new WRITE4resok();
