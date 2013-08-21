@@ -78,6 +78,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -121,6 +122,8 @@ import org.dcache.srm.util.JDC;
 public abstract class Job  {
 
     private static final Logger logger = LoggerFactory.getLogger(Job.class);
+
+    private static final String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXX";
 
     // this is the map from jobIds to jobs
     // job ids are referenced from jobs
@@ -683,9 +686,11 @@ public abstract class Job  {
         StringBuilder historyStringBuillder = new StringBuilder();
         rlock();
         try {
+            SimpleDateFormat format = new SimpleDateFormat(ISO8601_FORMAT);
             for( JobHistory nextHistoryElement: jobHistory ) {
                  historyStringBuillder.append(" at ");
-                 historyStringBuillder.append(new Date(nextHistoryElement.getTransitionTime()));
+                 historyStringBuillder.append(format
+                         .format(new Date(nextHistoryElement.getTransitionTime())));
                  historyStringBuillder.append(" state ").append(nextHistoryElement.getState());
                  historyStringBuillder.append(" : ");
                  historyStringBuillder.append(nextHistoryElement.getDescription());
