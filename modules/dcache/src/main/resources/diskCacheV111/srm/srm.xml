@@ -144,6 +144,7 @@
     <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
     <property name="protocolVersion" value="${srm.service.loginbroker.version}"/>
     <property name="protocolFamily" value="${srm.service.loginbroker.family}"/>
+    <property name="address" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
     <property name="port" value="${srm.net.port}"/>
     <property name="loginBrokers" value="${srm.service.loginbroker}"/>
   </bean>
@@ -552,7 +553,7 @@
         class="org.dcache.util.JettyGSIConnector">
     <description>synchronous GSI connector</description>
     <property name="port" value="${srm.net.port}"/>
-    <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
+    <property name="host" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
     <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
     <property name="maxIdleTime"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
@@ -586,7 +587,7 @@
         class="org.dcache.util.JettyGSIConnector">
     <description>synchronous SSL connector</description>
     <property name="port" value="${srm.net.ssl-port}"/>
-    <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${srm.net.listen}' ) }"/>
+    <property name="host" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
     <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
     <property name="maxIdleTime"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(

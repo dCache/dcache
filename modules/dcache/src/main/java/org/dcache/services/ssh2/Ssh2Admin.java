@@ -55,6 +55,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private String _hostKeyPrivate;
     private String _hostKeyPublic;
     private File _authorizedKeyList;
+    private String _host;
     private int _port;
     private int _adminGroupId;
     private LoginStrategy _loginStrategy;
@@ -78,6 +79,14 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
     public int getPort() {
         return _port;
+    }
+
+    public void setHost(String host) {
+        _host = host;
+    }
+
+    public String getHost() {
+        return _host;
     }
 
     public void setAdminGroupId(int groupId) {
@@ -198,6 +207,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
     private void startServer() {
         _server.setPort(_port);
+        _server.setHost(_host);
 
         try {
             _server.start();

@@ -680,12 +680,12 @@ public void cleanUp(){
      private void openPort() throws Exception  {
 
         String ssf = _args.getOpt("socketfactory") ;
-        String local   = _args.getOpt("listen");
+        String local = _args.getOpt("listen");
 
         if( ssf == null ){
            SocketAddress socketAddress;
 
-           if ( (local == null ) || local.equals("*") || local.equals("")  ) {
+           if (local == null || local.equals("any")) {
                socketAddress =  new InetSocketAddress( _listenPort ) ;
            }else{
                socketAddress = new InetSocketAddress( InetAddress.getByName(local) , _listenPort ) ;
@@ -754,7 +754,7 @@ public void cleanUp(){
            Method meth = ssfClass.getMethod("createServerSocket", new Class[0]) ;
            _serverSocket = (ServerSocket)meth.invoke( obj ) ;
 
-           if ( (local == null ) || local.equals("*") || local.equals("")  ) {
+           if (local == null || local.equals("any")) {
                _serverSocket.bind(new InetSocketAddress( _listenPort ) );
            }else{
                _serverSocket.bind(new InetSocketAddress(InetAddress.getByName(local), _listenPort ) );

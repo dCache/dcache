@@ -204,7 +204,7 @@
 		value="org.dcache.webdav.DcacheResourceFactory"/>
       <property name="protocolVersion" value="${webdav.service.loginbroker.version}"/>
       <property name="protocolFamily" value="${webdav.service.loginbroker.family}"/>
-      <property name="address" value="${webdav.net.listen}"/>
+      <property name="address" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
       <property name="port" value="${webdav.net.port}"/>
       <property name="loginBrokers" value="${webdav.service.loginbroker}"/>
   </bean>
@@ -223,7 +223,7 @@
 	      <list>
 		  <bean class="org.eclipse.jetty.server.nio.SelectChannelConnector">
 		      <property name="port" value="${webdav.net.port}"/>
-		      <property name="host" value="${webdav.net.listen}"/>
+		      <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
 		  </bean>
 	      </list>
 	  </property>
@@ -256,7 +256,7 @@
           <description>HTTPS connector from Jetty</description>
 
 	  <property name="port" value="${webdav.net.port}"/>
-	  <property name="host" value="${webdav.net.listen}"/>
+	  <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
 	  <property name="keystore" value="${webdav.authn.keystore}"/>
 	  <property name="keystoreType" value="PKCS12"/>
 	  <property name="password" value="${webdav.authn.keystore.password}"/>
@@ -275,7 +275,7 @@
           <description>HTTPS connector using jGlobus</description>
 
 	  <property name="port" value="${webdav.net.port}"/>
-	  <property name="host" value="${webdav.net.listen}"/>
+	  <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}"/>
 	  <property name="hostCertificatePath" value="${webdav.authn.hostcert.cert}"/>
 	  <property name="hostKeyPath" value="${webdav.authn.hostcert.key}"/>
 	  <property name="caCertificatePath" value="${webdav.authn.capath}"/>
