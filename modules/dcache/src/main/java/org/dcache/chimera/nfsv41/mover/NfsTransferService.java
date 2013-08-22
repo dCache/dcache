@@ -12,10 +12,12 @@ import java.nio.channels.CompletionHandler;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import org.dcache.cells.AbstractCellComponent;
@@ -25,6 +27,9 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.NFS4Client;
 import org.dcache.chimera.nfs.v4.NFSv41Session;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.pool.FaultAction;
+import org.dcache.pool.FaultEvent;
+import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
@@ -51,6 +56,8 @@ public class NfsTransferService extends AbstractCellComponent
     private CellStub _door;
     private PostTransferService _postTransferService;
 
+    private FaultListener _faultListener;
+
     public void init() throws ChimeraFsException, IOException, GSSException, OncRpcException {
 
         String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
@@ -66,6 +73,11 @@ public class NfsTransferService extends AbstractCellComponent
                 localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
 
         _door = new CellStub(getCellEndpoint());
+    }
+
+    @Required
+    public void setFaultListener(FaultListener faultListener) {
+        _faultListener = faultListener;
     }
 
     @Required
@@ -109,7 +121,11 @@ public class NfsTransferService extends AbstractCellComponent
                     completionHandler.completed(null, null);
                 }
             };
-        } catch (Throwable e) {
+        } catch (DiskErrorCacheException e) {
+            _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED,
+                    e.getMessage(), e));
+            completionHandler.failed(e, null);
+        } catch (NoRouteToCellException e) {
             completionHandler.failed(e, null);
         }
         return null;
