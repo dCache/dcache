@@ -51,8 +51,8 @@ printPoolConfig() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = 
     lfs="$6"
 
     echo "[$domain/pool]"
-    echo "name=$name"
-    echo "path=$path"
+    echo "pool.name=$name"
+    echo "pool.path=$path"
     if [ -n "$size" ]; then
         echo "pool.size=$size"
     fi
