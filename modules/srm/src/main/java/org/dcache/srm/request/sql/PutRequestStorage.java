@@ -310,24 +310,23 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage{
         " VALUES (?,?)";
 
     @Override
-    public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
-                                                             Job job) throws SQLException {
-        if(job == null || !(job instanceof PutRequest)) {
+    public PreparedStatement getBatchCreateStatement(Connection connection, Job job)
+            throws SQLException {
+        if (job == null || !(job instanceof PutRequest)) {
             throw new IllegalArgumentException("Request is not PutRequest" );
         }
-        PutRequest pr = (PutRequest)job;
+        PutRequest pr = (PutRequest) job;
         String[] protocols = pr.getProtocols();
-        if(protocols ==null) {
+        if (protocols == null) {
             return null;
         }
-        PreparedStatement[] statements  = new PreparedStatement[protocols.length];
-        for(int i=0; i<protocols.length ; ++i){
-            statements[i] = getPreparedStatement(connection,
-                    insertProtocols,
-                    protocols[i],
-                    pr.getId());
+        PreparedStatement statement = connection.prepareStatement(insertProtocols);
+        for (String protocol : protocols) {
+            statement.setString(1, protocol);
+            statement.setLong(2, pr.getId());
+            statement.addBatch();
         }
-        return statements;
+        return statement;
     }
 
     @Override
