@@ -59,14 +59,14 @@ printPoolConfig() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = 
     case "$meta" in
         file)
             echo "pool.plugins.meta=org.dcache.pool.repository.meta.file.FileMetaDataRepository"
-            echo "pool.wait-for-files=\${path}/data:\${path}/control"
+            echo "pool.wait-for-files=\${pool.path}/data:\${pool.path}/control"
             ;;
         db)
             echo "pool.plugins.meta=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository"
-            echo "pool.wait-for-files=\${path}/data:\${path}/meta"
+            echo "pool.wait-for-files=\${pool.path}/data:\${pool.path}/meta"
             ;;
         *)
-            echo "pool.wait-for-files=\${path}/data"
+            echo "pool.wait-for-files=\${pool.path}/data"
             ;;
     esac
 
