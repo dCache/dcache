@@ -114,11 +114,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
         return TABLE_NAME;
     }
 
-    @Override
-    public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
-                                                             Job job) throws SQLException {
-        return null;
-    }
     public PreparedStatement getStatement(Connection connection,
                                           String query,
                                           Job fr) throws SQLException {
