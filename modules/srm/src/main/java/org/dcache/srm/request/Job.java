@@ -702,11 +702,10 @@ public abstract class Job  {
        return historyStringBuillder.toString();
     }
 
-
-     public Iterator<JobHistory> getHistoryIterator() {
+     public List<JobHistory> getJobHistory() {
         rlock();
         try {
-            return new ArrayList<>(jobHistory).iterator();
+            return new ArrayList<>(jobHistory);
         } finally {
             runlock();
         }
@@ -1131,15 +1130,16 @@ public abstract class Job  {
     }
 
     public static class JobHistory implements Comparable<JobHistory> {
-        private long id;
-        private State state;
-        private long transitionTime;
-        private String description;
+        private final long id;
+        private final State state;
+        private final long transitionTime;
+        private final String description;
         private boolean saved; //false by default
+
         public JobHistory(long id, State state, String description, long transitionTime) {
             this.id = id;
             this.state = state;
-            this.description = description;
+            this.description = description.replace('\'','`');
             this.transitionTime = transitionTime;
         }
 
@@ -1172,9 +1172,6 @@ public abstract class Job  {
          * @return Value of property description.
          */
         public String getDescription() {
-            if(description.indexOf('\'') != -1 ) {
-                description = description.replace('\'','`');
-            }
             return description;
         }
 
@@ -1224,11 +1221,11 @@ public abstract class Job  {
             return sb.toString();
         }
 
-        public boolean isSaved() {
+        public synchronized boolean isSaved() {
             return saved;
         }
 
-        public void setSaved() {
+        public synchronized void setSaved() {
             this.saved = true;
         }
 
