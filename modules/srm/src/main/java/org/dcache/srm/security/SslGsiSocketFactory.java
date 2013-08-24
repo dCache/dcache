@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -67,12 +67,13 @@ COPYRIGHT STATUS:
 package org.dcache.srm.security;
 
 import java.net.Socket;
-import org.globus.gsi.GlobusCredential;
+import java.io.IOException;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.CredentialException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-import org.globus.gsi.GlobusCredentialException;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.globus.gsi.GSIConstants;
@@ -88,117 +89,124 @@ import org.ietf.jgss.GSSName;
  * @author  timur
  */
 public class SslGsiSocketFactory {
-    
-    private static GlobusCredential service_cred;
+
+    private static X509Credential service_cred;
     private static TrustedCertificates trusted_certs;
-    
+
     public static GSSCredential getServiceCredential(
     String x509ServiceCert,
     String x509ServiceKey,int usage) throws GSSException {
-        
+
         try {
             if(service_cred != null) {
                 service_cred.verify();
             }
         }
-        catch(GlobusCredentialException gce) {
+        catch(CredentialException gce) {
             service_cred = null;
-            
+
         }
-        
-        
+
+
         if(service_cred == null) {
             try {
-                service_cred =new GlobusCredential(
+                service_cred =new X509Credential(
                 x509ServiceCert,
                 x509ServiceKey
                 );
             }
-            catch(GlobusCredentialException gce) {
+            catch(CredentialException gce) {
                 throw new GSSException(GSSException.NO_CRED ,
                 0,
                 "could not load host globus credentials "+gce.toString());
+            } catch(IOException ioe) {
+                throw new GSSException(GSSException.NO_CRED, 0,
+                                       "could not load host globus credentials "+ioe.toString());
             }
         }
-        
+
         GSSCredential cred = new GlobusGSSCredentialImpl(service_cred, usage);
-        
+
         return cred;
     }
-    
-    
+
+
     public static GSSContext getServiceContext(
     String x509ServiceCert,
     String x509ServiceKey,
     String x509TrastedCACerts) throws GSSException {
         GSSCredential cred = getServiceCredential(x509ServiceCert, x509ServiceKey,
         GSSCredential.ACCEPT_ONLY);
-        
+
         if(trusted_certs == null) {
             trusted_certs =
             TrustedCertificates.load(x509TrastedCACerts);
         }
-        
+
         GSSManager manager = ExtendedGSSManager.getInstance();
         ExtendedGSSContext context =
         (ExtendedGSSContext) manager.createContext(cred);
-        
+
         context.setOption(GSSConstants.GSS_MODE,
         GSIConstants.MODE_GSI);
-        context.setOption(GSSConstants.TRUSTED_CERTIFICATES,
-        trusted_certs);
         return context;
     }
-    
-    
+
+
     public static GSSCredential createUserCredential(
-    String x509UserProxy)  throws GlobusCredentialException, GSSException {
+    String x509UserProxy)  throws CredentialException, GSSException {
         if(x509UserProxy != null) {
-            GlobusCredential gcred = new GlobusCredential(x509UserProxy);
+            X509Credential gcred = new X509Credential(x509UserProxy);
             GSSCredential cred =
             new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
             return cred;
         }
-        GlobusCredential gcred = GlobusCredential.getDefaultCredential();
+        X509Credential gcred = X509Credential.getDefaultCredential();
         GSSCredential cred = new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
         return  cred;
-        
+
     }
-    
+
     public static GSSCredential createUserCredential(String x509ServiceCert, String x509ServiceKey)
-    throws GlobusCredentialException, GSSException {
-            if(x509ServiceCert != null && x509ServiceKey != null) {
-            GlobusCredential gcred =new GlobusCredential(
-            x509ServiceCert,
-            x509ServiceKey
-            );
-            GSSCredential cred =
-            new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
-            return cred;
+    throws CredentialException, GSSException {
+        if(x509ServiceCert != null && x509ServiceKey != null) {
+            try {
+                X509Credential gcred =new X509Credential(
+                                                         x509ServiceCert,
+                                                         x509ServiceKey
+                                                         );
+                GSSCredential cred =
+                    new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
+                return cred;
+            }
+            catch(IOException ioe) {
+                throw new GSSException(GSSException.NO_CRED, 0,
+                                       "could not create globus credentials "+ioe.toString());
+            }
         }
-        
-        GlobusCredential gcred = GlobusCredential.getDefaultCredential();
+
+        X509Credential gcred = X509Credential.getDefaultCredential();
         GSSCredential cred = new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
         return  cred;
     }
 
     public static GSSCredential createUserCredential(String x509UserProxy, String x509ServiceCert, String x509ServiceKey)
-    throws GlobusCredentialException, GSSException {
-        
+    throws CredentialException, GSSException {
+
         if(x509UserProxy != null) {
             return createUserCredential(x509UserProxy);
         }
         else if(x509ServiceCert != null && x509ServiceKey != null) {
             return createUserCredential(x509ServiceCert,x509ServiceKey);
         }
-        
-        GlobusCredential gcred = GlobusCredential.getDefaultCredential();
+
+        X509Credential gcred = X509Credential.getDefaultCredential();
         GSSCredential cred = new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
         return  cred;
     }
-    
-    
-    
+
+
+
 
     public static GSIGssSocket delegateCredential(java.net.InetAddress inetAddress,
     int port,GSSCredential credential,boolean fulldelegation)
@@ -209,7 +217,7 @@ public class SslGsiSocketFactory {
         try {
             //   say("delegateCredentials() user credential is "+credential);
             GSSManager manager = ExtendedGSSManager.getInstance();
-            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth = 
+            org.globus.gsi.gssapi.auth.GSSAuthorization gssAuth =
             org.globus.gsi.gssapi.auth.HostAuthorization.getInstance();
             GSSName targetName = gssAuth.getExpectedName(null, inetAddress.getCanonicalHostName());
             ExtendedGSSContext context =

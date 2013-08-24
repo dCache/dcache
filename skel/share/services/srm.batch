@@ -165,6 +165,8 @@ check -strong grid.hostcert.key
 check -strong grid.hostcert.cert
 check -strong grid.ca.path
 
+check srm.security.ciphers
+
 
 # The 'spaceManagerEnabled' environment variable is a sanitised
 # version of 'srmSpaceManagerEnabled'.  It is always set and is either
@@ -349,4 +351,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -service-cert=${grid.hostcert.cert} \
         -service-trusted-certs=${grid.ca.path} \
         -spaceManagerEnabled=${spaceManagerEnabled} \
+        -srm.security.ciphers=\"${srm.security.ciphers}\" \
 "

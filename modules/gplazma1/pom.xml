@@ -23,8 +23,8 @@
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.globus</groupId>
-        <artifactId>cog-jglobus</artifactId>
+        <groupId>org.jglobus</groupId>
+        <artifactId>ssl-proxies</artifactId>
     </dependency>
     <dependency>
         <groupId>eu.emi</groupId>
@@ -84,6 +84,11 @@
     <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-common</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>gplazma2</artifactId>
         <version>${project.version}</version>
     </dependency>
   </dependencies>

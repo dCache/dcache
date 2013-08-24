@@ -4,8 +4,6 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.bc.BouncyCastleUtil;
@@ -40,6 +38,9 @@ import java.io.File;
 
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.AuthorizationController;
+import org.globus.gsi.CredentialException;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.util.ProxyCertificateUtil;
 
 /**
  * X509CertUtil.java
@@ -69,12 +70,15 @@ public class X509CertUtil {
 
     public static GSSContext getUserContext(String proxy_cert, String service_trusted_certs) throws GSSException {
 
-        GlobusCredential userCredential;
+        X509Credential userCredential;
         try {
-            userCredential =new GlobusCredential(proxy_cert, proxy_cert);
-        } catch(GlobusCredentialException gce) {
+            userCredential =new X509Credential(proxy_cert, proxy_cert);
+        } catch(CredentialException gce) {
             throw new GSSException(GSSException.NO_CRED , 0,
                     "could not load host globus credentials "+gce.toString());
+        } catch (IOException gce) {
+            throw new GSSException(GSSException.NO_CRED, 0,
+                    "could not load host globus credentials " + gce.toString());
         }
 
         GSSCredential cred = new GlobusGSSCredentialImpl(
@@ -161,8 +165,8 @@ public class X509CertUtil {
             for (int i = 0; i < chain.length; i++) {
                 X509Certificate testcert = chain[i];
                 tbsCert = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-                int certType = BouncyCastleUtil.getCertificateType(tbsCert);
-                if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+                GSIConstants.CertificateType certType = BouncyCastleUtil.getCertificateType(testcert);
+                if (!ProxyCertificateUtil.isImpersonationProxy(certType)) {
                     clientcert = chain[i];
                     break;
                 }
@@ -182,13 +186,12 @@ public class X509CertUtil {
     }
 
     public static X509Certificate getUserCertFromX509Chain(X509Certificate[] chain) throws Exception {
-        TBSCertificateStructure tbsCert=null;
+
         X509Certificate	clientcert=null;
         for (int i=0; i<chain.length; i++) {
             X509Certificate	testcert = chain[i];
-            tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-            int certType = BouncyCastleUtil.getCertificateType(tbsCert);
-            if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+            GSIConstants.CertificateType certType = BouncyCastleUtil.getCertificateType(testcert);
+            if (!ProxyCertificateUtil.isImpersonationProxy(certType)) {
                 clientcert = chain[i];
                 break;
             }
