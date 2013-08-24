@@ -334,15 +334,21 @@ public class SRMServerV2 implements ISRM  {
         }
     }
 
-    private boolean isFailure(Object response)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    private static boolean isFailure(Object response)
+            throws IllegalAccessException, InvocationTargetException
     {
-        Method statusMethod = response.getClass().getMethod("getReturnStatus");
-        if (statusMethod != null && TReturnStatus.class.isAssignableFrom(statusMethod
-                .getReturnType())) {
-            TReturnStatus status = (TReturnStatus) statusMethod.invoke(response);
-            TStatusCode statusCode = status.getStatusCode();
-            return FAILURES.contains(statusCode);
+        try {
+            Class<?> type = response.getClass();
+            Method getReturnStatus = type.getDeclaredMethod("getReturnStatus");
+            Class<?> returnType = getReturnStatus.getReturnType();
+            if (TReturnStatus.class.isAssignableFrom(returnType)) {
+                TReturnStatus status = (TReturnStatus) getReturnStatus.invoke(response);
+                return FAILURES.contains(status.getStatusCode());
+            }
+        } catch (NoSuchMethodException e) {
+            // Unfortunately, Java standard API provides no nice way of
+            // discovering if a method exists by reflection.  This is perhaps
+            // the least ugly.
         }
         return false;
     }
