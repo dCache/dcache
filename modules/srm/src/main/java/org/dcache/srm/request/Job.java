@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,8 +151,7 @@ public abstract class Job  {
     protected int maxNumberOfRetries;
     private long lastStateTransitionTime = System.currentTimeMillis();
 
-    private static final CopyOnWriteArrayList<JobStorage> jobStorages =
-        new CopyOnWriteArrayList<>();
+    private static volatile ImmutableMap<Class<? extends Job>, JobStorage> jobStorages = ImmutableMap.of();
     private final List<JobHistory> jobHistory = new ArrayList<>();
     private transient JobIdGenerator generator;
 
@@ -178,8 +178,9 @@ public abstract class Job  {
             new ReentrantReadWriteLock();
     private final WriteLock writeLock = reentrantReadWriteLock.writeLock();
 
-    public static final void registerJobStorage(JobStorage jobStorage) {
-            jobStorages.add(jobStorage);
+    public static final void registerJobStorages(ImmutableMap<Class<? extends Job>, JobStorage> jobStorages)
+    {
+        Job.jobStorages = jobStorages;
     }
 
     public static void shutdown() {
@@ -329,17 +330,6 @@ public abstract class Job  {
         return getJob(id, type, null);
     }
 
-    public static final <T extends Job> T getJob(Long id, Class<T> type,
-            Connection connection) throws SRMInvalidRequestException
-    {
-        Job job = getJob(id, connection);
-        try {
-            return type.cast(job);
-        } catch(ClassCastException e) {
-            throw new SRMInvalidRequestException("Job " + id + " has type " + Job.class.getSimpleName() + " and not the expected type " + Job.class.getSimpleName());
-        }
-    }
-
     /**
      * Fetch the Job associated with the supplied ID.  If no such job exists
      * then throw SRMInvalidRequestException.  This method never returns null.
@@ -348,14 +338,15 @@ public abstract class Job  {
      * @return a object representing this job.
      * @throws SRMInvalidRequestException if the job cannot be found
      */
-    private static Job getJob(Long jobId, Connection _con)
-            throws SRMInvalidRequestException  {
+    public static <T extends Job> T getJob(Long jobId, Class<T> type, Connection _con)
+            throws SRMInvalidRequestException
+    {
         synchronized(weakJobStorage) {
             WeakReference<Job> ref = weakJobStorage.get(jobId);
             if(ref!= null) {
                 Job o1 = ref.get();
                 if(o1 != null) {
-                    return o1;
+                    return toType(type, o1);
                 }
             }
         }
@@ -369,19 +360,21 @@ public abstract class Job  {
         job = sharedMemoryCache.getJob(jobId);
         boolean restoredFromDb=false;
         if (job == null) {
-            for (JobStorage storage: jobStorages) {
-                try {
-                    if(_con == null) {
-                        job = storage.getJob(jobId);
-                    } else {
-                        job = storage.getJob(jobId, _con);
+            for (Map.Entry<Class<? extends Job>, JobStorage> entry: jobStorages.entrySet()) {
+                if (type.isAssignableFrom(entry.getKey())) {
+                    try {
+                        if(_con == null) {
+                            job = entry.getValue().getJob(jobId);
+                        } else {
+                            job = entry.getValue().getJob(jobId, _con);
+                        }
+                    } catch (SQLException e){
+                        logger.error("Failed to read job", e);
                     }
-                } catch (SQLException e){
-                    logger.error("Failed to read job", e);
-                }
-                if(job != null) {
-                    restoredFromDb = true;
-                    break;
+                    if (job != null) {
+                        restoredFromDb = true;
+                        break;
+                    }
                 }
             }
         }
@@ -396,8 +389,8 @@ public abstract class Job  {
             WeakReference<Job> ref = weakJobStorage.get(jobId);
             if(ref!= null) {
                 Job o1 = ref.get();
-                if(o1 != null) {
-                    return o1;
+                if (o1 != null) {
+                    return toType(type, o1);
                 }
             }
 
@@ -412,9 +405,18 @@ public abstract class Job  {
             if(restoredFromDb) {
                 job.expireRestoredJobOrCreateExperationTimer();
             }
-            return job;
+            return toType(type, job);
         }
         throw new SRMInvalidRequestException("jobId = "+jobId+" does not correspond to any known job");
+    }
+
+    private static <T extends Job> T toType(Class<T> type, Job job)
+            throws SRMInvalidRequestException
+    {
+        if (!type.isAssignableFrom(job.getClass())) {
+            throw new SRMInvalidRequestException("Job has wrong type, actual type is " + job.getClass().getSimpleName() + " and expected type is " + type.getSimpleName());
+        }
+        return type.cast(job);
     }
 
     /** Performs state transition checking the legality first.

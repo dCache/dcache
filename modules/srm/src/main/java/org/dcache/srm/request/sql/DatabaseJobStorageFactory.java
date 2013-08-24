@@ -1,6 +1,7 @@
 package org.dcache.srm.request.sql;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,9 +108,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                 ReserveSpaceRequest.class,
                 ReserveSpaceRequestStorage.class);
 
-            for (JobStorage js: jobStorageMap.values()) {
-                Job.registerJobStorage(js);
-            }
+            Job.registerJobStorages(ImmutableMap.copyOf(jobStorageMap));
         } catch (InstantiationException e) {
             Throwables.propagateIfPossible(e.getCause(), SQLException.class);
             throw new RuntimeException("Request perisistence initialization failed: " + e.toString(), e);
