@@ -28,6 +28,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 
+import dmg.util.Args;
+
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.gplazma.util.CertificateUtils;
 import org.dcache.util.Crypto;
