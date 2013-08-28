@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import com.google.common.base.Charsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -108,24 +109,18 @@ public class FsInode_PGET extends FsInode {
     }
 
     @Override
-    public String toFullString() {
+    public byte[] getIdentifier() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(_fs.getFsId())
-          .append(":")
-          .append(type())
-          .append(":")
-          .append(_id);
-
-        if (_name != null) {
-            sb.append(":").append(_name);
+        if(_name != null) {
+            sb.append(_name).append(':');
         }
 
         for (String arg : _metadata.keySet()) {
-            sb.append(":").append(arg);
+            sb.append(arg).append(':');
         }
 
-        return sb.toString();
+        return byteBase(sb.toString().getBytes(Charsets.UTF_8));
     }
 
     @Override
