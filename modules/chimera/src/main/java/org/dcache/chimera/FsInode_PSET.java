@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import com.google.common.base.Charsets;
 import java.util.Arrays;
 
 import org.dcache.chimera.posix.Stat;
@@ -96,16 +97,14 @@ public class FsInode_PSET extends FsInode {
     }
 
     @Override
-    public String toFullString() {
+    public byte[] getIdentifier() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(_fs.getFsId()).append(":").append(type()).append(":").append(_id);
-
         for (String arg : _args) {
-            sb.append(":").append(arg);
+            sb.append(arg).append(':');
         }
 
-        return sb.toString();
+        return byteBase(sb.toString().getBytes(Charsets.UTF_8));
     }
 
     @Override

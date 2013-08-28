@@ -25,6 +25,7 @@ import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -61,6 +62,11 @@ public class JdbcFs implements FileSystemProvider {
     static private final int LEVELS_NUMBER = 7;
     private final FsInode _rootInode;
     private final String _wormID;
+
+    /**
+     * minimal binary handle size which can be processed.
+    */
+    private final static int MIN_HANDLE_LEN = 4;
     /**
      * SQL query engine
      */
@@ -991,7 +997,7 @@ public class JdbcFs implements FileSystemProvider {
                 if (cmd.length != 2) {
                     throw new FileNotFoundHimeraFsException(name);
                 }
-                FsInode constInode = new FsInode_CONST(this, cmd[1]);
+                FsInode constInode = new FsInode_CONST(this, parent.toString());
                 if (!constInode.exists()) {
                     throw new FileNotFoundHimeraFsException(name);
                 }
@@ -2678,9 +2684,142 @@ public class JdbcFs implements FileSystemProvider {
         }
     }
 
+    private final static byte[] FH_V0_BIN = new byte[] {0x30, 0x30, 0x30, 0x30};
+    private final static byte[] FH_V0_REG = new byte[]{0x30, 0x3a};
+    private final static byte[] FH_V0_PFS = new byte[]{0x32, 0x35, 0x35, 0x3a};
+
+    private static boolean arrayStartsWith(byte[] a1, byte[] a2) {
+        if (a1.length < a2.length) {
+            return false;
+        }
+        for (int i = 0; i < a2.length; i++) {
+            if (a1[i] != a2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public FsInode inodeFromBytes(byte[] handle) throws ChimeraFsException {
 
+        if (arrayStartsWith(handle, FH_V0_REG) || arrayStartsWith(handle, FH_V0_PFS)) {
+            return inodeFromBytesOld(handle);
+        } else if (arrayStartsWith(handle, FH_V0_BIN)) {
+            return inodeFromBytesNew(InodeId.hexStringToByteArray(new String(handle)));
+        } else {
+            return inodeFromBytesNew(handle);
+        }
+    }
+
+    private final static char[] HEX = new char[]{
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+    };
+
+    /**
+     * Returns a hexadecimal representation of given byte array.
+     *
+     * @param bytes whose string representation to return
+     * @return a string representation of <tt>bytes</tt>
+     */
+    public static String toHexString(byte[] bytes) {
+
+        char[] chars = new char[bytes.length * 2];
+        int p = 0;
+        for (byte b : bytes) {
+            int i = b & 0xff;
+            chars[p++] = HEX[i / 16];
+            chars[p++] = HEX[i % 16];
+        }
+        return new String(chars);
+    }
+
+    private String[] getArgs(byte[] bytes) {
+
+        StringTokenizer st = new StringTokenizer(new String(bytes), "[:]");
+        int argc = st.countTokens();
+        String[] args = new String[argc];
+        for (int i = 0; i < argc; i++) {
+            args[i] = st.nextToken();
+        }
+
+        return args;
+    }
+
+    FsInode inodeFromBytesNew(byte[] handle) throws ChimeraFsException {
+
+        FsInode inode;
+
+        if (handle.length < MIN_HANDLE_LEN) {
+            throw new FileNotFoundHimeraFsException("File handle too short");
+        }
+
+        ByteBuffer b = ByteBuffer.wrap(handle);
+        int fsid = b.get();
+        int type = b.get();
+        int idLen = b.get();
+        byte[] id = new byte[idLen];
+        b.get(id);
+        int opaqueLen = b.get();
+        if (opaqueLen > b.remaining()) {
+            throw new FileNotFoundHimeraFsException("Bad Opaque len");
+        }
+
+        byte[] opaque = new byte[opaqueLen];
+        b.get(opaque);
+
+        FsInodeType inodeType = FsInodeType.valueOf(type);
+        String inodeId = toHexString(id);
+
+        switch (inodeType) {
+            case INODE:
+                int level = Integer.parseInt( new String(opaque));
+                inode = new FsInode(this, inodeId, level);
+                break;
+
+            case ID:
+                inode = new FsInode_ID(this, inodeId);
+                break;
+
+            case TAGS:
+                inode = new FsInode_TAGS(this, inodeId);
+                break;
+
+            case TAG:
+                String tag = new String(opaque);
+                inode = new FsInode_TAG(this, inodeId, tag);
+                break;
+
+            case NAMEOF:
+                inode = new FsInode_NAMEOF(this, inodeId);
+                break;
+            case PARENT:
+                inode = new FsInode_PARENT(this, inodeId);
+                break;
+
+            case PATHOF:
+                inode = new FsInode_PATHOF(this, inodeId);
+                break;
+
+            case CONST:
+                inode = new FsInode_CONST(this, inodeId);
+                break;
+
+            case PSET:
+                inode = new FsInode_PSET(this, inodeId, getArgs(opaque));
+                break;
+
+            case PGET:
+                inode = getPGET(inodeId, getArgs(opaque));
+                break;
+            default:
+                throw new FileNotFoundHimeraFsException("Unsupported file handle type: " + inodeType);
+        }
+        return inode;
+    }
+
+    FsInode inodeFromBytesOld(byte[] handle) throws ChimeraFsException {
         FsInode inode = null;
 
         String strHandle = new String(handle);
@@ -2783,7 +2922,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public byte[] inodeToBytes(FsInode inode) throws ChimeraFsException {
-        return inode.toFullString().getBytes();
+        return inode.getIdentifier();
     }
 
     /**

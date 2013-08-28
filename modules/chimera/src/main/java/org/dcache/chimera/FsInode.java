@@ -16,6 +16,8 @@
  */
 package org.dcache.chimera;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import org.dcache.chimera.posix.Stat;
 
 /**
@@ -46,10 +48,6 @@ public class FsInode {
      * possible parents.
      */
     private FsInode _parent;
-    /**
-     * inode full id, e.g. fsid:inode type:inode is:[ some extra information]
-     */
-    private String _longIdString;
 
     /**
      * create a new inode in filesystem fs with given id and type
@@ -219,20 +217,37 @@ public class FsInode {
     }
 
     /**
+     * A helper method to generate the base path of identifier.
+     * @param opaque inode specific data
+     * @return
+     */
+    protected final byte[] byteBase(byte[] opaque) {
+        ByteBuffer b = ByteBuffer.allocate(128);
+        byte[] fh = InodeId.hexStringToByteArray(_id);
+        b.put((byte) _fs.getFsId())
+                .put((byte) _type.getType())
+                .put((byte) fh.length)
+                .put(fh);
+
+        b.put((byte) opaque.length);
+        b.put(opaque);
+
+        return Arrays.copyOf(b.array(), b.position());
+    }
+
+    /**
+     * @return a byte[] representation of inode, including type and fsid
+     */
+    public byte[] getIdentifier() {
+        return byteBase( Integer.toString(_level).getBytes());
+    }
+
+    @Deprecated
+    /**
      * @return a String representation of inode, including type and fsid
      */
     public String toFullString() {
-
-        if (_longIdString == null) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(_fs.getFsId()).append(":");
-            sb.append(_type).append(":");
-            sb.append(_id).append(":").append(_level);
-
-            _longIdString = sb.toString();
-        }
-
-        return _longIdString;
+        return JdbcFs.toHexString(getIdentifier());
     }
 
     /**
@@ -528,7 +543,7 @@ public class FsInode {
 
     @Override
     public int hashCode() {
-        return this.toFullString().hashCode();
+        return Arrays.hashCode(getIdentifier());
     }
     // only package classes allowed to use this
     private boolean _ioEnabled;
