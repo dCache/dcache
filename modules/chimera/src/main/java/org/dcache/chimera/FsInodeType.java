@@ -18,14 +18,33 @@ package org.dcache.chimera;
 
 public enum FsInodeType {
 
-    INODE, // regular inode
-    TAG, // the content of the inode is a directory tag
-    TAGS, // the content of the inode is a list of a directory tags
-    ID, // the content of the inode is the id of the inode
-    PATHOF, // the content of the inode is the absolute path of the inode
-    PARENT, // the content of the inode is the of the parent inode
-    NAMEOF, // the content of the inode is the name of the inode
-    PGET, // the content of the inode is the value of requested attributes
-    PSET, // by updating mtime of the inode the the defined attribute value is updated
-    CONST    // the content of the inode is a free form information
+    INODE(0),    // regular inode
+    TAG(1),      // the content of the inode is a directory tag
+    TAGS(2),     // the content of the inode is a list of a directory tags
+    ID(3),       // the content of the inode is the id of the inode
+    PATHOF(4),   // the content of the inode is the absolute path of the inode
+    PARENT(5),   // the content of the inode is the of the parent inode
+    NAMEOF(6),   // the content of the inode is the name of the inode
+    PGET(7),     // the content of the inode is the value of requested attributes
+    PSET(8),     // by updating mtime of the inode the the defined attribute value is updated
+    CONST(9);    // the content of the inode is a free form information
+
+    private final int _id;
+
+    private FsInodeType(int id) {
+        _id = id;
+    }
+
+    public int getType() {
+        return _id;
+    }
+
+    public static FsInodeType valueOf(int id) {
+        for (FsInodeType type : FsInodeType.values()) {
+            if (type.getType() == id) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("No such type: " + id);
+    }
 }

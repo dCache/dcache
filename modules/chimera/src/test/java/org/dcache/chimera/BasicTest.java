@@ -1,5 +1,6 @@
 package org.dcache.chimera;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.junit.Ignore;
@@ -918,5 +919,17 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.setInodeAttributes(tagInode, 0, stat);
 
         assertEquals(baseStat, base.stat());
+    }
+
+    @Test
+    public void testBackwardCompatibility() throws Exception {
+
+        byte[] oldId = "0:TAG:0000DA875B38D9E0461F9ADFEA7C7422A956:somelongtagname".getBytes(Charsets.UTF_8);
+        final FsInode inodeWithOldId = _fs.inodeFromBytes(oldId);
+        byte[] newId = inodeWithOldId.getIdentifier();
+        final FsInode inodeWithNewId = _fs.inodeFromBytes(newId);
+
+        assertTrue(newId.length < oldId.length);
+        assertEquals(inodeWithOldId, inodeWithNewId);
     }
 }
