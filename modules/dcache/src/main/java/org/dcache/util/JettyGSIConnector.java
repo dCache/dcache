@@ -16,10 +16,10 @@ import org.ietf.jgss.GSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.gridforum.jgss.ExtendedGSSContext;
 
-import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.X509Credential;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.GSIConstants;
-import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.CredentialException;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.net.GssInputStream;
@@ -35,10 +35,10 @@ import org.eclipse.jetty.server.bio.SocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.globus.axis.gsi.GSIConstants.*;
-
-import static org.dcache.util.Files.checkFile;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.util.Files.checkDirectory;
+import static org.dcache.util.Files.checkFile;
+import static org.globus.axis.gsi.GSIConstants.*;
 
 /**
  * GSI Socket Connector for Jetty.
@@ -69,6 +69,12 @@ public class JettyGSIConnector
     private TrustedCertificates _trustedCerts;
     private GSSManager _manager;
 
+    // public static final String GSI_CONTEXT="org.gglobus.gsi.context";
+    // public static final String GSI_USER_DN="org.globus.gsi.authorized.user.name";
+    // public static final String GSI_CREDENTIALS="org.globus.gsi.credentials";
+
+
+
     private String _serverCert;
     private String _serverKey;
     private String _serverProxy;
@@ -86,6 +92,7 @@ public class JettyGSIConnector
     private volatile boolean _rejectLimitedProxy = false;
     private volatile Integer _mode = GSIConstants.MODE_SSL;
     private volatile int _handshakeTimeout = 0; // 0 means use maxIdleTime
+    private String[] _excludedCipherSuites = {};
 
     /**
      * Assing default values to the certificate refresh intervals
@@ -283,6 +290,11 @@ public class JettyGSIConnector
         _handshakeTimeout = msec;
     }
 
+    public void setExcludeCipherSuites(String[] cipherSuites)
+    {
+        _excludedCipherSuites = checkNotNull(cipherSuites);
+    }
+
     protected ExtendedGSSContext createGSSContext()
         throws GSSException
     {
@@ -298,11 +310,12 @@ public class JettyGSIConnector
         context.setOption(GSSConstants.REJECT_LIMITED_PROXY,
                           _rejectLimitedProxy);
 
-        if (_trustedCerts != null) {
-            context.setOption(GSSConstants.TRUSTED_CERTIFICATES,
-                              _trustedCerts);
-        }
+        // if (_trustedCerts != null) {
+        //     context.setOption(GSSConstants.TRUSTED_CERTIFICATES,
+        //                       _trustedCerts);
+        // }
 
+        context.setBannedCiphers(_excludedCipherSuites);
         context.requestConf(_encrypt);
         return context;
     }
@@ -326,14 +339,14 @@ public class JettyGSIConnector
                               "interval: {} ms",
                               _hostCertRefreshInterval);
 
-                    GlobusCredential cred;
+                    X509Credential cred;
                     if (_serverProxy != null && !_serverProxy.equals("")) {
                         _log.info("Server Proxy: {}", _serverProxy);
-                        cred = new GlobusCredential(_serverProxy);
+                        cred = new X509Credential(_serverProxy);
                     } else if (_serverCert != null && _serverKey != null) {
                         _log.info("Server Certificate: {}", _serverCert);
                         _log.info("Server Key: {}", _serverKey);
-                        cred = new GlobusCredential(_serverCert, _serverKey);
+                        cred = new X509Credential(_serverCert, _serverKey);
                     } else {
                         throw new IllegalStateException("Server credentials" +
                                                         "have not been configured");
@@ -346,7 +359,7 @@ public class JettyGSIConnector
                     _manager = ExtendedGSSManager.getInstance();
                     _hostCertRefreshTimestamp = System.currentTimeMillis();
             }
-        } catch (GlobusCredentialException e) {
+        } catch (CredentialException e) {
             throw new IOException("Failed to load credentials", e);
         } catch (GSSException e) {
             throw new IOException("Failed to load credentials", e);
@@ -398,7 +411,7 @@ public class JettyGSIConnector
             ConnectorEndPoint connection = new GsiConnection(gsiSocket);
             connection.dispatch();
         } catch (GSSException e) {
-            _log.warn("Failed to initialize GSS Context: " + e);
+            _log.error("Failed to initialize GSS Context: " , e);
             throw new IOException("Failed to initialize GSS context", e);
         } catch (IOException e) {
             _log.warn("Failed to accept connection: " + e);
