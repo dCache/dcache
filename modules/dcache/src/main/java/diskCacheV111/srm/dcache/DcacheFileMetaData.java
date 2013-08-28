@@ -100,6 +100,7 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.v2_2.TAccessLatency;
@@ -280,7 +281,8 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     @Override
     public  boolean isOwner(SRMUser user) {
         try {
-            return Integer.parseInt(owner) == ((AuthorizationRecord) user).getUid();
+            long uid = Subjects.getUid(((DcacheUser) user).getSubject());
+            return Long.parseLong(owner) == uid;
         } catch (NumberFormatException nfe) {
             logger.error("owner is not a number: "+owner,nfe);
             throw nfe;
@@ -293,7 +295,8 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     @Override
     public boolean isGroupMember(SRMUser user) {
         try {
-            return Integer.parseInt(group) == ((AuthorizationRecord) user).getGid();
+            long gid = Subjects.getPrimaryGid(((DcacheUser) user).getSubject());
+            return Long.parseLong(group) == gid;
         } catch (NumberFormatException nfe) {
             logger.error("group is not a number: "+group,nfe);
             throw nfe;
