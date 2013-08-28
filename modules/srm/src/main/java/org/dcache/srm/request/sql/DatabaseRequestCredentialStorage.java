@@ -75,7 +75,7 @@ import java.sql.*;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.ietf.jgss.GSSCredential;
-import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.X509Credential;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.gridforum.jgss.ExtendedGSSCredential;
 import java.io.ByteArrayInputStream;
@@ -162,11 +162,11 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
          
          //get database info
          DatabaseMetaData md = _con.getMetaData();
-         
-         
+
+
          ResultSet tableRs = md.getTables(null, null, getTableName() , null );
-         
-         
+
+
          if(!tableRs.next()) {
             try {
                // Table does not exist
@@ -472,7 +472,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       if(credential_string != null) {
          ByteArrayInputStream in = new ByteArrayInputStream(credential_string.getBytes());
          try {
-            GlobusCredential gc = new GlobusCredential(in);
+            X509Credential gc = new X509Credential(in);
             GSSCredential cred =
                new GlobusGSSCredentialImpl(gc, GSSCredential.INITIATE_ONLY);
             return cred;

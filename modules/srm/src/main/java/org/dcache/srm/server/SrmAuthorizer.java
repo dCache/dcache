@@ -81,6 +81,8 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Configuration;
 import org.globus.axis.gsi.GSIConstants;
+import static org.globus.axis.gsi.GSIConstants.*;
+import org.glite.voms.PKIVerifier;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSContext;
@@ -95,6 +97,7 @@ public class SrmAuthorizer {
    String pathToConfigurationXml;
    Object syncObject = new Object();
    public static final String REMOTE_ADDR = "REMOTE_ADDR";
+    public static final String GSI_CONTEXT = "org.globus.gsi.context";
    private org.dcache.srm.SRMAuthorization authorization;
    private org.dcache.srm.request.RequestCredentialStorage credential_storage;
    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(
@@ -130,7 +133,8 @@ public class SrmAuthorizer {
          setUpEnv(mctx);
 
          org.ietf.jgss.GSSContext gsscontext  =
-            (org.ietf.jgss.GSSContext)mctx.getProperty(GSIConstants.GSI_CONTEXT);
+            (org.ietf.jgss.GSSContext)mctx.getProperty(GSI_CONTEXT);
+
          if(gsscontext == null) {
              throw new SRMAuthorizationException(
              "cant extract gsscontext from MessageContext, gsscontext is null");
@@ -230,10 +234,10 @@ public class SrmAuthorizer {
 
       javax.servlet.http.HttpServletRequest req = (javax.servlet.http.HttpServletRequest)tmp;
 
-      tmp = req.getAttribute(GSIConstants.GSI_CONTEXT);
+      tmp = req.getAttribute(GSI_CONTEXT);
 
       if (tmp != null) {
-         msgContext.setProperty(GSIConstants.GSI_CONTEXT, tmp);
+         msgContext.setProperty(GSI_CONTEXT, tmp);
       }
 
       tmp = req.getRemoteAddr();

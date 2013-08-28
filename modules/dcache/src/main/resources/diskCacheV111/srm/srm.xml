@@ -354,6 +354,11 @@
     <constructor-arg value="true"/>
   </bean>
 
+  <bean id="banned-ciphers" class="org.dcache.util.Crypto"
+        factory-method="getBannedCipherSuitesFromConfigurationValue">
+      <constructor-arg value="${srm.security.ciphers}"/>
+  </bean>
+
   <bean id="server" class="org.eclipse.jetty.server.Server"
         init-method="start" destroy-method="stop">
     <description>Jetty server hosting the SRM web application</description>
@@ -469,6 +474,7 @@
       <property name="handshakeTimeout" value="10000" />
       <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
       <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+        <property name="excludeCipherSuites" ref="banned-ciphers"/>
     </bean>
 
     <bean id="ssl-connector"
@@ -494,6 +500,7 @@
       <property name="handshakeTimeout" value="10000" />
       <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
       <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
+        <property name="excludeCipherSuites" ref="banned-ciphers"/>
     </bean>
   </beans>
 

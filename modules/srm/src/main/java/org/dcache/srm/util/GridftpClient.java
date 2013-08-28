@@ -24,8 +24,8 @@ import org.globus.ftp.exception.UnexpectedReplyCodeException;
 import org.globus.ftp.vanilla.Reply;
 import org.globus.util.GlobusURL;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.gsi.GlobusCredentialException;
-import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.CredentialException;
+import org.globus.gsi.X509Credential;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import java.io.RandomAccessFile;
@@ -72,7 +72,7 @@ public class GridftpClient
                          int tcpBufferSize,
                          GSSCredential cred)
         throws IOException, ServerException, ClientException,
-               GlobusCredentialException, GSSException
+               CredentialException, GSSException
     {
         this(host, port, tcpBufferSize, 0, cred);
     }
@@ -82,7 +82,7 @@ public class GridftpClient
                          int bufferSize,
                          GSSCredential cred)
         throws IOException, ServerException, ClientException,
-               GlobusCredentialException, GSSException
+               CredentialException, GSSException
     {
         if(bufferSize >0) {
             _bufferSize = bufferSize;
@@ -94,7 +94,7 @@ public class GridftpClient
                 logger.debug("tcp buffer size is set to "+tcpBufferSize);
             }
         if(cred == null) {
-            GlobusCredential gcred = GlobusCredential.getDefaultCredential();
+            X509Credential gcred = X509Credential.getDefaultCredential();
             cred = new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
         }
         _host = host;
