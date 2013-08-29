@@ -112,7 +112,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  * @version
  */
-public final class PutFileRequest extends FileRequest {
+public final class PutFileRequest extends FileRequest<PutRequest> {
     private final static Logger logger = LoggerFactory.getLogger(PutFileRequest.class);
     // this is anSurl path
     private URI surl;
@@ -360,7 +360,7 @@ public final class PutFileRequest extends FileRequest {
             fileStatus.setTransferURL(transferURL);
 
         }
-        fileStatus.setEstimatedWaitTime(getRequest().getRetryDeltaTime());
+        fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
         fileStatus.setRemainingPinLifetime((int)getRemainingLifetime()/1000);
         TReturnStatus returnStatus = getReturnStatus();
         if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
@@ -399,7 +399,7 @@ public final class PutFileRequest extends FileRequest {
     }
 
     private URI getTURL() throws SRMException, SQLException {
-        PutRequest request = (PutRequest)  getRequest();
+        PutRequest request = getContainerRequest();
         // do not synchronize on request, since it might cause deadlock
         String firstDcapTurl = request.getFirstDcapTurl();
         if(firstDcapTurl == null) {
@@ -460,7 +460,7 @@ public final class PutFileRequest extends FileRequest {
                 // SRM_DUPLICATION_ERROR must be returned at the file level.
                 for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, getSurl())) {
                     if (request != this) {
-                        if (!((PutRequest) getRequest()).isOverwrite()) {
+                        if (!getContainerRequest().isOverwrite()) {
                             setStateAndStatusCode(
                                     State.FAILED,
                                     "SURL exists already",
@@ -480,7 +480,7 @@ public final class PutFileRequest extends FileRequest {
                 // if we can not read this path for some reason
                 //(not in ftp root for example) this will throw exception
                 // we do not care about the return value yet
-                PutRequest request = getJob(requestId, PutRequest.class);
+                PutRequest request = getContainerRequest();
                 String[] supportedProts = getStorage().supportedPutProtocols();
                 boolean found_supp_prot=false;
                 String[] requestProtocols = request.getProtocols();
@@ -502,7 +502,7 @@ public final class PutFileRequest extends FileRequest {
                 PutCallbacks callbacks = new PutCallbacks(this.getId());
                 setState(State.ASYNCWAIT, "calling Storage.prepareToPut()");
                 getStorage().prepareToPut(getUser(),getSurl(),callbacks,
-                        ((PutRequest)getRequest()).isOverwrite());
+                        getContainerRequest().isOverwrite());
                 return;
             }
             long defaultSpaceReservationId=0;
@@ -560,7 +560,7 @@ public final class PutFileRequest extends FileRequest {
                                 getSpaceReservationId(),getSurl(),
                                 getSize()==0?1:getSize(),
                                 remaining_lifetime,
-                                ((PutRequest)getRequest()).isOverwrite(),
+                                getContainerRequest().isOverwrite(),
                                     callbacks );
                 return;
             }
@@ -578,7 +578,7 @@ public final class PutFileRequest extends FileRequest {
         logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
-                getRequest().resetRetryDeltaTime();
+                getContainerRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }
@@ -1462,7 +1462,7 @@ public final class PutFileRequest extends FileRequest {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        long requestLifetime = getRequest().extendLifetimeMillis(newLifetime);
+        long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
         if(requestLifetime <newLifetime) {
             newLifetime = requestLifetime;
         }

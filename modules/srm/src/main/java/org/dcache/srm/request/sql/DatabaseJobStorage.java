@@ -74,6 +74,7 @@ package org.dcache.srm.request.sql;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
+import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,7 +111,7 @@ import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
  *
  * @author  timur
  */
-public abstract class DatabaseJobStorage implements JobStorage, Runnable {
+public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>, Runnable {
     private final static Logger logger =
             LoggerFactory.getLogger(DatabaseJobStorage.class);
 
@@ -123,6 +124,9 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             return !element.isSaved();
         }
     };
+
+    @SuppressWarnings("unchecked")
+    private final Class<J> jobType = (Class<J>) new TypeToken<J>(getClass()) {}.getRawType();
 
     protected final Configuration.DatabaseParameters configuration;
     private final String jdbcUrl;
@@ -334,7 +338,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         }
     }
 
-    protected abstract Job getJob(
+    protected abstract J getJob(
             Connection _con,
             Long ID,
             Long NEXTJOBID ,
@@ -351,7 +355,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             int next_index) throws SQLException;
 
     @Override
-    public Job getJob(Long jobId) throws SQLException {
+    public J getJob(Long jobId) throws SQLException {
 
         if(jobId == null) {
 
@@ -362,7 +366,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
         try {
             _con = pool.getConnection();
-            Job job = getJob(jobId,_con);
+            J job = getJob(jobId,_con);
             pool.returnConnection(_con);
             _con = null;
             return job;
@@ -383,7 +387,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     }
 
     @Override
-    public Job getJob(Long jobId,Connection _con) throws SQLException {
+    public J getJob(Long jobId,Connection _con) throws SQLException {
         if(jobId == null) {
             throw new NullPointerException ("jobId is null");
         }
@@ -411,7 +415,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             int NUMOFRETR = set.getInt(9);
             int MAXNUMOFRETR = set.getInt(10);
             long LASTSTATETRANSITIONTIME = set.getLong(11);
-            Job job = getJob(_con,
+            J job = getJob(_con,
                     ID,
                     NEXTJOBID ,
                     CREATIONTIME,
@@ -580,14 +584,14 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     // job
     private boolean getJobsRan;
     @Override
-    public Set<Job> getJobs(String schedulerId) throws SQLException{
+    public Set<J> getJobs(String schedulerId) throws SQLException{
         if(getJobsRan)
         {
             throw new SQLException("getJobs("+schedulerId+") has already run" );
         }
         getJobsRan = true;
 
-        Set<Job> jobs = new HashSet<>();
+        Set<J> jobs = new HashSet<>();
         Connection _con =null;
 
         try {
@@ -612,7 +616,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 int NUMOFRETR = set.getInt(9);
                 int MAXNUMOFRETR = set.getInt(10);
                 long LASTSTATETRANSITIONTIME = set.getLong(11);
-                Job job = getJob(
+                J job = getJob(
                         _con,
                         ID,
                         NEXTJOBID ,
@@ -716,7 +720,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             for(Long ID : idsSet)
             {
                 try {
-                    Job job = Job.getJob(ID, Job.class, _con);
+                    J job = Job.getJob(ID, jobType, _con);
                     scheduler.schedule(job);
                 } catch (SRMInvalidRequestException ire) {
                     logger.error(ire.toString());
@@ -825,8 +829,32 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     }
 
     @Override
-    public Set<Job> getJobs(String schedulerId, State state) throws SQLException {
-        Set<Job> jobs = new HashSet<>();
+    public Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<J> getJobs(String schedulerId, State state) throws SQLException {
+        Set<J> jobs = new HashSet<>();
         Connection _con =null;
         PreparedStatement sqlStatement = null;
         ResultSet set = null;
@@ -862,7 +890,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 int NUMOFRETR = set.getInt(9);
                 int MAXNUMOFRETR = set.getInt(10);
                 long LASTSTATETRANSITIONTIME = set.getLong(11);
-                Job job = getJob(
+                J job = getJob(
                         _con,
                         ID,
                         NEXTJOBID ,

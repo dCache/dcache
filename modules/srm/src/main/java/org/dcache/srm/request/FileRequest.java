@@ -73,6 +73,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 
+import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,13 +102,16 @@ import org.dcache.srm.v2_2.TStatusCode;
  * or more LsFileRequest objects (a subclass of FileRequest), one for each file
  * in the srmLs operation.
  */
-public abstract class FileRequest extends Job {
+public abstract class FileRequest<R extends ContainerRequest> extends Job {
     private final static Logger logger =
             LoggerFactory.getLogger(FileRequest.class);
     //file ContainerRequest is being processed
     // for get and put it means that file turl
     // is not available yet
     //for copy - file is being copied
+
+    @SuppressWarnings("unchecked")
+    private final Class<R> containerRequestType = (Class<R>) new TypeToken<R>(getClass()) {}.getRawType();
 
     //request which contains this fileRequest (which is different from request number)
     protected final Long requestId;
@@ -267,18 +271,18 @@ public abstract class FileRequest extends Job {
     protected void stateChanged(State oldState)
     {
         try {
-            getRequest().fileRequestStateChanged(this);
+            getContainerRequest().fileRequestStateChanged(this);
         } catch (SRMInvalidRequestException ire) {
             logger.error(ire.toString());
         }
     }
 
     public SRMUser getUser() throws SRMInvalidRequestException {
-        return getRequest().getUser();
+        return getContainerRequest().getUser();
     }
 
-    public ContainerRequest getRequest() throws SRMInvalidRequestException  {
-        return Job.getJob(requestId, ContainerRequest.class);
+    public R getContainerRequest() throws SRMInvalidRequestException  {
+        return Job.getJob(requestId, containerRequestType);
     }
 
     /**

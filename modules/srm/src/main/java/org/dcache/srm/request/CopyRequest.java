@@ -131,7 +131,7 @@ import static com.google.common.collect.Iterables.getFirst;
  *
  * @author  timur
  */
-public final class CopyRequest extends ContainerRequest implements PropertyChangeListener {
+public final class CopyRequest extends ContainerRequest<CopyFileRequest> implements PropertyChangeListener {
     private final static Logger logger =
             LoggerFactory.getLogger(CopyRequest.class);
 
@@ -210,9 +210,9 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             throw new IllegalArgumentException(
             "unequal number of elements in url arrays");
         }
-        List<FileRequest> requests = Lists.newArrayListWithCapacity(reqs_num);
+        List<CopyFileRequest> requests = Lists.newArrayListWithCapacity(reqs_num);
         for(int i = 0; i < reqs_num; ++i) {
-            FileRequest request = new CopyFileRequest(getId(),
+            CopyFileRequest request = new CopyFileRequest(getId(),
                     requestCredentialId,from_urls[i],to_urls[i], spaceToken,
                     lifetime, max_number_of_retries);
             requests.add(request);
@@ -249,7 +249,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
-    FileRequest[] fileRequest,
+    CopyFileRequest[] fileRequest,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
@@ -327,11 +327,11 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         logger.debug("number_of_file_reqs = "+getNumber_of_file_reqs());
         wlock();
         try {
-            List<FileRequest> requests = getFileRequests();
+            List<CopyFileRequest> requests = getFileRequests();
             from_urls = new SrmUrl[getNumber_of_file_reqs()];
             to_urls = new SrmUrl[getNumber_of_file_reqs()];
             for(int i = 0 ; i<getNumber_of_file_reqs();++i) {
-                CopyFileRequest cfr = (CopyFileRequest) requests.get(i);
+                CopyFileRequest cfr = requests.get(i);
 
                 from_urls[i] = new SrmUrl(cfr.getFromURL());
                 to_urls[i] = new SrmUrl(cfr.getToURL());
@@ -431,7 +431,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
     private void makeQosReservation(int i) throws MalformedURLException, SRMException {
         try {
-            CopyFileRequest cfr = (CopyFileRequest) getFileRequests().get(i);
+            CopyFileRequest cfr = getFileRequests().get(i);
             RequestCredential credential = getCredential();
             QOSTicket qosTicket = getQosPlugin().createTicket(
                     credential.getCredentialName(),
@@ -471,7 +471,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             //String ls_client = "SRM"; // make it not hard coded
 
             for(int i = 0 ; i<getNumber_of_file_reqs();++i) {
-                CopyFileRequest cfr = (CopyFileRequest) getFileRequests().get(i);
+                CopyFileRequest cfr = getFileRequests().get(i);
                 if( cfr.getState()!= State.PENDING || cfr.getSchedulerId() != null) {
                     // copy file request has being canceled,failed or scheduled before
                     continue;
@@ -548,7 +548,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
          {
              // this means that the from url is loacal srm url.
             for(int i = 0;i<this.getNumber_of_file_reqs();++i) {
-                CopyFileRequest cfr = (CopyFileRequest) getFileRequests().get(i);
+                CopyFileRequest cfr = getFileRequests().get(i);
                 if( cfr.getState()!= State.PENDING || cfr.getSchedulerId() != null) {
                     // copy file request has being canceled,failed or scheduled before
                     continue;
@@ -570,7 +570,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             // we have a remote transfer url  as source and
             // a local srm url as destination
             for(int i = 0;i<this.getNumber_of_file_reqs();++i) {
-                CopyFileRequest cfr = (CopyFileRequest) getFileRequests().get(i);
+                CopyFileRequest cfr = getFileRequests().get(i);
                 if( cfr.getState()!= State.PENDING || cfr.getSchedulerId() != null) {
                     // copy file request has being canceled,failed or scheduled before
                     continue;
@@ -595,7 +595,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             // non local "from" turl, and we have local to srm
             // we have all info needed to proccede
             for(int i = 0;i<this.getNumber_of_file_reqs();++i) {
-                CopyFileRequest cfr = (CopyFileRequest) getFileRequests().get(i);
+                CopyFileRequest cfr = getFileRequests().get(i);
                 if( cfr.getState()!= State.PENDING || cfr.getSchedulerId() != null) {
                     // copy file request has being canceled,failed or scheduled before
                     continue;
@@ -616,7 +616,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             // this means we have local from url and some "to" turl that is given
             // we have all info needed to proccede
             for(int i = 0;i<this.getNumber_of_file_reqs();++i) {
-                CopyFileRequest cfr = (CopyFileRequest) getFileRequests().get(i);
+                CopyFileRequest cfr = getFileRequests().get(i);
                 if( cfr.getState()!= State.PENDING || cfr.getSchedulerId() != null) {
                     // copy file request has being canceled,failed or scheduled before
                     continue;
@@ -634,7 +634,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         //the to url is a remote srm url -> need to discover "to" TURL
 
         for(int i = 0;i<this.getNumber_of_file_reqs();++i) {
-            CopyFileRequest cfr = (CopyFileRequest) getFileRequests().get(i);
+            CopyFileRequest cfr = getFileRequests().get(i);
             if( cfr.getState()!= State.PENDING || cfr.getSchedulerId() != null) {
                 // copy file request has being canceled,failed or scheduled before
                 continue;
@@ -658,7 +658,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         for(int i =0 ; i<length;++i) {
             Long fileRequestId = getFirst(remoteSurlToFileReqIds
                     .get(remoteSurlsUniqueArray[i]), null);
-            CopyFileRequest cfr = (CopyFileRequest)getFileRequest(fileRequestId);
+            CopyFileRequest cfr = getFileRequest(fileRequestId);
             sizes[i] = getStorage().getFileMetaData(getUser(), cfr.getFrom_surl(), false).size;
             logger.debug("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
             cfr.setSize(sizes[i]);
@@ -732,7 +732,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     .toArray(new Long[fileRequestSet.size()]);
             for (Long cfr_id : cfr_ids) {
 
-                CopyFileRequest cfr = (CopyFileRequest) getFileRequest(cfr_id);
+                CopyFileRequest cfr = getFileRequest(cfr_id);
                 if (getQosPlugin() != null && cfr.getQOSTicket() != null) {
                     getQosPlugin().sayStatus(cfr.getQOSTicket());
                 }
@@ -784,7 +784,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     .toArray(new Long[fileRequestSet.size()]);
             for (Long cfr_id : cfr_ids) {
 
-                CopyFileRequest cfr = (CopyFileRequest) getFileRequest(cfr_id);
+                CopyFileRequest cfr = getFileRequest(cfr_id);
 
                 try {
                     String error;
@@ -817,7 +817,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 Long[] cfr_ids = fileRequestSet
                         .toArray(new Long[fileRequestSet.size()]);
                 for (Long cfr_id : cfr_ids) {
-                    CopyFileRequest cfr = (CopyFileRequest) getFileRequest(cfr_id);
+                    CopyFileRequest cfr = getFileRequest(cfr_id);
                     try {
                         String error;
                         if (isFrom_url_is_srm() && !isFrom_url_is_local()) {
@@ -886,10 +886,10 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         if(fromurl == null || tourl == null) {
            throw new SRMException("surl is null");
         }
-        for(FileRequest request : getFileRequests()) {
-            if(((CopyFileRequest)request).getFromURL().equals(fromurl) &&
-               ((CopyFileRequest)request).getToURL().equals(tourl) ) {
-                return (CopyFileRequest)request;
+        for (CopyFileRequest request : getFileRequests()) {
+            if(request.getFromURL().equals(fromurl) &&
+               request.getToURL().equals(tourl)) {
+                return request;
             }
         }
         throw new SRMException("file request for from url ="+fromurl+
@@ -921,7 +921,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         {
             proccessRequest();
             boolean done = true;
-            for(FileRequest request : getFileRequests()) {
+            for (CopyFileRequest request : getFileRequests()) {
                 State state = request.getState();
                 if(!(State.isFinalState(state))) {
                     done = false;
@@ -956,7 +956,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 a_getter_putter.stop();
             }
             logger.debug("copy request state changed to "+state);
-            for(FileRequest request : getFileRequests()) {
+            for (CopyFileRequest request : getFileRequests()) {
                 try {
                     State fr_state = request.getState();
                     if(!(State.isFinalState(fr_state)))
@@ -1022,7 +1022,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             try
             {
                 boolean done = true;
-                for(FileRequest request : getFileRequests()) {
+                for (CopyFileRequest request : getFileRequests()) {
                     State state = request.getState();
                     if(!(State.isFinalState(state ))) {
                         done = false;
@@ -1088,7 +1088,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
              new TCopyRequestFileStatus[len];
             if(fromurls == null) {
                 for(int i = 0; i< len; ++i) {
-                    CopyFileRequest fr =(CopyFileRequest)getFileRequests().get(i);
+                    CopyFileRequest fr = getFileRequests().get(i);
                     copyRequestFileStatuses[i] = fr.getTCopyRequestFileStatus();
                 }
             } else {
@@ -1119,13 +1119,13 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     }
 
     @Override
-    public final FileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException {
+    public final CopyFileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException {
         if(surl == null ) {
            throw new SRMException("surl is null");
         }
-        for(FileRequest request : getFileRequests()) {
-            if(((CopyFileRequest)request).getFrom_surl().equals(surl) ||
-               ((CopyFileRequest)request).getTo_surl().equals(surl) ) {
+        for (CopyFileRequest request : getFileRequests()) {
+            if(request.getFrom_surl().equals(surl) ||
+               request.getTo_surl().equals(surl) ) {
                 return request;
             }
         }
@@ -1147,12 +1147,12 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                CopyFileRequest fr =(CopyFileRequest)getFileRequests().get(i);
+                CopyFileRequest fr = getFileRequests().get(i);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus( null);
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                CopyFileRequest fr =(CopyFileRequest)getFileRequestBySurl(surls[i]);
+                CopyFileRequest fr = getFileRequestBySurl(surls[i]);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus(surls[i]);
             }
 

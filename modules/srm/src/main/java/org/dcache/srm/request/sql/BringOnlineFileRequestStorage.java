@@ -20,7 +20,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.dcache.srm.request.BringOnlineFileRequest;
-import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
 
@@ -28,7 +27,7 @@ import org.dcache.srm.util.Configuration;
  *
  * @author  timur
  */
-public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
+public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<BringOnlineFileRequest> {
 
     public static final String TABLE_NAME = "bringonlinefilerequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
@@ -53,7 +52,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
 
 
     @Override
-    protected FileRequest getFileRequest(Connection _con,
+    protected BringOnlineFileRequest getFileRequest(Connection _con,
         Long ID,
         Long NEXTJOBID,
         long CREATIONTIME,

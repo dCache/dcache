@@ -490,14 +490,10 @@ public final class Scheduler implements Runnable  {
 								numOfRunningBySameCreator,
 								maxRunningByOwner,
 								job);
-							try {
-								FileRequest req = (FileRequest) job;
-								logger.debug("UPDATEPRIORITYTHREADQUEUE ca " + req.getCredential());
-							}
-							catch (ClassCastException cce) {
-								logger.error("Failed to cast job to FileRequest",cce);
-							}
-
+                                                        if (job instanceof FileRequest) {
+                                                            logger.debug("UPDATEPRIORITYTHREADQUEUE ca " +
+                                                                    ((FileRequest<?>) job).getCredential());
+                                                        }
 							return value;
 						}
 					};
@@ -1219,7 +1215,6 @@ public final class Scheduler implements Runnable  {
 
     /**
      * Setter for property maxWaitingJobNum.
-     * @param maxWaitingJobNum New value of property maxWaitingJobNum.
      */
     public void setMaxWaitingJobNum(int maxAsyncWaitJobs) {
         this.maxAsyncWaitJobs = maxAsyncWaitJobs;
@@ -1235,7 +1230,6 @@ public final class Scheduler implements Runnable  {
 
     /**
      * Setter for property maxWaitingJobNum.
-     * @param maxWaitingJobNum New value of property maxWaitingJobNum.
      */
     public void setMaxRetryWaitJobNum(int maxRetryWaitJobs) {
         this.maxRetryWaitJobs = maxRetryWaitJobs;

@@ -122,7 +122,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  * @version
  */
-public final class CopyFileRequest extends FileRequest {
+public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
         private static final Logger logger =
                 LoggerFactory.getLogger(CopyFileRequest.class);
@@ -176,7 +176,7 @@ public final class CopyFileRequest extends FileRequest {
 	public CopyFileRequest(
 		Long id,
 		Long nextJobId,
-		JobStorage jobStorage,
+		JobStorage<CopyFileRequest> jobStorage,
 		long creationTime,
 		long lifetime,
 		int stateId,
@@ -574,7 +574,7 @@ public final class CopyFileRequest extends FileRequest {
 			logger.debug("calling storage.prepareToPut("+getLocal_to_path()+")");
 			getStorage().prepareToPut(getUser(),getTo_surl(),
 					     callbacks,
-					     ((CopyRequest)getRequest()).isOverwrite());
+					     getContainerRequest().isOverwrite());
 			logger.debug("callbacks.waitResult()");
 			return;
 		}
@@ -595,9 +595,9 @@ public final class CopyFileRequest extends FileRequest {
         // Use pnfs tag for the default space token
         // if the conditions are right
 		TAccessLatency accessLatency =
-			((CopyRequest)getRequest()).getTargetAccessLatency();
+			getContainerRequest().getTargetAccessLatency();
 		TRetentionPolicy retentionPolicy =
-			((CopyRequest)getRequest()).getTargetRetentionPolicy();
+			getContainerRequest().getTargetRetentionPolicy();
 		if (getSpaceReservationId()==null &&
             retentionPolicy==null&&
             accessLatency==null &&
@@ -654,7 +654,7 @@ public final class CopyFileRequest extends FileRequest {
 			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getTo_surl(),
 							size==0?1:size,
 							remaining_lifetime,
-							((CopyRequest)getRequest()).isOverwrite(),
+							getContainerRequest().isOverwrite(),
 							callbacks );
 			return;
 		}
@@ -675,7 +675,7 @@ public final class CopyFileRequest extends FileRequest {
 			getStorage().prepareToPut(getUser(),
                                                   getTo_surl(),
                                                   callbacks,
-                                                  ((CopyRequest)getRequest()).isOverwrite());
+                                                  getContainerRequest().isOverwrite());
 			logger.debug("callbacks.waitResult()");
 			return;
 		}
@@ -695,9 +695,9 @@ public final class CopyFileRequest extends FileRequest {
         // Use pnfs tag for the default space token
         // if the conditions are right
 		TAccessLatency accessLatency =
-			((CopyRequest)getRequest()).getTargetAccessLatency();
+			getContainerRequest().getTargetAccessLatency();
 		TRetentionPolicy retentionPolicy =
-			((CopyRequest)getRequest()).getTargetRetentionPolicy();
+			getContainerRequest().getTargetRetentionPolicy();
 		if (getSpaceReservationId()==null &&
             retentionPolicy==null&&
             accessLatency==null &&
@@ -743,7 +743,7 @@ public final class CopyFileRequest extends FileRequest {
 			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getTo_surl(),
 							size==0?1:size,
 							remaining_lifetime,
-							((CopyRequest)getRequest()).isOverwrite(),
+							getContainerRequest().isOverwrite(),
 							callbacks );
 			return;
 		}
@@ -776,7 +776,7 @@ public final class CopyFileRequest extends FileRequest {
         try {
             setState(State.DONE, "setStateToDone called");
             try {
-                ((CopyRequest)getRequest()).fileRequestCompleted();
+                getContainerRequest().fileRequestCompleted();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }
@@ -793,7 +793,7 @@ public final class CopyFileRequest extends FileRequest {
         catch(IllegalStateTransition ist) {
             logger.error("setStateToFailed: Illegal State Transition : " +ist.getMessage());
         }
-		((CopyRequest)getRequest()).fileRequestCompleted();
+		getContainerRequest().fileRequestCompleted();
 	}
 
 	private void runLocalToRemoteCopy() throws SRMException,
@@ -1073,7 +1073,8 @@ public final class CopyFileRequest extends FileRequest {
 		try {
 			logger.debug("setting remote file status to Done, SURL="+SURL+" remoteRequestId="+remoteRequestId+
 			    " remoteFileId="+remoteFileId);
-			(( CopyRequest)(getRequest())).remoteFileRequestDone(SURL.toString(),remoteRequestId,remoteFileId);
+			getContainerRequest().remoteFileRequestDone(SURL
+                                .toString(), remoteRequestId, remoteFileId);
                 }
                 catch(Exception e) {
 			logger.error("set remote file status to done failed, surl = "+SURL+
@@ -1876,7 +1877,7 @@ public final class CopyFileRequest extends FileRequest {
 		if(remainingLifetime >= newLifetime) {
 			return remainingLifetime;
 		}
-		long requestLifetime = getRequest().extendLifetimeMillis(newLifetime);
+		long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
 		if(requestLifetime <newLifetime) {
 			newLifetime = requestLifetime;
 		}
