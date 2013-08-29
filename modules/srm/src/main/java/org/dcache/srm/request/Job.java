@@ -93,7 +93,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
@@ -155,7 +154,7 @@ public abstract class Job  {
     protected int maxNumberOfRetries;
     private long lastStateTransitionTime = System.currentTimeMillis();
 
-    private static volatile ImmutableMap<Class<? extends Job>, JobStorage> jobStorages = ImmutableMap.of();
+    private static volatile ImmutableMap<Class<? extends Job>, JobStorage<?>> jobStorages = ImmutableMap.of();
     private final List<JobHistory> jobHistory = new ArrayList<>();
     private transient JobIdGenerator generator;
 
@@ -182,7 +181,7 @@ public abstract class Job  {
             new ReentrantReadWriteLock();
     private final WriteLock writeLock = reentrantReadWriteLock.writeLock();
 
-    public static final void registerJobStorages(ImmutableMap<Class<? extends Job>, JobStorage> jobStorages)
+    public static final void registerJobStorages(ImmutableMap<Class<? extends Job>, JobStorage<?>> jobStorages)
     {
         Job.jobStorages = jobStorages;
     }
@@ -282,7 +281,7 @@ public abstract class Job  {
         localMemoryCache.updateSharedMemoryChache(this);
     }
 
-    protected JobStorage getJobStorage() {
+    protected JobStorage<Job> getJobStorage() {
         return JobStorageFactory.getJobStorageFactory().getJobStorage(this);
     }
 
@@ -364,7 +363,7 @@ public abstract class Job  {
         job = sharedMemoryCache.getJob(jobId);
         boolean restoredFromDb=false;
         if (job == null) {
-            for (Map.Entry<Class<? extends Job>, JobStorage> entry: jobStorages.entrySet()) {
+            for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry: jobStorages.entrySet()) {
                 if (type.isAssignableFrom(entry.getKey())) {
                     try {
                         if(_con == null) {
@@ -424,7 +423,6 @@ public abstract class Job  {
     }
 
     /** Performs state transition checking the legality first.
-     * @param state
      */
     public State getState() {
         rlock();
@@ -736,7 +734,6 @@ public abstract class Job  {
     }
 
     /** Setter for property numberOfRetries.
-     * @param numberOfRetries New value of property numberOfRetries.
      *
      */
     private void inclreaseNumberOfRetries() {

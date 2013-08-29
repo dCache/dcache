@@ -105,7 +105,7 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
  *
  * @author  timur
  */
-public final class PutRequest extends ContainerRequest{
+public final class PutRequest extends ContainerRequest<PutFileRequest> {
     private final static Logger logger =
             LoggerFactory.getLogger(PutRequest.class);
 
@@ -148,9 +148,9 @@ public final class PutRequest extends ContainerRequest{
             "srcFileNames, destUrls, sizes,"+
             " wantPermanent arrays dimensions mismatch");
         }
-        List<FileRequest> requests = Lists.newArrayListWithCapacity(len);
+        List<PutFileRequest> requests = Lists.newArrayListWithCapacity(len);
         for(int i = 0; i < len; ++i) {
-            FileRequest request = new PutFileRequest(getId(),
+            PutFileRequest request = new PutFileRequest(getId(),
                     requestCredentialId, destUrls[i], sizes[i], lifetime,
                     max_number_of_retries, spaceToken, retentionPolicy,
                     accessLatency);
@@ -176,13 +176,13 @@ public final class PutRequest extends ContainerRequest{
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
-    FileRequest[] fileRequests,
+    PutFileRequest[] fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
     String client_host,
     String statusCodeString,
-    String[] protocols
+    List<String> protocols
     ) throws SQLException {
         super( id,
         nextJobId,
@@ -204,17 +204,17 @@ public final class PutRequest extends ContainerRequest{
         description,
         client_host,
         statusCodeString);
-        this.protocols = protocols;
+        this.protocols = protocols.toArray(new String[protocols.size()]);
 
     }
 
     @Override
-    public FileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
+    public PutFileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
-        for(FileRequest request : getFileRequests()) {
-            if(((PutFileRequest)request).getSurl().equals(surl)) {
+        for (PutFileRequest request : getFileRequests()) {
+            if (request.getSurl().equals(surl)) {
                 return request;
             }
         }
@@ -230,7 +230,7 @@ public final class PutRequest extends ContainerRequest{
         // scheduled, and the saved state needs to be consistent
 
         saveJob(true);
-        for(FileRequest request : getFileRequests()) {
+        for (PutFileRequest request : getFileRequests()) {
             request.schedule();
         }
     }
@@ -288,7 +288,7 @@ public final class PutRequest extends ContainerRequest{
         if(State.isFinalState(state)) {
 
             logger.debug("copy request state changed to "+state);
-            for(FileRequest request : getFileRequests()) {
+            for (PutFileRequest request : getFileRequests()) {
                 try {
                     State fr_state = request.getState();
                     if(!State.isFinalState(fr_state ))
@@ -403,12 +403,12 @@ public final class PutRequest extends ContainerRequest{
             = new TPutRequestFileStatus[len];
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                PutFileRequest fr =(PutFileRequest)getFileRequests().get(i);
+                PutFileRequest fr = getFileRequests().get(i);
                 putFileStatuses[i] = fr.getTPutRequestFileStatus();
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                PutFileRequest fr =(PutFileRequest)getFileRequestBySurl(surls[i]);
+                PutFileRequest fr = getFileRequestBySurl(surls[i]);
                 putFileStatuses[i] = fr.getTPutRequestFileStatus();
             }
 
@@ -437,12 +437,12 @@ public final class PutRequest extends ContainerRequest{
         String fr_error="";
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                PutFileRequest fr =(PutFileRequest)getFileRequests().get(i);
+                PutFileRequest fr = getFileRequests().get(i);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                PutFileRequest fr =(PutFileRequest)getFileRequestBySurl(surls[i]);
+                PutFileRequest fr = getFileRequestBySurl(surls[i]);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
 

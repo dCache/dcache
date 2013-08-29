@@ -13,7 +13,6 @@ import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
@@ -152,17 +151,17 @@ public class SrmPutDone {
         SrmPutDoneResponse srmPutDoneResponse = new SrmPutDoneResponse();
 
 	synchronized(putRequest) {
-		List<FileRequest> requests = putRequest.getFileRequests();
+		List<PutFileRequest> requests = putRequest.getFileRequests();
 		State state = putRequest.getState();
 		if(!State.isFinalState(state)) {
 			if( surls == null ){
 				int fail_counter=0;
 				int success_counter=0;
-				for(FileRequest fileRequest : requests) {
+				for (PutFileRequest fileRequest : requests) {
                                     try(JDC ignored = fileRequest.applyJdc()) {
                                         synchronized(fileRequest) {
                                             if ( !State.isFinalState(fileRequest.getState())) {
-                                                if ( ((PutFileRequest)fileRequest).getTurlString()==null) {
+                                                if (fileRequest.getTurlString()==null) {
                                                     fileRequest.setStateAndStatusCode(State.FAILED,
                                                             "SrmPutDone called, TURL is not ready",
                                                             TStatusCode.SRM_INVALID_PATH);
@@ -170,7 +169,7 @@ public class SrmPutDone {
                                                 }
                                                 else {
                                                     try {
-                                                        if (storage.exists(user,((PutFileRequest)fileRequest).getSurl())) {
+                                                        if (storage.exists(user, fileRequest.getSurl())) {
                                                             fileRequest.setState(State.DONE,"SrmPutDone called");
                                                             success_counter++;
                                                         }
@@ -236,7 +235,7 @@ public class SrmPutDone {
 				int success_counter=0;
 				for(int i = 0; i< surls.length; ++i) {
 					if(surls[i] != null ) {
-						PutFileRequest fileRequest = (PutFileRequest) putRequest.getFileRequestBySurl(surls[i]);
+						PutFileRequest fileRequest = putRequest.getFileRequestBySurl(surls[i]);
                                                 try (JDC ignored = fileRequest.applyJdc()) {
                                                     synchronized(fileRequest) {
                                                             if ( !State.isFinalState(fileRequest.getState())) {
@@ -316,7 +315,7 @@ public class SrmPutDone {
 			int fail_counter=0;
 			int success_counter=0;
 			if( surls == null ){
-			    for (FileRequest fileRequest : requests) {
+			    for (PutFileRequest fileRequest : requests) {
                                 try (JDC ignored = fileRequest.applyJdc()) {
                                     synchronized(fileRequest) {
                                         if (fileRequest.getState()==State.DONE) {
@@ -331,7 +330,7 @@ public class SrmPutDone {
 			else {
 				for(int i = 0; i< surls.length; ++i) {
 					if(surls[i] != null ) {
-						PutFileRequest fileRequest = (PutFileRequest) putRequest.getFileRequestBySurl(surls[i]);
+						PutFileRequest fileRequest = putRequest.getFileRequestBySurl(surls[i]);
                                                 try (JDC ignored = fileRequest.applyJdc()) {
                                                     synchronized(fileRequest) {
                                                             if (fileRequest.getState()==State.DONE) {
