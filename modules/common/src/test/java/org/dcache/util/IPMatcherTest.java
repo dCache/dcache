@@ -162,4 +162,49 @@ public class IPMatcherTest {
         assertEquals("255.255.255.128", IPMatcher.maskInetAddress(forString("255.255.255.255"), 25).getHostAddress());
         assertEquals("ffff:ffff:ffff:ffff:fff8:0:0:0", IPMatcher.maskInetAddress(forString("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), 77).getHostAddress());
     }
+
+    @Test
+    public void testZeroMask() {
+        assertTrue(IPMatcher.match(forString("123.123.123.123"), forString("0.0.0.0"), 0));
+    }
+
+    @Test
+    public void testConvertIPv4MaskStringToCidr() {
+        assertEquals(0, IPMatcher.convertToCidrIfIsIPv4Mask("0.0.0.0"));
+        assertEquals(1, IPMatcher.convertToCidrIfIsIPv4Mask("128.0.0.0"));
+        assertEquals(2, IPMatcher.convertToCidrIfIsIPv4Mask("192.0.0.0"));
+        assertEquals(3, IPMatcher.convertToCidrIfIsIPv4Mask("224.0.0.0"));
+        assertEquals(4, IPMatcher.convertToCidrIfIsIPv4Mask("240.0.0.0"));
+        assertEquals(5, IPMatcher.convertToCidrIfIsIPv4Mask("248.0.0.0"));
+        assertEquals(6, IPMatcher.convertToCidrIfIsIPv4Mask("252.0.0.0"));
+        assertEquals(7, IPMatcher.convertToCidrIfIsIPv4Mask("254.0.0.0"));
+        assertEquals(8, IPMatcher.convertToCidrIfIsIPv4Mask("255.0.0.0"));
+        assertEquals(9, IPMatcher.convertToCidrIfIsIPv4Mask("255.128.0.0"));
+        assertEquals(10, IPMatcher.convertToCidrIfIsIPv4Mask("255.192.0.0"));
+        assertEquals(11, IPMatcher.convertToCidrIfIsIPv4Mask("255.224.0.0"));
+        assertEquals(12, IPMatcher.convertToCidrIfIsIPv4Mask("255.240.0.0"));
+        assertEquals(13, IPMatcher.convertToCidrIfIsIPv4Mask("255.248.0.0"));
+        assertEquals(14, IPMatcher.convertToCidrIfIsIPv4Mask("255.252.0.0"));
+        assertEquals(15, IPMatcher.convertToCidrIfIsIPv4Mask("255.254.0.0"));
+        assertEquals(16, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.0.0"));
+        assertEquals(17, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.128.0"));
+        assertEquals(18, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.192.0"));
+        assertEquals(19, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.224.0"));
+        assertEquals(20, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.240.0"));
+        assertEquals(21, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.248.0"));
+        assertEquals(22, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.252.0"));
+        assertEquals(23, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.254.0"));
+        assertEquals(24, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.0"));
+        assertEquals(25, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.128"));
+        assertEquals(26, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.192"));
+        assertEquals(27, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.224"));
+        assertEquals(28, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.240"));
+        assertEquals(29, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.248"));
+        assertEquals(30, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.252"));
+        assertEquals(31, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.254"));
+        assertEquals(32, IPMatcher.convertToCidrIfIsIPv4Mask("255.255.255.255"));
+        assertEquals(0, IPMatcher.convertToCidrIfIsIPv4Mask("0"));
+        assertEquals(2, IPMatcher.convertToCidrIfIsIPv4Mask("2"));
+        assertEquals(32, IPMatcher.convertToCidrIfIsIPv4Mask("32"));
+    }
 }

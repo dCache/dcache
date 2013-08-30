@@ -32,7 +32,7 @@ public class IPMatcher {
     private static final int IPv6_FULL_MASK = 128;
     private static final int IPv6_HALF_MASK = 64;
 
-    public static int convertIPv4MaskStringToCidr(String maskString) {
+    public static int convertToCidrIfIsIPv4Mask(String maskString) {
         int mask;
         if (maskString.contains(".")) {
             mask = fromByteArray(forString(maskString).getAddress());
@@ -101,7 +101,7 @@ public class IPMatcher {
      * Checks matching ip in specified subnet.
      *
      * @param ip address to test
-     * @param subnet address
+     * @param subnet subnet's base address
      * @param mask netmask in CIDR notation
      * @return true if ip matches subnet.
      */
