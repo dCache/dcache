@@ -351,7 +351,6 @@
                                 <pluginExecutionFilter>
                                     <groupId>org.datanucleus</groupId>
                                     <artifactId>maven-datanucleus-plugin</artifactId>
-                                    <versionRange>[2.2.1,)</versionRange>
                                     <goals>
                                         <goal>enhance</goal>
                                     </goals>

@@ -63,6 +63,8 @@
          -->
         <bouncycastle.bcprov>bcprov-jdk16</bouncycastle.bcprov>
         <bouncycastle.version>1.43</bouncycastle.version>
+        <datanucleus-core.version>3.2.6</datanucleus-core.version>
+        <datanucleus.plugin.version>3.2.0-m1</datanucleus.plugin.version>
     </properties>
 
     <scm>
@@ -325,7 +327,7 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-core</artifactId>
-                <version>3.2.6</version>
+                <version>${datanucleus-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
@@ -906,13 +908,13 @@
                 </plugin>
                 <plugin>
                     <groupId>org.datanucleus</groupId>
-                    <artifactId>datanucleus-maven-plugin</artifactId>
-                    <version>3.2.0-release</version>
+                    <artifactId>maven-datanucleus-plugin</artifactId>
+                    <version>${datanucleus.plugin.version}</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.datanucleus</groupId>
                             <artifactId>datanucleus-core</artifactId>
-                            <version>3.2.6</version>
+                            <version>${datanucleus-core.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
