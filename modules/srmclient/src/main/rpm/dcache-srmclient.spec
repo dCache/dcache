@@ -7,7 +7,7 @@ Name: dcache-srmclient
 Version: @Version@
 Release: @Release@
 BuildArch: noarch
-Prefix: /opt/d-cache
+Prefix: /usr
 #BuildRoot: %{_topdir}/BUILDROOT/%{name}-%{version}
 #Source0: dcache-srmclient.tar
 AutoReqProv: no
