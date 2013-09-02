@@ -64,7 +64,7 @@
         <bouncycastle.bcprov>bcprov-jdk16</bouncycastle.bcprov>
         <bouncycastle.version>1.43</bouncycastle.version>
         <datanucleus-core.version>3.2.6</datanucleus-core.version>
-        <datanucleus.plugin.version>3.2.0-m1</datanucleus.plugin.version>
+        <datanucleus.plugin.version>3.2.0-release</datanucleus.plugin.version>
     </properties>
 
     <scm>
@@ -908,7 +908,7 @@
                 </plugin>
                 <plugin>
                     <groupId>org.datanucleus</groupId>
-                    <artifactId>maven-datanucleus-plugin</artifactId>
+                    <artifactId>datanucleus-maven-plugin</artifactId>
                     <version>${datanucleus.plugin.version}</version>
                     <dependencies>
                         <dependency>

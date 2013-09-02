@@ -306,7 +306,7 @@
 
           <plugin>
               <groupId>org.datanucleus</groupId>
-              <artifactId>maven-datanucleus-plugin</artifactId>
+              <artifactId>datanucleus-maven-plugin</artifactId>
               <configuration>
                   <verbose>false</verbose>
               </configuration>
@@ -350,7 +350,7 @@
                             <pluginExecution>
                                 <pluginExecutionFilter>
                                     <groupId>org.datanucleus</groupId>
-                                    <artifactId>maven-datanucleus-plugin</artifactId>
+                                    <artifactId>datanucleus-maven-plugin</artifactId>
                                     <goals>
                                         <goal>enhance</goal>
                                     </goals>
