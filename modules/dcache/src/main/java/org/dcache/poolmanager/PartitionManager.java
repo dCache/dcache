@@ -13,6 +13,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import dmg.util.Args;
+import dmg.util.CommandException;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;
@@ -307,11 +308,15 @@ public class PartitionManager
         "    Creating a partition reusing an existing name overwrites that\n" +
         "    partition. This allows the type of the default partition to be\n" +
         "    redefined. Any parameter values on the partition are lost.";
-    public String ac_pm_create_$_1(Args args)
+    public String ac_pm_create_$_1(Args args) throws CommandException
     {
-        String type = args.getOption("type");
-        PartitionFactory factory =
-            getFactory((type == null) ? "wass" : type);
+        String type = args.getOption("type", "wass");
+        PartitionFactory factory;
+        try {
+            factory = getFactory(type);
+        } catch (NoSuchElementException e) {
+            throw new CommandException(1, "Unknown partition type \"" + type + "\"");
+        }
         createPartition(factory,args.argv(0));
         return "";
     }

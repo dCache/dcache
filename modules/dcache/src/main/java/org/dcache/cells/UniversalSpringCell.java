@@ -535,8 +535,8 @@ public class UniversalSpringCell
                 try {
                     command(new Args(line));
                 } catch (CommandException e) {
-                    throw new CommandException("Error at line " + lineCount
-                                               + ": " + e.getMessage());
+                    throw new CommandException("Error at " + setup + ":" +
+                            lineCount + ": " + e.getMessage());
                 }
             }
         } finally {
