@@ -132,9 +132,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             maxNumberOfRetries);
         logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         surl = URI.create(url);
-        updateMemoryCache();
-
     }
+
     /**
      * restore constructore, used for restoring the existing
      * file request from the database
@@ -458,7 +457,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     return;
                 }
             }
-        } catch (IllegalStateTransition | SRMException e) {
+        } catch (IllegalStateTransition | SQLException | SRMException e) {
             // FIXME some SRMException failures are temporary and others are
             // permanent.  Code currently doesn't distinguish between them and
             // always retries, even if problem isn't transitory.

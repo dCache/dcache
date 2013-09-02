@@ -157,8 +157,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             requests.add(request);
         }
         setFileRequests(requests);
-        updateMemoryCache();
-
     }
 
     public  PutRequest(

@@ -12,12 +12,10 @@ package org.dcache.srm.request.sql;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Set;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
 
@@ -132,60 +130,6 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
                 next_index );
     }
     private static int ADDITIONAL_FIELDS_NUM=7;
-
-    public Set<Long> getActiveRequestIds(String schedulerid)  throws SQLException {
-        String condition = " SCHEDULERID='"+schedulerid+
-                "' AND STATE !="+State.DONE.getStateId()+
-                " AND STATE !="+State.CANCELED.getStateId()+
-                " AND STATE !="+State.FAILED.getStateId();
-        return getJobIdsByCondition(condition);
-    }
-
-    public Set<Long> getActiveRequestIds(String schedulerid,
-            SRMUser user,
-            String description )  throws SQLException {
-        String condition = " SCHEDULERID='"+schedulerid+
-                "' AND STATE !="+State.DONE.getStateId()+
-                " AND STATE !="+State.CANCELED.getStateId()+
-                " AND STATE !="+State.FAILED.getStateId()+
-                " AND USERID = '"+user.getId()+'\'';
-        if(description != null) {
-            condition += " AND DESCRIPTION = '"+
-                    description+'\'';
-        }
-        return getJobIdsByCondition(condition);
-    }
-
-    @Override
-    public Set<Long> getLatestCompletedJobIds(int maxNum)  throws SQLException {
-        return getJobIdsByCondition(
-                " STATE ="+State.DONE.getStateId()+
-                " OR STATE ="+State.CANCELED.getStateId()+
-                " OR STATE = "+State.FAILED.getStateId()+
-                " ORDER BY ID"+
-                " LIMIT "+maxNum+" ");
-    }
-
-    @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum)  throws SQLException {
-        return getJobIdsByCondition("STATE ="+State.DONE.getStateId()+
-                " ORDERED BY ID"+
-                " LIMIT "+maxNum+" ");
-    }
-
-    @Override
-    public Set<Long> getLatestFailedJobIds(int maxNum)  throws SQLException {
-        return getJobIdsByCondition("STATE !="+State.FAILED.getStateId()+
-                " ORDERED BY ID"+
-                " LIMIT "+maxNum+" ");
-    }
-
-    @Override
-    public Set<Long> getLatestCanceledJobIds(int maxNum)  throws SQLException {
-        return getJobIdsByCondition("STATE != "+State.CANCELED.getStateId()+
-                " ORDERED BY ID"+
-                " LIMIT "+maxNum+" ");
-    }
 
     protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
 
