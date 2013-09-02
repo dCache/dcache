@@ -85,7 +85,7 @@
 
             <properties>
                 <build.id>1</build.id>
-                <local.version></local.version>
+                <local.version />
                 <build.number>${build.id}${local.version}</build.number>
                 <Timestamp>${maven.build.timestamp}</Timestamp>
                 <Release>${build.number}</Release>
@@ -107,7 +107,7 @@
                                     <name>Version</name>
                                     <value>${project.version}</value>
                                     <regex>-</regex>
-                                    <replacement></replacement>
+                                    <replacement />
                                 </configuration>
                             </execution>
                         </executions>

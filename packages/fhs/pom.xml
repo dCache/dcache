@@ -129,7 +129,7 @@
 
             <properties>
                 <build.id>1</build.id>
-                <local.version></local.version>
+                <local.version />
                 <build.number>${build.id}${local.version}</build.number>
 
                 <Timestamp>${maven.build.timestamp}</Timestamp>
@@ -154,7 +154,7 @@
                                     <name>rpm.version</name>
                                     <value>${project.version}</value>
                                     <regex>-</regex>
-                                    <replacement></replacement>
+                                    <replacement />
                                 </configuration>
                             </execution>
                         </executions>
@@ -226,7 +226,7 @@
 
             <properties>
                 <build.id>1</build.id>
-                <local.version></local.version>
+                <local.version />
                 <build.number>${build.id}${local.version}</build.number>
 
                 <Version>${deb.version}-${build.number}</Version>
