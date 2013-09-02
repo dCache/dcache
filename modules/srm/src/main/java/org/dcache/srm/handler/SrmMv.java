@@ -113,30 +113,29 @@ public class SrmMv {
 			return getFailedResponse(" target or destination are not defined");
 		}
 
-                // [SRM 2.2, 4.6.3]     SRM_INVALID_PATH: status of fromSURL is SRM_FILE_BUSY.
-                // [SRM 2.2, 4.6.2, c)] srmMv must fail on SURL that its status is SRM_FILE_BUSY,
-                //                      and SRM_FILE_BUSY must be returned.
-                // [SRM 2.2, 4.6.2, e)] When moving an SURL to already existing SURL,
-                //                      SRM_DUPLICATION_ERROR must be returned.
-                //
-                // The SRM spec is somewhat inconsistent on what the correct return code should be.
-                // Instead we use SRM_DUPLICATION_ERROR if the target SURL is busy (consistent with
-                // how this situation is handled in srmPrepareToPut) and SRM_FILE_BUSY if the source
-                // SURL is busy.
-                SRM srm = SRM.getSRM();
-                if (srm.isFileBusy(from_surl)) {
-                    response.getReturnStatus().setStatusCode(TStatusCode.SRM_FILE_BUSY);
-                    response.getReturnStatus().setExplanation("The source SURL is being used by another client.");
-                    return response;
-                }
-                if (srm.isFileBusy(to_surl)) {
-                    response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
-                    response.getReturnStatus().setExplanation("The target SURL is being used by another client.");
-                    return response;
-                }
-
                 try {
-                        storage.moveEntry(user, from_surl, to_surl);
+                    // [SRM 2.2, 4.6.3]     SRM_INVALID_PATH: status of fromSURL is SRM_FILE_BUSY.
+                    // [SRM 2.2, 4.6.2, c)] srmMv must fail on SURL that its status is SRM_FILE_BUSY,
+                    //                      and SRM_FILE_BUSY must be returned.
+                    // [SRM 2.2, 4.6.2, e)] When moving an SURL to already existing SURL,
+                    //                      SRM_DUPLICATION_ERROR must be returned.
+                    //
+                    // The SRM spec is somewhat inconsistent on what the correct return code should be.
+                    // Instead we use SRM_DUPLICATION_ERROR if the target SURL is busy (consistent with
+                    // how this situation is handled in srmPrepareToPut) and SRM_FILE_BUSY if the source
+                    // SURL is busy.
+                    SRM srm = SRM.getSRM();
+                    if (srm.isFileBusy(from_surl)) {
+                        response.getReturnStatus().setStatusCode(TStatusCode.SRM_FILE_BUSY);
+                        response.getReturnStatus().setExplanation("The source SURL is being used by another client.");
+                        return response;
+                    }
+                    if (srm.isFileBusy(to_surl)) {
+                        response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
+                        response.getReturnStatus().setExplanation("The target SURL is being used by another client.");
+                        return response;
+                    }
+                    storage.moveEntry(user, from_surl, to_surl);
                 }
 		catch (Exception e) {
 		    logger.warn(e.toString());

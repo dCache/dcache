@@ -136,7 +136,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
             requests.add(request);
         }
         setFileRequests(requests);
-        updateMemoryCache();
     }
 
     /**

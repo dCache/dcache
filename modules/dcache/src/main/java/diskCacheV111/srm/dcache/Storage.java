@@ -784,10 +784,10 @@ public final class Storage
     }
 
     public final static String fh_ls_completed= " Syntax: ls completed [-get] [-put]" +
-        " [-copy] [-l] [max_count]"+
+        " [-copy] [max_count]"+
             " #will list completed (done, failed or canceled) requests, " +
         "if max_count is not specified, it is set to 50";
-    public final static String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
+    public final static String hh_ls_completed= " [-get] [-put] [-copy] [max_count]";
     public String ac_ls_completed_$_0_1(Args args) throws Exception{
         boolean get=args.hasOption("get");
         boolean put=args.hasOption("put");

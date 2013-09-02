@@ -280,7 +280,7 @@ public class SRM {
         SchedulerFactory.initSchedulerFactory(config, name);
         DatabaseJobStorageFactory afactory = new DatabaseJobStorageFactory(configuration);
         JobStorageFactory.initJobStorageFactory(afactory);
-        afactory.loadExistingJobs();
+        afactory.init();
 
         host = InetAddress.getLocalHost();
 
@@ -323,7 +323,6 @@ public class SRM {
     }
 
     public void stop() {
-        Job.shutdown();
         SchedulerFactory.getSchedulerFactory().shutdown();
     }
 
@@ -1459,7 +1458,9 @@ public class SRM {
         return getScheduler(LsFileRequest.class);
     }
 
-    public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description) {
+    public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description)
+            throws SQLException
+    {
         Set<T> jobs = Job.getActiveJobs(type);
         Set<Long> ids = new HashSet<>();
         for(Job job: jobs) {
@@ -1477,12 +1478,12 @@ public class SRM {
         return ids;
     }
 
-    public boolean isFileBusy(URI surl)
+    public boolean isFileBusy(URI surl) throws SQLException
     {
         return hasActivePutRequests(surl);
     }
 
-    private boolean hasActivePutRequests(URI surl)
+    private boolean hasActivePutRequests(URI surl) throws SQLException
     {
         Set<PutFileRequest> requests = Job.getActiveJobs(PutFileRequest.class);
         for (PutFileRequest request: requests) {
@@ -1494,6 +1495,7 @@ public class SRM {
     }
 
     public <T extends FileRequest<?>> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
+            throws SQLException
     {
         return Iterables.filter(Job.getActiveJobs(type),
                 new Predicate<T>()
