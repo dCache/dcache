@@ -1663,7 +1663,7 @@ public class      CellShell
                                                 no, e.getMessage()), e);
         } catch (RuntimeException e) {
             throw new RuntimeException(String.format("%s: line %d: %s", source,
-                                                     no, e.getMessage()), e);
+                    no, e.toString()), e);
         } finally {
             _argumentVector = store;
         }

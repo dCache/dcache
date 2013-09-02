@@ -307,17 +307,11 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
             kill();
             throw e;
         } catch (ExecutionException e) {
-            Throwable t = e.getCause();
-
-            // Treat as exception as a bug (and print the stacktrace) iff RuntimeException
-            if(t instanceof RuntimeException) {
-                _logger.error("Failed to initialise cell: " + t.getMessage(), t);
-            }
             start();
             kill();
             throw e;
         } catch (RuntimeException e) {
-            _logger.error("Failed to initialise cell: " + e.getMessage(), e);
+            // A stacktrace from a RuntimeException is printed in Bootloader
             start();
             kill();
             throw e;
