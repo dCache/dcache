@@ -6,6 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+import org.apache.wicket.markup.head.OnLoadHeaderItem;
+import org.apache.wicket.markup.head.StringHeaderItem;
 
 import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.exceptions.CellsServiceException;
@@ -43,5 +47,24 @@ public class CellServices extends BasePage {
             _log.debug("getCellServicesAction failed {}", ex.getMessage());
             return null;
         }
+    }
+
+    @Override
+    public void renderHead(IHeaderResponse response) {
+        super.renderHead(response);
+
+        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header BEGIN -->\n"));
+        response.render(JavaScriptHeaderItem.forUrl("js/picnet.table.filter.full.js"));
+        response.render(JavaScriptHeaderItem.forUrl("js/jquery.tablesorter.min.js"));
+        response.render(OnLoadHeaderItem.forScript(
+                "                $('#sortable').tablesorter();\n"
+                + "                // Initialise Plugin\n"
+                + "                var options1 = {\n"
+                + "                    additionalFilterTriggers: [$('#quickfind')],\n"
+                + "                    clearFiltersControls: [$('#cleanfilters')],\n"
+                + "                };\n"
+                + "                $('#sortable').tableFilter(options1);\n"));
+
+        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header END -->\n"));
     }
 }

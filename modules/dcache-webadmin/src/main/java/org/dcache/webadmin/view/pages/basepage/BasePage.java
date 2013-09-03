@@ -9,6 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.MissingResourceException;
+import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+import org.apache.wicket.markup.head.StringHeaderItem;
 
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
@@ -83,5 +86,15 @@ public class BasePage extends WebPage {
         } else {
             webRequest.getContainerRequest().getSession().setMaxInactiveInterval(24 * 60 * 60);
         }
+    }
+
+    @Override
+    public void renderHead(IHeaderResponse response) {
+        super.renderHead(response);
+
+        response.render(new StringHeaderItem("<!-- wicket " + BasePage.class.getSimpleName() + " header BEGIN -->\n"));
+        response.render(JavaScriptHeaderItem.forReference(getApplication().getJavaScriptLibrarySettings()
+                .getJQueryReference()));
+        response.render(new StringHeaderItem("<!-- wicket " +  BasePage.class.getSimpleName() + " header END -->\n"));
     }
 }
