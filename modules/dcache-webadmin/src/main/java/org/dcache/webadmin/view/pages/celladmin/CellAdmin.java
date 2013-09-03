@@ -156,7 +156,9 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
 
         @Override
         public List<String> getObject() {
-            return new ArrayList<>(_domainMap.keySet());
+            List<String> domains = new ArrayList<>(_domainMap.keySet());
+            Collections.sort(domains);
+            return domains;
         }
     }
 
