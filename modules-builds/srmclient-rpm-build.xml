@@ -25,6 +25,9 @@
             </filterset>
         </copy>
 
+        <!-- work-around for old rpmbuild that require directory to exist -->
+        <mkdir dir="${server.rpm.rpmdir}"/>
+
         <exec executable="rpmbuild" failonerror="true">
             <arg value="--buildroot" />
             <arg file="${srmclient.rpm.buildroot}" />

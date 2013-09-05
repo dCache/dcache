@@ -27,6 +27,9 @@
         <copy file="${rpmTemplateDir}/dcache.bash-completion"
               tofile="${server.rpm.buildroot}/etc/bash_completion.d/dcache"/>
 
+        <!-- work-around for old rpmbuild that require directory to exist -->
+        <mkdir dir="${server.rpm.rpmdir}"/>
+
         <exec executable="rpmbuild" failonerror="true">
             <arg value="--buildroot" />
             <arg file="${server.rpm.buildroot}"/>
@@ -74,6 +77,9 @@
                 <filter token="Release" value="${build.number}" />
             </filterset>
         </copy>
+
+        <!-- work-around for old rpmbuild that require directory to exist -->
+        <mkdir dir="${server.rpm.rpmdir}"/>
 
         <exec executable="rpmbuild" failonerror="true">
             <arg value="--buildroot" />
