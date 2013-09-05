@@ -30,6 +30,7 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,7 +111,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.JdbcConnectionPool;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 
 /**
@@ -3537,8 +3537,12 @@ public final class Manager
     private boolean isInterceptedMessage(Object message)
     {
         return message instanceof PoolMgrSelectWritePoolMsg
-                || message instanceof DoorTransferFinishedMessage
-                || message instanceof PoolAcceptFileMessage;
+                || message instanceof DoorTransferFinishedMessage;
+    }
+
+    private boolean isPoolAcceptFileReply(Serializable message)
+    {
+        return message instanceof PoolAcceptFileMessage && ((PoolAcceptFileMessage) message).isReply();
     }
 
     private void processMessage(CellMessage cellMessage, Message spaceMessage) {
@@ -3662,7 +3666,7 @@ public final class Manager
         public void messageToForward(final CellMessage envelope)
         {
             final Serializable message = envelope.getMessageObject();
-            if (spaceManagerEnabled && isInterceptedMessage(message)) {
+            if (spaceManagerEnabled && (isInterceptedMessage(message) || isPoolAcceptFileReply(message))) {
                     ThreadManager.execute(new Runnable() {
                         @Override
                         public void run()
@@ -3688,18 +3692,9 @@ public final class Manager
                                 selectPool(envelope, (PoolMgrSelectWritePoolMsg) message, true);
                         }
                         else if(message instanceof PoolAcceptFileMessage ) {
-                                PoolAcceptFileMessage poolRequest = (PoolAcceptFileMessage)message;
-                                if(poolRequest.isReply()) {
-                                        PnfsId pnfsId = poolRequest.getPnfsId();
-                                        //mark file as being transfered
-                                        transferStarted(pnfsId,poolRequest.getReturnCode() == 0);
-                                }
-                                else {
-                                        // this message on its way to the pool
-                                        // we need to set the AccessLatency, RetentionPolicy and StorageGroup
-                                        transferToBeStarted(poolRequest);
-                                        envelope.getDestinationPath().insert(poolManager);
-                                }
+                                Preconditions.checkArgument(message.isReply());
+                                PoolAcceptFileMessage poolRequest = (PoolAcceptFileMessage) message;
+                                transferStarted(poolRequest.getPnfsId(),poolRequest.getReturnCode() == 0);
                         }
                         else if ( message instanceof DoorTransferFinishedMessage) {
                                 DoorTransferFinishedMessage finished = (DoorTransferFinishedMessage) message;
@@ -4125,51 +4120,6 @@ public final class Manager
                                        pnfsPath,
                                        pnfsId);
                 use.setFileId(fileId);
-        }
-
-        private void transferToBeStarted(PoolAcceptFileMessage poolRequest){
-                PnfsId pnfsId = poolRequest.getPnfsId();
-                logger.debug("transferToBeStarted({})", pnfsId);
-                try {
-                        File f  = getFile(pnfsId);
-                        Space s = getSpace(f.getSpaceId());
-                        FileAttributes fileAttributes = poolRequest.getFileAttributes();
-                        fileAttributes.setAccessLatency(s.getAccessLatency());
-                        fileAttributes.setRetentionPolicy(s.getRetentionPolicy());
-                        if (fileAttributes.getSize() == 0 && f.getSizeInBytes() > 1) {
-                                fileAttributes.setSize(f.getSizeInBytes());
-                        }
-
-                        //
-                        // send message to PnfsManager
-                        //
-                        logger.debug("transferToBeStarted(), set AL to {} " +
-                                "RP to {}, sending message to {}",
-                                s.getAccessLatency(), s.getRetentionPolicy(),
-                                pnfsManager);
-                        try {
-                                FileAttributes attributesToUpdate = new FileAttributes();
-                                attributesToUpdate.setAccessLatency(s.getAccessLatency());
-                                attributesToUpdate.setRetentionPolicy(s.getRetentionPolicy());
-                                PnfsSetFileAttributes msg = new PnfsSetFileAttributes(pnfsId, attributesToUpdate);
-                                msg.setReplyRequired(false);
-                                sendMessage(new CellMessage(new CellPath(pnfsManager),msg));
-                        }
-                        catch (Exception e) {
-                                logger.error("failed to send PnfsSetStorageInfoMessage " +
-                                        "message to pnfsmanager: {}",
-                                        e.getMessage());
-                        }
-                }
-                catch(SQLException sqle){
-                    if (Objects.equals(sqle.getSQLState(), "02000")) {
-                        logger.debug("failed to get space reservation: {}",
-                                sqle.getMessage());
-                    } else {
-                        logger.error("failed to get space reservation: {}",
-                                sqle.getMessage());
-                    }
-                }
         }
 
         private void transferStarted(PnfsId pnfsId,boolean success) {
@@ -4934,6 +4884,8 @@ public final class Manager
                         selectWritePool.setLinkGroup(linkGroupName);
                         StorageInfo storageInfo = selectWritePool.getStorageInfo();
                         storageInfo.setKey("SpaceToken",Long.toString(spaceId));
+                        fileAttributes.setAccessLatency(space.getAccessLatency());
+                        fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
                         if (fileAttributes.getSize() == 0 && file.getSizeInBytes() > 1) {
                                 fileAttributes.setSize(file.getSizeInBytes());
                         }
