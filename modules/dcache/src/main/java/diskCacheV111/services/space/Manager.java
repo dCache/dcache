@@ -75,6 +75,7 @@ import diskCacheV111.services.space.message.Use;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DBManager;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.Pgpass;
@@ -155,6 +156,7 @@ public final class Manager
         private Args _args;
         private long _poolManagerTimeout = 60;
         private CellStub _poolManagerStub;
+        private PnfsHandler pnfs;
 
         private String spaceManagerAuthorizationPolicyClass=
                 "diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy";
@@ -274,6 +276,10 @@ public final class Manager
                 _poolManagerStub.setCellEndpoint(this);
                 _poolManagerStub.setTimeout(_poolManagerTimeout);
                 _poolManagerStub.setTimeoutUnit(TimeUnit.SECONDS);
+
+                pnfs = new PnfsHandler(new CellPath(pnfsManager));
+                pnfs.setCellEndpoint(this);
+
                 dbinit();
                 (updateLinkGroups = new Thread(this,"UpdateLinkGroups")).start();
                 (expireSpaceReservations = new Thread(this,"ExpireThreadReservations")).start();
@@ -1382,8 +1388,6 @@ public final class Manager
         private void fixMissingSize() {
                 synchronized (fixMissingSizeLock) {
                         try {
-                                PnfsHandler pnfs=new PnfsHandler(new CellPath(pnfsManager));
-                                pnfs.setCellEndpoint(this);
                                 logger.info("fix missing size: Searching for " +
                                         "files...");
                                 Set<File> files=
@@ -2506,11 +2510,21 @@ public final class Manager
                                                                                  space.getId());
                                         for (File file : files) {
                                                 try {
+                                                        if (file.getPnfsId() != null) {
+                                                            try {
+                                                                pnfs.deletePnfsEntry(file.getPnfsId(), file.getPnfsPath());
+                                                            } catch (FileNotFoundCacheException ignored) {
+                                                            }
+                                                        }
                                                         removeFileFromSpace(file.getId());
                                                 }
                                                 catch (SQLException e) {
-                                                        logger.error("failed to remove file {}: {}",
+                                                        logger.error("Failed to remove file {}: {}",
                                                                 file, e.getMessage());
+                                                }
+                                                catch (CacheException e) {
+                                                        logger.error("Failed to delete file {}: {}",
+                                                                file.getPnfsId(), e.getMessage());
                                                 }
                                         }
                                 }
@@ -4466,11 +4480,20 @@ public final class Manager
                         if(f.getState() == FileState.RESERVED ||
                            f.getState() == FileState.TRANSFERRING) {
                                 try {
+                                        if (f.getPnfsId() != null) {
+                                            try {
+                                                pnfs.deletePnfsEntry(f.getPnfsId(), pnfsPath);
+                                            } catch (FileNotFoundCacheException ignored) {
+                                            }
+                                        }
                                         removeFileFromSpace(connection,f);
                                         connection_pool.returnConnection(connection);
                                         connection = null;
-                                }
-                                finally {
+                                } catch (CacheException e) {
+                                    throw new SpaceException("Failed to delete " + pnfsPath +
+                                            " while attempting to cancel its reservation in space " +
+                                            reservationId + ": " + e.getMessage(), e);
+                                } finally {
                                         if (connection!=null) {
                                                 logger.warn("failed to " +
                                                         "remove file {}",
