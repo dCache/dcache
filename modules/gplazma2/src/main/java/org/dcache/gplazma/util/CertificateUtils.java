@@ -30,7 +30,7 @@ import org.glite.voms.ac.ACValidator;
 import org.globus.gsi.bc.BouncyCastleUtil;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSException;
 import org.slf4j.MDC;
