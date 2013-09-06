@@ -142,9 +142,12 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     }
                 }
             } catch (NamingException e) {
-                _log.warn("Faild to get mapping: {}", e.toString());
+                _log.debug("Failed to get mapping: {}", e.toString());
+                throw new AuthenticationException("no mapping");
             }
         }
+
+        throw new AuthenticationException("no username");
     }
 
     @Override
@@ -172,7 +175,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             }
 
         } catch (NamingException e) {
-            _log.warn("Faild to get mapping: {}", e.toString());
+            _log.debug("Failed to get mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
@@ -207,7 +210,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             }
             return principals;
         } catch (NamingException e) {
-            _log.warn("Faild to get reverse mapping: {}", e.toString());
+            _log.debug("Faild to get reverse mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
@@ -228,10 +231,11 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     attrib.add(new ReadOnly(false));
                 }
             } catch (NamingException e) {
-                throw new AuthenticationException("no mapping: "
-                        + e.getMessage(), e);
+                throw new AuthenticationException("no mapping");
             }
         }
+
+        throw new AuthenticationException("no username");
     }
 
     private SearchControls getSimplSearchControls(String... attr) {
