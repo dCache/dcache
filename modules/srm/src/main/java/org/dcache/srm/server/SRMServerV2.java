@@ -310,12 +310,22 @@ public class SRMServerV2 implements ISRM  {
                         srmServerCounters.incrementFailed(requestClass);
                     }
                     return response;
-                } catch(Exception e) {
-                    log.error("handler invocation failed",e);
+                } catch(IllegalAccessException | IllegalArgumentException |
+                        InvocationTargetException e) {
+                    Throwable cause = e;
+                    String message = e.toString();
+
+                    if (e instanceof InvocationTargetException) {
+                        cause = e.getCause();
+                        message = "InvocationTargetException: " +
+                                cause.toString();
+                    }
+
+                    log.error("Bug detected; please report to " +
+                                "<support@dCache.org>: {}", message, cause);
                     srmServerCounters.incrementFailed(requestClass);
                     return getFailedResponse(capitalizedRequestName,
-                            SRM_FAILURE,
-                         "handler invocation failed"+ e.getMessage());
+                            SRM_FAILURE, "internal error");
                 }
             } catch(Exception e) {
                 log.error(" handleRequest: ",e);
