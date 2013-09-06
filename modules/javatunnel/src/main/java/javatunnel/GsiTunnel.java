@@ -52,6 +52,7 @@ class GsiTunnel extends GssTunnel  {
     private static final String service_key           = "/etc/grid-security/hostkey.pem";
     private static final String service_cert          = "/etc/grid-security/hostcert.pem";
     private static final String service_trusted_certs = "/etc/grid-security/certificates";
+    private final Args _arguments;
     private Subject _subject = new Subject();
 
     // Creates a new instance of GssTunnel
@@ -63,7 +64,7 @@ class GsiTunnel extends GssTunnel  {
     public GsiTunnel(String args, boolean init)
             throws GSSException, IOException {
 
-        Args arguments = new Args(args);
+        _arguments = new Args(args);
 
         if( init ) {
 
@@ -87,7 +88,7 @@ class GsiTunnel extends GssTunnel  {
             _e_context = (ExtendedGSSContext) manager.createContext(cred);
             _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
             _e_context.setBannedCiphers(
-                    Crypto.getBannedCipherSuitesFromConfigurationValue(arguments.getOpt(CIPHER_FLAGS)));
+                    Crypto.getBannedCipherSuitesFromConfigurationValue(_arguments.getOpt(CIPHER_FLAGS)));
             _context = _e_context;
             // do not use channel binding with GSIGSS
             super.useChannelBinding(false);
@@ -113,7 +114,7 @@ class GsiTunnel extends GssTunnel  {
     @Override
     public Convertable makeCopy() throws IOException {
         try {
-            return new GsiTunnel(null, true);
+            return new GsiTunnel(_arguments.toString(), true);
         } catch (GSSException e) {
             throw new IOException(e);
         }
