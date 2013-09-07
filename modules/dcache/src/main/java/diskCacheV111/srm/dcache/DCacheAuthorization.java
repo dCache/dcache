@@ -85,6 +85,8 @@ import javax.security.auth.Subject;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 import diskCacheV111.util.CacheException;
@@ -96,6 +98,9 @@ import org.dcache.auth.Origin.AuthType;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
+import org.dcache.util.CertificateFactories;
+
+import static java.util.Arrays.asList;
 
 /**
  *
@@ -106,12 +111,14 @@ public final class DCacheAuthorization implements SRMAuthorization
     private static final Logger LOGGER = LoggerFactory.getLogger(DCacheAuthorization.class);
     private final DcacheUserPersistenceManager persistenceManager;
     private final LoginStrategy loginStrategy;
+    private final CertificateFactory cf;
 
     public DCacheAuthorization(LoginStrategy loginStrategy,
             DcacheUserPersistenceManager persistenceManager)
     {
-       this.loginStrategy = loginStrategy;
-       this.persistenceManager = persistenceManager;
+        this.loginStrategy = loginStrategy;
+        this.persistenceManager = persistenceManager;
+        this.cf = CertificateFactories.newX509CertificateFactory();
     }
 
     /** Performs authorization checks. Throws
@@ -152,7 +159,7 @@ public final class DCacheAuthorization implements SRMAuthorization
                  */
                 subject.getPrincipals().add(new GlobusPrincipal(secureId));
             }
-            subject.getPublicCredentials().add(chain);
+            subject.getPublicCredentials().add(cf.generateCertPath(asList(chain)));
 
             try {
                 InetAddress remoteOrigin = InetAddress.getByName(remoteIP);
@@ -166,7 +173,7 @@ public final class DCacheAuthorization implements SRMAuthorization
             }
 
             return persistenceManager.persist(loginStrategy.login(subject));
-        } catch (GSSException | CacheException e) {
+        } catch (GSSException | CacheException | CertificateException e) {
             throw new SRMAuthorizationException(e.getMessage(), e);
         }
     }

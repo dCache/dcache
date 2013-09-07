@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
+import java.security.cert.CertPath;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -45,6 +46,7 @@ import org.dcache.gplazma.monitor.LoginResult.PhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SetDiff;
+import org.dcache.util.CertPaths;
 
 import static java.util.concurrent.TimeUnit.*;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
@@ -181,8 +183,8 @@ public class LoginResultPrinter
 
     private String print(Object credential)
     {
-        if(credential instanceof X509Certificate[]) {
-            return print((X509Certificate[]) credential);
+        if (CertPaths.isX509CertPath(credential)) {
+            return print(CertPaths.getX509Certificates((CertPath) credential));
         } else {
             return credential.toString();
         }
