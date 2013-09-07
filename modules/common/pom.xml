@@ -43,9 +43,8 @@
     </dependency>
 
     <dependency>
-	<groupId>org.bouncycastle</groupId>
-	<artifactId>${bouncycastle.bcprov}</artifactId>
-	<scope>runtime</scope>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>${bouncycastle.bcprov}</artifactId>
     </dependency>
   </dependencies>
 </project>
