@@ -49,6 +49,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
                         "No mover associated with given stateid");
             }
 
+            mover.attachSession(context.getSession());
             if( mover.getIoMode() != IoMode.WRITE ) {
                 throw new ChimeraNFSException(nfsstat.NFSERR_PERM, "an attempt to write without IO mode enabled");
             }

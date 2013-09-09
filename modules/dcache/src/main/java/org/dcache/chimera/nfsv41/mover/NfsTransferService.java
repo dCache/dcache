@@ -36,7 +36,6 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.OncRpcException;
@@ -99,28 +98,15 @@ public class NfsTransferService extends AbstractCellComponent
     public Cancellable execute(final NfsMover mover, final CompletionHandler<Void,Void> completionHandler) {
         try {
 
-            final stateid4 stateid = mover.getStateId();
-            final RepositoryChannel repositoryChannel = mover.open();
-            _nfsIO.add(mover);
+            final Cancellable cancellableMover = mover.enable(completionHandler);
 
             CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
-            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, stateid));
+            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, mover.getStateId()));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).
              */
-            return new Cancellable() {
-                @Override
-                public void cancel() {
-                    _nfsIO.remove(mover);
-                    try {
-                        repositoryChannel.close();
-                    } catch (IOException e) {
-                        _log.error("failed to close RAF", e);
-                    }
-                    completionHandler.completed(null, null);
-                }
-            };
+            return cancellableMover;
         } catch (DiskErrorCacheException e) {
             _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED,
                     e.getMessage(), e));
@@ -129,6 +115,10 @@ public class NfsTransferService extends AbstractCellComponent
             completionHandler.failed(e, null);
         }
         return null;
+    }
+
+    public NFSv4MoverHandler getNfsMoverHandler() {
+        return _nfsIO;
     }
 
     public void setEnableGss(boolean withGss) {
