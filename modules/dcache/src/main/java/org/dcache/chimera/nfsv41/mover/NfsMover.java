@@ -21,6 +21,7 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import dmg.cells.nucleus.CellPath;
 import java.util.Collections;
 import java.util.Set;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -44,4 +45,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         return Collections.emptySet();
     }
 
+    public stateid4 getStateId() {
+        return getProtocolInfo().stateId();
+    }
 }

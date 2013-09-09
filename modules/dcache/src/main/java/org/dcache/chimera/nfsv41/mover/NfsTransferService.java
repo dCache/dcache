@@ -84,14 +84,12 @@ public class NfsTransferService extends AbstractCellComponent
     }
 
     @Override
-    public Cancellable execute(NfsMover mover, final CompletionHandler<Void,Void> completionHandler) {
+    public Cancellable execute(final NfsMover mover, final CompletionHandler<Void,Void> completionHandler) {
         try {
-            NFS4ProtocolInfo nfs4ProtocolInfo = mover.getProtocolInfo();
 
-            final stateid4 stateid = nfs4ProtocolInfo.stateId();
+            final stateid4 stateid = mover.getStateId();
             final RepositoryChannel repositoryChannel = mover.open();
-            final MoverBridge moverBridge = new MoverBridge(mover, repositoryChannel);
-            _nfsIO.addHandler(stateid, moverBridge);
+            _nfsIO.add(mover);
 
             CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
             _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, stateid));
@@ -102,7 +100,7 @@ public class NfsTransferService extends AbstractCellComponent
             return new Cancellable() {
                 @Override
                 public void cancel() {
-                    _nfsIO.removeHandler(stateid);
+                    _nfsIO.remove(mover);
                     try {
                         repositoryChannel.close();
                     } catch (IOException e) {

@@ -172,7 +172,7 @@ public class NFSv4MoverHandler {
      */
     private final OncRpcSvc _rpcService;
 
-    private final Map<stateid4, MoverBridge> _activeIO = new HashMap<>();
+    private final Map<stateid4, NfsMover> _activeIO = new HashMap<>();
     private final NFSv4OperationFactory _operationFactory =
             new EDSNFSv4OperationFactory(_activeIO);
     private final NFSServerV41 _embededDS;
@@ -208,30 +208,30 @@ public class NFSv4MoverHandler {
     }
 
     /**
-     * Add specified mover into list of allowed transfers.
+     * Add mover into list of allowed transfers.
      *
-     * @param moverBridge
+     * @param mover
      */
-    public void addHandler(stateid4 stateid, MoverBridge moverBridge) {
-        _log.debug("added io handler: {} for stateid {}", moverBridge, stateid);
-        _activeIO.put(stateid, moverBridge );
+    public void add(NfsMover mover) {
+        _log.debug("registering new mover {}", mover);
+        _activeIO.put(mover.getStateId(), mover );
     }
 
     /**
-     * Removes specified mover into list of allowed transfers.
+     * Removes mover from the list of allowed transfers.
      *
-     * @param moverBridge
+     * @param mover
      */
-    public void removeHandler(stateid4 stateid) {
-        _log.debug("removing io handler for stateid {}", stateid);
-        _activeIO.remove(stateid);
+    public void remove(NfsMover mover) {
+        _log.debug("un-removing io handler for stateid {}", mover);
+        _activeIO.remove(mover.getStateId());
     }
 
     private static class EDSNFSv4OperationFactory implements NFSv4OperationFactory {
 
-        private final Map<stateid4, MoverBridge> _activeIO;
+        private final Map<stateid4, NfsMover> _activeIO;
 
-        EDSNFSv4OperationFactory(Map<stateid4, MoverBridge> activeIO) {
+        EDSNFSv4OperationFactory(Map<stateid4, NfsMover> activeIO) {
             _activeIO = activeIO;
         }
 
