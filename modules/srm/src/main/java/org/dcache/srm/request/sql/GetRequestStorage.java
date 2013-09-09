@@ -311,24 +311,22 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         " VALUES (?,?)";
 
     @Override
-    public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
-                                                             Job job) throws SQLException {
-        if(job == null || !(job instanceof GetRequest)) {
+    public PreparedStatement getBatchCreateStatement(Connection connection, Job job) throws SQLException {
+        if (job == null || !(job instanceof GetRequest)) {
             throw new IllegalArgumentException("Request is not GetRequest" );
         }
         GetRequest gr = (GetRequest)job;
         String[] protocols = gr.getProtocols();
-        if(protocols ==null) {
+        if (protocols == null) {
             return null;
         }
-        PreparedStatement[] statements  = new PreparedStatement[protocols.length];
-        for(int i=0; i<protocols.length ; ++i){
-            statements[i] = getPreparedStatement(connection,
-                    insertProtocols,
-                    protocols[i],
-                    gr.getId());
+        PreparedStatement statement = connection.prepareStatement(insertProtocols);
+        for (String protocol : protocols) {
+            statement.setString(1, protocol);
+            statement.setLong(2, gr.getId());
+            statement.addBatch();
         }
-        return statements;
+        return statement;
     }
 
     @Override
