@@ -44,6 +44,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                 throw new ChimeraNFSException(nfsstat.NFSERR_BAD_STATEID,
                         "No mover associated with given stateid");
             }
+            mover.attachSession(context.getSession());
 
             ByteBuffer bb = ByteBuffer.allocate(count);
             RepositoryChannel fc = mover.getMoverChannel();
