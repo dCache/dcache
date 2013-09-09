@@ -9,6 +9,10 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
@@ -22,6 +26,7 @@ import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
+import org.dcache.srm.scheduler.AsynchronousSaveJobStorage;
 import org.dcache.srm.scheduler.CanonicalizingJobStorage;
 import org.dcache.srm.scheduler.FinalStateOnlyJobStorageDecorator;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -46,6 +51,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                                // requests are cached before container requests are loaded
     private final Map<Class<? extends Job>, JobStorage<?>> unmodifiableJobStorageMap =
             Collections.unmodifiableMap(jobStorageMap);
+    private final ExecutorService executor;
 
     private <J extends Job> void add(Configuration.DatabaseParameters config,
                      Class<J> entityClass,
@@ -60,6 +66,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
         JobStorage<J> js;
         if (config.isDatabaseEnabled()) {
             js = storageClass.getConstructor(Configuration.DatabaseParameters.class).newInstance(config);
+            js = new AsynchronousSaveJobStorage<>(js, executor);
             if (config.getStoreCompletedRequestsOnly()) {
                 js = new FinalStateOnlyJobStorageDecorator<>(js);
             }
@@ -71,6 +78,10 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
 
     public DatabaseJobStorageFactory(Configuration config) throws SQLException
     {
+        executor = new ThreadPoolExecutor(
+                config.getJdbcExecutionThreadNum(), config.getJdbcExecutionThreadNum(),
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(config.getMaxQueuedJdbcTasksNum()));
         try {
             add(config.getDatabaseParametersForBringOnline(),
                 BringOnlineFileRequest.class,

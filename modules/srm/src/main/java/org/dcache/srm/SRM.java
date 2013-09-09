@@ -117,7 +117,6 @@ import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.request.sql.DatabaseJobStorageFactory;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
-import org.dcache.srm.request.sql.JdbcConnectionPool;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
@@ -232,26 +231,6 @@ public class SRM {
                     new RrdRequestExecutionTimeGauges<>(abstractStorageElementGauges, rrddir);
             rrdAstractStorageElementGauges.startRrdUpdates();
             rrdAstractStorageElementGauges.startRrdGraphPlots();
-
-
-        }
-
-        // these jdbc parameters need to be set before the
-        // first jdbc instance is created
-        // so we do it before everything else
-
-        if (configuration.getMaxQueuedJdbcTasksNum() != null) {
-            logger.debug("setMaxJdbcTasksNum to " +
-                    configuration.getMaxQueuedJdbcTasksNum());
-            JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
-                    configuration.getMaxQueuedJdbcTasksNum());
-        }
-
-        if (configuration.getJdbcExecutionThreadNum() != null) {
-            logger.debug("set JDBC ExecutionThreadNum to " +
-                    configuration.getJdbcExecutionThreadNum());
-            JdbcConnectionPool.setExecutionThreadNum(
-                    configuration.getJdbcExecutionThreadNum());
         }
 
         if (config.isGsissl()) {

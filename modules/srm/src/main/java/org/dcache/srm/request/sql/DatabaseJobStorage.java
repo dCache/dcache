@@ -64,12 +64,6 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * TestDatabaseJobStorage.java
- *
- * Created on April 26, 2004, 3:27 PM
- */
-
 package org.dcache.srm.request.sql;
 
 import com.google.common.base.Predicate;
@@ -92,8 +86,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.commons.util.SqlHelper;
@@ -145,13 +137,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     protected static final int intType_int= Types.INTEGER;
     protected static final int dateTimeType_int= Types.TIMESTAMP;
     protected static final int booleanType_int= Types.INTEGER;
-
-    enum UpdateState
-    {
-        QUEUED, PROCESSING
-    }
-
-    private final ConcurrentMap<Long,UpdateState> states = new ConcurrentHashMap<>();
 
     public DatabaseJobStorage(Configuration.DatabaseParameters configuration)
             throws SQLException
@@ -440,137 +425,108 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         return job;
     }
 
+    private int updateJob(Connection connection, Job job) throws SQLException
+    {
+        PreparedStatement updateStatement = null;
+        try {
+            job.rlock();
+            try {
+                updateStatement = getUpdateStatement(connection, job);
+            } finally {
+                job.runlock();
+            }
+            return updateStatement.executeUpdate();
+        } finally {
+            SqlHelper.tryToClose(updateStatement);
+        }
+    }
+
+    private void createJob(Connection connection, Job job) throws SQLException
+    {
+        PreparedStatement createStatement = null;
+        PreparedStatement batchCreateStatement = null;
+        try {
+            job.rlock();
+            try {
+                createStatement = getCreateStatement(connection, job);
+                batchCreateStatement = getBatchCreateStatement(connection, job);
+            } finally {
+                job.runlock();
+            }
+            createStatement.executeUpdate();
+            if (batchCreateStatement != null) {
+                batchCreateStatement.executeBatch();
+            }
+        } finally {
+            SqlHelper.tryToClose(createStatement);
+            SqlHelper.tryToClose(batchCreateStatement);
+        }
+    }
+
+    private void saveHistory(Connection connection, Job job,
+                             List<Job.JobHistory> history) throws SQLException
+    {
+        PreparedStatement stmt =
+                connection.prepareStatement("INSERT INTO " + getHistoryTableName() + " VALUES (?,?,?,?,?)");
+        try {
+            for (Job.JobHistory element : history) {
+                stmt.setLong(1, element.getId());
+                stmt.setLong(2, job.getId());
+                stmt.setInt(3, element.getState().getStateId());
+                stmt.setLong(4, element.getTransitionTime());
+                stmt.setString(5, element.getDescription());
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        } finally {
+            SqlHelper.tryToClose(stmt);
+        }
+    }
+
+    private void markHistoryAsSaved(List<Job.JobHistory> history)
+    {
+        for (Job.JobHistory element : history) {
+            element.setSaved();
+        }
+    }
+
+    private List<Job.JobHistory> getJobHistoriesToSave(Job job)
+    {
+        return logHistory
+                ? Lists.newArrayList(filter(job.getJobHistory(), NOT_SAVED))
+                : Collections.<Job.JobHistory>emptyList();
+    }
+
+
     @Override
     public void saveJob(final Job job,boolean saveifmonitoringisdesabled) throws SQLException
     {
         if (!saveifmonitoringisdesabled && !logHistory) {
             return;
         }
-        if (states.put(job.getId(), UpdateState.QUEUED) == null) {
-            JdbcConnectionPool.JdbcTask task =
-                    new JdbcConnectionPool.JdbcTask() {
-                        @Override
-                        public String toString() {
-                            return  "save job " + job.getId() + (logHistory ? " and its history" : "");
-                        }
 
-                        private int updateJob(Connection connection) throws SQLException
-                        {
-                            PreparedStatement updateStatement = null;
-                            try {
-                                job.rlock();
-                                try {
-                                    updateStatement = getUpdateStatement(connection, job);
-                                } finally {
-                                    job.runlock();
-                                }
-                                return updateStatement.executeUpdate();
-                            } finally {
-                                SqlHelper.tryToClose(updateStatement);
-                            }
-                        }
+        List<Job.JobHistory> history = getJobHistoriesToSave(job);
 
-                        private void createJob(Connection connection) throws SQLException
-                        {
-                            PreparedStatement createStatement = null;
-                            PreparedStatement batchCreateStatement = null;
-                            try {
-                                job.rlock();
-                                try {
-                                    createStatement = getCreateStatement(connection, job);
-                                    batchCreateStatement = getBatchCreateStatement(connection, job);
-                                } finally {
-                                    job.runlock();
-                                }
-                                createStatement.executeUpdate();
-                                if (batchCreateStatement != null) {
-                                    batchCreateStatement.executeBatch();
-                                }
-                            } finally {
-                                SqlHelper.tryToClose(createStatement);
-                                SqlHelper.tryToClose(batchCreateStatement);
-                            }
-                        }
-
-                        private void saveHistory(Connection connection,
-                                                 List<Job.JobHistory> history) throws SQLException
-                        {
-                            PreparedStatement stmt =
-                                    connection.prepareStatement("INSERT INTO " + getHistoryTableName() + " VALUES (?,?,?,?,?)");
-                            try {
-                                for (Job.JobHistory element : history) {
-                                    stmt.setLong(1, element.getId());
-                                    stmt.setLong(2, job.getId());
-                                    stmt.setInt(3, element.getState().getStateId());
-                                    stmt.setLong(4, element.getTransitionTime());
-                                    stmt.setString(5, element.getDescription());
-                                    stmt.addBatch();
-                                }
-                                stmt.executeBatch();
-                            } finally {
-                                SqlHelper.tryToClose(stmt);
-                            }
-                        }
-
-                        private void markHistoryAsSaved(List<Job.JobHistory> history)
-                        {
-                            for (Job.JobHistory element : history) {
-                                element.setSaved();
-                            }
-                        }
-
-                        private List<Job.JobHistory> getJobHistoriesToSave()
-                        {
-                            return logHistory
-                                    ? Lists.newArrayList(filter(job.getJobHistory(), NOT_SAVED))
-                                    : Collections.<Job.JobHistory>emptyList();
-                        }
-
-                        @Override
-                        public void execute(Connection connection) throws SQLException
-                        {
-                            states.put(job.getId(), UpdateState.PROCESSING);
-                            try {
-                                List<Job.JobHistory> history = getJobHistoriesToSave();
-                                connection.setAutoCommit(false);
-                                boolean success = false;
-                                try {
-                                    int rowCount = updateJob(connection);
-                                    if (rowCount == 0) {
-                                        createJob(connection);
-                                    }
-                                    if (!history.isEmpty()) {
-                                        saveHistory(connection, history);
-                                    }
-                                    connection.commit();
-                                    success = true;
-                                } finally {
-                                    if (!success) {
-                                        connection.rollback();
-                                    }
-                                }
-                                markHistoryAsSaved(history);
-                            } finally {
-                                if (!states.remove(job.getId(), UpdateState.PROCESSING)) {
-                                    pool.execute(this);
-                                }
-                            }
-                        }
-                    };
-
-            boolean success = false;
-            try {
-                pool.execute(task);
-                success = true;
-            } catch (SQLException sqle) {
-                // ignore the saving errors, this will affect monitoring and
-                // future status updates, but is not critical
-            } finally {
-                if (!success) {
-                    states.remove(job.getId());
-                }
+        boolean success = false;
+        Connection connection = pool.getConnection();
+        try {
+            connection.setAutoCommit(false);
+            int rowCount = updateJob(connection, job);
+            if (rowCount == 0) {
+                createJob(connection, job);
+            }
+            if (!history.isEmpty()) {
+                saveHistory(connection, job, history);
+            }
+            success = true;
+        } finally {
+            if (!success) {
+                pool.returnFailedConnection(connection);
+            } else {
+                pool.returnConnection(connection);
             }
         }
+        markHistoryAsSaved(history);
     }
 
     protected PreparedStatement getBatchCreateStatement(Connection connection, Job job)
