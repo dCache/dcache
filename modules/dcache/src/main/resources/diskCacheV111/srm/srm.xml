@@ -407,8 +407,8 @@
                      '${srm.limits.request.put.remove-expired-period.unit}')}" />
     <property name="databaseParametersForPut.keepRequestHistoryPeriod"
               value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
-                     ${srm.limits.request.put.remove-expired-period},
-                     '${srm.limits.request.put.remove-expired-period.unit}')}" />
+                     ${srm.limits.request.put.keep-history-period},
+                     '${srm.limits.request.put.keep-history-period.unit}')}" />
     <property name="databaseParametersForPut.requestHistoryDatabaseEnabled"
               value="${srm.request.put.enable.history-database}"/>
     <property name="databaseParametersForPut.cleanPendingRequestsOnRestart"
