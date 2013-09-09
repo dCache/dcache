@@ -100,9 +100,13 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
-	<groupId>org.bouncycastle</groupId>
-	<artifactId>${bouncycastle.bcprov}</artifactId>
-	<scope>runtime</scope>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>${bouncycastle.bcprov}</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.jolbox</groupId>
+      <artifactId>bonecp</artifactId>
     </dependency>
   </dependencies>
 
