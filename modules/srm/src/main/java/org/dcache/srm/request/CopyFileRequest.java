@@ -150,7 +150,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
 	/** Creates new FileRequest */
 
-	public CopyFileRequest(Long requestId,
+	public CopyFileRequest(long requestId,
 			       Long  requestCredentalId,
 			       String from_surl,
 			       String to_surl,
@@ -173,7 +173,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	 */
 
 	public CopyFileRequest(
-		Long id,
+		long id,
 		Long nextJobId,
 		JobStorage<CopyFileRequest> jobStorage,
 		long creationTime,
@@ -186,7 +186,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		int maxNumberOfRetries,
 		long lastStateTransitionTime,
 		JobHistory[] jobHistoryArray,
-		Long requestId,
+		long requestId,
 		Long requestCredentalId,
 		String statusCodeString,
 		String FROMURL,
@@ -251,7 +251,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	@Override
         public RequestFileStatus getRequestFileStatus() {
 		RequestFileStatus rfs = new RequestFileStatus();
-		rfs.fileId = getId().intValue();
+		rfs.fileId = (int) getId();
 		rfs.SURL = getFrom_surl().toString();
 		rfs.size = 0;
 		rfs.TURL = getTo_surl().toString();
@@ -1262,7 +1262,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     }
 
 	private static class PutCallbacks implements PrepareToPutCallbacks {
-		Long fileRequestJobId;
+		final long fileRequestJobId;
 		public boolean completed;
 		public boolean success;
 		public String fileId;
@@ -1303,10 +1303,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 			this.notifyAll();
 		}
 
-		public PutCallbacks(Long fileRequestJobId) {
-			if(fileRequestJobId == null) {
-				throw new NullPointerException("fileRequestJobId should be non-null");
-			}
+		public PutCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
@@ -1492,11 +1489,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	}
 
 	private static class TheCopyCallbacks implements CopyCallbacks {
-		private Long fileRequestJobId;
+		private final long fileRequestJobId;
 		private boolean completed;
 		private boolean success;
 
-		public TheCopyCallbacks ( Long fileRequestJobId ) {
+		public TheCopyCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 		public synchronized boolean waitResult(long timeout) {
@@ -1702,14 +1699,14 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	}
 
 	public static class TheReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
-		Long fileRequestJobId;
+		private final long fileRequestJobId;
 		public CopyFileRequest getCopyFileRequest()
-                throws SQLException, SRMInvalidRequestException
-        {
+                        throws SQLException, SRMInvalidRequestException
+                {
 		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public TheReserveSpaceCallbacks(Long fileRequestJobId) {
+		public TheReserveSpaceCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
@@ -1795,9 +1792,9 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
 
 	private  static class TheReleaseSpaceCallbacks implements  SrmReleaseSpaceCallbacks {
-		Long fileRequestJobId;
+		private final long fileRequestJobId;
 
-		public TheReleaseSpaceCallbacks(Long fileRequestJobId) {
+		public TheReleaseSpaceCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
@@ -1899,14 +1896,14 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	}
 
 	public static class CopyUseSpaceCallbacks implements SrmUseSpaceCallbacks {
-		Long fileRequestJobId;
+		private final long fileRequestJobId;
 
 		public CopyFileRequest getCopyFileRequest()
                 throws SQLException, SRMInvalidRequestException{
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public CopyUseSpaceCallbacks(Long fileRequestJobId) {
+		public CopyUseSpaceCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
@@ -2059,14 +2056,14 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	}
 
 	public static class CopyCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
-		Long fileRequestJobId;
+		private final long fileRequestJobId;
 
 		public CopyFileRequest getCopyFileRequest()
                 throws SQLException, SRMInvalidRequestException {
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public CopyCancelUseOfSpaceCallbacks(Long fileRequestJobId) {
+		public CopyCancelUseOfSpaceCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 

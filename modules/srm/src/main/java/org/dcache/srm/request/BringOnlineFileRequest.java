@@ -116,7 +116,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     private transient FileMetaData fileMetaData;
 
     /** Creates new FileRequest */
-    public BringOnlineFileRequest(Long requestId,
+    public BringOnlineFileRequest(long requestId,
                                   Long requestCredentalId,
                                   URI surl,
                                   long lifetime,
@@ -136,7 +136,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
      */
 
     public BringOnlineFileRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -148,7 +148,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long requestId,
+    long requestId,
     Long  requestCredentalId,
     String statusCodeString,
     String SURL,
@@ -244,7 +244,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             rfs = new RequestFileStatus();
         }
 
-        rfs.fileId = getId().intValue();
+        rfs.fileId = (int) getId();
         rfs.SURL = getSurlString();
 
 
@@ -592,9 +592,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
 
     private  static class ThePinCallbacks implements PinCallbacks {
 
-        Long fileRequestJobId;
+        final long fileRequestJobId;
 
-        public ThePinCallbacks(Long fileRequestJobId) {
+        public ThePinCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 

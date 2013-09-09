@@ -163,7 +163,7 @@ public class Main extends CommandInterpreter implements  Runnable {
         public static final String hh_cancel= " <id> ";
         public String ac_cancel_$_1(Args args) {
             try {
-                Long id = new Long(args.argv(0));
+                long id = Long.parseLong(args.argv(0));
                 StringBuilder sb = new StringBuilder();
                 srm.cancelRequest(sb, id);
                 return sb.toString();
@@ -185,7 +185,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 StringBuilder sb = new StringBuilder();
                 if(args.argc() == 1) {
                     try {
-                        Long reqId = new Long(args.argv(0));
+                        long reqId = Long.parseLong(args.argv(0));
                         srm.listRequest(sb, reqId, longformat);
                     }
                     catch( NumberFormatException nfe) {

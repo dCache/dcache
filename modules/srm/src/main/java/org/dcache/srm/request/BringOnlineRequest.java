@@ -151,7 +151,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
      * restore constructor
      */
     public  BringOnlineRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -362,7 +362,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
 
 
     private String getTRequestToken() {
-        return getId().toString();
+        return String.valueOf(getId());
     }
 
    /* private ArrayOfTGetRequestFileStatus getArrayOfTGetRequestFileStatus()throws SRMException,java.sql.SQLException {

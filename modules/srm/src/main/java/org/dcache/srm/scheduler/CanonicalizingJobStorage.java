@@ -66,7 +66,7 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public J getJob(Long jobId) throws SQLException
+    public J getJob(long jobId) throws SQLException
     {
         Job job = map.get(jobId);
         if (job == null) {
@@ -79,7 +79,7 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public J getJob(Long jobId, Connection connection) throws SQLException
+    public J getJob(long jobId, Connection connection) throws SQLException
     {
         Job job = map.get(jobId);
         if (job == null) {

@@ -147,7 +147,7 @@ public final class ReserveSpaceRequest extends Request {
 
 
     public ReserveSpaceRequest(
-            Long id,
+            long id,
             Long nextJobId,
             long creationTime,
             long lifetime,
@@ -321,8 +321,8 @@ public final class ReserveSpaceRequest extends Request {
     }
 
     private class SrmReserveSpaceCallbacks implements org.dcache.srm.SrmReserveSpaceCallbacks {
-        Long requestJobId;
-        public SrmReserveSpaceCallbacks(Long requestJobId){
+        private final long requestJobId;
+        public SrmReserveSpaceCallbacks(long requestJobId){
             this.requestJobId = requestJobId;
         }
 

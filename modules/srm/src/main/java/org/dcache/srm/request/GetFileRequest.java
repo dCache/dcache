@@ -119,7 +119,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     private transient FileMetaData fileMetaData;
 
     /** Creates new FileRequest */
-    public GetFileRequest(Long requestId,
+    public GetFileRequest(long requestId,
     Long  requestCredentalId,
     String url,
     long lifetime,
@@ -140,7 +140,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
      */
 
     public GetFileRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -152,7 +152,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long requestId,
+    long requestId,
     Long  requestCredentalId,
     String statusCodeString,
     String SURL,
@@ -300,7 +300,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             rfs = new RequestFileStatus();
         }
 
-        rfs.fileId = getId().intValue();
+        rfs.fileId = (int) getId();
         rfs.SURL = getSurlString();
 
 
@@ -644,9 +644,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     private  static class ThePinCallbacks implements PinCallbacks {
 
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
-        public ThePinCallbacks(Long fileRequestJobId) {
+        public ThePinCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -803,9 +803,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     private  static class TheUnpinCallbacks implements UnpinCallbacks {
 
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
-        public TheUnpinCallbacks(Long fileRequestJobId) {
+        public TheUnpinCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 

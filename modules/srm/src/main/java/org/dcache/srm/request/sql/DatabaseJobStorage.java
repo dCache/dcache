@@ -341,7 +341,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
     protected abstract J getJob(
             Connection _con,
-            Long ID,
+            long ID,
             Long NEXTJOBID ,
             long CREATIONTIME,
             long LIFETIME,
@@ -361,13 +361,8 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public J getJob(Long jobId) throws SQLException {
-
-        if(jobId == null) {
-
-            throw new NullPointerException ("jobId is null");
-        }
-
+    public J getJob(long jobId) throws SQLException
+    {
         Connection _con =null;
 
         try {
@@ -393,10 +388,8 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public J getJob(Long jobId,Connection _con) throws SQLException {
-        if(jobId == null) {
-            throw new NullPointerException ("jobId is null");
-        }
+    public J getJob(long jobId,Connection _con) throws SQLException
+    {
         logger.debug("executing statement: SELECT * FROM {} WHERE ID=?({})",
                      getTableName(), jobId);
         PreparedStatement statement =null;
@@ -419,7 +412,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
     private J getJob(Connection _con, ResultSet set) throws SQLException
     {
-        Long ID = set.getLong(1);
+        long ID = set.getLong(1);
         Long NEXTJOBID = set.getLong(2);
         long CREATIONTIME = set.getLong(3);
         long LIFETIME = set.getLong(4);
@@ -606,7 +599,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         });
     }
 
-    protected Job.JobHistory[] getJobHistory(Long jobId,Connection _con) throws SQLException{
+    protected Job.JobHistory[] getJobHistory(long jobId,Connection _con) throws SQLException{
         List<Job.JobHistory> l = new ArrayList<>();
         String select = "SELECT * FROM " +getHistoryTableName()+
                 " WHERE JOBID="+jobId;
@@ -699,7 +692,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
             logger.debug("executing statement: {}", sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
-                Long ID = set.getLong(1);
+                long ID = set.getLong(1);
                 jobIds.add(ID);
             }
 

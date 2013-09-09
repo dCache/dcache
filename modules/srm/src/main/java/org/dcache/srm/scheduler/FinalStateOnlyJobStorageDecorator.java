@@ -25,12 +25,12 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
     }
 
     @Override
-    public J getJob(Long jobId) throws SQLException {
+    public J getJob(long jobId) throws SQLException {
         return jobStorage.getJob(jobId);
     }
 
     @Override
-    public J getJob(Long jobId, Connection connection) throws SQLException {
+    public J getJob(long jobId, Connection connection) throws SQLException {
         return jobStorage.getJob(jobId, connection);
     }
 

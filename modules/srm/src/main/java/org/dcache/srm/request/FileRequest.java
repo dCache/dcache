@@ -114,7 +114,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     private final Class<R> containerRequestType = (Class<R>) new TypeToken<R>(getClass()) {}.getRawType();
 
     //request which contains this fileRequest (which is different from request number)
-    protected final Long requestId;
+    protected final long requestId;
     protected Long credentialId;
 
     //pointer to underlying storage
@@ -134,7 +134,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     private TStatusCode statusCode;
 
    /** Creates new FileRequest */
-    protected FileRequest(Long requestId,
+    protected FileRequest(long requestId,
                           Long requestCredentalId,
                           long lifetime,
                           int maxNumberOfRetries)
@@ -151,7 +151,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
 
     protected FileRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,long lifetime,
     int stateId,String errorMessage,
@@ -161,7 +161,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long requestId,
+    long requestId,
     Long  requestCredentalId,
     String statusCodeString) {
         super(id,
@@ -224,7 +224,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return (int) (getId() ^ getId() >> 32);
     }
 
     public void setStatus(String status) throws SRMException, SQLException {
@@ -289,7 +289,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
      * Getter for property requestId.
      * @return Value of property requestId.
      */
-    public Long getRequestId() {
+    public long getRequestId() {
         return requestId;
     }
 

@@ -76,7 +76,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public  LsRequest(
-                Long id,
+                long id,
                 Long nextJobId,
                 long creationTime,
                 long lifetime,
@@ -250,7 +250,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         private String getTRequestToken() {
-                return getId().toString();
+                return String.valueOf(getId());
         }
 
         public TMetaDataPathDetail[] getPathDetailArray()

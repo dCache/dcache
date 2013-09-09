@@ -23,7 +23,6 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -121,9 +120,9 @@ public class SrmAbortRequest {
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");
         }
-        Long requestId;
+        long requestId;
         try {
-            requestId = new Long( requestToken);
+            requestId = Long.parseLong(requestToken);
         } catch (NumberFormatException nfe){
             return getFailedResponse(" requestToken \""+
                     requestToken+"\"is not valid",

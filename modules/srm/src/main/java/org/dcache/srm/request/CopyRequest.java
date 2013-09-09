@@ -73,6 +73,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
@@ -123,8 +124,6 @@ import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
-
-import static com.google.common.collect.Iterables.getFirst;
 
 
 /**
@@ -234,7 +233,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
      * restore constructor
      */
     public  CopyRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -655,8 +654,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         String[] dests = new String[length];
         long[] sizes = new long[length];
         for(int i =0 ; i<length;++i) {
-            Long fileRequestId = getFirst(remoteSurlToFileReqIds
-                    .get(remoteSurlsUniqueArray[i]), null);
+            long fileRequestId = Iterables.get(remoteSurlToFileReqIds.get(remoteSurlsUniqueArray[i]), 0);
             CopyFileRequest cfr = getFileRequest(fileRequestId);
             sizes[i] = getStorage().getFileMetaData(getUser(), cfr.getFrom_surl(), false).size;
             logger.debug("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
@@ -729,7 +727,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
             }
             Long[] cfr_ids = fileRequestSet
                     .toArray(new Long[fileRequestSet.size()]);
-            for (Long cfr_id : cfr_ids) {
+            for (long cfr_id : cfr_ids) {
 
                 CopyFileRequest cfr = getFileRequest(cfr_id);
                 if (getQosPlugin() != null && cfr.getQOSTicket() != null) {
@@ -781,7 +779,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
             }
             Long[] cfr_ids = fileRequestSet
                     .toArray(new Long[fileRequestSet.size()]);
-            for (Long cfr_id : cfr_ids) {
+            for (long cfr_id : cfr_ids) {
 
                 CopyFileRequest cfr = getFileRequest(cfr_id);
 
@@ -815,7 +813,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
                 Collection<Long> fileRequestSet = remoteSurlToFileReqIds.get(surl);
                 Long[] cfr_ids = fileRequestSet
                         .toArray(new Long[fileRequestSet.size()]);
-                for (Long cfr_id : cfr_ids) {
+                for (long cfr_id : cfr_ids) {
                     CopyFileRequest cfr = getFileRequest(cfr_id);
                     try {
                         String error;
@@ -1069,7 +1067,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
 
 
     private String getTRequestToken() {
-        return getId().toString();
+        return String.valueOf(getId());
     }
 
     public final TCopyRequestFileStatus[]  getArrayOfTCopyRequestFileStatuses(

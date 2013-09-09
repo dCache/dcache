@@ -118,7 +118,7 @@ public class ModifiableQueue  {
 
     public  Job peek()  throws SQLException,SRMInvalidRequestException {
 
-        Long headId;
+        long headId;
         synchronized(queue){
                 if(queue.isEmpty()) {
 
@@ -191,7 +191,7 @@ public class ModifiableQueue  {
 
     public void put(Job job) throws InterruptedException {
         checkArgument(type.isInstance(job));
-        Long id = job.getId();
+        long id = job.getId();
         while (true) {
             synchronized (queue) {
                 if (queue.size() < capacity) {
@@ -214,7 +214,7 @@ public class ModifiableQueue  {
         checkArgument(type.isInstance(job));
         long waitTime = msecs;
         long start = (msecs <= 0)? 0: System.currentTimeMillis();
-        Long id = job.getId();
+        long id = job.getId();
         while (true) {
             synchronized (queue) {
                 if (queue.size() < capacity) {
@@ -249,7 +249,7 @@ public class ModifiableQueue  {
         if(job == null ) {
             return null;
         }
-        Long id = job.getId();
+        long id = job.getId();
         synchronized(queue) {
             boolean found = queue.contains(id);
             while(queue.contains(id)){
@@ -297,7 +297,7 @@ public class ModifiableQueue  {
         // i++;
         int index =0;
         int size = queueCopy.size();
-        for (Long currentJobId:queueCopy) {
+        for (long currentJobId:queueCopy) {
             Job currentJob = Job.getJob(currentJobId, type);
             int currentValue = calc.calculateValue(size,index,currentJob);
             if(currentValue > greatestValue) {
@@ -325,7 +325,7 @@ public class ModifiableQueue  {
                     return;
             }
             int index =0;
-            for (Long nextId:queue){
+            for (long nextId:queue){
                 sb.append("queue element # ").append(index).append(" : ")
                         .append(nextId).append('\n');
                 index++;

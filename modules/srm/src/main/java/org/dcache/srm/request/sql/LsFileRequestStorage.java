@@ -31,7 +31,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
 
         @Override
         protected LsFileRequest getFileRequest(Connection connection,
-                                             Long ID,
+                                             long ID,
                                              Long NEXTJOBID,
                                              long CREATIONTIME,
                                              long LIFETIME,
@@ -42,7 +42,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                              int NUMOFRETR,
                                              int MAXNUMOFRETR,
                                              long LASTSTATETRANSITIONTIME,
-                                             Long REQUESTID,
+                                             long REQUESTID,
                                              Long CREDENTIALID,
                                              String STATUSCODE,
                                              ResultSet set,

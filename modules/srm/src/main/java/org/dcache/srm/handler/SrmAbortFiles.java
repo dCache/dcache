@@ -139,9 +139,9 @@ public class SrmAbortFiles {
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");
         }
-        Long requestId;
+        long requestId;
         try {
-            requestId = new Long( requestToken);
+            requestId = Long.parseLong(requestToken);
         } catch (NumberFormatException nfe){
             return getFailedResponse(" requestToken \""+
                     requestToken+"\"is not valid",

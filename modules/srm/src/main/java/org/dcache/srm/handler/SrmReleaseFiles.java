@@ -153,17 +153,6 @@ public class SrmReleaseFiles {
                SQLException, IllegalStateTransition
     {
         String requestToken = srmReleaseFilesRequest.getRequestToken();
-        Long requestId = null;
-        if( requestToken != null ) {
-            try {
-                requestId = Long.valueOf(requestToken);
-            }
-            catch (NumberFormatException nfe){
-                return getFailedResponse(" requestToken \""+
-                                         requestToken+"\"is not valid",
-                                         TStatusCode.SRM_INVALID_REQUEST);
-            }
-        }
         URI[] surls;
         if(  srmReleaseFilesRequest.getArrayOfSURLs() == null ){
             if(requestToken == null) {
@@ -181,6 +170,15 @@ public class SrmReleaseFiles {
         }
         else {
             surls = toUris(srmReleaseFilesRequest.getArrayOfSURLs().getUrlArray());
+        }
+
+        long requestId;
+        try {
+            requestId = Long.parseLong(requestToken);
+        } catch (NumberFormatException nfe){
+            return getFailedResponse(" requestToken \""+
+                    requestToken+"\"is not valid",
+                    TStatusCode.SRM_INVALID_REQUEST);
         }
 
         ContainerRequest<?> request = Job.getJob(requestId, ContainerRequest.class);

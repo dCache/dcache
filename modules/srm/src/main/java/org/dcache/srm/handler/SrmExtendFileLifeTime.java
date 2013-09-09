@@ -114,7 +114,7 @@ public class SrmExtendFileLifeTime {
     Integer newFileLifetime ;
     Integer newPinLifetime ;
     String token ;
-    Long requestId;
+    long requestId;
     Job job;
     /**
      * implementation of srm expend file life time
@@ -168,7 +168,7 @@ public class SrmExtendFileLifeTime {
     public SrmExtendFileLifeTimeResponse srmExtendTURLorPinLifeTime()
             throws SRMInvalidRequestException {
         try {
-            requestId = new Long( token);
+            requestId = Long.parseLong(token);
         } catch (NumberFormatException nfe){
             return getFailedResponse(" requestToken \""+
                     token+"\"is not valid",

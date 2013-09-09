@@ -124,7 +124,7 @@ public abstract class Request extends Job {
      */
 
     protected Request(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -243,7 +243,7 @@ public abstract class Request extends Job {
      * request id
      */
     public int getRequestNum() {
-        return (int) (getId().longValue());
+        return (int) getId();
     }
 
 

@@ -192,7 +192,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     @Override
     protected ReserveSpaceRequest getRequest(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,

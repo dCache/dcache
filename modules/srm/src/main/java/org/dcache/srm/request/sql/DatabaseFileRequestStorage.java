@@ -57,7 +57,7 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
 
     protected abstract F getFileRequest(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,
@@ -68,7 +68,7 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
     int NUMOFRETR,
     int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
-    Long REQUESTID,
+    long REQUESTID,
     Long CREDENTIALID,
     String STATUSCODE,
     ResultSet set,
@@ -78,7 +78,7 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
     protected F
     getJob(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,
@@ -91,7 +91,7 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
     long LASTSTATETRANSITIONTIME,
     ResultSet set,
     int next_index) throws SQLException {
-        Long REQUESTID = set.getLong(next_index++);
+        long REQUESTID = set.getLong(next_index++);
         Long CREDENTIALID = set.getLong(next_index++);
         String STATUSCODE= set.getString(next_index++);
         return getFileRequest(

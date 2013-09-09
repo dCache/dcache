@@ -149,7 +149,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
 
         @Override
         protected LsRequest getContainerRequest(Connection connection,
-                                                       Long ID,
+                                                       long ID,
                                                        Long NEXTJOBID,
                                                        long CREATIONTIME,
                                                        long LIFETIME,

@@ -22,12 +22,12 @@ public class NoopJobStorage<J extends Job> implements JobStorage<J> {
     }
 
     @Override
-    public J getJob(Long jobId) throws SQLException {
+    public J getJob(long jobId) throws SQLException {
         return null;
     }
 
     @Override
-    public J getJob(Long jobId, Connection connection) throws SQLException {
+    public J getJob(long jobId, Connection connection) throws SQLException {
         return null;
     }
 

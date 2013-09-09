@@ -65,7 +65,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 }
         };
 
-        public LsFileRequest(Long requestId,
+        public LsFileRequest(long requestId,
                              Long  requestCredentalId,
                              org.apache.axis.types.URI url,
                              long lifetime,
@@ -79,7 +79,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         }
 
         public LsFileRequest(
-                Long id,
+                long id,
                 Long nextJobId,
                 long creationTime,
                 long lifetime,
@@ -91,7 +91,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 int maxNumberOfRetries,
                 long lastStateTransitionTime,
                 JobHistory[] jobHistoryArray,
-                Long requestId,
+                long requestId,
                 Long  requestCredentalId,
                 String statusCodeString,
                 String SURL)

@@ -75,7 +75,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public J getJob(Long jobId) throws SQLException
+    public J getJob(long jobId) throws SQLException
     {
         Job jobFromCache = sharedMemoryCache.getJob(jobId);
         if (jobFromCache == null) {
@@ -88,7 +88,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public J getJob(Long jobId, Connection connection) throws SQLException
+    public J getJob(long jobId, Connection connection) throws SQLException
     {
         Job jobFromCache = sharedMemoryCache.getJob(jobId);
         if (jobFromCache == null) {

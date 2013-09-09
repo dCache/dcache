@@ -94,7 +94,7 @@ public class SharedMemoryCache {
         }
     }
 
-    public Job getJob(Long jobId) {
+    public Job getJob(long jobId) {
         _log.debug("getJob ( "+jobId + " ) ");
        sharedMemoryReadLock.lock();
        try {

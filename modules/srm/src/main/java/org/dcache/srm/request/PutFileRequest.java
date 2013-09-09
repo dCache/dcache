@@ -130,7 +130,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     private boolean spaceMarkedAsBeingUsed;
 
     /** Creates new FileRequest */
-    public PutFileRequest(Long requestId,
+    public PutFileRequest(long requestId,
             Long requestCredentalId,
             String url,
             long size,
@@ -158,7 +158,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
 
     public PutFileRequest(
-            Long id,
+            long id,
             Long nextJobId,
             long creationTime,
             long lifetime,
@@ -170,7 +170,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             int maxNumberOfRetries,
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
-            Long requestId,
+            long requestId,
             Long requestCredentalId,
             String statusCodeString,
             String SURL,
@@ -308,7 +308,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     @Override
     public RequestFileStatus getRequestFileStatus() {
         RequestFileStatus rfs = new RequestFileStatus();
-        rfs.fileId = getId().intValue();
+        rfs.fileId = (int) getId();
 
         rfs.SURL = getSurlString();
         rfs.size = getSize();
@@ -801,9 +801,9 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     private static class PutCallbacks implements PrepareToPutCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
-        public PutCallbacks(Long fileRequestJobId) {
+        public PutCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -960,7 +960,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     public static class PutReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
                 throws SQLException,
@@ -969,7 +969,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
 
-        public PutReserveSpaceCallbacks(Long fileRequestJobId) {
+        public PutReserveSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1051,7 +1051,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     public static class PutReleaseSpaceCallbacks implements SrmReleaseSpaceCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
                 throws SQLException,
@@ -1060,7 +1060,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
 
-        public PutReleaseSpaceCallbacks(Long fileRequestJobId) {
+        public PutReleaseSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1098,7 +1098,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     public static class PutUseSpaceCallbacks implements SrmUseSpaceCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
                 throws SQLException,
@@ -1107,7 +1107,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
 
-        public PutUseSpaceCallbacks(Long fileRequestJobId) {
+        public PutUseSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1257,7 +1257,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     public static class PutCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
                 throws SQLException, SRMInvalidRequestException {
@@ -1265,7 +1265,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
 
-        public PutCancelUseOfSpaceCallbacks(Long fileRequestJobId) {
+        public PutCancelUseOfSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1304,9 +1304,9 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
     private  static class TheReleaseSpaceCallbacks implements ReleaseSpaceCallbacks {
 
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
-        public TheReleaseSpaceCallbacks(Long fileRequestJobId) {
+        public TheReleaseSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 

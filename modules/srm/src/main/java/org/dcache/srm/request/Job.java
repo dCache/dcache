@@ -83,7 +83,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -122,7 +121,7 @@ public abstract class Job  {
     //this is used to build the queue of jobs.
     protected Long nextJobId;
 
-    protected final Long id;
+    protected final long id;
 
     private volatile State state = State.PENDING;
     protected StringBuilder errorMessage=new StringBuilder();
@@ -158,7 +157,7 @@ public abstract class Job  {
     // will never be called
     // we can not call it from the constructor, since this may lead to recursive job restoration
     // leading to the exhaust of the pool of database connections
-    protected Job(Long id, Long nextJobId, long creationTime,
+    protected Job(long id, Long nextJobId, long creationTime,
     long lifetime,int stateId,String errorMessage,
     String schedulerId,
     long schedulerTimestamp,
@@ -167,9 +166,6 @@ public abstract class Job  {
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray
     ) {
-        if(id == null) {
-            throw new NullPointerException(" job id is null");
-        }
         this.id = id;
         this.nextJobId = nextJobId;
         this.creationTime = creationTime;
@@ -258,7 +254,7 @@ public abstract class Job  {
      * @throws SRMInvalidRequestException if the job cannot be found or if
      * the job has the wrong type.
      */
-    public static final <T extends Job> T getJob(Long id, Class<T> type)
+    public static final <T extends Job> T getJob(long id, Class<T> type)
             throws SRMInvalidRequestException
     {
         return getJob(id, type, null);
@@ -272,7 +268,7 @@ public abstract class Job  {
      * @return a object representing this job.
      * @throws SRMInvalidRequestException if the job cannot be found
      */
-    public static <T extends Job> T getJob(Long jobId, Class<T> type, Connection _con)
+    public static <T extends Job> T getJob(long jobId, Class<T> type, Connection _con)
             throws SRMInvalidRequestException
     {
         for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry: JobStorageFactory.getJobStorageFactory().getJobStorages().entrySet()) {
@@ -665,9 +661,8 @@ public abstract class Job  {
      * @return Value of property id.
      *
      */
-    public Long getId() {
-        // never let the reference to actual id to escape; REVISIT: why not?
-        return new Long(id.longValue());
+    public long getId() {
+        return id;
     }
     /** Getter for property nextJobId.
      * @return Value of property nextJobId.
@@ -796,7 +791,7 @@ public abstract class Job  {
      * which returns longs limited to int range
      * @return next Long id
      */
-    private Long nextId() {
+    private long nextId() {
         return getGenerator().getNextId();
     }
 

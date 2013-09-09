@@ -160,7 +160,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     public  PutRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -392,7 +392,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     private String getTRequestToken() {
-        return getId().toString();
+        return String.valueOf(getId());
     }
 
     private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(URI[] surls) throws SRMException,SQLException {

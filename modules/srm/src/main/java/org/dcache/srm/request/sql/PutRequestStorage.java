@@ -229,7 +229,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
     @Override
     protected PutRequest getContainerRequest(
             Connection _con,
-            Long ID,
+            long ID,
             Long NEXTJOBID,
             long CREATIONTIME,
             long LIFETIME,

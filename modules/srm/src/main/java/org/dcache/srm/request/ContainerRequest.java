@@ -166,7 +166,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
 
 
     protected ContainerRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -224,12 +224,9 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
 
     }
 
-    public final R getFileRequest(Long fileRequestId){
-        if(fileRequestId == null) {
-            return null;
-        }
+    public final R getFileRequest(long fileRequestId){
         for (R fileRequest: fileRequests) {
-            if(fileRequest.getId().equals(fileRequestId)) {
+            if (fileRequest.getId() == fileRequestId) {
                 return fileRequest;
             }
         }
@@ -647,7 +644,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         TRequestSummary summary = new TRequestSummary();
         summary.setStatus(getTReturnStatus());
         summary.setRequestType(getRequestType());
-        summary.setRequestToken(getId().toString());
+        summary.setRequestToken(String.valueOf(getId()));
         int total_num = getNumOfFileRequest();
         summary.setTotalNumFilesInRequest(total_num);
         int num_of_failed=0;
@@ -721,7 +718,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return (int) (getId() ^ getId() >> 32);
     }
 
     @Override

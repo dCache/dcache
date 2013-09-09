@@ -231,7 +231,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
     @Override
     protected GetRequest getContainerRequest(
             Connection _con,
-            Long ID,
+            long ID,
             Long NEXTJOBID,
             long CREATIONTIME,
             long LIFETIME,

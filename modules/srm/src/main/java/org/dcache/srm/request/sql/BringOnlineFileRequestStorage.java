@@ -53,7 +53,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
 
     @Override
     protected BringOnlineFileRequest getFileRequest(Connection _con,
-        Long ID,
+        long ID,
         Long NEXTJOBID,
         long CREATIONTIME,
         long LIFETIME,
@@ -64,7 +64,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
         int NUMOFRETR,
         int MAXNUMOFRETR,
         long LASTSTATETRANSITIONTIME,
-        Long REQUESTID,
+        long REQUESTID,
         Long CREDENTIALID,
         String STATUSCODE,
         ResultSet set,

@@ -142,7 +142,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
      * restore constructor
      */
     public  GetRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -354,7 +354,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
 
 
     private String getTRequestToken() {
-        return getId().toString();
+        return String.valueOf(getId());
     }
 
    /* private ArrayOfTGetRequestFileStatus getArrayOfTGetRequestFileStatus()throws SRMException,java.sql.SQLException {

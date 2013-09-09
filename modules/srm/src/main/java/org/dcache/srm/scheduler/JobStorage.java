@@ -85,8 +85,8 @@ import org.dcache.srm.request.Job;
  */
 public interface JobStorage<J extends Job> {
     void init() throws SQLException;
-    J getJob(Long jobId) throws SQLException;
-    J getJob(Long jobId, Connection connection) throws SQLException;
+    J getJob(long jobId) throws SQLException;
+    J getJob(long jobId, Connection connection) throws SQLException;
     Set<J> getJobs(String scheduler) throws SQLException;
     Set<J> getJobs(String scheduler,State state) throws SQLException;
     /**

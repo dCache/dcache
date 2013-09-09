@@ -166,7 +166,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
     @Override
     protected PutFileRequest getFileRequest(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,
@@ -177,7 +177,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
     int NUMOFRETR,
     int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
-    Long REQUESTID,
+    long REQUESTID,
     Long CREDENTIALID,
     String STATUSCODE,
     ResultSet set,

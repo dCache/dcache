@@ -58,7 +58,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
 
     protected abstract C getContainerRequest(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,
@@ -84,7 +84,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
     protected C
     getRequest(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,

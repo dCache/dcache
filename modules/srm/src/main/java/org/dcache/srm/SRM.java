@@ -1231,7 +1231,7 @@ public class SRM {
     private <T extends Job> void listRequests(StringBuilder sb,
             Set<Long> jobIds,
             Class<T> type) throws SQLException {
-        for (Long requestId : jobIds) {
+        for (long requestId : jobIds) {
             try {
                 T request = Job.getJob(requestId, type);
                 sb.append(request).append('\n');
@@ -1263,7 +1263,7 @@ public class SRM {
         return load;
     }
 
-    public void listRequest(StringBuilder sb, Long requestId, boolean longformat) throws SQLException,
+    public void listRequest(StringBuilder sb, long requestId, boolean longformat) throws SQLException,
     SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null) {
@@ -1274,7 +1274,7 @@ public class SRM {
         }
     }
 
-    public void cancelRequest(StringBuilder sb, Long requestId) throws SQLException,
+    public void cancelRequest(StringBuilder sb, long requestId) throws SQLException,
     SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null || !(job instanceof ContainerRequest)) {
@@ -1338,8 +1338,8 @@ public class SRM {
         Set<Long> jobsToKill = new HashSet<>();
         Pattern p = Pattern.compile(pattern);
         Set<Long> activeRequestIds = getActiveJobIds(type, null);
-        for (Long requestId : activeRequestIds) {
-            Matcher m = p.matcher(requestId.toString());
+        for (long requestId : activeRequestIds) {
+            Matcher m = p.matcher(String.valueOf(requestId));
             if (m.matches()) {
                 logger.debug("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
                 jobsToKill.add(requestId);
@@ -1350,7 +1350,7 @@ public class SRM {
                     .append(" in scheduler ").append(scheduler).append("\n");
             return;
         }
-        for (Long requestId : jobsToKill) {
+        for (long requestId : jobsToKill) {
             try {
                 final ContainerRequest<?> job = Job.getJob(requestId, ContainerRequest.class);
                 sb.append("request #").append(requestId)

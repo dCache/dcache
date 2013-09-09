@@ -174,7 +174,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
 
     @Override
     protected CopyRequest getContainerRequest(Connection _con,
-            Long ID,
+            long ID,
             Long NEXTJOBID,
             long CREATIONTIME,
             long LIFETIME,

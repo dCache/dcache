@@ -59,7 +59,7 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
 
     protected abstract R getRequest(
             Connection _con,
-            Long ID,
+            long ID,
             Long NEXTJOBID,
             long CREATIONTIME,
             long LIFETIME,
@@ -84,7 +84,7 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
     protected final R
     getJob(
             Connection _con,
-            Long ID,
+            long ID,
             Long NEXTJOBID,
             long CREATIONTIME,
             long LIFETIME,
