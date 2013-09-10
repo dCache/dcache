@@ -95,7 +95,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 Long  requestCredentalId,
                 String statusCodeString,
                 String SURL)
-                throws SQLException {
+        {
                 super(id,
                       nextJobId,
                       creationTime,

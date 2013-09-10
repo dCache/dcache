@@ -89,7 +89,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
 
@@ -202,7 +201,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		String REMOTEFILEID,
 		String spaceReservationId,
 		String transferId
-		)  throws SQLException {
+		) {
 		super(id,
 		      nextJobId,
 		      creationTime,
@@ -1308,7 +1307,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 
 		public CopyFileRequest getCopyFileRequest()
-                throws SQLException, SRMInvalidRequestException{
+                throws SRMInvalidRequestException{
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
@@ -1569,7 +1568,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 	}
 
-	public  TCopyRequestFileStatus getTCopyRequestFileStatus() throws SQLException {
+	public  TCopyRequestFileStatus getTCopyRequestFileStatus() throws SRMInvalidRequestException {
 		TCopyRequestFileStatus copyRequestFileStatus = new TCopyRequestFileStatus();
 		copyRequestFileStatus.setFileSize(new UnsignedLong(size));
 		copyRequestFileStatus.setEstimatedWaitTime((int)(getRemainingLifetime()/1000));
@@ -1578,16 +1577,16 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		org.apache.axis.types.URI from_surl;
 		try { to_surl= new org.apache.axis.types.URI(getTo_surl().toASCIIString());
 		}
-		catch (Exception e) {
+		catch (org.apache.axis.types.URI.MalformedURIException e) {
 			logger.error(e.toString());
-			throw new SQLException("wrong surl format");
+			throw new SRMInvalidRequestException("wrong surl format");
 		}
 		try {
 			from_surl=new org.apache.axis.types.URI(getFrom_surl().toASCIIString());
 		}
-		catch (Exception e) {
+		catch (org.apache.axis.types.URI.MalformedURIException e) {
 			logger.error(e.toString());
-			throw new SQLException("wrong surl format");
+			throw new SRMInvalidRequestException("wrong surl format");
 		}
 		copyRequestFileStatus.setSourceSURL(from_surl);
 		copyRequestFileStatus.setTargetSURL(to_surl);
@@ -1639,7 +1638,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
 
 	public TSURLReturnStatus getTSURLReturnStatus(URI surl)
-                throws SQLException
+                throws SRMInvalidRequestException
         {
 		if(surl == null) {
 			surl = getTo_surl();
@@ -1648,9 +1647,9 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		try {
 			tsurl=new org.apache.axis.types.URI(surl.toASCIIString());
 		}
-		catch (Exception e) {
+		catch (org.apache.axis.types.URI.MalformedURIException e) {
 			logger.error(e.toString());
-			throw new SQLException("wrong surl format");
+			throw new SRMInvalidRequestException("wrong surl format");
 		}
 		TReturnStatus returnStatus =  getReturnStatus();
 		if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
@@ -1701,7 +1700,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	public static class TheReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
 		private final long fileRequestJobId;
 		public CopyFileRequest getCopyFileRequest()
-                        throws SQLException, SRMInvalidRequestException
+                        throws SRMInvalidRequestException
                 {
 		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
@@ -1799,7 +1798,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 
 		public CopyFileRequest getCopyFileRequest()
-                throws SQLException, SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
 		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
@@ -1899,7 +1898,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		private final long fileRequestJobId;
 
 		public CopyFileRequest getCopyFileRequest()
-                throws SQLException, SRMInvalidRequestException{
+                throws SRMInvalidRequestException{
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
@@ -2059,7 +2058,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		private final long fileRequestJobId;
 
 		public CopyFileRequest getCopyFileRequest()
-                throws SQLException, SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 

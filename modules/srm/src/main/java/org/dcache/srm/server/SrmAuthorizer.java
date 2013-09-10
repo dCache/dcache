@@ -87,7 +87,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.Collection;
 
 import org.dcache.auth.util.GSSUtils;
@@ -228,7 +227,7 @@ public class SrmAuthorizer
             rc.saveCredential();
             log.debug("About to return RequestCredential = {}", rc);
             return rc;
-        } catch(GSSException | SQLException e) {
+        } catch(GSSException e) {
             throw new RuntimeException("Problem getting request credential", e);
         }
    }

@@ -6,6 +6,7 @@
 
 package org.dcache.srm.request.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -163,10 +164,11 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
     }
 
     /** Creates a new instance of GetRequestStorage */
-     public CopyRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
-        super(configuration
-        );
-    }
+     public CopyRequestStorage(Configuration.DatabaseParameters configuration)
+             throws SQLException, IOException
+     {
+         super(configuration);
+     }
 
     @Override
     public void dbInit1() throws SQLException {

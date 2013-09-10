@@ -75,7 +75,6 @@ package org.dcache.srm.scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -467,7 +466,7 @@ public final class Scheduler implements Runnable  {
 
 	// this is supposed to be the only place that removes the jobs from
 	private void updatePriorityThreadQueue()
-                throws SQLException, SRMInvalidRequestException,
+                throws SRMInvalidRequestException,
                        InterruptedException
         {
 		while(true) {
@@ -552,7 +551,7 @@ public final class Scheduler implements Runnable  {
 
 	// this is supposed to be the only place that removes the jobs from
 	private void updateThreadQueue()
-                throws SQLException, SRMInvalidRequestException,
+                throws SRMInvalidRequestException,
                        InterruptedException
         {
 
@@ -653,7 +652,7 @@ public final class Scheduler implements Runnable  {
     }
 
     private void updateReadyQueue()
-            throws SQLException, SRMInvalidRequestException{
+            throws SRMInvalidRequestException{
         while(true) {
 
             if(getTotalReady() >= maxReadyJobs) {
@@ -763,8 +762,6 @@ public final class Scheduler implements Runnable  {
                         }
                         notified = false;
                     }
-                } catch( SQLException e) {
-                    logger.error("Sheduler(id={}) detected a database error: {}", getId(), e.toString());
                 } catch (SRMInvalidRequestException e) {
                     logger.error("Sheduler(id={}) detected an SRM error: {}", getId(), e.toString());
                 } catch (RuntimeException e) {
@@ -1355,15 +1352,15 @@ public final class Scheduler implements Runnable  {
         }
     }
 
-    public void printThreadQueue(StringBuilder sb) throws SQLException {
+    public void printThreadQueue(StringBuilder sb) {
         sb.append("ThreadQueue :\n");
         threadQueue.printQueue(sb);
     }
-    public void printPriorityThreadQueue(StringBuilder sb)  throws SQLException {
+    public void printPriorityThreadQueue(StringBuilder sb) {
         sb.append("PriorityThreadQueue :\n");
         priorityThreadQueue.printQueue(sb);
     }
-    public void printReadyQueue(StringBuilder sb)  throws SQLException {
+    public void printReadyQueue(StringBuilder sb) {
         sb.append("ReadyQueue :\n");
         readyQueue.printQueue(sb);
     }

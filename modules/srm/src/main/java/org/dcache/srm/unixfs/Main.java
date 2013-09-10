@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.sql.SQLException;
 
 import dmg.util.Args;
 import dmg.util.CommandInterpreter;
@@ -140,13 +139,9 @@ public class Main extends CommandInterpreter implements  Runnable {
             sb.append(" storage info ");
             sb.append('\n');
             sb.append(config.toString()).append('\n');
-            try {
-                srm.printGetSchedulerInfo(sb);
-                srm.printPutSchedulerInfo(sb);
-                srm.printCopySchedulerInfo(sb);
-            } catch (SQLException sqle) {
-                sqle.printStackTrace(printWriter);
-            }
+            srm.printGetSchedulerInfo(sb);
+            srm.printPutSchedulerInfo(sb);
+            srm.printCopySchedulerInfo(sb);
             printWriter.println( sb.toString()) ;
         }
 

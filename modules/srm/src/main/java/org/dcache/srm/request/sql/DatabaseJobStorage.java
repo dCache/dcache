@@ -73,6 +73,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -139,8 +140,8 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     protected static final int booleanType_int= Types.INTEGER;
 
     public DatabaseJobStorage(Configuration.DatabaseParameters configuration)
-            throws SQLException
-            {
+            throws IOException, SQLException
+    {
         this.configuration = configuration;
 
         this.jdbcUrl = configuration.getJdbcUrl();
@@ -779,7 +780,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     }
 
     protected void createTable(String tableName, String createStatement) throws SQLException {
-        createTable(tableName, createStatement,false,false);
+        createTable(tableName, createStatement, false, false);
     }
 
     protected void createTable(String tableName, String createStatement,boolean verify,boolean clean) throws SQLException {

@@ -154,7 +154,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     String SURL,
     String fileId,
     String pinId
-    ) throws SQLException {
+    ) {
         super(id,
         nextJobId,
         creationTime,
@@ -275,8 +275,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         return rfs;
     }
 
-    public TBringOnlineRequestFileStatus  getTGetRequestFileStatus()
-    throws SQLException, SRMInvalidRequestException{
+    public TBringOnlineRequestFileStatus getTGetRequestFileStatus()
+            throws SRMInvalidRequestException
+    {
         TBringOnlineRequestFileStatus fileStatus = new TBringOnlineRequestFileStatus();
         if(fileMetaData != null) {
             fileStatus.setFileSize(new UnsignedLong(fileMetaData.size));
@@ -284,9 +285,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
 
         try {
              fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
-        } catch (Exception e) {
+        } catch (org.apache.axis.types.URI.MalformedURIException e) {
             logger.error(e.toString());
-            throw new SQLException("wrong surl format");
+            throw new SRMInvalidRequestException("wrong surl format");
         }
 
         if(this.isPinned()) {
@@ -300,14 +301,14 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws SQLException{
+    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException {
         TReturnStatus returnStatus = getReturnStatus();
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
         try {
             surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
-        } catch (Exception e) {
+        } catch (org.apache.axis.types.URI.MalformedURIException e) {
             logger.error(e.toString());
-            throw new SQLException("wrong surl format");
+            throw new SRMInvalidRequestException("wrong surl format");
         }
         surlReturnStatus.setStatus(returnStatus);
         return surlReturnStatus;
@@ -746,7 +747,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
 
         public BringOnlineFileRequest getBringOnlineFileRequest()
-                throws SQLException, SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
             if(fileRequestJobId != null) {
                 return Job.getJob(fileRequestJobId, BringOnlineFileRequest.class);
             }

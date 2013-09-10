@@ -84,7 +84,6 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -255,7 +254,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     String statusCodeString,
     TFileStorageType storageType,
     TRetentionPolicy targetRetentionPolicy,
-    TAccessLatency targetAccessLatency)  throws SQLException {
+    TAccessLatency targetAccessLatency) {
         super( id,
         nextJobId,
         creationTime,
@@ -305,7 +304,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
      }
 
 
-    public void proccessRequest() throws SQLException, IOException,
+    public void proccessRequest() throws IOException,
             SRMException, InterruptedException, IllegalStateTransition,
             FatalJobFailure
     {
@@ -453,7 +452,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     }
 
     private void getTURLs() throws SRMException,
-    IOException,InterruptedException,IllegalStateTransition ,SQLException,
+    IOException,InterruptedException,IllegalStateTransition,
     FatalJobFailure {
         logger.debug("getTURLS()");
         if(isFrom_url_is_srm() && ! isFrom_url_is_local()) {
@@ -717,7 +716,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
          getGetter_putter().run();
     }
 
-    public void turlArrived(String SURL, String TURL,String remoteRequestId,String remoteFileId,Long size)  throws SQLException {
+    public void turlArrived(String SURL, String TURL,String remoteRequestId,String remoteFileId,Long size) {
 
         synchronized(remoteSurlToFileReqIds) {
             Collection<Long> fileRequestSet = remoteSurlToFileReqIds.get(SURL);
@@ -769,7 +768,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         }
     }
 
-    public void turlRetrievalFailed(String SURL, String reason,String remoteRequestId,String remoteFileId)  throws SQLException {
+    public void turlRetrievalFailed(String SURL, String reason,String remoteRequestId,String remoteFileId) {
 
         synchronized(remoteSurlToFileReqIds) {
             Collection<Long> fileRequestSet = remoteSurlToFileReqIds.get(SURL);
@@ -805,7 +804,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
 
     }
 
-    public void turlsRetrievalFailed(Object reason)  throws SQLException {
+    public void turlsRetrievalFailed(Object reason) {
         synchronized(remoteSurlToFileReqIds) {
             String SURLs[] = remoteSurlToFileReqIds.keySet()
                     .toArray(new String[remoteSurlToFileReqIds.size()]);
@@ -879,7 +878,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
 
 
     public final CopyFileRequest getFileRequestBySurls(String fromurl,String tourl)
-    throws SQLException, SRMException{
+    throws SRMException{
         if(fromurl == null || tourl == null) {
            throw new SRMException("surl is null");
         }
@@ -932,7 +931,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
             else {
                 setState(State.ASYNCWAIT, "waiting for files to complete");
             }
-        } catch(SRMException | IllegalStateTransition | SQLException e) {
+        } catch(SRMException | IllegalStateTransition e) {
             // FIXME some SRMException failures are temporary and others are
             // permanent.  Code currently doesn't distinguish between them and
             // always retries, even if problem isn't transitory.
@@ -1053,7 +1052,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     }
 
     public final SrmCopyResponse getSrmCopyResponse()
-        throws SRMException ,SQLException {
+        throws SRMException {
         SrmCopyResponse response = new SrmCopyResponse();
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
@@ -1072,7 +1071,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
 
     public final TCopyRequestFileStatus[]  getArrayOfTCopyRequestFileStatuses(
         String[] fromurls,String[] tourls)
-        throws SRMException, SQLException {
+        throws SRMException {
             if(fromurls != null) {
                if(tourls == null ||
                   fromurls.length != tourls.length ) {
@@ -1099,12 +1098,13 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         }
 
     public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest()
-        throws SRMException, SQLException {
+        throws SRMException
+    {
         return getSrmStatusOfCopyRequest(null,null);
     }
 
     public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(String[] fromurls,String[] tourls)
-        throws SRMException, SQLException {
+        throws SRMException {
         SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
         response.setReturnStatus(getTReturnStatus());
         ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
@@ -1116,7 +1116,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     }
 
     @Override
-    public final CopyFileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException {
+    public final CopyFileRequest getFileRequestBySurl(URI surl) throws SRMException {
         if(surl == null ) {
            throw new SRMException("surl is null");
         }
@@ -1131,7 +1131,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     }
 
     @Override
-    public final TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException, SQLException {
+    public final TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {

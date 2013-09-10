@@ -117,8 +117,10 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
    protected static final String dateTimeType= " TIMESTAMP ";
    protected static final String booleanType= " INT ";
    private final String credentialsDirectory;
-   public DatabaseRequestCredentialStorage(    Configuration configuration
-      )  throws SQLException {
+
+   public DatabaseRequestCredentialStorage(Configuration configuration)
+           throws SQLException, IOException
+   {
       this.jdbcUrl = configuration.getJdbcUrl();
       this.jdbcClass = configuration.getJdbcClass();
       this.user = configuration.getJdbcUser();

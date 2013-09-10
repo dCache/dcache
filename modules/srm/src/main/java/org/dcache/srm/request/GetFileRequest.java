@@ -159,7 +159,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     String TURL,
     String fileId,
     String pinId
-    ) throws SQLException {
+    ) {
         super(id,
         nextJobId,
         creationTime,
@@ -334,7 +334,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     }
 
     public TGetRequestFileStatus getTGetRequestFileStatus()
-            throws SQLException, SRMInvalidRequestException{
+            throws SRMInvalidRequestException {
         TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
         if(getFileMetaData() != null) {
             fileStatus.setFileSize(new UnsignedLong(getFileMetaData().size));
@@ -342,18 +342,18 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
         try {
              fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
-        } catch (Exception e) {
+        } catch (org.apache.axis.types.URI.MalformedURIException e) {
             logger.error(e.toString());
-            throw new SQLException("wrong surl format");
+            throw new SRMInvalidRequestException("wrong surl format");
         }
 
         String turlstring = getTurlString();
         if(turlstring != null) {
             try {
             fileStatus.setTransferURL(new org.apache.axis.types.URI(turlstring));
-            } catch (Exception e) {
+            } catch (org.apache.axis.types.URI.MalformedURIException e) {
                 logger.error(e.toString());
-                throw new SQLException("wrong turl format");
+                throw new SRMInvalidRequestException("wrong turl format");
             }
 
         }
@@ -368,20 +368,20 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws SQLException{
+    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException {
         TReturnStatus returnStatus = getReturnStatus();
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
         try {
             surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
-        } catch (Exception e) {
+        } catch (org.apache.axis.types.URI.MalformedURIException e) {
             logger.error(e.toString());
-            throw new SQLException("wrong surl format");
+            throw new SRMInvalidRequestException("wrong surl format");
         }
         surlReturnStatus.setStatus(returnStatus);
         return surlReturnStatus;
     }
 
-    private URI getTURL() throws SRMException, SQLException{
+    private URI getTURL() throws SRMException {
         String firstDcapTurl = null;
         GetRequest request = getContainerRequest();
         if (request != null) {
@@ -810,7 +810,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
 
         public GetFileRequest getGetFileRequest()
-                throws SQLException, SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, GetFileRequest.class);
         }
 

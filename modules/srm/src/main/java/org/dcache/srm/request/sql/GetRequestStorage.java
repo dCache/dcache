@@ -9,6 +9,7 @@ package org.dcache.srm.request.sql;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -135,9 +136,9 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
 
 
     /** Creates a new instance of GetRequestStorage */
-    public GetRequestStorage(
-            Configuration.DatabaseParameters configuration
-            )  throws SQLException {
+    public GetRequestStorage(Configuration.DatabaseParameters configuration)
+            throws SQLException, IOException
+    {
         super(configuration);
     }
 

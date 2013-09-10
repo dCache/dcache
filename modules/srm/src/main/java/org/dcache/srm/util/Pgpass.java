@@ -11,8 +11,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 /**
  *
  * @author  Vladimir Podstavkov
@@ -65,7 +66,7 @@ public class Pgpass {
             " jdbc:postgresql://host/database\n"+
             " jdbc:postgresql://host:port/database\n";
 
-    private void parseUrl(String url) throws SQLException {
+    private void parseUrl(String url) throws MalformedURLException {
         // -jdbcUrl=jdbc:postgresql:database
         // -jdbcUrl=jdbc:postgresql://host/database
         // -jdbcUrl=jdbc:postgresql://host:port/database
@@ -84,12 +85,12 @@ public class Pgpass {
             } else if (r1.length > 2) {
                 String error = "illegal jdbc url format: "+url+legalFormats;
                 _logger.error(error);
-                throw new SQLException(error);
+                throw new MalformedURLException(error);
             }
         } else {
                 String error = "illegal jdbc url format: "+url+legalFormats;
                 _logger.error(error);
-                throw new SQLException(error);
+                throw new MalformedURLException(error);
         }
     }
 
@@ -97,7 +98,7 @@ public class Pgpass {
             String hostname,
             String port,
             String database,
-            String username) throws SQLException {
+            String username) throws IOException {
         //
         try{
             Process p1 = Runtime.getRuntime().exec("stat -c '%a' "+_pwdfile);
@@ -109,7 +110,7 @@ public class Pgpass {
                     p1.waitFor();
                 } catch (InterruptedException x) {
                     _logger.error("stat for '" + _pwdfile + "' was interrupted", x);
-                    throw new SQLException("Cannot stat '" + _pwdfile + "'");
+                    throw new InterruptedIOException("Cannot stat '" + _pwdfile + "'");
                 }
             }
 
@@ -117,10 +118,10 @@ public class Pgpass {
             //             System.out.println("mode: '"+reply+"'");
             if (reply==null) {
                 _logger.error("Cannot stat '"+_pwdfile+"'");
-                throw new SQLException("Cannot stat '"+_pwdfile+"'");
+                throw new IOException("Cannot stat '"+_pwdfile+"'");
             } else if (!reply.equals("'600'")) {
                 _logger.error("Protection for '"+_pwdfile+"' must be '600'");
-                throw new SQLException("Protection for '"+_pwdfile+"' must be '600'");
+                throw new IOException("Protection for '"+_pwdfile+"' must be '600'");
             }
             /*
              * Here we can read and parse the password file
@@ -139,16 +140,16 @@ public class Pgpass {
                     "for  hostname: '%s' ,port: %s ,database: '%s' " +
                     "and username: '%s' ",_pwdfile,hostname,port,database,username);
                 _logger.error(error);
-                throw new SQLException(error);
+                throw new IOException(error);
             }
             return r;
         } catch (IOException ioe) {
             _logger.error("processing '"+_pwdfile+"' failed: I/O error",ioe);
-            throw new SQLException("processing '"+_pwdfile+"' failed: I/O error",ioe);
+            throw new IOException("processing '"+_pwdfile+"' failed: I/O error",ioe);
         }
     }
 
-    public String getPgpass(String url, String username) throws SQLException {
+    public String getPgpass(String url, String username) throws IOException {
         parseUrl(url);
         return getPgpass(_hostname, _port, _database, username);
     }

@@ -77,7 +77,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -181,7 +180,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     String client_host,
     String statusCodeString,
     List<String> protocols
-    ) throws SQLException {
+    ) {
         super( id,
         nextJobId,
         creationTime,
@@ -207,7 +206,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    public PutFileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
+    public PutFileRequest getFileRequestBySurl(URI surl) throws SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
@@ -320,7 +319,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
      */
     public final SrmPrepareToPutResponse
         getSrmPrepareToPutResponse(long timeout)
-        throws SRMException, SQLException, InterruptedException
+        throws SRMException, InterruptedException
     {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
@@ -343,7 +342,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     public final SrmPrepareToPutResponse getSrmPrepareToPutResponse()
-    throws SRMException ,SQLException {
+    throws SRMException {
         SrmPrepareToPutResponse response = new SrmPrepareToPutResponse();
        // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -360,13 +359,13 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse()
-    throws SRMException, SQLException {
+    throws SRMException {
             return getSrmStatusOfPutRequestResponse(null);
     }
 
     public  final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(
             URI[] surls)
-    throws SRMException, SQLException {
+    throws SRMException {
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
 
         // getTReturnStatus should be called before we get the
@@ -395,7 +394,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         return String.valueOf(getId());
     }
 
-    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(URI[] surls) throws SRMException,SQLException {
+    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(URI[] surls) throws SRMException {
          int len = surls == null ? getNumOfFileRequest():surls.length;
         TPutRequestFileStatus[] putFileStatuses
             = new TPutRequestFileStatus[len];
@@ -416,7 +415,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
 
     @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {

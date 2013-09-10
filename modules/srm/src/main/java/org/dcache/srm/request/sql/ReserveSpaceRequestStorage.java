@@ -6,6 +6,7 @@
 
 package org.dcache.srm.request.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -164,7 +165,9 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     }
 
     /** Creates a new instance of FileRequestStorage */
-    public ReserveSpaceRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
+    public ReserveSpaceRequestStorage(Configuration.DatabaseParameters configuration)
+            throws SQLException, IOException
+    {
         super(configuration);
     }
 

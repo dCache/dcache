@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -88,10 +87,6 @@ public class SrmAbortFiles {
             logger.debug(" invalid request : "+ire.getMessage());
             response = getFailedResponse(" invalid request : "+ire.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SQLException sqle) {
-            logger.error(sqle.toString());
-            response = getFailedResponse("sql error "+sqle.getMessage(),
-                    TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
@@ -133,7 +128,7 @@ public class SrmAbortFiles {
      */
     public SrmAbortFilesResponse srmAbortFiles()
         throws SRMException,URISyntaxException,
-               SQLException, IllegalStateTransition
+               IllegalStateTransition
     {
         String requestToken = srmAbortFilesRequest.getRequestToken();
         if( requestToken == null ) {

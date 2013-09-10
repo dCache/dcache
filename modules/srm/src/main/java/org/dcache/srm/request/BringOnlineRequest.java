@@ -78,7 +78,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -172,7 +171,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     String client_host,
     String statusCodeString,
     String[] protocols
-   )  throws SQLException {
+   ) {
         super( id,
         nextJobId,
         creationTime,
@@ -199,7 +198,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     @Override
-    public BringOnlineFileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
+    public BringOnlineFileRequest getFileRequestBySurl(URI surl) throws SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
@@ -286,7 +285,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
      */
     public final SrmBringOnlineResponse
         getSrmBringOnlineResponse(long timeout)
-        throws SRMException, SQLException, InterruptedException
+        throws SRMException, InterruptedException
     {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
@@ -309,7 +308,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     public  final SrmBringOnlineResponse getSrmBringOnlineResponse()
-    throws SRMException ,SQLException {
+            throws SRMException
+    {
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
       // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -328,7 +328,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
 
     public final SrmStatusOfBringOnlineRequestResponse
             getSrmStatusOfBringOnlineRequestResponse()
-    throws SRMException, SQLException {
+    throws SRMException {
         return getSrmStatusOfBringOnlineRequestResponse(null);
     }
 
@@ -336,7 +336,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     public final SrmStatusOfBringOnlineRequestResponse
             getSrmStatusOfBringOnlineRequestResponse(
             URI[] surls)
-    throws SRMException, SQLException {
+            throws SRMException
+    {
         SrmStatusOfBringOnlineRequestResponse response =
                 new SrmStatusOfBringOnlineRequestResponse();
       // getTReturnStatus should be called before we get the
@@ -365,12 +366,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         return String.valueOf(getId());
     }
 
-   /* private ArrayOfTGetRequestFileStatus getArrayOfTGetRequestFileStatus()throws SRMException,java.sql.SQLException {
-        return getArrayOfTGetRequestFileStatus(null);
-    }
-    */
-
-    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(URI[] surls) throws SRMException,SQLException {
+    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(URI[] surls) throws SRMException {
         int len = surls == null ? getNumOfFileRequest():surls.length;
          TBringOnlineRequestFileStatus[] getFileStatuses
             = new TBringOnlineRequestFileStatus[len];
@@ -391,7 +387,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {

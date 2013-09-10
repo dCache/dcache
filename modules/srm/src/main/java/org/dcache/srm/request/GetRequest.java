@@ -78,7 +78,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -163,7 +162,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     String client_host,
     String statusCodeString,
     List<String> protocols
-    )  throws SQLException {
+    ) {
         super( id,
         nextJobId,
         creationTime,
@@ -189,7 +188,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     @Override
-    public GetFileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
+    public GetFileRequest getFileRequestBySurl(URI surl) throws SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
@@ -281,7 +280,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
      */
     public final SrmPrepareToGetResponse
         getSrmPrepareToGetResponse(long timeout)
-        throws SRMException, SQLException, InterruptedException
+        throws SRMException, InterruptedException
     {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
@@ -305,7 +304,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     public final SrmPrepareToGetResponse getSrmPrepareToGetResponse()
-    throws SRMException ,SQLException {
+    throws SRMException {
         SrmPrepareToGetResponse response = new SrmPrepareToGetResponse();
         // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -322,12 +321,13 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse()
-    throws SRMException, SQLException {
+            throws SRMException
+    {
         return getSrmStatusOfGetRequestResponse(null);
     }
 
     public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse(URI[] surls)
-    throws SRMException, SQLException {
+    throws SRMException {
         SrmStatusOfGetRequestResponse response = new SrmStatusOfGetRequestResponse();
         // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -357,12 +357,8 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         return String.valueOf(getId());
     }
 
-   /* private ArrayOfTGetRequestFileStatus getArrayOfTGetRequestFileStatus()throws SRMException,java.sql.SQLException {
-        return getArrayOfTGetRequestFileStatus(null);
-    }
-    */
     private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus(URI[] surls)
-            throws SRMException,SQLException {
+            throws SRMException {
         int len = surls == null ? getNumOfFileRequest():surls.length;
         TGetRequestFileStatus[] getFileStatuses
             = new TGetRequestFileStatus[len];
@@ -380,13 +376,9 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         }
         return getFileStatuses;
     }
-    /*public TSURLReturnStatus[] getArrayOfTSURLReturnStatus()
-    throws SRMException,java.sql.SQLException {
-        return null;
-    }
-     */
+
     @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
 

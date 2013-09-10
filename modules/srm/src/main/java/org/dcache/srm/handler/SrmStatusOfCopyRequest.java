@@ -14,8 +14,6 @@ import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -86,10 +84,6 @@ public class SrmStatusOfCopyRequest {
             logger.debug(" malformed uri : "+mue.getMessage());
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SQLException sqle) {
-            logger.error(sqle.toString());
-            response = getFailedResponse("sql error "+sqle.getMessage(),
-                    TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMInvalidRequestException e) {
             logger.error(e.toString());
             response = getFailedResponse(e.getMessage(),
@@ -120,8 +114,7 @@ public class SrmStatusOfCopyRequest {
 
     public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest()
     throws SRMException,
-            MalformedURIException,
-            SQLException {
+            MalformedURIException {
         String requestToken = request.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token",

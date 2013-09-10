@@ -91,7 +91,6 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1408,7 +1407,7 @@ public class Configuration {
      * Getter for property pass.
      * @return Value of property pass.
      */
-    public String getJdbcPass() throws SQLException {
+    public String getJdbcPass() throws IOException {
         if (this.jdbcPwdfile==null) {
             return jdbcPass;
         } else if (this.jdbcPwdfile.equals("")) {
@@ -2511,7 +2510,7 @@ public class Configuration {
             cleanPendingRequestsOnRestart = value;
         }
 
-        public String getJdbcPass() throws SQLException {
+        public String getJdbcPass() throws IOException {
             return Configuration.this.getJdbcPass();
         }
 

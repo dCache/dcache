@@ -276,7 +276,7 @@ public class SrmReleaseFiles {
     }
 
    private SrmReleaseFilesResponse unpinDirectlyBySURLs(URI[] surls)
-       throws SQLException, IllegalStateTransition, SRMInvalidRequestException,
+       throws SQLException, IllegalStateTransition, SRMException,
               MalformedURIException
    {
         //prepare initial return statuses
@@ -352,9 +352,7 @@ public class SrmReleaseFiles {
 
     private void releaseFileRequestsDirectlyBySURLs(URI[] surls,
         Map<URI,TSURLReturnStatus> surlsMap)
-        throws SQLException,
-        IllegalStateTransition,
-        SRMInvalidRequestException
+            throws SQLException, IllegalStateTransition, SRMException
    {
         Set<BringOnlineFileRequest> bofrsToRelease =
             findBringOnlineFileRequestBySURLs(surls);

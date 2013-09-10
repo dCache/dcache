@@ -412,7 +412,7 @@ public final class Storage
         customGetHostByAddr = value;
     }
 
-    public void start() throws SQLException, CacheException, IOException,
+    public void start() throws CacheException, IOException,
             InterruptedException, IllegalStateTransition
     {
         _log.info("Starting SRM");
@@ -482,17 +482,13 @@ public final class Storage
 
         pw.println(config);
 
-        try {
-            StringBuilder sb = new StringBuilder();
-            srm.printGetSchedulerInfo(sb);
-            srm.printPutSchedulerInfo(sb);
-            srm.printCopySchedulerInfo(sb);
-            srm.printBringOnlineSchedulerInfo(sb);
-            srm.printLsSchedulerInfo(sb);
-            pw.println(sb);
-        } catch (SQLException e) {
-            _log.error(e.toString());
-        }
+        StringBuilder sb = new StringBuilder();
+        srm.printGetSchedulerInfo(sb);
+        srm.printPutSchedulerInfo(sb);
+        srm.printCopySchedulerInfo(sb);
+        srm.printBringOnlineSchedulerInfo(sb);
+        srm.printLsSchedulerInfo(sb);
+        pw.println(sb);
     }
 
     public final static String hh_set_switch_to_async_mode_delay_get =
@@ -602,9 +598,6 @@ public final class Storage
             return "Invalid request: "+ire.getMessage();
         } catch (NumberFormatException e) {
             return e.toString();
-        } catch (SQLException e) {
-            _log.warn(e.toString());
-            return e.toString();
         }
     }
 
@@ -653,10 +646,7 @@ public final class Storage
                 srm.cancelAllLsRequests(sb, pattern);
             }
             return sb.toString();
-        } catch (RuntimeException e) {
-            _log.error("Failure in cancelall", e);
-            return e.toString();
-        } catch (Exception e) {
+        } catch (SQLException | SRMException e) {
             _log.warn("Failure in cancelall: " + e.getMessage());
             return e.toString();
         }
@@ -664,123 +654,114 @@ public final class Storage
     public final static String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>] "+
             "#will list all requests";
     public final static String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>]";
-    public String ac_ls_$_0_1(Args args) {
-        try {
-            boolean get=args.hasOption("get");
-            boolean put=args.hasOption("put");
-            boolean copy=args.hasOption("copy");
-            boolean bring=args.hasOption("bring");
-            boolean reserve=args.hasOption("reserve");
-            boolean ls=args.hasOption("ls");
-            boolean longformat = args.hasOption("l");
-            StringBuilder sb = new StringBuilder();
-            if(args.argc() == 1) {
-                try {
-                    Long reqId = Long.valueOf(args.argv(0));
-                    srm.listRequest(sb, reqId, longformat);
-                } catch( NumberFormatException nfe) {
-                    return "id must be an integer, you gave id="+args.argv(0);
-                }
-            } else {
-                if( !get && !put && !copy && !bring && !reserve && !ls) {
-                    get=true;
-                    put=true;
-                    copy=true;
-                    bring=true;
-                    reserve=true;
-                    ls=true;
-                }
-                if(get) {
-                    sb.append("Get Requests:\n");
-                    srm.listGetRequests(sb);
-                }
-                if(put) {
-                    sb.append("Put Requests:\n");
-                    srm.listPutRequests(sb);
-                }
-                if(copy) {
-                    sb.append("Copy Requests:\n");
-                    srm.listCopyRequests(sb);
-                }
-                if(copy) {
-                    sb.append("Bring Online Requests:\n");
-                    srm.listBringOnlineRequests(sb);
-                }
-                if(reserve) {
-                    sb.append("Reserve Space Requests:\n");
-                    srm.listReserveSpaceRequests(sb);
-                }
-                if(ls) {
-                    sb.append("Ls Requests:\n");
-                    srm.listLsRequests(sb);
-                }
+    public String ac_ls_$_0_1(Args args) throws SQLException, SRMException
+    {
+        boolean get=args.hasOption("get");
+        boolean put=args.hasOption("put");
+        boolean copy=args.hasOption("copy");
+        boolean bring=args.hasOption("bring");
+        boolean reserve=args.hasOption("reserve");
+        boolean ls=args.hasOption("ls");
+        boolean longformat = args.hasOption("l");
+        StringBuilder sb = new StringBuilder();
+        if(args.argc() == 1) {
+            try {
+                Long reqId = Long.valueOf(args.argv(0));
+                srm.listRequest(sb, reqId, longformat);
+            } catch( NumberFormatException nfe) {
+                return "id must be an integer, you gave id="+args.argv(0);
             }
-            return sb.toString();
-        } catch(Throwable t) {
-            t.printStackTrace();
-            return t.toString();
+        } else {
+            if( !get && !put && !copy && !bring && !reserve && !ls) {
+                get=true;
+                put=true;
+                copy=true;
+                bring=true;
+                reserve=true;
+                ls=true;
+            }
+            if(get) {
+                sb.append("Get Requests:\n");
+                srm.listGetRequests(sb);
+            }
+            if(put) {
+                sb.append("Put Requests:\n");
+                srm.listPutRequests(sb);
+            }
+            if(copy) {
+                sb.append("Copy Requests:\n");
+                srm.listCopyRequests(sb);
+            }
+            if(copy) {
+                sb.append("Bring Online Requests:\n");
+                srm.listBringOnlineRequests(sb);
+            }
+            if(reserve) {
+                sb.append("Reserve Space Requests:\n");
+                srm.listReserveSpaceRequests(sb);
+            }
+            if(ls) {
+                sb.append("Ls Requests:\n");
+                srm.listLsRequests(sb);
+            }
         }
+        return sb.toString();
     }
     public final static String fh_ls_queues= " Syntax: ls queues " +
         "[-get] [-put] [-copy] [-bring] [-ls] [-l]  "+
             "#will list schedule queues";
     public final static String hh_ls_queues= " [-get] [-put] [-copy] [-bring] [-ls] [-l] ";
     public String ac_ls_queues_$_0(Args args) {
-        try {
-            boolean get=args.hasOption("get");
-            boolean put=args.hasOption("put");
-            boolean ls=args.hasOption("ls");
-            boolean copy=args.hasOption("copy");
-            boolean bring=args.hasOption("bring");
-            StringBuilder sb = new StringBuilder();
+        boolean get=args.hasOption("get");
+        boolean put=args.hasOption("put");
+        boolean ls=args.hasOption("ls");
+        boolean copy=args.hasOption("copy");
+        boolean bring=args.hasOption("bring");
+        StringBuilder sb = new StringBuilder();
 
-            if( !get && !put && !copy && !bring && !ls ) {
-                get=true;
-                put=true;
-                copy=true;
-                bring=true;
-                ls=true;
-            }
-            if(get) {
-                sb.append("Get Request Scheduler:\n");
-                srm.printGetSchedulerThreadQueue(sb);
-                srm.printGetSchedulerPriorityThreadQueue(sb);
-                srm.printCopySchedulerReadyThreadQueue(sb);
-                sb.append('\n');
-            }
-            if(put) {
-                sb.append("Put Request Scheduler:\n");
-                srm.printPutSchedulerThreadQueue(sb);
-                srm.printPutSchedulerPriorityThreadQueue(sb);
-                srm.printPutSchedulerReadyThreadQueue(sb);
-                sb.append('\n');
-            }
-            if(copy) {
-                sb.append("Copy Request Scheduler:\n");
-                srm.printCopySchedulerThreadQueue(sb);
-                srm.printCopySchedulerPriorityThreadQueue(sb);
-                srm.printCopySchedulerReadyThreadQueue(sb);
-                sb.append('\n');
-            }
-            if(bring) {
-                sb.append("Bring Online Request Scheduler:\n");
-                srm.printBringOnlineSchedulerThreadQueue(sb);
-                srm.printBringOnlineSchedulerPriorityThreadQueue(sb);
-                srm.printBringOnlineSchedulerReadyThreadQueue(sb);
-                sb.append('\n');
-            }
-            if(ls) {
-                sb.append("Ls Request Scheduler:\n");
-                srm.printLsSchedulerThreadQueue(sb);
-                srm.printLsSchedulerPriorityThreadQueue(sb);
-                srm.printLsSchedulerReadyThreadQueue(sb);
-                sb.append('\n');
-            }
-            return sb.toString();
-        } catch(Throwable t) {
-            t.printStackTrace();
-            return t.toString();
+        if( !get && !put && !copy && !bring && !ls ) {
+            get=true;
+            put=true;
+            copy=true;
+            bring=true;
+            ls=true;
         }
+        if(get) {
+            sb.append("Get Request Scheduler:\n");
+            srm.printGetSchedulerThreadQueue(sb);
+            srm.printGetSchedulerPriorityThreadQueue(sb);
+            srm.printCopySchedulerReadyThreadQueue(sb);
+            sb.append('\n');
+        }
+        if(put) {
+            sb.append("Put Request Scheduler:\n");
+            srm.printPutSchedulerThreadQueue(sb);
+            srm.printPutSchedulerPriorityThreadQueue(sb);
+            srm.printPutSchedulerReadyThreadQueue(sb);
+            sb.append('\n');
+        }
+        if(copy) {
+            sb.append("Copy Request Scheduler:\n");
+            srm.printCopySchedulerThreadQueue(sb);
+            srm.printCopySchedulerPriorityThreadQueue(sb);
+            srm.printCopySchedulerReadyThreadQueue(sb);
+            sb.append('\n');
+        }
+        if(bring) {
+            sb.append("Bring Online Request Scheduler:\n");
+            srm.printBringOnlineSchedulerThreadQueue(sb);
+            srm.printBringOnlineSchedulerPriorityThreadQueue(sb);
+            srm.printBringOnlineSchedulerReadyThreadQueue(sb);
+            sb.append('\n');
+        }
+        if(ls) {
+            sb.append("Ls Request Scheduler:\n");
+            srm.printLsSchedulerThreadQueue(sb);
+            srm.printLsSchedulerPriorityThreadQueue(sb);
+            srm.printLsSchedulerReadyThreadQueue(sb);
+            sb.append('\n');
+        }
+        return sb.toString();
     }
 
     public final static String fh_ls_completed= " Syntax: ls completed [-get] [-put]" +
@@ -848,12 +829,9 @@ public final class Storage
             StringBuilder sb = new StringBuilder();
             srm.listRequest(sb, requestId, true);
             return sb.toString();
-        } catch (RuntimeException e) {
-            _log.error("Failure in set job priority", e);
-            return e.toString();
         } catch (SRMInvalidRequestException e) {
             return e.getMessage() + "\n";
-        } catch (Exception e) {
+        } catch (SQLException e) {
             _log.warn("Failure in set job priority: " + e.getMessage());
             return e.toString();
         }

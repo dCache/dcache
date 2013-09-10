@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -87,10 +86,6 @@ public class SrmStatusOfBringOnlineRequest {
             logger.debug(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SQLException sqle) {
-            logger.error(sqle.toString());
-            response = getFailedResponse("sql error "+sqle.getMessage(),
-                    TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMInvalidRequestException e) {
             logger.error(e.toString());
             response = getFailedResponse(e.getMessage(),
@@ -132,7 +127,7 @@ public class SrmStatusOfBringOnlineRequest {
      * implementation of srm ls
      */
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequestResponse()
-        throws SRMException, URISyntaxException, SQLException
+        throws SRMException, URISyntaxException
     {
         String requestToken = statusOfBringOnlineRequest.getRequestToken();
         if( requestToken == null ) {

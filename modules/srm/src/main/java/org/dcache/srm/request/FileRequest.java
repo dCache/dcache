@@ -78,7 +78,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
 
@@ -227,7 +226,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         return (int) (getId() ^ getId() >> 32);
     }
 
-    public void setStatus(String status) throws SRMException, SQLException {
+    public void setStatus(String status) throws SRMException {
         logger.debug("("+status+")");
         try {
             wlock();

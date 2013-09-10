@@ -9,6 +9,7 @@ package org.dcache.srm.request.sql;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -137,9 +138,10 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
 
 
     /** Creates a new instance of GetRequestStorage */
-    public PutRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
-        super(
-                configuration);
+    public PutRequestStorage(Configuration.DatabaseParameters configuration)
+            throws SQLException, IOException
+    {
+        super(configuration);
     }
 
     private String getProtocolsTableName() {
@@ -216,7 +218,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                 getTableName() +" (ID) "+
                 " ON DELETE CASCADE"+
                 " )";
-        logger.debug("calling createTable for "+protocolsTableName);
+        logger.debug("calling createTable for " + protocolsTableName);
         createTable(protocolsTableName, createProtocolsTable);
         String protocols_columns[] = {
             "RequestID"};

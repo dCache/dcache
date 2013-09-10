@@ -164,9 +164,9 @@ public class SRM {
      */
     private SRM(Configuration config, String name)
             throws IOException,
-            SQLException,
-            InterruptedException,
-            IllegalStateTransition {
+                   InterruptedException,
+                   IllegalStateTransition, SQLException
+    {
         this.configuration = config;
         //First of all decorate the storage with counters and
         // gauges to measure the performance of storage operations
@@ -1030,38 +1030,38 @@ public class SRM {
     }
 
 
-    public void printGetSchedulerInfo(StringBuilder sb) throws SQLException {
+    public void printGetSchedulerInfo(StringBuilder sb) {
         getGetRequestScheduler().getInfo(sb);
     }
 
-    public void printLsSchedulerInfo(StringBuilder sb) throws SQLException {
+    public void printLsSchedulerInfo(StringBuilder sb) {
         getLsRequestScheduler().getInfo(sb);
     }
 
-    public void printGetSchedulerThreadQueue(StringBuilder sb) throws SQLException {
+    public void printGetSchedulerThreadQueue(StringBuilder sb) {
         getGetRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printGetSchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
+    public void printGetSchedulerPriorityThreadQueue(StringBuilder sb) {
         getGetRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printGetSchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
+    public void printGetSchedulerReadyThreadQueue(StringBuilder sb) {
         getGetRequestScheduler().printReadyQueue(sb);
 
     }
 
-    public void printLsSchedulerThreadQueue(StringBuilder sb) throws SQLException {
+    public void printLsSchedulerThreadQueue(StringBuilder sb) {
         getLsRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printLsSchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
+    public void printLsSchedulerPriorityThreadQueue(StringBuilder sb) {
         getLsRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printLsSchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
+    public void printLsSchedulerReadyThreadQueue(StringBuilder sb) {
         getLsRequestScheduler().printReadyQueue(sb);
 
     }
@@ -1090,20 +1090,20 @@ public class SRM {
         listRequests(sb, getPutStorage().getLatestDoneJobIds(maxCount), PutRequest.class);
     }
 
-    public void printPutSchedulerInfo(StringBuilder sb) throws SQLException {
+    public void printPutSchedulerInfo(StringBuilder sb) {
         getPutRequestScheduler().getInfo(sb);
     }
 
-    public void printPutSchedulerThreadQueue(StringBuilder sb) throws SQLException {
+    public void printPutSchedulerThreadQueue(StringBuilder sb) {
         getPutRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printPutSchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
+    public void printPutSchedulerPriorityThreadQueue(StringBuilder sb) {
         getPutRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printPutSchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
+    public void printPutSchedulerReadyThreadQueue(StringBuilder sb) {
         getPutRequestScheduler().printReadyQueue(sb);
 
     }
@@ -1133,20 +1133,19 @@ public class SRM {
         listRequests(sb, getCopyStorage().getLatestDoneJobIds(maxCount), CopyRequest.class);
     }
 
-    public void printCopySchedulerInfo(StringBuilder sb) throws SQLException {
+    public void printCopySchedulerInfo(StringBuilder sb) {
         getCopyRequestScheduler().getInfo(sb);
     }
 
-    public void printCopySchedulerThreadQueue(StringBuilder sb) throws SQLException {
+    public void printCopySchedulerThreadQueue(StringBuilder sb) {
         getCopyRequestScheduler().printThreadQueue(sb);
-
     }
 
-    public void printCopySchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
+    public void printCopySchedulerPriorityThreadQueue(StringBuilder sb) {
         getCopyRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printCopySchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
+    public void printCopySchedulerReadyThreadQueue(StringBuilder sb) {
         getCopyRequestScheduler().printReadyQueue(sb);
 
     }
@@ -1176,22 +1175,21 @@ public class SRM {
         listRequests(sb, getBringOnlineStorage().getLatestDoneJobIds(maxCount), BringOnlineRequest.class);
     }
 
-    public void printBringOnlineSchedulerInfo(StringBuilder sb) throws SQLException {
+    public void printBringOnlineSchedulerInfo(StringBuilder sb) {
         getBringOnlineRequestScheduler().getInfo(sb);
     }
 
-    public void printBringOnlineSchedulerThreadQueue(StringBuilder sb) throws SQLException {
+    public void printBringOnlineSchedulerThreadQueue(StringBuilder sb) {
         getBringOnlineRequestScheduler().printThreadQueue(sb);
 
     }
 
-    public void printBringOnlineSchedulerPriorityThreadQueue(StringBuilder sb) throws SQLException {
+    public void printBringOnlineSchedulerPriorityThreadQueue(StringBuilder sb) {
         getBringOnlineRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public void printBringOnlineSchedulerReadyThreadQueue(StringBuilder sb) throws SQLException {
+    public void printBringOnlineSchedulerReadyThreadQueue(StringBuilder sb) {
         getBringOnlineRequestScheduler().printReadyQueue(sb);
-
     }
 
     private Scheduler getScheduler(Class<? extends Job> requestType) {
@@ -1253,8 +1251,9 @@ public class SRM {
         }
     }
 
-    public void cancelRequest(StringBuilder sb, long requestId) throws SQLException,
-    SRMInvalidRequestException {
+    public void cancelRequest(StringBuilder sb, long requestId)
+            throws SRMInvalidRequestException
+    {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null || !(job instanceof ContainerRequest)) {
             sb.append("request with id ").append(requestId)

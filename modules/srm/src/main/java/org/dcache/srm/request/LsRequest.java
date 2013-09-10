@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -100,7 +99,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 boolean longFormat,
                 int numOfLevels,
                 long count,
-                long offset) throws SQLException {
+                long offset) {
                 super(id,
                       nextJobId,
                       creationTime,
@@ -131,8 +130,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
 
         @Override
         public LsFileRequest getFileRequestBySurl(URI surl)
-                throws SQLException,
-                SRMException{
+                throws SRMException {
                 if(surl == null) {
                         throw new SRMException("surl is null");
                 }
@@ -200,7 +198,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
          */
         public final SrmLsResponse
                 getSrmLsResponse(long timeout)
-                throws SRMException, SQLException, InterruptedException
+                throws SRMException, InterruptedException
         {
                 /* To avoid a race condition between us querying the
                  * current response and us waiting for a state change
@@ -224,7 +222,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public final SrmLsResponse getSrmLsResponse()
-                throws SRMException ,SQLException {
+                throws SRMException {
                 SrmLsResponse response = new SrmLsResponse();
                 response.setReturnStatus(getTReturnStatus());
                 if (!response.getReturnStatus().getStatusCode().isProcessing()) {
@@ -240,7 +238,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public final SrmStatusOfLsRequestResponse getSrmStatusOfLsRequestResponse()
-                throws SRMException, SQLException {
+                throws SRMException {
                 SrmStatusOfLsRequestResponse response = new SrmStatusOfLsRequestResponse();
                 response.setReturnStatus(getTReturnStatus());
                 ArrayOfTMetaDataPathDetail details = new ArrayOfTMetaDataPathDetail();
@@ -254,7 +252,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public TMetaDataPathDetail[] getPathDetailArray()
-                throws SRMException,SQLException {
+                throws SRMException {
                 int len = getFileRequests().size();
                 TMetaDataPathDetail detail[] = new TMetaDataPathDetail[len];
                 for(int i = 0; i<len; ++i) {
@@ -476,7 +474,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
 
         @Override
         public  TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls)
-                throws SRMException,SQLException {
+        {
                 return null;
         }
 

@@ -17,6 +17,7 @@ package org.dcache.srm.request.sql;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -141,9 +142,9 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
 
 
     /** Creates a new instance of BringOnlineRequestStorage */
-    public BringOnlineRequestStorage(
-    Configuration.DatabaseParameters configuration
-    )  throws SQLException {
+    public BringOnlineRequestStorage(Configuration.DatabaseParameters configuration)
+            throws SQLException, IOException
+    {
         super(configuration);
     }
 

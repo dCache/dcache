@@ -6,6 +6,7 @@
 
 package org.dcache.srm.request.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -136,9 +137,9 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
     }
 
     /** Creates a new instance of GetFileRequestStorage */
-    public GetFileRequestStorage(
-    Configuration.DatabaseParameters configuration
-    )  throws SQLException {
+    public GetFileRequestStorage(Configuration.DatabaseParameters configuration)
+            throws IOException, SQLException
+    {
         super(configuration);
     }
 

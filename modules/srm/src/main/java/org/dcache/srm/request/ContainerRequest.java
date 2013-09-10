@@ -77,7 +77,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -760,8 +759,8 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         }
     }
 
-    public abstract R getFileRequestBySurl(URI surl)  throws SQLException, SRMException ;
-    public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException;
+    public abstract R getFileRequestBySurl(URI surl)  throws SRMException ;
+    public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException;
 
     public List<R> getFileRequests()  {
         return fileRequests;

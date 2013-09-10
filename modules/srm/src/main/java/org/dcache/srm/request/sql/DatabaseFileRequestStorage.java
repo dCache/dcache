@@ -6,6 +6,7 @@
 
 package org.dcache.srm.request.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,8 +21,8 @@ import org.dcache.srm.util.Configuration;
 public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> extends DatabaseJobStorage<F>  {
 
     /** Creates a new instance of FileRequestStorage */
-    public DatabaseFileRequestStorage
-        (Configuration.DatabaseParameters configuration)  throws SQLException
+    public DatabaseFileRequestStorage(Configuration.DatabaseParameters configuration)
+            throws IOException, SQLException
     {
         super(configuration);
     }

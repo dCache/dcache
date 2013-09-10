@@ -181,7 +181,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             long size,
             TRetentionPolicy retentionPolicy,
             TAccessLatency accessLatency
-            ) throws SQLException {
+            ) {
         super(id,
                 nextJobId,
                 creationTime,
@@ -332,7 +332,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     public TPutRequestFileStatus getTPutRequestFileStatus()
-            throws SQLException, SRMInvalidRequestException{
+            throws SRMInvalidRequestException {
         TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
         fileStatus.setFileSize(new UnsignedLong(getSize()));
 
@@ -340,9 +340,9 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         org.apache.axis.types.URI anSurl;
         try {
             anSurl= new org.apache.axis.types.URI(getSurlString());
-        } catch (Exception e) {
+        } catch (org.apache.axis.types.URI.MalformedURIException e) {
             logger.error(e.toString());
-            throw new SQLException("wrong surl format");
+            throw new SRMInvalidRequestException("wrong surl format");
         }
         fileStatus.setSURL(anSurl);
         //fileStatus.set
@@ -352,9 +352,9 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             org.apache.axis.types.URI transferURL;
             try {
                 transferURL = new org.apache.axis.types.URI(turlstring);
-            } catch (Exception e) {
+            } catch (org.apache.axis.types.URI.MalformedURIException e) {
                 logger.error(e.toString());
-                throw new SQLException("wrong turl format");
+                throw new SRMInvalidRequestException("wrong turl format");
             }
             fileStatus.setTransferURL(transferURL);
 
@@ -376,13 +376,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws SQLException{
+    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException {
         org.apache.axis.types.URI anSurl;
         try {
             anSurl = new org.apache.axis.types.URI(getSurlString());
-        } catch (Exception e) {
+        } catch (org.apache.axis.types.URI.MalformedURIException e) {
             logger.error(e.toString());
-            throw new SQLException("wrong surl format");
+            throw new SRMInvalidRequestException("wrong surl format");
         }
         TReturnStatus returnStatus = getReturnStatus();
         if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
@@ -397,7 +397,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         return surlReturnStatus;
     }
 
-    private URI getTURL() throws SRMException, SQLException {
+    private URI getTURL() throws SRMException {
         PutRequest request = getContainerRequest();
         // do not synchronize on request, since it might cause deadlock
         String firstDcapTurl = request.getFirstDcapTurl();
@@ -963,8 +963,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
-                throws SQLException,
-                SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
@@ -1054,8 +1053,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
-                throws SQLException,
-                  SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
@@ -1101,8 +1099,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
-                throws SQLException,
-                SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
@@ -1260,7 +1257,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
-                throws SQLException, SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
@@ -1311,7 +1308,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         public PutFileRequest getPutFileRequest()
-                throws SQLException, SRMInvalidRequestException {
+                throws SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 

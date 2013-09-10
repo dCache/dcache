@@ -11,6 +11,7 @@ import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -37,7 +38,9 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
     final Class<F> fileRequestType = (Class<F>) new TypeToken<F>(getClass()) {}.getRawType();
 
     /** Creates a new instance of DatabaseContainerRequestStorage */
-    public DatabaseContainerRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
+    public DatabaseContainerRequestStorage(Configuration.DatabaseParameters configuration)
+            throws SQLException, IOException
+    {
         super(configuration);
     }
 

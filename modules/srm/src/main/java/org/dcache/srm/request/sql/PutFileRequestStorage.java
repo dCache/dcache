@@ -6,6 +6,7 @@
 
 package org.dcache.srm.request.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -157,10 +158,10 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
     }
 
    /** Creates a new instance of PutFileRequestStorage */
-    public PutFileRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
-        super(
-        configuration
-        );
+    public PutFileRequestStorage(Configuration.DatabaseParameters configuration)
+            throws IOException, SQLException
+    {
+        super(configuration);
     }
 
     @Override

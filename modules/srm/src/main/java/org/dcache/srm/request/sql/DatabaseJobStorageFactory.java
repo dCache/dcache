@@ -4,6 +4,7 @@ import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -76,7 +77,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
         jobStorageMap.put(entityClass, new CanonicalizingJobStorage<>(new SharedMemoryCacheJobStorage<>(js, entityClass), entityClass));
     }
 
-    public DatabaseJobStorageFactory(Configuration config) throws SQLException
+    public DatabaseJobStorageFactory(Configuration config) throws SQLException, IOException
     {
         executor = new ThreadPoolExecutor(
                 config.getJdbcExecutionThreadNum(), config.getJdbcExecutionThreadNum(),
@@ -122,7 +123,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                 ReserveSpaceRequest.class,
                 ReserveSpaceRequestStorage.class);
         } catch (InstantiationException e) {
-            Throwables.propagateIfPossible(e.getCause(), SQLException.class);
+            Throwables.propagateIfPossible(e.getCause(), SQLException.class, IOException.class);
             throw new RuntimeException("Request persistence initialization failed: " + e.toString(), e);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Request persistence initialization failed: " + e.toString(), e);

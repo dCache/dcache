@@ -1,5 +1,6 @@
 package org.dcache.srm.request.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,7 +26,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
 
         private static int ADDITIONAL_FIELDS = 1;
         public LsFileRequestStorage(Configuration.DatabaseParameters configuration)
-                throws SQLException {
+                throws IOException, SQLException {
                 super(configuration);
         }
 

@@ -75,7 +75,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -116,7 +115,7 @@ public class ModifiableQueue  {
     }
 
 
-    public  Job peek()  throws SQLException,SRMInvalidRequestException {
+    public  Job peek()  throws SRMInvalidRequestException {
 
         long headId;
         synchronized(queue){
@@ -134,7 +133,6 @@ public class ModifiableQueue  {
 
     public Job take()
             throws InterruptedException,
-            SQLException,
             SRMInvalidRequestException {
         while (true) {
             Long id = null;
@@ -158,7 +156,6 @@ public class ModifiableQueue  {
 
     public Job poll(long msecs)
             throws InterruptedException,
-            SQLException,
             SRMInvalidRequestException {
 
         long waitTime = msecs;
@@ -275,7 +272,7 @@ public class ModifiableQueue  {
     }
 
     public Job getGreatestValueObject(ValueCalculator calc)
-            throws SQLException, SRMInvalidRequestException{
+            throws SRMInvalidRequestException{
         Job greatestValueJob;
         int greatestValue;
        //System.out.println("QUEUE.getGreatestValueObject()");
@@ -310,14 +307,14 @@ public class ModifiableQueue  {
         return greatestValueJob;
     }
 
-    public String printQueue()  throws SQLException{
+    public String printQueue() {
 
         StringBuilder sb = new StringBuilder();
         printQueue(sb);
         return sb.toString();
     }
 
-    public void printQueue(StringBuilder sb)  throws SQLException{
+    public void printQueue(StringBuilder sb) {
         synchronized(queue)
         {
             if(queue.isEmpty()) {

@@ -11,6 +11,7 @@
 
 package org.dcache.srm.request.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -177,8 +178,10 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
 
 
     /** Creates a new instance of CopyFileRequestStorage */
-    public CopyFileRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
-        super(configuration        );
+    public CopyFileRequestStorage(Configuration.DatabaseParameters configuration)
+            throws IOException, SQLException
+    {
+        super(configuration);
     }
 
     @Override

@@ -9,6 +9,7 @@
 
 package org.dcache.srm.request.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,7 +27,9 @@ import org.dcache.srm.util.Configuration;
 public abstract class DatabaseRequestStorage<R extends Request> extends DatabaseJobStorage<R> {
     SRMUserPersistenceManager srmUserPersistenceManager;
     /** Creates a new instance of DatabaseRequestStorage */
-    public DatabaseRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
+    public DatabaseRequestStorage(Configuration.DatabaseParameters configuration)
+            throws SQLException, IOException
+    {
         super(configuration);
         srmUserPersistenceManager = configuration.getSrmUserPersistenceManager();
         if(srmUserPersistenceManager == null) {

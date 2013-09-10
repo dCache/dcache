@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.List;
 
 import org.dcache.srm.AbstractStorageElement;
@@ -75,10 +74,6 @@ public class SrmPutDone {
             logger.debug(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SQLException sqle) {
-            logger.error(sqle.toString());
-            response = getFailedResponse("sql error "+sqle.getMessage(),
-                    TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMInvalidRequestException e) {
             logger.error(e.toString());
             response = getFailedResponse(e.getMessage(),
@@ -122,7 +117,6 @@ public class SrmPutDone {
     public SrmPutDoneResponse srmPutDone()
 	throws SRMException,
                URISyntaxException,
-               SQLException,
                IllegalStateTransition
     {
         String requestToken = srmPutDoneRequest.getRequestToken();

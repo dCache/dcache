@@ -299,9 +299,6 @@ public abstract class Request extends Job {
         }
     }
 
-    //public abstract void schedule(Scheduler scheduler) throws InterruptedException, IllegalStateTransition, SQLException;
-
-
     /**
      * status is not going to change
      * set retry delta time to 1

@@ -76,7 +76,6 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
 import java.lang.ref.WeakReference;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -230,7 +229,7 @@ public class RequestCredential {
                             String role,
                             GSSCredential delegatedCredential,
                             RequestCredentialStorage storage)
-                            throws SQLException,GSSException {
+                            throws GSSException {
         //System.out.println("RequestCredential  constructor");
         //start();
 
@@ -263,7 +262,7 @@ public class RequestCredential {
                             GSSCredential delegatedCredential,
                             long delegatedCredentialExpiration,
                             RequestCredentialStorage storage)
-                            throws SQLException{
+    {
         //System.out.println("RequestCredential restore constructor");
         //new Throwable().printStackTrace();
         //start();
