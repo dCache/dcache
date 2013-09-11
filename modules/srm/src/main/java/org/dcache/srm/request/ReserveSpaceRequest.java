@@ -139,9 +139,6 @@ public final class ReserveSpaceRequest extends Request {
         this.retentionPolicy = retentionPolicy;
         this.accessLatency = accessLatency;
         this.spaceReservationLifetime = spaceReservationLifetime;
-        updateMemoryCache();
-        logger.debug("created");
-
     }
 
     /** this constructor is used for restoring the previously

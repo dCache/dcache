@@ -76,7 +76,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                       lifetime,
                       maxNumberOfRetries);
                 this.surl = URI.create(url.toString());
-                updateMemoryCache();
         }
 
         public LsFileRequest(
@@ -197,7 +196,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         }
                         setState(State.DONE, State.DONE.toString());
                 }
-                catch (SRMException | URISyntaxException | IllegalStateTransition e) {
+                catch (SRMException | SQLException | URISyntaxException | IllegalStateTransition e) {
                         wlock();
                         try {
                                 TReturnStatus status;
@@ -221,6 +220,11 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                         status = new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
                                                                    msg);
                                         setStatusCode(TStatusCode.SRM_INVALID_PATH);
+                                }
+                                else if (e instanceof SQLException) {
+                                    status = new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,
+                                            msg);
+                                    setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
                                 }
                                 else {
                                         if (e instanceof RuntimeException) {

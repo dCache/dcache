@@ -227,7 +227,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         this.targetRetentionPolicy = targetRetentionPolicy;
         this.overwriteMode = overwriteMode;
         this.targetSpaceToken = spaceToken;
-        updateMemoryCache();
         logger.debug("Request.createCopyRequest : created new request succesfully");
     }
 

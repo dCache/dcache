@@ -153,7 +153,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         if(retentionPolicy != null ) {
             this.retentionPolicy = retentionPolicy;
         }
-        updateMemoryCache();
     }
 
 
@@ -566,7 +565,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             }
             logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
         }
-        catch(SRMException | IllegalStateTransition e) {
+        catch(SRMException | SQLException | IllegalStateTransition e) {
             throw new FatalJobFailure("cannot prepare to put: " + e.getMessage());
         }
     }
