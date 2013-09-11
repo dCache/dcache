@@ -9,25 +9,26 @@ import org.apache.wicket.authroles.authorization.strategies.role.IRoleCheckingSt
 import org.apache.wicket.authroles.authorization.strategies.role.RoleAuthorizationStrategy;
 import org.apache.wicket.authroles.authorization.strategies.role.Roles;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
+import org.apache.wicket.core.request.mapper.CryptoMapper;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.https.HttpsConfig;
 import org.apache.wicket.protocol.https.HttpsMapper;
 import org.apache.wicket.request.Request;
 import org.apache.wicket.request.Response;
-import org.apache.wicket.request.mapper.CryptoMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
-import org.dcache.services.httpd.HttpServiceCell;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.CellAdminService;
@@ -85,7 +86,7 @@ public class WebAdminInterface extends WebApplication {
     private static final Logger _log
         = LoggerFactory.getLogger(WebAdminInterface.class);
 
-    private HttpServiceCell _cellEndpoint;
+    private CellEndpoint _cellEndpoint;
     private LogInService _logInService = new AlwaysFailLoginService();
     private PoolSpaceService _poolSpaceService;
     private PoolQueuesService _poolQueuesService;
@@ -103,18 +104,15 @@ public class WebAdminInterface extends WebApplication {
     private ThumbnailPanelProvider _thumbnailPanelProvider;
     private String _dcacheName;
     private String _authDestination;
-    private Integer _adminGid;
-    private String _generatePlots = "false";
-    private String _poolQueuePlotsEnabled = "false";
+    private int _adminGid;
     private int _httpsPort;
     private int _httpPort;
+    private boolean _generatePlots = false;
+    private boolean _poolQueuePlotsEnabled = false;
+    private boolean _authenticatedMode = false;
 
     public ActiveTransfersService getActiveTransfersService() {
         return _activeTransfersService;
-    }
-
-    public Integer getAdminGid() {
-        return _adminGid;
     }
 
     public List<Class<? extends Component>> getAdminOnlyPages() {
@@ -125,10 +123,6 @@ public class WebAdminInterface extends WebApplication {
         return _alarmDisplayService;
     }
 
-    public String getAuthDestination() {
-        return _authDestination;
-    }
-
     public IBillingService getBillingService() {
         return _billingService;
     }
@@ -137,20 +131,12 @@ public class WebAdminInterface extends WebApplication {
         return _cellAdminService;
     }
 
-    public HttpServiceCell getCellEndpoint() {
-        return _cellEndpoint;
-    }
-
     public CellsService getCellsService() {
         return _cellsService;
     }
 
     public String getDcacheName() {
         return _dcacheName;
-    }
-
-    public String getGeneratePlots() {
-        return _generatePlots;
     }
 
     @Override
@@ -198,8 +184,8 @@ public class WebAdminInterface extends WebApplication {
         return _thumbnailPanelProvider;
     }
 
-    public boolean isAuthenticatedMode() {
-        return _cellEndpoint.isAuthenticated();
+    public boolean getAuthenticatedMode() {
+        return _authenticatedMode;
     }
 
     @Override
@@ -207,91 +193,120 @@ public class WebAdminInterface extends WebApplication {
         return new WebAdminInterfaceSession(request);
     }
 
+    @Required
     public void setActiveTransfersService(
                     ActiveTransfersService activeTransfersService) {
         _activeTransfersService = activeTransfersService;
     }
 
-    public void setAdminGid(Integer adminGid) {
+    @Required
+    public void setAdminGid(int adminGid) {
         _adminGid = adminGid;
     }
 
+    @Required
     public void setAlarmDisplayService(IAlarmDisplayService alarmDisplayService) {
         _alarmDisplayService = alarmDisplayService;
     }
 
+    @Required
     public void setAuthDestination(String authDestination) {
         _authDestination = authDestination;
     }
 
+    @Required
+    public void setAuthenticatedMode(boolean authenticated) {
+        _authenticatedMode = authenticated;
+    }
+
+    @Required
     public void setBillingService(IBillingService billingService) {
         _billingService = billingService;
     }
 
+    @Required
     public void setCellAdminService(CellAdminService cellAdminService) {
         _cellAdminService = cellAdminService;
     }
 
-    public void setCellEndpoint(HttpServiceCell cellEnpoint) {
-        _cellEndpoint = cellEnpoint;
-        _httpPort = _cellEndpoint.getHttpPort();
-        _httpsPort = _cellEndpoint.getHttpsPort();
+    @Required
+    public void setHttpPort(int port) {
+        _httpPort = port;
     }
 
+    @Required
+    public void setHttpsPort(int port) {
+        _httpsPort = port;
+    }
+
+    @Required
+    public void setCellEndpoint(CellEndpoint endpoint) {
+        _cellEndpoint = endpoint;
+    }
+
+    @Required
     public void setCellsService(CellsService cellsService) {
         _cellsService = cellsService;
     }
 
+    @Required
     public void setDcacheName(String dCacheName) {
         _dcacheName = dCacheName;
     }
 
-    public void setGeneratePlots(String generatePlots) {
+    @Required
+    public void setGeneratePlots(boolean generatePlots) {
         _generatePlots = generatePlots;
     }
 
+    @Required
     public void setInfoService(InfoService infoService) {
         _infoService = infoService;
     }
 
+    @Required
     public void setLinkGroupsService(LinkGroupsService linkGroupsService) {
         _linkGroupsService = linkGroupsService;
     }
 
-    public void setLogInService(LogInService logInService) {
-        _logInService = logInService;
-    }
-
+    @Required
     public void setPoolAdminService(PoolAdminService poolAdminService) {
         _poolAdminService = poolAdminService;
     }
 
+    @Required
     public void setPoolGroupService(PoolGroupService poolGroupService) {
         _poolGroupService = poolGroupService;
     }
 
-    public void setPoolQueuePlotsEnabled(String enabled) {
+    @Required
+    public void setPoolQueuePlotsEnabled(boolean enabled) {
         _poolQueuePlotsEnabled = enabled;
     }
 
+    @Required
     public void setPoolQueuesService(PoolQueuesService poolQueuesService) {
         _poolQueuesService = poolQueuesService;
     }
 
+    @Required
     public void setPoolSelectionSetupService(
                     PoolSelectionSetupService poolSelectionSetupService) {
         _poolSelectionSetupService = poolSelectionSetupService;
     }
 
+    @Required
     public void setPoolSpaceService(PoolSpaceService poolSpaceService) {
         _poolSpaceService = poolSpaceService;
     }
 
+    @Required
     public void setTapeTransfersService(
                     TapeTransfersService tapeTransfersService) {
         _tapeTransfersService = tapeTransfersService;
     }
 
+    @Required
     public void setThumbnailPanelProvider(ThumbnailPanelProvider provider) {
         _thumbnailPanelProvider = provider;
     }
@@ -307,7 +322,7 @@ public class WebAdminInterface extends WebApplication {
         mountBookmarkablePages();
         markAdminOnlyPages();
 
-        if (isAuthenticatedMode()) {
+        if (getAuthenticatedMode()) {
             setRootRequestMapper(new HttpsMapper(getRootRequestMapper(),
                             new HttpsConfig(_httpPort, _httpsPort)));
         }
@@ -339,7 +354,7 @@ public class WebAdminInterface extends WebApplication {
         mountPage("tapetransfers", TapeTransferQueue.class);
         mountPage("alarms", AlarmsPage.class);
 
-        if (Boolean.parseBoolean(_generatePlots)) {
+        if (_generatePlots) {
             _billingService.initialize();
             mountPage("billingplots", BillingPlots.class);
             BasicNavigationPanel.addBillingPage();
@@ -348,7 +363,7 @@ public class WebAdminInterface extends WebApplication {
             BasicNavigationPanel.removeBillingPage();
         }
 
-        if (Boolean.parseBoolean(_poolQueuePlotsEnabled.trim())) {
+        if (_poolQueuePlotsEnabled) {
             mountPage("poolqueueplots", PoolQueuePlots.class);
             BasicNavigationPanel.addPoolQueuePlotsPage();
         } else {
@@ -358,7 +373,7 @@ public class WebAdminInterface extends WebApplication {
     }
 
     private void setAuthorizationStrategies() {
-        if (isAuthenticatedMode()) {
+        if (getAuthenticatedMode()) {
             LoginStrategy loginStrategy
                 = new RemoteLoginStrategy(new CellStub(_cellEndpoint,
                                           new CellPath(_authDestination),

@@ -255,24 +255,22 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
         " VALUES (?,?)";
 
     @Override
-    public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
-                                                             Job job) throws SQLException {
+    public PreparedStatement getBatchCreateStatement(Connection connection, Job job) throws SQLException {
         if(job == null || !(job instanceof BringOnlineRequest)) {
             throw new IllegalArgumentException("Request is not BringOnlineRequest" );
         }
-        BringOnlineRequest bor = (BringOnlineRequest)job;
+        BringOnlineRequest bor = (BringOnlineRequest) job;
         String[] protocols = bor.getProtocols();
-        if(protocols ==null) {
+        if (protocols == null) {
             return null;
         }
-        PreparedStatement[] statements  = new PreparedStatement[protocols.length];
-        for(int i=0; i<protocols.length ; ++i){
-            statements[i] = getPreparedStatement(connection,
-                    insertProtocols,
-                    protocols[i],
-                    bor.getId());
+        PreparedStatement statement = connection.prepareStatement(insertProtocols);
+        for (String protocol : protocols) {
+            statement.setString(1, protocol);
+            statement.setLong(2, bor.getId());
+            statement.addBatch();
         }
-        return statements;
+        return statement;
    }
 
 

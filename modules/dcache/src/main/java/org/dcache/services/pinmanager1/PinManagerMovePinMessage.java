@@ -64,4 +64,11 @@ public class PinManagerMovePinMessage extends Message
     {
         return _targetPool;
     }
+
+    @Override
+    public String getDiagnosticContext()
+    {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
 }

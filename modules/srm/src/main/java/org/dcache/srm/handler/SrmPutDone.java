@@ -24,6 +24,7 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmPutDoneRequest;
 import org.dcache.srm.v2_2.SrmPutDoneResponse;
@@ -139,6 +140,7 @@ public class SrmPutDone {
         }
 
         PutRequest putRequest = Job.getJob(requestId, PutRequest.class);
+        putRequest.applyJdc();
 
         URI[] surls;
         if(srmPutDoneRequest.getArrayOfSURLs() == null) {
@@ -157,49 +159,51 @@ public class SrmPutDone {
 				int fail_counter=0;
 				int success_counter=0;
 				for(FileRequest fileRequest : requests) {
-				    synchronized(fileRequest) {
-				        if ( !State.isFinalState(fileRequest.getState())) {
-				            if ( ((PutFileRequest)fileRequest).getTurlString()==null) {
-				                fileRequest.setStateAndStatusCode(State.FAILED,
-				                        "SrmPutDone called, TURL is not ready",
-				                        TStatusCode.SRM_INVALID_PATH);
-				                fail_counter++;
-				            }
-				            else {
-				                try {
-				                    if (storage.exists(user,((PutFileRequest)fileRequest).getSurl())) {
-				                        fileRequest.setState(State.DONE,"SrmPutDone called");
-				                        success_counter++;
-				                    }
-				                    else {
-				                        fail_counter++;
-				                        fileRequest.setStateAndStatusCode(
-				                                State.FAILED,
-				                                "SrmPutDone called : file does not exist",
-				                                TStatusCode.SRM_INVALID_PATH);
-				                    }
-				                }
-				                catch (SRMException e) {
-				                    fail_counter++;
-				                    fileRequest.setStateAndStatusCode(
-				                            State.FAILED,
-				                            "SrmPutDone called : " + e.getMessage(),
-				                            TStatusCode.SRM_FAILURE);
-				                }
-				            }
-				        }
-				        else {
-				            if (fileRequest.getState()==State.DONE) {
-				                success_counter++;
-				            }
-				            if (fileRequest.getState()==State.FAILED) {
-				                fail_counter++;
-				            }
-				            if (fileRequest.getState()==State.CANCELED) {
-				                fail_counter++;
-				            }
-				        }
-				    }
+                                    try(JDC ignored = fileRequest.applyJdc()) {
+                                        synchronized(fileRequest) {
+                                            if ( !State.isFinalState(fileRequest.getState())) {
+                                                if ( ((PutFileRequest)fileRequest).getTurlString()==null) {
+                                                    fileRequest.setStateAndStatusCode(State.FAILED,
+                                                            "SrmPutDone called, TURL is not ready",
+                                                            TStatusCode.SRM_INVALID_PATH);
+                                                    fail_counter++;
+                                                }
+                                                else {
+                                                    try {
+                                                        if (storage.exists(user,((PutFileRequest)fileRequest).getSurl())) {
+                                                            fileRequest.setState(State.DONE,"SrmPutDone called");
+                                                            success_counter++;
+                                                        }
+                                                        else {
+                                                            fail_counter++;
+                                                            fileRequest.setStateAndStatusCode(
+                                                                    State.FAILED,
+                                                                    "SrmPutDone called : file does not exist",
+                                                                    TStatusCode.SRM_INVALID_PATH);
+                                                        }
+                                                    }
+                                                    catch (SRMException e) {
+                                                        fail_counter++;
+                                                        fileRequest.setStateAndStatusCode(
+                                                                State.FAILED,
+                                                                "SrmPutDone called : " + e.getMessage(),
+                                                                TStatusCode.SRM_FAILURE);
+                                                    }
+                                                }
+                                            }
+                                            else {
+                                                if (fileRequest.getState()==State.DONE) {
+                                                    success_counter++;
+                                                }
+                                                if (fileRequest.getState()==State.FAILED) {
+                                                    fail_counter++;
+                                                }
+                                                if (fileRequest.getState()==State.CANCELED) {
+                                                    fail_counter++;
+                                                }
+                                            }
+                                        }
+                                    }
 				}
 				if (success_counter==requests.size()) {
 				    putRequest.setState(State.DONE,"SrmPutDone called");
@@ -233,49 +237,51 @@ public class SrmPutDone {
 				for(int i = 0; i< surls.length; ++i) {
 					if(surls[i] != null ) {
 						PutFileRequest fileRequest = (PutFileRequest) putRequest.getFileRequestBySurl(surls[i]);
-						synchronized(fileRequest) {
-							if ( !State.isFinalState(fileRequest.getState())) {
-								if ( fileRequest.getTurlString()==null) {
-									fileRequest.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-									fileRequest.setState(State.FAILED,"SrmPutDone called, TURL is not ready");
-									fail_counter++;
-								}
-								else {
-                                    try {
-                                        if (storage.exists(user,fileRequest.getSurl())) {
-                                                fileRequest.setState(State.DONE,"SrmPutDone called");
-										success_counter++;
+                                                try (JDC ignored = fileRequest.applyJdc()) {
+                                                    synchronized(fileRequest) {
+                                                            if ( !State.isFinalState(fileRequest.getState())) {
+                                                                    if ( fileRequest.getTurlString()==null) {
+                                                                            fileRequest.setStatusCode(TStatusCode.SRM_INVALID_PATH);
+                                                                            fileRequest.setState(State.FAILED,"SrmPutDone called, TURL is not ready");
+                                                                            fail_counter++;
+                                                                    }
+                                                                    else {
+                                        try {
+                                            if (storage.exists(user,fileRequest.getSurl())) {
+                                                    fileRequest.setState(State.DONE,"SrmPutDone called");
+                                                                                    success_counter++;
+                                            }
+                                            else {
+                                                fail_counter++;
+                                                fileRequest.setStateAndStatusCode(
+                                                        State.FAILED,
+                                                        "SrmPutDone called : file does not exist",
+                                                        TStatusCode.SRM_INVALID_PATH);
+                                            }
                                         }
-                                        else {
+                                        catch (SRMException e) {
                                             fail_counter++;
                                             fileRequest.setStateAndStatusCode(
                                                     State.FAILED,
-                                                    "SrmPutDone called : file does not exist",
-                                                    TStatusCode.SRM_INVALID_PATH);
+                                                    "SrmPutDone called : "+e.getMessage(),
+                                                    TStatusCode.SRM_FAILURE);
                                         }
-                                    }
-                                    catch (SRMException e) {
-                                        fail_counter++;
-                                        fileRequest.setStateAndStatusCode(
-                                                State.FAILED,
-                                                "SrmPutDone called : "+e.getMessage(),
-                                                TStatusCode.SRM_FAILURE);
-                                    }
-								}
-                                                        }
-							else {
-								if (fileRequest.getState()==State.DONE) {
-									success_counter++;
-								}
-								if (fileRequest.getState()==State.FAILED) {
-									fail_counter++;
-								}
-								if (fileRequest.getState()==State.CANCELED) {
-									fail_counter++;
-								}
+                                                                    }
+                                                            }
+                                                            else {
+                                                                    if (fileRequest.getState()==State.DONE) {
+                                                                            success_counter++;
+                                                                    }
+                                                                    if (fileRequest.getState()==State.FAILED) {
+                                                                            fail_counter++;
+                                                                    }
+                                                                    if (fileRequest.getState()==State.CANCELED) {
+                                                                            fail_counter++;
+                                                                    }
 
-							}
-						}
+                                                            }
+                                                    }
+                                                }
 					}
 					else {
 						return getFailedResponse("SiteURLs["+i+"] is null",
@@ -311,28 +317,32 @@ public class SrmPutDone {
 			int success_counter=0;
 			if( surls == null ){
 			    for (FileRequest fileRequest : requests) {
-			        synchronized(fileRequest) {
-			            if (fileRequest.getState()==State.DONE) {
-			                success_counter++;
-			            } else {
-			                fail_counter++;
-			            }
-			        }
+                                try (JDC ignored = fileRequest.applyJdc()) {
+                                    synchronized(fileRequest) {
+                                        if (fileRequest.getState()==State.DONE) {
+                                            success_counter++;
+                                        } else {
+                                            fail_counter++;
+                                        }
+                                    }
+                                }
 			    }
 			}
 			else {
 				for(int i = 0; i< surls.length; ++i) {
 					if(surls[i] != null ) {
 						PutFileRequest fileRequest = (PutFileRequest) putRequest.getFileRequestBySurl(surls[i]);
-						synchronized(fileRequest) {
-							if (fileRequest.getState()==State.DONE) {
-								success_counter++;
-							}
-							else {
-								fail_counter++;
-							}
+                                                try (JDC ignored = fileRequest.applyJdc()) {
+                                                    synchronized(fileRequest) {
+                                                            if (fileRequest.getState()==State.DONE) {
+                                                                    success_counter++;
+                                                            }
+                                                            else {
+                                                                    fail_counter++;
+                                                            }
 
-						}
+                                                    }
+                                                }
 					}
 					else {
 						return getFailedResponse("SiteURLs["+i+"] is null",

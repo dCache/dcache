@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -133,7 +134,7 @@ public class LoginBrokerHandler
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        if (_loginBrokers == null) {
+        if (_loginBrokers == null || _task == null) {
             pw.println("    Login Broker : DISABLED");
             return;
         }
@@ -173,11 +174,19 @@ public class LoginBrokerHandler
     public synchronized void setAddress(String host)
         throws SocketException, UnknownHostException
     {
-        InetAddress address = InetAddress.getByName(host);
-        if (address.isAnyLocalAddress()) {
+        if (host == null) {
+            // FIXME: this should include IPv6 addresses
             setAddresses(NetworkUtils.getLocalAddressesV4());
         } else {
-            setAddresses(Collections.singletonList(address));
+            InetAddress address = InetAddress.getByName(host);
+
+            if (address.isAnyLocalAddress()) {
+                // FIXME: this should check if reporting IPv6 addresses is
+                //        appropriate
+                setAddresses(NetworkUtils.getLocalAddressesV4());
+            } else {
+                setAddresses(Collections.singletonList(address));
+            }
         }
     }
 
@@ -270,6 +279,7 @@ public class LoginBrokerHandler
     public synchronized void setUpdateTimeUnit(TimeUnit unit)
     {
         _brokerUpdateTimeUnit = unit;
+        rescheduleTask();
     }
 
     public synchronized TimeUnit getUpdateTimeUnit()

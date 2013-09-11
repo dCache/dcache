@@ -130,14 +130,14 @@ public class FormatsTests
     public void testReplaceSimpleKeywordsWithDollarWithinKeywordExistsWithDoubleEscape()
     {
         _replacements.put("$other", "keyword");
-        assertHasReplacement("${${$$$$other}}", "replacement");
+        assertHasReplacement("${${$$$$other}}", "${${$$other}}");
     }
 
     @Test
     public void testReplaceSimpleKeywordsWithDollarBraceWithinKeywordExistsWithDoubleEscape()
     {
         _replacements.put("${other", "keyword");
-        assertHasReplacement("${${$$$${other}}", "replacement");
+        assertHasReplacement("${${$${other}}", "replacement");
     }
 
     @Test
@@ -171,7 +171,7 @@ public class FormatsTests
     public void testReplaceComplexKeywordsWithinKeywordPartial()
     {
         _replacements.put("other", "foo");
-        assertHasReplacement("${${other}", "${${other}");
+        assertHasReplacement("${${other}", "${foo");
     }
 
     private void assertHasReplacement(String in, String expected)

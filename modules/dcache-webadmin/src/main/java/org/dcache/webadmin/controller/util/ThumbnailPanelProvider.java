@@ -84,7 +84,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author arossi
  */
 public final class ThumbnailPanelProvider extends
-                AbstractRegexFilteringProvider<ThumbnailPanelBean> {
+                AbstractRegexFilteringProvider<ThumbnailPanelBean, String> {
 
     private static final long serialVersionUID = 9211014459588122003L;
 

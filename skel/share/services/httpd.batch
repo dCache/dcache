@@ -7,120 +7,165 @@
 ####################################################################
 
 onerror shutdown
-check -strong port
+check -strong httpd.net.port
 check -strong dcache.paths.config
 check -strong dcache.paths.etc
-check -strong cell.name
+check -strong httpd.cell.name
+check -strong httpd.enable.authn
+check -strong httpd.enable.alarm-cleaner
+check -strong httpd.enable.plots.pool-queue
+
+check httpd.statistics.location
+
 check -strong httpd.static-content.scripts
 check -strong httpd.static-content.docs
 check -strong httpd.static-content.images
 check -strong httpd.static-content.styles
 check -strong httpd.static-content.index
 check -strong httpd.static-content.plots
-check -strong dcache.service.loginbroker
-check -strong dcache.service.gplazma
-check -strong dcache.service.pnfsmanager
-check -strong dcache.service.poolmanager
+check -strong httpd.service.billing
+check -strong httpd.service.loginbroker
+check -strong httpd.service.gplazma
+check -strong httpd.service.pnfsmanager
+check -strong httpd.service.poolmanager
+check -strong httpd.limits.idle-time
+check -strong httpd.limits.idle-time.unit
+check -strong httpd.limits.threads
+check -strong httpd.container.default-webapp
+check -strong httpd.container.webapps.dir
+check -strong httpd.container.webapps.tmp-dir
+check httpd.html.dcache-instance-name
 
-check httpd.security.ciphers
+check -strong httpd.service.pool.timeout
+check -strong httpd.service.pool.timeout.unit
+check -strong httpd.service.billing.timeout
+check -strong httpd.service.billing.timeout.unit
+check -strong httpd.service.poolmonitor-collector.timeout
+check -strong httpd.service.poolmonitor-collector.timeout.unit
+check -strong httpd.service.activetransfers-collector.timeout
+check -strong httpd.service.activetransfers-collector.timeout.unit
+check -strong httpd.service.cellstatus-collector.timeout
+check -strong httpd.service.cellstatus-collector.timeout.unit
+check -strong httpd.service.spacetoken-collector.timeout
+check -strong httpd.service.spacetoken-collector.timeout.unit
+check -strong httpd.service.restorehandler-collector.timeout
+check -strong httpd.service.restorehandler-collector.timeout.unit
 
-# Default content for httpd service.
-#
-# Can be redefined in etc/httpd.conf or additional content can
-# be defined in httpdSetupExtra.
-####################################################################
+check -strong httpd.service.poolmonitor-collector.period
+check -strong httpd.service.poolmonitor-collector.period.unit
+check -strong httpd.service.activetransfers-collector.period
+check -strong httpd.service.activetransfers-collector.period.unit
+check -strong httpd.service.cellstatus-collector.period
+check -strong httpd.service.cellstatus-collector.period.unit
+check -strong httpd.service.spacetoken-collector.period
+check -strong httpd.service.spacetoken-collector.period.unit
+check -strong httpd.service.restorehandler-collector.period
+check -strong httpd.service.restorehandler-collector.period.unit
 
-#
-#  This checks to see if billingToDb is enabled
-onerror continue
 
-define env usePlottingFlag end
-  set env -c plotBillingData ${generatePlots}
+define env checkSecurityProperties end
+     check -strong httpd.net.https-port
+     check -strong httpd.authz.admin-gid
+     check -strong httpd.authn.ciphers
 end
 
-eval ${billingToDb} yes ==
-exec env usePlottingFlag -ifok
+define env checkAlarmCleanerProperites end
+     check -strong httpd.alarm-cleaner.timeout
+     check -strong httpd.alarm-cleaner.timeout.unit
+     check -strong httpd.alarm-cleaner.delete-entries-before
+     check -strong httpd.alarm-cleaner.delete-entries-before.unit
+end
 
-# Otherwise turn them off
-set env -c plotBillingData false
+define env checkAlarmProperties end
+     onerror continue
+     check -strong httpd.alarms.db.url
 
-#
+     onerror shutdown
+     check -strong httpd.alarms.definitions.path
+     check httpd.alarms.db.driver
+     check httpd.alarms.db.user
+     check httpd.alarms.db.password
+     check httpd.alarms.db.xml.path
+     check httpd.alarms.db.config.path
+end
+
+define env checkPoolQProperties end
+     check -strong httpd.pool-queue.db.version
+     check -strong httpd.pool-queue.db.heartbeat-factor
+     check -strong httpd.plots.pool-queue.refresh
+     check -strong httpd.plots.pool-queue.refresh.unit
+     check -strong httpd.plots.pool-queue.type
+     check -strong httpd.plots.pool-queue.height
+     check -strong httpd.plots.pool-queue.width
+     check -strong httpd.plots.pool-queue.x-span
+     check -strong httpd.plots.pool-queue.x-span.unit
+     check -strong httpd.plots.pool-queue.min-time-step
+     check -strong httpd.plots.pool-queue.min-time-step.unit
+     check -strong httpd.plots.pool-queue.major.unit
+     check -strong httpd.plots.pool-queue.grid.spacing.major
+     check -strong httpd.plots.pool-queue.minor.unit
+     check -strong httpd.plots.pool-queue.grid.spacing.minor
+     check -strong httpd.plots.pool-queue.right-margin
+     check -strong httpd.plots.pool-queue.label-span
+     check -strong httpd.plots.pool-queue.label.unit
+     check -strong httpd.plots.pool-queue.x-label.spacing
+     check -strong httpd.plots.pool-queue.x-label.format
+     check -strong httpd.plots.pool-queue.y-label
+end
+
+define env checkBillingPlotsProperties end
+     check -strong httpd.plots.billing.type
+     check -strong httpd.plots.billing.refresh
+     check -strong httpd.plots.billing.refresh.unit
+     check -strong httpd.plots.billing.height
+     check -strong httpd.plots.billing.width
+     check -strong httpd.plots.billing.style
+     check -strong httpd.plots.billing.scale
+end
+
+onerror continue
+eval ${httpd.enable.authn} true ==
+exec env checkSecurityProperties -ifok
+
+onerror continue
+eval ${httpd.enable.alarm-cleaner} true ==
+exec env checkAlarmCleanerProperites -ifok
+
+onerror continue
+exec env checkAlarmProperties
+
+onerror continue
+eval ${httpd.enable.plots.pool-queue} true ==
+exec env checkPoolQProperties -ifok
+
+onerror continue
+eval ${httpd.enable.plots.billing} true ==
+exec env checkBillingPlotsProperties -ifok
+
+####################################################################
 #  The following block defines the context set_alias_statistics to be either
-#  "set alias statistics directory ${statisticsLocation}" if
-#  ${statisticsLocation} exists and is a directory, or an empty string otherwise
+#  "set alias statistics directory ${httpd.statistics.location}" if
+#  ${httpd.statistics.location} exists and is a directory, or an empty string otherwise
 #
 define env defineStatisticsAlias.exe endDefine
-   set context set_alias_statistics "set alias statistics directory ${statisticsLocation}"
+   set context set_alias_statistics "set alias statistics directory ${httpd.statistics.location}"
 endDefine
 define env defineEmptyStatisticsAlias.exe endDefine
    set context set_alias_statistics ""
 endDefine
 
 onerror continue
-test -d ${statisticsLocation}
+test -d ${httpd.statistics.location}
 set env have_stats_loc ${rc}
 
 onerror shutdown
 exec env defineStatisticsAlias.exe -ifok=have_stats_loc
 exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 
-define context webadmin.exe endDefine
-    set alias webadmin webapp ${webadminWebappsPath} \
-     "-adminGid=${webadminAdminGid} \
-     -gPlazmaName=${dcache.service.gplazma} \
-     -dCacheInstanceName=${webadminDCacheInstanceName}  \
-     -loginBrokerNames=${dcache.service.loginbroker} \
-     -pnfsManagerName=${dcache.service.pnfsmanager} \
-     -poolManagerName=${dcache.service.poolmanager} \
-     -srmSpaceManagerEnabled=${dcache.enable.spacemanager} \
-     -collectorTimeout=${collectorTimeout} \
-     -transfersCollectorUpdate=${transfersCollectorUpdate} \
-     -tempUnpackDir=${webadminWarunpackdir} \
-     -billingCell=${billing} \
-     -generatePlots=${plotBillingData} \
-     -plotsDir=${httpd.static-content.plots} \
-     -imageType=${billingPlotsExportType} \
-     -webadmin.billing-plot.refresh-threshold=${webadmin.billing-plot.refresh-threshold} \
-     -webadmin.billing-plot.height=${webadmin.billing-plot.height} \
-     -webadmin.billing-plot.width=${webadmin.billing-plot.width} \
-     -webadmin.billing-plot.default-style=${webadmin.billing-plot.default-style} \
-     -webadmin.billing-plot.default-scale=${webadmin.billing-plot.default-scale} \
-     -alarmsXMLPath=${alarms.store.path} \
-     -alarmsDbDriver=${alarms.store.db.driver} \
-     -alarmsDbUrl=${alarms.store.db.url} \
-     -alarmsDbUser=${alarms.store.db.user} \
-     -alarmsDbPass=${alarms.store.db.pass} \
-     -alarmsPropertiesPath=${alarms.store.db.properties} \
-     -alarmsDefinitionsPath=${alarms.definitions.path} \
-     -alarmsCleanerEnabled=${webadmin.alarm.cleaner.enabled} \
-     -alarmsCleanerSleepInterval=${webadmin.alarm.cleaner.timeout} \
-     -alarmsCleanerDeleteThreshold=${webadmin.alarm.cleaner.delete-threshold} \
-     -pqpEnabled=${poolqplots.enabled} \
-     -pqpRefreshInterval=${poolqplots.refresh-interval} \
-     -pqpRefreshIntervalUnit=${poolqplots.refresh-interval-unit} \
-     -rrdHeartbeatFactor=${poolqplots.rrdb.plot.heartbeat-factor} \
-     -rrdVersion=${poolqplots.rrdb.db.version} \
-     -rrdYLabel=\"${poolqplots.rrdb.plot.y-label}\" \
-     -rrdSpanSize=${poolqplots.rrdb.plot.span-size} \
-     -rrdSpanUnit=${poolqplots.rrdb.plot.span-unit} \
-     -rrdStepSize=${poolqplots.rrdb.plot.step-size} \
-     -rrdStepUnit=${poolqplots.rrdb.plot.step-unit} \
-     -rrdImgType=${poolqplots.rrdb.image-type} \
-     -rrdImgHeight=${poolqplots.rrdb.plot.height} \
-     -rrdImgWidth=${poolqplots.rrdb.plot.width} \
-     -rrdLabelSpan=${poolqplots.rrdb.plot.label-span} \
-     -rrdLabelUnit=${poolqplots.rrdb.plot.label-unit} \
-     -rrdLabelUnitCount=${poolqplots.rrdb.plot.label-unit-count} \
-     -rrdMajorUnit=${poolqplots.rrdb.plot.major-unit} \
-     -rrdMajorUnitCount=${poolqplots.rrdb.plot.major-unit-count} \
-     -rrdMinorUnit=${poolqplots.rrdb.plot.minor-unit} \
-     -rrdMinorUnitCount=${poolqplots.rrdb.plot.minor-unit-count} \
-     -rrdRightMarginInSteps=${poolqplots.rrdb.plot.right-margin} \
-     -rrdSimpleDateFormat=\"${poolqplots.rrdb.plot.x-label-format}\""
-endDefine
+####################################################################
 
-define context ${cell.name}Setup endDefine
-   exec context webadmin.exe
+define context ${httpd.cell.name}Setup endDefine
+   set alias webadmin webapp ${httpd.container.webapps.dir}
    set alias <home> redirect webadmin
    set alias <default> context missing.html
    set alias old file ${httpd.static-content.index} -onError=default
@@ -141,7 +186,6 @@ define context ${cell.name}Setup endDefine
    set alias api class org.dcache.services.httpd.probe.ProbeResponseEngine
    ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
-   set update 60
 endDefine
 
 # Page to show for missing content
@@ -231,20 +275,9 @@ create diskCacheV111.cells.WebCollectorV3 collector \
      -replyObject"
 
 # The http service cell provides the web interface
+#
 ####################################################################
 
 onerror shutdown
-create org.dcache.services.httpd.HttpServiceCell ${cell.name} \
-       "-authenticated=${authenticated}  \
-        -httpPort=${port}  \
-        -httpsPort=${httpsPort}  \
-        -httpd.security.ciphers=\"${httpd.security.ciphers}\" \
-        -keystore=${keyStore}  \
-        -keystoreType=PKCS12  \
-        -keystorePassword=${keyStorePassword}  \
-        -truststore=${trustStore}  \
-        -truststorePassword=${trustStorePassword} \
-        -webappsResource=${httpdDefaultWebapp} \
-        -maxIdleTime=${httpdMaxIdleTimeInMs} \
-        -maxThreads=${httpdMaxThreads}"
-
+create org.dcache.cells.UniversalSpringCell ${httpd.cell.name} \
+        "classpath:org/dcache/services/httpd/httpd.xml"

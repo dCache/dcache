@@ -23,9 +23,9 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationREAD.class.getName());
 
-     private final Map<stateid4, MoverBridge> _activeIO;
+     private final Map<stateid4, NfsMover> _activeIO;
 
-    public EDSOperationREAD(nfs_argop4 args,  Map<stateid4, MoverBridge> activeIO) {
+    public EDSOperationREAD(nfs_argop4 args,  Map<stateid4, NfsMover> activeIO) {
         super(args, nfs_opnum4.OP_READ);
         _activeIO = activeIO;
     }
@@ -39,19 +39,17 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             long offset = _args.opread.offset.value.value;
             int count = _args.opread.count.value.value;
 
-            MoverBridge moverBridge = _activeIO.get(_args.opread.stateid);
-            if(moverBridge == null) {
+            NfsMover mover = _activeIO.get(_args.opread.stateid);
+            if(mover == null) {
                 throw new ChimeraNFSException(nfsstat.NFSERR_BAD_STATEID,
                         "No mover associated with given stateid");
             }
 
             ByteBuffer bb = ByteBuffer.allocate(count);
-            RepositoryChannel fc = moverBridge.getFileChannel();
+            RepositoryChannel fc = mover.getMoverChannel();
 
             bb.rewind();
             int bytesReaded = fc.read(bb, offset);
-
-            moverBridge.getMover().setBytesTransferred(bytesReaded);
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();

@@ -21,6 +21,8 @@ import org.ietf.jgss.GSSManager;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 import diskCacheV111.util.CacheException;
@@ -32,7 +34,10 @@ import dmg.util.StreamEngine;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.Option;
+import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
+
+import static java.util.Arrays.asList;
 
 /**
  *
@@ -64,6 +69,8 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     )
     protected String cipherFlags;
 
+    private CertificateFactory cf;
+
     private String _user;
 
     /** Creates a new instance of GsiFtpDoorV1 */
@@ -77,6 +84,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         throws Exception
     {
         super.init();
+        cf = CertificateFactories.newX509CertificateFactory();
 
         _gssFlavor = "gsi";
 
@@ -158,14 +166,14 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
                 (ExtendedGSSContext) _serviceContext;
             X509Certificate[] chain =
                 (X509Certificate[]) extendedcontext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
-            subject.getPublicCredentials().add(chain);
+            subject.getPublicCredentials().add(cf.generateCertPath(asList(chain)));
 
             login(subject);
 
             _user = arg;
 
             reply("200 User " + arg + " logged in");
-        } catch (GSSException e) {
+        } catch (GSSException | CertificateException e) {
             error("Failed to extract X509 chain: " + e);
             println("530 Login failed: " + e.getMessage());
         } catch (PermissionDeniedCacheException e) {

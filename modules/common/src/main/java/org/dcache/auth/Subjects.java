@@ -5,6 +5,8 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -124,7 +126,7 @@ public class Subjects
      * Returns the principal of the given type of the subject. Returns
      * null if there is no such principal.
      *
-     * @throw IllegalArguemntException is subject has more than one such principal
+     * @throws IllegalArgumentException is subject has more than one such principal
      */
     private static <T> T getUniquePrincipal(Subject subject, Class<T> type)
         throws IllegalArgumentException
@@ -216,7 +218,7 @@ public class Subjects
      * Returns the origin of a subject. Returns null if subject has no
      * origin.
      *
-     * @param IllegalArgumentException if there is more than one origin
+     * @throws IllegalArgumentException if there is more than one origin
     */
     public static Origin getOrigin(Subject subject)
         throws IllegalArgumentException
@@ -227,7 +229,7 @@ public class Subjects
     /**
      * Returns the DN of a subject. Returns null if subject has no DN.
      *
-     * @param IllegalArgumentException if there is more than one origin
+     * @throws IllegalArgumentException if there is more than one origin
      */
     public static String getDn(Subject subject)
         throws IllegalArgumentException
@@ -279,7 +281,7 @@ public class Subjects
      * Returns the the user name of a subject. If UserNamePrincipal is
      * not defined then null is returned.
      *
-     * @throw IllegalArgumentException if subject has more than one
+     * @throws IllegalArgumentException if subject has more than one
      *        user name
      */
     public static String getUserName(Subject subject)
@@ -293,7 +295,7 @@ public class Subjects
      * Returns the the login name of a subject. If LoginNamePrincipal
      * is not defined then null is returned.
      *
-     * @throw IllegalArgumentException if subject has more than one
+     * @throws IllegalArgumentException if subject has more than one
      *        login name
      */
     public static String getLoginName(Subject subject)
@@ -446,21 +448,35 @@ public class Subjects
             Principal principal;
 
             switch (type) {
-            case "dn":
-                principal = new GlobusPrincipal(value);
-                break;
-            case "kerberos":
-                principal = new KerberosPrincipal(value);
-                break;
-            case "fqan":
-                principal = new FQANPrincipal(value, isPrimaryFqan);
-                isPrimaryFqan = false;
-                break;
-            case "name":
-                principal = new LoginNamePrincipal(value);
-                break;
-            default:
-                throw new IllegalArgumentException("unknown type: " + type);
+                case "dn":
+                    principal = new GlobusPrincipal(value);
+                    break;
+                case "kerberos":
+                    principal = new KerberosPrincipal(value);
+                    break;
+                case "fqan":
+                    principal = new FQANPrincipal(value, isPrimaryFqan);
+                    isPrimaryFqan = false;
+                    break;
+                case "name":
+                    principal = new LoginNamePrincipal(value);
+                    break;
+                default:
+                    try {
+                        Class principalClass = Class.forName(type);
+                        Constructor principalConstructor = principalClass.getConstructor(String.class);
+                        principal = (Principal)principalConstructor.newInstance(value);
+                    } catch (NoSuchMethodException e) {
+                        throw new IllegalArgumentException("No matching constructor found: "+type+"(String)");
+                    } catch (ClassNotFoundException e) {
+                        throw new IllegalArgumentException("No matching class found: "+type);
+                    } catch (InvocationTargetException e) {
+                        throw new IllegalArgumentException("Invocation failed: "+e.toString());
+                    } catch (InstantiationException e) {
+                        throw new IllegalArgumentException("Instantiation failed: "+e.toString());
+                    } catch (IllegalAccessException e) {
+                        throw new IllegalArgumentException("Access Exception: "+e.toString());
+                    }
             }
 
             principals.add(principal);

@@ -1,7 +1,7 @@
 package org.dcache.webadmin.view.pages.poolgroupview;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -174,7 +174,7 @@ public class PoolGroupView extends BasePage {
         }
 
         private void addClassAttribute(WebMarkupContainer container, String value) {
-            container.add(new SimpleAttributeModifier("class", value));
+            container.add(new AttributeModifier("class", value));
         }
     }
 }

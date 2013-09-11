@@ -165,7 +165,7 @@ public class SrmLs {
                                                     numOfLevels,
                                                     longFormat,
                                                     max_results_num);
-
+                        r.applyJdc();
                         r.schedule();
                         return r.getSrmLsResponse(configuration.getLsSwitchToAsynchronousModeDelay());
                 }

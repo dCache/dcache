@@ -95,15 +95,11 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
- * File request is an abstract "SRM file request"
- * its concrete subclasses are GetFileRequest,PutFileRequest and CopyFileRequest
- * File request is one in a set of file requests within a request
- * each ContainerRequest is identified by its requestId
- * and each file request is identified by its fileRequestId within ContainerRequest
- * File ContainerRequest contains  a reference to its ContainerRequest
- *
- * @author timur
- * @version
+ * A FileRequest is used by ContainerRequest (and its subclasses) to represent
+ * the individual files that form this request.  For example if the user issues
+ * an srmLs operation then the corresponding LsRequest object will contain zero
+ * or more LsFileRequest objects (a subclass of FileRequest), one for each file
+ * in the srmLs operation.
  */
 public abstract class FileRequest extends Job {
     private final static Logger logger =
@@ -374,11 +370,11 @@ public abstract class FileRequest extends Job {
      }
 
     @Override
-    public void applyJdc()
+    public JDC applyJdc()
     {
-        jdc.apply();
-        JDC.push(String.valueOf(requestId));
-        JDC.push(String.valueOf(id));
+        JDC current = jdc.apply();
+        JDC.appendToSession(String.valueOf(requestId) + ':' + String.valueOf(id));
+        return current;
     }
 
      /**

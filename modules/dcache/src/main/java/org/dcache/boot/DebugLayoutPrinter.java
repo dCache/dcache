@@ -7,7 +7,6 @@ import java.util.Enumeration;
 import java.util.Map;
 
 import org.dcache.util.ConfigurationProperties;
-import org.dcache.util.ScopedConfigurationProperties;
 
 /**
  * Provide a clean view of the configuration properties.  This is intended to
@@ -61,10 +60,10 @@ public class DebugLayoutPrinter implements LayoutPrinter
             listProperties(domain.properties(),
                     "[" + domain.getName() + "]", 2);
 
-            for (ScopedConfigurationProperties properties :
+            for (ConfigurationProperties properties :
                     domain.getServices()) {
                 listProperties(properties, "[" + domain.getName() + "/"
-                        + properties.getScope() + "]", 2);
+                        + properties.getValue(Properties.PROPERTY_DOMAIN_SERVICE) + "]", 2);
             }
         }
     }

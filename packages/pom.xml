@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>2.7.0-SNAPSHOT</version>
+    <version>2.8.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>packaging</artifactId>
@@ -113,6 +113,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>gplazma2-banfile</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>gplazma2-kpwd</artifactId>
         <version>${project.version}</version>
     </dependency>
@@ -125,6 +130,11 @@
         <groupId>org.dcache</groupId>
         <artifactId>gplazma2-ldap</artifactId>
         <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>gplazma2-htpasswd</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>

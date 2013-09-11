@@ -54,4 +54,10 @@ public class PoolCheckFileMessage extends PoolCheckMessage implements
     public void setWaiting(boolean waiting) {
         _waiting = waiting;
     }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
 }

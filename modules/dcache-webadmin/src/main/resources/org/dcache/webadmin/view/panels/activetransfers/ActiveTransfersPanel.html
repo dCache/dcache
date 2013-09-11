@@ -4,23 +4,7 @@
     <wicket:head>
         <wicket:link>
             <link href="ActiveTransfersPanel.css" rel="stylesheet" type="text/css" />
-            <script src="js/jquery.stickytableheaders.js" type="text/javascript" ></script>
-            <script type="text/javascript" src="js/picnet.table.filter.full.js"></script>
         </wicket:link>
-
-        <script type="text/javascript">
-            $(document).ready(function() {
-                $('.sortable').tablesorter();
-                // Initialise Plugin
-                var options1 = {
-                    additionalFilterTriggers: [$('#quickfind')],
-                    clearFiltersControls: [$('#cleanfilters')],
-                };
-                $('.sortable').tableFilter(options1);
-                $("table").stickyTableHeaders();
-            });
-
-        </script>
     </wicket:head>
 </head>
 <body>
@@ -29,7 +13,7 @@
     <input type="button" value="Clear Filters" id="cleanfilters">
     <div class="clear"></div>
     <br>
-    <table  class="sortable">
+    <table  id="sortable">
         <thead>
             <tr>
                 <th wicket:id="selectBoxHeader"/>

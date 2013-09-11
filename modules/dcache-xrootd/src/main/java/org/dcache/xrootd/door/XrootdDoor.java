@@ -59,6 +59,8 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Shared cell component used to interface with the rest of
  * dCache.
@@ -236,7 +238,7 @@ public class XrootdDoor
 
     public void setMoverTimeoutUnit(TimeUnit unit)
     {
-        _moverTimeoutUnit = unit;
+        _moverTimeoutUnit = checkNotNull(unit);
     }
 
     public TimeUnit getMoverTimeoutUnit()

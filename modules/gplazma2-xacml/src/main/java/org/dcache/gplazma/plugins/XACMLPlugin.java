@@ -27,6 +27,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.security.Principal;
 import java.security.cert.CRLException;
+import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.auth.util.X509Utils;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.util.CertPaths;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -355,10 +357,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          * extract all sets of extensions from certificate chains
          */
         for (Object credential : publicCredentials) {
-            if (credential instanceof X509Certificate[]) {
-                extractExtensionsFromChain((X509Certificate[])  credential,
-                                                                extensions,
-                                                                validator);
+            if (CertPaths.isX509CertPath(credential)) {
+                extractExtensionsFromChain(CertPaths.getX509Certificates((CertPath) credential), extensions, validator);
             }
         }
 

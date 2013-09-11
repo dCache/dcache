@@ -471,9 +471,6 @@ public class SRM {
         }
     }
 
-    /**
-     * this srm method is not implemented
-     */
     public void advisoryDelete(final SRMUser user, RequestCredential credential, String[] SURLS) {
         logger.debug("SRM.advisoryDelete");
         if (user == null) {

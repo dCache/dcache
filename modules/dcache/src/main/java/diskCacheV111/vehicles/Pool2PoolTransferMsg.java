@@ -66,4 +66,10 @@ public class Pool2PoolTransferMsg extends PoolMessage {
                 "Undetermined":
                 ( _destinationFileStatus==PRECIOUS?"Precious":"Cached" ));
     }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
 }

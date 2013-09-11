@@ -148,6 +148,7 @@ public class SrmStatusOfBringOnlineRequest {
         }
 
         ContainerRequest request = Job.getJob(requestId, ContainerRequest.class);
+        request.applyJdc();
 
         BringOnlineRequest getRequest = (BringOnlineRequest) request;
         if( statusOfBringOnlineRequest.getArrayOfSourceSURLs() == null

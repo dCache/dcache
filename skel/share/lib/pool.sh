@@ -51,22 +51,22 @@ printPoolConfig() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = 
     lfs="$6"
 
     echo "[$domain/pool]"
-    echo "name=$name"
-    echo "path=$path"
+    echo "pool.name=$name"
+    echo "pool.path=$path"
     if [ -n "$size" ]; then
         echo "pool.size=$size"
     fi
     case "$meta" in
         file)
             echo "pool.plugins.meta=org.dcache.pool.repository.meta.file.FileMetaDataRepository"
-            echo "pool.cell.wait-for-files=\${path}/data:\${path}/control"
+            echo "pool.wait-for-files=\${pool.path}/data:\${pool.path}/control"
             ;;
         db)
             echo "pool.plugins.meta=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository"
-            echo "pool.cell.wait-for-files=\${path}/data:\${path}/meta"
+            echo "pool.wait-for-files=\${pool.path}/data:\${pool.path}/meta"
             ;;
         *)
-            echo "pool.cell.wait-for-files=\${path}/data"
+            echo "pool.wait-for-files=\${pool.path}/data"
             ;;
     esac
 
@@ -208,8 +208,8 @@ doForPoolOrFail() # $1 = name, $2 = function
     shift 2
 
     for domain in $(getProperty dcache.domains); do
-        for cell in $(getProperty domain.cells "$domain"); do
-            service=$(getProperty domain.service "$domain" "$cell")
+        for cell in $(getProperty dcache.domain.cells "$domain"); do
+            service=$(getProperty dcache.domain.service "$domain" "$cell")
             if [ "$service" = "pool" ]; then
                 if [ "$name" = $(getProperty pool.name "$domain" "$cell") ]; then
                     eval "$func" "$domain" "$cell" "$@" || fail $?

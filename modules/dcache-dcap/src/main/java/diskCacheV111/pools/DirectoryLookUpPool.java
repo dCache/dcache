@@ -26,10 +26,10 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.DCapConstants;
 import org.dcache.pool.movers.DCapDataOutputStream;
@@ -50,12 +50,15 @@ public class DirectoryLookUpPool extends AbstractCell
     private final static Logger _log =
         LoggerFactory.getLogger(DirectoryLookUpPool.class);
 
-    private final static CellPath PNFS_MANAGER = new CellPath("PnfsManager");
-
     private final String _poolName;
     private final Args _args;
     private PnfsHandler _pnfs;
     private DirectoryListSource _list;
+
+    @Option(name = "pnfsManager",
+            description = "Cell address of the PNFS manager",
+            defaultValue = "PnfsManager")
+    protected CellPath _pnfsManager;
 
     public DirectoryLookUpPool(String poolName, String args)
         throws InterruptedException, ExecutionException
@@ -74,7 +77,7 @@ public class DirectoryLookUpPool extends AbstractCell
     {
         _log.info("Lookup Pool " + _poolName + " starting");
 
-        _pnfs = new PnfsHandler(this, PNFS_MANAGER);
+        _pnfs = new PnfsHandler(this, _pnfsManager);
         ListDirectoryHandler listHandler = new ListDirectoryHandler(_pnfs);
         addMessageListener(listHandler);
         _list = listHandler;

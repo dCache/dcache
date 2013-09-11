@@ -95,4 +95,9 @@ public class PoolIoFileMessage extends PoolMessage {
     {
         return _forceSourceMode;
     }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
 }

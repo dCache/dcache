@@ -101,6 +101,12 @@ public class CacheException extends Exception
      */
     public final static int FILE_IS_NEW = 10022;
 
+    /**
+     * An operation failed because there was no service to handle the
+     * corresponding message request.
+     */
+    public final static int SERVICE_UNAVAILABLE = 10023;
+
 
     /**
      * default error code. <b>It's recommended to use more specific error

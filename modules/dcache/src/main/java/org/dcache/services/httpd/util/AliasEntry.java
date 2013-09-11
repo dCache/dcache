@@ -5,12 +5,13 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.webapp.WebAppContext;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.Properties;
 
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.Args;
-import dmg.util.HttpResponseEngine;
 
 import org.dcache.services.httpd.HttpServiceCell;
 import org.dcache.services.httpd.handlers.BadConfigHandler;
@@ -20,7 +21,7 @@ import org.dcache.services.httpd.handlers.RedirectHandler;
 import org.dcache.services.httpd.handlers.ResponseEngineHandler;
 
 /**
- * Abstraction for httpd aliases.  Integrates Jetty webapp type.
+ * Abstraction for httpd aliases. Integrates webapp type.
  *
  * @author arossi
  */
@@ -87,14 +88,14 @@ public class AliasEntry {
     public static final String TYPE_CLASS = "class";
     public static final String TYPE_WEBAPP = "webapp";
     public static final String TYPE_BAD_CONFIG = "badconfig";
+    public static final String HTTP_SERVICE = "httpService";
     public static final String CELL_ENDPOINT = "serviceCellEndpoint";
-    public static final String CELL_NUCLEUS = "serviceCellNucleus";
-    public static final String OPT_UNPACK_DIR = "tempUnpackDir";
+    public static final String JNDI_ARGS = "jndiArgs";
 
     public static AliasEntry createEntry(Args args, HttpServiceCell cell)
                     throws Exception {
-        final String alias = args.argv(0);
-        final String type = args.argv(1);
+        String alias = args.argv(0);
+        String type = args.argv(1);
         String specific = args.argv(2);
 
         AliasType aliasType = AliasType.fromType(type);
@@ -105,9 +106,9 @@ public class AliasEntry {
         switch (aliasType) {
             case FILE:
             case DIR:
-                final File dir = new File(specific);
+                File dir = new File(specific);
                 if ((!dir.isDirectory()) && (!dir.isFile())) {
-                    throw new Exception("Directory/File not found : " + specific);
+                    throw new FileNotFoundException(specific);
                 }
                 handler = new PathHandler(dir);
                 entry = new AliasEntry(alias, aliasType, handler, specific);
@@ -115,7 +116,7 @@ public class AliasEntry {
                                 + specific + ")";
                 break;
             case CONTEXT:
-                final int pos = specific.indexOf("*");
+                int pos = specific.indexOf("*");
                 if (pos > -1) {
                     specific = specific.substring(0, pos);
                 }
@@ -133,9 +134,9 @@ public class AliasEntry {
                                 + specific + ")";
                 break;
             case ENGINE:
-                final int argcount = args.argc() - 3;
-                final String[] handlerArgs = new String[argcount];
-                final StringBuilder sb = new StringBuilder();
+                int argcount = args.argc() - 3;
+                String[] handlerArgs = new String[argcount];
+                StringBuilder sb = new StringBuilder();
                 sb.append("class=").append(specific);
 
                 for (int i = 0; i < argcount; i++) {
@@ -143,13 +144,13 @@ public class AliasEntry {
                     sb.append(";").append(handlerArgs[i]);
                 }
 
-                final ResponseEngineHandler rhandler
+                ResponseEngineHandler rhandler
                     = new ResponseEngineHandler(specific, handlerArgs);
 
                 try {
                     rhandler.initialize(cell);
                     handler = rhandler;
-                } catch (final Exception e) {
+                } catch (Exception e) {
                     handler = new BadConfigHandler();
                     aliasType = AliasType.BADCONFIG;
                     failure = "failed to load class " + specific;
@@ -162,9 +163,10 @@ public class AliasEntry {
                                 + entry.getSpecificString() + ")";
                 break;
             case WEBAPP:
-                handler = createWebAppContext(alias, specific, new Args(args.argv(3)), cell);
+                handler = createWebAppContext(alias, specific, cell);
                 entry = new AliasEntry(alias, aliasType, handler, args.toString());
-                entry.statusMessage = alias + " -> " + TYPE_WEBAPP + "(" + args + ")";
+                entry.statusMessage = alias + " -> " + TYPE_WEBAPP
+                                            + "(" + args + ")";
                 break;
             case BADCONFIG:
                 handler = new BadConfigHandler();
@@ -175,6 +177,7 @@ public class AliasEntry {
             default:
                 /*
                  * should not get here (unknown alias type throws exception
+                 *
                  * @ fromType())
                  */
         }
@@ -185,38 +188,39 @@ public class AliasEntry {
         return entry;
     }
 
-    private static Handler createWebAppContext(String alias, String webappsPath,
-                    Args args, HttpServiceCell cell) throws Exception {
-            final String context = "/" + alias;
-            final String tmp = args.getOpt(OPT_UNPACK_DIR);
+    private static Handler createWebAppContext(String alias,
+                    String webappsPath, HttpServiceCell cell) throws Exception {
+        String context = "/" + alias;
+        Map<String, Object> env = cell.getEnvironment();
 
-            final File war = new File(webappsPath, context + ".war");
-            final File tmpDir = new File(tmp, alias);
+        File war = new File(webappsPath, context + ".war");
+        File tmpDir = new File(cell.getTmpUnpackDir(), alias);
 
-            final WebAppContext webappContext = new WebAppContext();
-            webappContext.setDefaultsDescriptor(cell.getDefaultWebappsXml());
-            webappContext.setContextPath(context);
-            webappContext.setWar(war.getAbsolutePath());
-            webappContext.setExtractWAR(true);
-            webappContext.setTempDirectory(tmpDir);
-            webappContext.setConfigurationClasses(configClasses);
+        WebAppContext webappContext = new WebAppContext();
+        webappContext.setDefaultsDescriptor(cell.getDefaultWebappsXml());
+        webappContext.setContextPath(context);
+        webappContext.setWar(war.getAbsolutePath());
+        webappContext.setExtractWAR(true);
+        webappContext.setTempDirectory(tmpDir);
+        webappContext.setConfigurationClasses(configClasses);
 
-            /*
-             * export to JNDI (constructor binds the entry into JNDI); all
-             * resources and env entries are scoped to the webapp context
-             */
-            new EnvEntry(webappContext, CELL_ENDPOINT, cell, true);
-            new EnvEntry(webappContext, CELL_NUCLEUS, cell.getNucleus(), true);
+        /*
+         * export to JNDI (constructor binds the entry into JNDI); all resources
+         * and env entries are scoped to the webapp context
+         */
+        new EnvEntry(webappContext, CELL_ENDPOINT, cell.getEndpoint(), true);
 
-            final Map<String, String> opts = args.optionsAsMap();
-            for (final String key : opts.keySet()) {
-                new EnvEntry(webappContext, key, opts.get(key), true);
-            }
+        Properties properties = new Properties();
+        for (String key : env.keySet()) {
+            properties.setProperty(key, String.valueOf(env.get(key)));
+        }
 
-            webappContext.setServer(cell.getServer());
-            webappContext.start();
+        new EnvEntry(webappContext, JNDI_ARGS, properties, true);
 
-            return webappContext;
+        webappContext.setServer(cell.getServer());
+        webappContext.start();
+
+        return webappContext;
     }
 
     private final String name;
@@ -230,8 +234,7 @@ public class AliasEntry {
     private String intFailureMsg;
     private String statusMessage;
 
-    private AliasEntry(String name, AliasType type, Handler handler, String spec)
-    {
+    private AliasEntry(String name, AliasType type, Handler handler, String spec) {
         this.name = name;
         this.type = type;
         this.handler = handler;
@@ -304,7 +307,7 @@ public class AliasEntry {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append(type.toType()).append("(").append(spec).append(")");
         if (onError != null) {
             sb.append(" [onError=").append(onError).append("]");

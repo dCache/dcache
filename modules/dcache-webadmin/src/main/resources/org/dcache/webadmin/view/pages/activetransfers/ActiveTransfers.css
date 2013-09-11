@@ -1,5 +1,13 @@
 @CHARSET "UTF-8";
 
+table {
+    width: 100%;
+}
+
+td {
+    text-align: center;
+}
+
 h2 {
     text-align: center;
 }

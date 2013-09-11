@@ -185,6 +185,7 @@ public class SrmReleaseFiles {
         }
 
         ContainerRequest request = Job.getJob(requestId, ContainerRequest.class);
+        request.applyJdc();
 
         if ( !(request instanceof GetRequest || request instanceof BringOnlineRequest) ){
             return getFailedResponse("request for requestToken \""+

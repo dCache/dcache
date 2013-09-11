@@ -97,13 +97,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.client.Transport;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  *
@@ -203,6 +203,15 @@ public class Configuration {
     private int putMaxRunningBySameOwner=10;
     private long putSwitchToAsynchronousModeDelay = 0;
 
+    private int reserveSpaceReqTQueueSize=1000;
+    private int reserveSpaceThreadPoolSize=30;
+    private int reserveSpaceMaxWaitingRequests=1000;
+    private int reserveSpaceReadyQueueSize=1000;
+    private int reserveSpaceMaxReadyJobs=60;
+    private int reserveSpaceMaxNumOfRetries=10;
+    private long reserveSpaceRetryTimeout=60000;
+    private int reserveSpaceMaxRunningBySameOwner=10;
+
     private int copyReqTQueueSize=1000;
     private int copyThreadPoolSize=30;
     private int copyMaxWaitingRequests=1000;
@@ -215,6 +224,7 @@ public class Configuration {
     private long bringOnlineLifetime = 24*60*60*1000;
     private long putLifetime = 24*60*60*1000;
     private long copyLifetime = 24*60*60*1000;
+    private long reserveSpaceLifetime = 24*60*60*1000;
     private long defaultSpaceLifetime = 24*60*60*1000;
 
     private boolean useUrlcopyScript=false;
@@ -232,13 +242,14 @@ public class Configuration {
     private String nextRequestIdStorageTable = "srmnextrequestid";
     private boolean reserve_space_implicitely;
     private boolean space_reservation_strict;
-    private long storage_info_update_period = SECONDS.toMillis(30);
+    private long storage_info_update_period = TimeUnit.SECONDS.toMillis(30);
     private String qosPluginClass = null;
     private String qosConfigFile = null;
     private String getPriorityPolicyPlugin="DefaultJobAppraiser";
     private String bringOnlinePriorityPolicyPlugin="DefaultJobAppraiser";
     private String putPriorityPolicyPlugin="DefaultJobAppraiser";
     private String lsPriorityPolicyPlugin="DefaultJobAppraiser";
+    private String reserveSpacePriorityPolicyPlugin="DefaultJobAppraiser";
     private Integer maxQueuedJdbcTasksNum ; //null by default
     private Integer jdbcExecutionThreadNum;//null by default
     private String credentialsDirectory="/opt/d-cache/credentials";
@@ -455,6 +466,25 @@ public class Configuration {
                 "putMaxRunningBySameOwner");
 
 
+        put(document,root,"reserveSpaceReqTQueueSize",Integer.toString(reserveSpaceReqTQueueSize),
+                "reserveSpaceReqTQueueSize");
+        put(document,root,"reserveSpaceThreadPoolSize",Integer.toString(reserveSpaceThreadPoolSize),
+                "reserveSpaceThreadPoolSize");
+        put(document,root,"reserveSpaceMaxWaitingRequests",Integer.toString(reserveSpaceMaxWaitingRequests),
+                "reserveSpaceMaxWaitingRequests");
+        put(document,root,"reserveSpaceReadyQueueSize",Integer.toString(reserveSpaceReadyQueueSize),
+                "reserveSpaceReadyQueueSize");
+        put(document,root,"reserveSpaceMaxReadyJobs",Integer.toString(reserveSpaceMaxReadyJobs),
+                "reserveSpaceMaxReadyJobs");
+        put(document,root,"reserveSpaceMaxNumOfRetries",Integer.toString(reserveSpaceMaxNumOfRetries),
+                "Maximum Number Of Retries for reserveSpace file request");
+        put(document,root,"reserveSpaceRetryTimeout",Long.toString(reserveSpaceRetryTimeout),
+                "reserveSpace request Retry Timeout in milliseconds");
+
+        put(document,root,"reserveSpaceMaxRunningBySameOwner",Integer.toString(reserveSpaceMaxRunningBySameOwner),
+                "reserveSpaceMaxRunningBySameOwner");
+
+
         put(document,root,"copyReqTQueueSize",Integer.toString(copyReqTQueueSize),
                 "copyReqTQueueSize");
         put(document,root,"copyThreadPoolSize",Integer.toString(copyThreadPoolSize),
@@ -478,6 +508,8 @@ public class Configuration {
                 "putLifetime");
         put(document,root,"copyLifetime",Long.toString(copyLifetime),
                 "copyLifetime");
+        put(document,root,"reserveSpaceLifetime",Long.toString(reserveSpaceLifetime),
+                "reserveSpaceLifetime");
         put(document,root,"defaultSpaceLifetime",Long.toString(defaultSpaceLifetime),
                 "defaultSpaceLifetime");
         put(document,root,"useUrlcopyScript", Boolean.toString(useUrlcopyScript),
@@ -746,6 +778,30 @@ public class Configuration {
             break;
         case XML_LABEL_TRANSPORT_CLIENT:
             clientTransport = Transport.transportFor(value).name();
+            break;
+        case "reserveSpaceReqTQueueSize":
+            reserveSpaceReqTQueueSize = Integer.parseInt(value);
+            break;
+        case "reserveSpaceThreadPoolSize":
+            reserveSpaceThreadPoolSize = Integer.parseInt(value);
+            break;
+        case "reserveSpaceMaxWaitingRequests":
+            reserveSpaceMaxWaitingRequests = Integer.parseInt(value);
+            break;
+        case "reserveSpaceReadyQueueSize":
+            reserveSpaceReadyQueueSize = Integer.parseInt(value);
+            break;
+        case "reserveSpaceMaxReadyJobs":
+            reserveSpaceMaxReadyJobs = Integer.parseInt(value);
+            break;
+        case "reserveSpaceMaxNumOfRetries":
+            reserveSpaceMaxNumOfRetries = Integer.parseInt(value);
+            break;
+        case "reserveSpaceRetryTimeout":
+            reserveSpaceRetryTimeout = Long.parseLong(value);
+            break;
+        case "reserveSpaceMaxRunningBySameOwner":
+            reserveSpaceMaxRunningBySameOwner = Integer.parseInt(value);
             break;
         }
     }
@@ -1088,6 +1144,18 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.putMaxRunningBySameOwner);
         sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.putSwitchToAsynchronousModeDelay));
+
+        sb.append("\n\t\t *** ReserveSpaceRequests Scheduler  Parameters **");
+        sb.append("\n\t\t request Lifetime in miliseconds =").append(this.reserveSpaceLifetime);
+        sb.append("\n\t\t max thread queue size =").append(this.reserveSpaceReqTQueueSize);
+        sb.append("\n\t\t max number of threads =").append(this.reserveSpaceThreadPoolSize);
+        sb.append("\n\t\t max number of waiting file requests =").append(this.reserveSpaceMaxWaitingRequests);
+        sb.append("\n\t\t max ready queue size =").append(this.reserveSpaceReadyQueueSize);
+        sb.append("\n\t\t max number of ready file requests =").append(this.reserveSpaceMaxReadyJobs);
+        sb.append("\n\t\t maximum number of retries = ").append(this.reserveSpaceMaxNumOfRetries);
+        sb.append("\n\t\t retry timeout in miliseconds =").append(this.reserveSpaceRetryTimeout);
+        sb.append("\n\t\t maximum number of jobs running created");
+        sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.reserveSpaceMaxRunningBySameOwner);
 
         sb.append("\n\t\t *** CopyRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.copyLifetime);
@@ -1744,6 +1812,139 @@ public class Configuration {
     }
 
 
+
+    /**
+     * Getter for property reserveSpaceReadyQueueSize.
+     * @return Value of property reserveSpaceReadyQueueSize.
+     */
+    public int getReserveSpaceReadyQueueSize() {
+        return reserveSpaceReadyQueueSize;
+    }
+
+    /**
+     * Setter for property reserveSpaceReadyQueueSize.
+     * @param reserveSpaceReadyQueueSize New value of property reserveSpaceReadyQueueSize.
+     */
+    public void setReserveSpaceReadyQueueSize(int reserveSpaceReadyQueueSize) {
+        this.reserveSpaceReadyQueueSize = reserveSpaceReadyQueueSize;
+    }
+
+    /**
+     * Getter for property reserveSpaceMaxReadyJobs.
+     * @return Value of property reserveSpaceMaxReadyJobs.
+     */
+    public int getReserveSpaceMaxReadyJobs() {
+        return reserveSpaceMaxReadyJobs;
+    }
+
+    /**
+     * Setter for property reserveSpaceMaxReadyJobs.
+     * @param reserveSpaceMaxReadyJobs New value of property reserveSpaceMaxReadyJobs.
+     */
+    public void setReserveSpaceMaxReadyJobs(int reserveSpaceMaxReadyJobs) {
+        this.reserveSpaceMaxReadyJobs = reserveSpaceMaxReadyJobs;
+    }
+
+
+
+
+    /**
+     * Getter for property reserveSpaceReqTQueueSize.
+     * @return Value of property reserveSpaceReqTQueueSize.
+     */
+    public int getReserveSpaceReqTQueueSize() {
+        return reserveSpaceReqTQueueSize;
+    }
+
+    /**
+     * Setter for property reserveSpaceReqTQueueSize.
+     * @param reserveSpaceReqTQueueSize New value of property reserveSpaceReqTQueueSize.
+     */
+    public void setReserveSpaceReqTQueueSize(int reserveSpaceReqTQueueSize) {
+        this.reserveSpaceReqTQueueSize = reserveSpaceReqTQueueSize;
+    }
+
+    /**
+     * Getter for property reserveSpaceThreadPoolSize.
+     * @return Value of property reserveSpaceThreadPoolSize.
+     */
+    public int getReserveSpaceThreadPoolSize() {
+        return reserveSpaceThreadPoolSize;
+    }
+
+    /**
+     * Setter for property reserveSpaceThreadPoolSize.
+     * @param reserveSpaceThreadPoolSize New value of property reserveSpaceThreadPoolSize.
+     */
+    public void setReserveSpaceThreadPoolSize(int reserveSpaceThreadPoolSize) {
+        this.reserveSpaceThreadPoolSize = reserveSpaceThreadPoolSize;
+    }
+
+    /**
+     * Getter for property reserveSpaceMaxWaitingRequests.
+     * @return Value of property reserveSpaceMaxWaitingRequests.
+     */
+    public int getReserveSpaceMaxWaitingRequests() {
+        return reserveSpaceMaxWaitingRequests;
+    }
+
+    /**
+     * Setter for property reserveSpaceMaxWaitingRequests.
+     * @param reserveSpaceMaxWaitingRequests New value of property reserveSpaceMaxWaitingRequests.
+     */
+    public void setReserveSpaceMaxWaitingRequests(int reserveSpaceMaxWaitingRequests) {
+        this.reserveSpaceMaxWaitingRequests = reserveSpaceMaxWaitingRequests;
+    }
+
+    /**
+     * Getter for property reserveSpaceMaxNumOfRetries.
+     * @return Value of property reserveSpaceMaxNumOfRetries.
+     */
+    public int getReserveSpaceMaxNumOfRetries() {
+        return reserveSpaceMaxNumOfRetries;
+    }
+
+    /**
+     * Setter for property reserveSpaceMaxNumOfRetries.
+     * @param reserveSpaceMaxNumOfRetries New value of property reserveSpaceMaxNumOfRetries.
+     */
+    public void setReserveSpaceMaxNumOfRetries(int reserveSpaceMaxNumOfRetries) {
+        this.reserveSpaceMaxNumOfRetries = reserveSpaceMaxNumOfRetries;
+    }
+
+    /**
+     * Getter for property reserveSpaceRetryTimeout.
+     * @return Value of property reserveSpaceRetryTimeout.
+     */
+    public long getReserveSpaceRetryTimeout() {
+        return reserveSpaceRetryTimeout;
+    }
+
+    /**
+     * Setter for property reserveSpaceRetryTimeout.
+     * @param reserveSpaceRetryTimeout New value of property reserveSpaceRetryTimeout.
+     */
+    public void setReserveSpaceRetryTimeout(long reserveSpaceRetryTimeout) {
+        this.reserveSpaceRetryTimeout = reserveSpaceRetryTimeout;
+    }
+
+    /**
+     * Getter for property reserveSpaceMaxRunningBySameOwner.
+     * @return Value of property reserveSpaceMaxRunningBySameOwner.
+     */
+    public int getReserveSpaceMaxRunningBySameOwner() {
+        return reserveSpaceMaxRunningBySameOwner;
+    }
+
+    /**
+     * Setter for property reserveSpaceMaxRunningBySameOwner.
+     * @param reserveSpaceMaxRunningBySameOwner New value of property reserveSpaceMaxRunningBySameOwner.
+     */
+    public void setReserveSpaceMaxRunningBySameOwner(int reserveSpaceMaxRunningBySameOwner) {
+        this.reserveSpaceMaxRunningBySameOwner = reserveSpaceMaxRunningBySameOwner;
+    }
+
+
     public static void main( String[] args) throws Exception {
         if(args == null || args.length !=2 ||
                 args[0].equalsIgnoreCase("-h")  ||
@@ -1862,7 +2063,6 @@ public class Configuration {
         return getPriorityPolicyPlugin;
     }
 
-
     public void setPutPriorityPolicyPlugin(String txt) {
         putPriorityPolicyPlugin=txt;
     }
@@ -1876,6 +2076,14 @@ public class Configuration {
     }
 
     public String getCopyPriorityPolicyPlugin() {
+        return putPriorityPolicyPlugin;
+    }
+
+    public void setReserveSpacePriorityPolicyPlugin(String txt) {
+        putPriorityPolicyPlugin=txt;
+    }
+
+    public String getReserveSpacePriorityPolicyPlugin() {
         return putPriorityPolicyPlugin;
     }
 

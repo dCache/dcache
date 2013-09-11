@@ -77,7 +77,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 if (target != null) {
-                    target.addComponent(cells);
+                    target.add(cells);
                 } else {
 //                implement fallback for non javascript clients
                     cells.updateModel();
@@ -156,7 +156,9 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
 
         @Override
         public List<String> getObject() {
-            return new ArrayList<>(_domainMap.keySet());
+            List<String> domains = new ArrayList<>(_domainMap.keySet());
+            Collections.sort(domains);
+            return domains;
         }
     }
 

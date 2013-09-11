@@ -1,6 +1,16 @@
 package org.dcache.commons.util;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import org.slf4j.MDC;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Strings.nullToEmpty;
 
 /**
  * The class emulates the Nested Diagnostic Context of Log4j.
@@ -98,20 +108,25 @@ public class NDC
      * Clients should call this method before leaving a diagnostic
      * context.
      */
-    static public void pop()
+    static public String pop()
     {
+        String top = null;
         String ndc = MDC.get(KEY_NDC);
         if (ndc != null) {
             String positions = MDC.get(KEY_POSITIONS);
             int pos = positions.lastIndexOf(',');
             if (pos == -1) {
+                top = ndc;
                 MDC.remove(KEY_NDC);
                 MDC.remove(KEY_POSITIONS);
             } else {
                 int offset = Integer.parseInt(positions.substring(pos + 1));
+                top = ndc.substring(offset+1);
                 MDC.put(KEY_NDC, ndc.substring(0, offset));
                 MDC.put(KEY_POSITIONS, positions.substring(0, pos));
             }
         }
+
+        return top;
     }
 }

@@ -27,7 +27,7 @@ public class ApplicationFactoryHelper {
             }
 
             @Override
-            public boolean isAuthenticatedMode() {
+            public boolean getAuthenticatedMode() {
                 return true;
             }
 
@@ -52,7 +52,7 @@ public class ApplicationFactoryHelper {
     public static WebAdminInterface createSignedInAsGuestApplication() {
         return new WebAdminInterface() {
             @Override
-            public boolean isAuthenticatedMode() {
+            public boolean getAuthenticatedMode() {
                 return false;
             }
 
@@ -77,7 +77,7 @@ public class ApplicationFactoryHelper {
     public static WebAdminInterface createNotSignedInApplication() {
         return new WebAdminInterface() {
             @Override
-            public boolean isAuthenticatedMode() {
+            public boolean getAuthenticatedMode() {
                 return false;
             }
 
@@ -102,7 +102,7 @@ public class ApplicationFactoryHelper {
     public static WebAdminInterface createStandardApplication() {
         return new WebAdminInterface() {
             @Override
-            public boolean isAuthenticatedMode() {
+            public boolean getAuthenticatedMode() {
                 return false;
             }
 

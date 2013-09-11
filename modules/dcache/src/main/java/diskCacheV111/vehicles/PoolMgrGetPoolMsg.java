@@ -84,4 +84,9 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
     {
         return EnumSet.of(PNFSID, STORAGEINFO);
     }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
 }

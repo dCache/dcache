@@ -5,7 +5,7 @@
 onerror shutdown
 
 check -strong alarms.cell.name
-check -strong dcache.log.server.port
+check -strong alarms.net.port
 check -strong alarms.log.config.path
 check -strong alarms.db.type
 check -strong alarms.db.url
@@ -20,18 +20,18 @@ define env dontStartService.exe enddefine
     say -level=esay "must be hosted in a domain by itself."
     say -level=esay ""
     say -level=esay "To fix this problem, either remove the alarms service or all other services"
-    say -level=esay "from the domain ${domain.name}."
+    say -level=esay "from the domain ${dcache.domain.name}."
     say -level=esay ""
     say -level=esay "The alarms service will not be started."
 enddefine
 
 define env startService.exe enddefine
-  create org.dcache.cells.UniversalSpringCell ${cell.name} \
+  create org.dcache.cells.UniversalSpringCell ${alarms.cell.name} \
         "classpath:org/dcache/alarms/server/alarms.xml -profiles=${alarms.db.type}"
 enddefine
 
 onerror continue
-eval "${domain.cells}" "${cell.name}" ==
+eval "${dcache.domain.cells}" "${alarms.cell.name}" ==
 set env isUnique ${rc}
 onerror shutdown
 

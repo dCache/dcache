@@ -86,6 +86,18 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends Mover<
         return _wrappedChannel;
     }
 
+    /**
+     * Get the MoverChannel for the replica of this mover.
+     *
+     * @return an open MoverChannel
+     * @throws IllegalStateException if channel is not opened
+     */
+    public MoverChannel<P> getMoverChannel() {
+        MoverChannel<P> channel = _wrappedChannel;
+        checkState(channel != null);
+        return channel;
+    }
+
     @Override
     protected String getStatus()
     {

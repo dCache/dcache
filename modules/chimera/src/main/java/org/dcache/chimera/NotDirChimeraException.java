@@ -26,6 +26,6 @@ public class NotDirChimeraException extends ChimeraFsException {
     }
 
     public NotDirChimeraException(FsInode inode) {
-        super("[" + inode + "] no a directory");
+        super("[" + inode + "] not a directory");
     }
 }

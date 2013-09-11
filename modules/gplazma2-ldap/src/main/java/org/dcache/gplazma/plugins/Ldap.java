@@ -77,6 +77,8 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     static final String LDAP_ORG = "gplazma.ldap.organization";
     static final String LDAP_PEOPLE_TREE = "gplazma.ldap.tree.people";
     static final String LDAP_GROUP_TREE = "gplazma.ldap.tree.groups";
+    static final String LDAP_USER_FILTER = "gplazma.ldap.userfilter";
+
     /**
      * The OU (organizational unit) to add users to
      */
@@ -85,6 +87,10 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
      * The OU (organizational unit) to add groups to
      */
     private final String groupOU;
+    /**
+     * The search filter to use to locate a user's entry in the LDAP directory.
+     */
+    private final String userFilter;
     private final InitialDirContext _ctx;
 
     /**
@@ -99,6 +105,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         String organization = properties.getProperty(LDAP_ORG);
         String peopleTree = properties.getProperty(LDAP_PEOPLE_TREE);
         String groupTree = properties.getProperty(LDAP_GROUP_TREE);
+        userFilter = properties.getProperty(LDAP_USER_FILTER);
 
 
         peopleOU = String.format("ou=%s,%s", peopleTree, organization);
@@ -119,7 +126,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         if (principal != null) {
             try {
                 NamingEnumeration<SearchResult> sResult = _ctx.search(peopleOU,
-                        String.format("(%s=%s)", USER_ID_ATTRIBUTE, principal.getName()),
+                        String.format(userFilter, principal.getName()),
                         getSimplSearchControls(UID_NUMBER_ATTRIBUTE, GID_NUMBER_ATTRIBUTE));
                 if (sResult.hasMore()) {
                     Attributes userAttr = sResult.next().getAttributes();
@@ -135,9 +142,12 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     }
                 }
             } catch (NamingException e) {
-                _log.warn("Faild to get mapping: {}", e.toString());
+                _log.debug("Failed to get mapping: {}", e.toString());
+                throw new AuthenticationException("no mapping");
             }
         }
+
+        throw new AuthenticationException("no username");
     }
 
     @Override
@@ -165,7 +175,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             }
 
         } catch (NamingException e) {
-            _log.warn("Faild to get mapping: {}", e.toString());
+            _log.debug("Failed to get mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
@@ -200,7 +210,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             }
             return principals;
         } catch (NamingException e) {
-            _log.warn("Faild to get reverse mapping: {}", e.toString());
+            _log.debug("Faild to get reverse mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
@@ -212,7 +222,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         if (principal != null) {
             try {
                 NamingEnumeration<?> sResult = _ctx.search(peopleOU,
-                        String.format("(%s=%s)", USER_ID_ATTRIBUTE, principal.getName()),
+                        String.format(userFilter, principal.getName()),
                         getSimplSearchControls(HOME_DIR_ATTRIBUTE));
                 if (sResult.hasMore()) {
                     SearchResult rs = (SearchResult) sResult.next();
@@ -221,10 +231,11 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     attrib.add(new ReadOnly(false));
                 }
             } catch (NamingException e) {
-                throw new AuthenticationException("no mapping: "
-                        + e.getMessage(), e);
+                throw new AuthenticationException("no mapping");
             }
         }
+
+        throw new AuthenticationException("no username");
     }
 
     private SearchControls getSimplSearchControls(String... attr) {

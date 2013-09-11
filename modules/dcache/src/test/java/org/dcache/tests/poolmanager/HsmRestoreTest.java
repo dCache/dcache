@@ -37,6 +37,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.tests.cells.GenericMockCellHelper;
 import org.dcache.tests.cells.GenericMockCellHelper.MessageAction;
@@ -154,7 +155,8 @@ public class HsmRestoreTest {
 
             PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
-            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
+            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
+            poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
 
             CellMessage envelope = new CellMessage(new CellPath("irrelevant"), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
@@ -231,7 +233,8 @@ public class HsmRestoreTest {
 
             PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
-            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
+            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
+            poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
 
             CellMessage envelope = new CellMessage(new CellPath(""), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
@@ -331,7 +334,8 @@ public class HsmRestoreTest {
 
             PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
-            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
+            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
+            poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
 
             CellMessage envelope = new CellMessage(new CellPath(""), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
@@ -430,7 +434,8 @@ public class HsmRestoreTest {
 
             PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
-            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
+            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
+            poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
 
             CellMessage envelope = new CellMessage(new CellPath(""), null);
             envelope.addSourceAddress(new CellAddressCore(pool));

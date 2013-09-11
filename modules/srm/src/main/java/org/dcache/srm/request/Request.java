@@ -89,8 +89,13 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
+ * A Request object represents an individual SOAP operation, as defined by the
+ * WSDL.  Such requests may be further divided into those requests that do not
+ * involve individual files (ReserveSpaceRequest) and those that contain one or
+ * more files (subclasses of ContainerRequest).
  *
- * @author timur
+ * Some SOAP operations are not scheduled (e.g., srmPing).  These are not
+ * represented as a subclass of Request.
  */
 public abstract class Request extends Job {
 

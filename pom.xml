@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.dcache</groupId>
-    <version>2.7.0-SNAPSHOT</version>
+    <version>2.8.0-SNAPSHOT</version>
     <artifactId>dcache-parent</artifactId>
     <packaging>pom</packaging>
 
@@ -25,13 +25,13 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.slf4j>1.7.5</version.slf4j>
-        <version.milton>2.3.0.6</version.milton>
+        <version.milton>2.3.0.7</version.milton>
         <version.spring>3.2.3.RELEASE</version.spring>
         <version.aspectj>1.7.3</version.aspectj>
         <version.smc>6.1.0</version.smc>
         <version.xerces>2.9.1</version.xerces>
-        <version.jetty>8.1.9.v20130131</version.jetty>
-        <version.wicket>1.5.10</version.wicket>
+        <version.jetty>8.1.12.v20130726</version.jetty>
+        <version.wicket>6.9.1</version.wicket>
         <version.xrootd4j>1.2.0</version.xrootd4j>
         <version.jglobus>2.0.6-rc3.d</version.jglobus>
         <version.openmq>4.5.2</version.openmq>
@@ -63,13 +63,15 @@
          -->
         <bouncycastle.bcprov>bcprov-jdk16</bouncycastle.bcprov>
         <bouncycastle.version>1.43</bouncycastle.version>
+        <datanucleus-core.version>3.2.6</datanucleus-core.version>
+        <datanucleus.plugin.version>3.2.0-release</datanucleus.plugin.version>
     </properties>
 
     <scm>
         <connection>scm:git:https://github.com/dCache/dcache.git</connection>
         <developerConnection>scm:git:git@github.com:dCache/dcache.git</developerConnection>
         <url>https://github.com/dCache/dcache.git</url>
-      <tag>HEAD</tag>
+      <tag>2.7</tag>
   </scm>
 
     <repositories>
@@ -88,6 +90,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>2.10.2</version>
+            </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
@@ -290,7 +297,7 @@
             <dependency>
                 <groupId>com.sleepycat</groupId>
                 <artifactId>je</artifactId>
-                <version>5.0.73</version>
+                <version>5.0.84</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.mq</groupId>
@@ -320,7 +327,7 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-core</artifactId>
-                <version>3.2.5</version>
+                <version>${datanucleus-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
@@ -340,7 +347,7 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-rdbms</artifactId>
-                <version>3.2.4</version>
+                <version>3.2.5</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
@@ -516,7 +523,7 @@
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>1.3.171</version>
+                <version>1.3.173</version>
             </dependency>
 
             <dependency>
@@ -736,7 +743,7 @@
         <dependency>
             <groupId>org.dcache.chimera</groupId>
             <artifactId>jpnfs</artifactId>
-            <version>0.5.1</version>
+            <version>0.5.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.chimera</groupId>
@@ -803,6 +810,11 @@
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
             <version>1.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_2.10</artifactId>
+            <version>2.0.M6-SNAP28</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -822,14 +834,14 @@
                     <version>3.3</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.scala-tools</groupId>
-                    <artifactId>maven-scala-plugin</artifactId>
-                    <version>2.15.2</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>net.alchim31.maven</groupId>
+                    <artifactId>scala-maven-plugin</artifactId>
+                    <version>3.0.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -852,7 +864,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-war-plugin</artifactId>
-                    <version>2.3</version>
+                    <version>2.4</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -896,8 +908,15 @@
                 </plugin>
                 <plugin>
                     <groupId>org.datanucleus</groupId>
-                    <artifactId>maven-datanucleus-plugin</artifactId>
-                    <version>3.2.0-m1</version>
+                    <artifactId>datanucleus-maven-plugin</artifactId>
+                    <version>${datanucleus.plugin.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.datanucleus</groupId>
+                            <artifactId>datanucleus-core</artifactId>
+                            <version>${datanucleus-core.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -951,23 +970,6 @@
                         <item>timestamp</item>
                         <item>${user.name}</item>
                     </items>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>buildnumber-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>create</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <doCheck>false</doCheck>
-                    <doUpdate>false</doUpdate>
                 </configuration>
             </plugin>
 
@@ -1096,11 +1098,13 @@
         <module>modules/gplazma2-jaas</module>
         <module>modules/gplazma2-nis</module>
         <module>modules/gplazma2-nsswitch</module>
+        <module>modules/gplazma2-banfile</module>
         <module>modules/gplazma2-voms</module>
         <module>modules/gplazma2-kpwd</module>
         <module>modules/gplazma2-xacml</module>
         <module>modules/gplazma2-ldap</module>
         <module>modules/gplazma2-gsi</module>
+        <module>modules/gplazma2-htpasswd</module>
         <module>modules/javatunnel</module>
         <module>modules/srm</module>
         <module>modules/dcache</module>

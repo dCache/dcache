@@ -13,7 +13,7 @@ import java.util.Properties;
 
 import org.dcache.util.ConfigurationProperties;
 
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
+import static org.dcache.boot.Properties.PROPERTY_CELL_NAME_SUFFIX;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -181,20 +181,6 @@ public class PythonOracleLayoutPrinterTests
                 is("pool2 value"));
     }
 
-    @Test
-    public void shouldFindScopedProperty()
-    {
-        givenDefaults().with("pool/property.name", "pool default value");
-        givenDomain("domain 1").
-                withService("pool", "pool1");
-
-        whenOracleIsLoadedAndExec();
-
-        assertThat(serviceScopedProperty("domain 1", "pool1", "property.name"),
-                is("pool default value"));
-    }
-
-
     private void whenOracleIsLoadedAndExec()
     {
         ByteArrayOutputStream stored = new ByteArrayOutputStream();
@@ -310,7 +296,7 @@ public class PythonOracleLayoutPrinterTests
         public DomainBuilder withService(String scope, String cellName)
         {
             _properties = _domain.createService(scope);
-            _properties.put(PROPERTY_CELL_NAME, cellName);
+            _properties.put(scope + "." + PROPERTY_CELL_NAME_SUFFIX, cellName);
             return this;
         }
     }

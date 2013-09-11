@@ -1,6 +1,6 @@
 onerror continue
 
-eval ${domain.name} ${dcache.broker.domain} ==
+eval ${dcache.domain.name} ${dcache.broker.domain} ==
 exec file:${dcache.paths.share}/cells/lmd.fragment -ifok
 
 onerror shutdown

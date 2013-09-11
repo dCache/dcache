@@ -4,7 +4,8 @@
 
 onerror shutdown
 
-check -strong cell.name
+check -strong ftp.cell.name
+check -strong ftp.cell.export
 check -strong ftp.implementation
 check -strong ftp.net.port
 check -strong ftp.net.port-range
@@ -29,8 +30,8 @@ check -strong ftp.service.pool.timeout
 check -strong ftp.service.pool.timeout.unit
 check -strong ftp.service.pnfsmanager.timeout
 check -strong ftp.service.pnfsmanager.timeout.unit
-check -strong ftp.delete-on-failure
-check -strong ftp.overwrite
+check -strong ftp.enable.delete-on-failure
+check -strong ftp.enable.overwrite
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
 check -strong ftp.authz.readonly
@@ -39,7 +40,7 @@ check -strong ftp.authn.hostcert.cert
 check -strong ftp.authn.capath
 check -strong ftp.authn.kerberos.key-distribution-center-list
 check -strong ftp.authn.kerberos.service-principle-name
-check ftp.security.ciphers
+check ftp.authn.ciphers
 check ftp.transaction-log
 check ftp.net.listen
 check ftp.net.internal
@@ -51,7 +52,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
   "${ftp.net.port} ${ftp.implementation} \
    -listen=${ftp.net.listen} \
    -prot=raw \
-   -export \
+   -export=${ftp.cell.export} \
    -clientDataPortRange=${ftp.net.port-range} \
    -protocolFamily=${ftp.service.loginbroker.family} \
    -protocolVersion=${ftp.service.loginbroker.version} \
@@ -75,11 +76,11 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -maxRetries=${ftp.limits.retries} \
    -maxStreamsPerClient=${ftp.limits.streams-per-client} \
    -defaultStreamsPerClient=1 \
-   -deleteOnConnectionClosed=${ftp.delete-on-failure} \
+   -deleteOnConnectionClosed=${ftp.enable.delete-on-failure} \
    -io-queue=${ftp.mover.queue} \
    -stageConfigurationFilePath=${ftp.authz.staging} \
    -ftp-adapter-internal-interface=${ftp.net.internal} \
-   -overwrite=${ftp.overwrite} \
+   -overwrite=${ftp.enable.overwrite} \
    -proxyPassive=${ftp.proxy.on-passive} \
    -proxyActive=${ftp.proxy.on-active} \
    -tlog=${ftp.transaction-log} \
@@ -89,5 +90,5 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -service-key=${ftp.authn.hostcert.key} \
    -service-cert=${ftp.authn.hostcert.cert} \
    -service-trusted-certs=${ftp.authn.capath} \
-   -gridftp.security.ciphers=\"${ftp.security.ciphers}\" \
+   -gridftp.security.ciphers=\"${ftp.authn.ciphers}\" \
    "

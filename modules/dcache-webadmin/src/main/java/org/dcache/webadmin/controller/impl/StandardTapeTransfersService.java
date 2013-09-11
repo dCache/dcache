@@ -1,8 +1,5 @@
 package org.dcache.webadmin.controller.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -20,7 +17,6 @@ import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
  */
 public class StandardTapeTransfersService implements TapeTransfersService {
 
-    private static final Logger _log = LoggerFactory.getLogger(StandardTapeTransfersService.class);
     private DAOFactory _daoFactory;
 
     public StandardTapeTransfersService(DAOFactory DAOFactory) {

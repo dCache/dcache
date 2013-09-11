@@ -7,7 +7,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="
-           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
   <bean id="properties"
     class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -17,35 +17,40 @@
 
   <bean id="poolmanager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
-    <property name="destination" value="${dcache.service.poolmanager}"/>
-    <property name="timeout" value="${poolConnectTimeout}"/>
+    <property name="destination" value="${billing.service.poolmanager}"/>
+    <property name="timeout" value="${billing.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${billing.service.poolmanager.timeout.unit}"/>
   </bean>
 
   <bean id="billingcell"
     class="org.dcache.services.billing.cells.BillingCell">
-    <property name="logsDir" value="${billingLogsDir}"/>
-    <property name="disableTxt" value="${billingDisableTxt}"/>
-    <property name="printMode" value="${printMode}"/>
+    <property name="logsDir" value="${billing.text.dir}"/>
+    <property name="enableTxt" value="${billing.enable.text}"/>
+    <property name="flatTextDir" value="${billing.text.flat-dir}"/>
     <property name="poolManagerStub" ref="poolmanager-stub"/>
   </bean>
 
+  <beans profile="db-false">
+    <bean id="histogram-request-receiver" class="org.dcache.services.billing.cells.receivers.NOPHistogramRequestReceiver">
+        <!-- no connection to database; returns failure on request -->
+    </bean>
+  </beans>
+
   <!-- Set of beans instantiated if database is enabled -->
-  <beans profile="db-yes">
-    <bean id="jdbc-billing-info-access" class="${billingInfoAccess}"
+  <beans profile="db-true">
+    <bean id="jdbc-billing-info-access" class="org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo"
           init-method="initialize" destroy-method="close">
-      <property name="jdbcUrl" value="${db.url}"/>
-      <property name="jdbcDriver" value="${db.driver}"/>
-      <property name="jdbcUser" value="${db.user}"/>
-      <property name="jdbcPassword"
-        value="#{ T(diskCacheV111.util.Pgpass).getPassword('${db.password.file}', '${db.url}', '${db.user}', '${db.password}') }"/>
-      <property name="maxInsertsBeforeCommit"
-        value="${billingMaxInsertsBeforeCommit}"/>
-      <property name="maxTimeBeforeCommit"
-        value="${billingMaxTimeBeforeCommitInSecs}"/>
-      <property name="propertiesPath" value="${billingInfoAccessPropertiesFile}"/>
-      <property name="partitionCount" value="${db.connections.partition-count}"/>
-      <property name="maxConnectionsPerPartition" value="${db.connections.max-per-partition}"/>
-      <property name="minConnectionsPerPartition" value="${db.connections.min-per-partition}"/>
+      <property name="jdbcUrl" value="${billing.db.url}"/>
+      <property name="jdbcDriver" value="${billing.db.driver}"/>
+      <property name="jdbcUser" value="${billing.db.user}"/>
+      <property name="jdbcPassword" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
+      <property name="maxInsertsBeforeCommit" value="${billing.db.inserts.max-before-commit}"/>
+      <property name="maxTimeBeforeCommit" value="${billing.db.inserts.timeout-before-commit}"/>
+      <property name="maxTimeBeforeCommitUnit" value="${billing.db.inserts.timeout-before-commit.unit}"/>
+      <property name="propertiesPath" value="${billing.db.config.path}"/>
+      <property name="partitionCount" value="${billing.db.connections.partition-count}"/>
+      <property name="maxConnectionsPerPartition" value="${billing.db.connections.max-per-partition}"/>
+      <property name="minConnectionsPerPartition" value="${billing.db.connections.min-per-partition}"/>
     </bean>
 
     <bean id="histogram-service" class="org.dcache.services.billing.histograms.data.JDOTimeFrameHistogramDataService">
@@ -64,15 +69,15 @@
       <description>Database schema manager</description>
       <property name="dataSource">
         <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-          <property name="driverClassName" value="${db.driver}"/>
-          <property name="url" value="${db.url}"/>
-          <property name="username" value="${db.user}"/>
+          <property name="driverClassName" value="${billing.db.driver}"/>
+          <property name="url" value="${billing.db.url}"/>
+          <property name="username" value="${billing.db.user}"/>
           <property name="password"
-                    value="#{ T(diskCacheV111.util.Pgpass).getPassword('${db.password.file}', '${db.url}', '${db.user}', '${db.password}') }"/>
+                    value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
         </bean>
       </property>
-      <property name="changeLog" value="classpath:${db.schema.changelog}"/>
-      <property name="shouldUpdate" value="${db.schema.auto}"/>
+      <property name="changeLog" value="classpath:${billing.db.schema.changelog}"/>
+      <property name="shouldUpdate" value="${billing.db.schema.auto}"/>
     </bean>
   </beans>
 </beans>

@@ -65,6 +65,7 @@ import java.lang.reflect.Method;
 
 import org.dcache.cells.CellStub;
 import org.dcache.services.billing.histograms.TimeFrame;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.billing.HistogramRequestMessage;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -91,7 +92,12 @@ public class TimeFrameHistogramDataProxy implements InvocationHandler {
                     throws Throwable {
         HistogramRequestMessage request = createRequestMessage(method, args);
         request = cell.sendAndWait(request, HistogramRequestMessage.class);
-        return request.getReturnValue(); // request cannot be null
+        int code = request.getReturnCode();
+        if (code != 0) {
+            throw CacheExceptionFactory.exceptionOf(code,
+                            String.valueOf(request.getErrorObject()));
+        }
+        return request.getReturnValue();
     }
 
     private static HistogramRequestMessage createRequestMessage(Method method, Object[] args) {

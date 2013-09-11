@@ -105,7 +105,7 @@ public class SrmMv {
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
 		response.setReturnStatus(returnStatus);
 		if(request==null) {
-			return getFailedResponse(" null request passed to SrmRm()");
+			return getFailedResponse(" null request passed to srmMv()");
 		}
 		URI to_surl = new URI(request.getToSURL().toString());
 		URI from_surl = new URI(request.getFromSURL().toString());

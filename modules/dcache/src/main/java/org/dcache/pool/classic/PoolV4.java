@@ -1466,10 +1466,7 @@ public class PoolV4
                                     p2pQueue.getMaxActiveJobs(),
                                     p2pQueue.getQueueSize());
 
-        info.setQueueSizes(_ioQueue.getActiveJobs() - p2pQueue.getActiveJobs(),
-                           _ioQueue.getMaxActiveJobs() - p2pQueue.getMaxActiveJobs(),
-                           _ioQueue.getQueueSize() - p2pQueue.getQueueSize(),
-                           _storageHandler.getActiveFetchJobs(),
+        info.setQueueSizes(_storageHandler.getActiveFetchJobs(),
                            _suppressHsmLoad ? 0 : _storageHandler.getMaxActiveFetchJobs(),
                            _storageHandler.getFetchQueueSize(),
                            _storageHandler.getActiveStoreJobs(),

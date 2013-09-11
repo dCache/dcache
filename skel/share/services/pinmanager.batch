@@ -1,14 +1,16 @@
 onerror shutdown
 
-check -strong cell.name
-check -strong db.driver
-check -strong db.url
-check -strong db.user
-check -strong db.schema.auto
-check -strong db.schema.changelog
-check db.password
-check db.password.file
-check -strong pinmanager.max-pin-duration
+check -strong pinmanager.cell.name
+check -strong pinmanager.cell.export
+check -strong pinmanager.db.driver
+check -strong pinmanager.db.url
+check -strong pinmanager.db.user
+check -strong pinmanager.db.schema.auto
+check -strong pinmanager.db.schema.changelog
+check pinmanager.db.password
+check pinmanager.db.password.file
+check -strong pinmanager.limits.pin-duration
+check -strong pinmanager.limits.pin-duration.unit
 check -strong pinmanager.expiration-period
 check -strong pinmanager.db.connections.max-per-partition
 check -strong pinmanager.db.connections.min-per-partition
@@ -26,9 +28,9 @@ check -strong pinmanager.cell.queue.max
 
 exec file:${dcache.paths.share}/cells/stage.fragment pinmanager doors
 
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${pinmanager.cell.name} \
        "classpath:org/dcache/pinmanager/pinmanager.xml \
-        -export \
+        -export=${pinmanager.cell.export} \
         -callbackExecutor=message-thread-pool \
         -messageExecutor=message-thread-pool \
        "

@@ -25,6 +25,7 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SpreadAndWait;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsFlagMessage;
@@ -1488,8 +1489,8 @@ public class UserAdminShell
 
     }
     protected Object sendCommand( String destination , String command )
-       throws Exception
-   {
+            throws InterruptedException, NoRouteToCellException, TimeoutCacheException
+    {
 
         CellPath cellPath = new CellPath(destination);
         CellMessage res =
@@ -1500,7 +1501,7 @@ public class UserAdminShell
                                   ) ,
               _timeout ) ;
           if( res == null ) {
-              throw new Exception("Request timed out");
+              throw new TimeoutCacheException("Request timed out");
           }
           Object obj =  res.getMessageObject() ;
           if( ( obj instanceof Throwable ) && _fullException ){
@@ -1511,9 +1512,10 @@ public class UserAdminShell
           return obj ;
 
     }
-    public Object executeCommand( String destination , Object str )
-           throws Exception {
 
+    public Object executeCommand( String destination , Object str )
+            throws InterruptedException, TimeoutCacheException, NoRouteToCellException
+    {
        _log.info( "Object command ("+destination+") "+str) ;
 
        return sendCommand( destination  , str.toString() ) ;

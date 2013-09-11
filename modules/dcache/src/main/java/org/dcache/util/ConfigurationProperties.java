@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -18,7 +20,6 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.InvalidPropertiesFormatException;
 import java.util.Map;
 import java.util.Properties;
@@ -31,6 +32,8 @@ import dmg.util.PropertiesBackedReplaceable;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Sets;
 
 /**
  * The ConfigurationProperties class represents a set of dCache
@@ -70,6 +73,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * affect any previous declarations of this property, nor does it generate any
  * errors when such properties are referenced in any way.
  * <p>
+ * Annotations are inherited when several ConfigurationProperties instances are
+ * chained. They are however not inherited through non-ConfigurationProperties
+ * classes, eg
+ * new ConfigurationProperties(new Properties(new ConfigurationProperties()))
+ * will not preserve annotations.
+ *
+ * <p>
  * The following provides examples of valid annotated declarations:
  * <pre>
  *   (obsolete)dcache.property1 = some value
@@ -84,9 +94,6 @@ public class ConfigurationProperties
 {
     private static final long serialVersionUID = -5684848160314570455L;
 
-    private static final String STORAGE_PREFIX_ANNOTATIONS = "<A>";
-    private static final String STORAGE_PREFIX_ERROR_MSG = "<E>";
-
     private static final Pattern SINGLE_PROPERTY_EXPANSION = Pattern.compile("^\\$\\{([^}]+)\\}");
 
     private static final Set<Annotation> OBSOLETE_FORBIDDEN =
@@ -97,6 +104,9 @@ public class ConfigurationProperties
 
     private final PropertiesBackedReplaceable _replaceable =
         new PropertiesBackedReplaceable(this);
+
+    private final Map<String,AnnotatedKey> _annotatedKeys =
+            new HashMap<>();
 
     private boolean _loading;
     private boolean _isService;
@@ -129,32 +139,6 @@ public class ConfigurationProperties
     public void setIsService(boolean isService)
     {
         _isService = isService;
-    }
-
-    public AnnotatedKey getAnnotatedKey(String name) {
-        AnnotatedKey key;
-
-        String annotations = getProperty(STORAGE_PREFIX_ANNOTATIONS + name);
-
-        if(annotations != null) {
-            String error = getProperty(STORAGE_PREFIX_ERROR_MSG + name);
-            key = new AnnotatedKey(name, annotations, error);
-        } else {
-            key = new AnnotatedKey(name, "");
-        }
-
-        return key;
-    }
-
-    /**
-     * Returns whether a name is scoped.
-     *
-     * A scoped name begins with the name of the scope followed by the
-     * scoping operator, a forward slash.
-     */
-    public static boolean isScoped(String name)
-    {
-        return name.indexOf('/') > -1;
     }
 
     /**
@@ -242,20 +226,20 @@ public class ConfigurationProperties
     @Override
     public synchronized Object put(Object rawKey, Object value)
     {
-        checkNotNull(rawKey, "A propery key must not be null");
-        checkNotNull(value, "A propery value must not be null");
+        checkNotNull(rawKey, "A property key must not be null");
+        checkNotNull(value, "A property value must not be null");
 
         AnnotatedKey key = new AnnotatedKey(rawKey, value);
         String name = key.getPropertyName();
-        if(_loading && containsKey(name)) {
+        if (_loading && containsKey(name)) {
             _problemConsumer.error(name + " is already defined");
             return null;
         }
 
-        checkIsAllowed(key, (String)value);
+        checkIsAllowed(key, (String) value);
 
-        if(key.hasAnnotations()) {
-            store(key);
+        if (key.hasAnnotations()) {
+            putAnnotatedKey(key);
         }
 
         return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null : super.put(name, ((String)value).trim());
@@ -266,10 +250,11 @@ public class ConfigurationProperties
     {
         String name = key.getPropertyName();
         AnnotatedKey existingKey = getAnnotatedKey(name);
-
-        checkKeyValid(existingKey, key);
+        if (existingKey != null) {
+            checkKeyValid(existingKey, key);
+            checkDataValid(existingKey, value);
+        }
         checkDataValid(key, value);
-        checkDataValid(existingKey, value);
     }
 
 
@@ -318,6 +303,22 @@ public class ConfigurationProperties
                         Joiner.on("\", \"").join(validValues) + "\"";
                 _problemConsumer.error("Property " + key.getPropertyName() +
                         ": \"" + value + "\" is not a valid value.  Must be one of "
+                        + validValuesList);
+            }
+        }
+        if (key.hasAnnotation(Annotation.ANY_OF)) {
+            String anyOfParameter = key.getParameter(Annotation.ANY_OF);
+            Set<String> values = Sets.newHashSet(Splitter.on(',')
+                    .omitEmptyStrings()
+                    .trimResults().split(value));
+            Set<String> validValues = ImmutableSet.copyOf(anyOfParameter.split("\\|"));
+            values.removeAll(validValues);
+            if (!values.isEmpty()) {
+                String validValuesList = "\""
+                        + Joiner.on("\", \"").join(validValues) + "\"";
+                _problemConsumer.error("Property " + key.getPropertyName()
+                        + ": \"" + value
+                        + "\" is not a valid value. Must be a comma separated list of "
                         + validValuesList);
             }
         }
@@ -406,19 +407,6 @@ public class ConfigurationProperties
         return Collections.enumeration(stringPropertyNames());
     }
 
-    @Override
-    public synchronized Set<String> stringPropertyNames()
-    {
-        Set<String> names = new HashSet<>();
-        for (String name: super.stringPropertyNames()) {
-            if( !name.startsWith(STORAGE_PREFIX_ANNOTATIONS) &&
-                !name.startsWith(STORAGE_PREFIX_ERROR_MSG)) {
-                names.add(name);
-            }
-        }
-        return names;
-    }
-
     public String replaceKeywords(String s)
     {
         return Formats.replaceKeywords(s, _replaceable);
@@ -430,17 +418,20 @@ public class ConfigurationProperties
         return (value == null) ? null : replaceKeywords(value);
     }
 
-    private void store(AnnotatedKey key) {
-        String name = key.getPropertyName();
-
-        setProperty(STORAGE_PREFIX_ANNOTATIONS + name,
-                    key.getAnnotationDeclaration());
-
-        setProperty(STORAGE_PREFIX_ERROR_MSG + name,
-                    key.getError());
+    @Nullable
+    public AnnotatedKey getAnnotatedKey(String name)
+    {
+        AnnotatedKey key = _annotatedKeys.get(name);
+        if (key == null && defaults instanceof ConfigurationProperties) {
+            key = ((ConfigurationProperties) defaults).getAnnotatedKey(name);
+        }
+        return key;
     }
 
-
+    private void putAnnotatedKey(AnnotatedKey key)
+    {
+        _annotatedKeys.put(key.getPropertyName(), key);
+    }
 
     /**
      * A class for parsing and storing a set of annotations associated with
@@ -463,7 +454,6 @@ public class ConfigurationProperties
         private static final String RE_KEY_DECLARATION =
             RE_ANNOTATION_DECLARATION + "(.*)";
 
-        private static final Pattern PATTERN_ANNOTATION_DECLARATION = Pattern.compile(RE_ANNOTATION_DECLARATION);
         private static final Pattern PATTERN_KEY_DECLARATION = Pattern.compile(RE_KEY_DECLARATION);
         private static final Pattern PATTERN_SEPARATOR = Pattern.compile(RE_SEPARATOR);
 
@@ -478,21 +468,6 @@ public class ConfigurationProperties
         private final Map<Annotation,String> _annotations =
                 new EnumMap<>(Annotation.class);
         private final String _error;
-
-        public AnnotatedKey(String name, String annotationDeclaration, String error)
-        {
-            _name = name;
-            _error = error;
-            _annotationDeclaration = annotationDeclaration;
-
-            Matcher m = PATTERN_ANNOTATION_DECLARATION.matcher(annotationDeclaration);
-            if( !m.matches()) {
-                throw new IllegalStateException("Cannot match stored annotation declaration");
-            }
-            for(String annotation : PATTERN_SEPARATOR.split(m.group(2))) {
-                addAnnotation(annotation);
-            }
-        }
 
         public AnnotatedKey(Object propertyKey, Object propertyValue)
         {
@@ -587,7 +562,6 @@ public class ConfigurationProperties
         }
     }
 
-
     /**
      *  This enum represents a property key annotation.  Each annotation has
      *  an associated label that is present as a comma-separated list within
@@ -600,7 +574,8 @@ public class ConfigurationProperties
         ONE_OF("one-of", true),
         DEPRECATED("deprecated"),
         NOT_FOR_SERVICES("not-for-services"),
-        IMMUTABLE("immutable");
+        IMMUTABLE("immutable"),
+        ANY_OF("any-of", true);
 
         private static final Map<String,Annotation> ANNOTATION_LABELS =
                 new HashMap<>();

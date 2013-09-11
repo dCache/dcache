@@ -70,7 +70,7 @@
         class="org.jboss.netty.handler.execution.MemoryAwareThreadPoolExecutor"
         destroy-method="shutdown">
     <description>Thread pool for xrootd request processing</description>
-    <constructor-arg value="${xrootd.threads}"/>
+    <constructor-arg value="${xrootd.limits.threads}"/>
     <constructor-arg value="${xrootd.max-channel-memory-size}"/>
     <constructor-arg value="${xrootd.max-total-memory-size}"/>
   </bean>
@@ -98,7 +98,7 @@
         init-method="init">
     <description>Netty based Xrootd service</description>
     <property name="port" value="${xrootd.net.port}"/>
-    <property name="address" value="${xrootd.net.listen}"/>
+    <property name="address" value="#{ '${xrootd.net.listen}'.equals('any') ? null : '${xrootd.net.listen}' }"/>
     <property name="backlog" value="${xrootd.net.backlog}"/>
     <property name="requestExecutor" ref="request-thread-pool"/>
     <property name="channelFactory" ref="channel-factory"/>
@@ -169,7 +169,7 @@
     <property name="protocolVersion" value="${xrootd.service.loginbroker.version}"/>
     <property name="protocolFamily" value="${xrootd.service.loginbroker.family}"/>
     <property name="port" value="${xrootd.net.port}"/>
-    <property name="address" value="${webdav.net.listen}"/>
+    <property name="address" value="#{ '${xrootd.net.listen}'.equals('any') ? null : '${xrootd.net.listen}' }"/>
     <property name="loginBrokers" value="${xrootd.service.loginbroker}"/>
   </bean>
 </beans>

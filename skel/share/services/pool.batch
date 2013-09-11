@@ -1,6 +1,7 @@
 onerror shutdown
 
-check -strong cell.name
+check -strong pool.cell.name
+check -strong pool.cell.export
 check -strong pool.name
 check -strong pool.path
 check -strong pool.size
@@ -29,6 +30,7 @@ check -strong pool.mover.xrootd.disk-threads
 check -strong pool.mover.xrootd.memory-per-connection
 check -strong pool.mover.xrootd.memory
 check -strong pool.mover.xrootd.timeout.idle
+check -strong pool.mover.xrootd.timeout.idle.unit
 check -strong pool.mover.xrootd.frame-size
 check pool.mover.xrootd.plugins
 check pool.mover.xrootd.socket-threads
@@ -36,7 +38,9 @@ check -strong pool.mover.http.disk-threads
 check -strong pool.mover.http.memory-per-connection
 check -strong pool.mover.http.memory
 check -strong pool.mover.http.timeout.idle
+check -strong pool.mover.http.timeout.idle.unit
 check -strong pool.mover.http.timeout.connect
+check -strong pool.mover.http.timeout.connect.unit
 check -strong pool.mover.http.chunk-size
 check pool.mover.http.socket-threads
 check -strong pool.mover.nfs.rpcsec_gss
@@ -56,6 +60,7 @@ check -strong pool.destination.heartbeat
 check -strong pool.destination.flush-notification
 check pool.destination.replicate
 check pool.destination.replicate.ip
+check pool.check-health-command
 
 define context PoolDefaults endDefine
    set heartbeat 30
@@ -89,15 +94,15 @@ define context PoolDefaults endDefine
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
 endDefine
 
-create org.dcache.cells.UniversalSpringCell "${cell.name}" \
+create org.dcache.cells.UniversalSpringCell "${pool.cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
-    -export -cellClass=Pool \
+    -export=${pool.cell.export} -cellClass=Pool -profiles=healthcheck-${pool.enable.repository-check} \
     -setupClass=pool -setupFile=\"${pool.path}/setup\" \
     -ftpProxyPassive=\"${pool.mover.ftp.allow-incomming-connections}\" \
     -allowMmap=\"${pool.mover.ftp.mmap}\" \
     -callbackExecutor=callbackThreadPool \
     -messageExecutor=messageThreadPool \
-    -waitForFiles=\"${pool.cell.wait-for-files}\" \
+    -waitForFiles=\"${pool.wait-for-files}\" \
 "
 
 

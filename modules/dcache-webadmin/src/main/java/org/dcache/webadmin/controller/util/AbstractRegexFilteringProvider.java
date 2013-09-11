@@ -77,11 +77,11 @@ import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
  * Base class for all {@link SortableDataProvider} classes with capabilities for
  * filtering table contents based on string expressions, as provided by
  * {@link IRegexFilterable}.
- * 
+ *
  * @author arossi
  */
-public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
-                extends SortableDataProvider<T> {
+public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable, S>
+                extends SortableDataProvider<T, S> {
 
     private static final long serialVersionUID = 1L;
 
@@ -102,10 +102,11 @@ public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
     }
 
     @Override
-    public Iterator<? extends T> iterator(int first, int count) {
+    public Iterator<? extends T> iterator(long first, long count) {
         List<T> data = getFiltered();
         Collections.sort(data, getComparator());
-        return data.subList(first, Math.min(first + count, data.size())).iterator();
+        return data.subList((int)first,
+                            (int)Math.min(first + count, data.size())).iterator();
     }
 
     @Override
@@ -130,7 +131,7 @@ public abstract class AbstractRegexFilteringProvider<T extends IRegexFilterable>
     }
 
     @Override
-    public int size() {
+    public long size() {
         return getFiltered().size();
     }
 

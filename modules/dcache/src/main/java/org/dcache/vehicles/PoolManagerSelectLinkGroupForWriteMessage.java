@@ -78,4 +78,11 @@ public class PoolManagerSelectLinkGroupForWriteMessage extends Message
     {
         _linkGroups = linkGroups;
     }
+
+    @Override
+    public String getDiagnosticContext()
+    {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
 }

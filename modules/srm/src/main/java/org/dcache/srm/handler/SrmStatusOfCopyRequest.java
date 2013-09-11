@@ -136,6 +136,7 @@ public class SrmStatusOfCopyRequest {
                     TStatusCode.SRM_INVALID_REQUEST);
         }
         CopyRequest copyRequest = Job.getJob(requestId, CopyRequest.class);
+        copyRequest.applyJdc();
 
         if (request.getArrayOfSourceSURLs() == null ||
                 request.getArrayOfTargetSURLs() == null) {

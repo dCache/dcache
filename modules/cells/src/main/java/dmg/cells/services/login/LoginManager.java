@@ -680,12 +680,12 @@ public void cleanUp(){
      private void openPort() throws Exception  {
 
         String ssf = _args.getOpt("socketfactory") ;
-        String local   = _args.getOpt("listen");
+        String local = _args.getOpt("listen");
 
         if( ssf == null ){
            SocketAddress socketAddress;
 
-           if ( (local == null ) || local.equals("*") || local.equals("")  ) {
+           if (local == null || local.equals("any")) {
                socketAddress =  new InetSocketAddress( _listenPort ) ;
            }else{
                socketAddress = new InetSocketAddress( InetAddress.getByName(local) , _listenPort ) ;
@@ -754,7 +754,7 @@ public void cleanUp(){
            Method meth = ssfClass.getMethod("createServerSocket", new Class[0]) ;
            _serverSocket = (ServerSocket)meth.invoke( obj ) ;
 
-           if ( (local == null ) || local.equals("*") || local.equals("")  ) {
+           if (local == null || local.equals("any")) {
                _serverSocket.bind(new InetSocketAddress( _listenPort ) );
            }else{
                _serverSocket.bind(new InetSocketAddress(InetAddress.getByName(local), _listenPort ) );
@@ -1057,13 +1057,20 @@ public void cleanUp(){
           _loginCounter ++ ;
 
        }catch( Exception e ){
+          if (e instanceof InvocationTargetException) {
+              Throwable cause = e.getCause();
+              if (cause instanceof Error) {
+                  throw (Error) cause;
+              }
+              _log.warn("Exception (ITE) in secure protocol : {}",
+                      (cause == null ? "(null)" : cause.toString()));
+          } else {
+              _log.warn( "Exception in secure protocol : {}", e.toString() ) ;
+          }
           try{ _socket.close() ; }catch(IOException ee ){/* dead any way....*/}
-          _log.warn( "Exception in secure protocol : {}", e.toString() ) ;
           _loginFailures ++ ;
           synchronized( _childHash ){ _childCount -- ; }
        }
-
-
      }
   }
   private void childrenCounterChanged(){

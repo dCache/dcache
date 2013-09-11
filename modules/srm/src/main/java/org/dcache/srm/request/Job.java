@@ -72,12 +72,14 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -114,12 +116,15 @@ import org.dcache.srm.util.JDC;
 
 
 /**
- *
- * @author  timur
+ * The base class for all scheduled activity within SRM.  An instance of this
+ * class represents either a complete SRM operation (Request), or an individual
+ * file within an operation (FileRequest).
  */
 public abstract class Job  {
 
     private static final Logger logger = LoggerFactory.getLogger(Job.class);
+
+    private static final String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXX";
 
     // this is the map from jobIds to jobs
     // job ids are referenced from jobs
@@ -150,8 +155,7 @@ public abstract class Job  {
     protected int maxNumberOfRetries;
     private long lastStateTransitionTime = System.currentTimeMillis();
 
-    private static final CopyOnWriteArrayList<JobStorage> jobStorages =
-        new CopyOnWriteArrayList<>();
+    private static volatile ImmutableMap<Class<? extends Job>, JobStorage> jobStorages = ImmutableMap.of();
     private final List<JobHistory> jobHistory = new ArrayList<>();
     private transient JobIdGenerator generator;
 
@@ -178,8 +182,9 @@ public abstract class Job  {
             new ReentrantReadWriteLock();
     private final WriteLock writeLock = reentrantReadWriteLock.writeLock();
 
-    public static final void registerJobStorage(JobStorage jobStorage) {
-            jobStorages.add(jobStorage);
+    public static final void registerJobStorages(ImmutableMap<Class<? extends Job>, JobStorage> jobStorages)
+    {
+        Job.jobStorages = jobStorages;
     }
 
     public static void shutdown() {
@@ -329,17 +334,6 @@ public abstract class Job  {
         return getJob(id, type, null);
     }
 
-    public static final <T extends Job> T getJob(Long id, Class<T> type,
-            Connection connection) throws SRMInvalidRequestException
-    {
-        Job job = getJob(id, connection);
-        try {
-            return type.cast(job);
-        } catch(ClassCastException e) {
-            throw new SRMInvalidRequestException("Job " + id + " has type " + Job.class.getSimpleName() + " and not the expected type " + Job.class.getSimpleName());
-        }
-    }
-
     /**
      * Fetch the Job associated with the supplied ID.  If no such job exists
      * then throw SRMInvalidRequestException.  This method never returns null.
@@ -348,14 +342,15 @@ public abstract class Job  {
      * @return a object representing this job.
      * @throws SRMInvalidRequestException if the job cannot be found
      */
-    private static Job getJob(Long jobId, Connection _con)
-            throws SRMInvalidRequestException  {
+    public static <T extends Job> T getJob(Long jobId, Class<T> type, Connection _con)
+            throws SRMInvalidRequestException
+    {
         synchronized(weakJobStorage) {
             WeakReference<Job> ref = weakJobStorage.get(jobId);
             if(ref!= null) {
                 Job o1 = ref.get();
                 if(o1 != null) {
-                    return o1;
+                    return toType(type, o1);
                 }
             }
         }
@@ -369,19 +364,21 @@ public abstract class Job  {
         job = sharedMemoryCache.getJob(jobId);
         boolean restoredFromDb=false;
         if (job == null) {
-            for (JobStorage storage: jobStorages) {
-                try {
-                    if(_con == null) {
-                        job = storage.getJob(jobId);
-                    } else {
-                        job = storage.getJob(jobId, _con);
+            for (Map.Entry<Class<? extends Job>, JobStorage> entry: jobStorages.entrySet()) {
+                if (type.isAssignableFrom(entry.getKey())) {
+                    try {
+                        if(_con == null) {
+                            job = entry.getValue().getJob(jobId);
+                        } else {
+                            job = entry.getValue().getJob(jobId, _con);
+                        }
+                    } catch (SQLException e){
+                        logger.error("Failed to read job", e);
                     }
-                } catch (SQLException e){
-                    logger.error("Failed to read job", e);
-                }
-                if(job != null) {
-                    restoredFromDb = true;
-                    break;
+                    if (job != null) {
+                        restoredFromDb = true;
+                        break;
+                    }
                 }
             }
         }
@@ -396,8 +393,8 @@ public abstract class Job  {
             WeakReference<Job> ref = weakJobStorage.get(jobId);
             if(ref!= null) {
                 Job o1 = ref.get();
-                if(o1 != null) {
-                    return o1;
+                if (o1 != null) {
+                    return toType(type, o1);
                 }
             }
 
@@ -412,9 +409,18 @@ public abstract class Job  {
             if(restoredFromDb) {
                 job.expireRestoredJobOrCreateExperationTimer();
             }
-            return job;
+            return toType(type, job);
         }
         throw new SRMInvalidRequestException("jobId = "+jobId+" does not correspond to any known job");
+    }
+
+    private static <T extends Job> T toType(Class<T> type, Job job)
+            throws SRMInvalidRequestException
+    {
+        if (!type.isAssignableFrom(job.getClass())) {
+            throw new SRMInvalidRequestException("Job has wrong type, actual type is " + job.getClass().getSimpleName() + " and expected type is " + type.getSimpleName());
+        }
+        return type.cast(job);
     }
 
     /** Performs state transition checking the legality first.
@@ -682,9 +688,11 @@ public abstract class Job  {
         StringBuilder historyStringBuillder = new StringBuilder();
         rlock();
         try {
+            SimpleDateFormat format = new SimpleDateFormat(ISO8601_FORMAT);
             for( JobHistory nextHistoryElement: jobHistory ) {
                  historyStringBuillder.append(" at ");
-                 historyStringBuillder.append(new Date(nextHistoryElement.getTransitionTime()));
+                 historyStringBuillder.append(format
+                         .format(new Date(nextHistoryElement.getTransitionTime())));
                  historyStringBuillder.append(" state ").append(nextHistoryElement.getState());
                  historyStringBuillder.append(" : ");
                  historyStringBuillder.append(nextHistoryElement.getDescription());
@@ -696,11 +704,10 @@ public abstract class Job  {
        return historyStringBuillder.toString();
     }
 
-
-     public Iterator<JobHistory> getHistoryIterator() {
+     public List<JobHistory> getJobHistory() {
         rlock();
         try {
-            return new ArrayList<>(jobHistory).iterator();
+            return new ArrayList<>(jobHistory);
         } finally {
             runlock();
         }
@@ -1125,15 +1132,16 @@ public abstract class Job  {
     }
 
     public static class JobHistory implements Comparable<JobHistory> {
-        private long id;
-        private State state;
-        private long transitionTime;
-        private String description;
+        private final long id;
+        private final State state;
+        private final long transitionTime;
+        private final String description;
         private boolean saved; //false by default
+
         public JobHistory(long id, State state, String description, long transitionTime) {
             this.id = id;
             this.state = state;
-            this.description = description;
+            this.description = description.replace('\'','`');
             this.transitionTime = transitionTime;
         }
 
@@ -1166,9 +1174,6 @@ public abstract class Job  {
          * @return Value of property description.
          */
         public String getDescription() {
-            if(description.indexOf('\'') != -1 ) {
-                description = description.replace('\'','`');
-            }
             return description;
         }
 
@@ -1218,11 +1223,11 @@ public abstract class Job  {
             return sb.toString();
         }
 
-        public boolean isSaved() {
+        public synchronized boolean isSaved() {
             return saved;
         }
 
-        public void setSaved() {
+        public synchronized void setSaved() {
             this.saved = true;
         }
 
@@ -1232,10 +1237,11 @@ public abstract class Job  {
         this.retryTimer = retryTimer;
     }
 
-    public void applyJdc()
+    public JDC applyJdc()
     {
-        jdc.apply();
-        JDC.push(String.valueOf(id));
+        JDC current = jdc.apply();
+        JDC.appendToSession(String.valueOf(id));
+        return current;
     }
 
     /**

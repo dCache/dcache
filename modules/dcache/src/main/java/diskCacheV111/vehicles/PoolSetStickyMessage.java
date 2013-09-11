@@ -38,6 +38,11 @@ public class PoolSetStickyMessage extends PoolMessage {
     public boolean isSticky(){ return _sticky ; }
     public String getOwner() { return _owner; }
     public long getLifeTime() {return _validTill; }
-}
 
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
+}
 

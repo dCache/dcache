@@ -3,7 +3,6 @@
 package diskCacheV111.pools ;
 
 import java.io.Serializable;
-import java.util.Map;
 
 public class      CostCalculationV5
        implements CostCalculatable,
@@ -91,44 +90,47 @@ public class      CostCalculationV5
        double cost = 0.0 ;
        double div  = 0.0 ;
 
-       PoolCostInfo.PoolQueueInfo queue;
-
-       Map<String, PoolCostInfo.NamedPoolQueueInfo> map = _info.getExtendedMoverHash() ;
-
-       PoolCostInfo.PoolQueueInfo [] q = {
-
-          map == null ? _info.getMoverQueue() : null ,
+       PoolCostInfo.PoolQueueInfo [] q1 = {
           _info.getP2pQueue() ,
-          _info.getP2pClientQueue() ,
+          _info.getP2pClientQueue()
+       };
+        for (PoolCostInfo.PoolQueueInfo queue : q1) {
+            if (queue != null) {
+                if (queue.getMaxActive() > 0) {
+                    cost += ((double) queue.getQueued() +
+                            (double) queue.getActive()) /
+                            (double) queue.getMaxActive();
+                } else if (queue.getQueued() > 0) {
+                    cost += 1.0;
+                }
+                div += 1.0;
+            }
+        }
+       PoolCostInfo.PoolQueueInfo [] q2 = {
           _info.getStoreQueue() ,
           _info.getRestoreQueue()
 
        };
-        for (PoolCostInfo.PoolQueueInfo info : q) {
-
-            queue = info;
-
-            if ((queue != null) && (queue.getMaxActive() > 0)) {
+        for (PoolCostInfo.PoolQueueInfo queue : q2) {
+            if (queue != null) {
+                if (queue.getQueued() > 0) {
+                    cost += 1.0;
+                } else {
+                    cost += (1.0 - Math.pow(0.75, queue.getActive()));
+                }
+                div += 1.0;
+            }
+        }
+        for (PoolCostInfo.NamedPoolQueueInfo queue : _info.getExtendedMoverHash().values()) {
+            if (queue.getMaxActive() > 0) {
                 cost += ((double) queue.getQueued() +
                         (double) queue.getActive()) /
                         (double) queue.getMaxActive();
-                div += 1.0;
-//            System.out.println("DEBUG : top "+cost+" "+div);
+            } else if (queue.getQueued() > 0) {
+                cost += 1.0;
             }
-
+            div += 1.0;
         }
-       if( map != null ) {
-           for (Object o : map.values()) {
-               queue = (PoolCostInfo.PoolQueueInfo) o;
-               if ((queue != null) && (queue.getMaxActive() > 0)) {
-                   cost += ((double) queue.getQueued() +
-                           (double) queue.getActive()) /
-                           (double) queue.getMaxActive();
-                   div += 1.0;
-//            System.out.println("DEBUG : top "+cost+" "+div);
-               }
-           }
-       }
        _performanceCost = div > 0.0 ? cost / div : 1000000.0;
 //       System.out.println("Calculation : "+_info+" -> cpu="+_performanceCost);
 

@@ -3,9 +3,6 @@ package org.dcache.boot;
 import java.io.PrintStream;
 
 import org.dcache.util.ConfigurationProperties;
-import org.dcache.util.ScopedConfigurationProperties;
-
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME;
 
 /**
  * Generates a shell function {@code getProperty} which serves as
@@ -43,7 +40,7 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
             out.println("        \"\")");
             out.println("          ;;"); // Fall through
             for (ConfigurationProperties service: domain.getServices()) {
-                String cellName = service.getValue(PROPERTY_CELL_NAME);
+                String cellName = Properties.getCellName(service);
                 if (cellName != null) {
                     out.append("        ").append(quoteForCase(cellName)).println(")");
                     compile(out, "          ", service, domain.properties());
@@ -83,12 +80,42 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
 
     private static String quote(String s)
     {
-        return s.replace("\\", "\\\\").replace("$", "\\$").replace("`", "\\`").replace("\"", "\\\"");
+        char[] output = new char[2 * s.length()];
+        int len = 0;
+        for (char c: s.toCharArray()) {
+            switch (c) {
+            case '\\':
+            case '$':
+            case '`':
+            case '"':
+                output[len++] = '\\';
+                break;
+            }
+            output[len++] = c;
+        }
+        return new String(output, 0, len);
     }
 
     private static String quoteForCase(String s)
     {
-        return quote(s).replace(")", "\\)").replace("?", "\\?").replace("*", "\\*").replace("[", "\\[");
+        char[] output = new char[2 * s.length()];
+        int len = 0;
+        for (char c: s.toCharArray()) {
+            switch (c) {
+            case '\\':
+            case '$':
+            case '`':
+            case '"':
+            case ')':
+            case '?':
+            case '*':
+            case '[':
+                output[len++] = '\\';
+                break;
+            }
+            output[len++] = c;
+        }
+        return new String(output, 0, len);
     }
 
     /**
@@ -101,7 +128,9 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
     {
         out.append(indent).println("case \"$1\" in");
         for (String key: properties.stringPropertyNames()) {
-            if (!ScopedConfigurationProperties.isScoped(key)) {
+            ConfigurationProperties.AnnotatedKey annotatedKey = properties.getAnnotatedKey(key);
+            if (annotatedKey == null ||
+                    !annotatedKey.hasAnnotation(ConfigurationProperties.Annotation.DEPRECATED)) {
                 String value = properties.getValue(key);
                 if (!value.equals(parentProperties.getValue(key))) {
                     out.append(indent).append("  ");

@@ -146,6 +146,7 @@ public class SrmStatusOfGetRequest {
         }
 
         GetRequest getRequest = Job.getJob(requestId, GetRequest.class);
+        getRequest.applyJdc();
 
         if( statusOfGetRequestRequest.getArrayOfSourceSURLs() == null ){
             return getRequest.getSrmStatusOfGetRequestResponse();

@@ -109,6 +109,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.poolManager.CostModule;
@@ -209,7 +210,6 @@ import org.dcache.util.list.DirectoryListSource;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -244,7 +244,7 @@ public final class Storage
      * loops.
      */
     private final static long TRANSIENT_FAILURE_DELAY =
-        MILLISECONDS.toMillis(10);
+        TimeUnit.MILLISECONDS.toMillis(10);
     private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
@@ -266,7 +266,6 @@ public final class Storage
     private SRM srm;
     private Configuration config;
     private Thread storageInfoUpdateThread;
-    private boolean ignoreClientProtocolOrder; //falseByDefault
     private boolean customGetHostByAddr; //falseByDefault
 
     private FsPath _xrootdRootPath;
@@ -413,11 +412,6 @@ public final class Storage
         customGetHostByAddr = value;
     }
 
-    public void setIgnoreClientProtocolOrder(boolean ignore)
-    {
-        ignoreClientProtocolOrder = ignore;
-    }
-
     public void start() throws SQLException, CacheException, IOException,
             InterruptedException, IllegalStateTransition
     {
@@ -458,6 +452,11 @@ public final class Storage
     public static long parseTime(String s)
     {
         return s.equals(INFINITY) ? Long.MAX_VALUE : Long.parseLong(s);
+    }
+
+    public static long parseTime(String s, TimeUnit unit)
+    {
+        return s.equals(INFINITY) ? Long.MAX_VALUE : TimeUnit.MILLISECONDS.convert(Long.parseLong(s),unit);
     }
 
     @Required
@@ -1057,19 +1056,11 @@ public final class Storage
             throw new SRMException("can not find sutable put protocol");
         }
 
-         /*
-          *this is incorrect, need to select on basis of client's preferences
-          * But we need to continue doing this while old srmcp clients
-          * are out there in the wild
-          */
-         if(ignoreClientProtocolOrder) {
-             for (String protocol : srmPreferredProtocols) {
-                 if (available_protocols.contains(protocol)) {
-                     return protocol;
-                 }
-             }
-         }
-
+        for (String protocol : srmPreferredProtocols) {
+            if (available_protocols.contains(protocol)) {
+                return protocol;
+            }
+        }
 
         for (String protocol : protocols) {
             if (available_protocols.contains(protocol)) {

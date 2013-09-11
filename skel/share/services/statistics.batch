@@ -1,11 +1,10 @@
-# Load arguments into environment
-
 onerror shutdown
-check -strong statisticsLocation
+check -strong statistics.cell.name
+check -strong statistics.location
 
-create diskCacheV111.services.PoolStatisticsV0 ${cell.name}  \
-     "${statisticsLocation}  \
+create diskCacheV111.services.PoolStatisticsV0 ${statistics.cell.name}  \
+     "${statistics.location}  \
 #      -create  \
-#      -htmlBase=${statisticsLocation}  \
+#      -htmlBase=${statistics.location}  \
       -domain=${thisFqHostname}"
 

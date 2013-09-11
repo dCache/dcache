@@ -25,7 +25,7 @@ public class DomainConfigurationTest
     private final static String DEFAULTS =
         "a=1\n" +
         "b=${a}\n" +
-        "service1/c=2\n";
+        "c=2\n";
 
     private final static String CONFIGURATION =
         "a=2\n" +
@@ -76,17 +76,17 @@ public class DomainConfigurationTest
         assertPropertyEquals("1", "a", shell);
         assertPropertyEquals("1", "b", shell);
         assertPropertyEquals("2", "c", shell);
-        assertPropertyEquals(DOMAIN_NAME, "domain.name", shell);
-        assertPropertyEquals(SERVICE1_NAME, "domain.service", shell);
+        assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
+        assertPropertyEquals(SERVICE1_NAME, "dcache.domain.service", shell);
 
         service = domain.createService(SERVICE2_NAME);
         shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("1", "a", shell);
         assertPropertyEquals("1", "b", shell);
-        assertPropertyEquals(null, "c", shell);
-        assertPropertyEquals(DOMAIN_NAME, "domain.name", shell);
-        assertPropertyEquals(SERVICE2_NAME, "domain.service", shell);
+        assertPropertyEquals("2", "c", shell);
+        assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
+        assertPropertyEquals(SERVICE2_NAME, "dcache.domain.service", shell);
     }
 
     @Test
@@ -100,9 +100,9 @@ public class DomainConfigurationTest
 
         assertPropertyEquals("2", "a", shell);
         assertPropertyEquals("2", "b", shell);
-        assertPropertyEquals("2", "c", shell);
-        assertPropertyEquals(DOMAIN_NAME, "domain.name", shell);
-        assertPropertyEquals(SERVICE1_NAME, "domain.service", shell);
+        assertPropertyEquals("1", "c", shell);
+        assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
+        assertPropertyEquals(SERVICE1_NAME, "dcache.domain.service", shell);
 
         service = domain.createService(SERVICE2_NAME);
         shell = domain.createShellForService(system, service);
@@ -110,8 +110,8 @@ public class DomainConfigurationTest
         assertPropertyEquals("2", "a", shell);
         assertPropertyEquals("2", "b", shell);
         assertPropertyEquals("1", "c", shell);
-        assertPropertyEquals(DOMAIN_NAME, "domain.name", shell);
-        assertPropertyEquals(SERVICE2_NAME, "domain.service", shell);
+        assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
+        assertPropertyEquals(SERVICE2_NAME, "dcache.domain.service", shell);
     }
 
     @Test
@@ -127,8 +127,8 @@ public class DomainConfigurationTest
         assertPropertyEquals("3", "a", shell);
         assertPropertyEquals("3", "b", shell);
         assertPropertyEquals("4", "c", shell);
-        assertPropertyEquals(DOMAIN_NAME, "domain.name", shell);
-        assertPropertyEquals(SERVICE1_NAME, "domain.service", shell);
+        assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
+        assertPropertyEquals(SERVICE1_NAME, "dcache.domain.service", shell);
 
         service = domain.createService(SERVICE2_NAME);
         service.load(new StringReader(SERVICE2_CONFIG));
@@ -137,8 +137,8 @@ public class DomainConfigurationTest
         assertPropertyEquals("3", "a", shell);
         assertPropertyEquals("2", "b", shell);
         assertPropertyEquals("5", "c", shell);
-        assertPropertyEquals(DOMAIN_NAME, "domain.name", shell);
-        assertPropertyEquals(SERVICE2_NAME, "domain.service", shell);
+        assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
+        assertPropertyEquals(SERVICE2_NAME, "dcache.domain.service", shell);
     }
 
     @Test

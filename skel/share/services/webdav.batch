@@ -3,7 +3,8 @@
 #
 
 onerror shutdown
-check -strong cell.name
+check -strong webdav.cell.name
+check -strong webdav.cell.export
 check -strong webdav.net.port
 check -strong webdav.net.listen
 check -strong webdav.service.pnfsmanager
@@ -45,7 +46,7 @@ check -strong webdav.static-content.location
 check -strong webdav.templates.html
 check -strong webdav.redirect.on-read
 check -strong webdav.redirect.on-write
-check -strong webdav.overwrite
+check -strong webdav.enable.overwrite
 check -strong webdav.service.missing-files
 check -strong webdav.service.missing-files.timeout
 check -strong webdav.service.missing-files.timeout.unit
@@ -53,7 +54,7 @@ check -strong webdav.enable.missing-files
 
 check webdav.net.internal
 check webdav.mover.queue
-check webdav.security.ciphers
+check webdav.authn.ciphers
 
 define env verify-http.exe enddefine
 enddefine
@@ -100,7 +101,7 @@ enddefine
 exec env verify-${webdav.authn.protocol}.exe
 
 onerror shutdown
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
+create org.dcache.cells.UniversalSpringCell ${webdav.cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
     -profiles=connector-${webdav.authn.protocol},missing-files-${webdav.enable.missing-files} \
-    -export -cellClass=WebDAVDoor"
+    -export=${webdav.cell.export} -cellClass=WebDAVDoor"

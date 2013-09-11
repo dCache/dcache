@@ -2,11 +2,6 @@
 # Cell Name Service
 #
 
-# The cns service is silently embedded in the broker and in that case
-# the cell.name variable is not defined.
-onerror continue
-set env -c cell.name ${cns.cell.name}
-
 onerror shutdown
 
 define env cns-cells.exe end
@@ -20,7 +15,7 @@ end
 define env cns-amq.exe end
   check -strong cns.broker.amq.url
 
-  create org.dcache.cells.UniversalSpringCell ${cell.name} \
+  create org.dcache.cells.UniversalSpringCell ${cns.cell.name} \
      "classpath:org/dcache/cells/cns-amq.xml -cellClass=TopoCell"
 end
 
@@ -30,7 +25,7 @@ define env cns-openmq.exe end
   check -strong cns.broker.openmq.reconnect-interval
   check -strong cns.broker.openmq.reconnect-interval.unit
 
-  create org.dcache.cells.UniversalSpringCell ${cell.name} \
+  create org.dcache.cells.UniversalSpringCell ${cns.cell.name} \
      "classpath:org/dcache/cells/cns-openmq.xml -cellClass=TopoCell"
 end
 

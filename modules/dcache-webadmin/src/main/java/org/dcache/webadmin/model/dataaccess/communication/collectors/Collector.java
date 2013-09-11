@@ -2,9 +2,11 @@ package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.cells.CellStub;
 import org.dcache.util.backoff.BackoffControllerBuilder;
@@ -30,7 +32,8 @@ public abstract class Collector implements Runnable,
     protected String _name = "";
     protected Map<String, Object> _pageCache;
     protected CellStub _cellStub;
-    protected Long sleepInterval;
+    protected long sleepInterval;
+    protected TimeUnit sleepIntervalUnit;
 
     private boolean enabled = true;
     private IBackoffAlgorithmFactory factory;
@@ -55,6 +58,7 @@ public abstract class Collector implements Runnable,
     @Override
     public void run() {
         Status status = Status.SUCCESS;
+        long timeout = sleepIntervalUnit.toMillis(sleepInterval);
         while (isEnabled()) {
             try {
                 logger.debug("collector {} calling controller.call", this);
@@ -73,7 +77,7 @@ public abstract class Collector implements Runnable,
 
             synchronized (this) {
                 try {
-                    wait(sleepInterval);
+                    wait(timeout);
                 } catch (InterruptedException t) {
                     break;
                 }
@@ -81,14 +85,17 @@ public abstract class Collector implements Runnable,
         }
     }
 
+    @Required
     public void setAlgorithmFactory(IBackoffAlgorithmFactory factory) {
         this.factory = factory;
     }
 
+    @Required
     public void setCellStub(CellStub cellstub) {
         _cellStub = cellstub;
     }
 
+    @Required
     public void setName(String name) {
         _name = name;
     }
@@ -97,8 +104,14 @@ public abstract class Collector implements Runnable,
         _pageCache = pageCache;
     }
 
-    public void setSleepInterval(Long sleepInterval) {
+    @Required
+    public void setSleepInterval(long sleepInterval) {
         this.sleepInterval = sleepInterval;
+    }
+
+    @Required
+    public void setSleepIntervalUnit(TimeUnit sleepIntervalUnit) {
+        this.sleepIntervalUnit = sleepIntervalUnit;
     }
 
     protected synchronized void setEnabled(boolean enabled) {

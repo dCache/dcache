@@ -1,11 +1,11 @@
 # Starts the gPlazma login cell
 
 onerror shutdown
-check -strong cell.name
+check -strong gplazma.cell.name
 check -strong gplazma.cell.limits.threads
 check -strong gplazma.configuration.file
 check -strong gplazma.service.pnfsmanager
 
-create org.dcache.cells.UniversalSpringCell "${cell.name}" \
+create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
    "classpath:org/dcache/services/login/gplazma.xml \
      -export=${gplazma.cell.export} -monitor -messageExecutor=message-thread-pool"

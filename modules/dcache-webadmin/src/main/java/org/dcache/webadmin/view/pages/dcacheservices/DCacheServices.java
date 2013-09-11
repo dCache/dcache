@@ -1,6 +1,6 @@
 package org.dcache.webadmin.view.pages.dcacheservices;
 
-import org.apache.wicket.behavior.SimpleAttributeModifier;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.link.Link;
@@ -50,9 +50,9 @@ public class DCacheServices extends BasePage {
     }
 
     private void enableOnlyInAuthenticatedMode(Link link) {
-        if (!getWebadminApplication().isAuthenticatedMode()) {
+        if (!getWebadminApplication().getAuthenticatedMode()) {
             link.setEnabled(false);
-            link.add(new SimpleAttributeModifier("title", getStringResource(
+            link.add(new AttributeModifier("title", getStringResource(
                     AUTHMODE_ONLY_TOOLTIP_MESSAGE)));
         }
     }

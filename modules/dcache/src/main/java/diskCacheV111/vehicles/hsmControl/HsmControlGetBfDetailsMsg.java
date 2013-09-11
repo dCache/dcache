@@ -32,5 +32,8 @@ public class HsmControlGetBfDetailsMsg extends Message  {
     public StorageInfo getStorageInfo(){ return _storageInfo ; }
     public String getDetails(){ return _detail ; }
 
-
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
 }

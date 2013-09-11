@@ -4,20 +4,7 @@
     <wicket:head>
         <wicket:link>
             <link href="CellServicesPanel.css" rel="stylesheet" type="text/css" />
-            <script type="text/javascript" src="js/picnet.table.filter.full.js"></script>
         </wicket:link>
-
-        <script type="text/javascript">
-            $(document).ready(function() {
-                $('#sortable').tablesorter();
-                // Initialise Plugin
-                var options1 = {
-                    additionalFilterTriggers: [$('#quickfind')],
-                    clearFiltersControls: [$('#cleanfilters')],
-                };
-                $('#sortable').tableFilter(options1);
-            });
-        </script>
     </wicket:head>
 </head>
 <body>

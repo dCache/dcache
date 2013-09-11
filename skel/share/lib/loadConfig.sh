@@ -24,6 +24,13 @@ undefinedProperty()
     :
 }
 
+# Wrapper for getProperty that prefixes the property name with
+# the service name.
+getScopedProperty() # $1 = property, $2 = domain, $3 = cell
+{
+   getProperty "$(getProperty dcache.domain.service "$2" "$3").$1" "$2" "$3"
+}
+
 findJava()
 {
     if [ -x "$JAVA" ]; then

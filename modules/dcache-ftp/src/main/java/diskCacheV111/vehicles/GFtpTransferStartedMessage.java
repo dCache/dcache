@@ -39,4 +39,11 @@ public class GFtpTransferStartedMessage extends Message
     {
         return _address;
     }
+
+    @Override
+    public String getDiagnosticContext()
+    {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
 }

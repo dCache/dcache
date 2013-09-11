@@ -1,0 +1,6 @@
+<plugins>
+  <plugin>
+    <name>htpasswd</name>
+    <class>org.dcache.gplazma.htpasswd.HtpasswdPlugin</class>
+  </plugin>
+</plugins>

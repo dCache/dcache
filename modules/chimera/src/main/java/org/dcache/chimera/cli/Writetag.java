@@ -34,7 +34,7 @@ public class Writetag {
 
         if (programArgc < 2 || programArgc > 3) {
             System.err.println(
-                    "Usage : " + Readtag.class.getName() + " " + FsFactory.USAGE
+                    "Usage : " + Writetag.class.getName() + " " + FsFactory.USAGE
                     + " <chimera path> <tag> [<data>]");
             System.exit(4);
         }

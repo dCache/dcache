@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.util.CacheException;
@@ -61,6 +62,7 @@ public class MovePinRequestProcessor
     private CellStub _poolStub;
     private AuthorizationPolicy _pdp;
     private long _maxLifetime;
+    private TimeUnit _maxLifetimeUnit;
     private PoolMonitor _poolMonitor;
 
     @Required
@@ -85,6 +87,17 @@ public class MovePinRequestProcessor
     public void setPoolMonitor(PoolMonitor poolMonitor)
     {
         _poolMonitor = poolMonitor;
+    }
+
+    @Required
+    public void setMaxLifetimeUnit(TimeUnit unit)
+    {
+        _maxLifetimeUnit = unit;
+    }
+
+    public TimeUnit getMaxLifetimeUnit()
+    {
+        return _maxLifetimeUnit;
     }
 
     @Required
@@ -245,7 +258,7 @@ public class MovePinRequestProcessor
         }
 
         if (_maxLifetime > -1) {
-            message.setLifetime(Math.min(_maxLifetime, message.getLifetime()));
+            message.setLifetime(Math.min(_maxLifetimeUnit.toMillis(_maxLifetime), message.getLifetime()));
         }
 
         long lifetime = message.getLifetime();

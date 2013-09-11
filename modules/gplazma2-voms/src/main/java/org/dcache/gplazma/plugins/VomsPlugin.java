@@ -8,14 +8,15 @@ import org.slf4j.MDC;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.cert.CRLException;
+import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.util.CertPaths;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
@@ -56,10 +57,9 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
         boolean hasFQANs = false;
 
         for (Object credential : publicCredentials) {
-            if (credential instanceof X509Certificate[]) {
+            if (CertPaths.isX509CertPath(credential)) {
                 hasX509 = true;
-                X509Certificate[] chain = (X509Certificate[]) credential;
-                validator.setClientChain(chain).validate();
+                validator.setClientChain(CertPaths.getX509Certificates((CertPath) credential)).validate();
                 for (String fqan : validator.getAllFullyQualifiedAttributes()) {
                     hasFQANs = true;
                     identifiedPrincipals.add(new FQANPrincipal(fqan, primary));

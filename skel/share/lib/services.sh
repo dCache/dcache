@@ -27,8 +27,8 @@ printPidFromFile() # $1 = file
     local pid
 
     [ -f "$1" ] || return 3      # program is not running
-    pid=$(cat "$1") || return 4  # program or service staus is unknown
-    [ -n "$pid" ] || return 4    # program or service staus is unknown
+    pid=$(cat "$1") || return 4  # program or service status is unknown
+    [ -n "$pid" ] || return 4    # program or service status is unknown
     isRunning "$pid" || return 1 # program is dead and pid file exists
 
     printf "%s" "$pid"

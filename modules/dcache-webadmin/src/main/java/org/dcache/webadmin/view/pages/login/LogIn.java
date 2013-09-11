@@ -144,9 +144,12 @@ public class LogIn extends BasePage {
              * then continue to the original destination, otherwise to the Home
              * page
              */
-            if (!continueToOriginalDestination()) {
-                setResponsePage(getApplication().getHomePage());
-            }
+            continueToOriginalDestination();
+
+            /*
+             *  if we reach this line there was no intercept page, so go to home page
+             */
+            setResponsePage(getApplication().getHomePage());
         }
 
         private void signIn(LogInBean model, IAuthenticationStrategy strategy)

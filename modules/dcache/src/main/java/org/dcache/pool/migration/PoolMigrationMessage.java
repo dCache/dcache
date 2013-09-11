@@ -43,4 +43,11 @@ public class PoolMigrationMessage extends Message
     {
         return _pnfsId;
     }
+
+    @Override
+    public String getDiagnosticContext()
+    {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
 }

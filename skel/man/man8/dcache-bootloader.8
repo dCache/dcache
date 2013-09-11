@@ -71,17 +71,17 @@ The URI to the layout file. The boot loader scans the layout file to
 determine the domains and services specified for this dCache host.
 
 .TP
-.B domain.service.uri
+.B dcache.domain.service.uri
 URI to service batch file. A relative URI and path is resolved by
 searching the plugin directories. If not found, it is resolved
 relative to the URI defined by domain.service.uri.base.
 
 .TP
-.B domain.service.uri.base
-Base URI for domain.service.uri.
+.B dcache.domain.service.uri.base
+Base URI for dcache.domain.service.uri.
 
 .TP
-.B domain.preload
+.B dcache.domain.preload
 The URI to a batch file executed during domain startup before any
 services are started.
 
@@ -110,15 +110,15 @@ The host name of this host.
 The fully qualified domain name of this host.
 
 .TP
-.B domain.name
+.B dcache.domain.name
 The name of the current domain as defined in the layout file.
 
 .TP
-.B domain.service
+.B dcache.domain.service
 The name of the current service as defined in the layout file.
 
 .TP
-.B cell.name
+.B <service>.cell.name
 Primary cell name of the service.
 
 .TP

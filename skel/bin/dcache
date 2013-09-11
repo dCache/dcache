@@ -271,17 +271,17 @@ checkForNonMigratedDcache()
 #  key through a 'openssl rsa' command that only alters the format.
 checkForPkcs8HostKey()
 {
-    if [ -r $(getProperty grid.hostcert.key) ] && \
-       grep "BEGIN PRIVATE KEY" $(getProperty grid.hostcert.key) >/dev/null; then
+    if [ -r $(getProperty dcache.authn.hostcert.key) ] && \
+       grep "BEGIN PRIVATE KEY" $(getProperty dcache.authn.hostcert.key) >/dev/null; then
 
-        printp "The file $(getProperty grid.hostcert.key) is in PKCS#8        \
+        printp "The file $(getProperty dcache.authn.hostcert.key) is in PKCS#8        \
                 format.  Unfortunately, dCache requires the private key to  \
                 be stored in PKCS#1 format.  The following two commands     \
                 will convert the hostkey.pem file into PKCS#1 format:"
         echo
-        echo "mv $(getProperty grid.hostcert.key) $(getProperty grid.hostcert.key)-pk8"
+        echo "mv $(getProperty dcache.authn.hostcert.key) $(getProperty dcache.authn.hostcert.key)-pk8"
         echo
-        echo "openssl rsa -in $(getProperty grid.hostcert.key)-pk8 -out $(getProperty grid.hostcert.key)"
+        echo "openssl rsa -in $(getProperty dcache.authn.hostcert.key)-pk8 -out $(getProperty dcache.authn.hostcert.key)"
         exit 1
     fi
 }
@@ -489,8 +489,8 @@ case "$1" in
         (
             printf "DOMAIN\tSERVICE\tCELL\tLOG\n"
             for domain in $(getProperty dcache.domains); do
-                for cell in $(getProperty domain.cells "$domain"); do
-                    service=$(getProperty domain.service "$domain" "$cell")
+                for cell in $(getProperty dcache.domain.cells "$domain"); do
+                    service=$(getProperty dcache.domain.service "$domain" "$cell")
                     log=$(getProperty dcache.log.file "$domain" "$cell")
                     printf "${domain}\t${service}\t${cell}\t${log}\n"
                 done
@@ -584,8 +584,8 @@ case "$1" in
                 (
                     printf "POOL\tDOMAIN\tMETA\tSIZE\tFREE\tPATH\n"
                     for domain in $(getProperty dcache.domains); do
-                        for cell in $(getProperty domain.cells "$domain"); do
-                            service=$(getProperty domain.service "$domain" "$cell")
+                        for cell in $(getProperty dcache.domain.cells "$domain"); do
+                            service=$(getProperty dcache.domain.service "$domain" "$cell")
                             if [ "$service" = "pool" ]; then
                                 name=$(getProperty pool.name "$domain" "$cell")
                                 path=$(getProperty pool.path "$domain" "$cell")
@@ -724,10 +724,10 @@ case "$1" in
             hostcert)
                 require openssl
 
-                opt_password="$(getProperty keyStorePassword)"
-                opt_out="$(getProperty keyStore)"
-                opt_hostcert="$(getProperty grid.hostcert.cert)"
-                opt_hostkey="$(getProperty grid.hostcert.key)"
+                opt_password="$(getProperty dcache.authn.keystore.password)"
+                opt_out="$(getProperty dcache.authn.keystore)"
+                opt_hostcert="$(getProperty dcache.authn.hostcert.cert)"
+                opt_hostkey="$(getProperty dcache.authn.hostcert.key)"
 
                 parseOptions "out password hostcert hostkey" "$@" || shift $?
 
@@ -747,9 +747,9 @@ case "$1" in
                         JRE. Please ensure that either keytool is in the path
                         or update JAVA_HOME."
 
-                opt_password="$(getProperty trustStorePassword)"
-                opt_out="$(getProperty trustStore)"
-                opt_cacerts="$(getProperty grid.ca.path)"
+                opt_password="$(getProperty dcache.authn.truststore.password)"
+                opt_out="$(getProperty dcache.authn.truststore)"
+                opt_cacerts="$(getProperty dcache.authn.capath)"
 
                 parseOptions "out password cacerts" "$@" || shift $?
 
@@ -813,14 +813,14 @@ case "$1" in
                     printf "${domain}\t-\t-\tUDP\t${port}\n"
                 done
 
-                for cell in $(getProperty domain.cells "$domain"); do
-                    service=$(getProperty domain.service "$domain" "$cell")
+                for cell in $(getProperty dcache.domain.cells "$domain"); do
+                    service=$(getProperty dcache.domain.service "$domain" "$cell")
 
-                    for port in $(getProperty net.ports.tcp "$domain" "$cell"); do
+                    for port in $(getScopedProperty net.ports.tcp "$domain" "$cell"); do
                         printf "${domain}\t${cell}\t${service}\tTCP\t$(echo $port | tr : -)\n"
                     done
 
-                    for port in $(getProperty net.ports.udp "$domain" "$cell"); do
+                    for port in $(getScopedProperty net.ports.udp "$domain" "$cell"); do
                         printf "${domain}\t${cell}\t${service}\tUDP\t$(echo $port | tr : -)\n"
                     done
                 done
@@ -828,31 +828,31 @@ case "$1" in
         ) | column
 
         for domain in $(getProperty dcache.domains); do
-	    if [ "$domain" = "$broker_domain" ]; then
+            if [ "$domain" = "$broker_domain" ]; then
                 prop_prefix=dcache.broker.net.ports
-	    else
+            else
                 prop_prefix=dcache.non-broker.net.ports
-	    fi
+            fi
 
-	    for port in $(getProperty "${prop_prefix}.tcp" "$domain") \
+            for port in $(getProperty "${prop_prefix}.tcp" "$domain") \
                         $(getProperty "${prop_prefix}.udp" "$domain"); do
-                has_broker_ports=true
+                 has_broker_ports=true
 
-		if [ "$port" = "0" ]; then
-		    has_zero_ports=true
-                    break
-		fi
-	    done
+                 if [ "$port" = "0" ]; then
+                     has_zero_ports=true
+                     break
+                 fi
+            done
 
-	    for cell in $(getProperty domain.cells "$domain"); do
-                for port in $(getProperty net.ports.tcp "$domain" "$cell") \
-		    $(getProperty net.ports.udp "$domain" "$cell"); do
-		    if [ "$port" = "0" ]; then
-			has_zero_ports=true
-			break 2
-		    fi
+            for cell in $(getProperty dcache.domain.cells "$domain"); do
+                for port in $(getScopedProperty net.ports.tcp "$domain" "$cell") \
+                    $(getScopedProperty net.ports.udp "$domain" "$cell"); do
+                    if [ "$port" = "0" ]; then
+                        has_zero_ports=true
+                        break 2
+                    fi
                 done
-	    done
+            done
         done
 
         if [ "$has_broker_ports" = "true" ]; then
@@ -863,11 +863,11 @@ case "$1" in
                     properties."
         fi
 
-	if [ "$has_zero_ports" = "true" ]; then
-	    printp "" "Entries where the port number is zero indicates that a random
-                    port number is chosen.  The chosen port is guaranteed not to
-                    conflict with already open ports."
-	fi
+        if [ "$has_zero_ports" = "true" ]; then
+            printp "" "Entries where the port number is zero indicates that a random
+                       port number is chosen.  The chosen port is guaranteed not to
+                       conflict with already open ports."
+        fi
         ;;
 
     alarm)
@@ -929,19 +929,19 @@ case "$1" in
                     totalMinConnections=0
                     totalMaxConnections=0
                     for domain in $(getProperty dcache.domains); do
-                        for cell in $(getProperty domain.cells "$domain"); do
+                        for cell in $(getProperty dcache.domain.cells "$domain"); do
                             if hasDatabase "$domain" "$cell"; then
-                                host=$(getProperty db.host "$domain" "$cell")
-                                user=$(getProperty db.user "$domain" "$cell")
-                                changelog=$(getProperty db.schema.changelog "$domain" "$cell")
-                                database=$(getProperty db.name "$domain" "$cell")
-                                partitions=$(getProperty db.connections.partition-count "$domain" "$cell")
+                                host=$(getScopedProperty db.host "$domain" "$cell")
+                                user=$(getScopedProperty db.user "$domain" "$cell")
+                                changelog=$(getScopedProperty db.schema.changelog "$domain" "$cell")
+                                database=$(getScopedProperty db.name "$domain" "$cell")
+                                partitions=$(getScopedProperty db.connections.partition-count "$domain" "$cell")
                                 if [ "$partitions" = "" ]; then
                                     maxConnections=""
                                     minConnections=""
                                 else
-                                    maxConnections=$(( $partitions * $(getProperty db.connections.max-per-partition "$domain" "$cell") ))
-                                    minConnections=$(( $partitions * $(getProperty db.connections.min-per-partition "$domain" "$cell") ))
+                                    maxConnections=$(( $partitions * $(getScopedProperty db.connections.max-per-partition "$domain" "$cell") ))
+                                    minConnections=$(( $partitions * $(getScopedProperty db.connections.min-per-partition "$domain" "$cell") ))
                                     totalMaxConnections=$(( $totalMaxConnections + $maxConnections ))
                                     totalMinConnections=$(( $totalMinConnections + $minConnections ))
                                 fi
@@ -951,7 +951,7 @@ case "$1" in
                                 else
                                     manageable=No
                                 fi
-                                if [ "$(getProperty db.schema.auto "$domain" "$cell")" = "true" ]; then
+                                if [ "$(getScopedProperty db.schema.auto "$domain" "$cell")" = "true" ]; then
                                     auto=Yes
                                 else
                                     auto=No
@@ -966,7 +966,7 @@ case "$1" in
 
             update)
                 for domain in $(getProperty dcache.domains); do
-                    for cell in $(getProperty domain.cells "$domain"); do
+                    for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf "%s: \n" "$cell@$domain"
@@ -986,7 +986,7 @@ case "$1" in
                 shift
 
                 for domain in $(getProperty dcache.domains); do
-                    for cell in $(getProperty domain.cells "$domain"); do
+                    for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf "%s: " "$cell@$domain"
@@ -1006,7 +1006,7 @@ case "$1" in
                 shift
 
                 for domain in $(getProperty dcache.domains); do
-                    for cell in $(getProperty domain.cells "$domain"); do
+                    for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf "%s: " "$cell@$domain"
@@ -1026,7 +1026,7 @@ case "$1" in
                 shift
 
                 for domain in $(getProperty dcache.domains); do
-                    for cell in $(getProperty domain.cells "$domain"); do
+                    for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf "%s: " "$cell@$domain"
@@ -1039,7 +1039,7 @@ case "$1" in
 
             listLocks)
                 for domain in $(getProperty dcache.domains); do
-                    for cell in $(getProperty domain.cells "$domain"); do
+                    for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf "%s: " "$cell@$domain"
@@ -1052,7 +1052,7 @@ case "$1" in
 
             releaseLocks)
                 for domain in $(getProperty dcache.domains); do
-                    for cell in $(getProperty domain.cells "$domain"); do
+                    for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf "%s: " "$cell@$domain"

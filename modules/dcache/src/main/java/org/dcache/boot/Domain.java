@@ -25,7 +25,6 @@ import dmg.util.CommandException;
 
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.NetworkUtils;
-import org.dcache.util.ScopedConfigurationProperties;
 
 import static org.dcache.boot.Properties.*;
 
@@ -42,7 +41,7 @@ public class Domain
         LoggerFactory.getLogger(SystemCell.class);
 
     private final ConfigurationProperties _properties;
-    private final List<ScopedConfigurationProperties> _services;
+    private final List<ConfigurationProperties> _services;
 
     public Domain(String name, ConfigurationProperties defaults)
     {
@@ -59,8 +58,8 @@ public class Domain
     public List<String> getCellNames()
     {
         List<String> cells = new ArrayList<>();
-        for (ScopedConfigurationProperties service: _services) {
-            String cellName = service.getValue(PROPERTY_CELL_NAME);
+        for (ConfigurationProperties service: _services) {
+            String cellName = Properties.getCellName(service);
             if (cellName != null) {
                 cells.add(cellName);
             }
@@ -70,8 +69,7 @@ public class Domain
 
     public ConfigurationProperties createService(String type)
     {
-        ScopedConfigurationProperties service =
-            new ScopedConfigurationProperties(_properties, type);
+        ConfigurationProperties service = new ConfigurationProperties(_properties);
         service.setIsService(true);
         service.put(PROPERTY_DOMAIN_SERVICE, type);
         _services.add(service);
@@ -83,7 +81,7 @@ public class Domain
         return _properties.getValue(PROPERTY_DOMAIN_NAME);
     }
 
-    List<ScopedConfigurationProperties> getServices()
+    List<ConfigurationProperties> getServices()
     {
         return _services;
     }
@@ -143,9 +141,7 @@ public class Domain
             loggerContext.reset();
 
             for (String key: _properties.stringPropertyNames()) {
-                if (!ScopedConfigurationProperties.isScoped(key)) {
-                    loggerContext.putProperty(key, _properties.getProperty(key));
-                }
+                loggerContext.putProperty(key, _properties.getProperty(key));
             }
 
             try {
@@ -167,9 +163,7 @@ public class Domain
                                   ConfigurationProperties properties)
     {
         for (String key: properties.stringPropertyNames()) {
-            if (!ScopedConfigurationProperties.isScoped(key)) {
-                map.put(key, properties.getProperty(key));
-            }
+            map.put(key, properties.getProperty(key));
         }
     }
 

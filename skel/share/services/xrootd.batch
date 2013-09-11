@@ -4,11 +4,12 @@
 
 onerror shutdown
 
-check -strong cell.name
+check -strong xrootd.cell.name
+check -strong xrootd.cell.export
 check -strong xrootd.net.port
 check -strong xrootd.net.listen
 check -strong xrootd.net.backlog
-check -strong xrootd.threads
+check -strong xrootd.limits.threads
 check -strong xrootd.max-channel-memory-size
 check -strong xrootd.max-total-memory-size
 check -strong xrootd.root
@@ -30,6 +31,7 @@ check -strong xrootd.service.loginbroker.version
 check -strong xrootd.service.loginbroker.family
 
 check -strong xrootd.mover.timeout
+check -strong xrootd.mover.timeout.unit
 check -strong xrootd.mover.queue
 check -strong xrootd.plugins
 check -strong xrootd.authz.user
@@ -38,6 +40,6 @@ check -strong xrootd.authz.write-paths
 
 onerror continue
 
-create org.dcache.cells.UniversalSpringCell ${cell.name} \
-       "classpath:org/dcache/xrootd/door/xrootd.xml -export -cellClass=XrootdDoor"
+create org.dcache.cells.UniversalSpringCell ${xrootd.cell.name} \
+       "classpath:org/dcache/xrootd/door/xrootd.xml -export=${xrootd.cell.export} -cellClass=XrootdDoor"
 

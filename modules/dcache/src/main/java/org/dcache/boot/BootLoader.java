@@ -302,18 +302,23 @@ public class BootLoader
     }
 
     private static void handleFatalError(Object message, String command) {
-        String logMessage;
-
-        if (message instanceof RuntimeException) {
-            logMessage = "Unexpected failure at startup; this is probably a bug";
-            ((RuntimeException)message).printStackTrace();
-        } else {
-            logMessage = "Failure at startup: {}";
-            System.err.println(message);
-        }
-
         if (CMD_START.equals(command)) {
+            String logMessage;
+
+            if (message instanceof RuntimeException) {
+                logMessage = "Bug found, please report the following " +
+                        "information to support@dcache.org";
+            } else {
+                logMessage = "Failure at startup: {}";
+            }
+
             LoggerFactory.getLogger("root").error(logMessage, message);
+        } else {
+            if (message instanceof RuntimeException) {
+                ((RuntimeException)message).printStackTrace();
+            } else {
+                System.err.println(message);
+            }
         }
 
         System.exit(1);

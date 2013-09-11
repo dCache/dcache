@@ -196,6 +196,10 @@ public class JdbcFs implements FileSystemProvider {
             // read/write only
             dbConnection.setAutoCommit(false);
 
+            if ((parent.statCache().getMode() & UnixPermission.S_ISGID) != 0) {
+                gid = parent.statCache().getGid();
+            }
+
             inode = _sqlDriver.createFile(dbConnection, parent, name, uid, gid, mode, UnixPermission.S_IFLNK);
             // link is a regular file where content is a reference
             _sqlDriver.setInodeIo(dbConnection, inode, true);
@@ -390,6 +394,10 @@ public class JdbcFs implements FileSystemProvider {
                     // read/write only
                     dbConnection.setAutoCommit(false);
 
+                    if ((parent.statCache().getMode() & UnixPermission.S_ISGID) != 0) {
+                        group = parent.statCache().getGid();
+                    }
+
                     inode = _sqlDriver.createFile(dbConnection, parent, name, owner, group, mode, type);
                     dbConnection.commit();
 
@@ -454,6 +462,10 @@ public class JdbcFs implements FileSystemProvider {
             if (parent.isDirectory()) {
                 // read/write only
                 dbConnection.setAutoCommit(false);
+
+                if ((parent.statCache().getMode() & UnixPermission.S_ISGID) != 0) {
+                    group = parent.statCache().getGid();
+                }
 
                 inode = _sqlDriver.createFileWithId(dbConnection, parent, inode, name, owner, group, mode, type);
                 dbConnection.commit();
@@ -781,6 +793,11 @@ public class JdbcFs implements FileSystemProvider {
 
             // read/write only
             dbConnection.setAutoCommit(false);
+
+            if ((parent.statCache().getMode() & UnixPermission.S_ISGID) != 0) {
+                group = parent.statCache().getGid();
+                mode |= UnixPermission.S_ISGID;
+            }
 
             inode = _sqlDriver.mkdir(dbConnection, parent, name, owner, group, mode);
             _sqlDriver.copyTags(dbConnection, parent, inode);

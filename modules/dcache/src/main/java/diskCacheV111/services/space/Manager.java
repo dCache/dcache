@@ -87,11 +87,10 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolMgrGetPoolLinkGroups;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -3471,71 +3470,78 @@ public final class Manager
         }
 
         @Override
-        public void messageArrived(final CellMessage cellMessage)
+        public void messageArrived(final CellMessage envelope)
         {
-            if(spaceManagerEnabled) {
-                ThreadManager.execute(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                                processMessage(cellMessage);
-                        }
-                    });
-            } else {
-                handleMessageAsDisabled(cellMessage);
-            }
-        }
-
-        private void handleMessageAsDisabled(CellMessage cellMessage)
-        {
-            Object rawPayload = cellMessage.getMessageObject();
-
-            if (!(rawPayload instanceof Message)) {
-                logger.warn("unknown payload {}: {}", rawPayload.getClass().
-                        getCanonicalName(), rawPayload);
+            Object rawMessage = envelope.getMessageObject();
+            logger.trace("Message  arrived: {} from {}", rawMessage, envelope.getSourcePath());
+            if (!(rawMessage instanceof Message)) {
+                logger.warn("Unknown payload {}: {}", rawMessage.getClass().getCanonicalName(), rawMessage);
                 return;
             }
 
-            Message message = (Message) cellMessage.getMessageObject();
+            final Message message = (Message) rawMessage;
 
-            if (message instanceof PoolFileFlushedMessage ||
-                    message instanceof PoolRemoveFilesMessage ||
-                    message instanceof PnfsDeleteEntryNotificationMessage) {
-
-                // Simply ignore these notification messages
-
-            } else if (message instanceof Reserve
-                    || message instanceof GetSpaceTokensMessage
-                    || message instanceof GetSpaceTokenIdsMessage
-                    || message instanceof GetLinkGroupsMessage
-                    || message instanceof GetLinkGroupNamesMessage
-                    || message instanceof GetLinkGroupIdsMessage
-                    || message instanceof Release
-                    || message instanceof Use
-                    || message instanceof CancelUse
-                    || message instanceof GetSpaceMetaData
-                    || message instanceof GetSpaceTokens
-                    || message instanceof ExtendLifetime
-                    || message instanceof GetFileSpaceTokensMessage ) {
-
-                returnFailedResponse("SpaceManager is disabled in configuration",
-                        message, cellMessage);
-
+            if (spaceManagerEnabled) {
+                if (isNotificationMessage(message) || isSpaceManagerMessage(message) || isInterceptedMessage(message)) {
+                    ThreadManager.execute(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            processMessage(envelope, message);
+                        }
+                    });
+                } else if (!message.isReply()) {
+                    forwardToPoolmanager(envelope);
+                }
             } else {
-                forwardToPoolmanager(cellMessage);
+                if (!isNotificationMessage(message)) {
+                    if (isSpaceManagerMessage(message)) {
+                        returnFailedResponse("SpaceManager is disabled in configuration", message, envelope);
+                    } else if (!message.isReply()) {
+                        forwardToPoolmanager(envelope);
+                    }
+                }
             }
         }
 
-        private void processMessage( CellMessage cellMessage ) {
-                Object object = cellMessage.getMessageObject();
-                logger.debug("Message  arrived: {} from {}", object,
-                        cellMessage.getSourcePath());
-                if (!(object instanceof Message)) {
-                        logger.error("unexpected message class {}",
-                                object.getClass());
-                        return;
-                }
-                Message spaceMessage = (Message)object;
+    /** Returns true if message is of a type processed exclusively by SpaceManager */
+    private boolean isSpaceManagerMessage(Object message)
+    {
+        return message instanceof Reserve
+                || message instanceof GetSpaceTokensMessage
+                || message instanceof GetSpaceTokenIdsMessage
+                || message instanceof GetLinkGroupsMessage
+                || message instanceof GetLinkGroupNamesMessage
+                || message instanceof GetLinkGroupIdsMessage
+                || message instanceof Release
+                || message instanceof Use
+                || message instanceof CancelUse
+                || message instanceof GetSpaceMetaData
+                || message instanceof GetSpaceTokens
+                || message instanceof ExtendLifetime
+                || message instanceof GetFileSpaceTokensMessage;
+    }
+
+    /** Returns true if message is a notification to which SpaceManager subscribes */
+    private boolean isNotificationMessage(Object message)
+    {
+        return message instanceof PoolFileFlushedMessage
+                || message instanceof PoolRemoveFilesMessage
+                || message instanceof PnfsDeleteEntryNotificationMessage;
+    }
+
+    /**
+     * Returns true if message is of a type that needs processing by SpaceManager even if
+     * SpaceManager is not the intended final destination.
+     */
+    private boolean isInterceptedMessage(Object message)
+    {
+        return message instanceof PoolMgrSelectWritePoolMsg
+                || message instanceof DoorTransferFinishedMessage
+                || message instanceof PoolAcceptFileMessage;
+    }
+
+    private void processMessage(CellMessage cellMessage, Message spaceMessage) {
                 boolean replyRequired = spaceMessage.getReplyRequired();
                 try {
                         if(spaceMessage instanceof Reserve) {
@@ -3579,8 +3585,8 @@ public final class Manager
                                 CancelUse cancelUse = (CancelUse) spaceMessage;
                                 cancelUseSpace(cancelUse);
                         }
-                        else if(spaceMessage instanceof PoolMgrSelectPoolMsg) {
-                                selectPool(cellMessage,false);
+                        else if(spaceMessage instanceof PoolMgrSelectWritePoolMsg) {
+                                selectPool(cellMessage, (PoolMgrSelectWritePoolMsg) spaceMessage, false);
                                 replyRequired = false;
                         }
                         else if(spaceMessage instanceof GetSpaceMetaData){
@@ -3620,24 +3626,21 @@ public final class Manager
                                 markFileDeleted(msg);
                         }
                         else {
-                            if (!spaceMessage.isReply()) {
-                                forwardToPoolmanager(cellMessage);
-                            }
-                            return;
+                            throw new RuntimeException("Unexpected " + spaceMessage.getClass() + ": Please report this to support@dcache.org");
                         }
                 }
                 catch(SpaceException se) {
                         logger.error("failed to process message: {}", se.getMessage());
-                        spaceMessage.setFailed(-2,se);
+                        spaceMessage.setFailed(-2, se);
                 }
                 catch(SQLException e) {
                         logger.error("database activity failed: {}",
                                 e.getMessage());
-                        spaceMessage.setFailed(-1,e);
+                        spaceMessage.setFailed(-1, e);
                 }
                 catch(Throwable t) {
                         logger.error("an operation failed:", t);
-                        spaceMessage.setFailed(-1,t);
+                        spaceMessage.setFailed(-1, t);
                 }
                 if (replyRequired) {
                         try {
@@ -3656,33 +3659,36 @@ public final class Manager
         }
 
         @Override
-        public void messageToForward(final CellMessage cellMessage)
+        public void messageToForward(final CellMessage envelope)
         {
-            if (spaceManagerEnabled) {
-                ThreadManager.execute(new Runnable() {
+            final Serializable message = envelope.getMessageObject();
+            if (spaceManagerEnabled && isInterceptedMessage(message)) {
+                    ThreadManager.execute(new Runnable() {
                         @Override
                         public void run()
                         {
-                            processMessageToForward(cellMessage);
+                            processMessageToForward(envelope, (Message) message);
                         }
                     });
             } else {
-                super.messageToForward(cellMessage);
+                if (message instanceof PoolIoFileMessage && !((Message) message).isReply()) {
+                    envelope.getDestinationPath().insert(poolManager);
+                }
+                super.messageToForward(envelope);
             }
         }
 
-        public void processMessageToForward(CellMessage cellMessage ) {
-                Object object = cellMessage.getMessageObject();
-                logger.debug("messageToForward,  arrived: type={} value={} " +
-                        "from {} going to {}", object.getClass().getName(),
-                        object, cellMessage.getSourcePath(),
-                        cellMessage.getDestinationPath());
+        public void processMessageToForward(CellMessage envelope, Message message) {
+                logger.trace("messageToForward,  arrived: type={} value={} " +
+                        "from {} going to {}", message.getClass().getName(),
+                        message, envelope.getSourcePath(),
+                        envelope.getDestinationPath());
                 try {
-                        if( object instanceof PoolMgrSelectPoolMsg) {
-                                selectPool(cellMessage,true);
+                        if( message instanceof PoolMgrSelectWritePoolMsg) {
+                                selectPool(envelope, (PoolMgrSelectWritePoolMsg) message, true);
                         }
-                        else if(object instanceof PoolAcceptFileMessage ) {
-                                PoolAcceptFileMessage poolRequest = (PoolAcceptFileMessage)object;
+                        else if(message instanceof PoolAcceptFileMessage ) {
+                                PoolAcceptFileMessage poolRequest = (PoolAcceptFileMessage)message;
                                 if(poolRequest.isReply()) {
                                         PnfsId pnfsId = poolRequest.getPnfsId();
                                         //mark file as being transfered
@@ -3692,18 +3698,11 @@ public final class Manager
                                         // this message on its way to the pool
                                         // we need to set the AccessLatency, RetentionPolicy and StorageGroup
                                         transferToBeStarted(poolRequest);
-                                        cellMessage.getDestinationPath().insert(poolManager);
+                                        envelope.getDestinationPath().insert(poolManager);
                                 }
                         }
-                        else if (object instanceof PoolDeliverFileMessage) {
-                                PoolDeliverFileMessage poolRequest =
-                                        (PoolDeliverFileMessage)object;
-                                if (!poolRequest.isReply()) {
-                                        cellMessage.getDestinationPath().insert(poolManager);
-                                }
-                        }
-                        else if ( object instanceof DoorTransferFinishedMessage) {
-                                DoorTransferFinishedMessage finished = (DoorTransferFinishedMessage) object;
+                        else if ( message instanceof DoorTransferFinishedMessage) {
+                                DoorTransferFinishedMessage finished = (DoorTransferFinishedMessage) message;
                                 try {
                                         transferFinished(finished);
                                 }
@@ -3719,7 +3718,7 @@ public final class Manager
                         logger.error("forwarding msg failed: {}",
                                 e.getMessage(), e);
                 }
-                super.messageToForward(cellMessage) ;
+                super.messageToForward(envelope) ;
         }
 
         @Override
@@ -4823,28 +4822,23 @@ public final class Manager
                 }
         }
 
-        public void selectPool(CellMessage cellMessage,
+        public void selectPool(CellMessage envelope,
+                               PoolMgrSelectWritePoolMsg selectWritePool,
                                boolean isReply)
                 throws Exception {
-                PoolMgrSelectPoolMsg selectPool =
-                        (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
-                logger.trace("selectPool({})", selectPool);
-                String pnfsPath = selectPool.getPnfsPath();
-                PnfsId pnfsId   = selectPool.getPnfsId();
-                if( !(selectPool instanceof PoolMgrSelectWritePoolMsg) ||
-                    pnfsPath == null) {
+                logger.trace("selectPool({})", selectWritePool);
+                String pnfsPath = selectWritePool.getPnfsPath();
+                PnfsId pnfsId   = selectWritePool.getPnfsId();
+                if (pnfsPath == null) {
                         if(!isReply) {
                                 logger.trace("just forwarding the message to {}",
                                              poolManager);
-                                cellMessage.getDestinationPath().add(new CellPath(poolManager));
-                                cellMessage.nextDestination() ;
-                                sendMessage(cellMessage) ;
+                            forwardToPoolmanager(envelope);
                         }
                         return;
                 }
-                PoolMgrSelectWritePoolMsg selectWritePool = (PoolMgrSelectWritePoolMsg) selectPool;
                 File file = null;
-                FileAttributes fileAttributes = selectPool.getFileAttributes();
+                FileAttributes fileAttributes = selectWritePool.getFileAttributes();
                 if (!isReply) {
                         /*
                          * message on the way to PoolManager
@@ -4906,7 +4900,7 @@ public final class Manager
                                                              "subject={}",
                                                              reserveSpaceForNonSRMTransfers,
                                                              subject.getPrincipals());
-                                                forwardToPoolmanager(cellMessage);
+                                                forwardToPoolmanager(envelope);
                                                 return;
                                         }
                                 }
@@ -4946,11 +4940,9 @@ public final class Manager
                         if (space.getDescription()!=null) {
                                 storageInfo.setKey("SpaceTokenDescription",space.getDescription());
                         }
-                        cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
-                        cellMessage.nextDestination() ;
                         logger.trace("selectPool: found linkGroup = {}, " +
                                      "forwarding message", linkGroupName);
-                        sendMessage(cellMessage) ;
+                        forwardToPoolmanager(envelope);
                 }
                 else {
                         /*

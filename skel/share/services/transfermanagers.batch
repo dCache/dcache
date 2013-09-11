@@ -5,90 +5,71 @@
 
 onerror shutdown
 
-check -strong cell.name
-check -strong dcache.enable.spacemanager
-check -strong dcache.service.poolmanager
-check -strong dcache.service.pnfsmanager
-check -strong dcache.service.spacemanager
-check -strong srmPoolManagerTimeout
-check -strong srmPoolTimeout
-check -strong srmPnfsTimeout
-check -strong srmMoverTimeout
-check -strong remoteCopyMaxTransfers
-check -strong remoteGsiftpMaxTransfers
-check remoteGsiftpIoQueue
-check -strong srmDbLogEnabled
+check -strong transfermanagers.cell.name
+check -strong transfermanagers.cell.export
 
-check -strong db.driver
-check -strong db.url
-check -strong db.user
-check db.password
-check db.password.file
+check -strong transfermanagers.service.poolmanager
+check -strong transfermanagers.service.poolmanager.timeout
+check -strong transfermanagers.service.poolmanager.timeout.unit
 
+check -strong transfermanagers.service.pool.timeout
+check -strong transfermanagers.service.pool.timeout.unit
 
-#
-#  ----  Usage of Srm Space Manager
-#
-#   If dcache.enable.spacemanager is on we need to use SrmSpaceManager
-#   as both poolManager and poolProxy
-#
-onerror continue
+check -strong transfermanagers.service.pnfsmanager
+check -strong transfermanagers.service.pnfsmanager.timeout
+check -strong transfermanagers.service.pnfsmanager.timeout.unit
 
-define env srmSpaceManagerOn.exe endExe
-  set env -c remoteTransferManagerPoolProxy        "${dcache.service.spacemanager}"
-  set env -c remoteTransferManagerPoolManager      "${dcache.service.spacemanager}"
-  set env -c srmImplicitSpaceManagerEnabled true
-  set env -c srmSpaceReservationStrict true
-endExe
+check -strong transfermanagers.limits.transfer-time
+check -strong transfermanagers.limits.transfer-time.unit
+check -strong transfermanagers.limits.internal-transfers
+check -strong transfermanagers.limits.external-transfers
 
-define env srmSpaceManagerOff.exe endExe
-  set env srmSpaceReservation false
-  set env srmSpaceReservationStrict false
-endExe
+check -strong transfermanagers.enable.log-to-database
 
-eval ${dcache.enable.spacemanager} true ==
-set env srmSpaceManagerIsOn ${rc}
-exec env srmSpaceManagerOn.exe -ifok=srmSpaceManagerIsOn
-exec env srmSpaceManagerOff.exe -ifnotok=srmSpaceManagerIsOn
+check -strong transfermanagers.db.driver
+check -strong transfermanagers.db.url
+check -strong transfermanagers.db.user
 
-set env -c remoteTransferManagerPoolProxy ${dcache.service.poolmanager}
-set env -c remoteTransferManagerPoolManager ${dcache.service.poolmanager}
+check transfermanagers.db.password
+check transfermanagers.db.password.file
 
-#
-#
-onerror shutdown
-#
-#
+check transfermanagers.mover.queue
 
-create diskCacheV111.services.RemoteTransferManager ${cell.name} \
-        "default -export \
-        -pool_manager_timeout=${srmPoolManagerTimeout} \
-        -pool_timeout=${srmPoolTimeout} \
-        -pnfs_timeout=${srmPnfsTimeout} \
-        -mover_timeout=${srmMoverTimeout} \
-        -max_transfers=${remoteGsiftpMaxTransfers} \
-        -io-queue=${remoteGsiftpIoQueue} \
-        -jdbcUrl=${db.url} \
-        -jdbcDriver=${db.driver} \
-        -dbUser=${db.user} \
-        -dbPass=${db.password} \
-        -pgPass=${db.password.file}   \
-        -doDbLog=${srmDbLogEnabled} \
-        -poolManager=${remoteTransferManagerPoolManager} \
-        -poolProxy=${remoteTransferManagerPoolProxy} \
-        -pnfsManager=${dcache.service.pnfsmanager} \
+create diskCacheV111.services.RemoteTransferManager ${transfermanagers.cell.name} \
+        "default -export=${transfermanagers.cell.export} \
+        -pool_manager_timeout=${transfermanagers.service.poolmanager.timeout} \
+        -pool_manager_timeout_unit=${transfermanagers.service.poolmanager.timeout.unit} \
+        -pool_timeout=${transfermanagers.service.pool.timeout} \
+        -pool_timeout_unit=${transfermanagers.service.pool.timeout.unit} \
+        -pnfs_timeout=${transfermanagers.service.pnfsmanager.timeout} \
+        -pnfs_timeout_unit=${transfermanagers.service.pnfsmanager.timeout.unit} \
+        -mover_timeout=${transfermanagers.limits.transfer-time} \
+        -mover_timeout_unit=${transfermanagers.limits.transfer-time.unit} \
+        -max_transfers=${transfermanagers.limits.external-transfers} \
+        -io-queue=${transfermanagers.mover.queue} \
+        -jdbcUrl=${transfermanagers.db.url} \
+        -jdbcDriver=${transfermanagers.db.driver} \
+        -dbUser=${transfermanagers.db.user} \
+        -dbPass=${transfermanagers.db.password} \
+        -pgPass=${transfermanagers.db.password.file}   \
+        -doDbLog=${transfermanagers.enable.log-to-database} \
+        -poolManager=${transfermanagers.service.poolmanager} \
+        -poolProxy=${transfermanagers.service.poolmanager} \
+        -pnfsManager=${transfermanagers.service.pnfsmanager} \
         -maxNumberOfDeleteRetries=1 \
 "
-#
-# Copy Manager Cell
-#
+
 create diskCacheV111.doors.CopyManager CopyManager \
-       "default -export \
-        -pool_manager_timeout=${srmPoolManagerTimeout} \
-        -pool_timeout=${srmPoolTimeout} \
-        -pnfs_timeout=${srmPnfsTimeout} \
-        -mover_timeout=${srmMoverTimeout} \
-        -max_transfers=${remoteCopyMaxTransfers} \
-        -poolManager=${remoteTransferManagerPoolManager} \
-        -poolProxy=${remoteTransferManagerPoolProxy} \
+       "default -export=${transfermanagers.cell.export} \
+        -pool_manager_timeout=${transfermanagers.service.poolmanager.timeout} \
+        -pool_manager_timeout_unit=${transfermanagers.service.poolmanager.timeout.unit} \
+        -pool_timeout=${transfermanagers.service.pool.timeout} \
+        -pool_timeout_unit=${transfermanagers.service.pool.timeout.unit} \
+        -pnfs_timeout=${transfermanagers.service.pnfsmanager.timeout} \
+        -pnfs_timeout_unit=${transfermanagers.service.pnfsmanager.timeout.unit} \
+        -mover_timeout=${transfermanagers.limits.transfer-time} \
+        -mover_timeout_unit=${transfermanagers.limits.transfer-time.unit} \
+        -max_transfers=${transfermanagers.limits.internal-transfers} \
+        -poolManager=${transfermanagers.service.poolmanager} \
+        -poolProxy=${transfermanagers.service.poolmanager} \
 "

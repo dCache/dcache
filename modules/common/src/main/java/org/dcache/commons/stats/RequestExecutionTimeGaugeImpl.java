@@ -13,6 +13,7 @@ import javax.management.ObjectName;
 
 import java.lang.management.ManagementFactory;
 import java.util.Formatter;
+import java.util.concurrent.TimeUnit;
 
 /**
  * this class stores an average of the execution time of the request
@@ -182,10 +183,11 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
 
         Formatter formatter = new Formatter(sb);
 
-        formatter.format("%-34s %12d\u00B1%10f %12d %12d %12d %12d %12d",
+        formatter.format("%-34s %12d\u00B1%10f %,12d %,12d %,12d %,12d %,12d",
                 aName, averageExecutionTime,getStandardError(),
                 minExecutionTime,maxExecutionTime,
-                getStandardDeviation(), updateNum, updatePeriod);
+                getStandardDeviation(), updateNum,
+                TimeUnit.MILLISECONDS.toSeconds(updatePeriod));
         formatter.flush();
         formatter.close();
 

@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.springframework.org/schema/beans
-  http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd ">
+
+  <context:annotation-config/>
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
@@ -11,8 +16,9 @@
 
   <bean id="login-stub" class="org.dcache.cells.CellStub">
     <description>Login serviceunication stub</description>
-    <property name="destination" value="${dcache.service.gplazma}"/>
-    <property name="timeout"     value="30000"/>
+    <property name="destination" value="${admin.service.gplazma}"/>
+    <property name="timeout"     value="${admin.service.gplazma.timeout}"/>
+    <property name="timeoutUnit" value="${admin.service.gplazma.timeout.unit}"/>
   </bean>
 
   <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
@@ -27,14 +33,26 @@
     <property name="anonymousAccess" value="NONE"/>
   </bean>
 
+  <bean id="shell-factory" class="org.dcache.services.ssh2.ConsoleReaderFactory">
+    <property name="historyFile" value="${admin.paths.history}"/>
+    <property name="useColor" value="${admin.enable.colors}"/>
+  </bean>
+
+  <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory"/>
+
   <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
-    <property name="port"               value="${admin.ssh2AdminPort}"/>
-    <property name="hostKeyPrivate"     value="${admin.dsaHostKeyPrivate}"/>
-    <property name="hostKeyPublic"      value="${admin.dsaHostKeyPublic}"/>
-    <property name="authorizedKeyList"  value="${admin.authorizedKey2}"/>
-    <property name="historyFile"        value="${adminHistoryFile}"/>
+    <property name="host" value="#{ '${admin.net.listen}'.equals('any') ? null : '${admin.net.listen}' }"/>
+    <property name="port"               value="${admin.net.port}"/>
+    <property name="hostKeyPrivate"     value="${admin.paths.dsa-host-key.private}"/>
+    <property name="hostKeyPublic"      value="${admin.paths.dsa-host-key.public}"/>
+    <property name="authorizedKeyList"  value="${admin.paths.authorized-keys}"/>
     <property name="loginStrategy"      ref="login-strategy"/>
-    <property name="adminGroupId"       value="${admin.ssh2.gid}"/>
-    <property name="useColors"          value="${admin.colors.enable}"/>
+    <property name="adminGroupId"       value="${admin.authz.gid}"/>
+    <property name="shellFactory"       ref="shell-factory"/>
+    <property name="subsystemFactories">
+      <list>
+        <ref bean="pcells-factory"/>
+      </list>
+    </property>
   </bean>
 </beans>

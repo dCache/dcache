@@ -15,6 +15,8 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.pool.classic.IoQueueManager;
+
 import static org.junit.Assert.*;
 
 public class CostModuleTest {
@@ -322,9 +324,10 @@ public class CostModuleTest {
                                 preciousSpace * BYTES_IN_GIGABYTE,
                                 removableSpace * BYTES_IN_GIGABYTE);
 
-        poolCost.setQueueSizes( moverActive, moverMaxActive, moverQueued,
-                                restoreActive, restoreMaxActive, restoreQueued,
-                                storeActive, storeMaxActive, storeQueued);
+        poolCost.setQueueSizes(
+                restoreActive, restoreMaxActive, restoreQueued,
+                storeActive, storeMaxActive, storeQueued);
+        poolCost.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, moverActive, moverMaxActive, moverQueued, 0, 0);
 
         long serialId = System.currentTimeMillis();
 

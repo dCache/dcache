@@ -6,12 +6,9 @@ import javax.security.auth.Subject;
 
 import java.io.Serializable;
 
-import diskCacheV111.util.PnfsId;
-
 import dmg.cells.nucleus.HasDiagnosticContext;
 
 import org.dcache.auth.Subjects;
-import org.dcache.util.ReflectionUtils;
 
 // Base class for all Messages
 
@@ -114,9 +111,7 @@ public class Message
     @Override
     public String getDiagnosticContext()
     {
-        String name = getMessageName();
-        PnfsId id = ReflectionUtils.getPnfsId(this);
-        return (id == null) ? name : (name + " " + id);
+        return getMessageName();
     }
 
     /**

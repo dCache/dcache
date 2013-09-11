@@ -138,7 +138,7 @@
       <property name="staticContentPath" value="${webdav.static-content.location}"/>
       <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
       <property name="redirectOnWriteEnabled" value="${webdav.redirect.on-write}"/>
-      <property name="overwriteAllowed" value="${webdav.overwrite}"/>
+      <property name="overwriteAllowed" value="${webdav.enable.overwrite}"/>
   </bean>
 
     <bean id="http-manager" class="org.dcache.webdav.HttpManagerFactory">
@@ -204,14 +204,14 @@
 		value="org.dcache.webdav.DcacheResourceFactory"/>
       <property name="protocolVersion" value="${webdav.service.loginbroker.version}"/>
       <property name="protocolFamily" value="${webdav.service.loginbroker.family}"/>
-      <property name="address" value="${webdav.net.listen}"/>
+      <property name="address" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
       <property name="port" value="${webdav.net.port}"/>
       <property name="loginBrokers" value="${webdav.service.loginbroker}"/>
   </bean>
 
     <bean id="banned-ciphers" class="org.dcache.util.Crypto"
           factory-method="getBannedCipherSuitesFromConfigurationValue">
-        <constructor-arg value="${webdav.security.ciphers}"/>
+        <constructor-arg value="${webdav.authn.ciphers}"/>
     </bean>
 
     <beans profile="connector-http">
@@ -223,7 +223,7 @@
 	      <list>
 		  <bean class="org.eclipse.jetty.server.nio.SelectChannelConnector">
 		      <property name="port" value="${webdav.net.port}"/>
-		      <property name="host" value="${webdav.net.listen}"/>
+		      <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
 		  </bean>
 	      </list>
 	  </property>
@@ -256,7 +256,7 @@
           <description>HTTPS connector from Jetty</description>
 
 	  <property name="port" value="${webdav.net.port}"/>
-	  <property name="host" value="${webdav.net.listen}"/>
+	  <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
 	  <property name="keystore" value="${webdav.authn.keystore}"/>
 	  <property name="keystoreType" value="PKCS12"/>
 	  <property name="password" value="${webdav.authn.keystore.password}"/>
@@ -275,7 +275,7 @@
           <description>HTTPS connector using jGlobus</description>
 
 	  <property name="port" value="${webdav.net.port}"/>
-	  <property name="host" value="${webdav.net.listen}"/>
+	  <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}"/>
 	  <property name="hostCertificatePath" value="${webdav.authn.hostcert.cert}"/>
 	  <property name="hostKeyPath" value="${webdav.authn.hostcert.key}"/>
 	  <property name="caCertificatePath" value="${webdav.authn.capath}"/>

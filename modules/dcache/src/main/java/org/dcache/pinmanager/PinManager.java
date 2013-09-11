@@ -32,7 +32,7 @@ public class PinManager
     private PinDao _dao;
     private CellStub _poolStub;
     private long _expirationPeriod;
-    private TimeUnit _expirationPeriodUnit = MILLISECONDS;
+    private TimeUnit _expirationPeriodUnit;
     private PoolMonitor _poolMonitor;
 
     @Required
@@ -70,6 +70,7 @@ public class PinManager
         return _expirationPeriod;
     }
 
+    @Required
     public void setExpirationPeriodUnit(TimeUnit unit)
     {
         _expirationPeriodUnit = unit;

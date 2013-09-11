@@ -52,4 +52,10 @@ public class PoolFetchFileMessage extends PoolMessage {
             _fileAttributes.setPnfsId(_pnfsId);
         }
     }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
+
 }

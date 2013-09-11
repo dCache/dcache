@@ -21,6 +21,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -182,14 +183,18 @@ public abstract class TransferManager extends AbstractCell
 
 		_tLogRoot = Strings.emptyToNull(args.getOpt("tlog"));
                 _maxNumberOfDeleteRetries = args.getIntOption("maxNumberOfDeleteRetries");
-		_poolManagerTimeout = args.getIntOption("pool_manager_timeout");
-		_pnfsManagerTimeout = args.getIntOption("pnfs_timeout");
-		_poolTimeout = args.getIntOption("pool_timeout");
+		_poolManagerTimeout = TimeUnit.MILLISECONDS.convert(args.getIntOption("pool_manager_timeout"),
+                                                                    TimeUnit.valueOf(args.getOpt("pool_manager_timeout_unit")));
+		_pnfsManagerTimeout = TimeUnit.MILLISECONDS.convert(args.getIntOption("pnfs_timeout"),
+                                                                    TimeUnit.valueOf(args.getOpt("pnfs_timeout_unit")));
+		_poolTimeout = TimeUnit.MILLISECONDS.convert(args.getIntOption("pool_timeout"),
+                                                             TimeUnit.valueOf(args.getOpt("pool_timeout_unit")));
 		_maxTransfers = args.getIntOption("max_transfers");
 		_overwrite = Strings.nullToEmpty(args.getOpt("overwrite")).equalsIgnoreCase("true");
                 _poolManager = args.getOpt("poolManager");
                 _pnfsManager = args.getOpt("pnfsManager");
-                _moverTimeout = args.getIntOption("mover_timeout");
+                _moverTimeout = TimeUnit.MILLISECONDS.convert(args.getIntOption("mover_timeout"),
+                                                              TimeUnit.valueOf(args.getOpt("mover_timeout_unit")));
                 _ioQueueName = Strings.emptyToNull(args.getOpt("io-queue"));
                 _poolProxy = args.getOpt("poolProxy");
                 log.debug("Pool Proxy " + (_poolProxy == null ? "not set" : ("set to " + _poolProxy)));
@@ -597,9 +602,7 @@ public abstract class TransferManager extends AbstractCell
 
 		// this is very approximate
 		// but we do not need hard real time
-		// note that the movertimeout is in seconds,
-		// so we need to multiply by 1000
-		_moverTimeoutTimer.schedule(task, _moverTimeout*1000L);
+		_moverTimeoutTimer.schedule(task, _moverTimeout);
 	}
 
 	public void stopTimer(long id)

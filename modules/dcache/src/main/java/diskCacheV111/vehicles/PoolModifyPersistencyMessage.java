@@ -20,5 +20,10 @@ public class PoolModifyPersistencyMessage extends PoolMessage {
     public PnfsId getPnfsId(){ return _pnfsId ; }
     public boolean isPrecious(){ return _precious ; }
     public boolean isCached(){ return ! _precious ; }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
 }
 

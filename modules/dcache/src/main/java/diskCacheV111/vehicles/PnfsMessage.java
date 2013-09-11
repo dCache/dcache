@@ -101,6 +101,11 @@ public class PnfsMessage extends Message {
             _mask = Collections.emptySet();
         }
     }
+
+    @Override
+    public String getDiagnosticContext() {
+        return super.getDiagnosticContext() + " " + getPnfsId();
+    }
 }
 
 

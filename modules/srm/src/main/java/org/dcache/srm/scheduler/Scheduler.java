@@ -807,41 +807,27 @@ public final class Scheduler implements Runnable  {
 
         @Override
         public void run() {
-            job.applyJdc();
-
-            try {
-                increaseNumberOfRunningThreads(job);
-                State state;
-                logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") entering sync(job) block" );
-                job.wlock();
+            try(JDC ignored = job.applyJdc()) {
                 try {
-                    logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") entered sync(job) block" );
-                    state =job.getState();
-                    logger.debug("Scheduler(id="+getId()+") JobWrapper run() running job with id="+job.getId()+" in state="+state);
-                    if(state == State.CANCELED ||
-                    state == State.FAILED) {
-                    logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") returning" );
-                        return;
-
-                    }
-                    if(state == State.PENDING ||
-                    state == State.TQUEUED ||
-                    state == State.PRIORITYTQUEUED ) {
-                        try {
-                             logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") changing job state to runinng");
-                            job.setState(State.RUNNING," executing ",false);
-                            started();
-                            job.saveJob();
-                        }
-                        catch( IllegalStateTransition ist) {
-                            logger.error("Illegal State Transition : " +ist.getMessage());
+                    increaseNumberOfRunningThreads(job);
+                    State state;
+                    logger.debug("Scheduler(id="+getId()+") entering sync(job) block" );
+                    job.wlock();
+                    try {
+                        logger.debug("Scheduler(id="+getId()+") entered sync(job) block" );
+                        state =job.getState();
+                        logger.debug("Scheduler(id="+getId()+") JobWrapper run() running job in state="+state);
+                        if(state == State.CANCELED ||
+                        state == State.FAILED) {
+                        logger.debug("Scheduler(id="+getId()+") returning" );
                             return;
+
                         }
-                    }
-                    else if(state == State.ASYNCWAIT ||
-                    state == State.RETRYWAIT ) {
+                        if(state == State.PENDING ||
+                        state == State.TQUEUED ||
+                        state == State.PRIORITYTQUEUED ) {
                             try {
-                             logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") changing job state to runinng");
+                                 logger.debug("Scheduler(id="+getId()+") changing job state to runinng");
                                 job.setState(State.RUNNING," executing ",false);
                                 started();
                                 job.saveJob();
@@ -850,130 +836,142 @@ public final class Scheduler implements Runnable  {
                                 logger.error("Illegal State Transition : " +ist.getMessage());
                                 return;
                             }
-                    }
-                    else {
-                        logger.error("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") job is in state "+state+"; can not execute, returning");
-                        return;
-                    }
-                } finally {
-                    job.wunlock();
-                }
-
-                logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") exited sync block");
-                Exception exception = null;
-                try {
-                   logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") calling job.run()");
-                   job.run();
-                   logger.debug("Scheduler(id="+getId()+") JobWrapper("+job.getId()+") job.run() returned");
-                } catch(NonFatalJobFailure | FatalJobFailure | RuntimeException e)
-                {
-                    exception = e;
-                }
-                job.wlock();
-                try {
-                    // if no exception was thrown
-                    if(exception == null) {
-                        state = job.getState();
-                        if(state == State.DONE) {
                         }
-
-                        else if(state == State.RUNNING) {
-                            try {
-                                // put blocks if ready queue is full
-                                job.setState(State.RQUEUED, "putting on a \"Ready\" Queue");
-                                if(!readyQueue(job))
-                                {
-                                       job.setState(State.FAILED,"All Ready slots are taken and Ready Thread Queue is full. Failing request");
-                                }
-
-                            }
-                            catch(InterruptedException ie) {
+                        else if(state == State.ASYNCWAIT ||
+                        state == State.RETRYWAIT ) {
                                 try {
-                                    job.setState(State.FAILED,"InterruptedException while putting on the ready queue");
-                                }
-                                catch( IllegalStateTransition ist) {
-                                    logger.error("Illegal State Transition : " +ist.getMessage());
-                                }
-                            }
-                            catch( IllegalStateTransition ist) {
-                                logger.error("Illegal State Transition : " +ist.getMessage());
-                            }
-                        }
-
-                    } else {
-
-                        if(exception instanceof NonFatalJobFailure) {
-
-                            NonFatalJobFailure failure = (NonFatalJobFailure)exception;
-                            if(job.getNumberOfRetries() < maxNumberOfRetries &&
-                            job.getNumberOfRetries() < job.getMaxNumberOfRetries()) {
-                                try {
-                                        job.setState(State.RETRYWAIT,
-                                        " nonfatal error ["+exception.toString()+"] retrying");
+                                 logger.debug("Scheduler(id="+getId()+") changing job state to runinng");
+                                    job.setState(State.RUNNING," executing ",false);
+                                    started();
+                                    job.saveJob();
                                 }
                                 catch( IllegalStateTransition ist) {
                                     logger.error("Illegal State Transition : " +ist.getMessage());
                                     return;
                                 }
-                                Scheduler.this.startRetryTimer(job);
+                        }
+                        else {
+                            logger.error("Scheduler(id="+getId()+") job is in state "+state+"; can not execute, returning");
+                            return;
+                        }
+                    } finally {
+                        job.wunlock();
+                    }
+
+                    logger.debug("Scheduler(id="+getId()+") exited sync block");
+                    Exception exception = null;
+                    try {
+                       logger.debug("Scheduler(id="+getId()+") calling job.run()");
+                       job.run();
+                       logger.debug("Scheduler(id="+getId()+") job.run() returned");
+                    } catch(NonFatalJobFailure | FatalJobFailure | RuntimeException e)
+                    {
+                        exception = e;
+                    }
+                    job.wlock();
+                    try {
+                        // if no exception was thrown
+                        if(exception == null) {
+                            state = job.getState();
+                            if(state == State.DONE) {
                             }
-                            else {
+
+                            else if(state == State.RUNNING) {
                                 try {
-                                    job.setState(State.FAILED,
-                                    "number of retries exceeded: "+failure.toString());
+                                    // put blocks if ready queue is full
+                                    job.setState(State.RQUEUED, "putting on a \"Ready\" Queue");
+                                    if(!readyQueue(job))
+                                    {
+                                           job.setState(State.FAILED,"All Ready slots are taken and Ready Thread Queue is full. Failing request");
+                                    }
+
+                                }
+                                catch(InterruptedException ie) {
+                                    try {
+                                        job.setState(State.FAILED,"InterruptedException while putting on the ready queue");
+                                    }
+                                    catch( IllegalStateTransition ist) {
+                                        logger.error("Illegal State Transition : " +ist.getMessage());
+                                    }
                                 }
                                 catch( IllegalStateTransition ist) {
                                     logger.error("Illegal State Transition : " +ist.getMessage());
                                 }
                             }
-                        }
-                        else if(exception instanceof FatalJobFailure) {
-                            FatalJobFailure failure = (FatalJobFailure)exception;
 
-                            try {
-                                job.setState(State.FAILED, failure.getMessage());
+                        } else {
+
+                            if(exception instanceof NonFatalJobFailure) {
+
+                                NonFatalJobFailure failure = (NonFatalJobFailure)exception;
+                                if(job.getNumberOfRetries() < maxNumberOfRetries &&
+                                job.getNumberOfRetries() < job.getMaxNumberOfRetries()) {
+                                    try {
+                                            job.setState(State.RETRYWAIT,
+                                            " nonfatal error ["+exception.toString()+"] retrying");
+                                    }
+                                    catch( IllegalStateTransition ist) {
+                                        logger.error("Illegal State Transition : " +ist.getMessage());
+                                        return;
+                                    }
+                                    Scheduler.this.startRetryTimer(job);
+                                }
+                                else {
+                                    try {
+                                        job.setState(State.FAILED,
+                                        "number of retries exceeded: "+failure.toString());
+                                    }
+                                    catch( IllegalStateTransition ist) {
+                                        logger.error("Illegal State Transition : " +ist.getMessage());
+                                    }
+                                }
                             }
-                            catch( IllegalStateTransition ist) {
-                                logger.error("Illegal State Transition : " +ist.getMessage());
+                            else if(exception instanceof FatalJobFailure) {
+                                FatalJobFailure failure = (FatalJobFailure)exception;
+
+                                try {
+                                    job.setState(State.FAILED, failure.getMessage());
+                                }
+                                catch( IllegalStateTransition ist) {
+                                    logger.error("Illegal State Transition : " +ist.getMessage());
+                                }
                             }
-                        }
-                        else
-                        {
-                            // Only possibility left is RuntimeException
-                            try {
-                                logger.error("Bug detected by SRM Scheduler",
-                                        exception);
-                                job.setState(State.FAILED, "Internal error: " +
-                                        exception.toString());
+                            else
+                            {
+                                // Only possibility left is RuntimeException
+                                try {
+                                    logger.error("Bug detected by SRM Scheduler",
+                                            exception);
+                                    job.setState(State.FAILED, "Internal error: " +
+                                            exception.toString());
+                                }
+                                catch( IllegalStateTransition ist) {
+                                    // FIXME how should we fail a request that is
+                                    // already in a terminal state?
+                                    logger.error("Illegal State Transition : {}",
+                                            ist.getMessage());
+                                }
                             }
-                            catch( IllegalStateTransition ist) {
-                                // FIXME how should we fail a request that is
-                                // already in a terminal state?
-                                logger.error("Illegal State Transition : {}",
-                                        ist.getMessage());
-                            }
-                        }
 
 
+                        }
+                    } finally {
+                        job.wunlock();
                     }
-                } finally {
-                    job.wunlock();
                 }
-            }
-            catch(Throwable t) {
-                logger.error(t.toString());
-            }
-            finally {
-                started();
-                decreaseNumberOfRunningThreads(job);
-                //need to notify the Scheduler that one more thread is becoming available
-
-                synchronized(Scheduler.this) {
-                    Scheduler.this.notifyAll();
-                    notified = true;
+                catch(Throwable t) {
+                    logger.error(t.toString());
                 }
+                finally {
+                    started();
+                    decreaseNumberOfRunningThreads(job);
+                    //need to notify the Scheduler that one more thread is becoming available
 
-                JDC.clear();
+                    synchronized(Scheduler.this) {
+                        Scheduler.this.notifyAll();
+                        notified = true;
+                    }
+                }
             }
         }
     }
