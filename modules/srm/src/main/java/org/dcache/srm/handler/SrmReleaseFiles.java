@@ -184,7 +184,7 @@ public class SrmReleaseFiles {
             surls = toUris(srmReleaseFilesRequest.getArrayOfSURLs().getUrlArray());
         }
 
-        ContainerRequest request = Job.getJob(requestId, ContainerRequest.class);
+        ContainerRequest<?> request = Job.getJob(requestId, ContainerRequest.class);
         request.applyJdc();
 
         if ( !(request instanceof GetRequest || request instanceof BringOnlineRequest) ){
@@ -207,7 +207,7 @@ public class SrmReleaseFiles {
             }
             if(request instanceof GetRequest) {
                 for (URI surl : surls) {
-                    FileRequest fileRequest = request
+                    FileRequest<?> fileRequest = request
                             .getFileRequestBySurl(surl);
                     fileRequest.setState(State.DONE, "SrmReleaseFiles called");
                 }
@@ -416,10 +416,10 @@ public class SrmReleaseFiles {
                 getScheduler(BringOnlineFileRequest.class);
         Set<BringOnlineFileRequest> foundRequests =
             new HashSet<>();
-        JobStorage js =
+        JobStorage<BringOnlineFileRequest> js =
                 JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineFileRequest.class);
         if(js instanceof DatabaseFileRequestStorage) {
-            DatabaseFileRequestStorage reqstorage =(DatabaseFileRequestStorage) js;
+            DatabaseFileRequestStorage<?> reqstorage = (DatabaseFileRequestStorage<?>) js;
             Set<Long> activeRequestIds ;
             try {
                 activeRequestIds =
@@ -454,11 +454,11 @@ public class SrmReleaseFiles {
         Scheduler scheduler = srm.getGetRequestScheduler();
         Set<GetFileRequest> foundRequests =
             new HashSet<>();
-        JobStorage js =
+        JobStorage<GetFileRequest> js =
                 JobStorageFactory.getJobStorageFactory().getJobStorage(GetFileRequest.class);
         if(js instanceof DatabaseFileRequestStorage) {
-           DatabaseFileRequestStorage  reqstorage =
-                   (DatabaseFileRequestStorage) js;
+           DatabaseFileRequestStorage<?>  reqstorage =
+                   (DatabaseFileRequestStorage<?>) js;
         Set<Long> activeRequestIds ;
         try {
             activeRequestIds =

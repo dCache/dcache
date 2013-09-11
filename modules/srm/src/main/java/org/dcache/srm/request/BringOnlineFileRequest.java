@@ -105,7 +105,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  * @version
  */
-public final class BringOnlineFileRequest extends FileRequest {
+public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest> {
     private final static Logger logger =
             LoggerFactory.getLogger(BringOnlineFileRequest.class);
 
@@ -294,7 +294,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
             fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
-        fileStatus.setEstimatedWaitTime(getRequest().getRetryDeltaTime());
+        fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
         TReturnStatus returnStatus = getReturnStatus();
         fileStatus.setStatus(returnStatus);
 
@@ -385,9 +385,7 @@ public final class BringOnlineFileRequest extends FileRequest {
     public void pinFile()
         throws NonFatalJobFailure, FatalJobFailure, SRMException
     {
-        BringOnlineRequest request = Job.getJob(requestId,
-                BringOnlineRequest.class);
-
+        BringOnlineRequest request = getContainerRequest();
         String[] protocols = request.getProtocols();
         if (protocols != null && !isProtocolSupported(protocols)) {
             throw new FatalJobFailure("Transfer protocols not supported: " +
@@ -403,7 +401,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         logger.info("Pinning {}", surl);
         getStorage().pinFile(getUser(),
                              surl,
-                             getRequest().getClient_host(),
+                             getContainerRequest().getClient_host(),
                              desiredPinLifetime,
                              getRequestId(),
                              new ThePinCallbacks(getId()));
@@ -415,7 +413,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
-                getRequest().resetRetryDeltaTime();
+                getContainerRequest().resetRetryDeltaTime();
             }
             catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -561,7 +559,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        long requestLifetime = getRequest().extendLifetimeMillis(newLifetime);
+        long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
         if(requestLifetime <newLifetime) {
             newLifetime = requestLifetime;
         }

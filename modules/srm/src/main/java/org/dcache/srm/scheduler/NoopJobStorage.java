@@ -11,33 +11,57 @@ import org.dcache.srm.request.Job;
  * Noop (No Operation) implementation of the JobStorage interface
  * @author timur
  */
-public class NoopJobStorage implements JobStorage {
+public class NoopJobStorage<J extends Job> implements JobStorage<J> {
 
     public NoopJobStorage( ) {
     }
 
     @Override
-    public Job getJob(Long jobId) throws SQLException {
+    public J getJob(Long jobId) throws SQLException {
         return null;
     }
 
     @Override
-    public Job getJob(Long jobId, Connection connection) throws SQLException {
+    public J getJob(Long jobId, Connection connection) throws SQLException {
         return null;
     }
 
     @Override
-    public Set<Job> getJobs(String scheduler) throws SQLException {
+    public Set<J> getJobs(String scheduler) throws SQLException {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<Job> getJobs(String scheduler, State state) throws SQLException {
+    public Set<J> getJobs(String scheduler, State state) throws SQLException {
         return Collections.emptySet();
     }
 
     @Override
-    public void saveJob(Job job, boolean saveIfMonitoringDisabled) throws SQLException {
+    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws SQLException {
+    }
+
+    @Override
+    public Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
     }
 
     @Override

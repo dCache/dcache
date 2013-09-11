@@ -9,7 +9,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
@@ -40,13 +39,12 @@ import org.dcache.srm.util.Configuration;
 public class DatabaseJobStorageFactory extends JobStorageFactory{
     private static final Logger logger =
             LoggerFactory.getLogger(DatabaseJobStorageFactory.class);
-    private static final NoopJobStorage noop = new NoopJobStorage();
-    private final Map<Class<? extends Job>,JobStorage> jobStorageMap =
+    private final Map<Class<? extends Job>,JobStorage<?>> jobStorageMap =
         new HashMap<>();
 
-    private void add(Configuration.DatabaseParameters config,
-                     Class<? extends Job> entityClass,
-                     Class<? extends DatabaseJobStorage> storageClass)
+    private <J extends Job> void add(Configuration.DatabaseParameters config,
+                     Class<J> entityClass,
+                     Class<? extends DatabaseJobStorage<J>> storageClass)
         throws InstantiationException,
                IllegalAccessException,
                IllegalArgumentException,
@@ -55,14 +53,14 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                SecurityException
     {
         if (config.isDatabaseEnabled()) {
-            JobStorage js =
+            JobStorage<J> js =
                 storageClass.getConstructor(Configuration.DatabaseParameters.class).newInstance(config);
             if (config.getStoreCompletedRequestsOnly()) {
-                js = new FinalStateOnlyJobStorageDecorator(js);
+                js = new FinalStateOnlyJobStorageDecorator<>(js);
             }
             jobStorageMap.put(entityClass, js);
         } else {
-            jobStorageMap.put(entityClass, noop);
+            jobStorageMap.put(entityClass, new NoopJobStorage<J>());
         }
     }
 
@@ -119,10 +117,10 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
 
     public void loadExistingJobs() throws SQLException, InterruptedException, IllegalStateTransition
     {
-        for (JobStorage js: jobStorageMap.values()) {
+        for (JobStorage<?> js: jobStorageMap.values()) {
             try {
                 if (js instanceof DatabaseJobStorage) {
-                    ((DatabaseJobStorage) js).updatePendingJobs();
+                    ((DatabaseJobStorage<?>) js).updatePendingJobs();
                 }
             } catch (Exception e) {
                 logger.error("updatePendingJobs failed",e);
@@ -136,35 +134,32 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
             try {
                 scheduler = schedulerFactory.getScheduler(jobType);
             } catch(UnsupportedOperationException uoe) {
-                //ignore, not all types of jobs are scheuled
+                //ignore, not all types of jobs are scheduled
                 //some are just containers for file requests
                 continue;
             }
-            JobStorage djs = jobStorageMap.get(jobType);
-            // get all pending unsheduled jobs
-            Set<Job> jobs = djs.getJobs(null, State.PENDING);
-            for(Job job:jobs) {
+            // get all pending unscheduled jobs
+            for (Job job: jobStorageMap.get(jobType).getJobs(null, State.PENDING)) {
                 scheduler.schedule(job);
             }
         }
     }
 
     @Override
-    public JobStorage getJobStorage(Job job) {
-        if(job == null) {
-            throw new IllegalArgumentException("job is null");
-        }
-        return getJobStorage(job.getClass());
+    @SuppressWarnings("unchecked")
+    public <J extends Job> JobStorage<J> getJobStorage(J job) {
+        return getJobStorage((Class<J>) job.getClass());
     }
 
     @Override
-    public JobStorage getJobStorage(Class<? extends Job> jobClass) {
-        JobStorage js = jobStorageMap.get(jobClass);
-        if (js != null) {
-            return js;
+    @SuppressWarnings("unchecked")
+    public <J extends Job> JobStorage<J> getJobStorage(Class<? extends J> jobClass) {
+        JobStorage<J> js = (JobStorage<J>) jobStorageMap.get(jobClass);
+        if (js == null) {
+            throw new UnsupportedOperationException(
+                    "JobStorage for class " + jobClass + " is not supported");
         }
-        throw new UnsupportedOperationException(
-                 "JobStorage for class "+jobClass+ " is not supported");
+        return js;
     }
 
 }
