@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -z "$SRM_PATH" ]; then
-    SRM_PATH="/usr/share/srm"
+    SRM_PATH="$(cd $(dirname $0)/../share/srm;pwd)"
 fi
 
 if [ ! -d "$SRM_PATH" ]; then
@@ -11,4 +11,4 @@ fi
 
 export SRM_PATH
 
-/usr/sbin/srm -ls $*
+"${SRM_PATH}/lib/srm" -ls $*

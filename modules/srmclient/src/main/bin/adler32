@@ -1,7 +1,7 @@
 #! /bin/sh
 
 if [ -z "$SRM_PATH" ]; then
-    SRM_PATH="/usr/share/srm"
+    SRM_PATH="$(cd $(dirname $0)/../share/srm;pwd)"
 fi
 
 if [ ! -d "$SRM_PATH" ]; then
@@ -32,7 +32,7 @@ OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
 
 if [ "$SECURITY_DEBUG" = "true" ]
 then
-  OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=/usr/share/srm/conf/logback-all.xml"
+  OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=${SRM_PATH}/conf/logback-all.xml"
 fi
 
 cmd="java -cp $SRM_CP $OPTIONS org.dcache.srm.util.Adler32  $*"
