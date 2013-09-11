@@ -6,6 +6,8 @@
 
 package org.dcache.srm.request.sql;
 
+import org.springframework.dao.DataAccessException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -138,7 +140,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
 
     /** Creates a new instance of GetFileRequestStorage */
     public GetFileRequestStorage(Configuration.DatabaseParameters configuration)
-            throws IOException, SQLException
+            throws IOException, DataAccessException
     {
         super(configuration);
     }

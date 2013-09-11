@@ -76,9 +76,9 @@ import com.google.common.base.Joiner;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
-import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
 
@@ -363,7 +363,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     return;
                 }
             }
-        } catch(SRMException | SQLException | IllegalStateTransition e) {
+        } catch(SRMException | DataAccessException | IllegalStateTransition e) {
             // FIXME some SRMExceptions are permanent failures while others
             // are temporary.  Code currently doesn't distinguish, so will
             // always retry internally even if problem isn't transitory.

@@ -1,5 +1,7 @@
 package org.dcache.srm.scheduler;
 
+import org.springframework.dao.DataAccessException;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -37,7 +39,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     private final Class<J> type;
     private final Set<J> jobsToExpire = Collections.newSetFromMap(new ConcurrentHashMap<J, Boolean>());
 
-    public SharedMemoryCacheJobStorage(JobStorage<J> storage, Class<J> type) throws SQLException
+    public SharedMemoryCacheJobStorage(JobStorage<J> storage, Class<J> type)
     {
         this.storage = storage;
         this.type = type;
@@ -65,7 +67,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public void init() throws SQLException
+    public void init() throws DataAccessException
     {
         storage.init();
         for (J job : storage.getActiveJobs()) {
@@ -75,7 +77,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public J getJob(long jobId) throws SQLException
+    public J getJob(long jobId) throws DataAccessException
     {
         Job jobFromCache = sharedMemoryCache.getJob(jobId);
         if (jobFromCache == null) {
@@ -101,7 +103,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) throws SQLException
+    public Set<J> getJobs(String scheduler) throws DataAccessException
     {
         Set<J> result = new HashSet<>();
         for (J job : storage.getJobs(scheduler)) {
@@ -111,7 +113,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getJobs(String scheduler, State state) throws SQLException
+    public Set<J> getJobs(String scheduler, State state) throws DataAccessException
     {
         Set<J> result = new HashSet<>();
         for (J job : storage.getJobs(scheduler, state)) {
@@ -121,7 +123,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws SQLException
+    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws DataAccessException
     {
         storage.saveJob(job, saveIfMonitoringDisabled);
         sharedMemoryCache.update(job);
@@ -135,25 +137,25 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCompletedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestDoneJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestFailedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCanceledJobIds(maxNum);
     }

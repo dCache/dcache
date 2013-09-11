@@ -78,6 +78,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -304,7 +305,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
      }
 
 
-    public void proccessRequest() throws IOException,
+    public void proccessRequest() throws DataAccessException, IOException,
             SRMException, InterruptedException, IllegalStateTransition,
             FatalJobFailure
     {
@@ -452,7 +453,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     }
 
     private void getTURLs() throws SRMException,
-    IOException,InterruptedException,IllegalStateTransition,
+    IOException,InterruptedException,IllegalStateTransition, DataAccessException,
     FatalJobFailure {
         logger.debug("getTURLS()");
         if(isFrom_url_is_srm() && ! isFrom_url_is_local()) {
@@ -931,7 +932,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
             else {
                 setState(State.ASYNCWAIT, "waiting for files to complete");
             }
-        } catch(SRMException | IllegalStateTransition e) {
+        } catch(SRMException | IllegalStateTransition | DataAccessException e) {
             // FIXME some SRMException failures are temporary and others are
             // permanent.  Code currently doesn't distinguish between them and
             // always retries, even if problem isn't transitory.

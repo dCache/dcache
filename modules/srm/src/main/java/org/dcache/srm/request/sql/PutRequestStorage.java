@@ -8,6 +8,8 @@ package org.dcache.srm.request.sql;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -139,7 +141,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
 
     /** Creates a new instance of GetRequestStorage */
     public PutRequestStorage(Configuration.DatabaseParameters configuration)
-            throws SQLException, IOException
+            throws IOException, DataAccessException
     {
         super(configuration);
     }
@@ -148,67 +150,49 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
         return getTableName()+"_protocols";
     }
 
-    @Override
-    public void dbInit1() throws SQLException {
-        boolean should_reanamed_old_table = reanamed_old_table;
-        String protocolsTableName = getProtocolsTableName().toLowerCase();
-        Connection _con =null;
-        try {
-            _con = pool.getConnection();
-            _con.setAutoCommit(true);
-
-            DatabaseMetaData md = _con.getMetaData();
-            String tableNameAsStored =
-                getIdentifierAsStored(md, protocolsTableName);
-            ResultSet columns =
-                md.getColumns(null, null, tableNameAsStored, null);
-            if(columns.next()){
-                String columnName = columns.getString("COLUMN_NAME");
-                int columnDataType = columns.getInt("DATA_TYPE");
-                verifyStringType("PROTOCOL",1,protocolsTableName ,
-                        columnName,columnDataType);
-                if(columns.next()){
-                    columnName = columns.getString("COLUMN_NAME");
-                    columnDataType = columns.getInt("DATA_TYPE");
-                    verifyLongType("RequestID",2,protocolsTableName ,
-                            columnName,columnDataType);
-                } else {
-                    should_reanamed_old_table = true;
+    private Boolean validateProtocolsTableSchema(final String tableName)
+    {
+        return jdbcTemplate.execute(new ConnectionCallback<Boolean>()
+        {
+            @Override
+            public Boolean doInConnection(Connection con) throws SQLException, DataAccessException
+            {
+                DatabaseMetaData md = con.getMetaData();
+                String tableNameAsStored =
+                        getIdentifierAsStored(md, tableName);
+                try (ResultSet columns = md.getColumns(null, null, tableNameAsStored, null)) {
+                    if (!columns.next()) {
+                        return false;
+                    }
+                    try {
+                        verifyStringType("PROTOCOL", 1, tableName,
+                                columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"));
+                    } catch (SQLException e) {
+                        return false;
+                    }
+                    if (!columns.next()) {
+                        return false;
+                    }
+                    try {
+                        verifyLongType("RequestID", 2, tableName,
+                                columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"));
+                    } catch (SQLException e) {
+                        return false;
+                    }
+                    return true;
                 }
-            } else {
-                // If getColumns returns a zero-sized ResourceSet then
-                // the table doesn't exist; no need to rename it.
             }
-            _con.setAutoCommit(false);
-            pool.returnConnection(_con);
-            _con =null;
-         } catch (SQLException sqe) {
-             logger.error(sqe.toString());
-            should_reanamed_old_table = true;
-            if(_con != null) {
-                pool.returnFailedConnection(_con);
-                _con = null;
-            }
-        } catch (Exception ex) {
-            logger.error(ex.toString());
-            should_reanamed_old_table = true;
-            if(_con != null) {
-                pool.returnFailedConnection(_con);
-                _con = null;
-            }
-        } finally {
-            if(_con != null) {
-                _con.setAutoCommit(false);
-                pool.returnConnection(_con);
-            }
-        }
-        try {
-            if(should_reanamed_old_table) {
-                renameTable(protocolsTableName);
-            }
-        }
-        catch (SQLException sqle) {
-            logger.error("renameTable  "+protocolsTableName+" failed, might have been removed already, ignoring");
+        });
+    }
+
+    @Override
+    protected void dbInit(boolean clean) throws DataAccessException
+    {
+        super.dbInit(clean);
+
+        String protocolsTableName = getProtocolsTableName().toLowerCase();
+        if (droppedOldTable || !validateProtocolsTableSchema(protocolsTableName)) {
+            dropTable(protocolsTableName);
         }
 
         String createProtocolsTable = "CREATE TABLE "+ protocolsTableName+" ( "+
@@ -218,12 +202,9 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                 getTableName() +" (ID) "+
                 " ON DELETE CASCADE"+
                 " )";
-        logger.debug("calling createTable for " + protocolsTableName);
+        logger.trace("calling createTable for {}", protocolsTableName);
         createTable(protocolsTableName, createProtocolsTable);
-        String protocols_columns[] = {
-            "RequestID"};
-        createIndex(protocols_columns,protocolsTableName );
-
+        createIndex(new String[]{ "RequestID" }, protocolsTableName);
     }
 
     private static int ADDITIONAL_FIELDS;

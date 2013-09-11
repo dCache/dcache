@@ -77,13 +77,13 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -158,14 +158,17 @@ public class SRM {
      * @param config
      * @param name
      * @throws IOException
-     * @throws SQLException
      * @throws InterruptedException
      * @throws IllegalStateTransition
+     * @throws ClassNotFoundException
+     * @throws DataAccessException
      */
     private SRM(Configuration config, String name)
             throws IOException,
                    InterruptedException,
-                   IllegalStateTransition, SQLException
+                   IllegalStateTransition,
+                   ClassNotFoundException,
+                   DataAccessException
     {
         this.configuration = config;
         //First of all decorate the storage with counters and
@@ -274,22 +277,22 @@ public class SRM {
      * @param name
      * @return SRM
      * @throws IOException
-     * @throws SQLException
      * @throws InterruptedException
      * @throws IllegalStateTransition
+     * @throws ClassNotFoundException
+     * @throws DataAccessException
      */
-    public static synchronized final SRM getSRM(Configuration configuration,
-            String name) throws IOException,
-            SQLException,
-            InterruptedException,
-            IllegalStateTransition {
-
-        if(srm != null) {
-            return srm;
+    public static final synchronized SRM getSRM(Configuration configuration, String name)
+            throws IOException,
+                   InterruptedException,
+                   IllegalStateTransition,
+                   ClassNotFoundException,
+                   DataAccessException
+    {
+        if (srm == null) {
+            srm = new SRM(configuration, name);
+            SRM.class.notifyAll();
         }
-
-        srm = new SRM(configuration, name);
-        SRM.class.notifyAll();
         return srm;
     }
 
@@ -1001,31 +1004,31 @@ public class SRM {
         return storage.getStorageElementInfo(user);
     }
 
-    public void listGetRequests(StringBuilder sb) throws SQLException {
+    public void listGetRequests(StringBuilder sb) throws DataAccessException {
         listRequests(sb, GetRequest.class);
     }
 
-    public Set<Long> getGetRequestIds(SRMUser user, String description) throws SQLException {
+    public Set<Long> getGetRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(GetRequest.class,description);
     }
 
-    public Set<Long> getLsRequestIds(SRMUser user, String description) throws SQLException {
+    public Set<Long> getLsRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(LsRequest.class,description);
     }
 
-    public void listLatestCompletedGetRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestCompletedGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getGetStorage().getLatestCompletedJobIds(maxCount), GetRequest.class);
     }
 
-    public void listLatestFailedGetRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestFailedGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getGetStorage().getLatestFailedJobIds(maxCount), GetRequest.class);
     }
 
-    public void listLatestDoneGetRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestDoneGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getGetStorage().getLatestDoneJobIds(maxCount), GetRequest.class);
     }
 
-    public void listLatestCanceledGetRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestCanceledGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getGetStorage().getLatestCanceledJobIds(maxCount), GetRequest.class);
     }
 
@@ -1066,27 +1069,27 @@ public class SRM {
 
     }
 
-    public void listPutRequests(StringBuilder sb) throws SQLException {
+    public void listPutRequests(StringBuilder sb) throws DataAccessException {
         listRequests(sb, PutRequest.class);
     }
 
-    public Set<Long> getPutRequestIds(SRMUser user, String description) throws SQLException {
+    public Set<Long> getPutRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(PutRequest.class,description);
     }
 
-    public void listLatestCompletedPutRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestCompletedPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getPutStorage().getLatestCompletedJobIds(maxCount), PutRequest.class);
     }
 
-    public void listLatestFailedPutRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestFailedPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getPutStorage().getLatestFailedJobIds(maxCount), PutRequest.class);
     }
 
-    public void listLatestCanceledPutRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestCanceledPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getPutStorage().getLatestCanceledJobIds(maxCount), PutRequest.class);
     }
 
-    public void listLatestDonePutRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestDonePutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getPutStorage().getLatestDoneJobIds(maxCount), PutRequest.class);
     }
 
@@ -1108,28 +1111,27 @@ public class SRM {
 
     }
 
-    public void listCopyRequests(StringBuilder sb) throws SQLException {
+    public void listCopyRequests(StringBuilder sb) throws DataAccessException {
         listRequests(sb, CopyRequest.class);
     }
 
-    public Set<Long> getCopyRequestIds(SRMUser user, String description) throws SQLException {
+    public Set<Long> getCopyRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(CopyRequest.class,description);
     }
 
-    public void listLatestCompletedCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestCompletedCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getCopyStorage().getLatestCompletedJobIds(maxCount), CopyRequest.class);
     }
 
-    public void listLatestFailedCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestFailedCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getCopyStorage().getLatestFailedJobIds(maxCount), CopyRequest.class);
     }
 
-    public void listLatestCanceledCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestCanceledCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getCopyStorage().getLatestCanceledJobIds(maxCount), CopyRequest.class);
     }
 
-
-    public void listLatestDoneCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestDoneCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getCopyStorage().getLatestDoneJobIds(maxCount), CopyRequest.class);
     }
 
@@ -1150,28 +1152,28 @@ public class SRM {
 
     }
 
-    public void listBringOnlineRequests(StringBuilder sb) throws SQLException {
+    public void listBringOnlineRequests(StringBuilder sb) throws DataAccessException {
         listRequests(sb, BringOnlineRequest.class);
     }
 
-    public Set<Long> getBringOnlineRequestIds(SRMUser user, String description) throws SQLException {
+    public Set<Long> getBringOnlineRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(BringOnlineRequest.class,description);
     }
 
-    public void listLatestCompletedBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestCompletedBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getBringOnlineStorage().getLatestCompletedJobIds(maxCount), BringOnlineRequest.class);
     }
 
-    public void listLatestFailedBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestFailedBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getBringOnlineStorage().getLatestFailedJobIds(maxCount), BringOnlineRequest.class);
     }
 
-    public void listLatestCanceledBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestCanceledBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getBringOnlineStorage().getLatestCanceledJobIds(maxCount), BringOnlineRequest.class);
     }
 
 
-    public void listLatestDoneBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
+    public void listLatestDoneBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getBringOnlineStorage().getLatestDoneJobIds(maxCount), BringOnlineRequest.class);
     }
 
@@ -1197,17 +1199,18 @@ public class SRM {
                 getScheduler(requestType);
     }
 
-    public void listReserveSpaceRequests(StringBuilder sb) throws SQLException {
+    public void listReserveSpaceRequests(StringBuilder sb) throws DataAccessException {
         listRequests(sb, ReserveSpaceRequest.class);
     }
 
-    public void listLsRequests(StringBuilder sb) throws SQLException {
+    public void listLsRequests(StringBuilder sb) throws DataAccessException {
         listRequests(sb, LsRequest.class);
     }
 
     private <T extends Job> void listRequests(StringBuilder sb,
             Set<Long> jobIds,
-            Class<T> type) throws SQLException {
+            Class<T> type)
+    {
         for (long requestId : jobIds) {
             try {
                 T request = Job.getJob(requestId, type);
@@ -1218,7 +1221,7 @@ public class SRM {
         }
     }
 
-    private <T extends Request> void listRequests(StringBuilder sb, Class<T> clazz) throws SQLException {
+    private <T extends Request> void listRequests(StringBuilder sb, Class<T> clazz) throws DataAccessException {
         Set<T> requests = Job.getActiveJobs(clazz);
         for (T request: requests) {
             request.toString(sb,false);
@@ -1240,8 +1243,9 @@ public class SRM {
         return load;
     }
 
-    public void listRequest(StringBuilder sb, long requestId, boolean longformat) throws SQLException,
-    SRMInvalidRequestException {
+    public void listRequest(StringBuilder sb, long requestId, boolean longformat)
+            throws DataAccessException, SRMInvalidRequestException
+    {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null) {
             sb.append("request with id ").append(requestId)
@@ -1272,37 +1276,37 @@ public class SRM {
     }
 
     public void cancelAllGetRequest(StringBuilder sb, String pattern)
-            throws SQLException, SRMInvalidRequestException {
+            throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getGetRequestScheduler(), GetRequest.class);
     }
 
     public void cancelAllBringOnlineRequest(StringBuilder sb, String pattern)
-            throws SQLException, SRMInvalidRequestException {
+            throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), BringOnlineRequest.class);
     }
 
     public void cancelAllPutRequest(StringBuilder sb, String pattern)
-            throws SQLException, SRMInvalidRequestException {
+            throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getPutRequestScheduler(), PutRequest.class);
     }
 
     public void cancelAllCopyRequest(StringBuilder sb, String pattern)
-            throws SQLException, SRMInvalidRequestException {
+            throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getCopyRequestScheduler(), CopyRequest.class);
     }
 
     public void cancelAllReserveSpaceRequest(StringBuilder sb, String pattern)
-            throws SQLException, SRMInvalidRequestException {
+            throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), ReserveSpaceRequest.class);
     }
 
     public void cancelAllLsRequests(StringBuilder sb, String pattern)
-            throws SQLException, SRMInvalidRequestException {
+            throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, getLsRequestScheduler(), LsRequest.class);
     }
@@ -1310,9 +1314,9 @@ public class SRM {
     private void cancelAllRequest(StringBuilder sb,
             String pattern,
             Scheduler scheduler,
-            Class<? extends Job> type) throws SQLException,
-            SRMInvalidRequestException {
-
+            Class<? extends Job> type)
+            throws DataAccessException, SRMInvalidRequestException
+    {
         Set<Long> jobsToKill = new HashSet<>();
         Pattern p = Pattern.compile(pattern);
         Set<Long> activeRequestIds = getActiveJobIds(type, null);
@@ -1437,7 +1441,7 @@ public class SRM {
     }
 
     public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description)
-            throws SQLException
+            throws DataAccessException
     {
         Set<T> jobs = Job.getActiveJobs(type);
         Set<Long> ids = new HashSet<>();
@@ -1456,12 +1460,12 @@ public class SRM {
         return ids;
     }
 
-    public boolean isFileBusy(URI surl) throws SQLException
+    public boolean isFileBusy(URI surl) throws DataAccessException
     {
         return hasActivePutRequests(surl);
     }
 
-    private boolean hasActivePutRequests(URI surl) throws SQLException
+    private boolean hasActivePutRequests(URI surl) throws DataAccessException
     {
         Set<PutFileRequest> requests = Job.getActiveJobs(PutFileRequest.class);
         for (PutFileRequest request: requests) {
@@ -1473,7 +1477,7 @@ public class SRM {
     }
 
     public <T extends FileRequest<?>> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
-            throws SQLException
+            throws DataAccessException
     {
         return Iterables.filter(Job.getActiveJobs(type),
                 new Predicate<T>()

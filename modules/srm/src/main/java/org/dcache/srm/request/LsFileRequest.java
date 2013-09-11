@@ -4,10 +4,10 @@ package org.dcache.srm.request;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.GregorianCalendar;
@@ -196,7 +196,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         }
                         setState(State.DONE, State.DONE.toString());
                 }
-                catch (SRMException | SQLException | URISyntaxException | IllegalStateTransition e) {
+                catch (SRMException | DataAccessException | URISyntaxException | IllegalStateTransition e) {
                         wlock();
                         try {
                                 TReturnStatus status;
@@ -221,7 +221,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                                                    msg);
                                         setStatusCode(TStatusCode.SRM_INVALID_PATH);
                                 }
-                                else if (e instanceof SQLException) {
+                                else if (e instanceof DataAccessException) {
                                     status = new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,
                                             msg);
                                     setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);

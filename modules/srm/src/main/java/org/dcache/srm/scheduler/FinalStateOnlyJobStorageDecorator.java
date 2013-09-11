@@ -1,5 +1,7 @@
 package org.dcache.srm.scheduler;
 
+import org.springframework.dao.DataAccessException;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -19,13 +21,13 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
     }
 
     @Override
-    public void init() throws SQLException
+    public void init() throws DataAccessException
     {
         jobStorage.init();
     }
 
     @Override
-    public J getJob(long jobId) throws SQLException {
+    public J getJob(long jobId) throws DataAccessException {
         return jobStorage.getJob(jobId);
     }
 
@@ -35,42 +37,42 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) throws SQLException {
+    public Set<J> getJobs(String scheduler) throws DataAccessException {
         return jobStorage.getJobs(scheduler);
     }
 
     @Override
-    public Set<J> getJobs(String scheduler, State state) throws SQLException {
+    public Set<J> getJobs(String scheduler, State state) throws DataAccessException {
         return jobStorage.getJobs(scheduler, state);
     }
 
     @Override
-    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws SQLException {
+    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws DataAccessException {
         if(job.getState().isFinalState()) {
             jobStorage.saveJob(job,saveIfMonitoringDisabled);
         }
     }
 
     @Override
-    public Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
     {
         return jobStorage.getLatestCompletedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
     {
         return jobStorage.getLatestDoneJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException
     {
         return jobStorage.getLatestFailedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException
     {
         return jobStorage.getLatestCanceledJobIds(maxNum);
     }

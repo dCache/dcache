@@ -6,6 +6,8 @@
 
 package org.dcache.srm.request.sql;
 
+import org.springframework.dao.DataAccessException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -159,7 +161,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
 
    /** Creates a new instance of PutFileRequestStorage */
     public PutFileRequestStorage(Configuration.DatabaseParameters configuration)
-            throws IOException, SQLException
+            throws IOException, DataAccessException
     {
         super(configuration);
     }

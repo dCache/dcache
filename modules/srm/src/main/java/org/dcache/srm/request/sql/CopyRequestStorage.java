@@ -6,6 +6,8 @@
 
 package org.dcache.srm.request.sql;
 
+import org.springframework.dao.DataAccessException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -165,14 +167,10 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
 
     /** Creates a new instance of GetRequestStorage */
      public CopyRequestStorage(Configuration.DatabaseParameters configuration)
-             throws SQLException, IOException
+             throws IOException, DataAccessException
      {
          super(configuration);
      }
-
-    @Override
-    public void dbInit1() throws SQLException {
-   }
 
     @Override
     protected CopyRequest getContainerRequest(Connection _con,

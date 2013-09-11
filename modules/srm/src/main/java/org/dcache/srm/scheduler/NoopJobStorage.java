@@ -1,7 +1,6 @@
 package org.dcache.srm.scheduler;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 
@@ -17,54 +16,54 @@ public class NoopJobStorage<J extends Job> implements JobStorage<J> {
     }
 
     @Override
-    public void init() throws SQLException
+    public void init()
     {
     }
 
     @Override
-    public J getJob(long jobId) throws SQLException {
+    public J getJob(long jobId) {
         return null;
     }
 
     @Override
-    public J getJob(long jobId, Connection connection) throws SQLException {
+    public J getJob(long jobId, Connection connection) {
         return null;
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) throws SQLException {
+    public Set<J> getJobs(String scheduler) {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<J> getJobs(String scheduler, State state) throws SQLException {
+    public Set<J> getJobs(String scheduler, State state) {
         return Collections.emptySet();
     }
 
     @Override
-    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws SQLException {
+    public void saveJob(J job, boolean saveIfMonitoringDisabled) {
     }
 
     @Override
-    public Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCompletedJobIds(int maxNum)
     {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestDoneJobIds(int maxNum)
     {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestFailedJobIds(int maxNum)
     {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCanceledJobIds(int maxNum)
     {
         return Collections.emptySet();
     }

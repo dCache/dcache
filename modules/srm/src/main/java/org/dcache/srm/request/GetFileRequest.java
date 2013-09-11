@@ -75,9 +75,9 @@ package org.dcache.srm.request;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
-import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
 
@@ -457,7 +457,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     return;
                 }
             }
-        } catch (IllegalStateTransition | SQLException | SRMException e) {
+        } catch (IllegalStateTransition | DataAccessException | SRMException e) {
             // FIXME some SRMException failures are temporary and others are
             // permanent.  Code currently doesn't distinguish between them and
             // always retries, even if problem isn't transitory.

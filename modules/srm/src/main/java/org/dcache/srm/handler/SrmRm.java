@@ -17,10 +17,10 @@ package org.dcache.srm.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.concurrent.CountDownLatch;
 
 import org.dcache.srm.AbstractStorageElement;
@@ -86,7 +86,7 @@ public class SrmRm {
             } catch(SRMException srme) {
                 logger.error(srme.toString());
                 response = getFailedResponse(srme.toString());
-            } catch (SQLException e) {
+            } catch (DataAccessException e) {
                 logger.error(e.toString());
                 response = getResponse("Internal failure: " + e.toString(), TStatusCode.SRM_INTERNAL_ERROR);
             }
@@ -116,7 +116,7 @@ public class SrmRm {
      */
 
 	public SrmRmResponse srmRm()
-                throws SRMException, SQLException, URISyntaxException
+                throws SRMException, DataAccessException, URISyntaxException
         {
 		if(request==null) {
 			return getResponse(" null request passed to SrmRm()",

@@ -6,6 +6,8 @@
 
 package org.dcache.srm.request.sql;
 
+import org.springframework.dao.DataAccessException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -166,14 +168,9 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
 
     /** Creates a new instance of FileRequestStorage */
     public ReserveSpaceRequestStorage(Configuration.DatabaseParameters configuration)
-            throws SQLException, IOException
+            throws IOException, DataAccessException
     {
         super(configuration);
-    }
-
-    @Override
-    protected void _dbInit() throws SQLException {
-
     }
 
     @Override

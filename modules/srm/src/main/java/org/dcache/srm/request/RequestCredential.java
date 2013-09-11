@@ -74,6 +74,7 @@ package org.dcache.srm.request;
 
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+import org.springframework.dao.DataAccessException;
 
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -127,7 +128,7 @@ public class RequestCredential {
         }
     }
   */
-    public static RequestCredential getRequestCredential(Long requestCredentialId) {
+    public static RequestCredential getRequestCredential(Long requestCredentialId) throws DataAccessException {
       synchronized(weakRequestCredentialStorage) {
           WeakReference<RequestCredential> o = weakRequestCredentialStorage.get(requestCredentialId);
             //System.out.println("RequestCredential.getRequestCredential: weakRequestCredentialStorage.get("+requestCredentialId+") = "+o);
@@ -179,6 +180,7 @@ public class RequestCredential {
     }
 
     public static RequestCredential getRequestCredential(String credentialName,String role)
+            throws DataAccessException
     {
        //System.out.println("RequestCredential.getRequestCredential("+credentialName+","+role+")");
         synchronized(weakRequestCredentialStorage) {

@@ -14,6 +14,8 @@
 
 package org.dcache.srm.request.sql;
 
+import org.springframework.dao.DataAccessException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -45,9 +47,9 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
 
 
     /** Creates a new instance of BringOnlineFileRequestStorage */
-    public BringOnlineFileRequestStorage(
-    Configuration.DatabaseParameters configuration
-    )  throws IOException, SQLException {
+    public BringOnlineFileRequestStorage(Configuration.DatabaseParameters configuration)
+            throws IOException, DataAccessException
+    {
         super(configuration);
     }
 

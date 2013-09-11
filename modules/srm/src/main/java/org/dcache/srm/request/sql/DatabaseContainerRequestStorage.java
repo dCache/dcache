@@ -10,6 +10,7 @@ import com.google.common.collect.ObjectArrays;
 import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -39,7 +40,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
 
     /** Creates a new instance of DatabaseContainerRequestStorage */
     public DatabaseContainerRequestStorage(Configuration.DatabaseParameters configuration)
-            throws SQLException, IOException
+            throws IOException, DataAccessException
     {
         super(configuration);
     }
@@ -49,15 +50,6 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
         return getTableName()+"_filerequestids";
     }
     **/
-
-    public abstract void dbInit1() throws SQLException;
-
-    @Override
-    protected void _dbInit() throws SQLException {
-        dbInit1();
-
-    }
-
 
     protected abstract C getContainerRequest(
     Connection _con,

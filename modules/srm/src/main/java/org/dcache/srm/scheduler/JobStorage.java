@@ -72,6 +72,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
+import org.springframework.dao.DataAccessException;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
@@ -84,11 +86,11 @@ import org.dcache.srm.request.Job;
  * @author  timur
  */
 public interface JobStorage<J extends Job> {
-    void init() throws SQLException;
-    J getJob(long jobId) throws SQLException;
+    void init() throws DataAccessException;
+    J getJob(long jobId) throws DataAccessException;
     J getJob(long jobId, Connection connection) throws SQLException;
-    Set<J> getJobs(String scheduler) throws SQLException;
-    Set<J> getJobs(String scheduler,State state) throws SQLException;
+    Set<J> getJobs(String scheduler) throws DataAccessException;
+    Set<J> getJobs(String scheduler,State state) throws DataAccessException;
     /**
      *
      * @param job Job to save
@@ -97,14 +99,14 @@ public interface JobStorage<J extends Job> {
      * @throws SQLException
      */
     void saveJob(J job, boolean saveIfMonitoringDisabled)
-            throws SQLException;
+            throws DataAccessException;
 
     boolean isJdbcLogRequestHistoryInDBEnabled();
 
-    Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException;
-    Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException;
-    Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException;
-    Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException;
+    Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException;
+    Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException;
+    Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException;
+    Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException;
 
-    Set<J> getActiveJobs() throws SQLException;
+    Set<J> getActiveJobs() throws DataAccessException;
 }

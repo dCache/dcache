@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
+import org.springframework.dao.DataAccessException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -60,13 +61,13 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
 
 
     @Override
-    public void init() throws SQLException
+    public void init() throws DataAccessException
     {
         storage.init();
     }
 
     @Override
-    public J getJob(long jobId) throws SQLException
+    public J getJob(long jobId) throws DataAccessException
     {
         Job job = map.get(jobId);
         if (job == null) {
@@ -92,19 +93,19 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) throws SQLException
+    public Set<J> getJobs(String scheduler) throws DataAccessException
     {
         return canonicalize(storage.getJobs(scheduler));
     }
 
     @Override
-    public Set<J> getJobs(String scheduler, State state) throws SQLException
+    public Set<J> getJobs(String scheduler, State state) throws DataAccessException
     {
         return canonicalize(storage.getJobs(scheduler, state));
     }
 
     @Override
-    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws SQLException
+    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws DataAccessException
     {
         Job other = map.putIfAbsent(job.getId(), job);
         if (other != null && other != job) {
@@ -120,31 +121,31 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCompletedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestDoneJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestFailedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCanceledJobIds(maxNum);
     }
 
     @Override
-    public Set<J> getActiveJobs() throws SQLException
+    public Set<J> getActiveJobs() throws DataAccessException
     {
         return canonicalize(storage.getActiveJobs());
     }

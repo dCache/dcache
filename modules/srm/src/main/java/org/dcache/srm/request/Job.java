@@ -74,6 +74,7 @@ package org.dcache.srm.request;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -229,7 +230,7 @@ public abstract class Job  {
             boolean isFinalState = this.getState().isFinalState();
             getJobStorage().saveJob(this, isFinalState || force);
             savedInFinalState = isFinalState;
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             // if saving fails we do not want to fail the request
             logger.error("Failed to save SQL request to database: {}", e.toString());
         } catch (RuntimeException e) {
@@ -283,7 +284,7 @@ public abstract class Job  {
                     if (job != null) {
                         return type.cast(job);
                     }
-                } catch (SQLException e){
+                } catch (DataAccessException | SQLException e) {
                     logger.error("Failed to read job", e);
                 }
             }
@@ -291,7 +292,7 @@ public abstract class Job  {
         throw new SRMInvalidRequestException("jobId = " + jobId + " does not correspond to any known job");
     }
 
-    public static <T extends Job> Set<T> getActiveJobs(Class<T> type) throws SQLException
+    public static <T extends Job> Set<T> getActiveJobs(Class<T> type) throws DataAccessException
     {
         JobStorage<T> jobStorage = JobStorageFactory.getJobStorageFactory().getJobStorage(type);
         return (jobStorage == null) ? Collections.<T>emptySet() : jobStorage.getActiveJobs();
@@ -725,7 +726,7 @@ public abstract class Job  {
                 // as we use scheduler id to identify who this job belongs to.
                 try {
                         getJobStorage().saveJob(this,true);
-                }catch (SQLException sqle) {
+                }catch (DataAccessException sqle) {
                     logger.error(sqle.toString());
                 }
             }

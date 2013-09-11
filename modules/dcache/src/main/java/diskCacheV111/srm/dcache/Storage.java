@@ -79,6 +79,7 @@ import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -95,7 +96,6 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -646,7 +646,7 @@ public final class Storage
                 srm.cancelAllLsRequests(sb, pattern);
             }
             return sb.toString();
-        } catch (SQLException | SRMException e) {
+        } catch (DataAccessException | SRMException e) {
             _log.warn("Failure in cancelall: " + e.getMessage());
             return e.toString();
         }
@@ -654,7 +654,7 @@ public final class Storage
     public final static String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>] "+
             "#will list all requests";
     public final static String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>]";
-    public String ac_ls_$_0_1(Args args) throws SQLException, SRMException
+    public String ac_ls_$_0_1(Args args) throws SRMInvalidRequestException, DataAccessException
     {
         boolean get=args.hasOption("get");
         boolean put=args.hasOption("put");
@@ -769,7 +769,8 @@ public final class Storage
             " #will list completed (done, failed or canceled) requests, " +
         "if max_count is not specified, it is set to 50";
     public final static String hh_ls_completed= " [-get] [-put] [-copy] [max_count]";
-    public String ac_ls_completed_$_0_1(Args args) throws Exception{
+    public String ac_ls_completed_$_0_1(Args args) throws DataAccessException
+    {
         boolean get=args.hasOption("get");
         boolean put=args.hasOption("put");
         boolean copy=args.hasOption("copy");
@@ -831,7 +832,7 @@ public final class Storage
             return sb.toString();
         } catch (SRMInvalidRequestException e) {
             return e.getMessage() + "\n";
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             _log.warn("Failure in set job priority: " + e.getMessage());
             return e.toString();
         }
@@ -2843,8 +2844,8 @@ public final class Storage
                 tokenStrings[i] = tokenLongs[i].toString();
             }
             return tokenStrings;
-        } catch (SQLException e) {
-            _log.error("srmGetRequestTokens failed: " + e.getMessage());
+        } catch (DataAccessException e) {
+            _log.error("srmGetRequestTokens failed: {}", e.getMessage());
             throw new SRMException("srmGetRequestTokens failed: " +
                                    e.getMessage(), e);
         }

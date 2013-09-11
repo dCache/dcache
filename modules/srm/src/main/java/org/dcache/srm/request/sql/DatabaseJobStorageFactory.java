@@ -3,10 +3,10 @@ package org.dcache.srm.request.sql;
 import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -62,7 +62,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                    IllegalArgumentException,
                    InvocationTargetException,
                    NoSuchMethodException,
-                   SecurityException, SQLException
+                   SecurityException, DataAccessException
     {
         JobStorage<J> js;
         if (config.isDatabaseEnabled()) {
@@ -77,7 +77,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
         jobStorageMap.put(entityClass, new CanonicalizingJobStorage<>(new SharedMemoryCacheJobStorage<>(js, entityClass), entityClass));
     }
 
-    public DatabaseJobStorageFactory(Configuration config) throws SQLException, IOException
+    public DatabaseJobStorageFactory(Configuration config) throws DataAccessException, IOException
     {
         executor = new ThreadPoolExecutor(
                 config.getJdbcExecutionThreadNum(), config.getJdbcExecutionThreadNum(),
@@ -123,14 +123,14 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                 ReserveSpaceRequest.class,
                 ReserveSpaceRequestStorage.class);
         } catch (InstantiationException e) {
-            Throwables.propagateIfPossible(e.getCause(), SQLException.class, IOException.class);
+            Throwables.propagateIfPossible(e.getCause(), IOException.class);
             throw new RuntimeException("Request persistence initialization failed: " + e.toString(), e);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Request persistence initialization failed: " + e.toString(), e);
         }
     }
 
-    public void init() throws SQLException, IllegalStateTransition, InterruptedException
+    public void init() throws IllegalStateTransition, InterruptedException, DataAccessException
     {
         for (JobStorage<?> jobStorage : jobStorageMap.values()) {
             jobStorage.init();

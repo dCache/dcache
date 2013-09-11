@@ -76,6 +76,7 @@ package org.dcache.srm.request;
 import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 
@@ -197,7 +198,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         return configuration;
     }
 
-    public RequestCredential getCredential() {
+    public RequestCredential getCredential() throws DataAccessException {
          return RequestCredential.getRequestCredential(credentialId);
     }
 

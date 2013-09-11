@@ -79,6 +79,7 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -506,7 +507,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	}
 
 	private void runScriptCopy() throws SRMException, IOException,
-                GSSException
+                GSSException, DataAccessException
         {
 		URI from =getFrom_turl();
 		URI to = getTo_turl();
@@ -852,7 +853,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 				logger.error("Unknown combination of to/from ursl");
 				setStateToFailed("Unknown combination of to/from ursl");
 			}
-		} catch (IllegalStateTransition | IOException | SRMException e) {
+		} catch (IllegalStateTransition | IOException | SRMException | DataAccessException e) {
 			throw new NonFatalJobFailure(e.toString());
                 }
 	}

@@ -1,13 +1,13 @@
 package org.dcache.srm.request.sql;
 
 import com.jolbox.bonecp.BoneCPDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,9 +15,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class JdbcConnectionPool
 {
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(JdbcConnectionPool.class);
-
     private static final int MAX_CONNECTIONS = 50;
 
     private static final List<JdbcConnectionPool> pools = new ArrayList<>();
@@ -27,11 +24,13 @@ public class JdbcConnectionPool
     private final String user;
     private final String pass;
     private final DataSource dataSource;
+    private final PlatformTransactionManager tx;
 
     public static final synchronized JdbcConnectionPool getPool(String jdbcUrl,
                                                                 String jdbcClass,
                                                                 String user,
-                                                                String pass) throws SQLException
+                                                                String pass)
+            throws ClassNotFoundException
     {
         for (JdbcConnectionPool pool : pools) {
             if (pool.jdbcClass.equals(jdbcClass) &&
@@ -49,18 +48,15 @@ public class JdbcConnectionPool
     protected JdbcConnectionPool(String jdbcUrl,
                                  String jdbcClass,
                                  String user,
-                                 String pass) throws SQLException
+                                 String pass)
+            throws ClassNotFoundException
     {
         this.jdbcUrl = checkNotNull(jdbcUrl);
         this.jdbcClass = checkNotNull(jdbcClass);
         this.user = checkNotNull(user);
         this.pass = checkNotNull(pass);
 
-        try {
-            Class.forName(jdbcClass);
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("Cannot initialize JDBC driver: " + jdbcClass);
-        }
+        Class.forName(jdbcClass);
 
         final BoneCPDataSource ds = new BoneCPDataSource();
         ds.setJdbcUrl(jdbcUrl);
@@ -75,6 +71,7 @@ public class JdbcConnectionPool
         ds.setReleaseHelperThreads(3);
 
         dataSource = ds;
+        tx = new DataSourceTransactionManager(dataSource);
 
         Runtime.getRuntime().addShutdownHook(new Thread()
         {
@@ -86,43 +83,14 @@ public class JdbcConnectionPool
         });
     }
 
-    public Connection getConnection() throws SQLException
+    public JdbcTemplate newJdbcTemplate()
     {
-        Connection con = dataSource.getConnection();
-        con.setAutoCommit(false);
-        return con;
+        return new JdbcTemplate(dataSource);
     }
 
-    public void returnFailedConnection(Connection con)
+    public TransactionTemplate newTransactionTemplate()
     {
-        try {
-            con.rollback();
-        } catch (SQLException e) {
-        }
-
-        try {
-            con.close();
-        } catch (SQLException e) {
-            LOGGER.debug("returnFailedConnection() exception: ", e);
-        }
-    }
-
-    /**
-     * should be called every time the connection is not in use anymore
-     *
-     * @param con Connection that is not in use anymore
-     */
-    public void returnConnection(Connection con)
-    {
-        try {
-            con.commit();
-        } catch (SQLException e) {
-        }
-        try {
-            con.close();
-        } catch (SQLException e) {
-            LOGGER.debug("returnConnection() exception: ", e);
-        }
+        return new TransactionTemplate(tx);
     }
 }
 

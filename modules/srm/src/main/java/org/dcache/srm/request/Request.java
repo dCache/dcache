@@ -77,6 +77,7 @@ package org.dcache.srm.request;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -211,7 +212,7 @@ public abstract class Request extends Job {
      */
     private TStatusCode statusCode;
 
-    public RequestCredential getCredential() {
+    public RequestCredential getCredential() throws DataAccessException {
         if(credentialId==null) {
             return null;
         }

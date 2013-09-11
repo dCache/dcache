@@ -16,6 +16,7 @@ package org.dcache.srm.request.sql;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -143,7 +144,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
 
     /** Creates a new instance of BringOnlineRequestStorage */
     public BringOnlineRequestStorage(Configuration.DatabaseParameters configuration)
-            throws SQLException, IOException
+            throws IOException, DataAccessException
     {
         super(configuration);
     }
@@ -154,12 +155,13 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     }
 
     @Override
-    public void dbInit1() throws SQLException {
-             if(reanamed_old_table) {
-                    renameTable(getProtocolsTableName());
-
+    protected void dbInit(boolean clean) throws DataAccessException
+    {
+            super.dbInit(clean);
+            if (droppedOldTable) {
+                    dropTable(getProtocolsTableName());
             }
-           String protocolsTableName = getProtocolsTableName().toLowerCase();
+            String protocolsTableName = getProtocolsTableName().toLowerCase();
             String createProtocolsTable = "CREATE TABLE "+ protocolsTableName+" ( "+
             " PROTOCOL "+stringType+ ","+
             " RequestID "+longType+ ", "+ //forein key

@@ -2,6 +2,7 @@ package org.dcache.srm.scheduler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -33,13 +34,13 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public void init() throws SQLException
+    public void init() throws DataAccessException
     {
         storage.init();
     }
 
     @Override
-    public J getJob(long jobId) throws SQLException
+    public J getJob(long jobId) throws DataAccessException
     {
         return storage.getJob(jobId);
     }
@@ -51,18 +52,18 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) throws SQLException
+    public Set<J> getJobs(String scheduler) throws DataAccessException
     {
         return storage.getJobs(scheduler);
     }
 
     @Override
-    public Set<J> getJobs(String scheduler, State state) throws SQLException
+    public Set<J> getJobs(String scheduler, State state) throws DataAccessException
     {
         return storage.getJobs(scheduler, state);
     }
 
-    public void saveJob(final J job, final boolean saveIfMonitoringDisabled) throws SQLException
+    public void saveJob(final J job, final boolean saveIfMonitoringDisabled)
     {
         if (!saveIfMonitoringDisabled && !isJdbcLogRequestHistoryInDBEnabled()) {
             return;
@@ -79,7 +80,7 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
                                 states.put(job.getId(), UpdateState.PROCESSING);
                                 try {
                                     storage.saveJob(job, saveIfMonitoringDisabled);
-                                } catch (SQLException e) {
+                                } catch (DataAccessException e) {
                                     LOGGER.error("SQL statement failed: {}", e.getMessage());
                                 } catch (Throwable e) {
                                     Thread.currentThread().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
@@ -112,31 +113,31 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCompletedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestDoneJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestFailedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
+    public Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCanceledJobIds(maxNum);
     }
 
     @Override
-    public Set<J> getActiveJobs() throws SQLException
+    public Set<J> getActiveJobs() throws DataAccessException
     {
         return storage.getActiveJobs();
     }

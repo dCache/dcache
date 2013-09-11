@@ -1,5 +1,7 @@
 package org.dcache.srm.request.sql;
 
+import org.springframework.dao.DataAccessException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,7 +28,8 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
 
         private static int ADDITIONAL_FIELDS = 1;
         public LsFileRequestStorage(Configuration.DatabaseParameters configuration)
-                throws IOException, SQLException {
+                throws IOException, DataAccessException
+        {
                 super(configuration);
         }
 

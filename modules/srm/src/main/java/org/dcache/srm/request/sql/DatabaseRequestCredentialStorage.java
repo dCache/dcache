@@ -78,6 +78,11 @@ import org.gridforum.jgss.ExtendedGSSCredential;
 import org.ietf.jgss.GSSCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.datasource.lookup.DataSourceLookupFailureException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -90,11 +95,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Configuration;
 
+import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 
 /**
@@ -111,6 +118,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
    private final String user;
    private final String pass;
    private final Configuration configuration;
+   private final JdbcTemplate jdbcTemplate;
    protected static final String stringType=" VARCHAR(32672)  ";
    protected static final String longType=" BIGINT ";
    protected static final String intType=" INTEGER ";
@@ -119,7 +127,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
    private final String credentialsDirectory;
 
    public DatabaseRequestCredentialStorage(Configuration configuration)
-           throws SQLException, IOException
+           throws IOException, DataAccessException
    {
       this.jdbcUrl = configuration.getJdbcUrl();
       this.jdbcClass = configuration.getJdbcClass();
@@ -127,6 +135,11 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       this.pass = configuration.getJdbcPass();
       this.configuration = configuration;
       this.credentialsDirectory = configuration.getCredentialsDirectory();
+      try {
+          this.jdbcTemplate = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass).newJdbcTemplate();
+      } catch (ClassNotFoundException e) {
+          throw new DataSourceLookupFailureException("Failed to initialize JDBC driver: " + e.getMessage(), e);
+      }
       File dir = new File(credentialsDirectory);
       if(!dir.exists()) {
           if(!dir.mkdir()) {
@@ -157,65 +170,29 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       "credentialexpiration "+ longType+
       " )";
 
-
-   JdbcConnectionPool pool;
-   /**
-    * in case the subclass needs to create/initialize more tables
-    */
-
    private void dbInit()
-   throws SQLException {
-      Connection _con = null;
-
-      try {
-         pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
-         //connect
-         _con = pool.getConnection();
-         _con.setAutoCommit(true);
-
-         //get database info
-         DatabaseMetaData md = _con.getMetaData();
-         String tableNameAsStored =
-             getIdentifierAsStored(md, getTableName());
-         ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null);
-
-         if(!tableRs.next()) {
-            try {
-               // Table does not exist
-               //logger.debug(getTableName()+" does not exits");
-               Statement s = _con.createStatement();
-               logger.debug("dbInit trying "+createRequestCredentialTable);
-               int result = s.executeUpdate(createRequestCredentialTable);
-               s.close();
-            } catch(SQLException sqle) {
-               logger.error(sqle.toString());
-               logger.error("relation could already exist");
-            }
-         }
-         // to be fast
-         _con.setAutoCommit(false);
-         pool.returnConnection(_con);
-         _con =null;
-      } catch (SQLException sqe) {
-         if(_con != null) {
-            pool.returnFailedConnection(_con);
-            _con = null;
-         }
-
-         throw sqe;
-      } catch (Exception ex) {
-         if(_con != null) {
-            pool.returnFailedConnection(_con);
-            _con = null;
-         }
-         logger.error(ex.toString());
-         throw new SQLException(ex.toString());
-      } finally {
-         if(_con != null) {
-            pool.returnFailedConnection(_con);
-         }
-
-      }
+           throws DataAccessException
+   {
+       jdbcTemplate.execute(new ConnectionCallback<Void>()
+       {
+           @Override
+           public Void doInConnection(Connection con) throws SQLException, DataAccessException
+           {
+               //get database info
+               DatabaseMetaData md = con.getMetaData();
+               String tableNameAsStored = getIdentifierAsStored(md, getTableName());
+               try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
+                   if (!tableRs.next()) {
+                       // Table does not exist
+                       try (Statement s = con.createStatement()) {
+                           logger.debug("dbInit trying " + createRequestCredentialTable);
+                           s.executeUpdate(createRequestCredentialTable);
+                       }
+                   }
+               }
+               return null;
+           }
+       });
    }
 
     public static final String INSERT = "INSERT INTO "+requestCredentialTableName +
@@ -223,127 +200,55 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        " VALUES ( ?,?,?,?,?,?,?) ";
 
     public void createRequestCredential(RequestCredential requestCredential) {
-        Connection _con = null;
-        try {
-            GSSCredential credential = requestCredential.getDelegatedCredential();
-            String credentialFileName=null;
-            if(credential != null) {
-                credentialFileName = credentialsDirectory+"/"+
-                    requestCredential.getId();
-                writeCredentialInFile(credential,credentialFileName);
-            }
-            _con = pool.getConnection();
-            int result = insert(_con,
-                                INSERT,
-                                requestCredential.getId(),
-                                requestCredential.getCreationtime(),
-                                requestCredential.getCredentialName(),
-                                requestCredential.getRole(),
-                                requestCredential.getCredential_users(),
-                                credentialFileName,
-                                requestCredential.getDelegatedCredentialExpiration());
-            _con.commit();
+        GSSCredential credential = requestCredential.getDelegatedCredential();
+        String credentialFileName = null;
+        if (credential != null) {
+            credentialFileName = credentialsDirectory + "/" + requestCredential.getId();
+            writeCredentialInFile(credential, credentialFileName);
         }
-        catch (SQLException e) {
-            if (_con!=null) {
-                try {
-                    _con.rollback();
-                }
-                catch(SQLException e1) { }
-                pool.returnFailedConnection(_con);
-                _con = null;
-            }
-        }
-        finally {
-            if (_con!=null) {
-                pool.returnConnection(_con);
-                _con = null;
-            }
-        }
+        jdbcTemplate.update(INSERT,
+                requestCredential.getId(),
+                requestCredential.getCreationtime(),
+                requestCredential.getCredentialName(),
+                requestCredential.getRole(),
+                requestCredential.getCredential_users(),
+                credentialFileName,
+                requestCredential.getDelegatedCredentialExpiration());
     }
 
     public static final String SELECT = "SELECT * FROM "+requestCredentialTableName +
         " WHERE ";
 
-    private RequestCredential getRequestCredentialByCondition(String query,
-                                                              Object ...args) {
-        Connection _con = null;
-        RequestCredential credential = null;
-        ResultSet set = null;
-        PreparedStatement stmt=null;
-        try {
-            _con = pool.getConnection();
-            stmt = prepare(_con, query,args);
-            set = stmt.executeQuery();
-            //
-            // we expect a single record, so the loop below is fine
-            //
-            if(set.next()) {
-                credential = new RequestCredential(set.getLong("id"),
-                                                   set.getLong("creationtime"),
-                                                   set.getString("credentialname"),
-                                                   set.getString("role"),
-                                                   fileNameToGSSCredentilal(set.getString("delegatedcredentials")),
-                                                   set.getLong("credentialexpiration"),
-                                                   this);
-                credential.setSaved(true);
-            }
-         }
-        catch (SQLException e) {
-            if(_con != null) {
-                        if ( set != null ) {
-                            try {
-                                    set.close();
-                            }
-                            catch (SQLException e1) {
-                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
-                            }
+    private RequestCredential getRequestCredentialByCondition(String query, Object ...args)
+            throws DataAccessException
+    {
+        List<RequestCredential> result = jdbcTemplate.query(query, args,
+                new RowMapper<RequestCredential>()
+                {
+                    @Override
+                    public RequestCredential mapRow(ResultSet rs, int rowNum) throws SQLException
+                    {
+                        RequestCredential credential =
+                                new RequestCredential(rs.getLong("id"),
+                                        rs.getLong("creationtime"),
+                                        rs.getString("credentialname"),
+                                        rs.getString("role"),
+                                        fileNameToGSSCredentilal(rs
+                                                .getString("delegatedcredentials")),
+                                        rs.getLong("credentialexpiration"),
+                                        DatabaseRequestCredentialStorage.this);
+                        credential.setSaved(true);
+                        return credential;
                     }
-                    if ( stmt != null ) {
-                            try {
-                                    stmt.close();
-                            }
-                            catch (SQLException e1) {
-                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
-                            }
-                    }
-                pool.returnFailedConnection(_con);
-                _con = null;
-            }
-        }
-        catch (Exception e) {
-            logger.error(e.toString());
-        }
-        finally {
-            if (_con != null) {
-            if ( set != null ) {
-                try {
-                    set.close();
-                }
-                catch (SQLException e1) {
-                    logger.debug("Failed to close ResultSet "+e1.getMessage());
-                }
-            }
-                    if ( stmt != null ) {
-                            try {
-                                    stmt.close();
-                            }
-                            catch (SQLException e1) {
-                                    logger.debug("Failed to close ResultSet "+e1.getMessage());
-                            }
-                    }
-                pool.returnConnection(_con);
-                _con=null;
-            }
-        }
-        return credential;
+                });
+        return getFirst(result, null);
     }
 
     public static final String SELECT_BY_ID = "SELECT * FROM "+requestCredentialTableName +
         " WHERE id=?";
 
     @Override
-    public RequestCredential getRequestCredential(Long requestCredentialId) {
+    public RequestCredential getRequestCredential(Long requestCredentialId) throws DataAccessException {
         return getRequestCredentialByCondition(SELECT_BY_ID, requestCredentialId);
     }
 
@@ -356,7 +261,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
 
    @Override
    public RequestCredential getRequestCredential(String credentialName,
-                                                 String role) {
+                                                 String role) throws DataAccessException {
       if(role == null || role.equalsIgnoreCase("null")) {
           return getRequestCredentialByCondition(SELECT_BY_NAME,credentialName);
       }
@@ -368,53 +273,25 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     private static final String UPDATE = "UPDATE " +requestCredentialTableName +
        " SET creationtime=?, credentialname=?, role=?, " +
        " numberofusers=?, delegatedcredentials=?, credentialexpiration=? where id=? ";
-
    @Override
    public void saveRequestCredential(RequestCredential requestCredential)  {
-      int result = 0;
-      Connection _con = null;
-      try {
-          GSSCredential credential = requestCredential.getDelegatedCredential();
-          String credentialFileName = null;
-          if(credential != null) {
-              credentialFileName = credentialsDirectory+"/"+
-                  requestCredential.getId();
-              writeCredentialInFile(credential,credentialFileName);
-          }
-          _con = pool.getConnection();
-          result=update(_con,UPDATE,
-                        requestCredential.getCreationtime(),
-                        requestCredential.getCredentialName(),
-                        requestCredential.getRole(),
-                        requestCredential.getCredential_users(),
-                        credentialFileName,
-                        requestCredential.getDelegatedCredentialExpiration(),
-                        requestCredential.getId());
-          _con.commit();
-      }
-      catch (SQLException e) {
-          logger.error(e.toString());
-          if (_con!=null) {
-              try {
-                  _con.rollback();
-              }
-              catch(SQLException e1) {
-                  logger.debug("Failed rollback connection "+e1.getMessage());
-              }
-              pool.returnFailedConnection(_con);
-              _con = null;
-          }
-      }
-      finally {
-          if(_con != null) {
-              pool.returnConnection(_con);
-              _con = null;
-          }
-      }
-      if(result == 0) {
-         //logger.debug("update result is 0, calling createRequestCredential()");
-         createRequestCredential(requestCredential);
-      }
+       GSSCredential credential = requestCredential.getDelegatedCredential();
+       String credentialFileName = null;
+       if (credential != null) {
+           credentialFileName = credentialsDirectory + "/" + requestCredential.getId();
+           writeCredentialInFile(credential,credentialFileName);
+       }
+       int result = jdbcTemplate.update(UPDATE,
+               requestCredential.getCreationtime(),
+               requestCredential.getCredentialName(),
+               requestCredential.getRole(),
+               requestCredential.getCredential_users(),
+               credentialFileName,
+               requestCredential.getDelegatedCredentialExpiration(),
+               requestCredential.getId());
+       if (result == 0) {
+           createRequestCredential(requestCredential);
+       }
    }
 
    private void writeCredentialInFile(GSSCredential credential, String credentialFileName) {

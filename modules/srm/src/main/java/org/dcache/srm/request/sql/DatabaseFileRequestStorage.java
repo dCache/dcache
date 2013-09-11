@@ -6,6 +6,8 @@
 
 package org.dcache.srm.request.sql;
 
+import org.springframework.dao.DataAccessException;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -22,18 +24,16 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
 
     /** Creates a new instance of FileRequestStorage */
     public DatabaseFileRequestStorage(Configuration.DatabaseParameters configuration)
-            throws IOException, SQLException
+            throws IOException, DataAccessException
     {
         super(configuration);
     }
 
-    /**
-     * empty emplementations
-     */
     @Override
-    protected void _dbInit() throws SQLException{
-
-	    String columns[] = {
+    protected void dbInit(boolean clean) throws DataAccessException
+    {
+           super.dbInit(clean);
+           String columns[] = {
 		    "REQUESTID"};
 	   createIndex(columns, getTableName().toLowerCase());
     }

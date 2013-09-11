@@ -75,10 +75,10 @@ package org.dcache.srm.request;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 
 import diskCacheV111.srm.RequestFileStatus;
 
@@ -565,7 +565,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             }
             logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
         }
-        catch(SRMException | SQLException | IllegalStateTransition e) {
+        catch(SRMException | DataAccessException | IllegalStateTransition e) {
             throw new FatalJobFailure("cannot prepare to put: " + e.getMessage());
         }
     }

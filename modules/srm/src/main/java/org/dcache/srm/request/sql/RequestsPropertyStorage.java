@@ -74,18 +74,20 @@ package org.dcache.srm.request.sql;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 
 /**
@@ -94,139 +96,77 @@ import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
  * class is preserved and can be connected to.
  * @author  timur
  */
-public class RequestsPropertyStorage extends JobIdGeneratorFactory implements JobIdGenerator {
-
-    private String jdbcUrl;
-    private String jdbcClass;
-    private String user;
-    private String pass;
-    private String nextRequestIdTableName;
-    private static Logger logger = LoggerFactory.getLogger(RequestsPropertyStorage.class);
-    private int nextIntBase;
-    private static int NEXT_INT_STEP=1000;
-    private int nextIntIncrement=NEXT_INT_STEP;
-    private long nextLongBase;
-    private static long NEXT_LONG_STEP=10000;
-    private long nextLongIncrement=NEXT_LONG_STEP;
+public class RequestsPropertyStorage extends JobIdGeneratorFactory implements JobIdGenerator
+{
+    private static final Logger logger = LoggerFactory.getLogger(RequestsPropertyStorage.class);
+    private static final int NEXT_INT_STEP = 1000;
+    private static final long NEXT_LONG_STEP = 10000;
     private static RequestsPropertyStorage requestsPropertyStorage;
+
+    private final String jdbcUrl;
+    private final String jdbcClass;
+    private final String user;
+    private final String pass;
+    private final String nextRequestIdTableName;
+    private final JdbcTemplate jdbcTemplate;
+
+    private int nextIntBase;
+    private int nextIntIncrement = NEXT_INT_STEP;
+    private long nextLongBase;
+    private long nextLongIncrement = NEXT_LONG_STEP;
 
     /** Creates a new instance of RequestsPropertyStorage */
     private RequestsPropertyStorage(  String jdbcUrl,
             String jdbcClass,
             String user,
             String pass,
-            String nextRequestIdTableName) {
+            String nextRequestIdTableName) throws ClassNotFoundException, DataAccessException
+    {
         this.jdbcUrl = jdbcUrl;
         this.jdbcClass = jdbcClass;
         this.user = user;
         this.pass = pass;
         this.nextRequestIdTableName = nextRequestIdTableName;
-        try{
-            dbInit();
+        this.jdbcTemplate = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass).newJdbcTemplate();
 
-        } catch(SQLException sqle){
-            sqle.printStackTrace();
-        }
+        dbInit();
     }
 
-    public void say(String s){
-        logger.debug(" RequestsPropertyStorage: "+s);
-        }
-
-    public void esay(String s){
-        logger.error(" RequestsPropertyStorage: "+s);
-        }
-
-    public void esay(Throwable t){
-        logger.error("RequestsPropertyStorage",t);
-        }
-
-    JdbcConnectionPool pool;
-
     private void dbInit()
-    throws SQLException {
-        Connection _con = null;
-        try {
-            pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
-
-
-            //connect
-            _con = pool.getConnection();
-            _con.setAutoCommit(true);
-
-            //get database info
-            DatabaseMetaData md = _con.getMetaData();
-
-            String tableNameAsStored =
-                getIdentifierAsStored(md, nextRequestIdTableName);
-            ResultSet tableRs =
-                md.getTables(null, null, tableNameAsStored, null);
-
-            //fields to be saved from the  Job object in the database:
-                /*
-                    this.id = id;
-                    this.nextJobId = nextJobId;
-                    this.creationTime = creationTime;
-                    this.lifetime = lifetime;
-                    this.state = state;
-                    this.errorMessage = errorMessage;
-                    this.creator = creator;
-
-                 */
-            if(!tableRs.next()) {
-                try {
-                    String createTable = "CREATE TABLE " + nextRequestIdTableName + "(" +
-                            "NEXTINT INTEGER ,NEXTLONG BIGINT)";
-                    say(nextRequestIdTableName+" does not exits");
-                    Statement s = _con.createStatement();
-                    say("dbInit trying "+createTable);
-                    int result = s.executeUpdate(createTable);
-                    s.close();
-                    String select = "SELECT * FROM "+nextRequestIdTableName;
-                    s = _con.createStatement();
-                    ResultSet set = s.executeQuery(select);
-                    if(!set.next()) {
-                        s.close();
-                        String insert = "INSERT INTO "+ nextRequestIdTableName+ " VALUES ("+Integer.MIN_VALUE+
-                                ", "+Long.MIN_VALUE+")";
-                        //say("dbInit trying "+insert);
-                        s = _con.createStatement();
-                        say("dbInit trying "+insert);
-                        result = s.executeUpdate(insert);
-                        s.close();
-                    } else {
-                        s.close();
-                        say("dbInit set.next() returned nonnull");
+            throws DataAccessException
+    {
+        jdbcTemplate.execute(new ConnectionCallback<Void>()
+        {
+            @Override
+            public Void doInConnection(Connection con)
+                    throws SQLException, DataAccessException
+            {
+                DatabaseMetaData md = con.getMetaData();
+                String tableNameAsStored =
+                        getIdentifierAsStored(md, nextRequestIdTableName);
+                try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
+                    if (!tableRs.next()) {
+                        logger.debug("RequestsPropertyStorage: {} does not exits", nextRequestIdTableName);
+                        try (Statement s = con.createStatement()) {
+                            String createTable =
+                                    "CREATE TABLE " + nextRequestIdTableName + "(NEXTINT INTEGER ,NEXTLONG BIGINT)";
+                            logger.debug("RequestsPropertyStorage: dbInit trying {}", createTable);
+                            s.executeUpdate(createTable);
+                            try (ResultSet set = s
+                                    .executeQuery("SELECT * FROM " + nextRequestIdTableName)) {
+                                if (!set.next()) {
+                                    String insert = "INSERT INTO " + nextRequestIdTableName + " VALUES (" + Integer.MIN_VALUE +
+                                            ", " + Long.MIN_VALUE + ")";
+                                    logger.debug("RequestsPropertyStorage: dbInit trying {}", insert);
+                                    s.executeUpdate(insert);
+                                }
+                            }
+                        }
                     }
-
-
-                } catch(SQLException sqle) {
-                    esay(sqle);
-                    say("relation could already exist");
                 }
+                return null;
             }
-            // to be fast
-            _con.setAutoCommit(false);
-            pool.returnConnection(_con);
-            _con = null;
-        } catch (SQLException sqe) {
-            if(_con != null) {
-                pool.returnFailedConnection(_con);
-                _con = null;
-            }
-            throw sqe;
-        } catch (Exception ex) {
-            if(_con != null) {
-                pool.returnFailedConnection(_con);
-                _con = null;
-            }
-            throw new SQLException(ex.toString());
-        } finally {
-            if(_con != null) {
-                _con.setAutoCommit(false);
-                pool.returnConnection(_con);
-            }
-        }
+        });
     }
 
 
@@ -244,62 +184,35 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     public  int getNextRequestId()  {
         return nextInt();
     }
-    int _nextIntBase;
+
     public synchronized  int nextInt()   {
-        if(nextIntIncrement >= NEXT_INT_STEP) {
-            nextIntIncrement =0;
-            Connection _con = null;
-            try {
-                _con = pool.getConnection();
-                String select_for_update = "SELECT * from "+nextRequestIdTableName+" FOR UPDATE ";
-                Statement s = _con.createStatement();
-                say("nextInt trying "+select_for_update);
-                ResultSet set = s.executeQuery(select_for_update);
-                if(!set.next()) {
-                    s.close();
-                    throw new SQLException("table "+nextRequestIdTableName+" is empty!!!");
-                }
-                nextIntBase = set.getInt(1);
-                s.close();
-                say("nextIntBase is ="+nextIntBase);
-                String increase_nextint = "UPDATE "+nextRequestIdTableName+
-                        " SET NEXTINT=NEXTINT+"+NEXT_INT_STEP;
-                s = _con.createStatement();
-                say("executing statement: "+increase_nextint);
-                int i = s.executeUpdate(increase_nextint);
-                s.close();
-                _con.commit();
-                pool.returnConnection(_con);
-                _con = null;
-            } catch(SQLException e) {
-                e.printStackTrace();
-                try{
-                    _con.rollback();
-                }catch(SQLException e1) {
-                }
-                nextIntBase = _nextIntBase;
-            } finally {
-                if(_con != null) {
-                    pool.returnConnection(_con);
-                }
-
-            }
-            _nextIntBase = nextIntBase+NEXT_INT_STEP;
+        if (nextIntIncrement >= NEXT_INT_STEP) {
+            nextIntBase = jdbcTemplate.execute(
+                    new ConnectionCallback<Integer>()
+                    {
+                        @Override
+                        public Integer doInConnection(Connection con)
+                                throws SQLException, DataAccessException
+                        {
+                            String select_for_update = "SELECT * from "+nextRequestIdTableName+" FOR UPDATE ";
+                            logger.debug("RequestsPropertyStorage: nextInt trying {}", select_for_update);
+                            try (Statement s = con.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+                                 ResultSet set = s.executeQuery(select_for_update)) {
+                                if (!set.next()) {
+                                    throw new SQLException("table " + nextRequestIdTableName + " is empty!!!");
+                                }
+                                int base = set.getInt(1) + NEXT_INT_STEP;
+                                set.updateInt(1, base);
+                                set.updateRow();
+                                return base;
+                            }
+                        }
+                    });
+            nextIntIncrement = 0;
         }
-        int nextInt = nextIntBase +(nextIntIncrement++);
-        say(" return nextInt="+nextInt);
+        int nextInt = nextIntBase + nextIntIncrement++;
+        logger.debug("RequestsPropertyStorage: return nextInt={}", nextInt);
         return nextInt;
-
-
-    }
-
-    private final SimpleDateFormat dateformat =
-            new SimpleDateFormat("yyMMddHHmmssSSSSZ");
-
-    public  String nextUniqueToken() throws SQLException{
-        long nextLong = nextLong();
-        return dateformat.format(new Date())+
-                "-"+nextLong;
     }
 
     @Override
@@ -307,7 +220,6 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
         return nextInt();
     }
 
-    long _nextLongBase;
     /**
      * Generate a next unique long id
      * Databse table is used to preserve the state of the long id generator.
@@ -321,51 +233,33 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
      */
     @Override
     public synchronized long nextLong() {
-        if(nextLongIncrement >= NEXT_LONG_STEP) {
+        if (nextLongIncrement >= NEXT_LONG_STEP) {
+            nextLongBase = jdbcTemplate.execute(
+                    new ConnectionCallback<Long>()
+                    {
+                        @Override
+                        public Long doInConnection(Connection con)
+                                throws SQLException, DataAccessException
+                        {
+                            String select_for_update = "SELECT * FROM " + nextRequestIdTableName + " FOR UPDATE";
+                            logger.debug("RequestsPropertyStorage: nextLong trying {}", select_for_update);
+                            try (Statement s = con.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+                                 ResultSet set = s.executeQuery(select_for_update)) {
+                                if (!set.next()) {
+                                    throw new SQLException("table " + nextRequestIdTableName + " is empty!!!");
+                                }
+                                long base = set.getLong(2) + NEXT_LONG_STEP;
+                                set.updateLong(2, base);
+                                set.updateRow();
+                                return base;
+                            }
+                        }
+                    });
             nextLongIncrement =0;
-            Connection _con = null;
-            String select_for_update = "SELECT * from "+nextRequestIdTableName+" FOR UPDATE ";
-            try {
-                _con = pool.getConnection();
-                Statement s = _con.createStatement();
-                say("nextLong trying "+select_for_update);
-                ResultSet set = s.executeQuery(select_for_update);
-                if(!set.next()) {
-                    s.close();
-                    throw new SQLException("table "+nextRequestIdTableName+" is empty!!!");
-                }
-                nextLongBase = set.getLong(2);
-                s.close();
-                say("nextLongBase is ="+nextLongBase);
-                String increase_nextint = "UPDATE "+nextRequestIdTableName+
-                        " SET NEXTLONG=NEXTLONG+"+NEXT_LONG_STEP;
-                s = _con.createStatement();
-                say("executing statement: "+increase_nextint);
-                int i = s.executeUpdate(increase_nextint);
-                s.close();
-                _con.commit();
-            } catch(SQLException e) {
-                e.printStackTrace();
-                try{
-                    _con.rollback();
-                }catch(Exception e1) {
-
-                }
-                pool.returnFailedConnection(_con);
-                _con = null;
-                nextLongBase = _nextLongBase;
-
-            } finally {
-                if(_con != null) {
-                    pool.returnConnection(_con);
-
-                }
-            }
-            _nextLongBase = nextLongBase+ NEXT_LONG_STEP;
         }
 
-        long nextLong = nextLongBase +(nextLongIncrement++);
-        say(" return nextLong="+nextLong);
+        long nextLong = nextLongBase + nextLongIncrement++;
+        logger.debug("RequestsPropertyStorage: return nextLong={}", nextLong);
         return nextLong;
     }
 
@@ -400,20 +294,17 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
         return this;
     }
 
-        public synchronized static final void initPropertyStorage(String jdbcUrl,
-    String jdbcClass,
-    String user,
-    String pass,
-    String nextRequestIdTableName)  {
-        if(RequestsPropertyStorage.requestsPropertyStorage != null) {
-            throw new IllegalStateException("RequestsPropertyStorage is already initialized");
-            }
-       requestsPropertyStorage  =   new RequestsPropertyStorage(jdbcUrl,jdbcClass,user,pass,
-            nextRequestIdTableName);
-       initJobIdGeneratorFactory(requestsPropertyStorage);
-
+    public static final synchronized void initPropertyStorage(String jdbcUrl,
+                                                              String jdbcClass,
+                                                              String user,
+                                                              String pass,
+                                                              String nextRequestIdTableName)
+            throws DataAccessException, ClassNotFoundException
+    {
+        checkState(RequestsPropertyStorage.requestsPropertyStorage == null,
+                "RequestsPropertyStorage is already initialized");
+        requestsPropertyStorage  =
+                new RequestsPropertyStorage(jdbcUrl,jdbcClass,user,pass,nextRequestIdTableName);
+        initJobIdGeneratorFactory(requestsPropertyStorage);
     }
-
-
-
 }

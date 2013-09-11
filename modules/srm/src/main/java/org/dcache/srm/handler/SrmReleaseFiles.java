@@ -9,10 +9,10 @@ package org.dcache.srm.handler;
 import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -100,9 +100,9 @@ public class SrmReleaseFiles {
             logger.debug(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SQLException sqle) {
-            logger.error(sqle.toString());
-            response = getFailedResponse("sql error "+sqle.getMessage(),
+        } catch(DataAccessException e) {
+            logger.error(e.toString());
+            response = getFailedResponse("sql error "+e.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
         } catch(SRMInvalidRequestException ire) {
             response = getFailedResponse(ire.toString(),
@@ -150,7 +150,7 @@ public class SrmReleaseFiles {
      */
     public SrmReleaseFilesResponse srmReleaseFiles()
         throws SRMException, URISyntaxException, MalformedURIException,
-               SQLException, IllegalStateTransition
+               DataAccessException, IllegalStateTransition
     {
         String requestToken = srmReleaseFilesRequest.getRequestToken();
         URI[] surls;
@@ -276,7 +276,7 @@ public class SrmReleaseFiles {
     }
 
    private SrmReleaseFilesResponse unpinDirectlyBySURLs(URI[] surls)
-       throws SQLException, IllegalStateTransition, SRMException,
+       throws DataAccessException, IllegalStateTransition, SRMException,
               MalformedURIException
    {
         //prepare initial return statuses
@@ -352,7 +352,9 @@ public class SrmReleaseFiles {
 
     private void releaseFileRequestsDirectlyBySURLs(URI[] surls,
         Map<URI,TSURLReturnStatus> surlsMap)
-            throws SQLException, IllegalStateTransition, SRMException
+            throws DataAccessException,
+                   IllegalStateTransition,
+                   SRMException
    {
         Set<BringOnlineFileRequest> bofrsToRelease =
             findBringOnlineFileRequestBySURLs(surls);
@@ -406,7 +408,7 @@ public class SrmReleaseFiles {
     }
 
     private Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls)
-            throws SQLException
+            throws DataAccessException
     {
         Collection<URI> surlList = (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
         Set<BringOnlineFileRequest> requests = new HashSet<>();
@@ -418,7 +420,7 @@ public class SrmReleaseFiles {
         return requests;
     }
 
-    private Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls) throws SQLException
+    private Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls) throws DataAccessException
     {
         Collection<URI> surlList = (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
         Set<GetFileRequest> requests = new HashSet<>();
