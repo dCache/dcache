@@ -23,16 +23,9 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/src/main/sbin</directory>
-            <outputDirectory>usr/sbin</outputDirectory>
+            <directory>${project.basedir}/src/main/lib</directory>
+            <outputDirectory>usr/share/srm/lib</outputDirectory>
             <fileMode>775</fileMode>
-            <excludes>
-                <exclude>make_release.sh</exclude>
-                <exclude>sdn</exclude>
-                <exclude>make-srmcp-rpm</exclude>
-                <exclude>timeout.sh</exclude>
-                <exclude>f-srmcp-prepare-and-make-in-user-space</exclude>
-            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/src/main/conf</directory>
