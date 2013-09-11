@@ -26,7 +26,7 @@ import org.dcache.services.httpd.util.StandardHttpRequest;
  */
 public class ContextHandler extends AbstractHandler {
 
-    private String specificName;
+    private final String specificName;
     private final Map<String, Object> context;
 
     public ContextHandler(String specificName, Map<String, Object> context) {
@@ -43,25 +43,23 @@ public class ContextHandler extends AbstractHandler {
             final HttpRequest proxy = new StandardHttpRequest(request, response);
             String html;
             final String[] tokens = proxy.getRequestTokens();
-            if ((tokens.length > 1) && (tokens[1].equals("index.html"))) {
+            if ((tokens.length < 2) || tokens[1].equals("index.html")) {
                 html = createContextDirectory();
             } else {
-                if (tokens.length > 1) {
-                    final String contextName = tokens[1];
-                    if (!contextName.startsWith(specificName)) {
-                        throw new HttpException(HttpServletResponse.SC_FORBIDDEN,
+                if(!specificName.equals("*") && !specificName.equals(tokens[1])) {
+                    throw new HttpException(HttpServletResponse.SC_FORBIDDEN,
                                                 "Forbidden");
-                    }
-                    specificName = contextName;
                 }
-                html = (String) context.get(specificName);
+                Object value = context.get(tokens[1]);
+                if (value == null) {
+                    throw new OnErrorException();
+                }
+                html = String.valueOf(value);
             }
-            if (html == null) {
-                throw new OnErrorException();
-            } else {
-                proxy.getPrintWriter().println(html);
-                proxy.getPrintWriter().flush();
-            }
+
+            proxy.getPrintWriter().println(html);
+            proxy.getPrintWriter().flush();
+
         } catch (final Exception t) {
             throw new ServletException("ContextHandler", t);
         }

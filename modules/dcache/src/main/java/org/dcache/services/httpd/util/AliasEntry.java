@@ -115,10 +115,6 @@ public class AliasEntry {
                                 + specific + ")";
                 break;
             case CONTEXT:
-                final int pos = specific.indexOf("*");
-                if (pos > -1) {
-                    specific = specific.substring(0, pos);
-                }
                 handler = new ContextHandler(specific, cell.getDomainContext());
                 entry = new AliasEntry(alias, aliasType, handler, specific);
                 entry.setOnError(args.getOpt("onError"));
