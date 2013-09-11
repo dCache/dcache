@@ -175,7 +175,7 @@ public class SrmExtendFileLifeTime {
                     TStatusCode.SRM_INVALID_REQUEST);
         }
 
-        ContainerRequest containerRequest = Job.getJob(requestId,
+        ContainerRequest<?> containerRequest = Job.getJob(requestId,
                 ContainerRequest.class);
         containerRequest.applyJdc();
 
@@ -203,7 +203,7 @@ public class SrmExtendFileLifeTime {
         for(int i = 0; i<len; ++i) {
             surlStatus[i] = new TSURLLifetimeReturnStatus();
             surlStatus[i].setSurl(surls[i]);
-            FileRequest fileRequest;
+            FileRequest<?> fileRequest;
 
             try {
                 fileRequest =

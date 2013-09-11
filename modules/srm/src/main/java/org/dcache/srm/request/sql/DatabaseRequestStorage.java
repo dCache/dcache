@@ -16,9 +16,7 @@ import java.util.Set;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMUserPersistenceManager;
-import org.dcache.srm.request.Job;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
@@ -27,7 +25,7 @@ import org.dcache.srm.util.Configuration;
  *
  * @author timur
  */
-public abstract class DatabaseRequestStorage extends DatabaseJobStorage implements RequestStorage{
+public abstract class DatabaseRequestStorage<R extends Request> extends DatabaseJobStorage<R> {
     SRMUserPersistenceManager srmUserPersistenceManager;
     /** Creates a new instance of DatabaseRequestStorage */
     public DatabaseRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
@@ -61,7 +59,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
                 getRequestCreateTableFields();
     }
 
-    protected abstract Request getRequest(
+    protected abstract R getRequest(
             Connection _con,
             Long ID,
             Long NEXTJOBID,
@@ -85,7 +83,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             int next_index)throws SQLException;
 
     @Override
-    protected final Job
+    protected final R
     getJob(
             Connection _con,
             Long ID,
@@ -135,46 +133,6 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
     }
     private static int ADDITIONAL_FIELDS_NUM=7;
 
-    public abstract  void getCreateList(Request r,StringBuffer sb);
-
-    public final void getCreateList(Job job, StringBuffer sb) {
-
-        if(job == null || !(job instanceof Request)) {
-            throw new IllegalArgumentException("job is not Request" );
-        }
-        Request r = (Request)job;
-
-        sb.append(", ").append(r.getCredentialId()).append(" ");
-        sb.append(", ").append(r.getRetryDeltaTime());
-        sb.append(", ").append(r.isShould_updateretryDeltaTime() ? 1 : 0);
-        String DESCRIPTION = r.getDescription();
-        if(DESCRIPTION == null) {
-            sb.append( ", NULL ");
-        }
-        else {
-            sb.append(", '").append(DESCRIPTION).append('\'');
-        }
-        String CLIENTHOST = r.getClient_host();
-        if(CLIENTHOST == null) {
-            sb.append( ", NULL ");
-        }
-        else {
-            sb.append(", '").append(CLIENTHOST).append('\'');
-        }
-        String STATUSCODE = r.getStatusCodeString();
-        if(STATUSCODE == null) {
-            sb.append( ", NULL ");
-        }
-        else {
-            sb.append(", '").append(STATUSCODE).append('\'');
-        }
-        sb.append(", ").append(
-                r.getUser().getId()
-                ).append(" ");
-        getCreateList(r,sb);
-
-    }
-
     public Set<Long> getActiveRequestIds(String schedulerid)  throws SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
                 "' AND STATE !="+State.DONE.getStateId()+
@@ -198,7 +156,8 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         return getJobIdsByCondition(condition);
     }
 
-    public Set<Long> getLatestCompletedRequestIds(int maxNum)  throws SQLException {
+    @Override
+    public Set<Long> getLatestCompletedJobIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition(
                 " STATE ="+State.DONE.getStateId()+
                 " OR STATE ="+State.CANCELED.getStateId()+
@@ -207,19 +166,22 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
                 " LIMIT "+maxNum+" ");
     }
 
-    public Set<Long> getLatestDoneRequestIds(int maxNum)  throws SQLException {
+    @Override
+    public Set<Long> getLatestDoneJobIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition("STATE ="+State.DONE.getStateId()+
                 " ORDERED BY ID"+
                 " LIMIT "+maxNum+" ");
     }
 
-    public Set<Long> getLatestFailedRequestIds(int maxNum)  throws SQLException {
+    @Override
+    public Set<Long> getLatestFailedJobIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition("STATE !="+State.FAILED.getStateId()+
                 " ORDERED BY ID"+
                 " LIMIT "+maxNum+" ");
     }
 
-    public Set<Long> getLatestCanceledRequestIds(int maxNum)  throws SQLException {
+    @Override
+    public Set<Long> getLatestCanceledJobIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition("STATE != "+State.CANCELED.getStateId()+
                 " ORDERED BY ID"+
                 " LIMIT "+maxNum+" ");

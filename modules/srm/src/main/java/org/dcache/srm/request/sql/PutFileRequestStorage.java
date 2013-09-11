@@ -11,7 +11,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.util.Configuration;
@@ -22,7 +21,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
  *
  * @author  timur
  */
-public class PutFileRequestStorage extends DatabaseFileRequestStorage {
+public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileRequest> {
     public static final String TABLE_NAME="putfilerequests";
 
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
@@ -165,7 +164,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
     }
 
     @Override
-    protected FileRequest getFileRequest(
+    protected PutFileRequest getFileRequest(
     Connection _con,
     Long ID,
     Long NEXTJOBID,

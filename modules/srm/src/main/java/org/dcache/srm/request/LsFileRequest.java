@@ -44,7 +44,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TUserPermission;
 
-public final class LsFileRequest extends FileRequest {
+public final class LsFileRequest extends FileRequest<LsRequest> {
         private static final Logger logger =
                 LoggerFactory.getLogger(LsFileRequest.class);
         private static final String SFN_STRING="SFN=";
@@ -163,7 +163,7 @@ public final class LsFileRequest extends FileRequest {
         @Override
         public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
                 try {
-                        LsRequest parent = (LsRequest)getRequest();
+                        LsRequest parent = getContainerRequest();
                         long t0=0;
                         if (logger.isDebugEnabled()){
                                 t0=System.currentTimeMillis();
@@ -190,7 +190,7 @@ public final class LsFileRequest extends FileRequest {
                                 logger.debug("LsFileRequest.run(), TOOK "+(System.currentTimeMillis()-t0));
                         }
                         try {
-                                getRequest().resetRetryDeltaTime();
+                                getContainerRequest().resetRetryDeltaTime();
                         }
                         catch(SRMInvalidRequestException ire) {
                                 logger.error(ire.toString());
@@ -297,7 +297,7 @@ public final class LsFileRequest extends FileRequest {
                 if(remainingLifetime >= newLifetime) {
                         return remainingLifetime;
                 }
-                long requestLifetime = getRequest().extendLifetimeMillis(newLifetime);
+                long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
                 return requestLifetime;
         }
 
@@ -321,7 +321,7 @@ public final class LsFileRequest extends FileRequest {
                                                                  fmd,
                                                                  depth,
                                                                  longFormat);
-                if(!((LsRequest)getRequest()).increaseResultsNumAndContinue()) {
+                if(!getContainerRequest().increaseResultsNumAndContinue()) {
                         return aMetaDataPathDetail;
                 }
                 if (fmd.isDirectory && depth< recursionDepth) {
@@ -370,7 +370,7 @@ public final class LsFileRequest extends FileRequest {
                                                    longFormat,
                                                    (int) offset,
                                                    (int) count);
-                ((LsRequest)getRequest()).setCounter(offset);
+                getContainerRequest().setCounter(offset);
                 List<TMetaDataPathDetail> metadataPathDetailList =
                         new LinkedList<>();
                 for (FileMetaData md : directoryList) {
@@ -380,10 +380,10 @@ public final class LsFileRequest extends FileRequest {
                                                                          md,
                                                                          1,
                                                                          longFormat);
-                        if (!((LsRequest)getRequest()).shouldSkipThisRecord()) {
+                        if (!getContainerRequest().shouldSkipThisRecord()) {
                                 metadataPathDetailList.add(dirMetaDataPathDetail);
                                 try {
-                                        if(!((LsRequest)getRequest()).increaseResultsNumAndContinue()) {
+                                        if(!getContainerRequest().increaseResultsNumAndContinue()) {
                                                 break;
                                         }
                                 }
@@ -396,7 +396,7 @@ public final class LsFileRequest extends FileRequest {
                         //
                         // increment global entries counter
                         //
-                        ((LsRequest)getRequest()).incrementGlobalEntryCounter();
+                        getContainerRequest().incrementGlobalEntryCounter();
                 }
                 metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList
                         .toArray(new TMetaDataPathDetail[metadataPathDetailList
@@ -469,7 +469,7 @@ public final class LsFileRequest extends FileRequest {
                         }
                         else {
                                 FileMetaData fileMetaData=md;
-                                if (!((LsRequest)getRequest()).shouldSkipThisRecord()) {
+                                if (!getContainerRequest().shouldSkipThisRecord()) {
                                         if (longFormat) {
                                                 fileMetaData = getStorage().getFileMetaData(getUser(),
                                                                                             subpath,
@@ -489,10 +489,10 @@ public final class LsFileRequest extends FileRequest {
                                                                                                        false);
                                 }
                         }
-                        if (!((LsRequest)getRequest()).shouldSkipThisRecord()) {
+                        if (!getContainerRequest().shouldSkipThisRecord()) {
                                 metadataPathDetailList.add(dirMetaDataPathDetail);
                                 try {
-                                        if(!((LsRequest)getRequest()).increaseResultsNumAndContinue()) {
+                                        if(!getContainerRequest().increaseResultsNumAndContinue()) {
                                                 break;
                                         }
                                 }
@@ -505,7 +505,7 @@ public final class LsFileRequest extends FileRequest {
                         //
                         // increment global entries counter
                         //
-                        ((LsRequest)getRequest()).incrementGlobalEntryCounter();
+                        getContainerRequest().incrementGlobalEntryCounter();
                         if (md.isDirectory) {
                                 try {
                                         getRecursiveMetaDataPathDetail(dirMetaDataPathDetail,

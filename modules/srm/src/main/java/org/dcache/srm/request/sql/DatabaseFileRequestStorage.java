@@ -12,7 +12,6 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
@@ -20,7 +19,7 @@ import org.dcache.srm.util.Configuration;
  *
  * @author  timur
  */
-public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
+public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> extends DatabaseJobStorage<F>  {
 
     /** Creates a new instance of FileRequestStorage */
     public DatabaseFileRequestStorage
@@ -58,7 +57,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
 
     private static int ADDITIONAL_FIELDS_NUM=3;
 
-    protected abstract FileRequest getFileRequest(
+    protected abstract F getFileRequest(
     Connection _con,
     Long ID,
     Long NEXTJOBID,
@@ -78,7 +77,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     int next_index)throws SQLException;
 
     @Override
-    protected Job
+    protected F
     getJob(
     Connection _con,
     Long ID,

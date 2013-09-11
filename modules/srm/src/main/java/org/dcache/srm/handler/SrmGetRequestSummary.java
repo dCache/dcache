@@ -129,7 +129,7 @@ public class SrmGetRequestSummary {
             String requestToken = requestTokens[i];
             try {
                 requestIds[i] = new Long(requestToken);
-                ContainerRequest request = Job.getJob(requestIds[i], ContainerRequest.class);
+                ContainerRequest<?> request = Job.getJob(requestIds[i], ContainerRequest.class);
 
                 try (JDC ignored = request.applyJdc()) {
                     // FIXME we do this to make the srm update the status of the request if it changed

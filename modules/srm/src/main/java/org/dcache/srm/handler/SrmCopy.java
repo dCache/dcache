@@ -24,7 +24,6 @@ import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMProtocol;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Configuration;
@@ -168,7 +167,7 @@ public class SrmCopy {
         }
 
         try {
-            ContainerRequest r = new CopyRequest(
+            CopyRequest r = new CopyRequest(
                     user,
                     credential.getId(),
                     from_urls,
