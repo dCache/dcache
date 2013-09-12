@@ -66,6 +66,11 @@ public class FileAttributes implements Serializable {
     private long _size;
 
     /**
+     * file's attribute change time
+     */
+    private long _ctime;
+
+    /**
      * file's creation time
      */
     private long _creationTime;
@@ -220,6 +225,16 @@ public class FileAttributes implements Serializable {
     }
 
     /**
+     * Get file's attribute change time.
+     *
+     * @return time in milliseconds since 1 of January 1970 00:00.00
+     */
+    public long getChangeTime() {
+        guard(CHANGE_TIME);
+        return _ctime;
+    }
+
+    /**
      * Get file's creation time.
      * @return time in milliseconds since 1 of January 1970 00:00.00
      */
@@ -305,6 +320,11 @@ public class FileAttributes implements Serializable {
         _mode = mode;
     }
 
+    public void setChangeTime(long ctime) {
+        define(CHANGE_TIME);
+        _ctime = ctime;
+    }
+
     public void setCreationTime(long creationTime) {
         define(CREATION_TIME);
         _creationTime = creationTime;
@@ -369,6 +389,7 @@ public class FileAttributes implements Serializable {
                 .add("defined", _definedAttributes)
                 .add("acl", _acl)
                 .add("size", _size)
+                .add("ctime", _ctime)
                 .add("creationTime", _creationTime)
                 .add("atime", _atime)
                 .add("mtime", _mtime)

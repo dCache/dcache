@@ -677,6 +677,10 @@ public class ChimeraNameSpaceProvider
                 stat = inode.statCache();
                 attributes.setSize(stat.getSize());
                 break;
+            case CHANGE_TIME:
+                stat = inode.statCache();
+                attributes.setChangeTime(stat.getCTime());
+                break;
             case CREATION_TIME:
                 stat = inode.statCache();
                 attributes.setCreationTime(stat.getCTime());

@@ -12,6 +12,7 @@ public enum FileAttribute {
     ACCESS_TIME,
     ACL,
     CHECKSUM,
+    CHANGE_TIME,
     CREATION_TIME,
     FLAGS,
     HSM,
