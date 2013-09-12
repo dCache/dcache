@@ -78,9 +78,12 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.sql.DataSource;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -107,10 +110,6 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     private static final long NEXT_LONG_STEP = 10000;
     private static RequestsPropertyStorage requestsPropertyStorage;
 
-    private final String jdbcUrl;
-    private final String jdbcClass;
-    private final String user;
-    private final String pass;
     private final String nextRequestIdTableName;
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate transactionTemplate;
@@ -121,20 +120,13 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     private long nextLongIncrement = NEXT_LONG_STEP;
 
     /** Creates a new instance of RequestsPropertyStorage */
-    private RequestsPropertyStorage(  String jdbcUrl,
-            String jdbcClass,
-            String user,
-            String pass,
-            String nextRequestIdTableName) throws ClassNotFoundException, DataAccessException
+    private RequestsPropertyStorage(PlatformTransactionManager transactionManager,
+                                    DataSource dataSource, String nextRequestIdTableName)
+            throws DataAccessException
     {
-        this.jdbcUrl = jdbcUrl;
-        this.jdbcClass = jdbcClass;
-        this.user = user;
-        this.pass = pass;
         this.nextRequestIdTableName = nextRequestIdTableName;
-        JdbcConnectionPool pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
-        this.jdbcTemplate = pool.newJdbcTemplate();
-        this.transactionTemplate = pool.newTransactionTemplate();
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
 
         dbInit();
     }
@@ -258,47 +250,18 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     }
 
     @Override
-    public boolean equals(Object o) {
-        if( this == o) {
-            return true;
-        }
-
-        if(o == null || !(o instanceof RequestsPropertyStorage)) {
-            return false;
-        }
-        RequestsPropertyStorage rps = (RequestsPropertyStorage)o;
-        return rps.jdbcClass.equals(jdbcClass) &&
-        rps.jdbcUrl.equals(jdbcUrl) &&
-        rps.pass.equals(pass) &&
-        rps.user.equals(user) &&
-        rps.nextRequestIdTableName.equals(nextRequestIdTableName);
-    }
-
-    @Override
-    public int hashCode() {
-        return jdbcClass.hashCode() ^
-        jdbcUrl.hashCode() ^
-        pass.hashCode() ^
-        user.hashCode() ^
-        nextRequestIdTableName.hashCode();
-    }
-
-    @Override
     public JobIdGenerator getJobIdGenerator() {
         return this;
     }
 
-    public static final synchronized void initPropertyStorage(String jdbcUrl,
-                                                              String jdbcClass,
-                                                              String user,
-                                                              String pass,
-                                                              String nextRequestIdTableName)
-            throws DataAccessException, ClassNotFoundException
+    public static final synchronized void initPropertyStorage(
+            PlatformTransactionManager transactionManager, DataSource dataSource, String nextRequestIdTableName)
+            throws DataAccessException
     {
         checkState(RequestsPropertyStorage.requestsPropertyStorage == null,
                 "RequestsPropertyStorage is already initialized");
         requestsPropertyStorage  =
-                new RequestsPropertyStorage(jdbcUrl,jdbcClass,user,pass,nextRequestIdTableName);
+                new RequestsPropertyStorage(transactionManager, dataSource, nextRequestIdTableName);
         initJobIdGeneratorFactory(requestsPropertyStorage);
     }
 }

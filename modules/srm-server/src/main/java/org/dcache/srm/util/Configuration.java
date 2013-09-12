@@ -75,12 +75,14 @@ COPYRIGHT STATUS:
 package org.dcache.srm.util;
 
 import com.google.common.base.Strings;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
+import javax.sql.DataSource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -233,11 +235,6 @@ public class Configuration {
     private boolean useFtpForSrmCopy=true;
     private boolean recursiveDirectoryCreation=false;
     private boolean advisoryDelete=false;
-    private String jdbcUrl;
-    private String jdbcClass;
-    private String jdbcUser;
-    private String jdbcPass;
-    private String jdbcPwdfile;
     private String nextRequestIdStorageTable = "srmnextrequestid";
     private boolean reserve_space_implicitely;
     private boolean space_reservation_strict;
@@ -262,6 +259,8 @@ public class Configuration {
     private String counterRrdDirectory = null;
     private String gaugeRrdDirectory = null;
     private String clientTransport = Transport.GSI.name();
+    private DataSource dataSource;
+    private PlatformTransactionManager transactionManager;
 
     private Map<String,DatabaseParameters> databaseParameters =
         new HashMap<>();
@@ -525,16 +524,6 @@ public class Configuration {
                 "recursiveDirectoryCreation");
         put(document,root,"advisoryDelete", Boolean.toString(advisoryDelete),
                 "advisoryDelete");
-        put(document,root,"jdbcUrl",jdbcUrl ,
-                "jdbcUrl");
-        put(document,root,"jdbcClass",jdbcClass ,
-                "jdbcClass");
-        put(document,root,"jdbcUser", jdbcUser,
-                "jdbcUser");
-        put(document,root,"jdbcPass", jdbcPass,
-                "jdbcPass");
-        put(document,root,"jdbcPwdfile", jdbcPwdfile,
-                "jdbcPwdfile");
         put(document,root,"nextRequestIdStorageTable", nextRequestIdStorageTable,
                 "nextRequestIdStorageTable");
 
@@ -550,7 +539,6 @@ public class Configuration {
                 XML_LABEL_TRANSPORT_CLIENT,
                 clientTransport,
                 "transport to use when connecting to other SRM instances");
-
     }
 
 
@@ -741,21 +729,6 @@ public class Configuration {
             break;
         case "advisoryDelete":
             advisoryDelete = Boolean.valueOf(value);
-            break;
-        case "jdbcUrl":
-            jdbcUrl = value;
-            break;
-        case "jdbcClass":
-            jdbcClass = value;
-            break;
-        case "jdbcUser":
-            jdbcUser = value;
-            break;
-        case "jdbcPass":
-            jdbcPass = value;
-            break;
-        case "jdbcPwdfile":
-            jdbcPwdfile = value;
             break;
         case "nextRequestIdStorageTable":
             nextRequestIdStorageTable = value;
@@ -1090,9 +1063,6 @@ public class Configuration {
         sb.append("\n\tuseHttpForSrmCopy=").append(this.useHttpForSrmCopy);
         sb.append("\n\tuseDcapForSrmCopy=").append(this.useDcapForSrmCopy);
         sb.append("\n\tuseFtpForSrmCopy=").append(this.useFtpForSrmCopy);
-        sb.append("\n\tjdbcUrl=").append(this.jdbcUrl);
-        sb.append("\n\tjdbcClass=").append(this.jdbcClass);
-        sb.append("\n\tjdbcUser=").append(this.jdbcUser);
         sb.append("\n\t\t *** GetRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.getLifetime);
         sb.append("\n\t\t max thread queue size =").append(this.getReqTQueueSize);
@@ -1355,91 +1325,23 @@ public class Configuration {
         this.advisoryDelete = advisoryDelete;
     }
 
-    /**
-     * Getter for property jdbcUrl.
-     * @return Value of property jdbcUrl.
-     */
-    public String getJdbcUrl() {
-        return jdbcUrl;
+    public void setDataSource(DataSource ds) {
+        this.dataSource = ds;
     }
 
-    /**
-     * Setter for property jdbcUrl.
-     * @param jdbcUrl New value of property jdbcUrl.
-     */
-    public void setJdbcUrl(String jdbcUrl) {
-        this.jdbcUrl = jdbcUrl;
+    public DataSource getDataSource()
+    {
+        return dataSource;
     }
 
-    /**
-     * Getter for property jdbcClass.
-     * @return Value of property jdbcClass.
-     */
-    public String getJdbcClass() {
-        return jdbcClass;
+    public void setTransactionManager(PlatformTransactionManager transactionManager)
+    {
+        this.transactionManager = transactionManager;
     }
 
-    /**
-     * Setter for property jdbcClass.
-     * @param jdbcClass New value of property jdbcClass.
-     */
-    public void setJdbcClass(String jdbcClass) {
-        this.jdbcClass = jdbcClass;
-    }
-
-    /**
-     * Getter for property user.
-     * @return Value of property user.
-     */
-    public String getJdbcUser() {
-        return jdbcUser;
-    }
-
-    /**
-     * Setter for property user.
-     * @param user New value of property user.
-     */
-    public void setJdbcUser(String user) {
-        this.jdbcUser = user;
-    }
-
-    /**
-     * Getter for property pass.
-     * @return Value of property pass.
-     */
-    public String getJdbcPass() throws IOException {
-        if (this.jdbcPwdfile==null) {
-            return jdbcPass;
-        } else if (this.jdbcPwdfile.equals("")) {
-            return jdbcPass;
-        } else {
-            Pgpass pgpass = new Pgpass(jdbcPwdfile);      //VP
-            return pgpass.getPgpass(jdbcUrl, jdbcUser);   //VP
-        }
-    }
-
-    /**
-     * Setter for property pass.
-     * @param pass New value of property pass.
-     */
-    public void setJdbcPass(String pass) {
-        this.jdbcPass = pass;
-    }
-
-    /**
-     * Getter for property pwdfile.
-     * @return Value of property pwdfile.
-     */
-    public String getJdbcPwdfile() {
-        return jdbcPwdfile;
-    }
-
-    /**
-     * Setter for property pwdfile.
-     * @param name New value of property pwdfile.
-     */
-    public void setJdbcPwdfile(String name) {
-        this.jdbcPwdfile = name;
+    public PlatformTransactionManager getTransactionManager()
+    {
+        return transactionManager;
     }
 
     /**
@@ -2510,22 +2412,6 @@ public class Configuration {
             cleanPendingRequestsOnRestart = value;
         }
 
-        public String getJdbcPass() throws IOException {
-            return Configuration.this.getJdbcPass();
-        }
-
-        public String getJdbcUser() {
-            return Configuration.this.getJdbcUser();
-        }
-
-        public String getJdbcClass() {
-            return Configuration.this.getJdbcClass();
-        }
-
-        public String getJdbcUrl() {
-            return Configuration.this.getJdbcUrl();
-        }
-
         public SRMUserPersistenceManager getSrmUserPersistenceManager() {
             return Configuration.this.getSrmUserPersistenceManager();
         }
@@ -2541,6 +2427,16 @@ public class Configuration {
             sb.append("\n\t\tkeepRequestHistoryPeriod=").append(keepRequestHistoryPeriod).append(" days");
             sb.append("\n\t\texpiredRequestRemovalPeriod=").append(expiredRequestRemovalPeriod).append(" seconds");
             return sb.toString();
+        }
+
+        public DataSource getDataSource()
+        {
+            return Configuration.this.getDataSource();
+        }
+
+        public PlatformTransactionManager getTransactionManager()
+        {
+            return Configuration.this.getTransactionManager();
         }
     }
 }

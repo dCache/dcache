@@ -2,8 +2,10 @@
 package diskCacheV111.services;
 
 import com.google.common.base.Strings;
+import com.jolbox.bonecp.BoneCPDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
@@ -122,15 +124,9 @@ public abstract class TransferManager extends AbstractCell
 
 		try {
 			if ( _jdbcUrl != null && _jdbcDriver != null && _user != null && _pass != null ) {
-                                try {
-                                        RequestsPropertyStorage.initPropertyStorage(_jdbcUrl, _jdbcDriver, _user, _pass, "srmnextrequestid");
-                                } catch (IllegalStateException ise){
-                                        // already initialized
-                                }
-                                idGenerator = JobIdGeneratorFactory.
-                                        getJobIdGeneratorFactory().getJobIdGenerator();
+                            initIdGenerator();
 			} else {
-				idGenerator=null;
+                            idGenerator=null;
 			}
 		} catch (Exception e) {
 			log.error("Failed to initialize Data Base connection to generate nextTransferId using default values");
@@ -201,7 +197,31 @@ public abstract class TransferManager extends AbstractCell
 		_poolMgrPath = new CellPath( _poolManager ) ;
 	}
 
-        @Override
+    private void initIdGenerator()
+    {
+        try {
+            final BoneCPDataSource ds = new BoneCPDataSource();
+            ds.setDriverClass(_jdbcDriver);
+            ds.setJdbcUrl(_jdbcUrl);
+            ds.setUsername(_user);
+            ds.setPassword(_pass);
+            ds.setIdleConnectionTestPeriodInMinutes(60);
+            ds.setIdleMaxAgeInMinutes(240);
+            ds.setMaxConnectionsPerPartition(50);
+            ds.setPartitionCount(1);
+            ds.setAcquireIncrement(5);
+            ds.setStatementsCacheSize(100);
+
+            RequestsPropertyStorage.initPropertyStorage(
+                    new DataSourceTransactionManager(ds), ds, "srmnextrequestid");
+        } catch (IllegalStateException ise){
+                // already initialized
+        }
+        idGenerator = JobIdGeneratorFactory.
+                getJobIdGeneratorFactory().getJobIdGenerator();
+    }
+
+    @Override
 	public void getInfo(PrintWriter pw)
         {
 		pw.printf("    %s\n", getClass().getName());
@@ -322,13 +342,7 @@ public abstract class TransferManager extends AbstractCell
 			return "database connection is already initialized\n";
 		}
 		try {
-                        try {
-                                RequestsPropertyStorage.initPropertyStorage(_jdbcUrl, _jdbcDriver, _user, _pass, "srmnextrequestid");
-                        } catch (IllegalStateException ise){
-                                // already initialized
-                        }
-                        idGenerator = RequestsPropertyStorage.
-                                getJobIdGeneratorFactory().getJobIdGenerator();
+                    initIdGenerator();
 		} catch (Exception e) {
 			log.error("Failed to initialize Data Base connection to generate nextTransferId\n");
 			idGenerator=null;

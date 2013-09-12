@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -40,7 +39,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
 
     /** Creates a new instance of DatabaseContainerRequestStorage */
     public DatabaseContainerRequestStorage(Configuration.DatabaseParameters configuration)
-            throws IOException, DataAccessException
+            throws DataAccessException
     {
         super(configuration);
     }

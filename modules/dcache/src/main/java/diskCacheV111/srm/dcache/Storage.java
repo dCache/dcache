@@ -417,13 +417,6 @@ public final class Storage
     {
         _log.info("Starting SRM");
 
-        if (config.getJdbcPass() == null && config.getJdbcPwdfile() == null) {
-            String error = "database parameters are not specified; use options " +
-                "-jdbcUrl, -jdbcDriver, -dbUser and -dbPass/-pgPass";
-            _log.error(error);
-            throw new IllegalStateException(error);
-        }
-
         while (_poolMonitor == null) {
             try {
                 _poolMonitor =

@@ -79,12 +79,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.lookup.DataSourceLookupFailureException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -109,7 +107,6 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.filter;
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 
@@ -135,10 +132,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     private final Class<J> jobType = (Class<J>) new TypeToken<J>(getClass()) {}.getRawType();
 
     private final Configuration.DatabaseParameters configuration;
-    private final String jdbcUrl;
-    private final String jdbcClass;
-    private final String user;
-    private final String pass;
     protected final JdbcTemplate jdbcTemplate;
     protected final TransactionTemplate transactionTemplate;
     private final boolean logHistory;
@@ -155,23 +148,12 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     protected static final int booleanType_int= Types.INTEGER;
 
     public DatabaseJobStorage(Configuration.DatabaseParameters configuration)
-            throws IOException, DataAccessException
+            throws DataAccessException
     {
         this.configuration = configuration;
-
-        this.jdbcUrl = configuration.getJdbcUrl();
-        this.jdbcClass = configuration.getJdbcClass();
-        this.user = configuration.getJdbcUser();
-        this.pass = configuration.getJdbcPass();
         this.logHistory = configuration.isRequestHistoryDatabaseEnabled();
-
-        try {
-            JdbcConnectionPool pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
-            this.jdbcTemplate = pool.newJdbcTemplate();
-            this.transactionTemplate = pool.newTransactionTemplate();
-        } catch (ClassNotFoundException e) {
-            throw new DataSourceLookupFailureException("Failed to initialize JDBC driver: " + e.getMessage(), e);
-        }
+        this.jdbcTemplate = new JdbcTemplate(configuration.getDataSource());
+        this.transactionTemplate = new TransactionTemplate(configuration.getTransactionManager());
 
         dbInit(configuration.isCleanPendingRequestsOnRestart());
         //updatePendingJobs();
@@ -287,7 +269,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                 "STATEID",
                 "TRANSITIONTIME",
         "JOBID"};
-        createIndex(history_columns,getHistoryTableName().toLowerCase());
+        createIndex(history_columns, getHistoryTableName().toLowerCase());
     }
 
     private void insertStates() throws DataAccessException
@@ -592,9 +574,9 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
     {
-        return getJobIdsByCondition("STATE ="+State.DONE.getStateId()+
-                " ORDERED BY ID DESC"+
-                " LIMIT "+maxNum+" ");
+        return getJobIdsByCondition("STATE =" + State.DONE.getStateId() +
+                " ORDERED BY ID DESC" +
+                " LIMIT " + maxNum + " ");
     }
 
     @Override

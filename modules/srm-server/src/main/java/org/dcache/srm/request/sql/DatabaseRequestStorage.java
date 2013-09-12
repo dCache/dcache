@@ -11,7 +11,6 @@ package org.dcache.srm.request.sql;
 
 import org.springframework.dao.DataAccessException;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,7 +31,7 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
     SRMUserPersistenceManager srmUserPersistenceManager;
     /** Creates a new instance of DatabaseRequestStorage */
     public DatabaseRequestStorage(Configuration.DatabaseParameters configuration)
-            throws IOException, DataAccessException
+            throws DataAccessException
     {
         super(configuration);
         srmUserPersistenceManager = checkNotNull(configuration.getSrmUserPersistenceManager());

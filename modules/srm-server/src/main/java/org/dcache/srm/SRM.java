@@ -160,14 +160,12 @@ public class SRM {
      * @throws IOException
      * @throws InterruptedException
      * @throws IllegalStateTransition
-     * @throws ClassNotFoundException
      * @throws DataAccessException
      */
     private SRM(Configuration config, String name)
             throws IOException,
                    InterruptedException,
                    IllegalStateTransition,
-                   ClassNotFoundException,
                    DataAccessException
     {
         this.configuration = config;
@@ -247,12 +245,9 @@ public class SRM {
         }
 
         try {
-            RequestsPropertyStorage.initPropertyStorage( config.getJdbcUrl(),
-                    config.getJdbcClass(),
-                    config.getJdbcUser(),
-                    config.getJdbcPass(),
-                    config.getNextRequestIdStorageTable()
-                    );
+            RequestsPropertyStorage.initPropertyStorage(
+                    config.getTransactionManager(), config.getDataSource(),
+                    config.getNextRequestIdStorageTable());
         } catch (IllegalStateException ise) {
             //already initialized
         }
@@ -279,14 +274,12 @@ public class SRM {
      * @throws IOException
      * @throws InterruptedException
      * @throws IllegalStateTransition
-     * @throws ClassNotFoundException
      * @throws DataAccessException
      */
     public static final synchronized SRM getSRM(Configuration configuration, String name)
             throws IOException,
                    InterruptedException,
                    IllegalStateTransition,
-                   ClassNotFoundException,
                    DataAccessException
     {
         if (srm == null) {

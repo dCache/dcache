@@ -23,6 +23,9 @@ check -strong srm.authn.hostcert.refresh.unit
 
 check -strong srm.client-transport
 
+check -strong srm.db.connections.partition-count
+check -strong srm.db.connections.min-per-partition
+check -strong srm.db.connections.max-per-partition
 check -strong srm.db.driver
 check -strong srm.db.url
 check -strong srm.db.user

@@ -150,18 +150,21 @@
   </bean>
 
   <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
+    <description>Persistence manager for authentication</description>
     <constructor-arg>
       <bean class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
-        <description>Persistence manager for authentication</description>
-        <constructor-arg value="${srm.db.url}"/>
-        <constructor-arg value="${srm.db.driver}"/>
-        <constructor-arg value="${srm.db.user}"/>
-        <constructor-arg value="${srm.db.password}"/>
+        <constructor-arg>
+          <bean id="emf" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+            <property name="dataSource" ref="data-source"/>
+            <property name="persistenceUnitName" value="AuthRecordPersistenceUnit"/>
+          </bean>
+        </constructor-arg>
       </bean>
     </constructor-arg>
   </bean>
 
   <bean id="login-strategy" class="org.dcache.services.login.CachingLoginStrategy">
+    <description>Caching gPlazma client</description>
     <constructor-arg>
       <bean class="org.dcache.services.login.RemoteLoginStrategy">
         <property name="cellStub" ref="gplazma-stub"/>
@@ -173,6 +176,7 @@
   </bean>
 
   <bean id="authorization" class="diskCacheV111.srm.dcache.DCacheAuthorization">
+    <description>gPlazma plugin for SRM</description>
     <constructor-arg ref="login-strategy"/>
     <constructor-arg ref="auth-persistence-manager"/>
   </bean>
@@ -260,12 +264,6 @@
               value="${srm.enable.space-reservation.implicit}"/>
     <property name="space_reservation_strict"
               value="${srm.enable.space-reservation.strict}"/>
-
-    <property name="jdbcUrl" value="${srm.db.url}"/>
-    <property name="jdbcClass" value="${srm.db.driver}"/>
-    <property name="jdbcUser" value="${srm.db.user}"/>
-    <property name="jdbcPass" value="${srm.db.password}"/>
-    <property name="jdbcPwdfile" value="${srm.db.password.file}"/>
 
     <property name="getReqTQueueSize" value="${srm.limits.request.get.scheduler.thread.queue.size}"/>
     <property name="getThreadPoolSize" value="${srm.limits.request.get.scheduler.thread.pool.size}"/>
@@ -364,6 +362,8 @@
     <property name="storage" ref="storage"/>
     <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
     <property name="authorization" ref="authorization"/>
+    <property name="dataSource" ref="data-source"/>
+    <property name="transactionManager" ref="tx-manager"/>
 
     <property name="databaseParametersForList.databaseEnabled"
               value="${srm.request.ls.enable.database}"/>
@@ -468,6 +468,26 @@
               value="${srm.request.reserve-space.enable.store-complete-only}"/>
   </bean>
 
+  <bean id="data-source" class="com.jolbox.bonecp.BoneCPDataSource"
+        destroy-method="close">
+    <description>Database connection pool</description>
+    <property name="driverClass" value="${srm.db.driver}"/>
+    <property name="jdbcUrl" value="${srm.db.url}"/>
+    <property name="username" value="${srm.db.user}"/>
+    <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srm.db.password.file}', '${srm.db.url}', '${srm.db.user}', '${srm.db.password}') }"/>
+    <property name="partitionCount" value="${srm.db.connections.partition-count}"/>
+    <property name="minConnectionsPerPartition" value="${srm.db.connections.min-per-partition}"/>
+    <property name="maxConnectionsPerPartition" value="${srm.db.connections.max-per-partition}"/>
+    <property name="idleConnectionTestPeriodInMinutes" value="60"/>
+    <property name="idleMaxAgeInMinutes" value="240"/>
+    <property name="acquireIncrement" value="5"/>
+    <property name="statementsCacheSize" value="100"/>
+  </bean>
+
+  <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <description>Database transaction manager</description>
+    <property name="dataSource" ref="data-source"/>
+  </bean>
 
   <bean id="srm" class="org.dcache.srm.SRM" factory-method="getSRM"
         destroy-method="stop" depends-on="config">
@@ -493,6 +513,7 @@
 
   <bean id="banned-ciphers" class="org.dcache.util.Crypto"
         factory-method="getBannedCipherSuitesFromConfigurationValue">
+    <description>Banned authentication ciphers</description>
     <constructor-arg value="${srm.authn.ciphers}"/>
   </bean>
 

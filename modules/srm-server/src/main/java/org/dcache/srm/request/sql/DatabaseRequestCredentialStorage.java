@@ -82,7 +82,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.lookup.DataSourceLookupFailureException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -113,11 +112,6 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             LoggerFactory.getLogger(DatabaseRequestCredentialStorage.class);
 
    /** Creates a new instance of TestDatabaseJobStorage */
-   private final String jdbcUrl;
-   private final String jdbcClass;
-   private final String user;
-   private final String pass;
-   private final Configuration configuration;
    private final JdbcTemplate jdbcTemplate;
    protected static final String stringType=" VARCHAR(32672)  ";
    protected static final String longType=" BIGINT ";
@@ -127,19 +121,10 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
    private final String credentialsDirectory;
 
    public DatabaseRequestCredentialStorage(Configuration configuration)
-           throws IOException, DataAccessException
+           throws DataAccessException
    {
-      this.jdbcUrl = configuration.getJdbcUrl();
-      this.jdbcClass = configuration.getJdbcClass();
-      this.user = configuration.getJdbcUser();
-      this.pass = configuration.getJdbcPass();
-      this.configuration = configuration;
       this.credentialsDirectory = configuration.getCredentialsDirectory();
-      try {
-          this.jdbcTemplate = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass).newJdbcTemplate();
-      } catch (ClassNotFoundException e) {
-          throw new DataSourceLookupFailureException("Failed to initialize JDBC driver: " + e.getMessage(), e);
-      }
+      this.jdbcTemplate = new JdbcTemplate(configuration.getDataSource());
       File dir = new File(credentialsDirectory);
       if(!dir.exists()) {
           if(!dir.mkdir()) {
