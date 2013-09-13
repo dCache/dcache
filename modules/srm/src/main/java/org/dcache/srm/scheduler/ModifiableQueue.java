@@ -83,25 +83,29 @@ import java.util.List;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  *
  * @author  timur
  */
 public class ModifiableQueue  {
-    String name;
-    String scheduler_name;
-    private int capacity=1024;
-    private final List<Long> queue = new LinkedList();
+    private final String name;
+    private final String scheduler_name;
+    private final Class<? extends Job> type;
+    private final List<Long> queue = new LinkedList<>();
+    private int capacity;
 
     /** Creates a new instance of ModifiableQueue */
-    public ModifiableQueue(String name, String scheduler_name, int capacity) {
+    public ModifiableQueue(String name, String scheduler_name, Class<? extends Job> type, int capacity) {
         this.name = name;
         this.scheduler_name = scheduler_name;
+        this.type = type;
         this.capacity=capacity;
     }
 
-    public ModifiableQueue(String name, String scheduler_name) {
-        this(name,scheduler_name,1024);
+    public ModifiableQueue(String name, String scheduler_name, Class<? extends Job> type) {
+        this(name, scheduler_name, type, 1024);
     }
 
 
@@ -124,7 +128,7 @@ public class ModifiableQueue  {
                 headId =  queue.get(0);
                 //System.out.println("headId is "+headId+" returning job ");
         }
-        return Job.getJob(headId, Job.class);
+        return Job.getJob(headId, type);
     }
 
 
@@ -140,7 +144,7 @@ public class ModifiableQueue  {
                     queue.notifyAll();
                 }
                 if (id != null) {
-                    return Job.getJob(id, Job.class);
+                    return Job.getJob(id, type);
                 }
                 try {
                     queue.wait();
@@ -167,7 +171,7 @@ public class ModifiableQueue  {
                     queue.notifyAll();
                 }
                 if (id != null) {
-                    return Job.getJob(id, Job.class);
+                    return Job.getJob(id, type);
                 }
                 if (waitTime <= 0) {
                     return null;
@@ -186,10 +190,7 @@ public class ModifiableQueue  {
 
 
     public void put(Job job) throws InterruptedException {
-        //System.out.println("QUEUE.put("+job.getId()+")");
-        if(job == null) {
-            throw new IllegalArgumentException("job is null");
-        }
+        checkArgument(type.isInstance(job));
         Long id = job.getId();
         while (true) {
             synchronized (queue) {
@@ -210,10 +211,7 @@ public class ModifiableQueue  {
 
 
     public boolean offer(Job job, long msecs) throws InterruptedException {
-        //System.out.println("QUEUE.offer("+job.getId()+","+msecs+")");
-        if(job == null) {
-            throw new IllegalArgumentException("job is null");
-        }
+        checkArgument(type.isInstance(job));
         long waitTime = msecs;
         long start = (msecs <= 0)? 0: System.currentTimeMillis();
         Long id = job.getId();
@@ -289,7 +287,7 @@ public class ModifiableQueue  {
                //System.out.println("QUEUE.getGreatestValueObject() returns NULL, queue is empty");
                 return null;
             }
-            queueCopy = new ArrayList(queue);
+            queueCopy = new ArrayList<>(queue);
         }
 
         greatestValueJob =null;
@@ -300,7 +298,7 @@ public class ModifiableQueue  {
         int index =0;
         int size = queueCopy.size();
         for (Long currentJobId:queueCopy) {
-            Job currentJob = Job.getJob(currentJobId, Job.class);
+            Job currentJob = Job.getJob(currentJobId, type);
             int currentValue = calc.calculateValue(size,index,currentJob);
             if(currentValue > greatestValue) {
                 greatestValueJob = currentJob;
