@@ -344,7 +344,7 @@ class FsSqlDriver {
     public Stat stat(Connection dbConnection, FsInode inode) throws SQLException {
         return stat(dbConnection, inode, 0);
     }
-    private static final String sqlStat = "SELECT isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime FROM t_inodes WHERE ipnfsid=?";
+    private static final String sqlStat = "SELECT isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime,icrtime FROM t_inodes WHERE ipnfsid=?";
 
     public Stat stat(Connection dbConnection, FsInode inode, int level) throws SQLException {
 
@@ -364,15 +364,17 @@ class FsSqlDriver {
             statResult = stStatInode.executeQuery();
 
             if (statResult.next()) {
+                ret = new Stat();
                 int inodeType;
 
                 if (level == 0) {
                     inodeType = statResult.getInt("itype");
+                    ret.setCrTime(statResult.getTimestamp("icrtime").getTime());
                 } else {
                     inodeType = UnixPermission.S_IFREG;
+                    ret.setCrTime(statResult.getTimestamp("imtime").getTime());
                 }
 
-                ret = new Stat();
                 ret.setSize(statResult.getLong("isize"));
                 ret.setATime(statResult.getTimestamp("iatime").getTime());
                 ret.setCTime(statResult.getTimestamp("ictime").getTime());

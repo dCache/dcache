@@ -674,7 +674,7 @@ public class ChimeraNameSpaceProvider
                 break;
             case CREATION_TIME:
                 stat = inode.statCache();
-                attributes.setCreationTime(stat.getCTime());
+                attributes.setCreationTime(stat.getCrTime());
                 break;
             case MODIFICATION_TIME:
                 stat = inode.statCache();

@@ -519,6 +519,23 @@ public class PnfsManagerTest
                 stat.getMode() & ~UnixPermission.S_PERMS | mode , new_stat.getMode());
     }
 
+    @Test
+    public void testCreationTime() throws Exception {
+        FsInode base = _fs.path2inode("/pnfs");
+        FsInode inode = _fs.createFile(base, "afile");
+        Stat stat = _fs.stat(inode);
+        _fs.setFileCTime(inode, stat.getCTime() + 10000);
+
+        PnfsGetFileAttributes pnfsGetFileAttributes
+                = new PnfsGetFileAttributes(new PnfsId(inode.toString()),
+                EnumSet.of(FileAttribute.CHANGE_TIME, FileAttribute.CREATION_TIME));
+        _pnfsManager.getFileAttributes(pnfsGetFileAttributes);
+
+        assertEquals(stat.getCrTime(), pnfsGetFileAttributes.getFileAttributes().getCreationTime());
+        assertTrue("Creation time can't be in the past", pnfsGetFileAttributes.getFileAttributes().getCreationTime()
+                < pnfsGetFileAttributes.getFileAttributes().getChangeTime());
+    }
+
     @After
     public void tearDown() throws Exception
     {

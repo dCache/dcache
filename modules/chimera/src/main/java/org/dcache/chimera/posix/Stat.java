@@ -41,9 +41,22 @@ public class Stat {
     /*
      * Opposite to classic Unix, all times in milliseconds
      */
-    private long _atime; //
-    private long _mtime; //
-    private long _ctime; //
+    /**
+     * Last access time.
+     */
+    private long _atime;
+    /**
+     * Last modification time
+     */
+    private long _mtime;
+    /**
+     * Last attribute change time.
+     */
+    private long _ctime;
+    /**
+     * Creation time.
+     */
+    private long _crtime;
     private int _blksize = 512; //
 
     public void setDev(int newDev) {
@@ -115,7 +128,7 @@ public class Stat {
     }
 
     /**
-     * Set creation time in milliseconds
+     * Set change time in milliseconds
      * @param newCTime
      */
     public void setCTime(long newCTime) {
@@ -124,10 +137,27 @@ public class Stat {
 
     /**
      *
-     * @return creation time in milliseconds
+     * @return change time in milliseconds
      */
     public long getCTime() {
         return _ctime;
+    }
+
+    /**
+     * Set creation time in milliseconds
+     *
+     * @param newCrTime
+     */
+    public void setCrTime(long newCrTime) {
+        _crtime = newCrTime;
+    }
+
+    /**
+     *
+     * @return creation time in milliseconds
+     */
+    public long getCrTime() {
+        return _crtime;
     }
 
     /**
@@ -178,20 +208,18 @@ public class Stat {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-
-        Formatter formatter = new Formatter(sb);
-
-        formatter.format(
-                "%s %8d %6d %6d %6d %s %s",
-                new UnixPermission(this.getMode()),
-                this.getNlink(),
-                this.getUid(),
-                this.getGid(),
-                this.getSize(),
-                new Date(this.getMTime()),
-                new Time(this.getMTime()));
-        formatter.flush();
-        formatter.close();
+        try (Formatter formatter = new Formatter(sb)) {
+            formatter.format(
+                    "%s %8d %6d %6d %6d %s %s",
+                    new UnixPermission(this.getMode()),
+                    this.getNlink(),
+                    this.getUid(),
+                    this.getGid(),
+                    this.getSize(),
+                    new Date(this.getMTime()),
+                    new Time(this.getMTime()));
+            formatter.flush();
+        }
 
         return sb.toString();
     }
@@ -210,6 +238,7 @@ public class Stat {
         hash = 79 * hash + (int) (this._atime ^ (this._atime >>> 32));
         hash = 79 * hash + (int) (this._mtime ^ (this._mtime >>> 32));
         hash = 79 * hash + (int) (this._ctime ^ (this._ctime >>> 32));
+        hash = 79 * hash + (int) (this._crtime ^ (this._crtime >>> 32));
         hash = 79 * hash + this._blksize;
         return hash;
     }
@@ -254,6 +283,9 @@ public class Stat {
             return false;
         }
         if (this._ctime != other._ctime) {
+            return false;
+        }
+        if (this._crtime != other._crtime) {
             return false;
         }
         if (this._blksize != other._blksize) {
