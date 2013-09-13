@@ -190,15 +190,15 @@ public final class Scheduler implements Runnable  {
             return schedulers.get(id);
 	}
 
-	public Scheduler(String id) {
+	public Scheduler(String id, Class<? extends Job> type) {
 		if(id == null || id.equals("")) {
 			throw new IllegalArgumentException(" need non-null non-empty string as an id");
 		}
 		this.id = id;
 		schedulers.put(id, this);
-        threadQueue = new ModifiableQueue("ThreadQueue",id,maxThreadQueueSize);
-		priorityThreadQueue = new ModifiableQueue("PriorityThreadQueue",id,maxThreadQueueSize);
-		readyQueue = new ModifiableQueue("ReadyQueue",id,maxReadyQueueSize);
+                threadQueue = new ModifiableQueue("ThreadQueue", id, type, maxThreadQueueSize);
+		priorityThreadQueue = new ModifiableQueue("PriorityThreadQueue", id, type, maxThreadQueueSize);
+		readyQueue = new ModifiableQueue("ReadyQueue", id, type, maxReadyQueueSize);
 
 
 		String className="org.dcache.srm.scheduler.policies."+priorityPolicyPlugin;
