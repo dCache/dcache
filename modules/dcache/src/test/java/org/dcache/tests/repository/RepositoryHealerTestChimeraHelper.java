@@ -1,20 +1,25 @@
 package org.dcache.tests.repository;
 
-import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.jolbox.bonecp.BoneCPDataSource;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
+import java.net.URL;
+import java.util.Properties;
+import java.util.UUID;
+import javax.sql.DataSource;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.resource.ClassLoaderResourceAccessor;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
@@ -25,40 +30,35 @@ import org.dcache.pool.repository.FileStore;
 
 public class RepositoryHealerTestChimeraHelper implements FileStore {
 
+    private final static URL DB_TEST_PROPERTIES
+            = Resources.getResource("org/dcache/tests/repository/chimera-test.properties");
 
-    private static final String JDBC_URL = "jdbc:hsqldb:mem:";
-    private static final String USERNAME = "sa";
-    private static final String PASSWORD = "";
-
-    private final UUID uuid = UUID.randomUUID();
+    private final Connection _conn;
     private final JdbcFs _fs;
     private final FsInode _rootInode;
 
-
     public RepositoryHealerTestChimeraHelper() throws Exception {
+        Properties dbProperties = new Properties();
+        dbProperties.load(Resources.newInputStreamSupplier(DB_TEST_PROPERTIES).getInput());
 
+        Class.forName(dbProperties.getProperty("chimera.db.driver"));
 
-        // FIXME: make it configurable
-        Class.forName("org.hsqldb.jdbcDriver");
+        DataSource ds = getFileSystemProvider(
+                dbProperties.getProperty("chimera.db.url") + ":" + UUID.randomUUID(),
+                dbProperties.getProperty("chimera.db.driver"),
+                dbProperties.getProperty("chimera.db.user"),
+                dbProperties.getProperty("chimera.db.password"));
 
-        BoneCPDataSource ds = new BoneCPDataSource();
-        ds.setJdbcUrl(JDBC_URL + uuid);
-        ds.setUsername(USERNAME);
-        ds.setPassword(PASSWORD);
-        ds.getConfig().setMaxConnectionsPerPartition(3); // seems to require >= 3
-        ds.getConfig().setMinConnectionsPerPartition(1);
-        ds.getConfig().setPartitionCount(1);
+        _conn = ds.getConnection();
 
-        String sql = Resources.toString(Resources.getResource("org/dcache/chimera/sql/create-hsqldb.sql"), Charsets.US_ASCII);
-        try (Connection conn = ds.getConnection()) {
-            try (Statement st = conn.createStatement()) {
-                for (String statement : sql.replace("\n", "").split(";")) {
-                    st.executeUpdate(statement);
-                }
-            }
-        }
+        _conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
-        _fs = new JdbcFs(ds, "HsqlDB");
+        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(_conn));
+        Liquibase liquibase = new Liquibase("org/dcache/chimera/changelog/changelog-master.xml",
+                new ClassLoaderResourceAccessor(), database);
+        liquibase.update("");
+
+        _fs = new JdbcFs(ds, dbProperties.getProperty("chimera.db.dialect"));
         _rootInode = _fs.path2inode("/");
     }
 
@@ -66,9 +66,8 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     {
         try {
             _fs.close();
-            try (Connection conn = DriverManager.getConnection(JDBC_URL + uuid, USERNAME, PASSWORD)) {
-                conn.createStatement().execute("SHUTDOWN;");
-            }
+            _conn.createStatement().execute("SHUTDOWN;");
+            //_conn.close();
         } catch (SQLException | IOException ignored) {
         }
     }
@@ -76,20 +75,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     public FsInode add(PnfsId pnfsid) throws ChimeraFsException {
 
         return _fs.createFile(_rootInode, pnfsid.toString() );
-
     }
-
-
-    static void tryToClose(Statement o) {
-        try {
-            if (o != null) {
-                o.close();
-            }
-        } catch (SQLException e) {
-
-        }
-    }
-
 
     @Override
     public File get(PnfsId id) {
@@ -137,5 +123,18 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         }
 
         return entries;
+    }
+
+    public static BoneCPDataSource getFileSystemProvider(String url, String drv, String user, String pass) {
+
+        BoneCPDataSource ds = new BoneCPDataSource();
+        ds.setJdbcUrl(url);
+        ds.setUsername(user);
+        ds.setPassword(pass);
+        ds.setDriverClass(drv);
+        ds.setMaxConnectionsPerPartition(3); // looks like we need >= 3
+        ds.setPartitionCount(1);
+
+        return ds;
     }
 }
