@@ -611,7 +611,7 @@ class FsSqlDriver {
 
         return path;
     }
-    private static final String sqlCreateInode = "INSERT INTO t_inodes VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+    private static final String sqlCreateInode = "INSERT INTO t_inodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
 
     /**
      *
@@ -650,6 +650,7 @@ class FsSqlDriver {
             stCreateInode.setTimestamp(9, now);
             stCreateInode.setTimestamp(10, now);
             stCreateInode.setTimestamp(11, now);
+            stCreateInode.setTimestamp(12, now);
 
             stCreateInode.executeUpdate();
 

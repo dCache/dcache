@@ -5,6 +5,32 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
 
+    <changeSet author="tigran" id="14">
+        <addColumn tableName="t_inodes">
+            <column name="icrtime" type="DATETIME" remarks="file/directory creation timestamp"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="tigran" id="15">
+        <sql stripComments="true">
+            UPDATE t_inodes SET icrtime = (
+                SELECT
+                    CASE
+                        WHEN ictime &lt;= imtime and ictime &lt;= iatime THEN ictime
+                        WHEN imtime &lt;= ictime and imtime &lt;= iatime THEN imtime
+                        ELSE iatime
+                    END AS icrtime
+                FROM t_inodes AS p WHERE p.ipnfsid = t_inodes.ipnfsid
+            )
+        </sql>
+    </changeSet>
+
+    <changeSet author="tigran" id="16">
+        <addNotNullConstraint columnDataType="DATETIME"
+                      columnName="icrtime"
+                      tableName="t_inodes"/>
+    </changeSet>
+
     <changeSet author="litvinse" id="17" dbms="postgresql">
        <createProcedure>
 	 ---  RFC 2396 :  http://www.ietf.org/rfc/rfc2396.txt
@@ -94,4 +120,5 @@
 	  LANGUAGE 'plpgsql';
        </createProcedure>
     </changeSet>
+
 </databaseChangeLog>
