@@ -1,13 +1,13 @@
 package org.dcache.srm.request.sql;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.dcache.srm.request.BringOnlineFileRequest;
@@ -22,6 +22,7 @@ import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
+import org.dcache.srm.scheduler.CanonicalizingJobStorage;
 import org.dcache.srm.scheduler.FinalStateOnlyJobStorageDecorator;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
@@ -29,6 +30,7 @@ import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.NoopJobStorage;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerFactory;
+import org.dcache.srm.scheduler.SharedMemoryCacheJobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
@@ -39,29 +41,32 @@ import org.dcache.srm.util.Configuration;
 public class DatabaseJobStorageFactory extends JobStorageFactory{
     private static final Logger logger =
             LoggerFactory.getLogger(DatabaseJobStorageFactory.class);
-    private final Map<Class<? extends Job>,JobStorage<?>> jobStorageMap =
-        new HashMap<>();
+    private final Map<Class<? extends Job>, JobStorage<?>> jobStorageMap =
+        new LinkedHashMap<>(); // JobStorage initialization order is significant to ensure file
+                               // requests are cached before container requests are loaded
+    private final Map<Class<? extends Job>, JobStorage<?>> unmodifiableJobStorageMap =
+            Collections.unmodifiableMap(jobStorageMap);
 
     private <J extends Job> void add(Configuration.DatabaseParameters config,
                      Class<J> entityClass,
                      Class<? extends DatabaseJobStorage<J>> storageClass)
-        throws InstantiationException,
-               IllegalAccessException,
-               IllegalArgumentException,
-               InvocationTargetException,
-               NoSuchMethodException,
-               SecurityException
+            throws InstantiationException,
+                   IllegalAccessException,
+                   IllegalArgumentException,
+                   InvocationTargetException,
+                   NoSuchMethodException,
+                   SecurityException, SQLException
     {
+        JobStorage<J> js;
         if (config.isDatabaseEnabled()) {
-            JobStorage<J> js =
-                storageClass.getConstructor(Configuration.DatabaseParameters.class).newInstance(config);
+            js = storageClass.getConstructor(Configuration.DatabaseParameters.class).newInstance(config);
             if (config.getStoreCompletedRequestsOnly()) {
                 js = new FinalStateOnlyJobStorageDecorator<>(js);
             }
-            jobStorageMap.put(entityClass, js);
         } else {
-            jobStorageMap.put(entityClass, new NoopJobStorage<J>());
+            js = new NoopJobStorage<>();
         }
+        jobStorageMap.put(entityClass, new CanonicalizingJobStorage<>(new SharedMemoryCacheJobStorage<>(js, entityClass), entityClass));
     }
 
     public DatabaseJobStorageFactory(Configuration config) throws SQLException
@@ -105,42 +110,28 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
             add(config.getDatabaseParametersForReserve(),
                 ReserveSpaceRequest.class,
                 ReserveSpaceRequestStorage.class);
-
-            Job.registerJobStorages(ImmutableMap.copyOf(jobStorageMap));
         } catch (InstantiationException e) {
             Throwables.propagateIfPossible(e.getCause(), SQLException.class);
-            throw new RuntimeException("Request perisistence initialization failed: " + e.toString(), e);
+            throw new RuntimeException("Request persistence initialization failed: " + e.toString(), e);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("Request perisistence initialization failed: " + e.toString(), e);
+            throw new RuntimeException("Request persistence initialization failed: " + e.toString(), e);
         }
     }
 
-    public void loadExistingJobs() throws SQLException, InterruptedException, IllegalStateTransition
+    public void init() throws SQLException, IllegalStateTransition, InterruptedException
     {
-        for (JobStorage<?> js: jobStorageMap.values()) {
-            try {
-                if (js instanceof DatabaseJobStorage) {
-                    ((DatabaseJobStorage<?>) js).updatePendingJobs();
-                }
-            } catch (Exception e) {
-                logger.error("updatePendingJobs failed",e);
-            }
+        for (JobStorage<?> jobStorage : jobStorageMap.values()) {
+            jobStorage.init();
         }
-        SchedulerFactory schedulerFactory =
-                SchedulerFactory.getSchedulerFactory();
 
-        for(Class<? extends Job> jobType: jobStorageMap.keySet()) {
-            Scheduler scheduler;
+        SchedulerFactory schedulerFactory = SchedulerFactory.getSchedulerFactory();
+        for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry: jobStorageMap.entrySet()) {
             try {
-                scheduler = schedulerFactory.getScheduler(jobType);
-            } catch(UnsupportedOperationException uoe) {
-                //ignore, not all types of jobs are scheduled
-                //some are just containers for file requests
-                continue;
-            }
-            // get all pending unscheduled jobs
-            for (Job job: jobStorageMap.get(jobType).getJobs(null, State.PENDING)) {
-                scheduler.schedule(job);
+                Scheduler scheduler = schedulerFactory.getScheduler(entry.getKey());
+                for (Job job: entry.getValue().getJobs(null, State.PENDING)) {
+                    scheduler.schedule(job);
+                }
+            } catch (UnsupportedOperationException ignored) {
             }
         }
     }
@@ -160,6 +151,12 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                     "JobStorage for class " + jobClass + " is not supported");
         }
         return js;
+    }
+
+    @Override
+    public Map<Class<? extends Job>, JobStorage<?>> getJobStorages()
+    {
+        return unmodifiableJobStorageMap;
     }
 
 }

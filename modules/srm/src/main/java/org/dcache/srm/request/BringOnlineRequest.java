@@ -145,7 +145,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             requests.add(request);
         }
         setFileRequests(requests);
-        updateMemoryCache();
     }
 
     /**

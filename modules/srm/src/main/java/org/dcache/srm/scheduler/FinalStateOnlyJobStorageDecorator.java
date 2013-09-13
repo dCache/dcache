@@ -2,6 +2,7 @@ package org.dcache.srm.scheduler;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Set;
 
 import org.dcache.srm.request.Job;
@@ -15,6 +16,12 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
     private final JobStorage<J> jobStorage;
     public FinalStateOnlyJobStorageDecorator(JobStorage<J> jobStorage ) {
         this.jobStorage = jobStorage;
+    }
+
+    @Override
+    public void init() throws SQLException
+    {
+        jobStorage.init();
     }
 
     @Override
@@ -66,6 +73,12 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
     public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
     {
         return jobStorage.getLatestCanceledJobIds(maxNum);
+    }
+
+    @Override
+    public Set<J> getActiveJobs()
+    {
+        return Collections.emptySet();
     }
 
     @Override

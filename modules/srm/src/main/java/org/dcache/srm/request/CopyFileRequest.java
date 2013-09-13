@@ -164,7 +164,6 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		this.from_surl = URI.create(from_surl);
 		this.to_surl = URI.create(to_surl);
 		this.spaceReservationId = spaceToken;
-                updateMemoryCache();
 		logger.debug("constructor from_url=" +from_surl+" to_url="+to_surl);
 	}
 

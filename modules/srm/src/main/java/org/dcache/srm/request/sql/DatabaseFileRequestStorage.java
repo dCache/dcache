@@ -9,10 +9,8 @@ package org.dcache.srm.request.sql;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Set;
 
 import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
 /**
@@ -154,14 +152,4 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
     /*protected java.util.Set getFileRequests(String requestId) throws java.sql.SQLException{
         return getJobsByCondition(" REQUESTID = '"+requestId+"'");
     }*/
-
-
-    public Set<Long> getActiveFileRequestIds(String schedulerid)  throws SQLException {
-        String condition = " SCHEDULERID='"+schedulerid+
-        "' AND STATE !="+State.DONE.getStateId()+
-        " AND STATE !="+State.CANCELED.getStateId()+
-        " AND STATE !="+State.FAILED.getStateId();
-        return getJobIdsByCondition(condition);
-    }
-
 }

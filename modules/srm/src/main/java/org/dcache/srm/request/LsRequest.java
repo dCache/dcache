@@ -73,7 +73,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                     requests.add(fileRequest);
                 }
                 setFileRequests(requests);
-                updateMemoryCache();
         }
 
         public  LsRequest(

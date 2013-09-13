@@ -128,7 +128,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 maxNumberOfRetries);
         logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         this.surl = surl;
-        updateMemoryCache();
     }
 
     /**
@@ -363,7 +362,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     return;
                 }
             }
-        } catch(SRMException | IllegalStateTransition e) {
+        } catch(SRMException | SQLException | IllegalStateTransition e) {
             // FIXME some SRMExceptions are permanent failures while others
             // are temporary.  Code currently doesn't distinguish, so will
             // always retry internally even if problem isn't transitory.

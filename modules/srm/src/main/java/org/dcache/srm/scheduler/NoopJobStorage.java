@@ -17,6 +17,11 @@ public class NoopJobStorage<J extends Job> implements JobStorage<J> {
     }
 
     @Override
+    public void init() throws SQLException
+    {
+    }
+
+    @Override
     public J getJob(Long jobId) throws SQLException {
         return null;
     }
@@ -60,6 +65,12 @@ public class NoopJobStorage<J extends Job> implements JobStorage<J> {
 
     @Override
     public Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<J> getActiveJobs()
     {
         return Collections.emptySet();
     }

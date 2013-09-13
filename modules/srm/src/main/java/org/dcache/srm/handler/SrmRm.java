@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.concurrent.CountDownLatch;
 
 import org.dcache.srm.AbstractStorageElement;
@@ -85,6 +86,9 @@ public class SrmRm {
             } catch(SRMException srme) {
                 logger.error(srme.toString());
                 response = getFailedResponse(srme.toString());
+            } catch (SQLException e) {
+                logger.error(e.toString());
+                response = getResponse("Internal failure: " + e.toString(), TStatusCode.SRM_INTERNAL_ERROR);
             }
             return response;
 	}
@@ -112,7 +116,7 @@ public class SrmRm {
      */
 
 	public SrmRmResponse srmRm()
-                throws SRMException, URISyntaxException
+                throws SRMException, SQLException, URISyntaxException
         {
 		if(request==null) {
 			return getResponse(" null request passed to SrmRm()",
