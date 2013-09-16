@@ -86,7 +86,7 @@ public class SchedulerFactory {
         putRequestScheduler.start();
         schedulerMap.put(PutFileRequest.class,putRequestScheduler);
 
-        Scheduler copyRequestScheduler = new Scheduler("copy_" + name, CopyRequest.class);
+        Scheduler copyRequestScheduler = new Scheduler("copy_" + name, Job.class);
         // scheduler parameters
         copyRequestScheduler.setMaxThreadQueueSize(config.getCopyReqTQueueSize());
         copyRequestScheduler.setThreadPoolSize(config.getCopyThreadPoolSize());
