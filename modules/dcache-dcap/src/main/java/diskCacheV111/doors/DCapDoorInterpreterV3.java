@@ -2256,8 +2256,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return ;
             }
 
-            // use the updated StorageInfo from PoolManager/SpaceManager
-            _fileAttributes.setStorageInfo(reply.getStorageInfo());
+            // use the updated file attributes from PoolManager/SpaceManager
+            _fileAttributes = reply.getFileAttributes();
 
             _pool = pool ;
             PoolIoFileMessage poolMessage;

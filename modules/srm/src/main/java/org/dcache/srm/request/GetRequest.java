@@ -98,7 +98,7 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
 /*
  * @author  timur
  */
-public final class GetRequest extends ContainerRequest {
+public final class GetRequest extends ContainerRequest<GetFileRequest> {
     private final static Logger logger =
             LoggerFactory.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
@@ -128,22 +128,21 @@ public final class GetRequest extends ContainerRequest {
         this.protocols = new String[len];
         System.arraycopy(protocols,0,this.protocols,0,len);
 
-        List<FileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
+        List<GetFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
         for(String surl : surls) {
-            FileRequest request = new GetFileRequest(getId(),
+            GetFileRequest request = new GetFileRequest(getId(),
                     requestCredentialId, surl, lifetime,
                     max_number_of_retries);
             requests.add(request);
         }
         setFileRequests(requests);
-        updateMemoryCache();
     }
 
     /**
      * restore constructor
      */
     public  GetRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -157,13 +156,13 @@ public final class GetRequest extends ContainerRequest {
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
-    FileRequest[] fileRequests,
+    GetFileRequest[] fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
     String client_host,
     String statusCodeString,
-    String[] protocols
+    List<String> protocols
     )  throws SQLException {
         super( id,
         nextJobId,
@@ -185,17 +184,17 @@ public final class GetRequest extends ContainerRequest {
         description,
         client_host,
         statusCodeString);
-        this.protocols = protocols;
+        this.protocols = protocols.toArray(new String[protocols.size()]);
 
     }
 
     @Override
-    public FileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
+    public GetFileRequest getFileRequestBySurl(URI surl) throws SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
-        for(FileRequest request : getFileRequests()) {
-            if(((GetFileRequest)request).getSurl().equals(surl)) {
+        for (GetFileRequest request : getFileRequests()) {
+            if (request.getSurl().equals(surl)) {
                 return request;
             }
         }
@@ -210,7 +209,7 @@ public final class GetRequest extends ContainerRequest {
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
         saveJob(true);
-        for(FileRequest request : getFileRequests()) {
+        for (GetFileRequest request : getFileRequests()) {
             request.schedule();
         }
     }
@@ -245,7 +244,7 @@ public final class GetRequest extends ContainerRequest {
         State state = getState();
         if(State.isFinalState(state)) {
             logger.debug("get request state changed to "+state);
-            for(FileRequest request : getFileRequests()) {
+            for (GetFileRequest request : getFileRequests()) {
                 try {
                     State fr_state = request.getState();
                     if(!State.isFinalState(fr_state ))
@@ -355,7 +354,7 @@ public final class GetRequest extends ContainerRequest {
 
 
     private String getTRequestToken() {
-        return getId().toString();
+        return String.valueOf(getId());
     }
 
    /* private ArrayOfTGetRequestFileStatus getArrayOfTGetRequestFileStatus()throws SRMException,java.sql.SQLException {
@@ -369,12 +368,12 @@ public final class GetRequest extends ContainerRequest {
             = new TGetRequestFileStatus[len];
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                GetFileRequest fr =(GetFileRequest)getFileRequests().get(i);
+                GetFileRequest fr = getFileRequests().get(i);
                 getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
+                GetFileRequest fr = getFileRequestBySurl(surls[i]);
                 getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
 
@@ -401,12 +400,12 @@ public final class GetRequest extends ContainerRequest {
         }
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                GetFileRequest fr =(GetFileRequest) getFileRequests().get(i);
+                GetFileRequest fr = getFileRequests().get(i);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                GetFileRequest fr =(GetFileRequest)getFileRequestBySurl(surls[i]);
+                GetFileRequest fr = getFileRequestBySurl(surls[i]);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
 

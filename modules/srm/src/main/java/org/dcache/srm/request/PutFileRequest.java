@@ -112,7 +112,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  * @version
  */
-public final class PutFileRequest extends FileRequest {
+public final class PutFileRequest extends FileRequest<PutRequest> {
     private final static Logger logger = LoggerFactory.getLogger(PutFileRequest.class);
     // this is anSurl path
     private URI surl;
@@ -130,7 +130,7 @@ public final class PutFileRequest extends FileRequest {
     private boolean spaceMarkedAsBeingUsed;
 
     /** Creates new FileRequest */
-    public PutFileRequest(Long requestId,
+    public PutFileRequest(long requestId,
             Long requestCredentalId,
             String url,
             long size,
@@ -153,13 +153,12 @@ public final class PutFileRequest extends FileRequest {
         if(retentionPolicy != null ) {
             this.retentionPolicy = retentionPolicy;
         }
-        updateMemoryCache();
     }
 
 
 
     public PutFileRequest(
-            Long id,
+            long id,
             Long nextJobId,
             long creationTime,
             long lifetime,
@@ -171,7 +170,7 @@ public final class PutFileRequest extends FileRequest {
             int maxNumberOfRetries,
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
-            Long requestId,
+            long requestId,
             Long requestCredentalId,
             String statusCodeString,
             String SURL,
@@ -309,7 +308,7 @@ public final class PutFileRequest extends FileRequest {
     @Override
     public RequestFileStatus getRequestFileStatus() {
         RequestFileStatus rfs = new RequestFileStatus();
-        rfs.fileId = getId().intValue();
+        rfs.fileId = (int) getId();
 
         rfs.SURL = getSurlString();
         rfs.size = getSize();
@@ -360,7 +359,7 @@ public final class PutFileRequest extends FileRequest {
             fileStatus.setTransferURL(transferURL);
 
         }
-        fileStatus.setEstimatedWaitTime(getRequest().getRetryDeltaTime());
+        fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
         fileStatus.setRemainingPinLifetime((int)getRemainingLifetime()/1000);
         TReturnStatus returnStatus = getReturnStatus();
         if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
@@ -399,7 +398,7 @@ public final class PutFileRequest extends FileRequest {
     }
 
     private URI getTURL() throws SRMException, SQLException {
-        PutRequest request = (PutRequest)  getRequest();
+        PutRequest request = getContainerRequest();
         // do not synchronize on request, since it might cause deadlock
         String firstDcapTurl = request.getFirstDcapTurl();
         if(firstDcapTurl == null) {
@@ -460,7 +459,7 @@ public final class PutFileRequest extends FileRequest {
                 // SRM_DUPLICATION_ERROR must be returned at the file level.
                 for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, getSurl())) {
                     if (request != this) {
-                        if (!((PutRequest) getRequest()).isOverwrite()) {
+                        if (!getContainerRequest().isOverwrite()) {
                             setStateAndStatusCode(
                                     State.FAILED,
                                     "SURL exists already",
@@ -480,7 +479,7 @@ public final class PutFileRequest extends FileRequest {
                 // if we can not read this path for some reason
                 //(not in ftp root for example) this will throw exception
                 // we do not care about the return value yet
-                PutRequest request = getJob(requestId, PutRequest.class);
+                PutRequest request = getContainerRequest();
                 String[] supportedProts = getStorage().supportedPutProtocols();
                 boolean found_supp_prot=false;
                 String[] requestProtocols = request.getProtocols();
@@ -502,7 +501,7 @@ public final class PutFileRequest extends FileRequest {
                 PutCallbacks callbacks = new PutCallbacks(this.getId());
                 setState(State.ASYNCWAIT, "calling Storage.prepareToPut()");
                 getStorage().prepareToPut(getUser(),getSurl(),callbacks,
-                        ((PutRequest)getRequest()).isOverwrite());
+                        getContainerRequest().isOverwrite());
                 return;
             }
             long defaultSpaceReservationId=0;
@@ -560,13 +559,13 @@ public final class PutFileRequest extends FileRequest {
                                 getSpaceReservationId(),getSurl(),
                                 getSize()==0?1:getSize(),
                                 remaining_lifetime,
-                                ((PutRequest)getRequest()).isOverwrite(),
+                                getContainerRequest().isOverwrite(),
                                     callbacks );
                 return;
             }
             logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
         }
-        catch(SRMException | IllegalStateTransition e) {
+        catch(SRMException | SQLException | IllegalStateTransition e) {
             throw new FatalJobFailure("cannot prepare to put: " + e.getMessage());
         }
     }
@@ -578,7 +577,7 @@ public final class PutFileRequest extends FileRequest {
         logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
-                getRequest().resetRetryDeltaTime();
+                getContainerRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }
@@ -802,9 +801,9 @@ public final class PutFileRequest extends FileRequest {
     }
 
     private static class PutCallbacks implements PrepareToPutCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
-        public PutCallbacks(Long fileRequestJobId) {
+        public PutCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -961,7 +960,7 @@ public final class PutFileRequest extends FileRequest {
     }
 
     public static class PutReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
                 throws SQLException,
@@ -970,7 +969,7 @@ public final class PutFileRequest extends FileRequest {
         }
 
 
-        public PutReserveSpaceCallbacks(Long fileRequestJobId) {
+        public PutReserveSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1052,7 +1051,7 @@ public final class PutFileRequest extends FileRequest {
     }
 
     public static class PutReleaseSpaceCallbacks implements SrmReleaseSpaceCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
                 throws SQLException,
@@ -1061,7 +1060,7 @@ public final class PutFileRequest extends FileRequest {
         }
 
 
-        public PutReleaseSpaceCallbacks(Long fileRequestJobId) {
+        public PutReleaseSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1099,7 +1098,7 @@ public final class PutFileRequest extends FileRequest {
     }
 
     public static class PutUseSpaceCallbacks implements SrmUseSpaceCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
                 throws SQLException,
@@ -1108,7 +1107,7 @@ public final class PutFileRequest extends FileRequest {
         }
 
 
-        public PutUseSpaceCallbacks(Long fileRequestJobId) {
+        public PutUseSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1258,7 +1257,7 @@ public final class PutFileRequest extends FileRequest {
     }
 
     public static class PutCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
                 throws SQLException, SRMInvalidRequestException {
@@ -1266,7 +1265,7 @@ public final class PutFileRequest extends FileRequest {
         }
 
 
-        public PutCancelUseOfSpaceCallbacks(Long fileRequestJobId) {
+        public PutCancelUseOfSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1305,9 +1304,9 @@ public final class PutFileRequest extends FileRequest {
 
     private  static class TheReleaseSpaceCallbacks implements ReleaseSpaceCallbacks {
 
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
-        public TheReleaseSpaceCallbacks(Long fileRequestJobId) {
+        public TheReleaseSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -1462,7 +1461,7 @@ public final class PutFileRequest extends FileRequest {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        long requestLifetime = getRequest().extendLifetimeMillis(newLifetime);
+        long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
         if(requestLifetime <newLifetime) {
             newLifetime = requestLifetime;
         }

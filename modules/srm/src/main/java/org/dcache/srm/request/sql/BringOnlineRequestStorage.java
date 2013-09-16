@@ -21,13 +21,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
 
@@ -35,7 +34,7 @@ import org.dcache.srm.util.Configuration;
  *
  * @author  timur
  */
-public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
+public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<BringOnlineRequest,BringOnlineFileRequest> {
    private final static Logger logger =
             LoggerFactory.getLogger(BringOnlineRequestStorage.class);
      public static final String TABLE_NAME ="bringonlinerequests";
@@ -170,16 +169,12 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             createTable(protocolsTableName, createProtocolsTable);
    }
 
-    @Override
-    public void getCreateList(ContainerRequest r, StringBuffer sb) {
-
-    }
     private static int ADDITIONAL_FIELDS;
 
     @Override
-    protected ContainerRequest getContainerRequest(
+    protected BringOnlineRequest getContainerRequest(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,
@@ -197,7 +192,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     String DESCRIPTION,
     String CLIENTHOST,
     String STATUSCODE,
-    FileRequest[] fileRequests,
+    BringOnlineFileRequest[] fileRequests,
     ResultSet set,
     int next_index)throws SQLException {
 
@@ -207,11 +202,10 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             logger.debug("executing: SELECT PROTOCOL FROM {} WHERE RequestID={} ",
                     getProtocolsTableName(),ID);
             ResultSet fileIdsSet = statement.executeQuery();
-            Set<String> utilset = new HashSet<>();
-            while(fileIdsSet.next()) {
-                utilset.add(fileIdsSet.getString(1));
+            List<String> protocols = new ArrayList<>();
+            while (fileIdsSet.next()) {
+                protocols.add(fileIdsSet.getString(1));
             }
-            String [] protocols = utilset.toArray(new String[utilset.size()]);
             statement.close();
             Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);
@@ -236,7 +230,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
                         DESCRIPTION,
                         CLIENTHOST,
                         STATUSCODE,
-                        protocols);
+                        protocols.toArray(new String[protocols.size()]));
 
     }
 

@@ -111,14 +111,14 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @version 1.0
  */
 
-public abstract class ContainerRequest extends Request {
+public abstract class ContainerRequest<R extends FileRequest<?>> extends Request {
     private static final Logger logger = LoggerFactory.getLogger(ContainerRequest.class);
     // dcache  requires that once client created a connection to a dcache door,
     // it uses the same door to make all following dcap transfers
     // therefore we need to synchronize the recept of dcap turls
     private String firstDcapTurl;
 
-    private final List<FileRequest> fileRequests;
+    private final List<R> fileRequests;
 
     /**
      * Counter used for notification between file requests and the
@@ -166,7 +166,7 @@ public abstract class ContainerRequest extends Request {
 
 
     protected ContainerRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -180,7 +180,7 @@ public abstract class ContainerRequest extends Request {
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
-    FileRequest[] fileRequests,
+    R[] fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
@@ -209,10 +209,10 @@ public abstract class ContainerRequest extends Request {
     }
 
 
-    public  FileRequest getFileRequest(int fileRequestId){
+    public R getFileRequest(int fileRequestId){
         rlock();
         try {
-            for(FileRequest fileRequest: fileRequests) {
+            for (R fileRequest: fileRequests) {
                 if(fileRequest.getId() == fileRequestId) {
                     return fileRequest;
                 }
@@ -224,19 +224,16 @@ public abstract class ContainerRequest extends Request {
 
     }
 
-    public final FileRequest getFileRequest(Long fileRequestId){
-        if(fileRequestId == null) {
-            return null;
-        }
-        for(FileRequest fileRequest: fileRequests) {
-            if(fileRequest.getId().equals(fileRequestId)) {
+    public final R getFileRequest(long fileRequestId){
+        for (R fileRequest: fileRequests) {
+            if (fileRequest.getId() == fileRequestId) {
                 return fileRequest;
             }
         }
         return null;
     }
 
-    public void setFileRequests(List<FileRequest> requests) {
+    public void setFileRequests(List<R> requests) {
         wlock();
         try {
             fileRequests.clear();
@@ -318,7 +315,7 @@ public abstract class ContainerRequest extends Request {
 
     private void getRequestStatusCalled() {
         scheduleIfRestored();
-        for(FileRequest fr: fileRequests) {
+        for (R fr: fileRequests) {
             fr.scheduleIfRestored();
         }
         updateRetryDeltaTime();
@@ -350,7 +347,7 @@ public abstract class ContainerRequest extends Request {
         boolean haveDoneRequests = false;
         String fr_error="";
         for(int i = 0; i< len; ++i) {
-            FileRequest fr = fileRequests.get(i);
+            R fr = fileRequests.get(i);
             fr.tryToReady();
             RequestFileStatus rfs = fr.getRequestFileStatus();
             if(rfs == null){
@@ -512,7 +509,7 @@ public abstract class ContainerRequest extends Request {
         int got_exception        = 0;
         boolean failure = false;
         for(int i = 0; i< len; ++i) {
-            FileRequest fr = fileRequests.get(i);
+            R fr = fileRequests.get(i);
             TReturnStatus fileReqRS = fr.getReturnStatus();
             TStatusCode fileReqSC   = fileReqRS.getStatusCode();
             logger.debug("getTReturnStatus() file["+i+"] statusCode : "+fileReqSC);
@@ -647,14 +644,14 @@ public abstract class ContainerRequest extends Request {
         TRequestSummary summary = new TRequestSummary();
         summary.setStatus(getTReturnStatus());
         summary.setRequestType(getRequestType());
-        summary.setRequestToken(getId().toString());
+        summary.setRequestToken(String.valueOf(getId()));
         int total_num = getNumOfFileRequest();
         summary.setTotalNumFilesInRequest(total_num);
         int num_of_failed=0;
         int num_of_completed = 0;
         int num_of_waiting = 0;
         for(int i = 0; i< total_num; ++i) {
-            FileRequest fr;
+            R fr;
             rlock();
             try {
                 fr = fileRequests.get(i);
@@ -721,7 +718,7 @@ public abstract class ContainerRequest extends Request {
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return (int) (getId() ^ getId() >> 32);
     }
 
     @Override
@@ -738,7 +735,7 @@ public abstract class ContainerRequest extends Request {
             sb.append("error message: ").append(getErrorMessage()).append("\n");
             sb.append("History of State Transitions: \n");
             sb.append(getHistory());
-            for (FileRequest fr:fileRequests) {
+            for (R fr:fileRequests) {
                 sb.append("\n");
                 fr.toString(sb, longformat);
             }
@@ -751,7 +748,7 @@ public abstract class ContainerRequest extends Request {
         }
     }
 
-    public void fileRequestStateChanged(FileRequest request)
+    public void fileRequestStateChanged(R request)
     {
         switch (request.getState()) {
         case RQUEUED:
@@ -763,10 +760,10 @@ public abstract class ContainerRequest extends Request {
         }
     }
 
-    public abstract FileRequest getFileRequestBySurl(URI surl)  throws SQLException, SRMException ;
+    public abstract R getFileRequestBySurl(URI surl)  throws SQLException, SRMException ;
     public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,SQLException;
 
-    public List<FileRequest> getFileRequests()  {
+    public List<R> getFileRequests()  {
         return fileRequests;
     }
 

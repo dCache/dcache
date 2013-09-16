@@ -11,7 +11,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
@@ -20,7 +19,7 @@ import org.dcache.srm.util.Configuration;
  *
  * @author  timur
  */
-public class GetFileRequestStorage extends DatabaseFileRequestStorage {
+public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileRequest> {
     public static final String TABLE_NAME = "getfilerequests";
 
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
@@ -144,8 +143,8 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
     }
 
     @Override
-    protected FileRequest getFileRequest(Connection _con,
-        Long ID,
+    protected GetFileRequest getFileRequest(Connection _con,
+        long ID,
         Long NEXTJOBID,
         long CREATIONTIME,
         long LIFETIME,
@@ -156,7 +155,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         int NUMOFRETR,
         int MAXNUMOFRETR,
         long LASTSTATETRANSITIONTIME,
-        Long REQUESTID,
+        long REQUESTID,
         Long CREDENTIALID,
         String STATUSCODE,
         ResultSet set,
@@ -207,65 +206,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
     @Override
     public String getTableName() {
         return TABLE_NAME;
-    }
-
-    public void getUpdateAssignements(FileRequest fr,StringBuffer sb) {
-        if(fr == null || !(fr instanceof GetFileRequest)) {
-            throw new IllegalArgumentException("fr is not GetFileRequest" );
-        }
-        GetFileRequest gfr = (GetFileRequest)fr;
-         sb.append(", SURL = '").append(gfr.getSurlString()).append("',");
-        String tmp =gfr.getTurlString();
-        if(tmp == null) {
-            sb.append(" TURL =NULL, ");
-        }
-        else {
-            sb.append("TURL = '").append(tmp).append("', ");
-        }
-
-        tmp =gfr.getFileId();
-        if(tmp == null) {
-            sb.append(" FILEID =NULL, ");
-        }
-        else {
-            sb.append("FILEID = '").append(tmp).append("', ");
-        }
-        tmp =gfr.getPinId();
-        if(tmp == null) {
-            sb.append(" PINID =NULL ");
-        }
-        else {
-            sb.append("PINID = '").append(tmp).append("' ");
-        }
-    }
-
-     public void getCreateList(FileRequest fr,StringBuffer sb) {
-        if(fr == null || !(fr instanceof GetFileRequest)) {
-            throw new IllegalArgumentException("fr is not GetFileRequest" );
-        }
-        GetFileRequest gfr = (GetFileRequest)fr;
-        sb.append(", '").append(gfr.getSurlString()).append("', ");
-        String tmp = gfr.getTurlString();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-        tmp =gfr.getFileId();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-        tmp = gfr.getPinId();
-        if(tmp == null) {
-            sb.append("NULL ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("' ");
-        }
     }
 
      @Override

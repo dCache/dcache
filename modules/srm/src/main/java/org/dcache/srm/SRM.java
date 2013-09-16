@@ -84,7 +84,6 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URI;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -118,8 +117,6 @@ import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.request.sql.DatabaseJobStorageFactory;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
-import org.dcache.srm.request.sql.DatabaseRequestStorage;
-import org.dcache.srm.request.sql.JdbcConnectionPool;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
@@ -234,26 +231,6 @@ public class SRM {
                     new RrdRequestExecutionTimeGauges<>(abstractStorageElementGauges, rrddir);
             rrdAstractStorageElementGauges.startRrdUpdates();
             rrdAstractStorageElementGauges.startRrdGraphPlots();
-
-
-        }
-
-        // these jdbc parameters need to be set before the
-        // first jdbc instance is created
-        // so we do it before everything else
-
-        if (configuration.getMaxQueuedJdbcTasksNum() != null) {
-            logger.debug("setMaxJdbcTasksNum to " +
-                    configuration.getMaxQueuedJdbcTasksNum());
-            JdbcConnectionPool.setMaxQueuedJdbcTasksNum(
-                    configuration.getMaxQueuedJdbcTasksNum());
-        }
-
-        if (configuration.getJdbcExecutionThreadNum() != null) {
-            logger.debug("set JDBC ExecutionThreadNum to " +
-                    configuration.getJdbcExecutionThreadNum());
-            JdbcConnectionPool.setExecutionThreadNum(
-                    configuration.getJdbcExecutionThreadNum());
         }
 
         if (config.isGsissl()) {
@@ -282,7 +259,7 @@ public class SRM {
         SchedulerFactory.initSchedulerFactory(config, name);
         DatabaseJobStorageFactory afactory = new DatabaseJobStorageFactory(configuration);
         JobStorageFactory.initJobStorageFactory(afactory);
-        afactory.loadExistingJobs();
+        afactory.init();
 
         host = InetAddress.getLocalHost();
 
@@ -325,7 +302,6 @@ public class SRM {
     }
 
     public void stop() {
-        Job.shutdown();
         SchedulerFactory.getSchedulerFactory().shutdown();
     }
 
@@ -590,7 +566,7 @@ public class SRM {
             }
             // create a request object
             logger.debug("calling Request.createCopyRequest()");
-            ContainerRequest r = new CopyRequest(
+            CopyRequest r = new CopyRequest(
                     user,
                     credential.getId(),
                     from_urls,
@@ -660,7 +636,7 @@ public class SRM {
                 errorsb.append(']');
                 return createFailedRequestStatus(errorsb.toString());
             }
-            ContainerRequest r =
+            GetRequest r =
                     new GetRequest(user, credential.getId(),
                             surls, protocols,
                             configuration.getGetLifetime(),
@@ -770,7 +746,7 @@ public class SRM {
         try {
             // Try to get the request with such id
             logger.debug("getRequestStatus() Request.getRequest(" + requestId + ");");
-            ContainerRequest r = Job.getJob((long) requestId, ContainerRequest.class);
+            ContainerRequest<?> r = Job.getJob((long) requestId, ContainerRequest.class);
             logger.debug("getRequestStatus() received Request  ");
             if (r != null) {
                 // we found one make sure it is the same  user
@@ -804,7 +780,7 @@ public class SRM {
      *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
-     * @param turls
+     * @param TURLS
      *         array of TURL (Transfer URL) strings
      * @return request status assosiated with this request
      */
@@ -824,15 +800,6 @@ public class SRM {
 
     /**
      * The implementation of SRM put method.
-     *
-     * @param user
-     *         an instance of the ReSRMUserr null if unknown
-     * @param requestId
-     *         the id of the previously issued pin request
-     * @param fileId
-     *         the id of the file within pin request
-     * @param state
-     *         the new state of the request
      * @return request status assosiated with this request
      */
     public RequestStatus put(SRMUser user,
@@ -896,7 +863,7 @@ public class SRM {
                 return createFailedRequestStatus(errorsb.toString());
             }
             // create a new put request
-            ContainerRequest r = new PutRequest(user,
+            PutRequest r = new PutRequest(user,
                     credential.getId(),
                     sources, dests_urls, sizes,
                     wantPerm, protocols, configuration.getPutLifetime(),
@@ -925,7 +892,7 @@ public class SRM {
      *         an instance of the ReSRMUserr null if unknown
      * @param requestId
      *         the id of the previously issued pin request
-     * @param fileId
+     * @param fileRequestId
      *         the id of the file within pin request
      * @param state
      *         the new state of the request
@@ -940,7 +907,7 @@ public class SRM {
             }
 
             //try to get the request
-            ContainerRequest r = Job.getJob((long)requestId, ContainerRequest.class);
+            ContainerRequest<?> r = Job.getJob((long)requestId, ContainerRequest.class);
 
             // check that user is the same
             SRMUser req_user = r.getUser();
@@ -949,7 +916,7 @@ public class SRM {
                         "request #" + requestId + " owned by "+req_user +" does not belong to user " + user);
             }
             // get file request from request
-            FileRequest fr = r.getFileRequest(fileRequestId);
+            FileRequest<?> fr = r.getFileRequest(fileRequestId);
             if (fr == null) {
                 return createFailedRequestStatus("request #" + requestId +
                         " does not contain file request #" + fileRequestId);
@@ -999,7 +966,7 @@ public class SRM {
      *
      * @param user
      *         an instance of the ReSRMUserr null if unknown
-     * @param turls
+     * @param TURLS
      *         array of TURL (Transfer URL) strings
      * @param requestId
      *         the id of the previously issued pin request
@@ -1008,18 +975,6 @@ public class SRM {
     public RequestStatus unPin(SRMUser user, RequestCredential credential,
             String[] TURLS, int requestId) {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
-    }
-
-    /**
-     * @return request corresponding ot id
-     */
-    public ContainerRequest getRequest(Integer id) {
-        try {
-            return Job.getJob((long)id.intValue(), ContainerRequest.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
     }
 
     private RequestStatus createFailedRequestStatus(String error) {
@@ -1059,23 +1014,19 @@ public class SRM {
     }
 
     public void listLatestCompletedGetRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getGetStorage().getLatestCompletedRequestIds(maxCount);
-        listRequests(sb,requestIds,GetRequest.class);
+        listRequests(sb, getGetStorage().getLatestCompletedJobIds(maxCount), GetRequest.class);
     }
 
     public void listLatestFailedGetRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getGetStorage().getLatestFailedRequestIds(maxCount);
-        listRequests(sb,requestIds,GetRequest.class);
+        listRequests(sb, getGetStorage().getLatestFailedJobIds(maxCount), GetRequest.class);
     }
 
     public void listLatestDoneGetRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getGetStorage().getLatestDoneRequestIds(maxCount);
-        listRequests(sb,requestIds,GetRequest.class);
+        listRequests(sb, getGetStorage().getLatestDoneJobIds(maxCount), GetRequest.class);
     }
 
     public void listLatestCanceledGetRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getGetStorage().getLatestCanceledRequestIds(maxCount);
-        listRequests(sb,requestIds,GetRequest.class);
+        listRequests(sb, getGetStorage().getLatestCanceledJobIds(maxCount), GetRequest.class);
     }
 
 
@@ -1124,23 +1075,19 @@ public class SRM {
     }
 
     public void listLatestCompletedPutRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getPutStorage().getLatestCompletedRequestIds(maxCount);
-        listRequests(sb,requestIds,PutRequest.class);
+        listRequests(sb, getPutStorage().getLatestCompletedJobIds(maxCount), PutRequest.class);
     }
 
     public void listLatestFailedPutRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getPutStorage().getLatestFailedRequestIds(maxCount);
-        listRequests(sb,requestIds,PutRequest.class);
+        listRequests(sb, getPutStorage().getLatestFailedJobIds(maxCount), PutRequest.class);
     }
 
     public void listLatestCanceledPutRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getPutStorage().getLatestCanceledRequestIds(maxCount);
-        listRequests(sb,requestIds,PutRequest.class);
+        listRequests(sb, getPutStorage().getLatestCanceledJobIds(maxCount), PutRequest.class);
     }
 
     public void listLatestDonePutRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getPutStorage().getLatestDoneRequestIds(maxCount);
-        listRequests(sb,requestIds,PutRequest.class);
+        listRequests(sb, getPutStorage().getLatestDoneJobIds(maxCount), PutRequest.class);
     }
 
     public void printPutSchedulerInfo(StringBuilder sb) throws SQLException {
@@ -1170,24 +1117,20 @@ public class SRM {
     }
 
     public void listLatestCompletedCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getCopyStorage().getLatestCompletedRequestIds(maxCount);
-        listRequests(sb, requestIds, CopyRequest.class);
+        listRequests(sb, getCopyStorage().getLatestCompletedJobIds(maxCount), CopyRequest.class);
     }
 
     public void listLatestFailedCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getCopyStorage().getLatestFailedRequestIds(maxCount);
-        listRequests(sb, requestIds, CopyRequest.class);
+        listRequests(sb, getCopyStorage().getLatestFailedJobIds(maxCount), CopyRequest.class);
     }
 
     public void listLatestCanceledCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getCopyStorage().getLatestCanceledRequestIds(maxCount);
-        listRequests(sb, requestIds, CopyRequest.class);
+        listRequests(sb, getCopyStorage().getLatestCanceledJobIds(maxCount), CopyRequest.class);
     }
 
 
     public void listLatestDoneCopyRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getCopyStorage().getLatestDoneRequestIds(maxCount);
-        listRequests(sb, requestIds, CopyRequest.class);
+        listRequests(sb, getCopyStorage().getLatestDoneJobIds(maxCount), CopyRequest.class);
     }
 
     public void printCopySchedulerInfo(StringBuilder sb) throws SQLException {
@@ -1217,24 +1160,20 @@ public class SRM {
     }
 
     public void listLatestCompletedBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getBringOnlineStorage().getLatestCompletedRequestIds(maxCount);
-        listRequests(sb, requestIds, BringOnlineRequest.class);
+        listRequests(sb, getBringOnlineStorage().getLatestCompletedJobIds(maxCount), BringOnlineRequest.class);
     }
 
     public void listLatestFailedBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getBringOnlineStorage().getLatestFailedRequestIds(maxCount);
-        listRequests(sb, requestIds, BringOnlineRequest.class);
+        listRequests(sb, getBringOnlineStorage().getLatestFailedJobIds(maxCount), BringOnlineRequest.class);
     }
 
     public void listLatestCanceledBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getBringOnlineStorage().getLatestCanceledRequestIds(maxCount);
-        listRequests(sb, requestIds, BringOnlineRequest.class);
+        listRequests(sb, getBringOnlineStorage().getLatestCanceledJobIds(maxCount), BringOnlineRequest.class);
     }
 
 
     public void listLatestDoneBringOnlineRequests(StringBuilder sb, int maxCount) throws SQLException {
-        Set<Long> requestIds = getBringOnlineStorage().getLatestDoneRequestIds(maxCount);
-        listRequests(sb, requestIds, BringOnlineRequest.class);
+        listRequests(sb, getBringOnlineStorage().getLatestDoneJobIds(maxCount), BringOnlineRequest.class);
     }
 
     public void printBringOnlineSchedulerInfo(StringBuilder sb) throws SQLException {
@@ -1269,9 +1208,9 @@ public class SRM {
     }
 
     private <T extends Job> void listRequests(StringBuilder sb,
-            Set<Long> requestIds,
+            Set<Long> jobIds,
             Class<T> type) throws SQLException {
-        for (Long requestId : requestIds) {
+        for (long requestId : jobIds) {
             try {
                 T request = Job.getJob(requestId, type);
                 sb.append(request).append('\n');
@@ -1303,29 +1242,29 @@ public class SRM {
         return load;
     }
 
-    public void listRequest(StringBuilder sb, Long requestId, boolean longformat) throws SQLException,
+    public void listRequest(StringBuilder sb, long requestId, boolean longformat) throws SQLException,
     SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null) {
-            sb.append("request with reqiest id ").append(requestId)
+            sb.append("request with id ").append(requestId)
                     .append(" is not found\n");
         } else {
             job.toString(sb,longformat);
         }
     }
 
-    public void cancelRequest(StringBuilder sb, Long requestId) throws SQLException,
+    public void cancelRequest(StringBuilder sb, long requestId) throws SQLException,
     SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null || !(job instanceof ContainerRequest)) {
-            sb.append("request with reqiest id ").append(requestId)
+            sb.append("request with id ").append(requestId)
                     .append(" is not found\n");
             return;
         }
-        ContainerRequest r = (ContainerRequest) job;
+        ContainerRequest<?> r = (ContainerRequest<?>) job;
         try {
             r.setState(State.CANCELED, "Canceled by admin through cancel command");
-            sb.append("state changed, no guarantee that the proccess will end immediately\n");
+            sb.append("state changed, no guarantee that the process will end immediately\n");
             sb.append(r.toString(false)).append('\n');
         } catch (IllegalStateTransition ist) {
             sb.append("Illegal State Transition : ").append(ist.getMessage());
@@ -1336,51 +1275,50 @@ public class SRM {
     public void cancelAllGetRequest(StringBuilder sb, String pattern)
             throws SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getGetRequestScheduler(), getGetStorage());
+        cancelAllRequest(sb, pattern, getGetRequestScheduler(), GetRequest.class);
     }
 
     public void cancelAllBringOnlineRequest(StringBuilder sb, String pattern)
             throws SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), getBringOnlineStorage());
+        cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), BringOnlineRequest.class);
     }
 
     public void cancelAllPutRequest(StringBuilder sb, String pattern)
             throws SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getPutRequestScheduler(), getPutStorage());
+        cancelAllRequest(sb, pattern, getPutRequestScheduler(), PutRequest.class);
     }
 
     public void cancelAllCopyRequest(StringBuilder sb, String pattern)
             throws SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getCopyRequestScheduler(), getCopyStorage());
+        cancelAllRequest(sb, pattern, getCopyRequestScheduler(), CopyRequest.class);
     }
 
     public void cancelAllReserveSpaceRequest(StringBuilder sb, String pattern)
             throws SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), getReserveSpaceRequestStorage());
+        cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), ReserveSpaceRequest.class);
     }
 
     public void cancelAllLsRequests(StringBuilder sb, String pattern)
             throws SQLException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, getLsRequestScheduler(), getLsRequestStorage());
+        cancelAllRequest(sb, pattern, getLsRequestScheduler(), LsRequest.class);
     }
 
     private void cancelAllRequest(StringBuilder sb,
             String pattern,
             Scheduler scheduler,
-            DatabaseRequestStorage storage) throws SQLException,
+            Class<? extends Job> type) throws SQLException,
             SRMInvalidRequestException {
 
         Set<Long> jobsToKill = new HashSet<>();
         Pattern p = Pattern.compile(pattern);
-        Set<Long> activeRequestIds =
-                storage.getActiveRequestIds(scheduler.getId());
-        for (Long requestId : activeRequestIds) {
-            Matcher m = p.matcher(requestId.toString());
+        Set<Long> activeRequestIds = getActiveJobIds(type, null);
+        for (long requestId : activeRequestIds) {
+            Matcher m = p.matcher(String.valueOf(requestId));
             if (m.matches()) {
                 logger.debug("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
                 jobsToKill.add(requestId);
@@ -1391,9 +1329,9 @@ public class SRM {
                     .append(" in scheduler ").append(scheduler).append("\n");
             return;
         }
-        for (Long requestId : jobsToKill) {
+        for (long requestId : jobsToKill) {
             try {
-                final ContainerRequest job = Job.getJob(requestId, ContainerRequest.class);
+                final ContainerRequest<?> job = Job.getJob(requestId, ContainerRequest.class);
                 sb.append("request #").append(requestId)
                         .append(" matches pattern=\"").append(pattern)
                         .append("\"; canceling request \n");
@@ -1409,7 +1347,7 @@ public class SRM {
                     }
                 }).start();
             } catch(SRMInvalidRequestException e) {
-                logger.error(" request with request id " + requestId + " is not found\n");
+                logger.error("request with request id {} is not found", requestId);
             }
         }
     }
@@ -1446,59 +1384,49 @@ public class SRM {
         return getScheduler(CopyRequest.class);
     }
 
-    public DatabaseRequestStorage getReserveSpaceRequestStorage() {
-        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
-                getJobStorage(ReserveSpaceRequest.class);
+    public JobStorage<ReserveSpaceRequest> getReserveSpaceRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(ReserveSpaceRequest.class);
     }
 
-    public DatabaseRequestStorage getLsRequestStorage() {
-        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
-                getJobStorage(LsRequest.class);
+    public JobStorage<LsRequest> getLsRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(LsRequest.class);
     }
 
-    public JobStorage getLsFileRequestStorage() {
+    public JobStorage<LsFileRequest> getLsFileRequestStorage() {
         return JobStorageFactory.getJobStorageFactory().
                 getJobStorage(LsFileRequest.class);
     }
 
-    public DatabaseRequestStorage getBringOnlineStorage() {
-        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
-                getJobStorage(BringOnlineRequest.class);
+    public JobStorage<BringOnlineRequest> getBringOnlineStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineRequest.class);
     }
 
-    public DatabaseRequestStorage  getGetStorage() {
-        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
-                getJobStorage(GetRequest.class);
+    public JobStorage<GetRequest> getGetStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(GetRequest.class);
     }
 
-    public DatabaseRequestStorage getPutStorage() {
-        return (DatabaseRequestStorage)  JobStorageFactory.getJobStorageFactory().
-                getJobStorage(PutRequest.class);
+    public JobStorage<PutRequest> getPutStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(PutRequest.class);
     }
 
-    public DatabaseRequestStorage getCopyStorage() {
-        return (DatabaseRequestStorage) JobStorageFactory.getJobStorageFactory().
-                getJobStorage(CopyRequest.class);
+    public JobStorage<CopyRequest> getCopyStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(CopyRequest.class);
     }
 
-    public JobStorage getBringOnlineFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().
-                getJobStorage(BringOnlineFileRequest.class);
+    public JobStorage<BringOnlineFileRequest> getBringOnlineFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineFileRequest.class);
     }
 
-    public JobStorage getGetFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().
-                getJobStorage(GetFileRequest.class);
+    public JobStorage<GetFileRequest> getGetFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(GetFileRequest.class);
     }
 
-    public JobStorage getPutFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().
-                getJobStorage(PutFileRequest.class);
+    public JobStorage<PutFileRequest> getPutFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(PutFileRequest.class);
     }
 
-    public JobStorage getCopyFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().
-                getJobStorage(CopyFileRequest.class);
+    public JobStorage<CopyFileRequest> getCopyFileRequestStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(CopyFileRequest.class);
     }
 
     public Scheduler getReserveSpaceScheduler() {
@@ -1509,7 +1437,9 @@ public class SRM {
         return getScheduler(LsFileRequest.class);
     }
 
-    public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description) {
+    public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description)
+            throws SQLException
+    {
         Set<T> jobs = Job.getActiveJobs(type);
         Set<Long> ids = new HashSet<>();
         for(Job job: jobs) {
@@ -1527,12 +1457,12 @@ public class SRM {
         return ids;
     }
 
-    public boolean isFileBusy(URI surl)
+    public boolean isFileBusy(URI surl) throws SQLException
     {
         return hasActivePutRequests(surl);
     }
 
-    private boolean hasActivePutRequests(URI surl)
+    private boolean hasActivePutRequests(URI surl) throws SQLException
     {
         Set<PutFileRequest> requests = Job.getActiveJobs(PutFileRequest.class);
         for (PutFileRequest request: requests) {
@@ -1543,7 +1473,8 @@ public class SRM {
         return false;
     }
 
-    public <T extends FileRequest> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
+    public <T extends FileRequest<?>> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
+            throws SQLException
     {
         return Iterables.filter(Job.getActiveJobs(type),
                 new Predicate<T>()

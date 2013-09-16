@@ -114,7 +114,7 @@ public class SrmExtendFileLifeTime {
     Integer newFileLifetime ;
     Integer newPinLifetime ;
     String token ;
-    Long requestId;
+    long requestId;
     Job job;
     /**
      * implementation of srm expend file life time
@@ -168,14 +168,14 @@ public class SrmExtendFileLifeTime {
     public SrmExtendFileLifeTimeResponse srmExtendTURLorPinLifeTime()
             throws SRMInvalidRequestException {
         try {
-            requestId = new Long( token);
+            requestId = Long.parseLong(token);
         } catch (NumberFormatException nfe){
             return getFailedResponse(" requestToken \""+
                     token+"\"is not valid",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
 
-        ContainerRequest containerRequest = Job.getJob(requestId,
+        ContainerRequest<?> containerRequest = Job.getJob(requestId,
                 ContainerRequest.class);
         containerRequest.applyJdc();
 
@@ -203,7 +203,7 @@ public class SrmExtendFileLifeTime {
         for(int i = 0; i<len; ++i) {
             surlStatus[i] = new TSURLLifetimeReturnStatus();
             surlStatus[i].setSurl(surls[i]);
-            FileRequest fileRequest;
+            FileRequest<?> fileRequest;
 
             try {
                 fileRequest =

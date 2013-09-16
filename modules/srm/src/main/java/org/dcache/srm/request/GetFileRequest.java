@@ -103,7 +103,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  * @version
  */
-public final class GetFileRequest extends FileRequest {
+public final class GetFileRequest extends FileRequest<GetRequest> {
     private final static Logger logger = LoggerFactory.getLogger(GetFileRequest.class);
 
     private URI surl;
@@ -119,7 +119,7 @@ public final class GetFileRequest extends FileRequest {
     private transient FileMetaData fileMetaData;
 
     /** Creates new FileRequest */
-    public GetFileRequest(Long requestId,
+    public GetFileRequest(long requestId,
     Long  requestCredentalId,
     String url,
     long lifetime,
@@ -132,16 +132,15 @@ public final class GetFileRequest extends FileRequest {
             maxNumberOfRetries);
         logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         surl = URI.create(url);
-        updateMemoryCache();
-
     }
+
     /**
      * restore constructore, used for restoring the existing
      * file request from the database
      */
 
     public GetFileRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -153,7 +152,7 @@ public final class GetFileRequest extends FileRequest {
     int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long requestId,
+    long requestId,
     Long  requestCredentalId,
     String statusCodeString,
     String SURL,
@@ -301,7 +300,7 @@ public final class GetFileRequest extends FileRequest {
             rfs = new RequestFileStatus();
         }
 
-        rfs.fileId = getId().intValue();
+        rfs.fileId = (int) getId();
         rfs.SURL = getSurlString();
 
 
@@ -362,7 +361,7 @@ public final class GetFileRequest extends FileRequest {
 
             fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
-        fileStatus.setEstimatedWaitTime(getRequest().getRetryDeltaTime());
+        fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
         TReturnStatus returnStatus = getReturnStatus();
         fileStatus.setStatus(returnStatus);
 
@@ -384,7 +383,7 @@ public final class GetFileRequest extends FileRequest {
 
     private URI getTURL() throws SRMException, SQLException{
         String firstDcapTurl = null;
-        GetRequest request = Job.getJob(requestId, GetRequest.class);
+        GetRequest request = getContainerRequest();
         if (request != null) {
             firstDcapTurl = request.getFirstDcapTurl();
             if (firstDcapTurl == null) {
@@ -458,7 +457,7 @@ public final class GetFileRequest extends FileRequest {
                     return;
                 }
             }
-        } catch (IllegalStateTransition | SRMException e) {
+        } catch (IllegalStateTransition | SQLException | SRMException e) {
             // FIXME some SRMException failures are temporary and others are
             // permanent.  Code currently doesn't distinguish between them and
             // always retries, even if problem isn't transitory.
@@ -471,7 +470,7 @@ public final class GetFileRequest extends FileRequest {
     public void pinFile()
         throws NonFatalJobFailure, FatalJobFailure, SRMException
     {
-        GetRequest request = Job.getJob(requestId, GetRequest.class);
+        GetRequest request = getContainerRequest();
         if (!isProtocolSupported(request.protocols)) {
             throw new FatalJobFailure("Transfer protocols not supported");
         }
@@ -480,7 +479,7 @@ public final class GetFileRequest extends FileRequest {
         logger.info("Pinning {}", surl);
         getStorage().pinFile(getUser(),
                              surl,
-                             getRequest().getClient_host(),
+                             getContainerRequest().getClient_host(),
                              lifetime,
                              getRequestId(),
                              new ThePinCallbacks(getId()));
@@ -492,7 +491,7 @@ public final class GetFileRequest extends FileRequest {
         logger.debug("State changed from "+oldState+" to "+getState());
         if(state == State.READY) {
             try {
-                getRequest().resetRetryDeltaTime();
+                getContainerRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }
@@ -576,7 +575,7 @@ public final class GetFileRequest extends FileRequest {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        long requestLifetime = getRequest().extendLifetimeMillis(newLifetime);
+        long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
         if(requestLifetime <newLifetime) {
             newLifetime = requestLifetime;
         }
@@ -645,9 +644,9 @@ public final class GetFileRequest extends FileRequest {
 
     private  static class ThePinCallbacks implements PinCallbacks {
 
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
-        public ThePinCallbacks(Long fileRequestJobId) {
+        public ThePinCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -804,9 +803,9 @@ public final class GetFileRequest extends FileRequest {
 
     private  static class TheUnpinCallbacks implements UnpinCallbacks {
 
-        Long fileRequestJobId;
+        private final long fileRequestJobId;
 
-        public TheUnpinCallbacks(Long fileRequestJobId) {
+        public TheUnpinCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 

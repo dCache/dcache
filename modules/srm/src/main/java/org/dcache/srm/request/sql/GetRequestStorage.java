@@ -15,12 +15,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.FileRequest;
+import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
@@ -31,7 +30,7 @@ import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
  *
  * @author  timur
  */
-public class GetRequestStorage extends DatabaseContainerRequestStorage{
+public class GetRequestStorage extends DatabaseContainerRequestStorage<GetRequest,GetFileRequest> {
     private final static Logger logger =
             LoggerFactory.getLogger(GetRequestStorage.class);
     public static final String TABLE_NAME ="getrequests";
@@ -227,16 +226,12 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         createIndex(protocols_columns,getProtocolsTableName());
     }
 
-    @Override
-    public void getCreateList(ContainerRequest r, StringBuffer sb) {
-
-    }
     private static int ADDITIONAL_FIELDS;
 
     @Override
-    protected ContainerRequest getContainerRequest(
+    protected GetRequest getContainerRequest(
             Connection _con,
-            Long ID,
+            long ID,
             Long NEXTJOBID,
             long CREATIONTIME,
             long LIFETIME,
@@ -254,7 +249,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
             String DESCRIPTION,
             String CLIENTHOST,
             String STATUSCODE,
-            FileRequest[] fileRequests,
+            GetFileRequest[] fileRequests,
             ResultSet set,
             int next_index)throws SQLException {
 
@@ -263,11 +258,10 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         Statement sqlStatement = _con.createStatement();
         logger.debug("executing statement: "+sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
-        Set<String> utilset = new HashSet<>();
+        List<String> protocols = new ArrayList<>();
         while(fileIdsSet.next()) {
-            utilset.add(fileIdsSet.getString(1));
+            protocols.add(fileIdsSet.getString(1));
         }
-        String [] protocols = utilset.toArray(new String[utilset.size()]);
         sqlStatement.close();
         Job.JobHistory[] jobHistoryArray =
                 getJobHistory(ID,_con);

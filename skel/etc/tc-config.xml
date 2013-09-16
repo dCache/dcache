@@ -26,11 +26,11 @@
 
   <application>
     <dso>
-      <!-- The following declarations tells DSO which classes should be instrumented to 
+      <!-- The following declarations tells DSO which classes should be instrumented to
       allow sharing. When the app runs under DSO, shared instances of these classes will
       broadcast changes in their state.
 
-      A good idiom when writing an app that you intend to cluster via TC DSO is to group the 
+      A good idiom when writing an app that you intend to cluster via TC DSO is to group the
       classes you wish to share under a single package (although if you follow the MVC pattern
       this tends to happen naturally) - this way the list of classes you wish to instrument
       can be concise -->
@@ -192,8 +192,8 @@
 
       <!-- Declare which web application context names should use DSO sessions -->
       <roots>
-        <root>        
-          <field-name>org.dcache.srm.scheduler.Job.sharedMemoryCache</field-name>
+        <root>
+          <field-name>org.dcache.srm.scheduler.SharedMemoryCacheJobStorage.sharedMemoryCache</field-name>
         </root>
       </roots>
 
@@ -202,7 +202,7 @@
            <method-expression>* org.dcache.srm.scheduler.Job.*(..)</method-expression>
            <!-- note that write is the default level, so strictly speaking, it's not
                 required to specify the lock-level for a write, but it's good practice
-                anyway  
+                anyway
             -->
            <lock-level>write</lock-level>
         </autolock>
@@ -211,7 +211,7 @@
            <method-expression>* org.dcache.srm.request.*.*(..)</method-expression>
            <!-- note that write is the default level, so strictly speaking, it's not
                 required to specify the lock-level for a write, but it's good practice
-                anyway  
+                anyway
             -->
            <lock-level>write</lock-level>
         </autolock>
@@ -228,7 +228,7 @@
         <include>java.lang.StringBuilder</include>
         <include>java.util.TimeZone</include>
         <include>sun.util.calendar.ZoneInfo</include>
-      </additional-boot-jar-classes> 
+      </additional-boot-jar-classes>
 
     <!-- This section specifies methods to invoke in a distributed
          fashion via Terracotta DSO. When a method matching one of the

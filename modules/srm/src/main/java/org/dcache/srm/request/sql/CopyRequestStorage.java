@@ -12,9 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.ContainerRequest;
+import org.dcache.srm.request.CopyFileRequest;
 import org.dcache.srm.request.CopyRequest;
-import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.TAccessLatency;
@@ -24,7 +23,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
  *
  * @author  timur
  */
-public class CopyRequestStorage extends DatabaseContainerRequestStorage{
+public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequest,CopyFileRequest> {
     public static final String TABLE_NAME="copyrequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
@@ -174,33 +173,8 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
    }
 
     @Override
-    public void getCreateList(ContainerRequest r, StringBuffer sb) {
-        CopyRequest cr = (CopyRequest)r;
-        TFileStorageType storageType = cr.getStorageType();
-        if(storageType == null) {
-            sb.append(", NULL ");
-        } else {
-            sb.append(", '").append(storageType.getValue()).append("' ");
-        }
-
-        TRetentionPolicy retentionPolicy = cr.getTargetRetentionPolicy();
-        if(retentionPolicy == null) {
-            sb.append(", NULL ");
-        } else {
-            sb.append(", '").append(retentionPolicy.getValue()).append("' ");
-        }
-        TAccessLatency  accessLatency = cr.getTargetAccessLatency();
-        if(accessLatency == null) {
-            sb.append(",NULL ");
-        } else {
-            sb.append(", '").append(accessLatency.getValue()).append('\'');
-        }
-
-    }
-
-    @Override
-    protected ContainerRequest getContainerRequest(Connection _con,
-            Long ID,
+    protected CopyRequest getContainerRequest(Connection _con,
+            long ID,
             Long NEXTJOBID,
             long CREATIONTIME,
             long LIFETIME,
@@ -218,7 +192,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
             String DESCRIPTION,
             String CLIENTHOST,
             String STATUSCODE,
-            FileRequest[] fileRequests,
+            CopyFileRequest[] fileRequests,
             ResultSet set,
             int next_index) throws SQLException {
 
@@ -281,30 +255,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
     public String getTableName() {
         return TABLE_NAME;
     }
-
-    public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
-        CopyRequest cr = (CopyRequest)r;
-
-        TFileStorageType storageType = cr.getStorageType();
-        if(storageType == null) {
-            sb.append(", STORAGETYPE=NULL ");
-        } else {
-            sb.append(", STORAGETYPE='").append(storageType.getValue()).append("' ");
-        }
-        TRetentionPolicy retentionPolicy = cr.getTargetRetentionPolicy();
-        if(retentionPolicy == null) {
-            sb.append(", RETENTIONPOLICY=NULL ");
-        } else {
-            sb.append(", RETENTIONPOLICY='").append(retentionPolicy.getValue()).append("' ");
-        }
-        TAccessLatency  accessLatency = cr.getTargetAccessLatency();
-        if(accessLatency == null) {
-            sb.append(", ACCESSLATENCY=NULL ");
-        } else {
-            sb.append(", ACCESSLATENCY='").append(accessLatency.getValue()).append('\'');
-        }
-    }
-
 
     @Override
     public String getFileRequestsTableName() {

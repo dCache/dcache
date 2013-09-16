@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,12 +32,8 @@ import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.request.sql.DatabaseFileRequestStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
@@ -45,6 +42,8 @@ import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static java.util.Arrays.asList;
 
 
 /**
@@ -154,17 +153,6 @@ public class SrmReleaseFiles {
                SQLException, IllegalStateTransition
     {
         String requestToken = srmReleaseFilesRequest.getRequestToken();
-        Long requestId = null;
-        if( requestToken != null ) {
-            try {
-                requestId = Long.valueOf(requestToken);
-            }
-            catch (NumberFormatException nfe){
-                return getFailedResponse(" requestToken \""+
-                                         requestToken+"\"is not valid",
-                                         TStatusCode.SRM_INVALID_REQUEST);
-            }
-        }
         URI[] surls;
         if(  srmReleaseFilesRequest.getArrayOfSURLs() == null ){
             if(requestToken == null) {
@@ -184,7 +172,16 @@ public class SrmReleaseFiles {
             surls = toUris(srmReleaseFilesRequest.getArrayOfSURLs().getUrlArray());
         }
 
-        ContainerRequest request = Job.getJob(requestId, ContainerRequest.class);
+        long requestId;
+        try {
+            requestId = Long.parseLong(requestToken);
+        } catch (NumberFormatException nfe){
+            return getFailedResponse(" requestToken \""+
+                    requestToken+"\"is not valid",
+                    TStatusCode.SRM_INVALID_REQUEST);
+        }
+
+        ContainerRequest<?> request = Job.getJob(requestId, ContainerRequest.class);
         request.applyJdc();
 
         if ( !(request instanceof GetRequest || request instanceof BringOnlineRequest) ){
@@ -207,7 +204,7 @@ public class SrmReleaseFiles {
             }
             if(request instanceof GetRequest) {
                 for (URI surl : surls) {
-                    FileRequest fileRequest = request
+                    FileRequest<?> fileRequest = request
                             .getFileRequestBySurl(surl);
                     fileRequest.setState(State.DONE, "SrmReleaseFiles called");
                 }
@@ -410,84 +407,28 @@ public class SrmReleaseFiles {
 
     }
 
-    private Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls) {
-        Scheduler scheduler =
-                SchedulerFactory.getSchedulerFactory().
-                getScheduler(BringOnlineFileRequest.class);
-        Set<BringOnlineFileRequest> foundRequests =
-            new HashSet<>();
-        JobStorage js =
-                JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineFileRequest.class);
-        if(js instanceof DatabaseFileRequestStorage) {
-            DatabaseFileRequestStorage reqstorage =(DatabaseFileRequestStorage) js;
-            Set<Long> activeRequestIds ;
-            try {
-                activeRequestIds =
-                   reqstorage.getActiveFileRequestIds(scheduler.getId());
-            } catch (SQLException sqle) {
-                logger.warn(sqle.toString());
-                //just return empty
-                return foundRequests;
-            }
-
-            for(Long requestId:activeRequestIds) {
-                BringOnlineFileRequest bofr;
-
-                try {
-                    bofr = Job.getJob(requestId, BringOnlineFileRequest.class);
-                } catch (SRMInvalidRequestException ire) {
-                    logger.error(ire.toString());
-                    continue;
-                }
-
-                for(URI surl: surls) {
-                    if(bofr.getSurl().equals(surl)) {
-                        foundRequests.add(bofr);
-                    }
-                }
+    private Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls)
+            throws SQLException
+    {
+        Collection<URI> surlList = (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
+        Set<BringOnlineFileRequest> requests = new HashSet<>();
+        for (BringOnlineFileRequest request : Job.getActiveJobs(BringOnlineFileRequest.class)) {
+            if (surlList.contains(request.getSurl())) {
+                requests.add(request);
             }
         }
-        return foundRequests;
+        return requests;
     }
 
-    private Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls)  {
-        Scheduler scheduler = srm.getGetRequestScheduler();
-        Set<GetFileRequest> foundRequests =
-            new HashSet<>();
-        JobStorage js =
-                JobStorageFactory.getJobStorageFactory().getJobStorage(GetFileRequest.class);
-        if(js instanceof DatabaseFileRequestStorage) {
-           DatabaseFileRequestStorage  reqstorage =
-                   (DatabaseFileRequestStorage) js;
-        Set<Long> activeRequestIds ;
-        try {
-            activeRequestIds =
-                reqstorage.getActiveFileRequestIds(scheduler.getId());
-        } catch (SQLException sqle) {
-            logger.warn(sqle.toString());
-            //just return empty
-            return foundRequests;
-        }
-
-
-        for(Long requestId:activeRequestIds) {
-            GetFileRequest gfr;
-            try {
-                gfr = Job.getJob(requestId, GetFileRequest.class);
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-                continue;
-            }
-
-            for(URI surl: surls) {
-                if(gfr.getSurl().equals(surl)) {
-                    foundRequests.add(gfr);
-                }
+    private Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls) throws SQLException
+    {
+        Collection<URI> surlList = (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
+        Set<GetFileRequest> requests = new HashSet<>();
+        for (GetFileRequest request : Job.getActiveJobs(GetFileRequest.class)) {
+            if (surlList.contains(request.getSurl())) {
+                requests.add(request);
             }
         }
-        }
-        return foundRequests;
+        return requests;
     }
-
-
 }

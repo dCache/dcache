@@ -121,15 +121,14 @@ public class SrmGetRequestSummary {
         if( requestTokens == null ) {
             return getFailedResponse("request contains no request tokens");
         }
-        Long[] requestIds = new Long[requestTokens.length];
         TRequestSummary[] requestSummaries = new TRequestSummary[requestTokens.length];
 
         for(int i = 0 ; i<requestTokens.length; ++i) {
 
             String requestToken = requestTokens[i];
             try {
-                requestIds[i] = new Long(requestToken);
-                ContainerRequest request = Job.getJob(requestIds[i], ContainerRequest.class);
+                long requestId = Long.parseLong(requestToken);
+                ContainerRequest<?> request = Job.getJob(requestId, ContainerRequest.class);
 
                 try (JDC ignored = request.applyJdc()) {
                     // FIXME we do this to make the srm update the status of the request if it changed

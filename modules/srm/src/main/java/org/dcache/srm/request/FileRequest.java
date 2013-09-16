@@ -73,6 +73,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 
+import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,7 +102,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * or more LsFileRequest objects (a subclass of FileRequest), one for each file
  * in the srmLs operation.
  */
-public abstract class FileRequest extends Job {
+public abstract class FileRequest<R extends ContainerRequest> extends Job {
     private final static Logger logger =
             LoggerFactory.getLogger(FileRequest.class);
     //file ContainerRequest is being processed
@@ -109,8 +110,11 @@ public abstract class FileRequest extends Job {
     // is not available yet
     //for copy - file is being copied
 
+    @SuppressWarnings("unchecked")
+    private final Class<R> containerRequestType = (Class<R>) new TypeToken<R>(getClass()) {}.getRawType();
+
     //request which contains this fileRequest (which is different from request number)
-    protected final Long requestId;
+    protected final long requestId;
     protected Long credentialId;
 
     //pointer to underlying storage
@@ -130,7 +134,7 @@ public abstract class FileRequest extends Job {
     private TStatusCode statusCode;
 
    /** Creates new FileRequest */
-    protected FileRequest(Long requestId,
+    protected FileRequest(long requestId,
                           Long requestCredentalId,
                           long lifetime,
                           int maxNumberOfRetries)
@@ -147,7 +151,7 @@ public abstract class FileRequest extends Job {
 
 
     protected FileRequest(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,long lifetime,
     int stateId,String errorMessage,
@@ -157,7 +161,7 @@ public abstract class FileRequest extends Job {
     int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long requestId,
+    long requestId,
     Long  requestCredentalId,
     String statusCodeString) {
         super(id,
@@ -220,7 +224,7 @@ public abstract class FileRequest extends Job {
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return (int) (getId() ^ getId() >> 32);
     }
 
     public void setStatus(String status) throws SRMException, SQLException {
@@ -267,25 +271,25 @@ public abstract class FileRequest extends Job {
     protected void stateChanged(State oldState)
     {
         try {
-            getRequest().fileRequestStateChanged(this);
+            getContainerRequest().fileRequestStateChanged(this);
         } catch (SRMInvalidRequestException ire) {
             logger.error(ire.toString());
         }
     }
 
     public SRMUser getUser() throws SRMInvalidRequestException {
-        return getRequest().getUser();
+        return getContainerRequest().getUser();
     }
 
-    public ContainerRequest getRequest() throws SRMInvalidRequestException  {
-        return Job.getJob(requestId, ContainerRequest.class);
+    public R getContainerRequest() throws SRMInvalidRequestException  {
+        return Job.getJob(requestId, containerRequestType);
     }
 
     /**
      * Getter for property requestId.
      * @return Value of property requestId.
      */
-    public Long getRequestId() {
+    public long getRequestId() {
         return requestId;
     }
 

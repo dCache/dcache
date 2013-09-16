@@ -21,7 +21,7 @@ import org.dcache.srm.util.Configuration;
  *
  * @author  timur
  */
-public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
+public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSpaceRequest> {
     public static final String TABLE_NAME ="reservespacerequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
@@ -190,9 +190,9 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
 
 
     @Override
-    protected Request getRequest(
+    protected ReserveSpaceRequest getRequest(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,
@@ -299,51 +299,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
     @Override
     protected int getMoreCollumnsNum() {
         return ADDITIONAL_FIELDS_NUM;
-    }
-
-    @Override
-    public void getCreateList(Request request, StringBuffer sb) {
-
-        if(request == null || !(request instanceof ReserveSpaceRequest)) {
-            throw new IllegalArgumentException("request is not ReserveSpaceRequest" );
-        }
-        ReserveSpaceRequest r = (ReserveSpaceRequest)request;
-
-        /*
-         *additional fields:
-                 ","+
-        ","+
-        "CREDENTIALID "+  longType+
-        ","+
-        "SIZEINBYTES "+  longType+
-        ","+
-        "RESERVATIONLIFETIME "+  longType+
-        ","+
-         "SPACETOKEN "+  stringType+
-         ","+
-        "RETENTIONPOLICY "+  stringType+
-        ","+
-        "ACCESSLATENCY "+  stringType+
-        ","+
-        "DESCRIPTION "+  stringType;
-        */
-        sb.append(", ").append(r.getSizeInBytes());
-        sb.append(", ").append(r.getSpaceReservationLifetime());
-        if(r.getSpaceToken() == null){
-            sb.append(", NULL");
-        } else {
-            sb.append(", '").append(r.getSpaceToken()).append('\'');
-        }
-        if(r.getRetentionPolicy() == null){
-            sb.append(", NULL");
-        } else {
-            sb.append(", '").append(r.getRetentionPolicy().getValue()).append('\'');
-        }
-        if(r.getAccessLatency() == null){
-            sb.append(", NULL");
-        } else {
-            sb.append(", '").append(r.getAccessLatency().getValue()).append('\'');
-        }
     }
 
     @Override

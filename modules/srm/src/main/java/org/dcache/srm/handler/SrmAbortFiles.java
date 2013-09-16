@@ -26,7 +26,6 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
@@ -140,16 +139,16 @@ public class SrmAbortFiles {
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");
         }
-        Long requestId;
+        long requestId;
         try {
-            requestId = new Long( requestToken);
+            requestId = Long.parseLong(requestToken);
         } catch (NumberFormatException nfe){
             return getFailedResponse(" requestToken \""+
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
 
-        ContainerRequest request = Job.getJob(requestId, ContainerRequest.class);
+        ContainerRequest<?> request = Job.getJob(requestId, ContainerRequest.class);
         request.applyJdc();
 
         URI[] surls;
@@ -165,7 +164,7 @@ public class SrmAbortFiles {
                     TStatusCode.SRM_INVALID_REQUEST);
         }
         for (URI surl: surls) {
-            FileRequest fileRequest = request.getFileRequestBySurl(surl);
+            FileRequest<?> fileRequest = request.getFileRequestBySurl(surl);
             fileRequest.setState(State.CANCELED,"SrmAbortFiles called");
         }
 

@@ -6,13 +6,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
+import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.util.Configuration;
 
-public class LsRequestStorage extends DatabaseContainerRequestStorage{
+public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,LsFileRequest> {
     public static final String TABLE_NAME ="lsrequests";
 
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
@@ -149,26 +148,8 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
         }
 
         @Override
-        public void getCreateList(ContainerRequest r, StringBuffer sb) {
-                if (r==null || !(r instanceof LsRequest)){
-                        throw new IllegalArgumentException("r is not LsRequest" );
-                }
-                LsRequest lsRequest = (LsRequest)r;
-                if(lsRequest.getExplanation()!=null) {
-                        sb.append(",'").append(lsRequest.getExplanation()).append("'");
-                }
-                else {
-                        sb.append(",NULL");
-                }
-                sb.append(",").append(lsRequest.getLongFormat()==true?1:0);
-                sb.append(",").append(lsRequest.getNumOfLevels());
-                sb.append(",").append(lsRequest.getCount());
-                sb.append(",").append(lsRequest.getOffset());
-        }
-
-        @Override
-        protected ContainerRequest getContainerRequest(Connection connection,
-                                                       Long ID,
+        protected LsRequest getContainerRequest(Connection connection,
+                                                       long ID,
                                                        Long NEXTJOBID,
                                                        long CREATIONTIME,
                                                        long LIFETIME,
@@ -186,7 +167,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
                                                        String DESCRIPTION,
                                                        String CLIENTHOST,
                                                        String STATUSCODE,
-                                                       FileRequest[] fileRequests,
+                                                       LsFileRequest[] fileRequests,
                                                        ResultSet set,
                                                        int next_index) throws SQLException {
                 Job.JobHistory[] jobHistoryArray = getJobHistory(ID,connection);
@@ -236,24 +217,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
         public String getTableName() {
                 return TABLE_NAME;
         }
-
-        public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
-                if (r==null || !(r instanceof LsRequest)){
-                        throw new IllegalArgumentException("r is not LsRequest" );
-                }
-                LsRequest lsRequest = (LsRequest)r;
-                if(lsRequest.getExplanation()!=null) {
-                        sb.append(",EXPLANATION='").append(lsRequest.getExplanation()).append("'");
-                }
-                else {
-                        sb.append(",EXPLANATION=NULL");
-                }
-                sb.append(",LONGFORMAT=").append(lsRequest.getLongFormat()==true?1:0);
-                sb.append(",NUMOFLEVELS=").append(lsRequest.getNumOfLevels());
-                sb.append(",\"count\"=").append(lsRequest.getCount());
-                sb.append(",LSOFFSET=").append(lsRequest.getOffset());
-        }
-
 
         @Override
         public String getFileRequestsTableName() {

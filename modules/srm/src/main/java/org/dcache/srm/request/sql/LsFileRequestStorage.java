@@ -5,12 +5,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.util.Configuration;
 
-public class LsFileRequestStorage extends DatabaseFileRequestStorage {
+public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileRequest> {
     public static final String TABLE_NAME = "lsfilerequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
@@ -31,8 +30,8 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
         }
 
         @Override
-        protected FileRequest getFileRequest(Connection connection,
-                                             Long ID,
+        protected LsFileRequest getFileRequest(Connection connection,
+                                             long ID,
                                              Long NEXTJOBID,
                                              long CREATIONTIME,
                                              long LIFETIME,
@@ -43,7 +42,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
                                              int NUMOFRETR,
                                              int MAXNUMOFRETR,
                                              long LASTSTATETRANSITIONTIME,
-                                             Long REQUESTID,
+                                             long REQUESTID,
                                              Long CREDENTIALID,
                                              String STATUSCODE,
                                              ResultSet set,

@@ -72,11 +72,9 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -85,15 +83,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
 import java.util.TimerTask;
-import java.util.WeakHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
@@ -110,7 +103,6 @@ import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerFactory;
-import org.dcache.srm.scheduler.SharedMemoryCache;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.JDC;
 
@@ -126,18 +118,10 @@ public abstract class Job  {
 
     private static final String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXX";
 
-    // this is the map from jobIds to jobs
-    // job ids are referenced from jobs
-    // jobs are wrapped into WeakReferences to prevent
-    // creation hard references to jobIdsA
-
-    private static final Map<Long, WeakReference<Job>> weakJobStorage =
-            new WeakHashMap<>();
-
     //this is used to build the queue of jobs.
     protected Long nextJobId;
 
-    protected final Long id;
+    protected final long id;
 
     private volatile State state = State.PENDING;
     protected StringBuilder errorMessage=new StringBuilder();
@@ -155,24 +139,10 @@ public abstract class Job  {
     protected int maxNumberOfRetries;
     private long lastStateTransitionTime = System.currentTimeMillis();
 
-    private static volatile ImmutableMap<Class<? extends Job>, JobStorage> jobStorages = ImmutableMap.of();
     private final List<JobHistory> jobHistory = new ArrayList<>();
     private transient JobIdGenerator generator;
 
     private transient TimerTask retryTimer;
-
-    // this instance is registered as a terracotta root
-    // the objects put in this cache are clustered,
-    // but they are not guaranteed to present in local
-    // memory
-    private static final SharedMemoryCache sharedMemoryCache =
-            new SharedMemoryCache();
-
-    // this instance is not registered as a terracotta root
-    // the objects put in this cache are guaranteed to present in
-    // local memory, for as long as their state is not final
-    private static final SharedMemoryCache localMemoryCache =
-            new SharedMemoryCache();
 
     private transient boolean savedInFinalState;
 
@@ -182,21 +152,12 @@ public abstract class Job  {
             new ReentrantReadWriteLock();
     private final WriteLock writeLock = reentrantReadWriteLock.writeLock();
 
-    public static final void registerJobStorages(ImmutableMap<Class<? extends Job>, JobStorage> jobStorages)
-    {
-        Job.jobStorages = jobStorages;
-    }
-
-    public static void shutdown() {
-        LifetimeExpiration.shutdown();
-    }
-
     // this constructor is used for restoring the job from permanent storage
     // should be called through the Job.getJob only, otherwise the expireRestoredJobOrCreateExperationTimer
     // will never be called
     // we can not call it from the constructor, since this may lead to recursive job restoration
     // leading to the exhaust of the pool of database connections
-    protected Job(Long id, Long nextJobId, long creationTime,
+    protected Job(long id, Long nextJobId, long creationTime,
     long lifetime,int stateId,String errorMessage,
     String schedulerId,
     long schedulerTimestamp,
@@ -205,9 +166,6 @@ public abstract class Job  {
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray
     ) {
-        if(id == null) {
-            throw new NullPointerException(" job id is null");
-        }
         this.id = id;
         this.nextJobId = nextJobId;
         this.creationTime = creationTime;
@@ -237,28 +195,6 @@ public abstract class Job  {
         }
     }
 
-    /**
-     * NEED TO CALL THIS METHOD FROM THE CONCRETE SUBCLASS
-     * RESTORE CONSTRUCTOR
-     */
-    private void expireRestoredJobOrCreateExperationTimer()  {
-        wlock();
-        try {
-            if( ! state.isFinalState() ) {
-                long newLifetime =
-                        creationTime + lifetime - System.currentTimeMillis();
-                /* We schedule a timer even if the job has already
-                 * expired.  This is to avoid a restore loop in which
-                 * expiring a job during restore causes the job to be read
-                 * recursively.
-                 */
-                LifetimeExpiration.schedule(id, Math.max(0, newLifetime));
-            }
-        } finally {
-            wunlock();
-        }
-    }
-
     /** Creates a new instance of Job */
 
     public Job(long lifetime,
@@ -269,20 +205,10 @@ public abstract class Job  {
         this.lifetime = lifetime;
         this.maxNumberOfRetries = maxNumberOfRetries;
         this.jdc = new JDC();
-
-        LifetimeExpiration.schedule(id, lifetime);
-        synchronized (weakJobStorage) {
-            weakJobStorage.put(id, new WeakReference<>(this));
-        }
-        jobHistory.add( new JobHistory(nextLong(),state,"created",lastStateTransitionTime));
+        jobHistory.add(new JobHistory(nextLong(), state, "created", lastStateTransitionTime));
     }
 
-    protected final void updateMemoryCache () {
-        sharedMemoryCache.updateSharedMemoryChache(this);
-        localMemoryCache.updateSharedMemoryChache(this);
-    }
-
-    protected JobStorage getJobStorage() {
+    protected JobStorage<Job> getJobStorage() {
         return JobStorageFactory.getJobStorageFactory().getJobStorage(this);
     }
 
@@ -300,7 +226,7 @@ public abstract class Job  {
             if(savedInFinalState){
                 return;
             }
-            boolean isFinalState = State.isFinalState(this.getState());
+            boolean isFinalState = this.getState().isFinalState();
             getJobStorage().saveJob(this, isFinalState || force);
             savedInFinalState = isFinalState;
         } catch (SQLException e) {
@@ -328,7 +254,7 @@ public abstract class Job  {
      * @throws SRMInvalidRequestException if the job cannot be found or if
      * the job has the wrong type.
      */
-    public static final <T extends Job> T getJob(Long id, Class<T> type)
+    public static final <T extends Job> T getJob(long id, Class<T> type)
             throws SRMInvalidRequestException
     {
         return getJob(id, type, null);
@@ -342,89 +268,36 @@ public abstract class Job  {
      * @return a object representing this job.
      * @throws SRMInvalidRequestException if the job cannot be found
      */
-    public static <T extends Job> T getJob(Long jobId, Class<T> type, Connection _con)
+    public static <T extends Job> T getJob(long jobId, Class<T> type, Connection _con)
             throws SRMInvalidRequestException
     {
-        synchronized(weakJobStorage) {
-            WeakReference<Job> ref = weakJobStorage.get(jobId);
-            if(ref!= null) {
-                Job o1 = ref.get();
-                if(o1 != null) {
-                    return toType(type, o1);
-                }
-            }
-        }
-
-        Job job;
-
-        //
-        // This will allow to retrieve a job put in
-        // a shared cache by a different instance of SRM
-        // in a cluster
-        job = sharedMemoryCache.getJob(jobId);
-        boolean restoredFromDb=false;
-        if (job == null) {
-            for (Map.Entry<Class<? extends Job>, JobStorage> entry: jobStorages.entrySet()) {
-                if (type.isAssignableFrom(entry.getKey())) {
-                    try {
-                        if(_con == null) {
-                            job = entry.getValue().getJob(jobId);
-                        } else {
-                            job = entry.getValue().getJob(jobId, _con);
-                        }
-                    } catch (SQLException e){
-                        logger.error("Failed to read job", e);
+        for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry: JobStorageFactory.getJobStorageFactory().getJobStorages().entrySet()) {
+            if (type.isAssignableFrom(entry.getKey())) {
+                try {
+                    Job job;
+                    if (_con == null) {
+                        job = entry.getValue().getJob(jobId);
+                    } else {
+                        job = entry.getValue().getJob(jobId, _con);
                     }
                     if (job != null) {
-                        restoredFromDb = true;
-                        break;
+                        return type.cast(job);
                     }
+                } catch (SQLException e){
+                    logger.error("Failed to read job", e);
                 }
             }
         }
-        //since we do not synchronize  on the jobStorages or the job class
-        // in this method, some other thread could have got to the same point, and created
-        // an instance of the job for the same job id
-        // but we always want the same instance to be available to ewveryone
-        // only one of them  should win in storing his object in weakJobStorage
-        // the object stored by the winner is the one we want to return
-        //System.out.println("checking weakJobStorage");
-        synchronized(weakJobStorage) {
-            WeakReference<Job> ref = weakJobStorage.get(jobId);
-            if(ref!= null) {
-                Job o1 = ref.get();
-                if (o1 != null) {
-                    return toType(type, o1);
-                }
-            }
-
-            if (job != null)
-            {
-                weakJobStorage.put(job.id,new WeakReference<>(job));
-                job.updateMemoryCache();
-            }
-        }
-
-        if(job != null ) {
-            if(restoredFromDb) {
-                job.expireRestoredJobOrCreateExperationTimer();
-            }
-            return toType(type, job);
-        }
-        throw new SRMInvalidRequestException("jobId = "+jobId+" does not correspond to any known job");
+        throw new SRMInvalidRequestException("jobId = " + jobId + " does not correspond to any known job");
     }
 
-    private static <T extends Job> T toType(Class<T> type, Job job)
-            throws SRMInvalidRequestException
+    public static <T extends Job> Set<T> getActiveJobs(Class<T> type) throws SQLException
     {
-        if (!type.isAssignableFrom(job.getClass())) {
-            throw new SRMInvalidRequestException("Job has wrong type, actual type is " + job.getClass().getSimpleName() + " and expected type is " + type.getSimpleName());
-        }
-        return type.cast(job);
+        JobStorage<T> jobStorage = JobStorageFactory.getJobStorageFactory().getJobStorage(type);
+        return (jobStorage == null) ? Collections.<T>emptySet() : jobStorage.getActiveJobs();
     }
 
     /** Performs state transition checking the legality first.
-     * @param state
      */
     public State getState() {
         rlock();
@@ -589,19 +462,11 @@ public abstract class Job  {
 
             notifySchedulerOfStateChange(old, state);
 
-            if(state.isFinalState()) {
-                LifetimeExpiration.cancel(id);
-            }
-            else {
-                if(schedulerId == null) {
-                    throw new IllegalStateTransition("Scheduler ID is null");
-                }
-            }
-            if(!old.isFinalState() && state.isFinalState()) {
-                 updateMemoryCache();
+            if (!state.isFinalState() && schedulerId == null) {
+                throw new IllegalStateTransition("Scheduler ID is null");
             }
             stateChanged(old);
-            if(save) {
+            if(save || !old.isFinalState() && state.isFinalState()) {
                 saveJob();
             }
         } finally {
@@ -736,7 +601,6 @@ public abstract class Job  {
     }
 
     /** Setter for property numberOfRetries.
-     * @param numberOfRetries New value of property numberOfRetries.
      *
      */
     private void inclreaseNumberOfRetries() {
@@ -797,9 +661,8 @@ public abstract class Job  {
      * @return Value of property id.
      *
      */
-    public Long getId() {
-        // never let the reference to actual id to escape; REVISIT: why not?
-        return new Long(id.longValue());
+    public long getId() {
+        return id;
     }
     /** Getter for property nextJobId.
      * @return Value of property nextJobId.
@@ -887,27 +750,26 @@ public abstract class Job  {
     public long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
         wlock();
         try {
-            if(State.isFinalState(state)){
-                if(state == State.CANCELED) {
+            if (state.isFinalState()){
+                switch (state) {
+                case CANCELED:
                     throw new SRMAbortedException("can't extend lifetime, job was aborted");
-                } else if(state == State.DONE) {
+                case DONE:
                     throw new SRMReleasedException("can't extend lifetime, job has finished");
-                } else {
-                    throw new SRMException("can't extend lifetime, job state is "+state);
+                default:
+                    throw new SRMException("can't extend lifetime, job state is " + state);
                 }
             }
 
-            long remainingLifetime = getRemainingLifetime();
-            if(remainingLifetime >=newLifetimeInMillis) {
+            long now = System.currentTimeMillis();
+            long remainingLifetime = creationTime + lifetime - now;
+            if (remainingLifetime >= newLifetimeInMillis) {
                 return remainingLifetime;
             }
 
-            if (!LifetimeExpiration.cancel(id)) {
-                throw new SRMException (" job expiration has started already ");
-            }
-            LifetimeExpiration.schedule(id, newLifetimeInMillis);
-
-            return 0;
+            lifetime = now + newLifetimeInMillis - creationTime;
+            saveJob();
+            return newLifetimeInMillis;
         } finally {
             wunlock();
         }
@@ -929,7 +791,7 @@ public abstract class Job  {
      * which returns longs limited to int range
      * @return next Long id
      */
-    private Long nextId() {
+    private long nextId() {
         return getGenerator().getNextId();
     }
 
@@ -941,91 +803,22 @@ public abstract class Job  {
         return getGenerator().nextLong();
     }
 
-
-
-
-    private static class LifetimeExpiration extends TimerTask
+    public void checkExpiration()
     {
-        static private Map<Long,LifetimeExpiration> _instances =
-            new HashMap<>();
-
-        static private Timer _timer = new Timer();
-
-        private Long _id;
-
-        static public void shutdown()
-        {
-            _timer.cancel();
-        }
-
-        static synchronized public void schedule(Long id, long time)
-        {
-            if (!_instances.containsKey(id)) {
-                LifetimeExpiration task = new LifetimeExpiration(id);
-                _instances.put(id, task);
-                _timer.schedule(task, time);
-            }
-        }
-
-        static synchronized public boolean contains(Long id)
-        {
-            return _instances.containsKey(id);
-        }
-
-        static synchronized public boolean cancel(Long id)
-        {
-            LifetimeExpiration task = _instances.remove(id);
-            if (task == null) {
-                return false;
-            } else {
-                return task.cancel();
-            }
-        }
-
-        static synchronized private void remove(Long id)
-        {
-            _instances.remove(id);
-        }
-
-        private LifetimeExpiration(Long id)
-        {
-            _id = id;
-        }
-
-        @Override
-        public void run()
-        {
-            remove(_id);
-            try {
-                expireJob(Job.getJob(_id, Job.class));
-            } catch (IllegalArgumentException e) {
-                // Job is already gone
-            } catch (Exception e) {
-                logger.error("Unexpected exception during job timeout", e);
-            }
-        }
-    }
-
-    public static final void expireJob(Job job) {
+        wlock();
         try {
-            job.wlock();
-            try {
-                logger.debug("expiring job id="+job.getId());
-                if(job.state == State.READY ||
-                job.state == State.TRANSFERRING) {
-                    job.setState(State.DONE,"lifetime expired");
-                    return;
+            if (creationTime + lifetime < System.currentTimeMillis()) {
+                logger.debug("expiring job #{}", getId());
+                if (state == State.READY || state == State.TRANSFERRING) {
+                    setState(State.DONE, "lifetime expired");
+                } else if (!state.isFinalState()) {
+                    setState(State.FAILED, "lifetime expired");
                 }
-                if(State.isFinalState(job.state)) {
-                    return;
-                }
-                job.setState(State.FAILED,"lifetime expired");
-            } finally {
-                job.wunlock();
             }
-        }
-        catch(IllegalStateTransition ist) {
-            // todo: need to add log when adding logger ("Illegal State Transition : " +ist.getMessage());
+        } catch (IllegalStateTransition e) {
+            logger.error("Illegal state transition while expiring job: {}", e.toString());
+        } finally {
+            wunlock();
         }
     }
 
@@ -1077,16 +870,15 @@ public abstract class Job  {
     }
 
     public long getRemainingLifetime() {
-        wlock();
+        rlock();
         try {
-            if(State.isFinalState(this.state)) {
+            if (state.isFinalState()) {
                 return 0;
             }
-            long remianingLifetime = creationTime+
-                    lifetime - System.currentTimeMillis();
-            return remianingLifetime >0?remianingLifetime:0;
+            long remainingLifetime = creationTime + lifetime - System.currentTimeMillis();
+            return remainingLifetime > 0 ? remainingLifetime : 0;
         } finally {
-            wunlock();
+            runlock();
         }
     }
 
@@ -1260,12 +1052,6 @@ public abstract class Job  {
         } finally {
             wunlock();
         }
-    }
-
-
-
-    public static <T extends Job> Set<T > getActiveJobs(Class<T> type) {
-        return sharedMemoryCache.getJobs(type);
     }
 
     /**

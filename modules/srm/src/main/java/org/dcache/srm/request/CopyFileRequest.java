@@ -122,7 +122,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  * @version
  */
-public final class CopyFileRequest extends FileRequest {
+public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
         private static final Logger logger =
                 LoggerFactory.getLogger(CopyFileRequest.class);
@@ -150,7 +150,7 @@ public final class CopyFileRequest extends FileRequest {
 
 	/** Creates new FileRequest */
 
-	public CopyFileRequest(Long requestId,
+	public CopyFileRequest(long requestId,
 			       Long  requestCredentalId,
 			       String from_surl,
 			       String to_surl,
@@ -164,7 +164,6 @@ public final class CopyFileRequest extends FileRequest {
 		this.from_surl = URI.create(from_surl);
 		this.to_surl = URI.create(to_surl);
 		this.spaceReservationId = spaceToken;
-                updateMemoryCache();
 		logger.debug("constructor from_url=" +from_surl+" to_url="+to_surl);
 	}
 
@@ -174,9 +173,9 @@ public final class CopyFileRequest extends FileRequest {
 	 */
 
 	public CopyFileRequest(
-		Long id,
+		long id,
 		Long nextJobId,
-		JobStorage jobStorage,
+		JobStorage<CopyFileRequest> jobStorage,
 		long creationTime,
 		long lifetime,
 		int stateId,
@@ -187,7 +186,7 @@ public final class CopyFileRequest extends FileRequest {
 		int maxNumberOfRetries,
 		long lastStateTransitionTime,
 		JobHistory[] jobHistoryArray,
-		Long requestId,
+		long requestId,
 		Long requestCredentalId,
 		String statusCodeString,
 		String FROMURL,
@@ -252,7 +251,7 @@ public final class CopyFileRequest extends FileRequest {
 	@Override
         public RequestFileStatus getRequestFileStatus() {
 		RequestFileStatus rfs = new RequestFileStatus();
-		rfs.fileId = getId().intValue();
+		rfs.fileId = (int) getId();
 		rfs.SURL = getFrom_surl().toString();
 		rfs.size = 0;
 		rfs.TURL = getTo_surl().toString();
@@ -574,7 +573,7 @@ public final class CopyFileRequest extends FileRequest {
 			logger.debug("calling storage.prepareToPut("+getLocal_to_path()+")");
 			getStorage().prepareToPut(getUser(),getTo_surl(),
 					     callbacks,
-					     ((CopyRequest)getRequest()).isOverwrite());
+					     getContainerRequest().isOverwrite());
 			logger.debug("callbacks.waitResult()");
 			return;
 		}
@@ -595,9 +594,9 @@ public final class CopyFileRequest extends FileRequest {
         // Use pnfs tag for the default space token
         // if the conditions are right
 		TAccessLatency accessLatency =
-			((CopyRequest)getRequest()).getTargetAccessLatency();
+			getContainerRequest().getTargetAccessLatency();
 		TRetentionPolicy retentionPolicy =
-			((CopyRequest)getRequest()).getTargetRetentionPolicy();
+			getContainerRequest().getTargetRetentionPolicy();
 		if (getSpaceReservationId()==null &&
             retentionPolicy==null&&
             accessLatency==null &&
@@ -654,7 +653,7 @@ public final class CopyFileRequest extends FileRequest {
 			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getTo_surl(),
 							size==0?1:size,
 							remaining_lifetime,
-							((CopyRequest)getRequest()).isOverwrite(),
+							getContainerRequest().isOverwrite(),
 							callbacks );
 			return;
 		}
@@ -675,7 +674,7 @@ public final class CopyFileRequest extends FileRequest {
 			getStorage().prepareToPut(getUser(),
                                                   getTo_surl(),
                                                   callbacks,
-                                                  ((CopyRequest)getRequest()).isOverwrite());
+                                                  getContainerRequest().isOverwrite());
 			logger.debug("callbacks.waitResult()");
 			return;
 		}
@@ -695,9 +694,9 @@ public final class CopyFileRequest extends FileRequest {
         // Use pnfs tag for the default space token
         // if the conditions are right
 		TAccessLatency accessLatency =
-			((CopyRequest)getRequest()).getTargetAccessLatency();
+			getContainerRequest().getTargetAccessLatency();
 		TRetentionPolicy retentionPolicy =
-			((CopyRequest)getRequest()).getTargetRetentionPolicy();
+			getContainerRequest().getTargetRetentionPolicy();
 		if (getSpaceReservationId()==null &&
             retentionPolicy==null&&
             accessLatency==null &&
@@ -743,7 +742,7 @@ public final class CopyFileRequest extends FileRequest {
 			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getTo_surl(),
 							size==0?1:size,
 							remaining_lifetime,
-							((CopyRequest)getRequest()).isOverwrite(),
+							getContainerRequest().isOverwrite(),
 							callbacks );
 			return;
 		}
@@ -776,7 +775,7 @@ public final class CopyFileRequest extends FileRequest {
         try {
             setState(State.DONE, "setStateToDone called");
             try {
-                ((CopyRequest)getRequest()).fileRequestCompleted();
+                getContainerRequest().fileRequestCompleted();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }
@@ -793,7 +792,7 @@ public final class CopyFileRequest extends FileRequest {
         catch(IllegalStateTransition ist) {
             logger.error("setStateToFailed: Illegal State Transition : " +ist.getMessage());
         }
-		((CopyRequest)getRequest()).fileRequestCompleted();
+		getContainerRequest().fileRequestCompleted();
 	}
 
 	private void runLocalToRemoteCopy() throws SRMException,
@@ -1073,7 +1072,8 @@ public final class CopyFileRequest extends FileRequest {
 		try {
 			logger.debug("setting remote file status to Done, SURL="+SURL+" remoteRequestId="+remoteRequestId+
 			    " remoteFileId="+remoteFileId);
-			(( CopyRequest)(getRequest())).remoteFileRequestDone(SURL.toString(),remoteRequestId,remoteFileId);
+			getContainerRequest().remoteFileRequestDone(SURL
+                                .toString(), remoteRequestId, remoteFileId);
                 }
                 catch(Exception e) {
 			logger.error("set remote file status to done failed, surl = "+SURL+
@@ -1262,7 +1262,7 @@ public final class CopyFileRequest extends FileRequest {
     }
 
 	private static class PutCallbacks implements PrepareToPutCallbacks {
-		Long fileRequestJobId;
+		final long fileRequestJobId;
 		public boolean completed;
 		public boolean success;
 		public String fileId;
@@ -1303,10 +1303,7 @@ public final class CopyFileRequest extends FileRequest {
 			this.notifyAll();
 		}
 
-		public PutCallbacks(Long fileRequestJobId) {
-			if(fileRequestJobId == null) {
-				throw new NullPointerException("fileRequestJobId should be non-null");
-			}
+		public PutCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
@@ -1492,11 +1489,11 @@ public final class CopyFileRequest extends FileRequest {
 	}
 
 	private static class TheCopyCallbacks implements CopyCallbacks {
-		private Long fileRequestJobId;
+		private final long fileRequestJobId;
 		private boolean completed;
 		private boolean success;
 
-		public TheCopyCallbacks ( Long fileRequestJobId ) {
+		public TheCopyCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 		public synchronized boolean waitResult(long timeout) {
@@ -1702,14 +1699,14 @@ public final class CopyFileRequest extends FileRequest {
 	}
 
 	public static class TheReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
-		Long fileRequestJobId;
+		private final long fileRequestJobId;
 		public CopyFileRequest getCopyFileRequest()
-                throws SQLException, SRMInvalidRequestException
-        {
+                        throws SQLException, SRMInvalidRequestException
+                {
 		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public TheReserveSpaceCallbacks(Long fileRequestJobId) {
+		public TheReserveSpaceCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
@@ -1795,9 +1792,9 @@ public final class CopyFileRequest extends FileRequest {
 
 
 	private  static class TheReleaseSpaceCallbacks implements  SrmReleaseSpaceCallbacks {
-		Long fileRequestJobId;
+		private final long fileRequestJobId;
 
-		public TheReleaseSpaceCallbacks(Long fileRequestJobId) {
+		public TheReleaseSpaceCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
@@ -1876,7 +1873,7 @@ public final class CopyFileRequest extends FileRequest {
 		if(remainingLifetime >= newLifetime) {
 			return remainingLifetime;
 		}
-		long requestLifetime = getRequest().extendLifetimeMillis(newLifetime);
+		long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
 		if(requestLifetime <newLifetime) {
 			newLifetime = requestLifetime;
 		}
@@ -1899,14 +1896,14 @@ public final class CopyFileRequest extends FileRequest {
 	}
 
 	public static class CopyUseSpaceCallbacks implements SrmUseSpaceCallbacks {
-		Long fileRequestJobId;
+		private final long fileRequestJobId;
 
 		public CopyFileRequest getCopyFileRequest()
                 throws SQLException, SRMInvalidRequestException{
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public CopyUseSpaceCallbacks(Long fileRequestJobId) {
+		public CopyUseSpaceCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 
@@ -2059,14 +2056,14 @@ public final class CopyFileRequest extends FileRequest {
 	}
 
 	public static class CopyCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
-		Long fileRequestJobId;
+		private final long fileRequestJobId;
 
 		public CopyFileRequest getCopyFileRequest()
                 throws SQLException, SRMInvalidRequestException {
 			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
-		public CopyCancelUseOfSpaceCallbacks(Long fileRequestJobId) {
+		public CopyCancelUseOfSpaceCallbacks(long fileRequestJobId) {
 			this.fileRequestJobId = fileRequestJobId;
 		}
 

@@ -7,7 +7,7 @@ Name: dcache-srmclient
 Version: @Version@
 Release: @Release@
 BuildArch: noarch
-Prefix: /opt/d-cache
+Prefix: /usr
 #BuildRoot: %{_topdir}/BUILDROOT/%{name}-%{version}
 #Source0: dcache-srmclient.tar
 AutoReqProv: no
@@ -68,8 +68,8 @@ This package contains the clinet components.
 %attr(0755,root,root) /usr/bin/srm-abort-files
 %attr(0755,root,root) /usr/bin/srm-abort-request
 %attr(0755,root,root) /usr/bin/srm-release-files
-%attr(0755,root,root) /usr/sbin/srm
-%attr(0755,root,root) /usr/sbin/url-copy.sh
+%attr(0755,root,root) /usr/share/srm/lib/srm
+%attr(0755,root,root) /usr/share/srm/lib/url-copy.sh
 /usr/share/srm/lib
 /usr/share/srm/conf
 %changelog

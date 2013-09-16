@@ -27,7 +27,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-public final class LsRequest extends ContainerRequest {
+public final class LsRequest extends ContainerRequest<LsFileRequest> {
     private final static Logger logger =
             LoggerFactory.getLogger(LsRequest.class);
 
@@ -65,19 +65,18 @@ public final class LsRequest extends ContainerRequest {
                 this.longFormat = longFormat;
                 this.maxNumOfResults = maxNumOfResults;
                 org.apache.axis.types.URI[] urls = request.getArrayOfSURLs().getUrlArray();
-                List<FileRequest> requests = Lists.newArrayListWithCapacity(urls.length);
+                List<LsFileRequest> requests = Lists.newArrayListWithCapacity(urls.length);
                 for(org.apache.axis.types.URI url : urls) {
-                    FileRequest fileRequest = new LsFileRequest(getId(),
+                    LsFileRequest fileRequest = new LsFileRequest(getId(),
                             requestCredentialId, url, lifetime,
                             max_number_of_retries);
                     requests.add(fileRequest);
                 }
                 setFileRequests(requests);
-                updateMemoryCache();
         }
 
         public  LsRequest(
-                Long id,
+                long id,
                 Long nextJobId,
                 long creationTime,
                 long lifetime,
@@ -91,7 +90,7 @@ public final class LsRequest extends ContainerRequest {
                 long lastStateTransitionTime,
                 JobHistory[] jobHistoryArray,
                 Long credentialId,
-                FileRequest[] fileRequests,
+                LsFileRequest[] fileRequests,
                 int retryDeltaTime,
                 boolean should_updateretryDeltaTime,
                 String description,
@@ -131,14 +130,14 @@ public final class LsRequest extends ContainerRequest {
         }
 
         @Override
-        public FileRequest getFileRequestBySurl(URI surl)
+        public LsFileRequest getFileRequestBySurl(URI surl)
                 throws SQLException,
                 SRMException{
                 if(surl == null) {
                         throw new SRMException("surl is null");
                 }
-                for(FileRequest request : getFileRequests()) {
-                        if(((LsFileRequest)request).getSurl().equals(surl)) {
+                for (LsFileRequest request : getFileRequests()) {
+                        if (request.getSurl().equals(surl)) {
                                 return request;
                         }
                 }
@@ -154,7 +153,7 @@ public final class LsRequest extends ContainerRequest {
                 // scheduled, and the saved state needs to be consistent
 
                 saveJob(true);
-                for(FileRequest request : getFileRequests()) {
+                for (LsFileRequest request : getFileRequests()) {
                         request.schedule();
                 }
         }
@@ -180,7 +179,7 @@ public final class LsRequest extends ContainerRequest {
         protected void stateChanged(State oldState) {
                 State state = getState();
                 if(State.isFinalState(state)) {
-                        for(FileRequest fr : getFileRequests() ) {
+                        for (LsFileRequest fr : getFileRequests() ) {
                                 try {
                                         State fr_state = fr.getState();
                                         if(!State.isFinalState(fr_state)) {
@@ -251,7 +250,7 @@ public final class LsRequest extends ContainerRequest {
         }
 
         private String getTRequestToken() {
-                return getId().toString();
+                return String.valueOf(getId());
         }
 
         public TMetaDataPathDetail[] getPathDetailArray()
@@ -259,7 +258,7 @@ public final class LsRequest extends ContainerRequest {
                 int len = getFileRequests().size();
                 TMetaDataPathDetail detail[] = new TMetaDataPathDetail[len];
                 for(int i = 0; i<len; ++i) {
-                        LsFileRequest fr =(LsFileRequest)getFileRequests().get(i);
+                        LsFileRequest fr = getFileRequests().get(i);
                         detail[i] = fr.getMetaDataPathDetail();
                 }
                 return detail;
@@ -383,7 +382,7 @@ public final class LsRequest extends ContainerRequest {
                 int done_req             = 0;
                 int got_exception        = 0;
                 int auth_failure         = 0;
-                for(FileRequest fr : getFileRequests()) {
+                for (LsFileRequest fr : getFileRequests()) {
                         TReturnStatus fileReqRS = fr.getReturnStatus();
                         TStatusCode fileReqSC   = fileReqRS.getStatusCode();
                         try {
@@ -486,9 +485,8 @@ public final class LsRequest extends ContainerRequest {
                 sb.append(getMethod()).append("Request #").append(getId()).append(" created by ").append(getUser());
                 sb.append(" with credentials : ").append(getCredential()).append(" state = ").append(getState());
                 sb.append("\n SURL(s) : ");
-                for(FileRequest fr: getFileRequests()) {
-                        LsFileRequest lsfr = (LsFileRequest) fr;
-                        sb.append(lsfr.getSurlString()).append(" ");
+                for (LsFileRequest fr: getFileRequests()) {
+                        sb.append(fr.getSurlString()).append(" ");
                 }
                 sb.append("\n count      : ").append(getCount());
                 sb.append("\n offset     : ").append(getOffset());
@@ -499,7 +497,7 @@ public final class LsRequest extends ContainerRequest {
                         sb.append("\n error message=").append(getErrorMessage());
                         sb.append("\n History of State Transitions: \n");
                         sb.append(getHistory());
-                        for(FileRequest fr: getFileRequests()) {
+                        for (LsFileRequest fr: getFileRequests()) {
                                 fr.toString(sb,longformat);
                         }
                 } else {

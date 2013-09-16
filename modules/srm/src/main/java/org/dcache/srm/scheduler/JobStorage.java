@@ -83,11 +83,12 @@ import org.dcache.srm.request.Job;
  *
  * @author  timur
  */
-public interface JobStorage {
-    public Job getJob(Long jobId) throws SQLException;
-    public Job getJob(Long jobId, Connection connection) throws SQLException;
-    public Set<Job> getJobs(String scheduler) throws SQLException;
-    public Set<Job> getJobs(String scheduler,State state) throws SQLException;
+public interface JobStorage<J extends Job> {
+    void init() throws SQLException;
+    J getJob(long jobId) throws SQLException;
+    J getJob(long jobId, Connection connection) throws SQLException;
+    Set<J> getJobs(String scheduler) throws SQLException;
+    Set<J> getJobs(String scheduler,State state) throws SQLException;
     /**
      *
      * @param job Job to save
@@ -95,8 +96,15 @@ public interface JobStorage {
      *         disabled, this operation will be ignored
      * @throws SQLException
      */
-    public void saveJob(Job job, boolean saveIfMonitoringDisabled)
-    throws SQLException;
+    void saveJob(J job, boolean saveIfMonitoringDisabled)
+            throws SQLException;
 
-    public boolean isJdbcLogRequestHistoryInDBEnabled();
+    boolean isJdbcLogRequestHistoryInDBEnabled();
+
+    Set<Long> getLatestCompletedJobIds(int maxNum) throws SQLException;
+    Set<Long> getLatestDoneJobIds(int maxNum) throws SQLException;
+    Set<Long> getLatestFailedJobIds(int maxNum) throws SQLException;
+    Set<Long> getLatestCanceledJobIds(int maxNum) throws SQLException;
+
+    Set<J> getActiveJobs() throws SQLException;
 }

@@ -757,7 +757,7 @@ public class Transfer implements Comparable<Transfer>
                     _poolManager.sendAndWait(request, timeout);
                 setPool(reply.getPoolName());
                 setPoolAddress(reply.getPoolAddress());
-                setStorageInfo(reply.getStorageInfo());
+                setFileAttributes(reply.getFileAttributes());
             } else if (!_fileAttributes.getStorageInfo().isCreatedOnly()) {
                 EnumSet<RequestContainerV5.RequestState> allowedStates =
                     _checkStagePermission.canPerformStaging(_subject, fileAttributes.getStorageInfo())
@@ -777,7 +777,7 @@ public class Transfer implements Comparable<Transfer>
                     _poolManager.sendAndWait(request, timeout);
                 setPool(reply.getPoolName());
                 setPoolAddress(reply.getPoolAddress());
-                setStorageInfo(reply.getStorageInfo());
+                setFileAttributes(reply.getFileAttributes());
                 setReadPoolSelectionContext(reply.getContext());
             } else {
                 throw new FileIsNewCacheException();

@@ -9,18 +9,15 @@ package org.dcache.srm.request.sql;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Set;
 
 import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
 /**
  *
  * @author  timur
  */
-public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
+public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> extends DatabaseJobStorage<F>  {
 
     /** Creates a new instance of FileRequestStorage */
     public DatabaseFileRequestStorage
@@ -58,9 +55,9 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
 
     private static int ADDITIONAL_FIELDS_NUM=3;
 
-    protected abstract FileRequest getFileRequest(
+    protected abstract F getFileRequest(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,
@@ -71,17 +68,17 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     int NUMOFRETR,
     int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
-    Long REQUESTID,
+    long REQUESTID,
     Long CREDENTIALID,
     String STATUSCODE,
     ResultSet set,
     int next_index)throws SQLException;
 
     @Override
-    protected Job
+    protected F
     getJob(
     Connection _con,
-    Long ID,
+    long ID,
     Long NEXTJOBID,
     long CREATIONTIME,
     long LIFETIME,
@@ -94,7 +91,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     long LASTSTATETRANSITIONTIME,
     ResultSet set,
     int next_index) throws SQLException {
-        Long REQUESTID = set.getLong(next_index++);
+        long REQUESTID = set.getLong(next_index++);
         Long CREDENTIALID = set.getLong(next_index++);
         String STATUSCODE= set.getString(next_index++);
         return getFileRequest(
@@ -155,14 +152,4 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     /*protected java.util.Set getFileRequests(String requestId) throws java.sql.SQLException{
         return getJobsByCondition(" REQUESTID = '"+requestId+"'");
     }*/
-
-
-    public Set<Long> getActiveFileRequestIds(String schedulerid)  throws SQLException {
-        String condition = " SCHEDULERID='"+schedulerid+
-        "' AND STATE !="+State.DONE.getStateId()+
-        " AND STATE !="+State.CANCELED.getStateId()+
-        " AND STATE !="+State.FAILED.getStateId();
-        return getJobIdsByCondition(condition);
-    }
-
 }

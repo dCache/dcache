@@ -80,7 +80,6 @@ import org.slf4j.LoggerFactory;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
-import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -125,7 +124,7 @@ public abstract class Request extends Job {
      */
 
     protected Request(
-    Long id,
+    long id,
     Long nextJobId,
     long creationTime,
     long lifetime,
@@ -238,31 +237,13 @@ public abstract class Request extends Job {
         }
     }
 
-
-    public static Request getRequest(Long requestId)
-            throws  SRMInvalidRequestException {
-        Job job = Job.getJob( requestId, Job.class);
-        if (job == null || !(job instanceof Request)) {
-            return null;
-        }
-        return (Request) job;
-    }
-
-
-
-    public static Request getRequest(int requestNum)
-            throws SRMInvalidRequestException {
-        return Job.getJob((long) requestNum, Request.class);
-    }
-
-
     /**
      * gets request id as int
      * @return
      * request id
      */
     public int getRequestNum() {
-        return (int) (getId().longValue());
+        return (int) getId();
     }
 
 

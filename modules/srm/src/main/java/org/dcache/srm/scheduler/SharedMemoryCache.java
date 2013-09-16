@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.dcache.srm.scheduler;
 
 import org.slf4j.Logger;
@@ -42,32 +37,64 @@ public class SharedMemoryCache {
     private  Map<Long,Job> sharedMemoryCache =
             new HashMap<>();
 
-   public  void updateSharedMemoryChache(Job job) {
-        if(job == null) {
-            return;
-        }
-        State state = job.getState();
+
+    /**
+     * Canonicalizes non-final jobs.
+     *
+     * @throws IllegalStateException if the canonical instance has a different type than {@code job}
+     * @return a canonical instance of {@code job}, which may be job itself
+     */
+    public <T extends Job> T canonicalize(T job)
+    {
         sharedMemoryWriteLock.lock();
         try {
-            boolean cached =sharedMemoryCache.containsKey(job.getId());
-            _log.debug("updateSharedMemoryChache for job ="+job.getId()+
-                    " state="+state+ " cached ="+cached);
-            if(cached  && state.isFinalState()) {
-                _log.debug("removing job #"+job.getId() +" from memory cache");
-                sharedMemoryCache.remove(job.getId());
-            }
-            if(!cached && !state.isFinalState()) {
-                _log.debug("putting job #"+job.getId() +" to memory cache");
-                sharedMemoryCache.put(job.getId(),job);
+            Job other = sharedMemoryCache.get(job.getId());
+            if (other != null) {
+                if (!job.getClass().isInstance(other)) {
+                    throw new IllegalStateException("Conflicting types for request " + job.getId() + ": " + job.getClass() + " and " + other.getClass());
+                }
+                job = (T) other;
+            } else if (!job.getState().isFinalState()) {
+                sharedMemoryCache.put(job.getId(), job);
             }
         } finally {
             sharedMemoryWriteLock.unlock();
         }
-
-
+        return job;
     }
 
-    public Job getJob(Long jobId) {
+    /**
+     * Updates the registration of job in the cache.
+     *
+     * A post-condition of this method is that job is in the cache if and only if
+     * {@code job} is not final.
+     *
+     * @param job The canonical instance of a job
+     * @throws IllegalArgumentException if {@code job} is not the canonical instance
+     */
+    public <T extends Job> void update(T job)
+    {
+        sharedMemoryWriteLock.lock();
+        try {
+            Job other = sharedMemoryCache.get(job.getId());
+            if (other != null) {
+                if (other != job) {
+                    throw new IllegalArgumentException("Duplicate job #" + job.getId());
+                }
+                if (job.getState().isFinalState()) {
+                    sharedMemoryCache.remove(job.getId());
+                }
+            } else {
+                if (!job.getState().isFinalState()) {
+                    sharedMemoryCache.put(job.getId(), job);
+                }
+            }
+        } finally {
+            sharedMemoryWriteLock.unlock();
+        }
+    }
+
+    public Job getJob(long jobId) {
         _log.debug("getJob ( "+jobId + " ) ");
        sharedMemoryReadLock.lock();
        try {

@@ -29,6 +29,7 @@ import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 
+import static com.google.common.base.Throwables.getRootCause;
 import static com.google.common.collect.Iterables.transform;
 import static org.dcache.boot.Properties.*;
 
@@ -315,7 +316,7 @@ public class BootLoader
             LoggerFactory.getLogger("root").error(logMessage, message);
         } else {
             if (message instanceof RuntimeException) {
-                ((RuntimeException)message).printStackTrace();
+                getRootCause((RuntimeException)message).printStackTrace();
             } else {
                 System.err.println(message);
             }

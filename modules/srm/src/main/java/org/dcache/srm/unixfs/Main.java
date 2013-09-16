@@ -163,7 +163,7 @@ public class Main extends CommandInterpreter implements  Runnable {
         public static final String hh_cancel= " <id> ";
         public String ac_cancel_$_1(Args args) {
             try {
-                Long id = new Long(args.argv(0));
+                long id = Long.parseLong(args.argv(0));
                 StringBuilder sb = new StringBuilder();
                 srm.cancelRequest(sb, id);
                 return sb.toString();
@@ -185,7 +185,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 StringBuilder sb = new StringBuilder();
                 if(args.argc() == 1) {
                     try {
-                        Long reqId = new Long(args.argv(0));
+                        long reqId = Long.parseLong(args.argv(0));
                         srm.listRequest(sb, reqId, longformat);
                     }
                     catch( NumberFormatException nfe) {
@@ -268,14 +268,13 @@ public class Main extends CommandInterpreter implements  Runnable {
             }
         }
 
-        public static final String fh_ls_completed= " Syntax: ls completed [-get] [-put] [-copy] [-l] [max_count]"+
+        public static final String fh_ls_completed= " Syntax: ls completed [-get] [-put] [-copy] [max_count]"+
         " #will list completed (done, failed or canceled) requests, if max_count is not specified, it is set to 50";
-        public static final String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
+        public static final String hh_ls_completed= " [-get] [-put] [-copy] [[max_count]";
         public String ac_ls_completed_$_0_1(Args args) throws Exception{
             boolean get=args.hasOption("get");
             boolean put=args.hasOption("put");
             boolean copy=args.hasOption("copy");
-            boolean longformat = args.hasOption("l");
             int max_count=50;
             if(args.argc() == 1) {
                 max_count = Integer.parseInt(args.argv(0));
