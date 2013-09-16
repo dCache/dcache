@@ -87,4 +87,9 @@
       <property name="nameSpaceProvider" ref="name-space-provider"/>
   </bean>
 
+  <bean id="ws" class="org.dcache.chimera.namespace.ChimeraWebApi" init-method="init"
+        destroy-method="destoroy">
+      <property name="port" value="${pnfsmanager.ws.port}"/>
+      <property name="provider" ref="name-space-provider"/>
+  </bean>
 </beans>

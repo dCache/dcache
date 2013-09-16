@@ -55,4 +55,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -inheritFileOwnership=${pnfsInheritFileOwnership} \
         -verifyAllLookups=${pnfsVerifyAllLookups} \
         -atime.gap=${atime.gap} \
+        -pnfsmanager.ws.port=${pnfsmanager.ws.port} \
        "
