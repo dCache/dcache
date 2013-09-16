@@ -35,6 +35,7 @@
         <property name="destination" value="${httpd.service.billing}"/>
         <property name="timeout" value="${httpd.service.billing.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.billing.timeout.unit}"/>
+        <property name="retryOnNoRouteToCell" value="true"/>
     </bean>
 
     <bean id="PoolMonitorCollectorCellStub" class="org.dcache.cells.CellStub">
