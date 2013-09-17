@@ -32,6 +32,9 @@ public class FileMetaData implements Serializable {
 
     private long _created;
 
+    private long _lastChange;
+    private boolean _isChangeTimeSet;
+
     private long _lastAccessed;
     private boolean _isATimeSet;
 
@@ -190,6 +193,10 @@ public class FileMetaData implements Serializable {
                 setLastAccessedTime(attributes.getAccessTime());
                 break;
 
+            case CHANGE_TIME:
+                setLastChangedTime(attributes.getChangeTime());
+                break;
+
             case MODIFICATION_TIME:
                 setLastModifiedTime(attributes.getModificationTime());
                 break;
@@ -258,6 +265,9 @@ public class FileMetaData implements Serializable {
         return _lastAccessed;
     }
 
+    public long getLastChangedTime() {
+        return _lastChange;
+    }
     /**
      *
      * @param accessed
@@ -303,6 +313,11 @@ public class FileMetaData implements Serializable {
 
     public boolean isMTimeSet() {
         return _isMTimeSet;
+    }
+
+    public void setLastChangedTime(long newTime) {
+        _lastChange = newTime;
+        _isChangeTimeSet = true;
     }
 
     public boolean isDirectory() {
@@ -536,6 +551,6 @@ public class FileMetaData implements Serializable {
     public static Set<FileAttribute> getKnownFileAttributes()
     {
         return EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
-                          CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME);
+                          CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME);
     }
 }

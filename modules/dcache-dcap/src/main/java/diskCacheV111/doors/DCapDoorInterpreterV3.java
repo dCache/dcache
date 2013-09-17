@@ -1310,7 +1310,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 sb.append("-st_gid=").append(meta.getGid()).append(" ");
                 sb.append("-st_atime=").append(meta.getLastAccessedTime()/1000).append(" ");
                 sb.append("-st_mtime=").append(meta.getLastModifiedTime()/1000).append(" ");
-                sb.append("-st_ctime=").append(meta.getCreationTime()/1000).append(" ");
+                sb.append("-st_ctime=").append(meta.getLastChangedTime()/1000).append(" ");
 
                 FileMetaData.Permissions user  = meta.getUserPermissions() ;
                 FileMetaData.Permissions group = meta.getGroupPermissions();
