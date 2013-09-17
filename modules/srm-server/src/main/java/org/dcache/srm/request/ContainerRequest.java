@@ -457,18 +457,10 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         //
         getRequestStatus();
 
-        TReturnStatus status = new TReturnStatus();
-
         rlock();
         try {
-
-
-           if(getStatusCode() != null) {
-                status.setStatusCode(getStatusCode());
-                logger.debug("getTReturnStatus() assigned status.statusCode : "+status.getStatusCode());
-                status.setExplanation(getErrorMessage());
-                logger.debug("getTReturnStatus() assigned status.explanation : "+status.getExplanation());
-                return status;
+           if (getStatusCode() != null) {
+                return new TReturnStatus(getStatusCode(), getErrorMessage());
            }
         } finally {
             runlock();
@@ -483,20 +475,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         // once file request reach their final state, this state does not change
         // so the combined logic
 
-        int len = getNumOfFileRequest();
-
-        if (len == 0) {
-            //no single failure - we should not get to this piece if code
-            status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-            status.setExplanation("Could not find (deserialize) files in the request," +
-                " NumOfFileRequest is 0");
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
-
-        }
-
-
         int failed_req           = 0;
         int failed_space_expired = 0;
         int failed_no_free_space = 0;
@@ -505,135 +483,91 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         int running_req          = 0;
         int ready_req            = 0;
         int done_req             = 0;
-        int got_exception        = 0;
         boolean failure = false;
-        for(int i = 0; i< len; ++i) {
-            R fr = fileRequests.get(i);
+        for (R fr : fileRequests) {
             TReturnStatus fileReqRS = fr.getReturnStatus();
             TStatusCode fileReqSC   = fileReqRS.getStatusCode();
-            logger.debug("getTReturnStatus() file["+i+"] statusCode : "+fileReqSC);
-            try{
-                if( fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
-                    pending_req++;
-                }
-                else if(fileReqSC == TStatusCode.SRM_REQUEST_INPROGRESS) {
-                    running_req++;
-                }
-                else if(fileReqSC == TStatusCode.SRM_FILE_PINNED ||
-                        fileReqSC == TStatusCode.SRM_SPACE_AVAILABLE) {
-                    ready_req++;
-                }
-                else if(fileReqSC == TStatusCode.SRM_SUCCESS ||
-                        fileReqSC == TStatusCode.SRM_RELEASED) {
-                    done_req++;
-                }
-                else if(fileReqSC == TStatusCode.SRM_ABORTED) {
-                     canceled_req++;
-                     failure=true;
-                }
-                else if(fileReqSC == TStatusCode.SRM_NO_FREE_SPACE) {
-                    failed_no_free_space++;
-                    failure=true;
-                }
-                else if(fileReqSC == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED) {
-                    failed_space_expired++;
-                    failure=true;
-                }
-                else if(RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
-                    failed_req++;
-                    failure=true;
-                }
-                else {
-                    logger.error("File Request StatusCode is unknown!!! state  == "+fr.getState());
-                    logger.error("fr is "+fr);
-                }
-            }catch (Exception e) {
-                logger.error(e.toString());
-                got_exception++;
+            if( fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
+                pending_req++;
+            }
+            else if(fileReqSC == TStatusCode.SRM_REQUEST_INPROGRESS) {
+                running_req++;
+            }
+            else if(fileReqSC == TStatusCode.SRM_FILE_PINNED ||
+                    fileReqSC == TStatusCode.SRM_SPACE_AVAILABLE) {
+                ready_req++;
+            }
+            else if(fileReqSC == TStatusCode.SRM_SUCCESS ||
+                    fileReqSC == TStatusCode.SRM_RELEASED) {
+                done_req++;
+            }
+            else if(fileReqSC == TStatusCode.SRM_ABORTED) {
+                canceled_req++;
                 failure=true;
+            }
+            else if(fileReqSC == TStatusCode.SRM_NO_FREE_SPACE) {
+                failed_no_free_space++;
+                failure=true;
+            }
+            else if(fileReqSC == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED) {
+                failed_space_expired++;
+                failure=true;
+            }
+            else if(RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
+                failed_req++;
+                failure=true;
+            }
+            else {
+                logger.error("Unknown request status code {} for request {}", fr.getState(), fr.getId());
             }
         }
 
-        status.setExplanation(getErrorMessage());
-
+        int len = getNumOfFileRequest();
         if (canceled_req == len ) {
-            status.setStatusCode(TStatusCode.SRM_ABORTED);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
+            return new TReturnStatus(TStatusCode.SRM_ABORTED, getErrorMessage());
         }
 
-        if (failed_req==len || got_exception==len) {
-            status.setStatusCode(TStatusCode.SRM_FAILURE);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
+        if (failed_req==len) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, getErrorMessage());
         }
         if (ready_req==len || done_req==len || ready_req+done_req==len ) {
             if (failure) {
-            status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
+                return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, getErrorMessage());
             }
             else {
-            status.setStatusCode(TStatusCode.SRM_SUCCESS);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, getErrorMessage());
             }
         }
         if (pending_req==len) {
-            status.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, getErrorMessage());
         }
         // SRM space is not enough to hold all requested SURLs for free. (so me thinks one fails - all fail)
         if (failed_no_free_space>0) {
-            status.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
+            return new TReturnStatus(TStatusCode.SRM_NO_FREE_SPACE, getErrorMessage());
         }
         // space associated with the targetSpaceToken is expired. (so me thinks one fails - all fail)
         if (failed_space_expired>0) {
-            status.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
+            return new TReturnStatus(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED, getErrorMessage());
         }
         // we still have work to do:
         if (running_req > 0 || pending_req > 0) {
-            status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
-            logger.debug("assigned status.statusCode : "+status.getStatusCode());
-            logger.debug("assigned status.explanation : "+status.getExplanation());
-            return status;
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, getErrorMessage());
         }
         else {
             // all are done here
             if (failure) {
-            if (ready_req > 0 || done_req > 0 ) {
-                //some succeeded some not
-                status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-                logger.debug("assigned status.statusCode : "+status.getStatusCode());
-                logger.debug("assigned status.explanation : "+status.getExplanation());
-                return status;
-            }
-            else {
-                //none succeeded
-                status.setStatusCode(TStatusCode.SRM_FAILURE);
-                logger.debug("assigned status.statusCode : "+status.getStatusCode());
-                logger.debug("assigned status.explanation : "+status.getExplanation());
-                return status;
-            }
+                if (ready_req > 0 || done_req > 0 ) {
+                    //some succeeded some not
+                    return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, getErrorMessage());
+                }
+                else {
+                    //none succeeded
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, getErrorMessage());
+                }
             }
             else {
                 //no single failure - we should not get to this piece if code
-                status.setStatusCode(TStatusCode.SRM_SUCCESS);
-                logger.debug("assigned status.statusCode : "+status.getStatusCode());
-                logger.debug("assigned status.explanation : "+status.getExplanation());
-                return status;
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, getErrorMessage());
             }
         }
     }

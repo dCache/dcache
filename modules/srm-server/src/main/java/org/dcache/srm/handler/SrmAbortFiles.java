@@ -105,9 +105,7 @@ public class SrmAbortFiles {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
+        TReturnStatus status = new TReturnStatus(statusCode, error);
         SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
         srmAbortFilesResponse.setReturnStatus(status);
         return srmAbortFilesResponse;
@@ -163,10 +161,8 @@ public class SrmAbortFiles {
             fileRequest.setState(State.CANCELED,"SrmAbortFiles called");
         }
 
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(TStatusCode.SRM_SUCCESS);
         SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
-        srmAbortFilesResponse.setReturnStatus(status);
+        srmAbortFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
         TSURLReturnStatus[] surlReturnStatusArray =  request.getArrayOfTSURLReturnStatus(surls);
         for (TSURLReturnStatus surlReturnStatus:surlReturnStatusArray) {
             if(surlReturnStatus.getStatus().getStatusCode() == TStatusCode.SRM_ABORTED) {

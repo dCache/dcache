@@ -88,11 +88,8 @@ public class SrmSetPermission {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
 		}
-		TReturnStatus status = new TReturnStatus();
-		status.setStatusCode(statusCode);
-		status.setExplanation(error);
-		SrmSetPermissionResponse response = new SrmSetPermissionResponse();
-		response.setReturnStatus(status);
+                SrmSetPermissionResponse response = new SrmSetPermissionResponse();
+		response.setReturnStatus(new TReturnStatus(statusCode, error));
 		return response;
 	}
 
@@ -104,10 +101,6 @@ public class SrmSetPermission {
 	public SrmSetPermissionResponse srmSetPermission()
                 throws SRMException, URISyntaxException
         {
-		SrmSetPermissionResponse response  = new SrmSetPermissionResponse();
-		TReturnStatus returnStatus = new TReturnStatus();
-		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-		response.setReturnStatus(returnStatus);
 		if(request==null) {
 			return getFailedResponse(" null request passed to SrmSetPermission()");
 		}
@@ -201,20 +194,12 @@ public class SrmSetPermission {
 
 			int newPermissions = ((iowner<<6)|(igroup<<3))|iother;
 			fmd.permMode=newPermissions;
-			try {
-			    storage.setFileMetaData(user,fmd);
-			}
-			catch (SRMException e) {
-				logger.warn(e.toString());
-				return getFailedResponse(e.getMessage(),TStatusCode.SRM_FAILURE);
-			}
+                        storage.setFileMetaData(user,fmd);
 		}
-		catch  (SRMException srme) {
-			logger.warn(srme.toString());
-			return getFailedResponse(srme.getMessage(),TStatusCode.SRM_FAILURE);
+		catch  (SRMException e) {
+			logger.warn(e.toString());
+			return getFailedResponse(e.getMessage(), TStatusCode.SRM_FAILURE);
 		}
-		response.getReturnStatus().setStatusCode(TStatusCode.SRM_SUCCESS);
-		response.getReturnStatus().setExplanation("success");
-		return response;
+                return new SrmSetPermissionResponse(new TReturnStatus(TStatusCode.SRM_SUCCESS, "success"));
 	}
 }

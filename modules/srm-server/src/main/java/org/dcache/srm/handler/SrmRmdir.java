@@ -108,44 +108,32 @@ public class SrmRmdir {
                                         }
                                 }
                                 else {
-                                        response.getReturnStatus().setStatusCode(
-                                                                                 TStatusCode.SRM_NON_EMPTY_DIRECTORY);
-                                        response.getReturnStatus().setExplanation(
-                                                                                  "non empty directory, no recursion flag specified ");
+                                        response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_NON_EMPTY_DIRECTORY,
+                                                "non empty directory, no recursion flag specified "));
                                 }
                         }
 		}
                 catch(SRMAuthorizationException srmae) {
-			response.getReturnStatus().setStatusCode(
-                                TStatusCode.SRM_AUTHORIZATION_FAILURE);
-			response.getReturnStatus().setExplanation(
-                                surl +" : "+srmae.getMessage());
+			response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                                surl + " : " + srmae.getMessage()));
                 }
 		catch (SRMInvalidPathException srmipe) {
                     if(topdir) {
-			response.getReturnStatus().setStatusCode(
-                                TStatusCode.SRM_INVALID_PATH);
-			response.getReturnStatus().setExplanation(
-                                surl +" : "+srmipe.getMessage());
+			response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
+                                surl + " : " + srmipe.getMessage()));
                     } else {
-			response.getReturnStatus().setStatusCode(
-                                TStatusCode.SRM_NON_EMPTY_DIRECTORY);
-			response.getReturnStatus().setExplanation(
-                                surl +" : "+srmipe.getMessage());
+			response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_NON_EMPTY_DIRECTORY,
+                                surl + " : " + srmipe.getMessage()));
                     }
 		}
 		catch (SRMException srme) {
-			response.getReturnStatus().setStatusCode(
-                                TStatusCode.SRM_FAILURE);
-			response.getReturnStatus().setExplanation(
-                                surl +" : "+srme.getMessage());
+			response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_FAILURE,
+                                surl + " : " + srme.getMessage()));
 		}
 		catch (Exception e) {
 			logger.warn(e.toString());
-			response.getReturnStatus().setStatusCode(
-                                TStatusCode.SRM_FAILURE);
-			response.getReturnStatus().setExplanation(
-                                surl +" : "+e.toString());
+			response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_FAILURE,
+                                surl + " : " + e.toString()));
 		}
 	}
 
@@ -159,11 +147,8 @@ public class SrmRmdir {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
 		}
-		TReturnStatus status = new TReturnStatus();
-		status.setStatusCode(statusCode);
-		status.setExplanation(error);
-		SrmRmdirResponse response = new SrmRmdirResponse();
-		response.setReturnStatus(status);
+                SrmRmdirResponse response = new SrmRmdirResponse();
+		response.setReturnStatus(new TReturnStatus(statusCode, error));
 		return response;
 	}
 
@@ -175,13 +160,11 @@ public class SrmRmdir {
 	public SrmRmdirResponse srmRmdir()
                 throws SRMException, URISyntaxException
         {
-		SrmRmdirResponse response  = new SrmRmdirResponse();
-		TReturnStatus returnStatus = new TReturnStatus();
-		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-		response.setReturnStatus(returnStatus);
 		if(request==null) {
 			return getFailedResponse(" null request passed to SrmRm()");
 		}
+                SrmRmdirResponse response  = new SrmRmdirResponse();
+                response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
 		URI surl = new URI(request.getSURL().toString());
 		List<URI> surls = new ArrayList<>();
 		//
@@ -223,15 +206,12 @@ public class SrmRmdir {
 			storage.removeDirectory(user,surls);
 		}
 		catch (SRMException srme) {
-			logger.warn("failed to remove "+surl,srme);
-			response.getReturnStatus().setStatusCode(
-                                TStatusCode.SRM_FAILURE);
-			response.getReturnStatus().setExplanation(
-                                surl+" "+srme.getMessage());
+			logger.warn("failed to remove " + surl, srme);
+			response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_FAILURE,
+                                surl + " " + srme.getMessage()));
 			return response;
 		}
-		response.getReturnStatus().setStatusCode(TStatusCode.SRM_SUCCESS);
-		response.getReturnStatus().setExplanation("success");
+		response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "success"));
 		return response;
 	}
 }

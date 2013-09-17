@@ -118,10 +118,7 @@ public class SrmGetTransferProtocols {
             statusCode = TStatusCode.SRM_FAILURE;
         }
         SrmGetTransferProtocolsResponse response = new SrmGetTransferProtocolsResponse();
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
-        response.setReturnStatus(status);
+        response.setReturnStatus(new TReturnStatus(statusCode, error));
         return response;
     }
 }

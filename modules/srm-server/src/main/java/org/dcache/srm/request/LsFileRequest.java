@@ -262,37 +262,33 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
 
     @Override
         public TReturnStatus getReturnStatus() {
-                TReturnStatus returnStatus = new TReturnStatus();
                 State state = getState();
-                returnStatus.setExplanation(state.toString());
                 if(getStatusCode() != null) {
-                        returnStatus.setStatusCode(getStatusCode());
+                    return new TReturnStatus(getStatusCode(), state.toString());
                 }
                 else if(state == State.DONE) {
-                        returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
+                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, state.toString());
                 }
                 else if(state == State.READY) {
-                        returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
+                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, state.toString());
                 }
                 else if(state == State.FAILED) {
-                        returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-                        returnStatus.setExplanation("FAILED: "+getErrorMessage());
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, "FAILED: " + getErrorMessage());
                 }
                 else if(state == State.CANCELED ) {
-                        returnStatus.setStatusCode(TStatusCode.SRM_ABORTED);
+                    return new TReturnStatus(TStatusCode.SRM_ABORTED, state.toString());
                 }
                 else if(state == State.TQUEUED ) {
-                        returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
                 }
                 else if(state == State.RUNNING ||
                         state == State.RQUEUED ||
                         state == State.ASYNCWAIT ) {
-                        returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
                 }
                 else {
-                        returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
                 }
-                return returnStatus;
         }
 
         @Override
@@ -521,19 +517,16 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                                                        longFormat);
                                 }
                                 catch (SRMException e) {
-                                        TReturnStatus rs = new TReturnStatus();
-                                        String msg = e.getMessage();
-                                        rs.setExplanation(msg);
-                                        if (e instanceof SRMAuthorizationException) {
-                                                rs.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                                        }
-                                        else if (e instanceof SRMInvalidPathException) {
-                                                rs.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-                                        }
-                                        else {
-                                                rs.setStatusCode(TStatusCode.SRM_FAILURE);
-                                        }
-                                        dirMetaDataPathDetail.setStatus(rs);
+                                    String msg = e.getMessage();
+                                    if (e instanceof SRMAuthorizationException) {
+                                        dirMetaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, msg));
+                                    }
+                                    else if (e instanceof SRMInvalidPathException) {
+                                        dirMetaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_PATH, msg));
+                                    }
+                                    else {
+                                        dirMetaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, msg));
+                                    }
                                 }
                         }
                 }
@@ -681,9 +674,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                 }
                         }
                 }
-                TReturnStatus returnStatus = new TReturnStatus();
-                returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-                metaDataPathDetail.setStatus(returnStatus);
+                metaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
                 return metaDataPathDetail;
         }
 }

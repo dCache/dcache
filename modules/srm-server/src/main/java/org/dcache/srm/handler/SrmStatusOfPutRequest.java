@@ -102,11 +102,8 @@ public class SrmStatusOfPutRequest {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
         SrmStatusOfPutRequestResponse srmPrepareToPutResponse = new SrmStatusOfPutRequestResponse();
-        srmPrepareToPutResponse.setReturnStatus(status);
+        srmPrepareToPutResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmPrepareToPutResponse;
     }
 

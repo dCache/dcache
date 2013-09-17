@@ -102,11 +102,8 @@ public class SrmRm {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
 		}
-		TReturnStatus status = new TReturnStatus();
-		status.setStatusCode(statusCode);
-		status.setExplanation(error);
-		SrmRmResponse response = new SrmRmResponse();
-		response.setReturnStatus(status);
+                SrmRmResponse response = new SrmRmResponse();
+		response.setReturnStatus(new TReturnStatus(statusCode, error));
 		return response;
 	}
 

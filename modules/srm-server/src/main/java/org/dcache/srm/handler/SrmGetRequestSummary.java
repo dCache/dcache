@@ -98,9 +98,7 @@ public class SrmGetRequestSummary {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
+        TReturnStatus status = new TReturnStatus(statusCode, error);
         SrmGetRequestSummaryResponse srmGetRequestSummaryResponse = new SrmGetRequestSummaryResponse();
         srmGetRequestSummaryResponse.setReturnStatus(status);
         return srmGetRequestSummaryResponse;
@@ -142,10 +140,8 @@ public class SrmGetRequestSummary {
         SrmGetRequestSummaryResponse response =
                 new SrmGetRequestSummaryResponse();
 
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(TStatusCode.SRM_SUCCESS);
         response.setArrayOfRequestSummaries(new ArrayOfTRequestSummary(requestSummaries));
-        response.setReturnStatus(status);
+        response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
         return response;
 
     }

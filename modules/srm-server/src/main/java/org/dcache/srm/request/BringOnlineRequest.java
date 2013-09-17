@@ -345,19 +345,16 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
        // getTReturnStatus() can now trigger the update of the statuses
        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
-        ArrayOfTBringOnlineRequestFileStatus arrayOfTBringOnlineRequestFileStatus =
-            new ArrayOfTBringOnlineRequestFileStatus();
-        arrayOfTBringOnlineRequestFileStatus.setStatusArray(
-            getArrayOfTBringOnlineRequestFileStatus(surls));
-        response.setArrayOfFileStatuses(arrayOfTBringOnlineRequestFileStatus);
-        StringBuilder s = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
-        s.append(" StatusCode = ")
-                .append(response.getReturnStatus().getStatusCode());
-        for(TBringOnlineRequestFileStatus fs :arrayOfTBringOnlineRequestFileStatus.getStatusArray()) {
-            s.append(" FileStatusCode = ")
-                    .append(fs.getStatus().getStatusCode());
+        TBringOnlineRequestFileStatus[] statusArray = getArrayOfTBringOnlineRequestFileStatus(surls);
+        response.setArrayOfFileStatuses(new ArrayOfTBringOnlineRequestFileStatus(statusArray));
+        if (logger.isDebugEnabled()) {
+            StringBuilder s = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
+            s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
+            for (TBringOnlineRequestFileStatus fs : statusArray) {
+                s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
+            }
+            logger.debug(s.toString());
         }
-        logger.debug(s.toString());
         return response;
     }
 
@@ -454,32 +451,24 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                         BringOnlineFileRequest.unpinBySURLandRequestId(
                             getStorage(),user, theId, surls[i]);
                         TSURLReturnStatus surlStatus = new TSURLReturnStatus();
-                        TReturnStatus surlReturnStatus = new TReturnStatus();
-                        surlReturnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
                         surlStatus.setSurl(surl);
-                        surlStatus.setStatus(surlReturnStatus);
+                        surlStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
                         surlLReturnStatuses[i] = surlStatus;
                     } catch (Exception e) {
                         TSURLReturnStatus surlStatus = new TSURLReturnStatus();
-                        TReturnStatus surlReturnStatus = new TReturnStatus();
-                        surlReturnStatus.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-                        surlReturnStatus.setExplanation(
-                            "could not release file, neither file request " +
-                            "for surl, nor pin is found: "+e);
                         surlStatus.setSurl(surl);
-                        surlStatus.setStatus(surlReturnStatus);
+                        surlStatus.setStatus(new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,
+                                "could not release file, neither file request " +
+                                        "for surl, nor pin is found: " + e));
                         surlLReturnStatuses[i] = surlStatus;
                     }
                     continue;
                 }
                 catch (Exception e) {
                     TSURLReturnStatus surlStatus = new TSURLReturnStatus();
-                    TReturnStatus surlReturnStatus = new TReturnStatus();
-                    surlReturnStatus.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-                    surlReturnStatus.setExplanation(
-                        "error retrieving a file request for an surl: "+e);
                     surlStatus.setSurl(surl);
-                    surlStatus.setStatus(surlReturnStatus);
+                    surlStatus.setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
+                        "error retrieving a file request for an surl: "+e));
                     surlLReturnStatuses[i] = surlStatus;
                     continue;
                 }
@@ -489,11 +478,9 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                 }
                 catch (Exception e) {
                     TSURLReturnStatus surlStatus = new TSURLReturnStatus();
-                    TReturnStatus surlReturnStatus = new TReturnStatus();
-                    surlReturnStatus.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-                    surlReturnStatus.setExplanation("could not releaseFile file: "+e);
                     surlStatus.setSurl(surl);
-                    surlStatus.setStatus(surlReturnStatus);
+                    surlStatus.setStatus(new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,
+                            "could not releaseFile file: " + e));
                     surlLReturnStatuses[i] = surlStatus;
                 }
             }
@@ -519,16 +506,14 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                 errors_cnt++;
             }
         }
-        TReturnStatus status = new TReturnStatus();
-        if(errors_cnt == 0) {
-            status.setStatusCode(TStatusCode.SRM_SUCCESS);
-        } else if (errors_cnt < len) {
-            status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-        } else {
-            status.setStatusCode(TStatusCode.SRM_FAILURE);
-        }
         SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
-        srmReleaseFilesResponse.setReturnStatus(status);
+        if(errors_cnt == 0) {
+            srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
+        } else if (errors_cnt < len) {
+            srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null));
+        } else {
+            srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, null));
+        }
         srmReleaseFilesResponse.setArrayOfFileStatuses(new ArrayOfTSURLReturnStatus(surlLReturnStatuses));
         return srmReleaseFilesResponse;
 

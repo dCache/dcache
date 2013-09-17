@@ -359,13 +359,14 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse()
-    throws SRMException {
+            throws SRMException
+    {
             return getSrmStatusOfPutRequestResponse(null);
     }
 
-    public  final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(
-            URI[] surls)
-    throws SRMException {
+    public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(URI[] surls)
+            throws SRMException
+    {
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
 
         // getTReturnStatus should be called before we get the
@@ -374,19 +375,18 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
 
-        ArrayOfTPutRequestFileStatus  arrayOfTPutRequestFileStatus =
-        new ArrayOfTPutRequestFileStatus();
-        arrayOfTPutRequestFileStatus.setStatusArray(
-            getArrayOfTPutRequestFileStatus(surls));
-        response.setArrayOfFileStatuses(arrayOfTPutRequestFileStatus);
-        StringBuilder s =new StringBuilder("getSrmStatusOfPutRequestResponse:");
-        s.append(" StatusCode = ")
-                .append(response.getReturnStatus().getStatusCode());
-        for(TPutRequestFileStatus fs :arrayOfTPutRequestFileStatus.getStatusArray()) {
-            s.append(" FileStatusCode = ")
-                    .append(fs.getStatus().getStatusCode());
+        TPutRequestFileStatus[] statusArray = getArrayOfTPutRequestFileStatus(surls);
+
+        if (logger.isDebugEnabled()) {
+            StringBuilder s = new StringBuilder("getSrmStatusOfPutRequestResponse:");
+            s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
+            for (TPutRequestFileStatus fs : statusArray) {
+                s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
+            }
+            logger.debug(s.toString());
         }
-        logger.debug(s.toString());
+
+        response.setArrayOfFileStatuses(new ArrayOfTPutRequestFileStatus(statusArray));
         return response;
     }
 

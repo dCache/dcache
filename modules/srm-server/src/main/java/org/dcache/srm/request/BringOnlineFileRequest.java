@@ -443,15 +443,12 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
 
     public TSURLReturnStatus releaseFile() throws SRMInvalidRequestException {
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
-        TReturnStatus returnStatus = new TReturnStatus();
         try {
             surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
-           returnStatus.setExplanation("wrong surl format");
-           returnStatus.setStatusCode(TStatusCode.SRM_INVALID_REQUEST);
-           surlReturnStatus.setStatus(returnStatus);
-           return surlReturnStatus;
+            surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_REQUEST, "wrong surl format"));
+            return surlReturnStatus;
         }
         State state = getState();
         if(!State.isFinalState(state)) {
@@ -461,10 +458,8 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             } catch (IllegalStateTransition ist) {
                 logger.warn("Illegal State Transition : " +ist.getMessage());
             }
-           returnStatus.setExplanation("srmBringOnline for this file has not completed yet,"+
-                    " pending srmBringOnline canceled");
-           returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-           surlReturnStatus.setStatus(returnStatus);
+            surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE,
+                    "srmBringOnline for this file has not completed yet, pending srmBringOnline canceled"));
            return surlReturnStatus;
 
         }
@@ -479,71 +474,56 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 if(callbacks.success) {
                     setPinId(null);
                     this.saveJob();
-                    returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-                    surlReturnStatus.setStatus(returnStatus);
+                    surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
                     return surlReturnStatus;
                 }
             } catch( InterruptedException ie) {
                 logger.error(ie.toString());
             }
 
-
-           returnStatus.setExplanation(" srmReleaseFile failed: "+callbacks.getError());
-           returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-           surlReturnStatus.setStatus(returnStatus);
-           return surlReturnStatus;
+            surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, "srmReleaseFile failed: "+callbacks.getError()));
+            return surlReturnStatus;
         } else {
-           returnStatus.setExplanation(" srmReleaseFile failed: file is not pinned");
-           returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-           surlReturnStatus.setStatus(returnStatus);
-           return surlReturnStatus;
-
+            surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, "srmReleaseFile failed: file is not pinned"));
+            return surlReturnStatus;
         }
-
-
     }
 
     @Override
     public TReturnStatus getReturnStatus() {
-        TReturnStatus returnStatus = new TReturnStatus();
-
         State state = getState();
- 	returnStatus.setExplanation(state.toString());
-
         if(getStatusCode() != null) {
-            returnStatus.setStatusCode(getStatusCode());
+            return new TReturnStatus(getStatusCode(), state.toString());
         } else if(state == State.DONE) {
             if(getPinId() != null) {
-                returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, state.toString());
             }  else {
-                returnStatus.setStatusCode(TStatusCode.SRM_RELEASED);
+                return new TReturnStatus(TStatusCode.SRM_RELEASED, state.toString());
             }
         }
         else if(state == State.READY) {
-            returnStatus.setStatusCode(TStatusCode.SRM_FILE_PINNED);
+            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, state.toString());
         }
         else if(state == State.TRANSFERRING) {
-            returnStatus.setStatusCode(TStatusCode.SRM_FILE_PINNED);
+            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, state.toString());
         }
         else if(state == State.FAILED) {
-	    returnStatus.setExplanation("FAILED: "+getErrorMessage());
-            returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, "FAILED: " + getErrorMessage());
         }
         else if(state == State.CANCELED ) {
-            returnStatus.setStatusCode(TStatusCode.SRM_ABORTED);
+            return new TReturnStatus(TStatusCode.SRM_ABORTED, state.toString());
         }
         else if(state == State.TQUEUED ) {
-            returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
         }
         else if(state == State.RUNNING ||
                 state == State.RQUEUED ||
                 state == State.ASYNCWAIT ) {
-            returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
         }
         else {
-            returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
         }
-        return returnStatus;
     }
 
     /**

@@ -61,20 +61,10 @@ public class SrmMv {
 	}
 
 	public SrmMvResponse getResponse() {
-		if(response != null ) {
-                    return response;
-                }
-		try {
-			response = srmMv();
-        } catch(URISyntaxException e) {
-            logger.debug(" malformed uri : "+e.getMessage());
-            response = getFailedResponse(" malformed uri : "+e.getMessage(),
-                    TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SRMException srme) {
-            logger.error(srme.toString());
-            response = getFailedResponse(srme.toString());
-        }
-		return response;
+            if (response == null) {
+                response = srmMv();
+            }
+            return response;
 	}
 
 	public static final SrmMvResponse getFailedResponse(String error) {
@@ -85,11 +75,8 @@ public class SrmMv {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
 		}
-		TReturnStatus status = new TReturnStatus();
-		status.setStatusCode(statusCode);
-		status.setExplanation(error);
-		SrmMvResponse response = new SrmMvResponse();
-		response.setReturnStatus(status);
+                SrmMvResponse response = new SrmMvResponse();
+		response.setReturnStatus(new TReturnStatus(statusCode, error));
 		return response;
 	}
 
@@ -98,22 +85,14 @@ public class SrmMv {
 	 */
 
 	public SrmMvResponse srmMv()
-                throws SRMException, URISyntaxException
         {
-		SrmMvResponse response      = new SrmMvResponse();
-		TReturnStatus returnStatus  = new TReturnStatus();
-		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-		response.setReturnStatus(returnStatus);
-		if(request==null) {
-			return getFailedResponse(" null request passed to srmMv()");
+		if (request==null) {
+                    return getFailedResponse(" null request passed to srmMv()");
 		}
-		URI to_surl = new URI(request.getToSURL().toString());
-		URI from_surl = new URI(request.getFromSURL().toString());
-		if (to_surl==null || from_surl==null) {
-			return getFailedResponse(" target or destination are not defined");
-		}
-
+                TReturnStatus returnStatus;
                 try {
+                    URI to_surl = new URI(request.getToSURL().toString());
+                    URI from_surl = new URI(request.getFromSURL().toString());
                     // [SRM 2.2, 4.6.3]     SRM_INVALID_PATH: status of fromSURL is SRM_FILE_BUSY.
                     // [SRM 2.2, 4.6.2, c)] srmMv must fail on SURL that its status is SRM_FILE_BUSY,
                     //                      and SRM_FILE_BUSY must be returned.
@@ -126,42 +105,38 @@ public class SrmMv {
                     // SURL is busy.
                     SRM srm = SRM.getSRM();
                     if (srm.isFileBusy(from_surl)) {
-                        response.getReturnStatus().setStatusCode(TStatusCode.SRM_FILE_BUSY);
-                        response.getReturnStatus().setExplanation("The source SURL is being used by another client.");
-                        return response;
+                        returnStatus = new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
+                                "The source SURL is being used by another client.");
+                    } else if (srm.isFileBusy(to_surl)) {
+                        returnStatus = new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR,
+                                "The target SURL is being used by another client.");
+                    } else {
+                        storage.moveEntry(user, from_surl, to_surl);
+                        returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, "success");
                     }
-                    if (srm.isFileBusy(to_surl)) {
-                        response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
-                        response.getReturnStatus().setExplanation("The target SURL is being used by another client.");
-                        return response;
-                    }
-                    storage.moveEntry(user, from_surl, to_surl);
-                }
-		catch (Exception e) {
-		    logger.warn(e.toString());
-		    response.getReturnStatus().setExplanation(e.getMessage());
-		    if ( e instanceof SRMDuplicationException) {
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
-		    }
-		    else if ( e instanceof  SRMInternalErrorException) {
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-		    }
-		    else if ( e instanceof  SRMInvalidPathException ) {
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INVALID_PATH);
-		    }
-		    else if ( e instanceof SRMAuthorizationException ) {
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-		    }
-		    else if ( e instanceof SRMException ) {
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
-		    }
-		    else {
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-		    }
-		    return response;
+                } catch (URISyntaxException e) {
+                    logger.debug("Malformed URI in move request: {}", e.getMessage());
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_REQUEST, "Malformed uri: " + e.getMessage());
+                } catch (SRMDuplicationException e) {
+                    logger.warn(e.toString());
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR, e.getMessage());
+                } catch (SRMInternalErrorException e) {
+                    logger.warn(e.toString());
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
+                } catch (SRMInvalidPathException e) {
+                    logger.warn(e.toString());
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+                } catch (SRMAuthorizationException e) {
+                    logger.warn(e.toString());
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+                } catch (SRMException e) {
+                    logger.warn(e.toString());
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
+                } catch (RuntimeException e) {
+                    logger.warn("Please report this error to support@dcache.org,", e);
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
 		}
-		response.getReturnStatus().setExplanation("success");
-		return response;
+                return new SrmMvResponse(returnStatus);
 	}
 
 }

@@ -105,10 +105,7 @@ public class SrmStatusOfCopyRequest {
             statusCode =TStatusCode.SRM_FAILURE;
         }
         SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(text);
-        response.setReturnStatus(status);
+        response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;
     }
 

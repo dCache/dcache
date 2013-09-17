@@ -101,11 +101,8 @@ public class SrmExtendFileLifeTime {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
         SrmExtendFileLifeTimeResponse response = new SrmExtendFileLifeTimeResponse();
-        response.setReturnStatus(status);
+        response.setReturnStatus(new TReturnStatus(statusCode, error));
         return response;
     }
 
@@ -153,15 +150,13 @@ public class SrmExtendFileLifeTime {
         SrmExtendFileLifeTimeResponse response = new SrmExtendFileLifeTimeResponse();
         response.setArrayOfFileStatuses(
                 new ArrayOfTSURLLifetimeReturnStatus(surlStatus));
-        TReturnStatus returnStatus  = new TReturnStatus();
-        returnStatus.setStatusCode(
-                failuresCount==0 ?
-                    TStatusCode.SRM_SUCCESS:
-                    failuresCount == len ?
-                        TStatusCode.SRM_FAILURE:
-                        TStatusCode.SRM_PARTIAL_SUCCESS);
-        response.setReturnStatus(returnStatus);
-        response.getReturnStatus().setExplanation("success");
+        if (failuresCount == 0) {
+            response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "success"));
+        } else if (failuresCount == len) {
+            response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, "failure"));
+        } else {
+            response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, "partial success"));
+        }
         return response;
     }
 
@@ -269,20 +264,16 @@ public class SrmExtendFileLifeTime {
             }
         }
 
-        SrmExtendFileLifeTimeResponse response =
-                new SrmExtendFileLifeTimeResponse();
-        response.setArrayOfFileStatuses(
+        TReturnStatus returnStatus;
+        if (failuresCount == 0) {
+            returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+        } else if (failuresCount == len) {
+            returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
+        } else {
+            returnStatus = new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
+        }
+        return new SrmExtendFileLifeTimeResponse(returnStatus,
                 new ArrayOfTSURLLifetimeReturnStatus(surlStatus));
-        TReturnStatus returnStatus  = new TReturnStatus();
-        returnStatus.setStatusCode(
-                failuresCount==0 ?
-                    TStatusCode.SRM_SUCCESS:
-                    failuresCount == len ?
-                        TStatusCode.SRM_FAILURE:
-                        TStatusCode.SRM_PARTIAL_SUCCESS);
-        response.setReturnStatus(returnStatus);
-        return response;
-
     }
 
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime()

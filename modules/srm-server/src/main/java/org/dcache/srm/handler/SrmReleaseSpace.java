@@ -93,26 +93,16 @@ public class SrmReleaseSpace {
         return response;
     }
 
-    public static final SrmReleaseSpaceResponse getFailedResponse(String text) {
-        return getFailedResponse(text,null);
+    private static SrmReleaseSpaceResponse getFailedResponse(String text) {
+        return getFailedResponse(text, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmReleaseSpaceResponse getFailedResponse(String text, TStatusCode statusCode) {
-        if(statusCode == null) {
-            statusCode = TStatusCode.SRM_FAILURE;
-        }
+    private static SrmReleaseSpaceResponse getFailedResponse(String text, TStatusCode statusCode) {
         SrmReleaseSpaceResponse response = new SrmReleaseSpaceResponse();
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(text);
-        response.setReturnStatus(status);
+        response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;
     }
-    /**
-     * implementation of srm copy
-     */
 
-    TReturnStatus status = new TReturnStatus();
     public SrmReleaseSpaceResponse releaseSpace()
         throws SRMException,MalformedURIException {
         if(request==null) {
@@ -122,19 +112,19 @@ public class SrmReleaseSpace {
         String token = request.getSpaceToken();
         SrmReleaseSpaceCallbacks callbacks = new SrmReleaseSpaceCallbacks();
         storage.srmReleaseSpace(user,token,null, callbacks );
-         callbacks.waitResult(60*1000); //one minute max
-        SrmReleaseSpaceResponse response = new SrmReleaseSpaceResponse();
-        response.setReturnStatus(status);
-        return response;
+        TReturnStatus status = callbacks.waitResult(60 * 1000);//one minute max
+        return new SrmReleaseSpaceResponse(status);
    }
 
    private class  SrmReleaseSpaceCallbacks implements org.dcache.srm.SrmReleaseSpaceCallbacks {
          private boolean completed;
+         private TReturnStatus status;
+
            public SrmReleaseSpaceCallbacks() {
 
            }
 
-        public synchronized void waitResult(long timeout)
+        public synchronized TReturnStatus waitResult(long timeout)
         {
            //System.out.println("PutCallbacks waitResult() starting for CopyFileRequest "+fileId);
            long start = System.currentTimeMillis();
@@ -145,7 +135,7 @@ public class SrmReleaseSpace {
                {
                     //System.out.println("PutCallbacks waitResult() completed with success="+success+
                     //" for CopyFileRequest "+fileId);
-                   return;
+                   return status;
                }
                long wait = timeout - (current -start);
                if(wait > 0)
@@ -160,9 +150,7 @@ public class SrmReleaseSpace {
                }
                else
                {
-                status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-                status.setExplanation("release takes longer then "+timeout +" millis");
-                return ;
+                   return new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR, "release takes longer then "+timeout +" millis");
                }
                current = System.currentTimeMillis();
 
@@ -174,30 +162,29 @@ public class SrmReleaseSpace {
             this.completed = true;
             this.notifyAll();
         }
+
            @Override
            public void ReleaseSpaceFailed(String reason){
-                status.setStatusCode(TStatusCode.SRM_FAILURE);
-                status.setExplanation(reason);
+                status = new TReturnStatus(TStatusCode.SRM_FAILURE, reason);
                 complete();
-
             }
 
             @Override
             public void SpaceReleased(String spaceReservationToken,long remainingSpaceSize){
-                status.setStatusCode(TStatusCode.SRM_SUCCESS);
-                status.setExplanation("Space released");
+                status = new TReturnStatus(TStatusCode.SRM_SUCCESS, "Space released");
                 complete();
 
             }
 
             @Override
             public void ReleaseSpaceFailed(Exception e){
-                status.setStatusCode(TStatusCode.SRM_FAILURE);
-                status.setExplanation(e.toString());
+                status = new TReturnStatus(TStatusCode.SRM_FAILURE, e.toString());
                 complete();
             }
 
         }
+
+   @Override
    public String toString(){
        return "SrmReleaseSpace("+request.getSpaceToken()+")";
    }

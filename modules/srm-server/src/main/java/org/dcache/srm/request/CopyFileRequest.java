@@ -1593,7 +1593,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		copyRequestFileStatus.setTargetSURL(to_surl);
 		TReturnStatus returnStatus = getReturnStatus();
 		if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
-			returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
+			returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
 		}
 		copyRequestFileStatus.setStatus(returnStatus);
 		return copyRequestFileStatus;
@@ -1601,40 +1601,36 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
 	@Override
         public TReturnStatus getReturnStatus() {
-		TReturnStatus returnStatus = new TReturnStatus();
 		State state = getState();
-		returnStatus.setExplanation(state.toString());
 		if(getStatusCode() != null) {
-			returnStatus.setStatusCode(getStatusCode());
+                    return new TReturnStatus(getStatusCode(), state.toString());
 		}
 		else if(state == State.DONE) {
-			returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
+                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, state.toString());
 		}
 		else if(state == State.READY) {
-			returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
 		}
 		else if(state == State.TRANSFERRING) {
-			returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
 		}
 		else if(state == State.FAILED) {
-			returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-			returnStatus.setExplanation("FAILED: "+getErrorMessage());
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, "FAILED: "+getErrorMessage());
 		}
 		else if(state == State.CANCELED ) {
-			returnStatus.setStatusCode(TStatusCode.SRM_ABORTED);
+                    return new TReturnStatus(TStatusCode.SRM_ABORTED, state.toString());
 		}
 		else if(state == State.TQUEUED ) {
-			returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
 		}
 		else if(state == State.RUNNING ||
 			state == State.RQUEUED ||
 			state == State.ASYNCWAIT ) {
-			returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
 		}
 		else {
-			returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
 		}
-		return returnStatus;
 	}
 
 
@@ -1654,7 +1650,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 		TReturnStatus returnStatus =  getReturnStatus();
 		if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
-			returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
+			returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
 		}
 		TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
 		surlReturnStatus.setSurl(tsurl);

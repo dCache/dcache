@@ -84,11 +84,8 @@ public class SrmMkdir {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
 		}
-		TReturnStatus status = new TReturnStatus();
-		status.setStatusCode(statusCode);
-		status.setExplanation(error);
-		SrmMkdirResponse response = new SrmMkdirResponse();
-		response.setReturnStatus(status);
+                SrmMkdirResponse response = new SrmMkdirResponse();
+		response.setReturnStatus(new TReturnStatus(statusCode, error));
 		return response;
 	}
 
@@ -100,46 +97,36 @@ public class SrmMkdir {
 	public SrmMkdirResponse srmMkdir()
             throws SRMException, URISyntaxException
         {
-		SrmMkdirResponse response  = new SrmMkdirResponse();
-		TReturnStatus returnStatus = new TReturnStatus();
-		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-		response.setReturnStatus(returnStatus);
-		if(request==null) {
-		return getFailedResponse("null request passed to srmMkdir()");
-		}
-		org.apache.axis.types.URI surl = request.getSURL();
-		try {
-                        storage.createDirectory(user, new URI(surl.toString()));
-                }
-        catch (SRMDuplicationException srmde) {
-            logger.debug("srmMkdir duplication : "+srmde.toString());
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
-			response.getReturnStatus().setExplanation(surl+" : "+srmde.getMessage());
-			return response;
+            if(request==null) {
+                return getFailedResponse("null request passed to srmMkdir()");
+            }
+            TReturnStatus returnStatus;
+            try {
+                storage.createDirectory(user, new URI(request.getSURL().toString()));
+                returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, "success");
+            }
+            catch (SRMDuplicationException e) {
+                logger.debug("srmMkdir duplication: {}", e.toString());
+                returnStatus = new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR,
+                        request.getSURL() + " : " + e.getMessage());
+            }
+            catch (SRMAuthorizationException e) {
+                logger.debug("srmMkdir authorization exception: {}", e.toString());
+                returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                        request.getSURL() + " : " + e.getMessage());
 
-        }
-        catch (SRMAuthorizationException srmae) {
-            logger.debug("srmMkdir authorization exception : "+srmae.toString());
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-			response.getReturnStatus().setExplanation(surl+" : "+srmae.getMessage());
-			return response;
+            }
+            catch (SRMInvalidPathException e) {
+                logger.debug("srmMkdir invalid pathh: {}", e.toString());
+                returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
+                        request.getSURL() + " : " + e.getMessage());
 
-        }
-        catch (SRMInvalidPathException srmipe) {
-            logger.debug("srmMkdir invalid pathh : "+srmipe.toString());
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INVALID_PATH);
-			response.getReturnStatus().setExplanation(surl+" : "+srmipe.getMessage());
-			return response;
-
-        }
-		catch (SRMException srme) {
-            logger.debug("srmMkdir error ",srme);
-			response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
-			response.getReturnStatus().setExplanation(surl+" "+srme.getMessage());
-			return response;
-		}
-		response.getReturnStatus().setStatusCode(TStatusCode.SRM_SUCCESS);
-		response.getReturnStatus().setExplanation("success");
-		return response;
+            }
+            catch (SRMException srme) {
+                logger.debug("srmMkdir error: {}", srme.toString());
+                returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE,
+                        request.getSURL() + " " + srme.getMessage());
+            }
+            return new SrmMkdirResponse(returnStatus);
 	}
 }

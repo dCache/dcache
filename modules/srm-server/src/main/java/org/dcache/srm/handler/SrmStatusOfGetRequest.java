@@ -103,11 +103,8 @@ public class SrmStatusOfGetRequest {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
         SrmStatusOfGetRequestResponse srmPrepareToGetResponse = new SrmStatusOfGetRequestResponse();
-        srmPrepareToGetResponse.setReturnStatus(status);
+        srmPrepareToGetResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmPrepareToGetResponse;
     }
 

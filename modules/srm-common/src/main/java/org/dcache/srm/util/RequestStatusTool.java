@@ -6,9 +6,12 @@
 
 package org.dcache.srm.util;
 
-import org.dcache.srm.SRMException;
+import javax.annotation.Nonnull;
+
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  *
@@ -16,26 +19,9 @@ import org.dcache.srm.v2_2.TStatusCode;
  */
 public class RequestStatusTool {
 
-    public static final void checkValidity(TReturnStatus returnStatus)
-    throws SRMException {
-            if(returnStatus == null) {
-                throw new SRMException(" null return status");
-            }
-            TStatusCode statusCode = returnStatus.getStatusCode();
-            if(statusCode == null) {
-                throw new SRMException(" null status code");
-            }
-     }
-
-    public static final boolean isFailedRequestStatus(TReturnStatus returnStatus)
-    throws SRMException {
-           if(returnStatus == null) {
-                throw new SRMException(" null return status");
-           }
-           TStatusCode statusCode = returnStatus.getStatusCode();
-           if(statusCode == null) {
-                throw new SRMException(" null status code");
-           }
+    public static final boolean isFailedRequestStatus(@Nonnull TReturnStatus returnStatus)
+    {
+           TStatusCode statusCode = checkNotNull(returnStatus.getStatusCode());
            return
                statusCode != TStatusCode.SRM_PARTIAL_SUCCESS &&
                statusCode != TStatusCode.SRM_REQUEST_INPROGRESS &&
@@ -46,15 +32,9 @@ public class RequestStatusTool {
 
     }
 
-    public static final boolean isFailedFileRequestStatus(TReturnStatus returnStatus)
-    throws SRMException {
-           if(returnStatus == null) {
-                throw new SRMException(" null return status");
-           }
-           TStatusCode statusCode = returnStatus.getStatusCode();
-           if(statusCode == null) {
-                throw new SRMException(" null status code");
-           }
+    public static final boolean isFailedFileRequestStatus(@Nonnull TReturnStatus returnStatus)
+    {
+           TStatusCode statusCode = checkNotNull(returnStatus.getStatusCode());
            return
                statusCode != TStatusCode.SRM_SPACE_AVAILABLE &&
                statusCode != TStatusCode.SRM_FILE_PINNED &&
@@ -68,15 +48,9 @@ public class RequestStatusTool {
     }
 
 
-    public static final boolean isTransientStateStatus(TReturnStatus returnStatus)
-       throws SRMException {
-           if(returnStatus == null) {
-                throw new SRMException(" null return status");
-           }
-           TStatusCode statusCode = returnStatus.getStatusCode();
-           if(statusCode == null) {
-                throw new SRMException(" null status code");
-           }
+    public static final boolean isTransientStateStatus(@Nonnull TReturnStatus returnStatus)
+    {
+           TStatusCode statusCode = checkNotNull(returnStatus.getStatusCode());
            return
                statusCode == TStatusCode.SRM_REQUEST_QUEUED ||
                    statusCode == TStatusCode.SRM_REQUEST_INPROGRESS;

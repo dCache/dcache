@@ -97,11 +97,8 @@ public class SrmAbortRequest {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
         SrmAbortRequestResponse srmReleaseFilesResponse = new SrmAbortRequestResponse();
-        srmReleaseFilesResponse.setReturnStatus(status);
+        srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmReleaseFilesResponse;
     }
     /**
@@ -135,10 +132,8 @@ public class SrmAbortRequest {
         if(!State.isFinalState(state)) {
             job.setState(State.CANCELED,"SrmAbortRequest called");
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(TStatusCode.SRM_SUCCESS);
         SrmAbortRequestResponse srmAbortRequestResponse = new SrmAbortRequestResponse();
-        srmAbortRequestResponse.setReturnStatus(status);
+        srmAbortRequestResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
         return srmAbortRequestResponse;
 
     }

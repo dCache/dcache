@@ -335,20 +335,17 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
 
-        ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus;
-        arrayOfTGetRequestFileStatus =
-            new ArrayOfTGetRequestFileStatus();
-        arrayOfTGetRequestFileStatus.setStatusArray(
-            getArrayOfTGetRequestFileStatus(surls));
-        response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
-        StringBuilder s = new StringBuilder("getSrmStatusOfGetRequestResponse:");
-        s.append(" StatusCode = ")
-                .append(response.getReturnStatus().getStatusCode());
-        for(TGetRequestFileStatus fs :arrayOfTGetRequestFileStatus.getStatusArray()) {
-            s.append(" FileStatusCode = ")
-                    .append(fs.getStatus().getStatusCode());
+        TGetRequestFileStatus[] statusArray = getArrayOfTGetRequestFileStatus(surls);
+        response.setArrayOfFileStatuses(new ArrayOfTGetRequestFileStatus(statusArray));
+
+        if (logger.isDebugEnabled()) {
+            StringBuilder s = new StringBuilder("getSrmStatusOfGetRequestResponse:");
+            s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
+            for (TGetRequestFileStatus fs : statusArray) {
+                s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
+            }
+            logger.debug(s.toString());
         }
-        logger.debug(s.toString());
         return response;
     }
 

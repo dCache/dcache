@@ -84,11 +84,8 @@ public class SrmStatusOfLsRequest {
                 if(statusCode == null) {
                         statusCode =TStatusCode.SRM_FAILURE;
                 }
-                TReturnStatus status = new TReturnStatus();
-                status.setStatusCode(statusCode);
-                status.setExplanation(error);
                 SrmStatusOfLsRequestResponse srmStatusOfLsRequestResponse = new SrmStatusOfLsRequestResponse();
-                srmStatusOfLsRequestResponse.setReturnStatus(status);
+                srmStatusOfLsRequestResponse.setReturnStatus(new TReturnStatus(statusCode, error));
                 return srmStatusOfLsRequestResponse;
         }
 

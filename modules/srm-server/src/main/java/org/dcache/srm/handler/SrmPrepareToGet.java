@@ -6,6 +6,7 @@
 
 package org.dcache.srm.handler;
 
+import com.google.common.base.Joiner;
 import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,11 +102,8 @@ public class SrmPrepareToGet {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
         SrmPrepareToGetResponse srmPrepareToGetResponse = new SrmPrepareToGetResponse();
-        srmPrepareToGetResponse.setReturnStatus(status);
+        srmPrepareToGetResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmPrepareToGetResponse;
     }
 
@@ -168,16 +166,8 @@ public class SrmPrepareToGet {
         }
 
 	if (!foundMatchedProtocol) {
-
-	    TReturnStatus status = new TReturnStatus();
- 	    status.setStatusCode(TStatusCode.SRM_NOT_SUPPORTED);
-            StringBuilder errorsb =
-                new StringBuilder("Protocol(s) specified not supported: [ ");
-	    for(String protocol:protocols) {
-                errorsb.append(protocol).append(' ');
-            }
-            errorsb.append(']');
- 	    status.setExplanation(errorsb.toString());
+            String error = "Protocol(s) specified not supported: [" + Joiner.on(' ').join(protocols) + "]";
+            TReturnStatus status = new TReturnStatus(TStatusCode.SRM_NOT_SUPPORTED, error);
  	    SrmPrepareToGetResponse srmPrepareToGetResponse = new SrmPrepareToGetResponse();
  	    srmPrepareToGetResponse.setReturnStatus(status);
  	    TGetRequestFileStatus[] statusArray = new TGetRequestFileStatus[fileRequests.length];
@@ -186,11 +176,8 @@ public class SrmPrepareToGet {
  		if (fr!=null) {
  		    if (fr.getSourceSURL()!=null) {
  			TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
- 			TReturnStatus fileReturnStatus = new TReturnStatus();
- 			fileReturnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
- 			fileReturnStatus.setExplanation(errorsb.toString());
- 			fileStatus.setSourceSURL(fr.getSourceSURL());
- 			fileStatus.setStatus(fileReturnStatus);
+                        fileStatus.setSourceSURL(fr.getSourceSURL());
+ 			fileStatus.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, error));
  			statusArray[i]=fileStatus;
  		    }
  		}

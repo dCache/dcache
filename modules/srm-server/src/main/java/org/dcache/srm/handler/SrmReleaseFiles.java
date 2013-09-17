@@ -138,11 +138,8 @@ public class SrmReleaseFiles {
         }
         logger.error("getFailedResponse: "+error+" StatusCode "+statusCode);
 
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
         SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
-        srmReleaseFilesResponse.setReturnStatus(status);
+        srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmReleaseFilesResponse;
     }
     /**
@@ -215,10 +212,8 @@ public class SrmReleaseFiles {
             }
         }
 
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(TStatusCode.SRM_SUCCESS);
         SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
-        srmReleaseFilesResponse.setReturnStatus(status);
+        srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
         if( surls != null) {
             TSURLReturnStatus[] surlReturnStatusArray =  request.getArrayOfTSURLReturnStatus(surls);
             for (TSURLReturnStatus surlReturnStatus:surlReturnStatusArray) {
@@ -260,13 +255,13 @@ public class SrmReleaseFiles {
             }
         }
 
-        TReturnStatus status = new TReturnStatus();
+        TReturnStatus status;
         if(failure_num == 0) {
-            status.setStatusCode(TStatusCode.SRM_SUCCESS);
+            status = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } else if(failure_num < surls.length) {
-            status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
+            status = new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
         } else {
-            status.setStatusCode(TStatusCode.SRM_FAILURE);
+            status = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
         }
         SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
         srmReleaseFilesResponse.setReturnStatus(status);
@@ -308,13 +303,13 @@ public class SrmReleaseFiles {
             surlReturnStatusArray[i] = rs;
         }
 
-        TReturnStatus status = new TReturnStatus();
-        if(failure_num == 0) {
-            status.setStatusCode(TStatusCode.SRM_SUCCESS);
+        TReturnStatus status;
+        if (failure_num == 0) {
+            status = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } else if(failure_num < surls.length) {
-            status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
+            status = new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
         } else {
-            status.setStatusCode(TStatusCode.SRM_FAILURE);
+            status = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
         }
         SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
         srmReleaseFilesResponse.setReturnStatus(status);

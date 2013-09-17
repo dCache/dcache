@@ -360,18 +360,13 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         @Override
         public synchronized final TReturnStatus getTReturnStatus()  {
                 getRequestStatus();
-                TReturnStatus status = new TReturnStatus();
                 if(getStatusCode() != null) {
                         return new TReturnStatus(getStatusCode(),getExplanation());
                 }
                 int len = getNumOfFileRequest();
                 if (len == 0) {
-                        status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-                        status.setExplanation("Could not find (deserialize) files in the request," +
-                                              " NumOfFileRequest is 0");
-                        logger.debug("assigned status.statusCode : "+status.getStatusCode());
-                        logger.debug("assigned status.explanation : "+status.getExplanation());
-                        return status;
+                    return new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,
+                            "Could not find (deserialize) files in the request,  NumOfFileRequest is 0");
                 }
                 int failed_req           = 0;
                 int canceled_req         = 0;
@@ -409,8 +404,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                         }
                 }
                 if (done_req == len ) {
-                        status.setStatusCode(TStatusCode.SRM_SUCCESS);
-                        status.setExplanation("All ls file requests completed");
                         if (!State.isFinalState(getState())) {
                                 try {
                                        setState(State.DONE,State.DONE.toString());
@@ -419,55 +412,45 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                          logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
                          }
-                        return status;
+                         return new TReturnStatus(TStatusCode.SRM_SUCCESS, "All ls file requests completed");
                 }
                 if (canceled_req == len ) {
-                        status.setStatusCode(TStatusCode.SRM_ABORTED);
-                        status.setExplanation("All ls file requests were cancelled");
-                        return status;
+                        return new TReturnStatus(TStatusCode.SRM_ABORTED, "All ls file requests were cancelled");
                 }
                 if ((pending_req==len)||(pending_req+running_req==len)||running_req==len) {
-                        status.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
-                        status.setExplanation("All ls file requests are pending");
-                        return status;
+                        return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, "All ls file requests are pending");
                 }
                 if (auth_failure==len) {
-                        status.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                        status.setExplanation("Client is not authorized to request information");
-                        return status;
+                        return new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                                "Client is not authorized to request information");
                 }
                 if (got_exception==len) {
-                        status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-                        status.setExplanation("SRM has an internal transient error, and client may try again");
-                        return status;
+                        return new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,
+                                "SRM has an internal transient error, and client may try again");
                 }
                 if (running_req > 0 || pending_req > 0) {
-                        status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
-                        status.setExplanation("Some files are completed, and some files are still on the queue. Details are on the files status");
-                        return status;
+                        return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS,
+                                "Some files are completed, and some files are still on the queue. Details are on the files status");
                 }
                 else {
                         if (done_req>0) {
-                                status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-                                status.setExplanation("Some SURL requests successfully completed, and some SURL requests failed. Details are on the files status");
                                  try {
                                          setState(State.DONE,State.DONE.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
                                          logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
-                                return status;
+                                 return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
+                                         "Some SURL requests successfully completed, and some SURL requests failed. Details are on the files status");
                         }
                         else {
-                                status.setStatusCode(TStatusCode.SRM_FAILURE);
-                                status.setExplanation("All ls requests failed in some way or another");
                                  try {
                                          setState(State.FAILED,State.FAILED.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
                                          logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
-                                return status;
+                                 return new TReturnStatus(TStatusCode.SRM_FAILURE, "All ls requests failed in some way or another");
                         }
                 }
         }

@@ -89,11 +89,8 @@ public class SrmGetPermission {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
 		}
-		TReturnStatus status = new TReturnStatus();
-		status.setStatusCode(statusCode);
-		status.setExplanation(error);
-		SrmGetPermissionResponse response = new SrmGetPermissionResponse();
-		response.setReturnStatus(status);
+                SrmGetPermissionResponse response = new SrmGetPermissionResponse();
+		response.setReturnStatus(new TReturnStatus(statusCode, error));
 		return response;
 	}
 
@@ -105,11 +102,6 @@ public class SrmGetPermission {
 	public SrmGetPermissionResponse srmGetPermission()
                 throws SRMException, URISyntaxException
         {
-		SrmGetPermissionResponse response  = new SrmGetPermissionResponse();
-		TReturnStatus returnStatus = new TReturnStatus();
-		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-		returnStatus.setExplanation("success");
-		response.setReturnStatus(returnStatus);
 		if(request==null) {
 			return getFailedResponse(" null request passed to SrmGetPermission()");
 		}
@@ -127,10 +119,8 @@ public class SrmGetPermission {
 		for(int i=0;i <length;i++){
                         logger.debug("SURL["+i+"]= "+uriarray[i]);
                         URI surl = new URI(uriarray[i].toString());
-			TReturnStatus rs = new TReturnStatus();
-			rs.setStatusCode(TStatusCode.SRM_SUCCESS);
-			TPermissionReturn p = new TPermissionReturn();
-			p.setStatus(rs);
+                        TPermissionReturn p = new TPermissionReturn();
+			p.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
 			p.setSurl(uriarray[i]);
 			try {
                                 FileMetaData fmd= storage.getFileMetaData(user,surl, false);
@@ -159,8 +149,8 @@ public class SrmGetPermission {
 			}
 			catch (SRMException srme) {
 				logger.warn(srme.toString());
-				p.getStatus().setStatusCode(TStatusCode.SRM_FAILURE);
-				p.getStatus().setExplanation(uriarray[i]+" "+srme.getMessage());
+				p.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, uriarray[i] + " " + srme
+                                        .getMessage()));
 				haveFailure = true;
 				nfailed++;
 			}
@@ -168,22 +158,17 @@ public class SrmGetPermission {
 				permissionarray.setPermissionArray(i,p);
 			}
 		}
-		response.setArrayOfPermissionReturns(permissionarray);
-		if ( haveFailure ) {
-			if ( nfailed == length ) {
-				response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
-				response.getReturnStatus().setExplanation("failed to get Permission for all requested surls");
-			}
-			else {
-				response.getReturnStatus().setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-				response.getReturnStatus().setExplanation("failed to get Permission for at least one file");
+                TReturnStatus returnStatus;
+                if (!haveFailure) {
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, "success");
+                } else if (nfailed == length) {
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE,
+                            "failed to get Permission for all requested surls");
+                } else {
+                    returnStatus = new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
+                            "failed to get Permission for at least one file");
 
-			}
-			return response;
-		}
-
-		response.getReturnStatus().setStatusCode(TStatusCode.SRM_SUCCESS);
-		response.getReturnStatus().setExplanation("success");
-		return response;
+                }
+                return new SrmGetPermissionResponse(returnStatus, permissionarray);
 	}
 }

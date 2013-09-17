@@ -105,9 +105,7 @@ public class SrmStatusOfBringOnlineRequest {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(error);
+        TReturnStatus status = new TReturnStatus(statusCode, error);
         SrmStatusOfBringOnlineRequestResponse srmPrepareToGetResponse = new SrmStatusOfBringOnlineRequestResponse();
         srmPrepareToGetResponse.setReturnStatus(status);
         return srmPrepareToGetResponse;

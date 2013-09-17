@@ -67,11 +67,8 @@ public class SrmLs {
                 if(statusCode == null) {
                         statusCode =TStatusCode.SRM_FAILURE;
                 }
-                TReturnStatus status = new TReturnStatus();
-                status.setStatusCode(statusCode);
-                status.setExplanation(error);
                 SrmLsResponse response = new SrmLsResponse();
-                response.setReturnStatus(status);
+                response.setReturnStatus(new TReturnStatus(statusCode, error));
                 return response;
         }
 
@@ -89,10 +86,7 @@ public class SrmLs {
                 catch(Exception e) {
                         logger.error(e.toString());
                         response = new SrmLsResponse();
-                        TReturnStatus returnStatus = new TReturnStatus();
-                        returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-                        returnStatus.setExplanation(e.toString());
-                        response.setReturnStatus(returnStatus);
+                        response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, e.toString()));
                 }
                 return response;
         }

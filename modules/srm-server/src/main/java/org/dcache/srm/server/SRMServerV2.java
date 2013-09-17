@@ -374,7 +374,7 @@ public class SRMServerV2 implements ISRM  {
         Constructor<?> responseConstructor = responseClass.getConstructor((Class[])null);
         Object response = responseConstructor.newInstance((Object[])null);
         try {
-		TReturnStatus trs = new TReturnStatus(statusCode,errorMessage );
+		TReturnStatus trs = new TReturnStatus(statusCode,errorMessage);
 		Method setReturnStatus = responseClass.getMethod("setReturnStatus",new Class[]{TReturnStatus.class});
 		setReturnStatus.invoke(response, trs);
         }

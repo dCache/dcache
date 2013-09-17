@@ -523,42 +523,35 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     @Override
     public TReturnStatus getReturnStatus() {
-        TReturnStatus returnStatus = new TReturnStatus();
-
         State state = getState();
-
- 	returnStatus.setExplanation(state.toString());
-
-        if(getStatusCode() != null) {
-            returnStatus.setStatusCode(getStatusCode());
+        if (getStatusCode() != null) {
+            return new TReturnStatus(getStatusCode(), state.toString());
         } else if(state == State.DONE) {
-            returnStatus.setStatusCode(TStatusCode.SRM_RELEASED);
+            return new TReturnStatus(TStatusCode.SRM_RELEASED, state.toString());
         }
         else if(state == State.READY) {
-            returnStatus.setStatusCode(TStatusCode.SRM_FILE_PINNED);
+            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, state.toString());
         }
         else if(state == State.TRANSFERRING) {
-            returnStatus.setStatusCode(TStatusCode.SRM_FILE_PINNED);
+            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, state.toString());
         }
         else if(state == State.FAILED) {
-            returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
-	    returnStatus.setExplanation("FAILED: "+getErrorMessage());
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, "FAILED: " + getErrorMessage());
         }
         else if(state == State.CANCELED ) {
-            returnStatus.setStatusCode(TStatusCode.SRM_ABORTED);
+            return new TReturnStatus(TStatusCode.SRM_ABORTED, state.toString());
         }
         else if(state == State.TQUEUED ) {
-            returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
         }
         else if(state == State.RUNNING ||
                 state == State.RQUEUED ||
                 state == State.ASYNCWAIT ) {
-            returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
         }
         else {
-            returnStatus.setStatusCode(TStatusCode.SRM_REQUEST_QUEUED);
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
         }
-        return returnStatus;
     }
 
 

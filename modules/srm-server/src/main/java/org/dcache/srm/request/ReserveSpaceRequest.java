@@ -286,33 +286,31 @@ public final class ReserveSpaceRequest extends Request {
     }
 
     public final TReturnStatus getTReturnStatus()   {
-        TReturnStatus status = new TReturnStatus();
-        rlock();
         State state;
         TStatusCode statusCode;
+        String errorMessage;
+        rlock();
         try {
-            status.setExplanation(getErrorMessage());
+            errorMessage = getErrorMessage();
             state = getState();
             statusCode = getStatusCode() ;
         } finally {
             runlock();
         }
-        if(statusCode != null) {
-            status.setStatusCode(statusCode);
+        if (statusCode != null) {
+            return new TReturnStatus(statusCode, errorMessage);
+        } else {
+            switch (state) {
+            case FAILED:
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, errorMessage);
+            case CANCELED:
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, errorMessage);
+            case DONE:
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, errorMessage);
+            default:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, errorMessage);
+            }
         }
-        else if(state == State.FAILED) {
-            status.setStatusCode(TStatusCode.SRM_FAILURE);
-        }
-        else if(state == State.CANCELED) {
-            status.setStatusCode(TStatusCode.SRM_ABORTED);
-        }
-        else if(state == State.DONE) {
-            status.setStatusCode(TStatusCode.SRM_SUCCESS);
-        }
-        else {
-            status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
-        }
-        return status;
     }
 
     public static ReserveSpaceRequest getRequest(Long requestId)

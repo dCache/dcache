@@ -99,10 +99,7 @@ public class SrmGetRequestTokens {
         }
 
         SrmGetRequestTokensResponse response = new SrmGetRequestTokensResponse();
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(statusCode);
-        status.setExplanation(text);
-        response.setReturnStatus(status);
+        response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;
     }
     /**
@@ -131,7 +128,7 @@ public class SrmGetRequestTokens {
                     new TReturnStatus(TStatusCode.SRM_SUCCESS,"OK"),
                     new ArrayOfTRequestTokenReturn(requestTokenReturns));
 
-                    return response;
+            return response;
         } else {
                return getFailedResponse("userRequestDescription does not refer to any existing known requests",
                TStatusCode.SRM_INVALID_REQUEST);
