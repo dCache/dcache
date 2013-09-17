@@ -324,9 +324,9 @@ public class MigrationModule
                 usage="Only copy replicas with the given access latency.")
         String accessLatency;
 
-        @Option(name="pnfsid",
+        @Option(name="pnfsid", separator=",",
                 category="Filter options",
-                usage="Only copy replicas with the given access latency.")
+                usage="Only copy replicas with one of the given PNFS IDs.")
         PnfsId[] pnfsid;
 
         @Option(name="rp", values={"custodial", "replica", "output"},
