@@ -7,6 +7,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -15,7 +16,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import dmg.util.Args;
@@ -33,6 +36,8 @@ import static java.util.Arrays.asList;
  */
 public class AnnotatedCommandExecutor implements CommandExecutor
 {
+    private static final Joiner AS_COMMA_LIST = Joiner.on(", ");
+
     private final static Function<Handler, Integer> GET_MAX_ARGS =
             new Function<Handler,Integer>() {
                 @Override
@@ -214,12 +219,15 @@ public class AnnotatedCommandExecutor implements CommandExecutor
 
     private static List<Handler> createFieldHandlers(Class<? extends Callable<?>> clazz)
     {
+        Set<String> names = new HashSet<>();
+
         List<Handler> handlers = Lists.newArrayList();
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field field: c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
                 if (option != null) {
                     handlers.add(createFieldHandler(field, option));
+                    names.add(option.name());
                 }
 
                 Argument argument = field.getAnnotation(Argument.class);
@@ -239,6 +247,8 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         if (maxArgs < Integer.MAX_VALUE) {
             handlers.add(new MaxArgumentsHandler(maxArgs));
         }
+
+        handlers.add(new CheckOptionsKnownHandler(names));
 
         return handlers;
     }
@@ -621,6 +631,37 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         public int getMaxArguments()
         {
             return 0;
+        }
+    }
+
+    /**
+     * Prevents running a command if user supplied any options that are unknown.
+     */
+    private static class CheckOptionsKnownHandler implements Handler
+    {
+        private final Set<String> _known;
+
+        private CheckOptionsKnownHandler(Set<String> names)
+        {
+            _known = names;
+        }
+
+        @Override
+        public void apply(Object object, Args args) throws IllegalAccessException
+        {
+            Set<String> supplied = args.options().keySet();
+            Set<String> unknown = Sets.difference(supplied, _known);
+            if (!unknown.isEmpty()) {
+                throw new IllegalArgumentException("Unknown option" +
+                        (unknown.size() > 1 ? "s" : "") + ": " +
+                        AS_COMMA_LIST.join(unknown));
+            }
+        }
+
+        @Override
+        public int getMaxArguments()
+        {
+            return Integer.MAX_VALUE;
         }
     }
 
