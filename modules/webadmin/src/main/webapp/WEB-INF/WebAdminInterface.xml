@@ -67,6 +67,7 @@
     <bean id="BillingCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="serviceCellEndpoint"/>
         <property name="destination" ref="billingCellPath"/>
+        <property name="retryOnNoRouteToCell" value="true"/>
         <property name="timeout" value="60000"/>
     </bean>
 
