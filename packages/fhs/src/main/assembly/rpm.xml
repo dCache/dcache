@@ -12,5 +12,10 @@
 	<outputDirectory>etc/rc.d/init.d</outputDirectory>
 	<destName>dcache-server</destName>
       </file>
+      <file>
+        <source>src/main/scripts/dcache-limits.conf</source>
+        <outputDirectory>etc/security/limits.d</outputDirectory>
+        <destName>92-dcache.conf</destName>
+      </file>
     </files>
 </assembly>

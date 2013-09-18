@@ -107,6 +107,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %attr(0755,root,root) /etc/rc.d/init.d/dcache-server
 %attr(0755,root,root) /etc/bash_completion.d/dcache
+%config(noreplace) %attr(0644,root,root) /etc/security/limits.d/92-dcache.conf
+
 %docdir /usr/share/doc/dcache
 %config(noreplace) /etc/dcache
 %config(noreplace) /var/lib/dcache
