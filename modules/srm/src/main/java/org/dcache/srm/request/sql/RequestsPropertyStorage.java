@@ -75,8 +75,12 @@ package org.dcache.srm.request.sql;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -109,6 +113,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     private final String pass;
     private final String nextRequestIdTableName;
     private final JdbcTemplate jdbcTemplate;
+    private final TransactionTemplate transactionTemplate;
 
     private int nextIntBase;
     private int nextIntIncrement = NEXT_INT_STEP;
@@ -127,7 +132,9 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
         this.user = user;
         this.pass = pass;
         this.nextRequestIdTableName = nextRequestIdTableName;
-        this.jdbcTemplate = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass).newJdbcTemplate();
+        JdbcConnectionPool pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
+        this.jdbcTemplate = pool.newJdbcTemplate();
+        this.transactionTemplate = pool.newTransactionTemplate();
 
         dbInit();
     }
@@ -173,7 +180,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
 
     /**
      * Generate a next unique int request id
-     * Databse table is used to preserve the state of the request generator.
+     * Database table is used to preserve the state of the request generator.
      * In this table we store a single record with field NEXTINT
      * We read the value of this field and increase it by NEXT_INT_STEP (1000 by
      * default), Thus reserving the 1000 values for use by this instance.
@@ -187,31 +194,24 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
 
     public synchronized  int nextInt()   {
         if (nextIntIncrement >= NEXT_INT_STEP) {
-            nextIntBase = jdbcTemplate.execute(
-                    new ConnectionCallback<Integer>()
-                    {
-                        @Override
-                        public Integer doInConnection(Connection con)
-                                throws SQLException, DataAccessException
-                        {
-                            String select_for_update = "SELECT * from "+nextRequestIdTableName+" FOR UPDATE ";
-                            logger.debug("RequestsPropertyStorage: nextInt trying {}", select_for_update);
-                            try (Statement s = con.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
-                                 ResultSet set = s.executeQuery(select_for_update)) {
-                                if (!set.next()) {
-                                    throw new SQLException("table " + nextRequestIdTableName + " is empty!!!");
-                                }
-                                int base = set.getInt(1) + NEXT_INT_STEP;
-                                set.updateInt(1, base);
-                                set.updateRow();
-                                return base;
-                            }
-                        }
-                    });
+            nextIntBase = transactionTemplate.execute(new TransactionCallback<Integer>() {
+                @Override
+                public Integer doInTransaction(TransactionStatus status)
+                {
+                    int base = jdbcTemplate.queryForObject("SELECT NEXTINT FROM " + nextRequestIdTableName + " FOR UPDATE", Integer.class);
+                    int newBase = base + NEXT_INT_STEP;
+                    int n = jdbcTemplate.update("UPDATE " + nextRequestIdTableName + " SET NEXTINT=?", newBase);
+                    if (n != 1) {
+                        throw new IncorrectResultSizeDataAccessException(
+                                "Unexpected number of rows got updated in " + nextRequestIdTableName, 1, n);
+                    }
+                    return newBase;
+                }
+            });
             nextIntIncrement = 0;
         }
         int nextInt = nextIntBase + nextIntIncrement++;
-        logger.debug("RequestsPropertyStorage: return nextInt={}", nextInt);
+        logger.trace("RequestsPropertyStorage: return nextInt={}", nextInt);
         return nextInt;
     }
 
@@ -222,7 +222,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
 
     /**
      * Generate a next unique long id
-     * Databse table is used to preserve the state of the long id generator.
+     * Database table is used to preserve the state of the long id generator.
      * In this table we store a single record with field NEXTLONG
      * We read the value of this field and increase it by NEXT_LONG_STEP (10000
      * by default), thus reserving the 10000 values for use by this instance.
@@ -234,28 +234,22 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     @Override
     public synchronized long nextLong() {
         if (nextLongIncrement >= NEXT_LONG_STEP) {
-            nextLongBase = jdbcTemplate.execute(
-                    new ConnectionCallback<Long>()
-                    {
-                        @Override
-                        public Long doInConnection(Connection con)
-                                throws SQLException, DataAccessException
-                        {
-                            String select_for_update = "SELECT * FROM " + nextRequestIdTableName + " FOR UPDATE";
-                            logger.debug("RequestsPropertyStorage: nextLong trying {}", select_for_update);
-                            try (Statement s = con.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
-                                 ResultSet set = s.executeQuery(select_for_update)) {
-                                if (!set.next()) {
-                                    throw new SQLException("table " + nextRequestIdTableName + " is empty!!!");
-                                }
-                                long base = set.getLong(2) + NEXT_LONG_STEP;
-                                set.updateLong(2, base);
-                                set.updateRow();
-                                return base;
-                            }
-                        }
-                    });
-            nextLongIncrement =0;
+            nextLongBase = transactionTemplate.execute(new TransactionCallback<Long>()
+            {
+                @Override
+                public Long doInTransaction(TransactionStatus status)
+                {
+                    long base = jdbcTemplate.queryForObject("SELECT NEXTLONG FROM " + nextRequestIdTableName + " FOR UPDATE", Long.class);
+                    long newBase = base + NEXT_LONG_STEP;
+                    int n = jdbcTemplate.update("UPDATE " + nextRequestIdTableName + " SET NEXTLONG=?", newBase);
+                    if (n != 1) {
+                        throw new IncorrectResultSizeDataAccessException(
+                                "Unexpected number of rows got updated in " + nextRequestIdTableName, 1, n);
+                    }
+                    return newBase;
+                }
+            });
+            nextLongIncrement = 0;
         }
 
         long nextLong = nextLongBase + nextLongIncrement++;
