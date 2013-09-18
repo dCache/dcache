@@ -70,6 +70,7 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import org.glite.voms.PKIVerifier;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -77,10 +78,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
+import java.security.cert.CRLException;
+import java.security.cert.CertificateException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -95,6 +99,7 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
@@ -174,6 +179,7 @@ import org.dcache.srm.v2_2.SrmSuspendRequestRequest;
 import org.dcache.srm.v2_2.SrmSuspendRequestResponse;
 import org.dcache.srm.v2_2.SrmUpdateSpaceRequest;
 import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
+import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
@@ -189,37 +195,31 @@ public class SRMServerV2 implements ISRM  {
                     SRM_INTERNAL_ERROR, SRM_FATAL_INTERNAL_ERROR, SRM_NOT_SUPPORTED, SRM_ABORTED,
                     SRM_REQUEST_TIMED_OUT, SRM_FILE_BUSY, SRM_FILE_LOST, SRM_FILE_UNAVAILABLE, SRM_CUSTOM_STATUS);
 
-    public Logger log;
-    private SrmAuthorizer srmAuth;
-    private PKIVerifier pkiVerifier;
-    Configuration configuration;
-    private AbstractStorageElement storage;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SRMServerV2.class);
+    private final SrmAuthorizer srmAuth;
+    private final PKIVerifier pkiVerifier;
+    private final AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerCounters;
     private final RequestExecutionTimeGauges<Class<?>> srmServerGauges;
     private final SRM srm;
 
     public SRMServerV2() throws RemoteException{
         try {
-            // srmConn = SrmDCacheConnector.getInstance();
-            log = LoggerFactory.getLogger("logger.org.dcache.authorization."+
-                this.getClass().getName());
-
             srm = Axis.getSRM();
             storage = Axis.getStorage();
             Configuration config = Axis.getConfiguration();
-
             srmAuth = new SrmAuthorizer(config.getAuthorization(),
                     srm.getRequestCredentialStorage(),
                     config.isClientDNSLookup());
-
             // use default locations for cacerts and vomdsdir
             pkiVerifier
-                = GSSUtils.getPkiVerifier(null, null, MDC.getCopyOfContextMap());
+                    = GSSUtils.getPkiVerifier(null, null, MDC.getCopyOfContextMap());
             srmServerCounters = srm.getSrmServerV2Counters();
             srmServerGauges = srm.getSrmServerV2Gauges();
-
-        } catch ( RemoteException re) { throw re; } catch ( Exception e) {
-            throw new RemoteException("exception",e);
+        } catch (IOException e) {
+            throw new RemoteException("Server initialization failed: " + e.getMessage(), e);
+        } catch (CRLException | CertificateException e) {
+            throw new RemoteException("Server initialization failed: " + e, e);
         }
     }
 
@@ -247,7 +247,7 @@ public class SRMServerV2 implements ISRM  {
                         = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
                                         pkiVerifier);
                     String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
-                    log.debug("role is {}", role);
+                    LOGGER.debug("role is {}", role);
                     requestCredential = srmAuth.getRequestCredential(userCred,role);
                     user              = srmAuth.getRequestUser(requestCredential,
                                                                null,
@@ -262,17 +262,17 @@ public class SRMServerV2 implements ISRM  {
                         case "srmSetPermission":
                             return getFailedResponse(capitalizedRequestName,
                                                      TStatusCode.SRM_AUTHORIZATION_FAILURE,
-                                                     "Session is read-only");
+                                                     "User account is read-only");
                         }
                     }
                 } catch (SRMAuthorizationException sae) {
-                    log.info("SRM Authorization failed: {}", sae.getMessage());
+                    LOGGER.info("Authentication failed: {}", sae.getMessage());
                     srmServerCounters.incrementFailed(requestClass);
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_AUTHENTICATION_FAILURE,
-                            "SRM Authentication failed");
+                            "Authentication failed (server log contains additional information)");
                 }
-                log.debug("About to call {} handler", requestName);
+                LOGGER.debug("About to call {} handler", requestName);
                 Constructor<?> handlerConstructor;
                 Object handler;
                 Method handleGetResponseMethod;
@@ -280,12 +280,12 @@ public class SRMServerV2 implements ISRM  {
                     Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+
                             capitalizedRequestName);
                     handlerConstructor =
-                            handlerClass.getConstructor(new Class[]{SRMUser.class,
+                            handlerClass.getConstructor(SRMUser.class,
                             RequestCredential.class,
                             requestClass,
                             AbstractStorageElement.class,
                             SRM.class,
-                            String.class});
+                            String.class);
                     handler = handlerConstructor.newInstance(user,
                             requestCredential,
                             request,
@@ -293,50 +293,28 @@ public class SRMServerV2 implements ISRM  {
                             srm,
                             userCred.clientHost);
                     handleGetResponseMethod = handlerClass.getMethod("getResponse");
-                } catch(ClassNotFoundException e) {
-                    if( log.isDebugEnabled() ) {
-                        log.debug("handler discovery and dynamic loading failed", e);
-                    }else{
-                        log.info("handler discovery and dynamic loading failed");
+                } catch (ClassNotFoundException e) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.info("handler discovery and dynamic loading failed", e);
+                    } else {
+                        LOGGER.info("handler discovery and dynamic loading failed");
                     }
                     srmServerCounters.incrementFailed(requestClass);
                     return getFailedResponse(capitalizedRequestName,
                             TStatusCode.SRM_NOT_SUPPORTED,
-                            "can not find a handler, not implemented");
+                            requestName + " is unsupported");
                 }
-                try {
-                    Object response = handleGetResponseMethod.invoke(handler);
-                    if (isFailure(response)) {
-                        srmServerCounters.incrementFailed(requestClass);
-                    }
-                    return response;
-                } catch(IllegalAccessException | IllegalArgumentException |
-                        InvocationTargetException e) {
-                    Throwable cause = e;
-                    String message = e.toString();
-
-                    if (e instanceof InvocationTargetException) {
-                        cause = e.getCause();
-                        message = "InvocationTargetException: " +
-                                cause.toString();
-                    }
-
-                    log.error("Bug detected; please report to " +
-                                "<support@dCache.org>: {}", message, cause);
+                Object response = handleGetResponseMethod.invoke(handler);
+                if (isFailure(response)) {
                     srmServerCounters.incrementFailed(requestClass);
-                    return getFailedResponse(capitalizedRequestName,
-                            SRM_FAILURE, "internal error");
                 }
-            } catch(Exception e) {
-                log.error(" handleRequest: ",e);
+                return response;
+            } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | RuntimeException e) {
+                LOGGER.error("Please report this failure to support@dcache.org", e);
                 srmServerCounters.incrementFailed(requestClass);
-                try{
-                    return getFailedResponse(capitalizedRequestName,
-                            TStatusCode.SRM_INTERNAL_ERROR,
-                         "internal error: "+ e.getMessage());
-                } catch(Exception ee){
-                    throw new RemoteException("SRMServerV2."+requestName+"() exception",e);
-                }
+                return getFailedResponse(capitalizedRequestName,
+                        TStatusCode.SRM_INTERNAL_ERROR,
+                        "Internal error (server log contains additional information)");
             }
         } finally {
             srmServerGauges.update(requestClass,
@@ -364,37 +342,41 @@ public class SRMServerV2 implements ISRM  {
     }
 
     private Object getFailedResponse(String capitalizedRequestName, TStatusCode statusCode, String errorMessage)
-    throws ClassNotFoundException,
-            NoSuchMethodException,
-            InstantiationException,
-            IllegalAccessException,
-            InvocationTargetException {
-
-        Class<?> responseClass = Class.forName("org.dcache.srm.v2_2."+capitalizedRequestName+"Response");
-        Constructor<?> responseConstructor = responseClass.getConstructor((Class[])null);
-        Object response = responseConstructor.newInstance((Object[])null);
+            throws RemoteException
+    {
         try {
-		TReturnStatus trs = new TReturnStatus(statusCode,errorMessage);
-		Method setReturnStatus = responseClass.getMethod("setReturnStatus",new Class[]{TReturnStatus.class});
-		setReturnStatus.invoke(response, trs);
+            Class<?> responseClass = Class.forName("org.dcache.srm.v2_2."+capitalizedRequestName+"Response");
+            Constructor<?> responseConstructor = responseClass.getConstructor();
+            Object response;
+            try {
+                response = responseConstructor.newInstance();
+            } catch (InvocationTargetException e) {
+                Throwables.propagateIfPossible(e, Exception.class);
+                throw new RuntimeException("Unexpected exception", e);
+            }
+            try {
+                Method setReturnStatus = responseClass
+                        .getMethod("setReturnStatus", TReturnStatus.class);
+                setReturnStatus.setAccessible(true);
+                try {
+                    setReturnStatus.invoke(response, new TReturnStatus(statusCode, errorMessage));
+                } catch (InvocationTargetException e) {
+                    Throwables.propagateIfPossible(e, Exception.class);
+                    throw new RuntimeException("Unexpected exception", e);
+                }
+            } catch (Exception e) {
+                LOGGER.trace("getFailedResponse invocation failed", e);
+                Method setStatusCode = responseClass.getMethod("setStatusCode", TStatusCode.class);
+                setStatusCode.setAccessible(true);
+                setStatusCode.invoke(response, statusCode);
+                Method setExplanation = responseClass.getMethod("setExplanation", String.class);
+                setExplanation.setAccessible(true);
+                setExplanation.invoke(response, errorMessage);
+            }
+            return response;
+        } catch (Exception e) {
+            throw new RemoteException("Failed to generate SRM reply", e);
         }
-	catch (NoSuchMethodException nsme) {
-		// A hack to handle SrmPingResponse which does not have "setReturnStatus" method
-		log.trace("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
-		if (capitalizedRequestName.equals("SrmPing")) {
-			Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+capitalizedRequestName);
-			Method getFailedRespose = handlerClass.getMethod("getFailedResponse",new Class[]{String.class});
-			return getFailedRespose.invoke(null, errorMessage);
-		}
-	}
-        catch(Exception e) {
-            log.trace("getFailedResponse invocation failed",e);
-            Method setStatusCode = responseClass.getMethod("setStatusCode",new Class[]{TStatusCode.class});
-            Method setExplanation = responseClass.getMethod("setExplanation",new Class[]{String.class});
-            setStatusCode.invoke(response, statusCode);
-            setExplanation.invoke(response, errorMessage);
-        }
-        return response;
     }
 
     @Override
@@ -646,8 +628,16 @@ public class SRMServerV2 implements ISRM  {
 
     @Override
     public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException {
-        return (SrmPingResponse)
-        handleRequest("srmPing",srmPingRequest);
+        srmServerCounters.incrementRequests(SrmPingRequest.class);
+
+        // Ping is special as it isn't authenticated and unable to return a failure
+        SrmPingResponse response = new SrmPingResponse();
+        response.setVersionInfo("v2.2");
+        response.setOtherInfo(new ArrayOfTExtraInfo(
+                new TExtraInfo[]{
+                        new TExtraInfo("backend_type", "dCache"),
+                        new TExtraInfo("backend_version", storage.getStorageBackendVersion())}));
+        return response;
     }
 
     @Override
