@@ -86,7 +86,6 @@ define context PoolDefaults endDefine
    jtm set timeout -queue=io -lastAccess=0 -total=0
    jtm set timeout -queue=p2p -lastAccess=0 -total=0
    csm set checksumtype adler32
-   csm set policy -frequently=off
    csm set policy -onread=off -onwrite=on -onrestore=off -ontransfer=off -enforcecrc=on -getcrcfromhsm=off
 
    movermap define DCap-3  org.dcache.pool.movers.DCapProtocol_3_nio
