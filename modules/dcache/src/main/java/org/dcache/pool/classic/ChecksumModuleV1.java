@@ -279,6 +279,12 @@ public class ChecksumModuleV1
                 usage = "Verbose.")
         boolean verbose;
 
+        @Option(name = "frequently",
+                metaVar = "IGNORED_VALUE",
+                usage = "This option is accepted but ignored.  It exists only " +
+                "for backwards compatibility with older dCache pool 'setup' files")
+        String ignoredValue;
+
         private void updatePolicy(String value, PolicyFlag flag)
         {
             if (value != null) {
