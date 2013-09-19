@@ -5,7 +5,7 @@
     <dependencySets>
         <dependencySet>
             <outputDirectory>usr/share/srm/lib</outputDirectory>
-            <useProjectArtifact>true</useProjectArtifact>
+          <useProjectArtifact>true</useProjectArtifact>
         </dependencySet>
     </dependencySets>
 

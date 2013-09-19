@@ -8,10 +8,10 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>srm</artifactId>
+  <artifactId>srm-server</artifactId>
   <packaging>jar</packaging>
 
-  <name>SRM</name>
+  <name>SRM Server</name>
 
   <dependencies>
     <dependency>
@@ -75,6 +75,11 @@
         <groupId>org.dcache</groupId>
         <artifactId>dcache-common</artifactId>
         <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>srm-common</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>

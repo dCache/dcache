@@ -810,6 +810,7 @@
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
             <version>1.5.1</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
@@ -1106,7 +1107,6 @@
         <module>modules/gplazma2-gsi</module>
         <module>modules/gplazma2-htpasswd</module>
         <module>modules/javatunnel</module>
-        <module>modules/srm</module>
         <module>modules/dcache</module>
         <module>modules/dcache-chimera</module>
         <module>modules/dcache-ftp</module>
@@ -1116,7 +1116,9 @@
         <module>modules/dcache-gplazma</module>
         <module>modules/dcache-jms</module>
         <module>modules/dcache-webadmin</module>
-        <module>modules/srmclient</module>
+        <module>modules/srm-common</module>
+        <module>modules/srm-server</module>
+        <module>modules/srm-client</module>
         <module>modules/acl</module>
         <module>modules/chimera</module>
         <module>modules/missingfiles-semsg</module>

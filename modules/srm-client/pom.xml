@@ -8,7 +8,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>srmclient</artifactId>
+    <artifactId>srm-client</artifactId>
     <packaging>jar</packaging>
 
     <name>SRM Client</name>
@@ -40,10 +40,9 @@
         </dependency>
         <dependency>
             <groupId>org.dcache</groupId>
-            <artifactId>srm</artifactId>
+            <artifactId>srm-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>${bouncycastle.bcprov}</artifactId>
