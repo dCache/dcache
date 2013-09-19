@@ -24,7 +24,6 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.srm.SRMUser;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.persistence.CascadeType.ALL;
@@ -40,7 +39,7 @@ import static javax.persistence.FetchType.EAGER;
 
 @Entity
 @Table(name="authrecord")
-public class AuthorizationRecord implements SRMUser{
+public class AuthorizationRecord {
 
     private static final String PRIMARY_ATTRIBUTE_PREFIX_THAT_RETURN_IDENTITY_AS_VO_GROUP = "/Role=";
 
@@ -223,7 +222,6 @@ public class AuthorizationRecord implements SRMUser{
      * it is set to a unique value by gPlazma
      * It has nothing to do with user id
      */
-    @Override
     @Id  // property access is used
     @Column( name="id")
     public long getId() {
@@ -284,7 +282,6 @@ public class AuthorizationRecord implements SRMUser{
         this.groupLists = groupLists;
     }
 
-    @Override
     @Basic
     @Column( name="priority")
     public int getPriority() {

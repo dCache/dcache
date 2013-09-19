@@ -754,7 +754,7 @@ public class SRM {
             if (r != null) {
                 // we found one make sure it is the same  user
                 SRMUser requestUser = r.getUser();
-                if (requestUser == null || requestUser.equals(user)) {
+                if (requestUser == null || requestUser.getId() == user.getId()) {
                     // and return the request status
                     RequestStatus rs = r.getRequestStatus();
                     logger.debug("obtained request status, returning rs for request id=" + requestId);
@@ -914,7 +914,7 @@ public class SRM {
 
             // check that user is the same
             SRMUser req_user = r.getUser();
-            if (req_user != null && !req_user.equals(user)) {
+            if (req_user != null && req_user.getId() != user.getId()) {
                 return createFailedRequestStatus(
                         "request #" + requestId + " owned by "+req_user +" does not belong to user " + user);
             }
