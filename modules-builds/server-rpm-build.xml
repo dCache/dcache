@@ -19,6 +19,8 @@
               tofile="${server.rpm.buildroot}/etc/rc.d/init.d/dcache-server"/>
         <copy file="${rpmTemplateDir}/dcache.bash-completion"
               tofile="${server.rpm.buildroot}/etc/bash_completion.d/dcache"/>
+        <copy file="${rpmTemplateDir}/dcache-limits.conf"
+              tofile="${server.rpm.buildroot}/etc/security/limits.d/92-dcache.conf"/>
 
         <!-- Create spec file from template -->
         <copy todir="${server.rpm.specdir}" overwrite="true">
