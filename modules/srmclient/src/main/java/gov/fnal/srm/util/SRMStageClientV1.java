@@ -199,6 +199,13 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
                         throw new IOException(" null requests status");
                     }
 
+                    if(rs.state.equals("Failed")) {
+                        esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                        for(int i = 0; i< rs.fileStatuses.length;++i) {
+                            edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
+                        }
+                        throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                    }
                     if(rs.fileStatuses.length != len) {
                         esay( "incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
                         throw new IOException("incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
@@ -206,14 +213,6 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
 
                     for(int i =0; i<len;++i) {
                         fileIDsMap.put(rs.fileStatuses[i].fileId,rs.fileStatuses[i]);
-                    }
-
-                    if(rs.state.equals("Failed")) {
-                        esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-                        for(int i = 0; i< rs.fileStatuses.length;++i) {
-                            edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
-                        }
-                        throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
                     }
                 }
             }catch(IOException ioe) {
