@@ -81,11 +81,13 @@ import org.springframework.dao.DataAccessException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
@@ -433,6 +435,39 @@ public abstract class Request extends Job {
         return configuration;
     }
 
+    public TReturnStatus abort()
+    {
+        wlock();
+        try {
+            /* [ SRM 2.2, 5.11.2 ]
+             *
+             * c) Abort must be allowed to all requests with requestToken.
+             * i) When duplicate abort request is issued on the same request, SRM_SUCCESS
+             *    may be returned to all duplicate abort requests and no operations on
+             *    duplicate abort requests are performed.
+             */
+            State state = getState();
+            if (!State.isFinalState(state)) {
+                setState(State.CANCELED, "Request aborted");
+            }
+        } catch (IllegalStateTransition e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, "Cannot abort request in its current state");
+        } finally {
+            wunlock();
+        }
+        return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+    }
 
-
+    public static <R extends Request> R getRequest(String requestToken, Class<R> type)
+            throws SRMInvalidRequestException
+    {
+        if (requestToken == null) {
+            throw new SRMInvalidRequestException("Request token is empty");
+        }
+        try {
+            return Job.getJob(Long.parseLong(requestToken), type);
+        } catch (SRMInvalidRequestException | NumberFormatException e) {
+            throw new SRMInvalidRequestException("No such request: " + requestToken);
+        }
+    }
 }

@@ -44,6 +44,7 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 import static java.util.Arrays.asList;
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 
 /**
@@ -236,7 +237,6 @@ public class SrmReleaseFiles {
     {
         TSURLReturnStatus[] surlReturnStatusArray =
             new TSURLReturnStatus[surls.length];
-        int failure_num=0;
         for (int i = 0; i< surls.length; ++i) {
            URI surl = surls[i];
            surlReturnStatusArray[i] = new TSURLReturnStatus();
@@ -250,24 +250,12 @@ public class SrmReleaseFiles {
             catch(Exception e) {
                 surlReturnStatusArray[i].setStatus(
                     new TReturnStatus(TStatusCode.SRM_FAILURE,"release failed: "+e));
-                failure_num++;
-
             }
         }
 
-        TReturnStatus status;
-        if(failure_num == 0) {
-            status = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-        } else if(failure_num < surls.length) {
-            status = new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
-        } else {
-            status = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
-        }
-        SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
-        srmReleaseFilesResponse.setReturnStatus(status);
-        srmReleaseFilesResponse.setArrayOfFileStatuses(
-                                new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
-        return srmReleaseFilesResponse;
+        return new SrmReleaseFilesResponse(
+                getSummaryReturnStatus(surlReturnStatusArray),
+                new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
     }
 
    private SrmReleaseFilesResponse unpinDirectlyBySURLs(URI[] surls)
@@ -292,31 +280,15 @@ public class SrmReleaseFiles {
         unpinFilesDirectlyBySURLs(surls,surlsMap);
 
         //analize the results to form SrmReleaseFilesResponse
-        int failure_num=0;
         TSURLReturnStatus[] surlReturnStatusArray =
             new TSURLReturnStatus[surls.length];
         for(int i = 0; i<surls.length; i++) {
-            TSURLReturnStatus rs = surlsMap.get(surls[i]);
-            if(!rs.getStatus().getStatusCode().equals(TStatusCode.SRM_SUCCESS)) {
-                failure_num++;
-            }
-            surlReturnStatusArray[i] = rs;
+            surlReturnStatusArray[i] = surlsMap.get(surls[i]);
         }
 
-        TReturnStatus status;
-        if (failure_num == 0) {
-            status = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-        } else if(failure_num < surls.length) {
-            status = new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
-        } else {
-            status = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
-        }
-        SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
-        srmReleaseFilesResponse.setReturnStatus(status);
-        srmReleaseFilesResponse.setArrayOfFileStatuses(
-                                new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
-        return srmReleaseFilesResponse;
-
+       return new SrmReleaseFilesResponse(
+               getSummaryReturnStatus(surlReturnStatusArray),
+               new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
     }
 
     private void unpinFilesDirectlyBySURLs(URI[] surls, Map<URI,TSURLReturnStatus> surlsMap) {

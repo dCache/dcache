@@ -90,6 +90,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMProtocol;
 import org.dcache.srm.SRMReleasedException;
@@ -1117,18 +1118,15 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     }
 
     @Override
-    public final CopyFileRequest getFileRequestBySurl(URI surl) throws SRMException {
-        if(surl == null ) {
-           throw new SRMException("surl is null");
-        }
+    public final CopyFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
+    {
         for (CopyFileRequest request : getFileRequests()) {
             if(request.getFrom_surl().equals(surl) ||
                request.getTo_surl().equals(surl) ) {
                 return request;
             }
         }
-        throw new SRMException("file request for url ="+surl+
-        " is not found");
+        throw new SRMFileRequestNotFoundException("file request for url =" + surl + " is not found");
     }
 
     @Override

@@ -99,6 +99,9 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+
 /*
  * @author  timur
  */
@@ -198,10 +201,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     @Override
-    public BringOnlineFileRequest getFileRequestBySurl(URI surl) throws SRMException{
-        if(surl == null) {
-           throw new SRMException("surl is null");
-        }
+    public BringOnlineFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
+    {
         for (BringOnlineFileRequest request : getFileRequests()) {
             if (request.getSurl().equals(surl)) {
                 return request;
@@ -498,25 +499,10 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         catch(Exception e) {
             logger.error(e.toString());
         }
-        int errors_cnt = 0;
 
-        for (TSURLReturnStatus surlLReturnStatus: surlLReturnStatuses) {
-            if(surlLReturnStatus == null || !surlLReturnStatus.getStatus().
-                getStatusCode().equals(TStatusCode.SRM_SUCCESS)) {
-                errors_cnt++;
-            }
-        }
-        SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
-        if(errors_cnt == 0) {
-            srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
-        } else if (errors_cnt < len) {
-            srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null));
-        } else {
-            srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, null));
-        }
-        srmReleaseFilesResponse.setArrayOfFileStatuses(new ArrayOfTSURLReturnStatus(surlLReturnStatuses));
-        return srmReleaseFilesResponse;
-
+        return new SrmReleaseFilesResponse(
+                getSummaryReturnStatus(surlLReturnStatuses),
+                new ArrayOfTSURLReturnStatus(surlLReturnStatuses));
     }
 
 

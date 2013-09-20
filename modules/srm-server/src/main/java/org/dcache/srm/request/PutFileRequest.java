@@ -615,6 +615,43 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
+    public void abort() throws IllegalStateTransition
+    {
+        wlock();
+        try {
+            /* [ SRM 2.2, 5.12.2 ]
+             *
+             * a) srmAbortFiles aborts all files in the request regardless of the state.
+             * d) When aborting srmPrepareToPut request before srmPutDone and before the
+             *    file transfer, the SURL must not exist as the result of the successful
+             *    abort on the SURL. Any srmRm request on the SURL must fail.
+             * e) When aborting srmPrepareToPut request before srmPutDone and after the
+             *    file transfer, the SURL may exist, and a srmRm request on the SURL may
+             *    remove the requested SURL.
+             * f) When aborting srmPrepareToPut request after srmPutDone, it must be failed
+             *    for those files. An explicit srmRm is required to remove those successfully
+             *    completed files for srmPrepareToPut.
+             * g) srmAbortFiles must not change the request level status of the completed
+             *    requests. Once a request is completed, the status of the request remains
+             *    the same.
+             *
+             * We interpret this to mean that a put request in a non-final state is
+             * cancelled, while the abort request itself fails if the put request has
+             * finished successfully. Otherwise nothing happens.
+             */
+            State state = getState();
+            if (!State.isFinalState(state)) {
+                setState(State.CANCELED, "Request aborted");
+            } else if (state == State.DONE) {
+                throw new IllegalStateTransition("Put request completed successfully and cannot be aborted",
+                        State.DONE, State.CANCELED);
+            }
+        } finally {
+            wunlock();
+        }
+    }
+
+    @Override
     public boolean isTouchingSurl(URI surl)
     {
         return surl.equals(getSurl());

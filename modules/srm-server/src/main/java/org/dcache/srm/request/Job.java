@@ -289,7 +289,7 @@ public abstract class Job  {
                 }
             }
         }
-        throw new SRMInvalidRequestException("jobId = " + jobId + " does not correspond to any known job");
+        throw new SRMInvalidRequestException("Id " + jobId + " does not correspond to any known job");
     }
 
     public static <T extends Job> Set<T> getActiveJobs(Class<T> type) throws DataAccessException
@@ -339,7 +339,8 @@ public abstract class Job  {
             }
             if (!isValidTransition(this.state, newState)) {
                 throw new IllegalStateTransition(
-                        "Illegal state transition from " + this.state + " to " + newState);
+                        "Illegal state transition from " + this.state + " to " + newState,
+                        this.state, newState);
             }
             State oldState = this.state;
             this.state = newState;

@@ -277,6 +277,34 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         }
     }
 
+    public void abort() throws IllegalStateTransition
+    {
+        wlock();
+        try {
+            /* [ SRM 2.2, 5.12.2 ]
+             *
+             * a) srmAbortFiles aborts all files in the request regardless of the state.
+             * g) srmAbortFiles must not change the request level status of the completed
+             *    requests. Once a request is completed, the status of the request remains
+             *    the same.
+             * h) When duplicate abort file request is issued on the same files, SRM_SUCCESS
+             *    must be returned to all duplicate abort file requests and no operations on
+             *    duplicate abort file requests must performed.
+             *
+             * Combined we interpret this to mean that for any non-final state, the request
+             * is cancelled.
+             *
+             * Note that the remaining items more constraints for particular types of
+             * requests. Some subclasses thus override this method.
+             */
+            if (!getState().isFinalState()) {
+                setState(State.CANCELED, "Request aborted");
+            }
+        } finally {
+            wunlock();
+        }
+    }
+
     public SRMUser getUser() throws SRMInvalidRequestException {
         return getContainerRequest().getUser();
     }

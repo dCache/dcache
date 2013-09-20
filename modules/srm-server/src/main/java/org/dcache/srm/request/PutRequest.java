@@ -84,6 +84,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMUser;
@@ -99,7 +100,12 @@ import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+
 /**
  *
  * @author  timur
@@ -206,16 +212,14 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    public PutFileRequest getFileRequestBySurl(URI surl) throws SRMException{
-        if(surl == null) {
-           throw new SRMException("surl is null");
-        }
+    public PutFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
+    {
         for (PutFileRequest request : getFileRequests()) {
             if (request.getSurl().equals(surl)) {
                 return request;
             }
         }
-        throw new SRMException("file request for surl ="+surl +" is not found");
+        throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
     }
 
     @Override
@@ -264,6 +268,66 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     @Override
     public String getMethod() {
         return "Put";
+    }
+
+    @Override
+    public TReturnStatus abort()
+    {
+        wlock();
+        try {
+            /* [ SRM 2.2, 5.11.2 ]
+             *
+             * a) srmAbortRequest terminates all files in the request regardless of the file
+             *    state. Remove files from the queue, and release cached files if a limited
+             *    lifetime is associated with the file.
+             * c) Abort must be allowed to all requests with requestToken.
+             * f) When aborting srmPrepareToPut request before srmPutDone and before the file
+             *    transfer, the SURL must not exist as the result of the successful abort on
+             *    the SURL. Any srmRm request on the SURL must fail.
+             * g) When aborting srmPrepareToPut request before srmPutDone and after the file
+             *    transfer, the SURL may exist, and a srmRm request on the SURL may remove
+             *    the requested SURL.
+             * h) When aborting srmPrepareToPut request after srmPutDone, it must be failed
+             *    for those files. An explicit srmRm is required to remove those successfully
+              *   completed files for srmPrepareToPut.
+             * i) When duplicate abort request is issued on the same request, SRM_SUCCESS
+             *    may be returned to all duplicate abort requests and no operations on
+             *    duplicate abort requests are performed.
+             */
+
+            boolean hasSuccess = false;
+            boolean hasFailure = false;
+            boolean hasCompleted = false;
+            // FIXME: we do this to make the srm update the status of the request if it changed
+            getRequestStatus();
+            State state = getState();
+            if (!State.isFinalState(state)) {
+                for (PutFileRequest file : getFileRequests()) {
+                    try {
+                        file.abort();
+                        hasSuccess = true;
+                    } catch (IllegalStateTransition e) {
+                        if (e.getFromState() == State.DONE) {
+                            hasCompleted = true;
+                        }
+                        hasFailure = true;
+                    }
+                }
+                // FIXME: Trigger state update now that we aborted the file requests
+                getRequestStatus();
+            } else if (state == State.DONE) {
+                return new TReturnStatus(TStatusCode.SRM_FAILURE,
+                        "Put request completed successfully and cannot be aborted");
+            }
+            TReturnStatus returnStatus = getSummaryReturnStatus(hasFailure, hasSuccess);
+            if (hasCompleted) {
+                returnStatus = new TReturnStatus(returnStatus.getStatusCode(),
+                        "Some SURLs have completed successfully and cannot be aborted");
+            }
+            return returnStatus;
+        } finally {
+            wunlock();
+        }
     }
 
     //we do not want to stop handler if the

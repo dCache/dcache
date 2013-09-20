@@ -87,6 +87,7 @@ import diskCacheV111.srm.RequestStatus;
 
 import org.dcache.commons.util.AtomicCounter;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
@@ -96,6 +97,8 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 /**
  * This abstract class represents an "SRM request"
@@ -303,6 +306,44 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
 
     @Override
     public abstract String getMethod();
+
+    @Override
+    public TReturnStatus abort()
+    {
+        boolean hasSuccess = false;
+        boolean hasFailure = false;
+        wlock();
+        try {
+            /* [ SRM 2.2, 5.11.2 ]
+             *
+             * a) srmAbortRequest terminates all files in the request regardless of the file
+             *    state. Remove files from the queue, and release cached files if a limited
+             *    lifetime is associated with the file.
+             * c) Abort must be allowed to all requests with requestToken.
+             * i) When duplicate abort request is issued on the same request, SRM_SUCCESS
+             *    may be returned to all duplicate abort requests and no operations on
+             *    duplicate abort requests are performed.
+             */
+
+            // FIXME: we do this to make the srm update the status of the request if it changed
+            getRequestStatus();
+            if (!getState().isFinalState()) {
+                for (R file : getFileRequests()) {
+                    try {
+                        file.abort();
+                        hasSuccess = true;
+                    } catch (IllegalStateTransition e) {
+                        hasFailure = true;
+                    }
+                }
+                // FIXME: Trigger state update now that we aborted the file requests
+                getRequestStatus();
+            }
+        } finally {
+            wunlock();
+        }
+        return getSummaryReturnStatus(hasFailure, hasSuccess);
+    }
 
     /**
      *
@@ -693,7 +734,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         }
     }
 
-    public abstract R getFileRequestBySurl(URI surl)  throws SRMException ;
+    public abstract R getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException;
     public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException;
 
     public List<R> getFileRequests()  {

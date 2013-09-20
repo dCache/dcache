@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
@@ -130,16 +131,14 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
 
         @Override
         public LsFileRequest getFileRequestBySurl(URI surl)
-                throws SRMException {
-                if(surl == null) {
-                        throw new SRMException("surl is null");
-                }
+                throws SRMFileRequestNotFoundException
+        {
                 for (LsFileRequest request : getFileRequests()) {
                         if (request.getSurl().equals(surl)) {
                                 return request;
                         }
                 }
-                throw new SRMException("ls file request for surl ="+surl +" is not found");
+                throw new SRMFileRequestNotFoundException("ls file request for surl ="+surl +" is not found");
         }
 
         @Override

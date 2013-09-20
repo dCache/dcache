@@ -1,30 +1,19 @@
-/*
- * SrmLs.java
- *
- * Created on October 4, 2005, 3:40 PM
- */
-
 package org.dcache.srm.handler;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
-import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.ContainerRequest;
-import org.dcache.srm.request.FileRequest;
-import org.dcache.srm.request.Job;
+import org.dcache.srm.request.Request;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
@@ -32,152 +21,92 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
-/**
- *
- * @author  timur
- */
-public class SrmAbortFiles {
+public class SrmAbortFiles
+{
+    private final SrmAbortFilesRequest request;
+    private SrmAbortFilesResponse response;
 
-    private static Logger logger =
-            LoggerFactory.getLogger(SrmAbortFiles.class);
-
-    private final static String SFN_STRING="?SFN=";
-    AbstractStorageElement storage;
-    SrmAbortFilesRequest srmAbortFilesRequest;
-    SrmAbortFilesResponse response;
-    Scheduler getScheduler;
-    SRMUser user;
-    RequestCredential credential;
-    Configuration configuration;
-    private int results_num;
-    private int max_results_num;
-    int numOfLevels;
     /** Creates a new instance of SrmLs */
     public SrmAbortFiles(
             SRMUser user,
             RequestCredential credential,
-            SrmAbortFilesRequest srmAbortFilesRequest,
+            SrmAbortFilesRequest request,
             AbstractStorageElement storage,
             SRM srm,
-            String client_host) {
-        this.srmAbortFilesRequest = srmAbortFilesRequest;
-        this.user = user;
-        this.credential = credential;
-        this.storage = storage;
-        this.getScheduler = srm.getGetRequestScheduler();
-        this.configuration = srm.getConfiguration();
+            String clientHost)
+    {
+        this.request = request;
     }
 
-    boolean longFormat;
-    String servicePathAndSFNPart = "";
-    int port;
-    String host;
-    public SrmAbortFilesResponse getResponse() {
-        if(response != null ) {
-            return response;
+    public static SrmAbortFilesResponse getFailedResponse(String error,
+                                                          TStatusCode statusCode)
+    {
+        SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
+        srmAbortFilesResponse.setReturnStatus(new TReturnStatus(statusCode, error));
+        return srmAbortFilesResponse;
+    }
+
+    private SrmAbortFilesResponse abortFiles()
+            throws SRMInvalidRequestException
+    {
+        ContainerRequest<?> requestToAbort =
+                Request.getRequest(this.request.getRequestToken(), ContainerRequest.class);
+        try (JDC ignored = requestToAbort.applyJdc()) {
+            org.apache.axis.types.URI[] surls = getSurls();
+
+            TSURLReturnStatus[] surlReturnStatusArray = new TSURLReturnStatus[surls.length];
+            for (int i = 0; i < surls.length; i++) {
+                TReturnStatus returnStatus = abortSurl(requestToAbort, surls[i]);
+                surlReturnStatusArray[i] = new TSURLReturnStatus(surls[i], returnStatus);
+            }
+
+            // we do this to make the srm update the status of the request if it changed
+            requestToAbort.getTReturnStatus();
+
+            return new SrmAbortFilesResponse(
+                    getSummaryReturnStatus(surlReturnStatusArray),
+                    new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
         }
+    }
+
+    private TReturnStatus abortSurl(ContainerRequest<?> request, org.apache.axis.types.URI surl)
+    {
         try {
-            response = srmAbortFiles();
-        } catch(URISyntaxException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
-                    TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SRMInvalidRequestException ire) {
-            logger.debug(" invalid request : "+ire.getMessage());
-            response = getFailedResponse(" invalid request : "+ire.getMessage(),
-                    TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SRMException srme) {
-            logger.error(srme.toString());
-            response = getFailedResponse(srme.toString());
-        } catch(IllegalStateTransition ist) {
-            logger.error("Illegal State Transition : " +ist.getMessage());
-            response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
+            request.getFileRequestBySurl(new URI(surl.toString())).abort();
+            return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+        } catch (SRMFileRequestNotFoundException | URISyntaxException e) {
+            return new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
+                    "SURL does match any existing file request associated with the request token");
+        } catch (IllegalStateTransition e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
+        }
+    }
+
+    private org.apache.axis.types.URI[] getSurls() throws SRMInvalidRequestException
+    {
+        ArrayOfAnyURI arrayOfSURLs = request.getArrayOfSURLs();
+        if (arrayOfSURLs == null || arrayOfSURLs.getUrlArray().length == 0) {
+            throw new SRMInvalidRequestException("Request contains no SURL");
+        }
+        return arrayOfSURLs.getUrlArray();
+    }
+
+    public SrmAbortFilesResponse getResponse()
+    {
+        if (response == null) {
+            try {
+                response = abortFiles();
+            } catch (SRMInvalidRequestException e) {
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
+            }
         }
         return response;
     }
 
-    public static final SrmAbortFilesResponse getFailedResponse(String error) {
-        return getFailedResponse(error,null);
-    }
-
-    public static final SrmAbortFilesResponse getFailedResponse(String error,TStatusCode statusCode) {
-        if(statusCode == null) {
-            statusCode =TStatusCode.SRM_FAILURE;
-        }
-        TReturnStatus status = new TReturnStatus(statusCode, error);
-        SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
-        srmAbortFilesResponse.setReturnStatus(status);
-        return srmAbortFilesResponse;
-    }
-
-    private static URI[] toUris(org.apache.axis.types.URI[] uris)
-        throws URISyntaxException
+    public static SrmAbortFilesResponse getFailedResponse(String error)
     {
-        URI[] result = new URI[uris.length];
-        for (int i = 0; i < uris.length; i++) {
-            result[i] = new URI(uris[i].toString());
-        }
-        return result;
+        return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
-
-    /**
-     * implementation of srm ls
-     */
-    public SrmAbortFilesResponse srmAbortFiles()
-        throws SRMException,URISyntaxException,
-               IllegalStateTransition
-    {
-        String requestToken = srmAbortFilesRequest.getRequestToken();
-        if( requestToken == null ) {
-            return getFailedResponse("request contains no request token");
-        }
-        long requestId;
-        try {
-            requestId = Long.parseLong(requestToken);
-        } catch (NumberFormatException nfe){
-            return getFailedResponse(" requestToken \""+
-                    requestToken+"\"is not valid",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-
-        ContainerRequest<?> request = Job.getJob(requestId, ContainerRequest.class);
-        request.applyJdc();
-
-        URI[] surls;
-        if(  srmAbortFilesRequest.getArrayOfSURLs() == null ){
-            return getFailedResponse("request does not contain any SURLs",
-                    TStatusCode.SRM_INVALID_REQUEST);
-
-        }  else {
-            surls = toUris(srmAbortFilesRequest.getArrayOfSURLs().getUrlArray());
-        }
-        if(surls.length == 0) {
-            return getFailedResponse("0 length SiteURLs array",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        for (URI surl: surls) {
-            FileRequest<?> fileRequest = request.getFileRequestBySurl(surl);
-            fileRequest.setState(State.CANCELED,"SrmAbortFiles called");
-        }
-
-        SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
-        srmAbortFilesResponse.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
-        TSURLReturnStatus[] surlReturnStatusArray =  request.getArrayOfTSURLReturnStatus(surls);
-        for (TSURLReturnStatus surlReturnStatus:surlReturnStatusArray) {
-            if(surlReturnStatus.getStatus().getStatusCode() == TStatusCode.SRM_ABORTED) {
-                surlReturnStatus.getStatus().setStatusCode(TStatusCode.SRM_SUCCESS);
-            }
-        }
-
-        srmAbortFilesResponse.setArrayOfFileStatuses(
-                new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
-        // we do this to make the srm update the status of the request if it changed
-        request.getTReturnStatus();
-
-        return srmAbortFilesResponse;
-
-    }
-
-
 }

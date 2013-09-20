@@ -82,6 +82,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -188,16 +189,14 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     @Override
-    public GetFileRequest getFileRequestBySurl(URI surl) throws SRMException{
-        if(surl == null) {
-           throw new SRMException("surl is null");
-        }
+    public GetFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
+    {
         for (GetFileRequest request : getFileRequests()) {
             if (request.getSurl().equals(surl)) {
                 return request;
             }
         }
-        throw new SRMException("file request for surl ="+surl +" is not found");
+        throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
     }
 
     @Override
