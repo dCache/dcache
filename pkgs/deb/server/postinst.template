@@ -25,6 +25,7 @@ Please fix this and reinstall this package." >&2
     chown dcache:dcache /var/lib/dcache/alarms
     chown dcache:dcache /var/lib/dcache/config
     chown dcache:dcache /var/lib/dcache/billing
+    chown dcache:dcache /var/lib/dcache/httpd
     chown dcache:dcache /var/lib/dcache/plots
     chown dcache:dcache /var/lib/dcache/statistics
     chown dcache:dcache /var/lib/dcache/credentials
