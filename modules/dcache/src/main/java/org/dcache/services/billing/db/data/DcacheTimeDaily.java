@@ -68,25 +68,26 @@ import org.dcache.services.billing.histograms.data.IHistogramData;
  */
 public final class DcacheTimeDaily extends BaseEntry implements IHistogramData {
     private static final long serialVersionUID = 8589296884966419466L;
+
     public static final String MIN_TIME = "minimum";
     public static final String MAX_TIME = "maximum";
     public static final String AVG_TIME = "average";
 
-    private Long totalTime = Long.MAX_VALUE;
+    private Double average= 0.0;
     private Long minimum= 0L;
     private Long maximum= 0L;
 
     public String toString() {
         return "(" + dateString() + "," + count + "," + minimum + "," + maximum
-                        + "," + average() + ")";
+                        + "," + average + ")";
     }
 
-    public Long getTotalTime() {
-        return totalTime;
+    public Double getAverage() {
+        return average;
     }
 
-    public void setTotalTime(Long totalTime) {
-        this.totalTime = totalTime;
+    public void setAverage(Double average) {
+        this.average = average;
     }
 
     public Long getMinimum() {
@@ -105,19 +106,12 @@ public final class DcacheTimeDaily extends BaseEntry implements IHistogramData {
         this.maximum = maximum;
     }
 
-    public Double average() {
-        if (count == 0) {
-            return 0.0;
-        }
-        return totalTime / (double) count;
-    }
-
     @Override
     public Map<String, Double> data() {
         Map<String, Double> dataMap = super.data();
         dataMap.put(MIN_TIME, minimum.doubleValue());
         dataMap.put(MAX_TIME, maximum.doubleValue());
-        dataMap.put(AVG_TIME, average());
+        dataMap.put(AVG_TIME, average);
         return dataMap;
     }
 }
