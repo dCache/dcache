@@ -322,131 +322,30 @@ public abstract class Job  {
     }
 
     /**
-     * Changes the state of this job to a new state
-     * @param state
-     * @param description
-     * @param save
-     * if save is false we do not save state in database
-     * the caller of the save state needs to call saveJob then
-     * @throws IllegalStateTransition
-     */
-    public final void setState(State state,String description, boolean save) throws
+         * Changes the state of this job to a new state
+         * @param newState
+         * @param description
+         * @param save
+         * if save is false we do not save state in database
+         * the caller of the save state needs to call saveJob then
+         * @throws IllegalStateTransition
+         */
+    public final void setState(State newState,String description, boolean save) throws
        IllegalStateTransition {
         wlock();
         try {
-            State old;
-            if(state == this.state) {
+            if (newState == this.state) {
                 return;
             }
-            if(this.state == State.PENDING) {
-                if(
-                state != State.DONE &&
-                state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.RUNNING &&
-                state != State.TQUEUED &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "a illegal state transition from "+this.state+" to "+state);
-                }
-
-            }
-            if(this.state == State.TQUEUED) {
-                if(state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.RUNNING &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "b illegal state transition from "+this.state+" to "+state);
-                }
-            }
-            if(this.state == State.PRIORITYTQUEUED) {
-                if(state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.RUNNING &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "b illegal state transition from "+this.state+" to "+state);
-                }
-            }
-            if(this.state == State.RUNNING) {
-                if(state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.RETRYWAIT &&
-                state != State.ASYNCWAIT &&
-                state != State.RQUEUED &&
-                state != State.READY &&
-                state != State.DONE &&
-                state != State.RUNNINGWITHOUTTHREAD &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "c illegal state transition from "+this.state+" to "+state);
-                }
-            }
-            if(this.state == State.ASYNCWAIT) {
-                if(state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.RUNNING &&
-                state != State.PRIORITYTQUEUED &&
-                state != State.DONE &&
-                // this is added to support the reading of the job from the database
-                // the jon in database in asyncwait state will be put in retrywait state
-                // since the notification will likely not come
-                state != State.RETRYWAIT &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "z illegal state transition from "+this.state+" to "+state);
-                }
-            }
-            if(this.state == State.RETRYWAIT) {
-                if(state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.RUNNING &&
-                state != State.PRIORITYTQUEUED &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "d illegal state transition from "+this.state+" to "+state);
-                }
-            }
-            if(this.state == State.RQUEUED) {
-                if(state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.READY &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "l illegal state transition from "+this.state+" to "+state);
-                }
-            }
-            if(this.state == State.READY) {
-                if(state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.TRANSFERRING &&
-                state != State.DONE &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "e illegal state transition from "+this.state+" to "+state);
-                }
-            }
-            if(this.state == State.TRANSFERRING) {
-                if(state != State.CANCELED &&
-                state != State.FAILED &&
-                state != State.DONE &&
-                state != State.RESTORED ) {
-                    throw new IllegalStateTransition(
-                    "f illegal state transition from "+this.state+" to "+state);
-                }
-            }
-            if(this.state == State.FAILED ||
-            this.state == State.DONE ||
-            this.state == State.CANCELED) {
+            if (!isValidTransition(this.state, newState)) {
                 throw new IllegalStateTransition(
-                "g illegal state transition from "+this.state+" to "+state);
+                        "Illegal state transition from " + this.state + " to " + newState);
             }
-            old = this.state;
-            this.state = state;
+            State oldState = this.state;
+            this.state = newState;
             lastStateTransitionTime = System.currentTimeMillis();
 
-            jobHistory.add( new JobHistory(nextLong(),state,description,lastStateTransitionTime));
+            jobHistory.add( new JobHistory(nextLong(),newState,description,lastStateTransitionTime));
 
             if( errorMessage.length()== 0) {
                   errorMessage.append(description);
@@ -457,23 +356,93 @@ public abstract class Job  {
                  errorMessage.append(description);
             }
 
-            if(state == State.RETRYWAIT) {
+            if(newState == State.RETRYWAIT) {
                 inclreaseNumberOfRetries();
             }
 
-            notifySchedulerOfStateChange(old, state);
+            notifySchedulerOfStateChange(oldState, newState);
 
-            if (!state.isFinalState() && schedulerId == null) {
+            if (!newState.isFinalState() && schedulerId == null) {
                 throw new IllegalStateTransition("Scheduler ID is null");
             }
-            stateChanged(old);
-            if(save || !old.isFinalState() && state.isFinalState()) {
+            stateChanged(oldState);
+            if(save || !oldState.isFinalState() && newState.isFinalState()) {
                 saveJob();
             }
         } finally {
             wunlock();
         }
     }
+
+    private boolean isValidTransition(State currentState, State newState)
+            throws IllegalStateTransition
+    {
+        switch (currentState) {
+        case PENDING:
+            return newState == State.DONE
+                    || newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.RUNNING
+                    || newState == State.TQUEUED
+                    || newState == State.RESTORED;
+        case TQUEUED:
+            return newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.RUNNING
+                    || newState == State.RESTORED;
+        case PRIORITYTQUEUED:
+            return newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.RUNNING
+                    || newState == State.RESTORED;
+        case RUNNING:
+            return newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.RETRYWAIT
+                    || newState == State.ASYNCWAIT
+                    || newState == State.RQUEUED
+                    || newState == State.READY
+                    || newState == State.DONE
+                    || newState == State.RUNNINGWITHOUTTHREAD
+                    || newState == State.RESTORED;
+        case ASYNCWAIT:
+            return newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.RUNNING
+                    || newState == State.PRIORITYTQUEUED
+                    || newState == State.DONE
+                    || newState == State.RETRYWAIT
+                    || newState == State.RESTORED;
+        case RETRYWAIT:
+            return newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.RUNNING
+                    || newState == State.PRIORITYTQUEUED
+                    || newState == State.RESTORED;
+        case RQUEUED:
+            return newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.READY
+                    || newState == State.RESTORED;
+        case READY:
+            return newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.TRANSFERRING
+                    || newState == State.DONE
+                    || newState == State.RESTORED;
+        case TRANSFERRING:
+            return newState == State.CANCELED
+                    || newState == State.FAILED
+                    || newState == State.DONE
+                    || newState == State.RESTORED;
+        case FAILED:
+        case DONE:
+        case CANCELED:
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Try to change the state of the job to READY. the request into the ready state
      */
