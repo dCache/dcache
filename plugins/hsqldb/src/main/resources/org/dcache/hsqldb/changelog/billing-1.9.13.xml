@@ -104,7 +104,7 @@
             "count"        bigint,
             "minimum"      bigint,
             "maximum"      bigint,
-            "totaltime"    bigint
+            "average"      bigint
             );
 
             CREATE TABLE "storageinfo_rd_daily"
@@ -184,187 +184,265 @@
         </sql>
     </changeSet>
     <changeSet id="4.1.0" author="arossi" context="billing">
-        <comment>trigger to populate daily table</comment>
+        <comment>triggers to populate daily tables</comment>
         <sql splitStatements="false">
             CREATE TRIGGER "tgr_update_billinginfo_rd_daily"
                 AFTER INSERT ON "billinginfo"
                 REFERENCING NEW ROW AS new
                 FOR EACH ROW
                 BEGIN ATOMIC
-                    DECLARE truncated_date timestamp with time zone;
-                    SET truncated_date = trunc(new."datestamp");
-                    IF (new."isnew" = false AND new."errorcode" = 0
-                        AND (new."p2p" = false OR new."p2p" is null)) THEN
-                        UPDATE "billinginfo_rd_daily"
-                        SET "count" = "count" + 1,
-                            "size" = "size" + new."fullsize",
-                            "transferred" = "transferred" + new."transfersize"
-                        WHERE trunc("date") = truncated_date;
-                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
-                            INSERT INTO "billinginfo_rd_daily"
-                                   ("date", "count", "size", "transferred")
-                            VALUES (truncated_date, 1, new."fullsize", new."transfersize");
-                       END IF;
+                    DECLARE curr_date timestamp with time zone;
+                    DECLARE max_date timestamp with time zone;
+                    SET curr_date = CURRENT_DATE;
+                    SET max_date = SELECT max("date") FROM "billinginfo_rd_daily";
+                    IF max_date IS NULL THEN
+                        INSERT INTO
+                            "billinginfo_rd_daily" ("date","count","size","transferred")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0),
+                               coalesce(sum("transfersize"),0)
+                        FROM "billinginfo"
+                        WHERE "datestamp" &gt; DATE_SUB(curr_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "isnew" = false
+                            AND "errorcode" = 0
+                            AND "p2p" != true
+                            GROUP BY "d";
+                    ELSEIF DATEDIFF('day', curr_date, max_date) > 1 THEN
+                        INSERT INTO
+                            "billinginfo_rd_daily" ("date","count","size","transferred")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0),
+                               coalesce(sum("transfersize"),0)
+                        FROM "billinginfo"
+                        WHERE "datestamp" &gt; DATE_ADD(max_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "isnew" = false
+                            AND "errorcode" = 0
+                            AND "p2p" != true
+                            GROUP BY "d";
                     END IF;
                 END
-        </sql>
-    </changeSet>
-    <changeSet id="4.1.1" author="arossi" context="billing">
-        <comment>trigger to populate daily table</comment>
-        <sql splitStatements="false">
+
             CREATE TRIGGER "tgr_update_billinginfo_wr_daily"
                 AFTER INSERT ON "billinginfo"
                 REFERENCING NEW ROW AS new
                 FOR EACH ROW
                 BEGIN ATOMIC
-                    DECLARE truncated_date timestamp with time zone;
-                    SET truncated_date = trunc(new."datestamp");
-                    IF (new."isnew" = true AND new."errorcode" = 0
-                        AND (new."p2p" = false OR new."p2p" is null)) THEN
-                        UPDATE "billinginfo_wr_daily"
-                        SET "count" = "count" + 1,
-                            "size" = "size" + new."fullsize",
-                            "transferred" = "transferred" + new."transfersize"
-                        WHERE trunc("date") = truncated_date;
-                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
-                            INSERT INTO "billinginfo_wr_daily"
-                                   ("date", "count", "size", "transferred")
-                            VALUES (truncated_date, 1, new."fullsize", new."transfersize");
-                        END IF;
+                    DECLARE curr_date timestamp with time zone;
+                    DECLARE max_date timestamp with time zone;
+                    SET curr_date = CURRENT_DATE;
+                    SET max_date = SELECT max("date") FROM "billinginfo_wr_daily";
+                    IF max_date IS NULL THEN
+                        INSERT INTO
+                            "billinginfo_wr_daily" ("date","count","size","transferred")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0),
+                               coalesce(sum("transfersize"),0)
+                        FROM "billinginfo"
+                        WHERE "datestamp" &gt; DATE_SUB(curr_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "isnew" = true
+                            AND "errorcode" = 0
+                            AND "p2p" != true
+                            GROUP BY "d";
+                    ELSEIF DATEDIFF('day', curr_date, max_date) > 1 THEN
+                        INSERT INTO
+                            "billinginfo_wr_daily" ("date","count","size","transferred")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0),
+                               coalesce(sum("transfersize"),0)
+                        FROM "billinginfo"
+                        WHERE "datestamp" &gt; DATE_ADD(max_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "isnew" = true
+                            AND "errorcode" = 0
+                            AND "p2p" != true
+                            GROUP BY "d";
                     END IF;
                 END
-        </sql>
-    </changeSet>
-    <changeSet id="4.1.2" author="arossi" context="billing">
-        <comment>trigger to populate daily table</comment>
-        <sql splitStatements="false">
-            CREATE TRIGGER "tgr_update_billinginfo_tm_daily"
-            AFTER INSERT ON "billinginfo"
-            REFERENCING NEW ROW AS new
-            FOR EACH ROW
-                BEGIN ATOMIC
-                    DECLARE truncated_date timestamp with time zone;
-                    SET truncated_date = trunc(new."datestamp");
-                    IF (new."errorcode" = 0) THEN
-                        UPDATE "billinginfo_tm_daily"
-                        SET "count" = "count" + 1,
-                            "totaltime" = "totaltime" + new."connectiontime",
-                            "minimum" = LEAST("minimum", new."connectiontime"),
-                            "maximum" = GREATEST("maximum", new."connectiontime")
-                        WHERE trunc("date") = truncated_date;
-                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
-                            INSERT INTO "billinginfo_tm_daily"
-                                   ("date", "count", "totaltime", "minimum", "maximum")
-                            VALUES (truncated_date, 1, new."connectiontime",
-                                    new."connectiontime", new."connectiontime");
-                        END IF;
-                    END IF;
-                END
-        </sql>
-    </changeSet>
-    <changeSet id="4.1.3" author="arossi" context="billing">
-        <comment>trigger to populate daily table</comment>
-        <sql splitStatements="false">
-            CREATE TRIGGER "tgr_update_storageinfo_rd_daily"
-                AFTER INSERT ON "storageinfo"
-                REFERENCING NEW ROW AS new
-                FOR EACH ROW
-                BEGIN ATOMIC
-                    DECLARE truncated_date timestamp with time zone;
-                    SET truncated_date = trunc(new."datestamp");
-                    IF (new."action" = 'restore' AND new."errorcode" = 0) THEN
-                        UPDATE "storageinfo_rd_daily"
-                        SET "count" = "count" + 1,
-                            "size" = "size" + new."fullsize"
-                        WHERE trunc("date") = truncated_date;
-                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
-                            INSERT INTO "storageinfo_rd_daily"
-                                   ("date", "count", "size")
-                            VALUES (truncated_date, 1, new."fullsize");
-                        END IF;
-                    END IF;
-                END
-        </sql>
-    </changeSet>
-    <changeSet id="4.1.4" author="arossi" context="billing">
-        <comment>trigger to populate daily table</comment>
-        <sql splitStatements="false">
-            CREATE TRIGGER "tgr_update_storageinfo_wr_daily"
-                AFTER INSERT ON "storageinfo"
-                REFERENCING NEW ROW AS new
-                FOR EACH ROW
-                BEGIN ATOMIC
-                    DECLARE truncated_date timestamp with time zone;
-                    SET truncated_date = trunc(new."datestamp");
-                    IF (new."action" = 'store' AND new."errorcode" = 0) THEN
-                        UPDATE "storageinfo_wr_daily"
-                        SET "count" = "count" + 1,
-                            "size" = "size" + new."fullsize"
-                        WHERE trunc("date") = truncated_date;
-                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
-                            INSERT INTO "storageinfo_wr_daily"
-                                   ("date", "count", "size")
-                            VALUES (truncated_date, 1, new."fullsize");
-                        END IF;
-                    END IF;
-                END
-        </sql>
-    </changeSet>
-    <changeSet id="4.1.5" author="arossi" context="billing">
-        <comment>trigger to populate daily table</comment>
-        <sql splitStatements="false">
-            CREATE TRIGGER "tgr_update_hitinfo_daily"
-                AFTER INSERT ON "hitinfo"
-                REFERENCING NEW ROW AS new
-                FOR EACH ROW
-                BEGIN ATOMIC
-                    DECLARE delta_notcached bigint;
-                    DECLARE delta_cached bigint;
-                    DECLARE truncated_date timestamp with time zone;
-                    SET truncated_date = trunc(new."datestamp");
-                    IF (new."errorcode" = 0) THEN
-                        IF (new."filecached" = false) THEN
-                            SET delta_notcached = 1;
-                            SET delta_cached = 0;
-                        ELSE
-                            SET delta_notcached = 0;
-                            SET delta_cached = 1;
-                        END IF;
-                        UPDATE "hitinfo_daily"
-                        SET "count" = "count" + 1,
-                            "notcached" = "notcached" + delta_notcached,
-                            "cached" = "cached" + delta_cached
-                        WHERE trunc("date") = truncated_date;
-                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
-                            INSERT INTO "hitinfo_daily"
-                                   ("date", "count", "notcached", "cached")
-                            VALUES (truncated_date, 1, delta_notcached, delta_cached);
-                        END IF;
-                    END IF;
-                END
-        </sql>
-    </changeSet>
-    <changeSet id="4.1.6" author="arossi" context="billing">
-        <comment>trigger to populate daily table</comment>
-        <sql splitStatements="false">
+
             CREATE TRIGGER "tgr_update_billinginfo_p2p_daily"
                 AFTER INSERT ON "billinginfo"
                 REFERENCING NEW ROW AS new
                 FOR EACH ROW
                 BEGIN ATOMIC
-                    DECLARE truncated_date timestamp with time zone;
-                    SET truncated_date = trunc(new."datestamp");
-                    IF (new."p2p" = true AND new."errorcode" = 0) THEN
-                        UPDATE "billinginfo_p2p_daily"
-                        SET "count" = "count" + 1,
-                            "size" = "size" + new."fullsize",
-                            "transferred" = "transferred" + new."transfersize"
-                        WHERE trunc("date") = truncated_date;
-                        IF (DIAGNOSTICS(ROW_COUNT) = 0) THEN
-                            INSERT INTO "billinginfo_p2p_daily"
-                                   ("date", "count", "size", "transferred")
-                            VALUES (truncated_date, 1, new."fullsize", new."transfersize");
-                       END IF;
+                    DECLARE curr_date timestamp with time zone;
+                    DECLARE max_date timestamp with time zone;
+                    SET curr_date = CURRENT_DATE;
+                    SET max_date = SELECT max("date") FROM "billinginfo_p2p_daily";
+                    IF max_date IS NULL THEN
+                        INSERT INTO
+                            "billinginfo_p2p_daily" ("date","count","size","transferred")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0),
+                               coalesce(sum("transfersize"),0)
+                        FROM "billinginfo"
+                        WHERE "datestamp" &gt; DATE_SUB(curr_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "errorcode" = 0
+                            AND "p2p" = true
+                            GROUP BY "d";
+                    ELSEIF DATEDIFF('day', curr_date, max_date) > 1 THEN
+                        INSERT INTO
+                            "billinginfo_p2p_daily" ("date","count","size","transferred")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0),
+                               coalesce(sum("transfersize"),0)
+                        FROM "billinginfo"
+                        WHERE "datestamp" &gt; DATE_ADD(max_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "errorcode" = 0
+                            AND "p2p" = true
+                            GROUP BY "d";
+                    END IF;
+                END
+
+            CREATE TRIGGER "tgr_update_billinginfo_tm_daily"
+                AFTER INSERT ON "billinginfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE curr_date timestamp with time zone;
+                    DECLARE max_date timestamp with time zone;
+                    SET curr_date = CURRENT_DATE;
+                    SET max_date = SELECT max("date") FROM "billinginfo_tm_daily";
+                    IF max_date IS NULL THEN
+                        INSERT INTO
+                        "billinginfo_tm_daily" ("date","count","minimum","maximum","average")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               min("connectiontime"), max("connectiontime"), avg("connectiontime")
+                        FROM "billinginfo"
+                        WHERE "datestamp" &gt; DATE_SUB(curr_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "errorcode" = 0
+                            GROUP BY "d";
+                    ELSEIF DATEDIFF('day', curr_date, max_date) > 1 THEN
+                        INSERT INTO
+                        "billinginfo_tm_daily" ("date","count","minimum","maximum","average")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               min("connectiontime"), max("connectiontime"), avg("connectiontime")
+                        FROM "billinginfo"
+                        WHERE "datestamp" &gt; DATE_ADD(max_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "errorcode" = 0
+                            GROUP BY "d";
+                    END IF;
+                END
+
+            CREATE TRIGGER "tgr_update_storageinfo_rd_daily"
+                AFTER INSERT ON "storageinfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE curr_date timestamp with time zone;
+                    DECLARE max_date timestamp with time zone;
+                    SET curr_date = CURRENT_DATE;
+                    SET max_date = SELECT max("date") FROM "storageinfo_rd_daily";
+                    IF max_date IS NULL THEN
+                        INSERT INTO
+                            "storageinfo_rd_daily" ("date","count","size")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0)
+                        FROM "storageinfo"
+                        WHERE "datestamp" &gt; DATE_SUB(curr_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "action" = 'restore'
+                            AND "errorcode" = 0
+                            GROUP BY "d";
+                    ELSEIF DATEDIFF('day', curr_date, max_date) > 1 THEN
+                        INSERT INTO
+                            "storageinfo_rd_daily" ("date","count","size")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0)
+                        FROM "storageinfo"
+                        WHERE "datestamp" &gt; DATE_ADD(max_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "action" = 'restore'
+                            AND "errorcode" = 0
+                            GROUP BY "d";
+                    END IF;
+                END
+
+            CREATE TRIGGER "tgr_update_storageinfo_wr_daily"
+                AFTER INSERT ON "storageinfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE curr_date timestamp with time zone;
+                    DECLARE max_date timestamp with time zone;
+                    SET curr_date = CURRENT_DATE;
+                    SET max_date = SELECT max("date") FROM "storageinfo_wr_daily";
+                    IF max_date IS NULL THEN
+                        INSERT INTO
+                            "storageinfo_wr_daily" ("date","count","size")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0)
+                        FROM "storageinfo"
+                        WHERE "datestamp" &gt; DATE_SUB(curr_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "action" = 'store'
+                            AND "errorcode" = 0
+                            GROUP BY "d";
+                    ELSEIF DATEDIFF('day', curr_date, max_date) > 1 THEN
+                        INSERT INTO
+                            "storageinfo_wr_daily" ("date","count","size")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               coalesce(sum("fullsize"),0)
+                        FROM "storageinfo"
+                        WHERE "datestamp" &gt; DATE_ADD(max_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "action" = 'store'
+                            AND "errorcode" = 0
+                            GROUP BY "d";
+                    END IF;
+                END
+
+            CREATE TRIGGER "tgr_update_hitinfo_daily"
+                AFTER INSERT ON "hitinfo"
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    DECLARE curr_date timestamp with time zone;
+                    DECLARE max_date timestamp with time zone;
+                    SET curr_date = CURRENT_DATE;
+                    SET max_date = SELECT max("date") FROM "hitinfo_daily";
+                    IF max_date IS NULL THEN
+                        INSERT INTO
+                            "hitinfo_daily" ("date","count","notcached","cached")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               count(nullif("filecached", true)) as notcached,
+                               count(nullif("filecached", false)) as cached
+                        FROM "hitinfo"
+                        WHERE "datestamp" &gt; DATE_SUB(curr_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "errorcode" = 0
+                            GROUP BY "d";
+                    ELSEIF DATEDIFF('day', curr_date, max_date) > 1 THEN
+                        INSERT INTO
+                            "hitinfo_daily" ("date","count","notcached","cached")
+                        SELECT TRUNC("datestamp", 'YYYY-MM-DD') as "d",
+                               count(*),
+                               count(nullif("filecached", true)) as notcached,
+                               count(nullif("filecached", false)) as cached
+                        FROM "hitinfo"
+                        WHERE "datestamp" &gt; DATE_ADD(max_date, INTERVAL 1 DAY)
+                            AND "datestamp" &lt; curr_date
+                            AND "errorcode" = 0
+                            GROUP BY "d";
                     END IF;
                 END
         </sql>
