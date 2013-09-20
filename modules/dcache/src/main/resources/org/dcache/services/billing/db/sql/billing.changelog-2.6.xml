@@ -338,4 +338,213 @@
             ORDER BY date_trunc('hour', datestamp);
         </sql>
     </changeSet>
+    <changeSet id="6.4.0" author="arossi" context="billing">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="billinginfo_tm_daily"
+                          columnName="totaltime"
+                          schemaName="public"/>
+        </preConditions>
+        <sql splitStatements="false">
+            UPDATE billinginfo_tm_daily SET totaltime = totaltime/count
+            WHERE count > 1;
+        </sql>
+        <renameColumn newColumnName="average"
+                      oldColumnName="totaltime"
+                      tableName="billinginfo_tm_daily"/>
+    </changeSet>
+    <changeSet id="6.4.1" author="arossi" context="billing">
+        <preConditions onError="WARN" onFail="WARN">
+            <sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
+        </preConditions>
+        <comment>change updates in triggers to select and single insert every 24 hours</comment>
+        <sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_billinginfo_wr_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM billinginfo_wr_daily;
+            IF max_date IS NULL THEN
+                INSERT INTO
+                billinginfo_wr_daily (date,count,size,transferred) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0),
+                coalesce(sum(transfersize),0)
+                from billinginfo where datestamp between curr_date-interval'24 hours' and curr_date
+                and isnew='t' and errorcode=0 and (p2p='f' or p2p is null) group by d;
+            ELSIF curr_date - max_date > interval'1 days' THEN
+                INSERT INTO
+                billinginfo_wr_daily (date,count,size,transferred) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0),
+                coalesce(sum(transfersize),0)
+                from billinginfo where datestamp between max_date+interval'1 day' and curr_date
+                and isnew='t' and errorcode=0 and p2p != 't' group by d;
+            END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_billinginfo_rd_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM billinginfo_rd_daily;
+            IF max_date IS NULL THEN
+                INSERT INTO
+                billinginfo_rd_daily (date,count,size,transferred) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0),
+                coalesce(sum(transfersize),0)
+                from billinginfo where datestamp between curr_date-interval'24 hours' and curr_date
+                and isnew='f' and errorcode=0 and (p2p='f' or p2p is null) group by d;
+            ELSIF curr_date - max_date > interval'1 days' THEN
+                INSERT INTO
+                billinginfo_rd_daily (date,count,size,transferred) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0),
+                coalesce(sum(transfersize),0)
+                from billinginfo where datestamp between max_date+interval'1 day' and curr_date
+                and isnew='f' and errorcode=0 and p2p != 't' group by d;
+            END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_billinginfo_p2p_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM billinginfo_p2p_daily;
+            IF max_date IS NULL THEN
+                INSERT INTO
+                billinginfo_p2p_daily (date,count,size,transferred) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0),
+                coalesce(sum(transfersize),0)
+                from billinginfo where datestamp between curr_date-interval'24 hours' and curr_date
+                and errorcode=0 and p2p='t' group by d;
+            ELSIF curr_date - max_date > interval'1 days' THEN
+                INSERT INTO
+                billinginfo_p2p_daily (date,count,size,transferred) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0),
+                coalesce(sum(transfersize),0)
+                from billinginfo where datestamp between max_date+interval'1 day' and curr_date
+                and errorcode=0 and p2p='t' group by d;
+            END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_billinginfo_tm_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM billinginfo_tm_daily;
+            IF max_date IS NULL THEN
+                INSERT INTO
+                billinginfo_tm_daily (date,count,minimum,maximum,average) select date(datestamp) as d,
+                count(*),
+                min(connectiontime),max(connectiontime), avg(connectiontime)
+                from billinginfo where datestamp between curr_date-interval'24 hours' and curr_date
+                and errorcode=0 group by d;
+            ELSIF curr_date - max_date > interval'1 days' THEN
+                INSERT INTO
+                billinginfo_tm_daily (date,count,minimum,maximum,average) select date(datestamp) as d,
+                count(*),
+                min(connectiontime),max(connectiontime), avg(connectiontime)
+                from billinginfo where datestamp between max_date+interval'1 day' and curr_date
+                and errorcode=0 group by d;
+            END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE
+            plpgsql;
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_storageinfo_rd_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM storageinfo_rd_daily;
+            IF max_date IS NULL THEN
+                INSERT INTO storageinfo_rd_daily (date,count,size) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0)
+                from storageinfo where datestamp between curr_date-interval'24 hours' and curr_date
+                and action='restore' and errorcode=0 group by d;
+            ELSIF curr_date - max_date > interval'1 days' THEN
+                INSERT INTO storageinfo_rd_daily (date,count,size) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0)
+                from storageinfo where datestamp between max_date+interval'1 day' and curr_date
+                and action='restore' and errorcode=0 group by d;
+            END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_storageinfo_wr_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM storageinfo_wr_daily;
+            IF max_date IS NULL THEN
+                INSERT INTO storageinfo_wr_daily (date,count,size) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0)
+                from storageinfo where datestamp between curr_date-interval'24 hours' and curr_date
+                and action='store' and errorcode=0 group by d;
+            ELSIF curr_date - max_date > interval'1 days' THEN
+                INSERT INTO storageinfo_wr_daily (date,count,size) select date(datestamp) as d,
+                count(*), coalesce(sum(fullsize),0)
+                from storageinfo where datestamp between max_date+interval'1 day' and curr_date
+                and action='store' and errorcode=0 group by d;
+            END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">CREATE OR REPLACE FUNCTION f_update_hitinfo_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM hitinfo_daily;
+            IF max_date IS NULL THEN
+                INSERT INTO hitinfo_daily(date, count, notcached, cached) select date(datestamp) as d,
+                count(*),
+                count(nullif(filecached, 't')) as notcached, count(nullif(filecached,'f')) as cached
+                from hitinfo where datestamp
+                between curr_date-interval'24 hours' and curr_date
+                and errorcode=0 group by d;
+            ELSIF curr_date - max_date > interval'1 days' THEN
+                INSERT INTO hitinfo_daily(date, count, notcached, cached) select date(datestamp) as d,
+                count(*),
+                count(nullif(filecached, 't')) as notcached, count(nullif(filecached, 'f')) as cached
+                from hitinfo where datestamp
+                between max_date+interval'1 day' and curr_date
+                and errorcode=0 group by d;
+            END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
