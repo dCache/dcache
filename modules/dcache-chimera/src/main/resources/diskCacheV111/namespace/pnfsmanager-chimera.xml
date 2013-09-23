@@ -51,7 +51,6 @@
       <property name="idleMaxAgeInMinutes" value="240"/>
       <property name="acquireIncrement" value="5"/>
       <property name="statementsCacheSize" value="100"/>
-      <property name="releaseHelperThreads" value="3"/>
   </bean>
 
   <bean id="liquibase" class="org.dcache.util.SpringLiquibase">

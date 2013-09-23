@@ -1,7 +1,7 @@
 package org.dcache.xrootd.door;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.Ranges;
+import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -527,7 +527,7 @@ public class XrootdDoor
             new PnfsListDirectoryMessage(
                     path.toString(),
                     null,
-                    Ranges.<Integer>all(),
+                    Range.<Integer>all(),
                     EnumSet.noneOf(FileAttribute.class));
         UUID uuid = msg.getUUID();
 

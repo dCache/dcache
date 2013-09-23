@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bonecp-config>
+  <default-config>
+    <!-- Queries taking longer than this limit to execute are logged. -->
+    <property name="queryExecuteTimeLimitInMs">10000</property>
+
+    <!-- Sets the defaultAutoCommit setting for newly created connections. -->
+    <property name="defaultAutoCommit">true</property>
+  </default-config>
+</bonecp-config>

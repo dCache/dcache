@@ -2,7 +2,6 @@ package org.dcache.vehicles;
 
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
-import com.google.common.collect.Ranges;
 
 import java.util.Collection;
 import java.util.Set;
@@ -83,14 +82,14 @@ public class PnfsListDirectoryMessage extends PnfsMessage
     public Range<Integer> getRange()
     {
         if (_lower == null && _upper == null) {
-            return Ranges.all();
+            return Range.all();
         } else if (_lower == null) {
-            return Ranges.upTo(_upper, _upperBoundType);
+            return Range.upTo(_upper, _upperBoundType);
         } else if (_upper == null) {
-            return Ranges.downTo(_lower, _lowerBoundType);
+            return Range.downTo(_lower, _lowerBoundType);
         } else {
-            return Ranges.range(_lower, _lowerBoundType,
-                                _upper, _upperBoundType);
+            return Range.range(_lower, _lowerBoundType,
+                               _upper, _upperBoundType);
         }
     }
 

@@ -288,7 +288,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         ds.setPartitionCount(3);
         ds.setAcquireIncrement(5);
         ds.setStatementsCacheSize(100);
-        ds.setReleaseHelperThreads(3);
 
         _dataSource = ds;
         _db = new JdbcTemplate(_dataSource);

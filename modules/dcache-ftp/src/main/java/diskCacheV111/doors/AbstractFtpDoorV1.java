@@ -69,7 +69,7 @@ COPYRIGHT STATUS:
 package diskCacheV111.doors;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Ranges;
+import com.google.common.collect.Range;
 
 import javax.security.auth.Subject;
 
@@ -2906,7 +2906,7 @@ public abstract class AbstractFtpDoorV1
 
                 try {
                     total = _listSource.printDirectory(null, printer, path, null,
-                                                       Ranges.<Integer>all());
+                                                       Range.<Integer>all());
                 } catch (NotDirCacheException e) {
                     /* path exists, but it is not a directory.
                      */
@@ -2919,7 +2919,7 @@ public abstract class AbstractFtpDoorV1
                      */
                     total =
                         _listSource.printDirectory(null, printer, path.getParent(),
-                                                   new Glob(path.getName()), Ranges.<Integer>all());
+                                                   new Glob(path.getName()), Range.<Integer>all());
                 }
 
                 writer.close();
@@ -2991,11 +2991,11 @@ public abstract class AbstractFtpDoorV1
                     total =
                         _listSource.printDirectory(null, printer, path.getParent(),
                                                    new Glob(path.getName()),
-                                                   Ranges.<Integer>all());
+                                                   Range.<Integer>all());
                 } else {
                     total = _listSource.printDirectory(null, printer,
                                                        path, null,
-                                                       Ranges.<Integer>all());
+                                                       Range.<Integer>all());
                 }
                 writer.close();
             } finally {
@@ -3092,7 +3092,7 @@ public abstract class AbstractFtpDoorV1
 
                 total = _listSource.printDirectory(null, new MlsdFactPrinter(writer),
                                                    path, null,
-                                                   Ranges.<Integer>all());
+                                                   Range.<Integer>all());
                 writer.close();
             } finally {
                 closeDataSocket();

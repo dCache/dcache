@@ -5,11 +5,10 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ranges;
+import com.google.common.collect.Range;
 import com.google.common.io.ByteStreams;
 import com.google.common.net.InetAddresses;
 import io.milton.http.HttpManager;
-import io.milton.http.Range;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
 import io.milton.resource.Resource;
@@ -707,7 +706,7 @@ public class DcacheResourceFactory
      * a pool.
      */
     public void readFile(FsPath path, PnfsId pnfsid,
-                         OutputStream outputStream, Range range)
+                         OutputStream outputStream, io.milton.http.Range range)
             throws CacheException, InterruptedException, IOException,
                    URISyntaxException
     {
@@ -760,7 +759,7 @@ public class DcacheResourceFactory
             };
 
         _list.printDirectory(getSubject(), printer, path, null,
-                             Ranges.<Integer>all());
+                             Range.<Integer>all());
         return result;
     }
 
@@ -808,7 +807,7 @@ public class DcacheResourceFactory
                     }
                 };
         _list.printDirectory(getSubject(), printer, path, null,
-                             Ranges.<Integer>all());
+                             Range.<Integer>all());
 
         t.write(new AutoIndentWriter(out));
         out.flush();
@@ -1155,7 +1154,7 @@ public class DcacheResourceFactory
             }
         }
 
-        public void relayData(OutputStream outputStream, Range range)
+        public void relayData(OutputStream outputStream, io.milton.http.Range range)
             throws IOException, CacheException, InterruptedException
         {
             setStatus("Mover " + getPool() + "/" + getMoverId() +

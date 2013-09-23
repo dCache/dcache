@@ -2,7 +2,6 @@ package org.dcache.auth;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
-import com.google.common.collect.Ranges;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -101,7 +100,7 @@ import static org.mockito.BDDMockito.*;
  */
 public class RemoteNameSpaceProviderTests
 {
-    private static final Range<Integer> ALL_ENTRIES = Ranges.all();
+    private static final Range<Integer> ALL_ENTRIES = Range.all();
 
     private static final CellPath CELLPATH_PNFSMANAGER =
             new CellPath("PnfsManager");

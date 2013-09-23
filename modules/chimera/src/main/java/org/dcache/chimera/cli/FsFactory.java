@@ -50,7 +50,6 @@ public class FsFactory {
         ds.setPartitionCount(1);
         ds.setAcquireIncrement(1);
         ds.setStatementsCacheSize(100);
-        ds.setReleaseHelperThreads(0);
         ds.setDisableConnectionTracking(true);
         ds.setDisableJMX(true);
         ds.setStatisticsEnabled(false);

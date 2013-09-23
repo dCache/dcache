@@ -1,7 +1,6 @@
 package org.dcache.pool.migration;
 
 import com.google.common.collect.Range;
-import com.google.common.collect.Ranges;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
@@ -211,18 +210,18 @@ public class MigrationModule
         String[] bounds = s.split("\\.\\.", 2);
         switch (bounds.length) {
         case 1:
-            return Ranges.singleton(Long.parseLong(bounds[0]));
+            return Range.singleton(Long.parseLong(bounds[0]));
 
         case 2:
             if (bounds[0].length() == 0 && bounds[1].length() == 0) {
-                return Ranges.all();
+                return Range.all();
             } else if (bounds[0].length() == 0) {
-                return Ranges.atMost(Long.parseLong(bounds[1]));
+                return Range.atMost(Long.parseLong(bounds[1]));
             } else if (bounds[1].length() == 0) {
-                return Ranges.atLeast(Long.parseLong(bounds[0]));
+                return Range.atLeast(Long.parseLong(bounds[0]));
             } else {
-                return Ranges.closed(Long.parseLong(bounds[0]),
-                                     Long.parseLong(bounds[1]));
+                return Range.closed(Long.parseLong(bounds[0]),
+                                    Long.parseLong(bounds[1]));
             }
 
         default:

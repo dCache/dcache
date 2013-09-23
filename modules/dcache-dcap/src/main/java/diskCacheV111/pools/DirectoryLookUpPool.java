@@ -2,7 +2,7 @@
 
 package diskCacheV111.pools;
 
-import com.google.common.collect.Ranges;
+import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,7 +106,7 @@ public class DirectoryLookUpPool extends AbstractCell
         StringBuilder sb = new StringBuilder();
         try {
             _list.printDirectory(null, new DirectoryPrinter(sb),
-                                 path, null, Ranges.<Integer>all());
+                                 path, null, Range.<Integer>all());
         } catch (FileNotFoundCacheException e) {
             sb.append("Path ").append(path).append(" does not exist.");
         } catch (NotDirCacheException e) {

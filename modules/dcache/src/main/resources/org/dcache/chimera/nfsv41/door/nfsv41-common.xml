@@ -61,7 +61,6 @@
         <property name="partitionCount" value="3"/>
         <property name="acquireIncrement" value="5"/>
         <property name="statementsCacheSize" value="100"/>
-        <property name="releaseHelperThreads" value="3"/>
     </bean>
 
     <bean id="fileSystem" class="org.dcache.chimera.DCacheAwareJdbcFs">

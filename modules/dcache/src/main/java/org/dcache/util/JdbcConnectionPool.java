@@ -129,7 +129,6 @@ public class JdbcConnectionPool
         ds.setPartitionCount(3);
         ds.setAcquireIncrement(5);
         ds.setStatementsCacheSize(100);
-        ds.setReleaseHelperThreads(3);
 
         dataSource = ds;
 
