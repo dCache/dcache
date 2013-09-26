@@ -751,6 +751,10 @@
                     <groupId>org.dcache</groupId>
                     <artifactId>oncrpc4j-spring</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jna</groupId>
+                    <artifactId>jna</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         </dependencies>
