@@ -12,5 +12,6 @@
     <include file="org/dcache/chimera/changelog/changeset-1.9.13.xml"/>
     <include file="org/dcache/chimera/changelog/changeset-2.3.xml"/>
     <include file="org/dcache/chimera/changelog/changeset-2.7.xml"/>
+    <include file="org/dcache/chimera/changelog/changeset-2.8.xml"/>
 
 </databaseChangeLog>
