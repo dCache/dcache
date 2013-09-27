@@ -77,6 +77,8 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
@@ -188,6 +190,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
 
     }
 
+    @Nonnull
     @Override
     public GetFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
     {

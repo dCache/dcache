@@ -76,6 +76,8 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -734,6 +736,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         }
     }
 
+    @Nonnull
     public abstract R getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException;
     public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException;
 

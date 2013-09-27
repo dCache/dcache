@@ -1122,13 +1122,14 @@ public class Storage
     /**
      *
      *
+     *
      * @param newLifetime SURL lifetime in seconds
      *   -1 stands for infinite lifetime
      * @return long lifetime left in seconds
      *   -1 stands for infinite lifetime
      */
     @Override
-    public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime) throws SRMException {
+    public long srmExtendSurlLifetime(SRMUser user, URI surl, long newLifetime) throws SRMException {
         FileMetaData fmd = getFileMetaData(user,surl, true);
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);

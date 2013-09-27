@@ -76,6 +76,8 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
@@ -211,6 +213,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
     }
 
+    @Nonnull
     @Override
     public PutFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
     {
@@ -547,6 +550,14 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
     @Override
     public long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
+        /* [ SRM 2.2, 5.16.2 ]
+         *
+         * h) Lifetime cannot be extended on the released files, aborted files, expired
+         *    files, and suspended files. For example, pin lifetime cannot be extended
+         *    after srmPutDone is requested on SURLs for srmPrepareToPut request. In
+         *    such case, SRM_INVALID_REQUEST at the file level must be returned, and
+         *    SRM_PARTIAL_SUCCESS or SRM_FAILURE must be returned at the request level.
+         */
         try {
             return super.extendLifetimeMillis(newLifetimeInMillis);
         } catch(SRMReleasedException releasedException) {

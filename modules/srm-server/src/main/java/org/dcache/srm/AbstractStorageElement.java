@@ -622,12 +622,13 @@ public interface AbstractStorageElement {
         throws SRMException;
 
     /**
+     *
      * @param newLifetime SURL lifetime in milliseconds
      *   -1 stands for infinite lifetime
      * @return long lifetime left in milliseconds
      *   -1 stands for infinite lifetime
      */
-    public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime)
+    public long srmExtendSurlLifetime(SRMUser user, URI surl, long newLifetime)
     throws SRMException;
 
     public String getStorageBackendVersion();

@@ -722,11 +722,38 @@ public abstract class Job  {
         wlock();
         try {
             if (state.isFinalState()){
+                /* [ SRM 2.2, 5.16.2 ]
+                 *
+                 * h) Lifetime cannot be extended on the released files, aborted files, expired
+                 *    files, and suspended files. For example, pin lifetime cannot be extended
+                 *    after srmPutDone is requested on SURLs for srmPrepareToPut request. In
+                 *    such case, SRM_INVALID_REQUEST at the file level must be returned, and
+                 *    SRM_PARTIAL_SUCCESS or SRM_FAILURE must be returned at the request level.
+                 *
+                 * [ SRM 2.2, 5.16.3 ]
+                 *
+                 * SRM_ABORTED
+                 * §  The requested file has been aborted.
+                 * SRM_RELEASED
+                 * §  The requested file has been released.
+                 * SRM_INVALID_REQUEST
+                 * §  Attempt to extend pin lifetimes on TURLs that have been already expired.
+                 *
+                 * ----
+                 *
+                 * We interpret the above to mean that attempting to extend the lifetime of
+                 * any request that is in a final state should either result in SRM_ABORTED,
+                 * SRM_RELEASED, or SRM_INVALID_REQUEST. Specifically a request that failed
+                 * does not cause lifetime extension to return SRM_FAILURE - SRM_FAILURE is
+                 * only return if the lifetime extension request itself fails.
+                 */
                 switch (state) {
                 case CANCELED:
                     throw new SRMAbortedException("can't extend lifetime, job was aborted");
                 case DONE:
                     throw new SRMReleasedException("can't extend lifetime, job has finished");
+                case FAILED:
+                    throw new SRMInvalidRequestException("can't extend lifetime, job has failed");
                 default:
                     throw new SRMException("can't extend lifetime, job state is " + state);
                 }

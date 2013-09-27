@@ -2882,6 +2882,7 @@ public final class Storage
     /**
      *
      * we support only permanent file, lifetime is always -1
+     *
      * @param newLifetime SURL lifetime in seconds
      *   -1 stands for infinite lifetime
      * @return long lifetime left in seconds
@@ -2889,7 +2890,7 @@ public final class Storage
      *
      */
     @Override
-    public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime)
+    public long srmExtendSurlLifetime(SRMUser user, URI surl, long newLifetime)
         throws SRMException
     {
         checkWritePrivileges(user, surl);
@@ -2928,7 +2929,7 @@ public final class Storage
                                    e.getRc()+" errorObject = "+
                                    e.getMessage());
         } catch (InterruptedException e) {
-            throw new SRMException("Request to SrmSpaceManager got interrupted", e);
+            throw new SRMInternalErrorException("Request to SrmSpaceManager got interrupted", e);
         }
     }
 
@@ -2966,7 +2967,7 @@ public final class Storage
         } catch (CacheException e) {
             throw new SRMException("extendPinLifetime failed, PinManagerExtendLifetimeMessage.returnCode="+ e.getRc() + " errorObject = " + e.getMessage());
         } catch (InterruptedException e) {
-            throw new SRMException("Request to PinManager got interrupted", e);
+            throw new SRMInternalErrorException("Request to PinManager got interrupted", e);
         }
     }
 
