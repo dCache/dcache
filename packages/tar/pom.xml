@@ -104,6 +104,7 @@
                   </formats>
                   <appendAssemblyId>false</appendAssemblyId>
                   <includeEmptyDirs>true</includeEmptyDirs>
+                  <finalName>${project.build.finalName}-1</finalName>
               </configuration>
               <executions>
                   <execution>
