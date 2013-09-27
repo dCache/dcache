@@ -17,7 +17,9 @@
       <dependency>
           <groupId>ch.qos.logback</groupId>
           <artifactId>logback-classic</artifactId>
-          <version>1.0.13</version>
+          <!-- 1.0.13 breaks remote logging; until the issue is better
+               understood, we should not move past 1.0.12 -->
+          <version>1.0.12</version>
       </dependency>
   </dependencies>
 

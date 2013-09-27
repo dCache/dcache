@@ -118,9 +118,11 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <!-- Remember to update modules/logback-test-config/pom.xml
+                <!-- 1.0.13 breaks remote logging; until this is
+                     better understood, we should not move past 1.0.12.
+                     Remember to update modules/logback-test-config/pom.xml
                      when upgrading logback. -->
-                <version>1.0.13</version>
+                <version>1.0.12</version>
             </dependency>
             <dependency>
                 <groupId>jline</groupId>
