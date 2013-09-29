@@ -3,7 +3,7 @@ package diskCacheV111.util;
 
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import dmg.cells.nucleus.CellPath;
@@ -14,7 +14,7 @@ import org.dcache.cells.CellStub;
 public class SpreadAndWait<T extends Serializable>
 {
 	private final CellStub _stub;
-        private final Map<CellPath,T> _replies = new HashMap<>();
+        private final Map<CellPath,T> _replies = new LinkedHashMap<>();
         private int _pending;
 
         public SpreadAndWait(CellStub stub)
@@ -68,7 +68,7 @@ public class SpreadAndWait<T extends Serializable>
 		return _replies.size();
 	}
 
-	public synchronized Serializable next() throws InterruptedException {
+	public synchronized T next() throws InterruptedException {
 		//
 		// pending replies what
 		// yes == 0 wait
@@ -84,7 +84,6 @@ public class SpreadAndWait<T extends Serializable>
                     return null;
                 }
 
-
-		return _replies.remove(0);
+                return _replies.remove(_replies.keySet().iterator().next());
 	}
 }
