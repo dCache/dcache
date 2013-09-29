@@ -871,7 +871,7 @@ public class UniversalSpringCell
                             values.put(property, bean.getPropertyValue(property));
                         } catch (InvalidPropertyException | PropertyAccessException e) {
                             _log.debug("Failed to read {} of object of class {}: {}",
-                                    new Object[] { property, o.getClass(), e.getMessage() });
+                                    property, o.getClass(), e.getMessage());
                         }
                     }
                 }

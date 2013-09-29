@@ -279,7 +279,7 @@ public class AlarmDefinitionManager {
     private static Element getRootElement(File xmlFile)
                     throws JDOMException, IOException {
         SAXBuilder builder = new SAXBuilder();
-        Document document = (Document) builder.build(xmlFile);
+        Document document = builder.build(xmlFile);
         return document.getRootElement();
     }
 

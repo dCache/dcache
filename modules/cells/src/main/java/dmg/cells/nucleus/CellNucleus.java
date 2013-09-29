@@ -734,7 +734,7 @@ public class CellNucleus implements ThreadFactory
                 // mainly useful for debuggin purposes (see alias
                 // package.
                 //
-                ce = new MessageEvent(((RoutedMessageEvent)ce).getMessage());
+                ce = new MessageEvent(ce.getMessage());
             }
         }
 

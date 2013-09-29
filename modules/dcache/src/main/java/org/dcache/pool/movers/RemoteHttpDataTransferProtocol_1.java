@@ -51,7 +51,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         PnfsId pnfsId = fileAttributes.getPnfsId();
         StorageInfo storage = fileAttributes.getStorageInfo();
         _log.info("Active HTTP: Protocol={}, StorageInfo={}, PnfsId={}, Access={}",
-                  new Object[] { protocol, storage, pnfsId, access });
+                protocol, storage, pnfsId, access);
         if (!(protocol instanceof RemoteHttpDataTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteHttpDataTransferProtocolInfo");
         }

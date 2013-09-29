@@ -341,7 +341,7 @@ public final class JDOTimeFrameHistogramDataService implements
     private <T extends IHistogramData> Collection<IHistogramData> getViewData(
                     Class<T> clzz) throws TimeFrameHistogramException {
         try {
-            Collection<T> c = (Collection<T>) access.get(clzz);
+            Collection<T> c = access.get(clzz);
             Collection<IHistogramData> plotData = new ArrayList<IHistogramData>();
             plotData.addAll(c);
             return plotData;

@@ -327,7 +327,7 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
     private void loadDefinitions(File xmlFile) throws JDOMException,
                     IOException {
         SAXBuilder builder = new SAXBuilder();
-        Document document = (Document) builder.build(xmlFile);
+        Document document = builder.build(xmlFile);
         Element rootNode = document.getRootElement();
         List<Element> list = rootNode.getChildren(AlarmDefinition.ALARM_TYPE_TAG);
         for (Element node: list) {

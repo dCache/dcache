@@ -17,10 +17,13 @@
  */
 package org.dcache.chimera.nfsv41.mover;
 
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import dmg.cells.nucleus.CellPath;
 import java.util.Collections;
 import java.util.Set;
+
+import diskCacheV111.vehicles.PoolIoFileMessage;
+
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.movers.MoverChannelMover;
@@ -37,7 +40,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
     @Override
     public Set<Checksum> getActualChecksums() {
-        return Collections.<Checksum>emptySet();
+        return Collections.emptySet();
     }
 
     @Override
