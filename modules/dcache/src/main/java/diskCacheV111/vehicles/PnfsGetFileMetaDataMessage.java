@@ -7,8 +7,6 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.util.Checksum;
-import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
@@ -16,11 +14,7 @@ import static org.dcache.namespace.FileAttribute.PNFSID;
 
 public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
 {
-    private FileMetaData _metaData;
     private boolean      _resolve     = true ;
-    private boolean _checksumsRequested;
-
-    private Set<Checksum> _checksums;
 
     private static final long serialVersionUID = 1591894346369251468L;
 
@@ -46,82 +40,16 @@ public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
 	setReplyRequired(true);
     }
 
-    @Override
-    public void setFileAttributes(FileAttributes fileAttributes)
-    {
-        /* For backwards compatibility with old versions we set these
-         * fields. We do this even though we don't use these fields.
-         */
-        _metaData = new FileMetaData(fileAttributes);
-        if (fileAttributes.isDefined(CHECKSUM)) {
-            _checksums = fileAttributes.getChecksums();
-        }
-
-        /* For backwards compatibility with old versions, we do not
-         * set the file attributes unless they have actually been
-         * requested. This avoid deserialization problems with clients
-         * that cannot handle all values in the FileAttribute enum.
-         */
-        if (_attributes != null) {
-            super.setFileAttributes(fileAttributes);
-        }
-    }
-
-    public FileMetaData getMetaData()
-    {
-        return
-            (_fileAttributes == null)
-            ? null
-            : new FileMetaData(_fileAttributes);
-    }
-
     public void setResolve( boolean resolve ){ _resolve = resolve ; }
     public boolean resolve(){ return _resolve ; }
 
-    public Set<Checksum> getChecksums()
-    {
-        return
-            (_fileAttributes == null || !_fileAttributes.isDefined(CHECKSUM))
-            ? null
-            : _fileAttributes.getChecksums();
-    }
-
-    public boolean isChecksumsRequested() {
-        return _checksumsRequested;
-    }
-
     public void setChecksumsRequested(boolean checksumsRequested)
     {
-        _checksumsRequested = checksumsRequested;
         if (checksumsRequested) {
             _attributes.add(CHECKSUM);
         } else {
             _attributes.remove(CHECKSUM);
         }
-    }
-
-    public void requestChecksum()
-    {
-        _checksumsRequested = true;
-        _attributes.add(CHECKSUM);
-    }
-
-    /* To ensure backwards compatibility with pre 1.9.6 clients, we
-     * explicitly add attributes compatible with
-     * PnfsGetFileMetaDataMessage to the set of requested attributes
-     * if the attribute set is null.
-     */
-    @Override
-    public Set<FileAttribute> getRequestedAttributes()
-    {
-        Set<FileAttribute> attributes = _attributes;
-        if (attributes == null) {
-            attributes = FileMetaData.getKnownFileAttributes();
-            if (_checksumsRequested) {
-                attributes.add(CHECKSUM);
-            }
-        }
-        return attributes;
     }
 
     @Override
