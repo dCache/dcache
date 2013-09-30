@@ -93,7 +93,7 @@ public final class TimeFrame implements Serializable {
 
     /**
      * @return Current time rounded up to next 12-hour interval for hourly and
-     *         to the next day for daily data.
+     *         down to the current day for daily data.
      */
     public static Calendar computeHighTimeFromNow(BinType type) {
         Calendar cal = Calendar.getInstance();
@@ -102,8 +102,6 @@ public final class TimeFrame implements Serializable {
         int dd = cal.get(Calendar.DAY_OF_MONTH);
         if (type == BinType.HOUR) {
             hh = cal.get(Calendar.HOUR_OF_DAY) < 12 ? 12 : 24;
-        } else {
-            dd++;
         }
         cal.set(Calendar.DAY_OF_MONTH, dd);
         cal.set(Calendar.HOUR_OF_DAY, hh);
