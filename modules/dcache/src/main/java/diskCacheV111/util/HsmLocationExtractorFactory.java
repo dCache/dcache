@@ -24,19 +24,19 @@ public class HsmLocationExtractorFactory {
 
     public static HsmLocation extractorOf(URI location) throws IllegalArgumentException {
 
-        URI validatedUri = validate(location);
+        validate(location);
         HsmLocation extractor;
-        String hsmType = validatedUri.getScheme();
+        String hsmType = location.getScheme();
 
         switch (hsmType) {
         case "osm":
-            extractor = new OsmLocationExtractor(validatedUri);
+            extractor = new OsmLocationExtractor(location);
             break;
         case "enstore":
-            extractor = new EnstoreLocationExtractor(validatedUri);
+            extractor = new EnstoreLocationExtractor(location);
             break;
         case "hpss":
-            extractor = new HpssLocationExtractor(validatedUri);
+            extractor = new HpssLocationExtractor(location);
             break;
         default:
             throw new IllegalArgumentException("hsmType " + hsmType
@@ -46,7 +46,7 @@ public class HsmLocationExtractorFactory {
     }
 
     /**
-     * Validate gived URI with hsm location rules:
+     * Validate given URI with hsm location rules:
      * <pre>
      *  <strong>[scheme:][//authority][path][?query][#fragment]</strong>
      *  where:
@@ -55,10 +55,9 @@ public class HsmLocationExtractorFactory {
      * 	path+query: opaque to dCache HSM specific data
      * </pre>
      * @param location
-     * @return location is it's valid
      * @throws IllegalArgumentException if location violates hsm rules.
      */
-    public static URI validate(URI location) throws IllegalArgumentException {
+    public static void validate(URI location) throws IllegalArgumentException {
 
         if(location.getScheme() == null) {
             throw new IllegalArgumentException("hsm type not defined in " + location);
@@ -67,11 +66,5 @@ public class HsmLocationExtractorFactory {
         if(location.getAuthority() == null) {
             throw new IllegalArgumentException("hsm instance id not defined in " + location);
         }
-
-        if (location.getPath() == null || location.getPath().isEmpty() ) {
-            throw new IllegalArgumentException("hsm-specific opaque data not defined in " + location);
-        }
-
-        return location;
     }
 }
