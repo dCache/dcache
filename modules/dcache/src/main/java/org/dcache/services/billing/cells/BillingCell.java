@@ -161,7 +161,7 @@ public final class BillingCell
     private String getFormattedMessage(InfoMessage msg) {
         String type = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN,
                                                 msg.getClass().getSimpleName());
-        String property = "billing.format." + type;
+        String property = "billing.text.format." + type;
         Object format = _environment.get(property);
         if (format == null) {
             return msg.toString();
