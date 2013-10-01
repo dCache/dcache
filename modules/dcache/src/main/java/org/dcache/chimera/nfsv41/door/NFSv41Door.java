@@ -382,7 +382,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
                 PnfsId pnfsId = new PnfsId(inode.toString());
                 Transfer.initSession();
-                NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"),
+                NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT,
+                        context.getRpcCall().getCredential().getSubject(),
                         remote, stateid);
 
                 NFS4ProtocolInfo protocolInfo = transfer.getProtocolInfoForPool();
@@ -594,9 +595,9 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final stateid4 _stateid;
         private final NFS4ProtocolInfo _protocolInfo;
 
-        NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path, InetSocketAddress client,
+        NfsTransfer(PnfsHandler pnfs, Subject namespaceSubject, Subject ioSubject, InetSocketAddress client,
                 stateid4 stateid) {
-            super(pnfs, subject, path);
+            super(pnfs, namespaceSubject, ioSubject,  new FsPath("/"));
             _stateid = stateid;
             _protocolInfo = new NFS4ProtocolInfo(client, _stateid);
         }

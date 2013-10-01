@@ -17,6 +17,10 @@ public class RedirectedTransfer<T> extends Transfer
     private boolean _isRedirected;
     private T _redirectObject;
 
+    public RedirectedTransfer(PnfsHandler pnfs, Subject namespaceSubject, Subject subject, FsPath path) {
+        super(pnfs, namespaceSubject, subject, path);
+    }
+
     public RedirectedTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
         super(pnfs, subject, path);
     }

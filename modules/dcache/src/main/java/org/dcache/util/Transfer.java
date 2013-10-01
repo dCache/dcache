@@ -108,18 +108,30 @@ public class Transfer implements Comparable<Transfer>
      * Constructs a new Transfer object.
      *
      * @param pnfs PnfsHandler used for pnfs communication
-     * @param subject The subject performing the transfer
+     * @param namespaceSubject The subject performing the namespace operations
+     * @param ioSubject The subject performing the transfer
      * @param path The path of the file to transfer
      */
-    public Transfer(PnfsHandler pnfs, Subject subject, FsPath path)
-    {
-        _pnfs = new PnfsHandler(pnfs, subject);
-        _subject = subject;
+    public Transfer(PnfsHandler pnfs, Subject namespaceSubject, Subject ioSubject, FsPath path) {
+        _pnfs = new PnfsHandler(pnfs, namespaceSubject);
+        _subject = ioSubject;
         _path = path;
         _startedAt = System.currentTimeMillis();
         _sessionId = _sessionCounter.next();
         _session = CDC.getSession();
         _checkStagePermission = new CheckStagePermission(null);
+    }
+
+    /**
+     * Constructs a new Transfer object.
+     *
+     * @param pnfs PnfsHandler used for pnfs communication
+     * @param subject The subject performing the transfer and namespace operations
+     * @param path The path of the file to transfer
+     */
+    public Transfer(PnfsHandler pnfs, Subject subject, FsPath path)
+    {
+        this(pnfs, subject, subject, path);
     }
 
     /**
