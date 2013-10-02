@@ -1,7 +1,6 @@
 package org.dcache.services.billing.cells;
 
 import com.google.common.base.CaseFormat;
-
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -18,6 +17,7 @@ import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +32,8 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
+import dmg.util.Formats;
+import dmg.util.Replaceable;
 
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
@@ -53,6 +55,7 @@ public final class BillingCell
     private static final Logger _log =
         LoggerFactory.getLogger(BillingCell.class);
     private static final Charset UTF8 = Charset.forName("UTF-8");
+    public static final String FORMAT_PREFIX = "billing.text.format.";
 
     private final SimpleDateFormat _formatter =
         new SimpleDateFormat ("MM.dd HH:mm:ss");
@@ -62,6 +65,7 @@ public final class BillingCell
         new SimpleDateFormat("yyyy" + File.separator + "MM");
 
     private final STGroup _templateGroup = new STGroup('$', '$');
+    private final Map<String,String> _formats = new HashMap<>();
 
     private final Map<String,int[]> _map = Maps.newHashMap();
     private final Map<String,long[]> _poolStatistics = Maps.newHashMap();
@@ -74,7 +78,6 @@ public final class BillingCell
     /*
      * Injected
      */
-    private Map<String,Object> _environment;
     private CellStub _poolManagerStub;
     private File _logsDir;
     private boolean _enableText;
@@ -86,8 +89,23 @@ public final class BillingCell
     }
 
     @Override
-    public void setEnvironment(Map<String,Object> environment) {
-        _environment = environment;
+    public void setEnvironment(final Map<String,Object> environment) {
+        Replaceable replaceable = new Replaceable() {
+            @Override
+            public String getReplacement(String name)
+            {
+                Object value =  environment.get(name);
+                return (value == null) ? null : value.toString().trim();
+            }
+        };
+        for (Map.Entry<String,Object> e: environment.entrySet()) {
+            String key = e.getKey();
+            if (key.startsWith(FORMAT_PREFIX)) {
+                String format = Formats.replaceKeywords(String.valueOf(e.getValue()), replaceable);
+                String clazz = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, key.substring(FORMAT_PREFIX.length()));
+                _formats.put(clazz, format);
+            }
+        }
     }
 
     @Override
@@ -114,8 +132,6 @@ public final class BillingCell
      * The main cell routine. Depending on the type of cell message and the
      * option sets, it either processes the message for persistent storage or
      * logs the message to a text file (or both).
-     *
-     * @param msg
      */
     public void messageArrived(InfoMessage info) {
         /*
@@ -159,20 +175,17 @@ public final class BillingCell
     }
 
     private String getFormattedMessage(InfoMessage msg) {
-        String type = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN,
-                                                msg.getClass().getSimpleName());
-        String property = "billing.format." + type;
-        Object format = _environment.get(property);
+        String format = _formats.get(msg.getClass().getSimpleName());
         if (format == null) {
             return msg.toString();
         } else {
-            ST template = new ST(_templateGroup, format.toString());
+            ST template = new ST(_templateGroup, format);
             msg.fillTemplate(template);
             return template.render();
         }
     }
 
-    private final static Function<Map.Entry<String,int[]>,Object[]> toPair =
+    private static final Function<Map.Entry<String,int[]>,Object[]> toPair =
         new Function<Map.Entry<String,int[]>,Object[]>()
         {
             @Override
