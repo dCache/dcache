@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+              http://www.springframework.org/schema/beans/spring-beans.xsd
+              http://www.springframework.org/schema/context
+              http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:annotation-config/>
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="arguments:"/>
+  </bean>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+    <description>Pool manager communication stub</description>
+    <property name="destination" value="${srm.service.poolmanager}"/>
+    <property name="timeout" value="${srm.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${srm.service.poolmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+    <description>PNFS manager communication stub</description>
+    <property name="destination" value="${srm.service.pnfsmanager}"/>
+    <property name="timeout" value="${srm.service.pnfsmanager.timeout}"/>
+    <property name="timeoutUnit" value="${srm.service.pnfsmanager.timeout.unit}"/>
+    <property name="retryOnNoRouteToCell" value="true"/>
+  </bean>
+
+  <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+    <description>PNFS manager client module</description>
+    <constructor-arg ref="pnfs-stub"/>
+  </bean>
+
+  <bean id="db-manager" class="diskCacheV111.util.DBManager"
+	factory-method="getInstance" lazy-init="false">
+  </bean>
+
+  <bean id="authz-policy-class" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetClass"><value>java.lang.Class</value></property>
+    <property name="targetMethod"><value>forName</value></property>
+    <property name="arguments">
+      <list>
+	<value>diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy</value>
+      </list>
+    </property>
+  </bean>
+
+
+  <bean id="authz-policy-ctor" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject"><ref local="authz-policy-class"/></property>
+    <property name="targetMethod"><value>getConstructor</value></property>
+  </bean>
+
+
+  <bean id="authz-policy" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject"><ref local="authz-policy-ctor"/></property>
+    <property name="targetMethod"><value>newInstance</value></property>
+  </bean>
+
+
+ <!--
+  <bean id="authz-policy" class="diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy"
+	factory-method="newInstance"/>
+  -->
+
+
+  <bean id="spacemanager" class="diskCacheV111.services.space.Manager"
+         init-method="start" destroy-method="stop">
+    <description>SrmSpaceManager</description>
+    <property name="dbManager"        ref="db-manager" />
+    <property name="pnfsStub"         ref="pnfs-stub"/>
+    <property name="pnfsHandler"      ref="pnfs"/>
+    <property name="poolManagerStub"  ref="pool-manager-stub"/>
+    <property name="jdbcUrl" value="${spacemanager.db.url}"/>
+    <property name="jdbcDriver" value="${spacemanager.db.driver}"/>
+    <property name="jdbcUser" value="${spacemanager.db.user}"/>
+    <property name="jdbcPassword" value="#{T(diskCacheV111.util.Pgpass).getPassword(
+					 '${spacemanager.db.password.file}',
+					 '${spacemanager.db.url}',
+					 '${spacemanager.db.user}',
+					 '${spacemanager.db.password}')}"/>
+    <property name="spaceManagerEnabled"
+              value="${dcache.enable.space-reservation}" />
+    <property name="updateLinkGroupsPeriod"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${spacemanager.link-groups-update.period},
+		     '${spacemanager.link-groups-update.period.unit}')}" />
+    <property name="expireSpaceReservationsPeriod"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+		     ${spacemanager.expire-space-reservation.period},
+		     '${spacemanager.expire-space-reservation.period.unit}')}" />
+    <property name="defaultRetentionPolicy" value="#{T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${spacemanager.default-retention-policy}')}" />
+    <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
+    <property name="reserveSpaceForNonSRMTransfers" value="${spacemanager.enable.reserve-space-for-non-srm-tranfers}" />
+    <property name="deleteStoredFileRecord" value="false" />
+    <property name="cleanupExpiredSpaceFiles" value="true" />
+    <property name="returnFlushedSpaceToReservation" value="true" />
+    <property name="linkGroupAuthorizationFileName" value="${spacemanager.authz.link-group-file-name}" />
+    <property name="authorizationPolicy" ref="authz-policy" />
+</bean>
+
+</beans>

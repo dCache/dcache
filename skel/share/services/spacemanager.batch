@@ -19,20 +19,6 @@ check -strong spacemanager.enable.space-reservation
 check -strong spacemanager.service.poolmanager
 check -strong spacemanager.service.pnfsmanager
 
-create diskCacheV111.services.space.Manager ${spacemanager.cell.name} \
-       "default \
-        -export=${spacemanager.cell.export} \
-        -jdbcUrl=${spacemanager.db.url} \
-        -jdbcDriver=${spacemanager.db.driver} \
-        -dbUser=${spacemanager.db.user} \
-        -dbPass=${spacemanager.db.password} \
-        -poolManager=${spacemanager.service.poolmanager} \
-        -pnfsManager=${spacemanager.service.pnfsmanager} \
-        -defaultAccessLatencyForSpaceReservation=${spacemanager.default-access-latency} \
-        -reserveSpaceForNonSRMTransfers=${spacemanager.enable.reserve-space-for-non-srm-tranfers} \
-        -deleteStoredFileRecord=false \
-        -returnFlushedSpaceToReservation=true \
-        -returnRemovedSpaceToReservation=true \
-        -linkGroupAuthorizationFileName=${spacemanager.authz.link-group-file-name} \
-        -spaceManagerEnabled=${spacemanager.enable.space-reservation} \
-"
+create org.dcache.cells.UniversalSpringCell ${spacemanager.cell.name} \
+   "classpath:diskCacheV111/services/space/spacemanager.xml -export"
+

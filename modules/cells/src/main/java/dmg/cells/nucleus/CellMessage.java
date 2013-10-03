@@ -114,7 +114,7 @@ public boolean equals( Object obj ){
   // package methods
   //
   boolean isStreamMode(){ return _mode == STREAM_MODE  ; }
-  void touch(){
+  public void touch(){
     if( _destination.isFirstDestination() ){
         _umid = new UOID() ;
     }

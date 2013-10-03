@@ -116,16 +116,20 @@ public class CellPath  implements Cloneable , Serializable {
           _position = 0;
       }
    }
+
+   public synchronized void insert( CellPath path ){
+      _list.addAll(_position + 1, path._list);
+      if( _position < 0 ) {
+          _position = 0;
+      }
+   }
+
    public synchronized void insert( String path ){
-      // FIXME: This method seeems to reverse the path
-      StringTokenizer st = new StringTokenizer( path ,":" ) ;
-       while (st.hasMoreTokens()) {
-           insert(new CellAddressCore(st.nextToken()));
-       }
+       insert(new CellPath(path));
    }
 
     public void insert( String cell , String domain ){
-       add( new CellAddressCore( cell , domain ) ) ;
+       insert(new CellAddressCore(cell, domain)) ;
    }
    /**
      * Increment the current cell position by one.
