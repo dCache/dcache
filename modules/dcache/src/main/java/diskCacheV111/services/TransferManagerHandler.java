@@ -140,7 +140,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
                 info.setSubject(subject);
                 info.setPath(pnfsPath);
                 info.setTimeQueued(-System.currentTimeMillis());
-                info.setMessageType("request");
                 this.sourcePath = sourcePath;
                 try {
                         info.setClient(new URI(transferRequest.getRemoteURL()).getHost());

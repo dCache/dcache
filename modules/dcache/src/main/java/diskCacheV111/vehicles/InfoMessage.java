@@ -18,7 +18,7 @@ import org.dcache.auth.Subjects;
 public class InfoMessage implements Serializable {
    private static final SimpleDateFormat __dateFormat = new SimpleDateFormat("MM.dd HH:mm:ss");
    private final String    _cellType    ;
-   private String    _messageType;
+   private final String    _messageType;
    private final String    _cellName    ;
    private long      _timeQueued;
    private int       _resultCode;
@@ -75,9 +75,6 @@ public class InfoMessage implements Serializable {
    public void   setTimeQueued( long timeQueued ){ _timeQueued = timeQueued ; }
    public long   getTimeQueued(){ return _timeQueued ; }
    public String getCellType(){ return _cellType ; }
-   public void   setMessageType( String messageType ){
-      _messageType = messageType ;
-   }
    public String getMessageType(){ return _messageType ; }
    public String getCellName(){ return _cellName ; }
    public String getMessage(){ return _message ; }

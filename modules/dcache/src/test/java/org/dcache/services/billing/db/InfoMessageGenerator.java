@@ -49,10 +49,9 @@ public class InfoMessageGenerator {
     }
 
     DoorRequestInfoMessage newDoorMessage() {
-        DoorRequestInfoMessage info = new DoorRequestInfoMessage(CELL_PATH);
+        DoorRequestInfoMessage info = new DoorRequestInfoMessage(CELL_PATH, "transfer");
         info.setFileSize(Math.abs(r.nextLong()) % 10000000000000L);
         info.setPath(getFilePath());
-        info.setMessageType("transfer");
         info.setTransaction(getTransaction());
         info.setPnfsId(new PnfsId(getPnsfId()));
         Subject subject = new Subject();
@@ -67,22 +66,18 @@ public class InfoMessageGenerator {
     }
 
     PoolHitInfoMessage newHitMessage() {
-        PoolHitInfoMessage info = new PoolHitInfoMessage(CELL_PATH, new PnfsId(
-                        getPnsfId()));
+        PoolHitInfoMessage info = new PoolHitInfoMessage(CELL_PATH, new PnfsId(getPnsfId()));
         info.setFileCached(r.nextInt() % 17 == 0);
         info.setFileSize(Math.abs(r.nextLong()) % 10000000000000L);
         info.setPath(getFilePath());
-        info.setMessageType("transfer");
         info.setTransaction(getTransaction());
         return info;
     }
 
     StorageInfoMessage newStorageMessage() {
-        StorageInfoMessage info = new StorageInfoMessage(CELL_PATH, new PnfsId(
-                        getPnsfId()), r.nextInt() % 23 != 0);
+        StorageInfoMessage info =
+                new StorageInfoMessage(CELL_PATH, new PnfsId(getPnsfId()), r.nextInt() % 2 != 0);
         info.setFileSize(Math.abs(r.nextLong()) % 10000000000000L);
-        int t = r.nextInt() % 2;
-        info.setMessageType(t == 0 ? "store" : "restore");
         info.setTransaction(getTransaction());
         info.setFileSize(Math.abs(r.nextLong()) % 10000000000000L);
         info.setStorageInfo(newStorageInfo());
@@ -94,7 +89,6 @@ public class InfoMessageGenerator {
     MoverInfoMessage newMoverMessage() {
         MoverInfoMessage info = new MoverInfoMessage(CELL_PATH, new PnfsId(
                         getPnsfId()));
-        info.setMessageType("transfer");
         info.setTransaction(getTransaction());
         info.setFileSize(Math.abs(r.nextLong()) % 10000000000000L);
         info.setTransferAttributes(info.getFileSize(),

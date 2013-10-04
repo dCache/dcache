@@ -1683,7 +1683,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             super( sessionId , commandId , args, false, true ) ;
 
-            _info.setMessageType("check") ;
+            _info = new DoorRequestInfoMessage(
+                    _cell.getCellInfo().getCellName()+"@"+_cell.getCellInfo().getDomainName(), "check");
             _destination      = args.getOpt( "location" ) ;
             String protocolName = args.getOpt( "protocol" ) ;
             if( protocolName == null) {

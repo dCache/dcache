@@ -19,7 +19,6 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     }
 
     public DoorRequestInfoMessage(String cellName, String action) {
-    	//action: "remove"
     	super(action, "door", cellName, null);
      }
 
