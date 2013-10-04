@@ -163,7 +163,10 @@
         <artifactId>commons-codec</artifactId>
         <version>1.4</version>
     </dependency>
-
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+    </dependency>
     <dependency>
         <groupId>org.liquibase</groupId>
         <artifactId>liquibase-core</artifactId>

@@ -26,10 +26,11 @@ usage()
     echo "Usage: $(basename $0) [OPTION]... COMMAND"
     echo
     echo "Valid commands are:"
-    echo "   alarm send [-s=<source info uri>] [-l=<log level>] [-t=<alarm type>] message"
+    echo "   alarm send [-s=<source info uri>] [-l=<log level>] [-t=<alarm type>] <message>"
     echo "   alarm add    (interactive)"
     echo "   alarm modify (interactive)"
     echo "   alarm remove (interactive)"
+    echo "   billing [-files] <path>|<pnfsid>|<dn>"
     echo "   check-config"
     echo "   condrestart [<domain>]..."
     echo "   database ls"
@@ -1074,6 +1075,15 @@ case "$1" in
                 usage
                 ;;
         esac
+        ;;
+
+    billing)
+        shift
+        if [ $# -eq 0 ]; then
+            usage
+        fi
+        . ${lib}/billing.sh
+        billing_find ${opt_files:+-files} "$@"
         ;;
 
     loader)

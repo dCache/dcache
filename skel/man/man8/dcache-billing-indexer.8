@@ -1,0 +1,78 @@
+.TH DCACHE-BILLING-INDEXER 8 "October 2013" "" ""
+
+.SH NAME
+dcache-billing-indexer \- Indexing tool for dCache billing files
+
+.SH SYNOPSIS
+
+\fBdcache-billing-indexer\fR [OPTION]... COMMAND
+
+.SH DESCRIPTION
+
+Tool for indexing, compressing, and scanning dCache billing files.
+
+Billing files retain a complete log of all file transfers in dCache. Due
+to the sheer number of transfers, billing files may grow quite large and
+should be compressed to conserve disk space. Since searching for entries
+in a large number of compressed billing files is a slow process, billing
+files may be indexed before compression, thus greatly improving the response
+time for searches.
+
+Index files are bloom filters containing paths, PNFS IDs and DNs, and their
+prefixes, of billing entries. A Bloom filter is compact probabilistic
+data structure with a small false positive rate. Thus indexes are complete,
+but occasionally the false positive rate may cause a billing file
+to be read in vain.
+
+Billing entries are parsed using the format strings from the billing
+configuration. Therefore only billing entries that have format strings
+are indexed. If the format is customized, old entries may no longer be
+indexable, however existing indexes will still be valid. Care should be
+taken that format strings are unambiguous so no two formats match the
+same billing entry.
+
+.SH COMMANDS
+
+.TP
+\fB-all [-fpp=PROP] [-dir=BASE]\fR
+(Re)index all billing files.
+
+.TP
+\fB-compress FILE\fR
+Compress \fBFILE\fR.
+
+.TP
+\fB-decompress FILE
+Decompress \fBFILE\fR.
+
+.TP
+\fB-find [-files] [-dir=BASE] SEARCHTERM\fR
+Output billing entries that contain \fBSEARCHTERM\fR. Valid search terms are
+path, pnfsid, dn and path prefixes of those. Optionally output names
+of billing files that might contain the search term.
+
+.TP
+\fB-index [-fpp=PROP] FILE\fR
+Create index for FILE.
+
+.TP
+\fB-yesterday [-compress] [-fpp=PROP] [-dir=BASE] [-flat=BOOLEAN]\fR
+Index yesterday's billing file. Optionally compresses the billing file
+after indexing it.
+
+.SH OPTIONS
+
+.TP
+\fB-dir=BASE\fR
+Base directory for billing files. Default is taken from dCache
+configuration.
+
+.TP
+\fB-flat=BOOLEAN\fR
+Chooses between flat or hierarchical directory layout. Default is
+taken from dCache configuration.
+
+.TP
+\fB-fpp=PROP\fR
+The false positive probability expressed as a value in (0;1]. The
+default is 0.01.

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+@DCACHE_LOAD_CONFIG@
+
+lib="$(getProperty dcache.paths.share.lib)"
+
+. ${lib}/utils.sh
+. ${lib}/billing.sh
+
+
+billing_indexer "$@"

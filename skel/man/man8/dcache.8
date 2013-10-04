@@ -1,4 +1,4 @@
-.TH DCACHE 8 "July 2007" "" ""
+.TH DCACHE 8 "October 2013" "" ""
 
 .SH NAME
 dcache \- The dCache distributed storage resource manager
@@ -274,11 +274,11 @@ documentation is written as HTML to the output directory specified.
 .SH ALARM COMMANDS
 
 .TP
-.B alarm send [-s=<source info uri>] [-l=<log level>] [-t=<alarm type>] message
+.B alarm send [-s=SOURCE] [-l=LEVEL] [-t=TYPE] MESSAGE
 Command for sending an arbitrary alarm message to the alarm server.
 
 .TP.TP
-.B source info uri
+.B SOURCE
 the host, domain and service issuing the alarm, in the form:
 "src://[host]/[domain]/[service]"; if host is not given, it defaults
 to the hostname of the node where the command is issued; if domain is not
@@ -286,12 +286,12 @@ given, it defaults to "NA"; if service is not given, it defaults to
 "command-line".
 
 .TP.TP
-.B log level
+.B LEVEL
 can be ERROR (default), WARN, INFO, DEBUG; these translate into HIGH, MODERATE,
 LOW and LOW severity levels.
 
 .TP.TP
-.B alarm type
+.B TYPE
 additional subtype marker; all alarms are marked ALARM; with type defined,
 the marker becomes: ALARM [type].
 
@@ -311,6 +311,13 @@ Activates interpreter for removing an alarm definition from the alarm definition
 xml file.  The path for the latter is determined from alarms.definitions.path.
 
 .SH MISCELLANEOUS COMMANDS
+
+.TP
+.B billing [-files] PATH|PNFSID|DN
+Searches local billing files for entries for the particular path, PNFS
+ID or DN. Complete prefixes of paths and DNs can be searched too. If
+the \fB-files\fR option is given, a list of billing files that are
+likely to contain the search term is printed instead.
 
 .TP
 .B kpwd COMMAND [-debug] [ARGUMENT]...
