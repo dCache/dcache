@@ -39,8 +39,8 @@ public class Args implements Serializable
 
     public Args(CharSequence args)
     {
-        Scanner scanner = new Scanner(args);
-        scanner.scan();
+        Scanner scanner = new Scanner();
+        scanner.scan(args, false);
         _options = scanner.options.build();
         _arguments = scanner.arguments.build();
         _oneChar = scanner.oneChar.toString();
@@ -48,7 +48,13 @@ public class Args implements Serializable
 
     public Args(String[] args)
     {
-        this(Joiner.on(' ').join(args));
+        Scanner scanner = new Scanner();
+        for (String arg : args) {
+            scanner.scan(arg, true);
+        }
+        _options = scanner.options.build();
+        _arguments = scanner.arguments.build();
+        _oneChar = scanner.oneChar.toString();
     }
 
     public Args(Args in)
@@ -337,38 +343,39 @@ public class Args implements Serializable
      */
     private static class Scanner
     {
-        ImmutableListMultimap.Builder<String,String> options;
-        ImmutableList.Builder<String> arguments;
-        StringBuilder oneChar;
+        final ImmutableListMultimap.Builder<String,String> options = new ImmutableListMultimap.Builder<>();
+        final ImmutableList.Builder<String> arguments = new ImmutableList.Builder<>();
+        final StringBuilder oneChar = new StringBuilder();
 
-        private final CharSequence _line;
-        private int _position;
+        private CharSequence line;
+        private int position;
+        private boolean isAtEndOfOptions;
+        private boolean shouldIgnoreWhitespace;
 
-        public Scanner(CharSequence line)
+        public Scanner()
         {
-            _line = line;
         }
 
         private char peek()
         {
-            return isEof() ? (char) 0 : _line.charAt(_position);
+            return isEof() ? (char) 0 : line.charAt(position);
         }
 
         private char readChar()
         {
             char c = peek();
-            _position++;
+            position++;
             return c;
         }
 
         private boolean isEof()
         {
-            return (_position >= _line.length());
+            return (position >= line.length());
         }
 
         private boolean isWhitespace()
         {
-            return Character.isWhitespace(peek());
+            return !shouldIgnoreWhitespace && Character.isWhitespace(peek());
         }
 
         private void scanWhitespace()
@@ -378,13 +385,11 @@ public class Args implements Serializable
             }
         }
 
-        public void scan()
+        public void scan(CharSequence line, boolean shouldIgnoreWhitespace)
         {
-            boolean isAtEndOfOptions = false;
-
-            options = new ImmutableListMultimap.Builder<>();
-            arguments = new ImmutableList.Builder<>();
-            oneChar = new StringBuilder();
+            this.line = line;
+            this.shouldIgnoreWhitespace = shouldIgnoreWhitespace;
+            position = 0;
 
             scanWhitespace();
             while (!isEof()) {

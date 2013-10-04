@@ -1,6 +1,5 @@
 package dmg.util;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.NoSuchElementException;
@@ -611,14 +610,14 @@ public class ArgsTest {
                      parsedLong);
     }
 
-    @Test @Ignore("This is a bug that should be fixed")
+    @Test
     public void testArgumentWithWhitespace()
     {
-        String ARG1 = "first argument contains space";
-        String ARG2 = "second";
-        Args args = new Args(new String[] {ARG1, ARG2});
+        String arg1 = "first argument contains space";
+        String arg2 = "second";
+        Args args = new Args(new String[] {arg1, arg2});
         assertEquals(2, args.argc());
-        assertEquals(ARG1, args.argv(0));
-        assertEquals(ARG2, args.argv(1));
+        assertEquals(arg1, args.argv(0));
+        assertEquals(arg2, args.argv(1));
     }
 }
