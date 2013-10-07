@@ -5,7 +5,7 @@
      xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
 
-    <changeSet author="tigran" id="7" dbms="postgresql">
+    <changeSet author="tigran" id="7.1" dbms="postgresql">
         <createProcedure>
             DROP TRIGGER IF EXISTS tgr_insertACL ON t_dirs;
 
@@ -14,9 +14,8 @@
                 msk INTEGER;
                 flag INTEGER;
                 rstype INTEGER;
-                id character(36);
-                parentid character(36);
-
+                id character varying(36);
+                parentid character varying(36);
             BEGIN
                 IF (TG_OP = 'INSERT') THEN
                     msk := 0;
@@ -28,7 +27,6 @@
                         rstype := 1;    -- inserted object is a file
                         flag := 1;      -- check flags for 'f' bit
                         msk := 11;      -- mask contains 'o','d' and 'f' bits
-
                     ELSIF (rstype = 16384 AND NEW.iname = '..') THEN
                         id := NEW.iparent;
                         parentid := NEW.ipnfsid;
