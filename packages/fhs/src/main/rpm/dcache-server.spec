@@ -94,6 +94,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/doc/dcache
 /usr/share/dcache
 /usr/share/man/man8/dcache-bootloader.8
+/usr/share/man/man8/dcache-billing-indexer.8
 /usr/share/man/man8/dcache.8
 /var/log/dcache
 
