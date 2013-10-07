@@ -99,6 +99,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,dcache,dcache) /var/lib/dcache/alarms
 %attr(-,dcache,dcache) /var/lib/dcache/config
 %attr(-,dcache,dcache) /var/lib/dcache/billing
+%attr(-,dcache,dcache) /var/lib/dcache/httpd
 %attr(-,dcache,dcache) /var/lib/dcache/plots
 %attr(-,dcache,dcache) /var/lib/dcache/statistics
 %attr(-,dcache,dcache) /var/lib/dcache/star
