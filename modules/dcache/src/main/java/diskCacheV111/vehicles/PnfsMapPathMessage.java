@@ -13,6 +13,7 @@ public class PnfsMapPathMessage extends PnfsMessage {
 
    public PnfsMapPathMessage( String globalPath ){
       _globalPath = globalPath ;
+      setPnfsPath(globalPath);
       setReplyRequired(true);
    }
    public PnfsMapPathMessage( PnfsId pnfsId ){
@@ -30,6 +31,7 @@ public class PnfsMapPathMessage extends PnfsMessage {
    public String getGlobalPath(){ return _globalPath ; }
    public void setGlobalPath( String globalPath ){
       _globalPath = globalPath ;
+      setPnfsPath(globalPath);
    }
 
     @Override
