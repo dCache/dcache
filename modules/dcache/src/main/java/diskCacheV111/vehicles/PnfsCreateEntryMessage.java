@@ -22,6 +22,7 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
         _uid = NameSpaceProvider.DEFAULT;
         _gid = NameSpaceProvider.DEFAULT;
         _mode = NameSpaceProvider.DEFAULT;
+        setPnfsPath(path);
         setReplyRequired(true);
     }
     public PnfsCreateEntryMessage(String path, int uid , int gid , int mode ){
@@ -29,6 +30,7 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
         _uid  = uid ;
         _gid  = gid ;
         _mode = mode ;
+        setPnfsPath(path);
         setReplyRequired(true);
     }
 
@@ -42,6 +44,7 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
         _uid  = uid ;
         _gid  = gid ;
         _mode = mode ;
+        setPnfsPath(path);
         setReplyRequired(true);
     }
 
