@@ -17,8 +17,6 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -30,25 +28,18 @@ import java.util.Set;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Group;
 import org.dcache.auth.GroupList;
-import org.dcache.srm.SRMUserPersistenceManager;
 
 /**
  *
  * @author timur
  */
-public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
+public class  AuthRecordPersistenceManager {
 
     private Map<Long,AuthorizationRecord> authRecCache  =
         new HashMap<>();
     private static final Logger _logJpa =
             LoggerFactory.getLogger( AuthRecordPersistenceManager.class);
-    EntityManager em ;
-    public AuthRecordPersistenceManager(String propertiesFile) throws IOException {
-        Properties p = new Properties();
-        p.load(new FileInputStream(propertiesFile));
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("AuthRecordPersistenceUnit",p );
-        em = emf.createEntityManager();
-    }
+    private final EntityManager em ;
 
     public AuthRecordPersistenceManager(String jdbcUrl,
     String jdbcDriver,
@@ -113,7 +104,6 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
 
     }
 
-    @Override
     public synchronized AuthorizationRecord find(long id) {
         if(authRecCache.containsKey(id)) {
             return authRecCache.get(id);
