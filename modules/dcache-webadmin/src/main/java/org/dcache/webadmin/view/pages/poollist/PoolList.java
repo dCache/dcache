@@ -1,10 +1,6 @@
 package org.dcache.webadmin.view.pages.poollist;
 
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.OnLoadHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -16,10 +12,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import diskCacheV111.pools.PoolV2Mode;
+import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+import org.apache.wicket.markup.head.OnLoadHeaderItem;
+import org.apache.wicket.markup.head.StringHeaderItem;
 
 import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
@@ -37,6 +36,7 @@ public class PoolList extends BasePage {
 
     private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
     private static final long serialVersionUID = -3519762401458479856L;
+    private List<PoolSpaceBean> _poolBeans;
     private SelectOption _selectedOption;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
@@ -44,8 +44,9 @@ public class PoolList extends BasePage {
         Form poolUsageForm = new PoolUsageForm("poolUsageForm");
         poolUsageForm.add(createPoolModeDropDown("mode"));
         poolUsageForm.add(new FeedbackPanel("feedback"));
+        getPoolsAction();
         PoolListPanel poolListPanel = new PoolListPanel("poolListPanel",
-                new PropertyModel(this, "poolSpaceBeans"), true);
+                new PropertyModel(this, "_poolBeans"), true);
         poolUsageForm.add(poolListPanel);
         add(poolUsageForm);
     }
@@ -80,14 +81,14 @@ public class PoolList extends BasePage {
         return getWebadminApplication().getPoolSpaceService();
     }
 
-    public List<PoolSpaceBean> getPoolSpaceBeans() {
+    private void getPoolsAction() {
         try {
             _log.debug("getPoolListAction called");
-            return getPoolSpaceService().getPoolBeans();
+            this._poolBeans = getPoolSpaceService().getPoolBeans();
         } catch (PoolSpaceServiceException ex) {
             this.error(getStringResource("error.getPoolsFailed") + ex.getMessage());
             _log.debug("getPoolListAction failed {}", ex.getMessage());
-            return Collections.emptyList();
+            this._poolBeans = null;
         }
     }
 
@@ -106,13 +107,13 @@ public class PoolList extends BasePage {
         @Override
         protected void onSubmit() {
             _log.debug("button pressed");
-            List<PoolSpaceBean> poolBeans = getPoolSpaceBeans();
-            if (poolBeans != null && _selectedOption != null) {
+            if (_poolBeans != null && _selectedOption != null) {
                 try {
                     _log.debug("selected: {}", _selectedOption.getValue());
                     PoolV2Mode poolMode = new PoolV2Mode(_selectedOption.getKey());
-                    getPoolSpaceService().changePoolMode(poolBeans, poolMode,
+                    getPoolSpaceService().changePoolMode(_poolBeans, poolMode,
                             getWebadminSession().getUserName());
+                    getPoolsAction();
                 } catch (PoolSpaceServiceException ex) {
                     _log.error("something went wrong with enable/disable");
                     this.error(getStringResource("error.changePoolModeFailed") + ex.getMessage());

@@ -15,9 +15,9 @@ import org.apache.wicket.model.PropertyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 
+import org.dcache.webadmin.controller.PoolGroupService;
 import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
 import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
@@ -38,22 +38,24 @@ public class PoolGroupView extends BasePage {
 
     private static final long serialVersionUID = 5336661788688627752L;
     private String SPECIAL_POOLGROUP_HEADER = "specialPoolGroup.header";
-    private String _selectedGroupName;
+    private List<PoolGroupBean> _poolGroups;
+    private PoolGroupBean _currentPoolGroup;
     private String _selectedGroup = getStringResource(SPECIAL_POOLGROUP_HEADER);
     private PoolListPanel _poolListPanel = new PoolListPanel(
             "specialPoolGroupPanel", new PropertyModel<List<PoolSpaceBean>>(
-            this, "poolSpaces"), false);
+            this, "_currentPoolGroup._poolSpaces"), false);
     private PoolQueuesPanel _poolQueuesPanel = new PoolQueuesPanel(
             "specialPoolGroupPanel", new PropertyModel<PoolGroupBean>(
-            this, "currentPoolGroup"));
+            this, "_currentPoolGroup"));
     private CellServicesPanel _cellServicesPanel = new CellServicesPanel(
             "specialPoolGroupPanel", new PropertyModel<List<CellServicesBean>>(
-            this, "cellStatuses"));
+            this, "_currentPoolGroup._cellStatuses"));
     private Panel _shownPanel = _poolListPanel;
     private static final Logger _log = LoggerFactory.getLogger(PoolGroupView.class);
 
     public PoolGroupView() {
         addMarkup();
+        getPoolGroupsAction();
     }
 
     private void addMarkup() {
@@ -71,7 +73,7 @@ public class PoolGroupView extends BasePage {
     private ListView<PoolGroupBean> createListview() {
         return new EvenOddListView<PoolGroupBean>(
                 "poolGroupView", new PropertyModel<List<PoolGroupBean>>(
-                this, "poolGroups")) {
+                this, "_poolGroups")) {
 
             private static final long serialVersionUID = -6804519816869455339L;
 
@@ -99,11 +101,9 @@ public class PoolGroupView extends BasePage {
 
                     @Override
                     public void onClick() {
-                        _selectedGroupName = poolGroup.getName();
-                        _selectedGroup
-                            = getStringResource(SPECIAL_POOLGROUP_HEADER)
-                            + " " + _selectedGroupName;
-                        configure();
+                        _selectedGroup = getStringResource(
+                                SPECIAL_POOLGROUP_HEADER) + " " + poolGroup.getName();
+                        _currentPoolGroup = poolGroup;
                     }
                 };
                 link.add(new Label("nameMessage", poolGroup.getName()));
@@ -112,37 +112,23 @@ public class PoolGroupView extends BasePage {
         };
     }
 
-    public PoolGroupBean getCurrentPoolGroup() {
-        List<PoolGroupBean> groups = getPoolGroups();
-        for (PoolGroupBean group : groups) {
-            if (group.getName().equals(_selectedGroupName)) {
-                return group;
-            }
-        }
-        return null;
+    private PoolGroupService getPoolGroupService() {
+        return getWebadminApplication().getPoolGroupService();
     }
 
-    public List<PoolSpaceBean> getPoolSpaces() {
-        PoolGroupBean current = getCurrentPoolGroup();
-        if (current == null) return null;
-        return current.getPoolSpaces();
-    }
-
-    public List<CellServicesBean> getCellStatuses() {
-        PoolGroupBean current = getCurrentPoolGroup();
-        if (current == null) return null;
-        return current.getCellStatuses();
-    }
-
-    public List<PoolGroupBean> getPoolGroups() {
+    private void getPoolGroupsAction() {
         try {
             _log.debug("getPoolGroupsAction called");
-            return getWebadminApplication().getPoolGroupService().getPoolGroups();
+            setPoolGroups(getPoolGroupService().getPoolGroups());
         } catch (PoolGroupServiceException ex) {
             this.error(getStringResource("error.getPoolgroupsFailed") + ex.getMessage());
             _log.debug("getPoolGroupsAction failed {}", ex.getMessage());
-            return Collections.emptyList();
+            setPoolGroups(null);
         }
+    }
+
+    private void setPoolGroups(List<PoolGroupBean> poolGroups) {
+        _poolGroups = poolGroups;
     }
 
     private class NavigationFragment extends Fragment {

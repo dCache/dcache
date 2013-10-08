@@ -48,10 +48,11 @@ public class PoolSelectionSetup extends BasePage {
     private static final String PARTICULAR_PROPERTIES_ID = "particularProperties";
     private static final long serialVersionUID = 4020499606063085733L;
     private WebMarkupContainer _results = new EmptyPanel(RESULT_PANEL_ID);
+    private DCacheEntityContainerBean _entityContainer = new DCacheEntityContainerBean();
 
     public PoolSelectionSetup() {
         super();
-        entityContainer();
+        retrieveEntityContainer();
         addMarkup();
     }
 
@@ -73,18 +74,17 @@ public class PoolSelectionSetup extends BasePage {
         return getWebadminApplication().getPoolSelectionSetupService();
     }
 
-    private DCacheEntityContainerBean entityContainer() {
+    private void retrieveEntityContainer() {
         try {
-            return getPoolSelectionSetupService().getEntityContainer();
+            _entityContainer = getPoolSelectionSetupService().getEntityContainer();
         } catch (PoolSelectionSetupServiceException ex) {
             error("No Data available yet, please reload page: " + ex.getMessage());
             _log.debug("no Data: " + ex.getMessage());
-            return new DCacheEntityContainerBean();
         }
     }
 
     public Link getLinkToPool(String linkId, String name) {
-        PoolEntity entity = entityContainer().getPool(name);
+        PoolEntity entity = _entityContainer.getPool(name);
         if (entity != null) {
             return new ParticularEntityLink<>(linkId, entity);
         } else {
@@ -143,7 +143,7 @@ public class PoolSelectionSetup extends BasePage {
 
                         @Override
                         public void onClick() {
-                           //do nothing is on purpose - just an empty column
+//                           do nothing is on purpose - just an empty column
                         }
                     };
                     link.add(new Label("name", EMPTY_STRING));
@@ -192,7 +192,7 @@ public class PoolSelectionSetup extends BasePage {
         private List<DCacheEntity> extractEntitiesFromContainer(List<EntityReference> references) {
             List<DCacheEntity> entites = new ArrayList<>();
             for (EntityReference ref : references) {
-                entites.add(entityContainer().getEntity(ref.getName(), ref.getEntityType()));
+                entites.add(_entityContainer.getEntity(ref.getName(), ref.getEntityType()));
             }
             return entites;
         }
@@ -254,7 +254,7 @@ public class PoolSelectionSetup extends BasePage {
         @Override
         public void onClick() {
             Fragment results = new EntityListShowingFragment<>(
-                    RESULT_PANEL_ID, entityContainer().getPools(), getStringResource(
+                    RESULT_PANEL_ID, _entityContainer.getPools(), getStringResource(
                     "pools.header"));
             _results.replaceWith(results);
             _results = results;
@@ -272,7 +272,7 @@ public class PoolSelectionSetup extends BasePage {
         @Override
         public void onClick() {
             Fragment results = new EntityListShowingFragment<>(
-                    RESULT_PANEL_ID, entityContainer().getPoolGroups(), getStringResource(
+                    RESULT_PANEL_ID, _entityContainer.getPoolGroups(), getStringResource(
                     "poolGroups.header"));
             _results.replaceWith(results);
             _results = results;
@@ -290,7 +290,7 @@ public class PoolSelectionSetup extends BasePage {
         @Override
         public void onClick() {
             Fragment results = new EntityListShowingFragment<>(
-                    RESULT_PANEL_ID, entityContainer().getUnits(), getStringResource(
+                    RESULT_PANEL_ID, _entityContainer.getUnits(), getStringResource(
                     "units.header"));
             _results.replaceWith(results);
             _results = results;
@@ -308,7 +308,7 @@ public class PoolSelectionSetup extends BasePage {
         @Override
         public void onClick() {
             Fragment results = new EntityListShowingFragment<>(
-                    RESULT_PANEL_ID, entityContainer().getUnitGroups(), getStringResource(
+                    RESULT_PANEL_ID, _entityContainer.getUnitGroups(), getStringResource(
                     "unitGroups.header"));
             _results.replaceWith(results);
             _results = results;
@@ -327,7 +327,7 @@ public class PoolSelectionSetup extends BasePage {
         @Override
         public void onClick() {
             Fragment results = new EntityListShowingFragment<>(
-                    RESULT_PANEL_ID, entityContainer().getLinks(), getStringResource(
+                    RESULT_PANEL_ID, _entityContainer.getLinks(), getStringResource(
                     "links.header"));
             _results.replaceWith(results);
             _results = results;
@@ -345,7 +345,7 @@ public class PoolSelectionSetup extends BasePage {
 
         @Override
         public void onClick() {
-            Fragment results = new LinkListFragment(RESULT_PANEL_ID, entityContainer().getLinks());
+            Fragment results = new LinkListFragment(RESULT_PANEL_ID, _entityContainer.getLinks());
             _results.replaceWith(results);
             _results = results;
         }
@@ -445,6 +445,7 @@ public class PoolSelectionSetup extends BasePage {
                 @Override
                 protected void populateItem(ListItem<LinkEntity> item) {
                     LinkEntity entity = item.getModelObject();
+//                    item.add(new Label("_name", link.getName()));
                     Link link = new ParticularEntityLink<>("linkLink", entity);
                     link.add(new Label("_name", entity.getName()));
                     item.add(link);
@@ -467,8 +468,7 @@ public class PoolSelectionSetup extends BasePage {
                     String[] unitGroups = new String[4];
                     int counter = 0;
                     for (EntityReference unitGroup : list) {
-                        // just show the first 4 UnitGroups
-                        // -- more are not even a sensible configuration of dCache
+// just show the first 4 UnitGroups -- more are not even a sensible configuration of dCache
                         if (counter > 3) {
                             break;
                         }

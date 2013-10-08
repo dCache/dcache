@@ -16,7 +16,7 @@ import org.apache.wicket.protocol.https.RequireHttps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.dcache.webadmin.controller.PoolAdminService;
@@ -40,11 +40,13 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     public static final int RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS = 120;
     private static final Logger _log = LoggerFactory.getLogger(PoolAdmin.class);
     private static final long serialVersionUID = -3790266074783564167L;
+    private List<PoolAdminBean> _poolGroups = new ArrayList<>();
     private PoolAdminBean _currentPoolGroup;
     private String _command = "";
     private String _lastCommand = "";
 
     public PoolAdmin() {
+        getPoolGroupsAction();
         addMarkup();
     }
 
@@ -115,13 +117,12 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         return oneIsSelected;
     }
 
-    public List<PoolAdminBean> getPoolGroups() {
+    private void getPoolGroupsAction() {
         try {
-            return getPoolAdminService().getPoolGroups();
+            _poolGroups = getPoolAdminService().getPoolGroups();
         } catch (PoolAdminServiceException e) {
             error(getStringResource("error.noPoolGroups"));
             _log.error("could not retrieve Pool Groups: {}", e.getMessage());
-            return Collections.emptyList();
         }
     }
 
@@ -132,7 +133,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
     private ListView<PoolAdminBean> buildPoolGroupView(String id) {
         return new ListView<PoolAdminBean>(
                 id, new PropertyModel<List<PoolAdminBean>>(
-                this, "poolGroups")) {
+                this, "_poolGroups")) {
 
             private static final long serialVersionUID = 6196065833753259467L;
 
