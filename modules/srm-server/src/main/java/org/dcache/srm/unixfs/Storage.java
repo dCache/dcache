@@ -18,6 +18,8 @@ import org.ietf.jgss.GSSCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -504,7 +506,7 @@ public class Storage
   }
 
   /** */
-  @Override
+  @Override @Nonnull
   public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read) throws SRMException{
 
     /**@todo getFileMetaData() - process exception */
@@ -550,7 +552,7 @@ public class Storage
                       URI surl,
                       String clientHost,
                       long pinLifetime,
-                      long requestId,
+                      String requestToken,
                       PinCallbacks callbacks) {
     /**@todo - pinFile() - check authorization, do timeout */
 
@@ -1175,8 +1177,7 @@ public class Storage
 
     @Override
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
-        UnpinCallbacks callbacks,
-        long srmRequestId)   {
+        UnpinCallbacks callbacks, String requestToken)   {
         callbacks.Unpinned(fileId);
     }
 

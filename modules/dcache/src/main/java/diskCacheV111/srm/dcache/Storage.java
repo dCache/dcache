@@ -81,6 +81,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nonnull;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -959,7 +960,7 @@ public final class Storage
                         URI surl,
                         String clientHost,
                         long pinLifetime,
-                        long requestId,
+                        String requestToken,
                         PinCallbacks callbacks)
     {
         try {
@@ -968,7 +969,7 @@ public final class Storage
                                  clientHost,
                                  callbacks,
                                  pinLifetime,
-                                 requestId,
+                                 requestToken,
                                  _isOnlinePinningEnabled,
                                  _poolMonitor,
                                  _pnfsStub,
@@ -995,10 +996,10 @@ public final class Storage
     @Override
     public void unPinFileBySrmRequestId(SRMUser user, String fileId,
                                         UnpinCallbacks callbacks,
-                                        long srmRequestId)
+                                        String requestToken)
     {
         UnpinCompanion.unpinFileBySrmRequestId(((DcacheUser) user).getSubject(),
-                new PnfsId(fileId), srmRequestId, callbacks, _pinManagerStub);
+                new PnfsId(fileId), requestToken, callbacks, _pinManagerStub);
     }
 
     @Override
@@ -1533,7 +1534,7 @@ public final class Storage
         }
     }
 
-    @Override
+    @Override @Nonnull
     public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read)
         throws SRMException
     {

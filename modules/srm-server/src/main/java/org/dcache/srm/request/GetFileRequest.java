@@ -481,7 +481,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                              surl,
                              getContainerRequest().getClient_host(),
                              lifetime,
-                             getRequestId(),
+                             String.valueOf(getRequestId()),
                              new ThePinCallbacks(getId()));
     }
 
@@ -630,6 +630,32 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         wlock();
         try {
             this.fileMetaData = fileMetaData;
+        } finally {
+            wunlock();
+        }
+    }
+
+    public TReturnStatus release()
+    {
+        wlock();
+        try {
+            State state = getState();
+            switch (state) {
+            case READY:
+                setState(State.DONE, "TURL released");
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+            case DONE:
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+            case CANCELED:
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL has been aborted and cannot be released");
+            case FAILED:
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, "Pinning failed");
+            default:
+                setState(State.CANCELED, "Aborted by srmReleaseFile request");
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL is not yet pinned, pinning aborted");
+            }
+        } catch (IllegalStateTransition e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
         } finally {
             wunlock();
         }

@@ -76,6 +76,8 @@ documents or software obtained from this server.
 package org.dcache.srm;
 
 
+import javax.annotation.Nonnull;
+
 import java.net.URI;
 import java.util.List;
 
@@ -190,9 +192,9 @@ public interface AbstractStorageElement {
      * @param network address from which file will be read
      *        null, if unknown
      * @param pinLifetime Requested pin operation lifetime in millis
-     * @param requestId - ping will save request id
-     *        so that unping by file name and request id can take place
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
+     * @param requestToken - pin will save request token
+     *        so that unpinning by file name and request token can take place
+     * @param callbacks This interface is used for asynchronous notification of SRM of the
      * various actions performed to "pin" file in the storage
      */
 
@@ -201,7 +203,7 @@ public interface AbstractStorageElement {
            URI surl,
            String clientHost,
            long pinLifetime,
-           long requestId,
+           String requestToken,
            PinCallbacks callbacks);
 
     /**
@@ -345,6 +347,7 @@ public interface AbstractStorageElement {
      * @throws SRMInternalErrorException in case of transient errors
      * @throws SRMException for any other error
      */
+    @Nonnull
     public FileMetaData getFileMetaData(SRMUser user,URI surl,boolean read)
         throws SRMException;
 
@@ -372,11 +375,11 @@ public interface AbstractStorageElement {
      * @param fileId Storage Element internal file ID
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to "unpin" file in the storage
-     * @param srmRequestId id given to the storage  during pinFile operation
+     * @param requestToken id given to the storage  during pinFile operation
      */
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
-            long srmRequestId);
+            String requestToken);
     /** Unpin all pins on this file that user has permission to unpin
      * @param user Authorization Record of the user
      * @param fileId Storage Element internal file ID

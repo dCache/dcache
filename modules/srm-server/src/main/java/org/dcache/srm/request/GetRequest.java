@@ -85,6 +85,7 @@ import java.util.List;
 
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -95,6 +96,7 @@ import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
 import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.TRequestType;
+import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 
 /*
@@ -409,4 +411,63 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         return TRequestType.PREPARE_TO_GET;
     }
 
+    public TSURLReturnStatus[] release()
+            throws SRMInternalErrorException
+    {
+        int len = getNumOfFileRequest();
+        TSURLReturnStatus[] surlReturnStatuses = new TSURLReturnStatus[len];
+        logger.debug("releaseFiles, releasing all {} files", len);
+        List<GetFileRequest> requests = getFileRequests();
+        for (int i = 0; i < len; i++) {
+            GetFileRequest fr = requests.get(i);
+            org.apache.axis.types.URI surl;
+            try {
+                surl = new org.apache.axis.types.URI(fr.getSurlString());
+            } catch (org.apache.axis.types.URI.MalformedURIException e) {
+                throw new RuntimeException("Failed to convert Java URI to Axis URI. " +
+                        "Please report this to support@dcache.org: " + e.getMessage(), e);
+            }
+            surlReturnStatuses[i] = new TSURLReturnStatus(surl, fr.release());
+        }
+
+        // we do this to make the srm update the status of the request if it changed
+        // getTReturnStatus should be called before we get the
+        // statuses of the each file, as the call to the
+        // getTReturnStatus() can now trigger the update of the statuses
+        // in particular move to the READY state, and TURL availability
+        getTReturnStatus();
+
+        return surlReturnStatuses;
+    }
+
+    public TSURLReturnStatus[] releaseFiles(org.apache.axis.types.URI[] surls)
+            throws SRMInternalErrorException
+    {
+        SRMUser user = getUser();
+        int len = surls.length;
+        TSURLReturnStatus[] surlReturnStatuses = new TSURLReturnStatus[len];
+        for (int i = 0; i < len; i++) {
+            org.apache.axis.types.URI surl = surls[i];
+            URI uri = URI.create(surl.toString());
+            logger.debug("releaseFiles, releasing {}", surl);
+            try {
+                GetFileRequest fr = getFileRequestBySurl(uri);
+                surlReturnStatuses[i] = new TSURLReturnStatus(surl, fr.release());
+            } catch (SRMFileRequestNotFoundException e) {
+                String requestToken = String.valueOf(getId());
+                TReturnStatus status = BringOnlineFileRequest.unpinBySURLandRequestToken(
+                        getStorage(), user, requestToken, uri);
+                surlReturnStatuses[i] = new TSURLReturnStatus(surl, status);
+            }
+        }
+
+        // we do this to make the srm update the status of the request if it changed
+        // getTReturnStatus should be called before we get the
+        // statuses of the each file, as the call to the
+        // getTReturnStatus() can now trigger the update of the statuses
+        // in particular move to the READY state, and TURL availability
+        getTReturnStatus();
+
+        return surlReturnStatuses;
+    }
 }

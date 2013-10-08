@@ -86,7 +86,10 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.UnpinCallbacks;
@@ -403,7 +406,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                              surl,
                              getContainerRequest().getClient_host(),
                              desiredPinLifetime,
-                             getRequestId(),
+                             String.valueOf(getRequestId()),
                              new ThePinCallbacks(getId()));
     }
 
@@ -441,51 +444,54 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         return surl.equals(getSurl());
     }
 
-    public TSURLReturnStatus releaseFile() throws SRMInvalidRequestException {
-        TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
+    public TReturnStatus release(SRMUser user) throws SRMInternalErrorException
+    {
+        String fileId;
+        String pinId;
+
+        wlock();
         try {
-            surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
-        } catch (Exception e) {
-            logger.error(e.toString());
-            surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_REQUEST, "wrong surl format"));
-            return surlReturnStatus;
-        }
-        State state = getState();
-        if(!State.isFinalState(state)) {
-            logger.error("Canceled by the srmReleaseFile");
-            try {
-                this.setState(State.CANCELED, "Canceled by the srmReleaseFile");
-            } catch (IllegalStateTransition ist) {
-                logger.warn("Illegal State Transition : " +ist.getMessage());
-            }
-            surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE,
-                    "srmBringOnline for this file has not completed yet, pending srmBringOnline canceled"));
-           return surlReturnStatus;
-
-        }
-
-        if(getFileId() != null && getPinId() != null) {
-            TheUnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
-            logger.debug("srmReleaseFile, unpinning fileId= "+
-                    getFileId()+" pinId = "+getPinId());
-            getStorage().unPinFile(getUser(),getFileId(),callbacks, getPinId());
-            try {
-                callbacks.waitCompleteion(60000); //one minute
-                if(callbacks.success) {
-                    setPinId(null);
-                    this.saveJob();
-                    surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
-                    return surlReturnStatus;
+            State state = getState();
+            switch (state) {
+            case DONE:
+                fileId = getFileId();
+                pinId = getPinId();
+                if (fileId == null || pinId == null) {
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, "SURL is not pinned");
                 }
-            } catch( InterruptedException ie) {
-                logger.error(ie.toString());
+                // Unpinning is done below, outside the lock
+                break;
+            case CANCELED:
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL has been aborted and cannot be released");
+            case FAILED:
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, "Pinning failed");
+            default:
+                logger.warn("Canceled by the srmReleaseFiles");
+                setState(State.CANCELED, "Aborted by srmReleaseFile request");
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL is not yet pinned, pinning aborted");
             }
+        } catch (IllegalStateTransition e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
+        } finally {
+            wunlock();
+        }
 
-            surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, "srmReleaseFile failed: "+callbacks.getError()));
-            return surlReturnStatus;
-        } else {
-            surlReturnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, "srmReleaseFile failed: file is not pinned"));
-            return surlReturnStatus;
+        TheUnpinCallbacks callbacks = new TheUnpinCallbacks(getId());
+        logger.debug("srmReleaseFile, unpinning fileId={} pinId={}", fileId, pinId);
+        getStorage().unPinFile(user, fileId, callbacks, pinId);
+        try {
+            callbacks.waitCompletion(60000);
+            if (!callbacks.isDone()) {
+                throw new SRMInternalErrorException("Operation timed out");
+            }
+            if (!callbacks.success) {
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, "Failed to unpin SURL: " + callbacks.getError());
+            }
+            setPinId(null);
+            this.saveJob();
+            return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("Operation interrupted");
         }
     }
 
@@ -841,7 +847,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         public synchronized boolean  isSuccess() {
             return done && success;
         }
-        public  boolean waitCompleteion(long timeout) throws InterruptedException {
+        public  boolean waitCompletion(long timeout) throws InterruptedException {
            long starttime = System.currentTimeMillis();
             while(true) {
                 synchronized(this) {
@@ -872,75 +878,74 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         public synchronized  boolean  isDone() {
             return done;
         }
-
-
-    }
-    public static void unpinBySURLandRequestId(
-        AbstractStorageElement storage,
-        final SRMUser user,
-        final long id,
-        final URI surl) throws SRMException {
-
-        FileMetaData fmd =
-            storage.getFileMetaData(user,surl,true);
-        String fileId = fmd.fileId;
-        if(fileId != null) {
-            BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =
-                new BringOnlineFileRequest.TheUnpinCallbacks(null);
-            storage.unPinFileBySrmRequestId(user,
-                fileId,unpinCallbacks,id);
-          try {
-                unpinCallbacks.waitCompleteion(60000); //one minute
-                if(unpinCallbacks.isDone()) {
-
-                    if(unpinCallbacks.isSuccess()) {
-                    } else {
-                        throw new SRMException("unpinning of " + surl + " by SrmRequestId " + id +
-                                " failed :" + unpinCallbacks.getError());
-                    }
-                } else {
-                    throw new SRMException("unpinning of "+surl+" by SrmRequestId "+id+
-                        " took too long");
-
-                }
-            } catch( InterruptedException ie) {
-                logger.error(ie.toString());
-                throw new SRMException("unpinning of "+surl+" by SrmRequestId "+id+
-                        " got interrupted");
-            }
-         }
     }
 
-    public static void unpinBySURL(
-        AbstractStorageElement storage,
-        final SRMUser user,
-        final URI surl)
-        throws SRMException {
-        FileMetaData fmd =
-            storage.getFileMetaData(user,surl,true);
-        String fileId = fmd.fileId;
-        if(fileId != null) {
-            BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =
+    public static TReturnStatus unpinBySURLandRequestToken(
+            AbstractStorageElement storage, SRMUser user, String requestToken, URI surl)
+            throws SRMInternalErrorException
+    {
+        String fileId;
+        try {
+            fileId = storage.getFileMetaData(user, surl, true).fileId;
+        } catch (SRMInternalErrorException e) {
+            throw e;
+        } catch (SRMAuthorizationException e) {
+            return new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+        } catch (SRMInvalidPathException e) {
+            return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+        } catch (SRMException e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
+        }
+
+        BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =
                 new BringOnlineFileRequest.TheUnpinCallbacks(null);
-            storage.unPinFile(user,
-                fileId,unpinCallbacks);
-          try {
-                unpinCallbacks.waitCompleteion(60000); //one minute
-                if(unpinCallbacks.isDone()) {
-                    if(unpinCallbacks.isSuccess()) {
-                    } else {
-                        throw new SRMException("unpinning of "+surl+
-                            " failed :"+unpinCallbacks.getError());
-                    }
-                } else {
-                        throw new SRMException("unpinning of "+surl+
-                            " took too long");
-                }
-            } catch( InterruptedException ie) {
-                logger.error(ie.toString());
-                throw new SRMException("unpinning of "+surl+
-                        " got interrupted");
+        storage.unPinFileBySrmRequestId(user, fileId, unpinCallbacks, requestToken);
+        try {
+            unpinCallbacks.waitCompletion(60000);
+            if (!unpinCallbacks.isDone()) {
+                throw new SRMInternalErrorException("Operation timed out");
             }
-         }
+            if (!unpinCallbacks.isSuccess()) {
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, "Failed to unpin: " + unpinCallbacks.getError());
+            }
+        } catch (InterruptedException ie) {
+            logger.error(ie.toString());
+            throw new SRMInternalErrorException("Operation interrupted");
+        }
+        return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+    }
+
+    public static TReturnStatus unpinBySURL(AbstractStorageElement storage, SRMUser user, URI surl)
+            throws SRMInternalErrorException
+    {
+        String fileId;
+        try {
+            fileId = storage.getFileMetaData(user, surl, true).fileId;
+        } catch (SRMInternalErrorException e) {
+            throw e;
+        } catch (SRMAuthorizationException e) {
+            return new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+        } catch (SRMInvalidPathException e) {
+            return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+        } catch (SRMException e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
+        }
+
+        BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =
+                new BringOnlineFileRequest.TheUnpinCallbacks(null);
+        storage.unPinFile(user, fileId, unpinCallbacks);
+        try {
+            unpinCallbacks.waitCompletion(60000); //one minute
+            if (!unpinCallbacks.isDone()) {
+                throw new SRMInternalErrorException("Operation timed out");
+            }
+            if (!unpinCallbacks.isSuccess()) {
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, "Failed to unpin: " + unpinCallbacks.getError());
+            }
+        } catch (InterruptedException ie) {
+            logger.error(ie.toString());
+            throw new SRMInternalErrorException("Operation interrupted");
+        }
+        return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
     }
 }

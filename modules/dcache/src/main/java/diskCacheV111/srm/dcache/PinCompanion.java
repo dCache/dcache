@@ -110,7 +110,7 @@ public class PinCompanion
     private final String _clientHost;
     private final PinCallbacks _callbacks;
     private final long _pinLifetime;
-    private final long _requestId;
+    private final String _requestToken;
     private final CellStub _pnfsStub;
     private final CellStub _poolManagerStub;
     private final CellStub _pinManagerStub;
@@ -247,8 +247,7 @@ public class PinCompanion
         public PinningState() {
             PinManagerPinMessage msg =
                 new PinManagerPinMessage(_attributes, getProtocolInfo(),
-                                         String.valueOf(_requestId),
-                                         _pinLifetime);
+                                         _requestToken, _pinLifetime);
             msg.setSubject(_subject);
             _pinManagerStub.send(msg, PinManagerPinMessage.class,
                                  new ThreadManagerMessageCallback(this));
@@ -274,7 +273,7 @@ public class PinCompanion
                          String clientHost,
                          PinCallbacks callbacks,
                          long pinLifetime,
-                         long requestId,
+                         String requestToken,
                          boolean isOnlinePinningEnabled,
                          PoolMonitor poolMonitor,
                          CellStub pnfsStub,
@@ -286,7 +285,7 @@ public class PinCompanion
         _clientHost = clientHost;
         _callbacks = callbacks;
         _pinLifetime = pinLifetime;
-        _requestId = requestId;
+        _requestToken = requestToken;
         _isOnlinePinningEnabled = isOnlinePinningEnabled;
         _poolMonitor = poolMonitor;
         _pnfsStub = pnfsStub;
@@ -345,7 +344,7 @@ public class PinCompanion
                                        String clientHost,
                                        PinCallbacks callbacks,
                                        long pinLifetime,
-                                       long requestId,
+                                       String requestToken,
                                        boolean isOnlinePinningEnabled,
                                        PoolMonitor poolMonitor,
                                        CellStub pnfsStub,
@@ -353,7 +352,7 @@ public class PinCompanion
                                        CellStub pinManagerStub)
     {
         return new PinCompanion(subject, path, clientHost, callbacks,
-                                pinLifetime, requestId, isOnlinePinningEnabled,
+                                pinLifetime, requestToken, isOnlinePinningEnabled,
                                 poolMonitor,
                                 pnfsStub, poolManagerStub, pinManagerStub);
     }

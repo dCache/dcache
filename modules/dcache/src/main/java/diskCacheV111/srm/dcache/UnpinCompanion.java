@@ -180,7 +180,7 @@ public class UnpinCompanion
 
     public static void unpinFileBySrmRequestId(Subject subject,
                                                PnfsId pnfsId,
-                                               long  srmRequestId,
+                                               String requestToken,
                                                UnpinCallbacks callbacks,
                                                CellStub pinManagerStub)
     {
@@ -188,7 +188,7 @@ public class UnpinCompanion
         UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
-        msg.setRequestId(String.valueOf(srmRequestId));
+        msg.setRequestId(requestToken);
         msg.setSubject(subject);
         pinManagerStub.send(msg, PinManagerUnpinMessage.class,
                             new ThreadManagerMessageCallback(companion));
