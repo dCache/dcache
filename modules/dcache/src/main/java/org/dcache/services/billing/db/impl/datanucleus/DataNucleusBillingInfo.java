@@ -63,6 +63,7 @@ import com.google.common.base.Strings;
 import org.datanucleus.FetchPlan;
 
 import javax.jdo.JDOHelper;
+import javax.jdo.JDOUserException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
@@ -82,6 +83,7 @@ import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.db.impl.BaseBillingInfoAccess;
+import org.dcache.services.billing.histograms.data.IHistogramData;
 
 /**
  * Implements {@link IBillingInfoAccess} using <href
@@ -96,7 +98,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         = "org/dcache/services/billing/db/datanucleus.properties";
 
     private PersistenceManagerFactory pmf;
-    private PersistenceManager insertManager;
 
     private static Query createQuery(PersistenceManager pm, Class<?> type,
                     String filter, String parameters) {
@@ -124,6 +125,31 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     }
 
     @Override
+    public void commit(Collection<IHistogramData> data)
+                    throws BillingQueryException {
+        PersistenceManager insertManager = pmf.getPersistenceManager();
+        Transaction tx = insertManager.currentTransaction();
+        try {
+            tx.begin();
+            insertManager.makePersistentAll(data);
+            tx.commit();
+        } catch (JDOUserException t) {
+            printSQLException("committing  " + data.size() + " cached objects",
+                            t);
+            throw new BillingQueryException(t.getMessage(), t.getCause());
+        } finally {
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                /*
+                 * closing is necessary in order to avoid memory leaks
+                 */
+                insertManager.close();
+            }
+        }
+    }
+
+    @Override
     public <T> Collection<T> get(Class<T> type) throws BillingQueryException {
         return get(type, null, null, (Object) null);
     }
@@ -138,9 +164,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     public <T> Collection<T> get(Class<T> type, String filter,
                     String parameters, Object... values)
                     throws BillingQueryException {
-        if (!isRunning()) {
-            return null;
-        }
         PersistenceManager readManager = pmf.getPersistenceManager();
         Transaction tx = readManager.currentTransaction();
         try {
@@ -158,7 +181,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                             type, filter, parameters,
                             values == null ? null : Arrays.asList(values) );
             return detached;
-        } catch (Exception t) {
+        } catch (JDOUserException t) {
             String message = "get: " + type + ", " + filter + ", " + parameters
                             + ", " + Arrays.asList(values);
             printSQLException(message, t);
@@ -208,47 +231,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
     }
 
-    @Override
-    public <T> void put(T data) throws BillingQueryException {
-        if (!isRunning()) {
-            return;
-        }
-        synchronized (this) {
-            Transaction tx = null;
-            try {
-                if (insertManager == null) {
-                    logger.trace("put, new write manager ...");
-                    insertManager = pmf.getPersistenceManager();
-                }
-                tx = insertManager.currentTransaction();
-                if (!tx.isActive()) {
-                    tx.setIsolationLevel("serializable");
-                    tx.begin();
-                }
-                insertManager.makePersistent(data);
-                insertCount++;
-
-            } catch (Exception e) {
-                if (tx != null) {
-                    tx.rollback();
-                }
-                printSQLException("put failed for " + data, e);
-                throw new BillingQueryException(e);
-            } catch (Throwable t) {
-                if (tx != null) {
-                    tx.rollback();
-                }
-                throw t;
-            }
-            /*
-             * we do not rollback active transactions under finally{...} because
-             * the transaction normally remains open until the committer thread
-             * closes it
-             */
-        }
-
-        doCommitIfNeeded(false);
-    }
 
     /**
      * Does bulk deletes. Properties file must set
@@ -256,9 +238,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      */
     @Override
     public <T> long remove(Class<T> type) throws BillingQueryException {
-        if (!isRunning()) {
-            return 0;
-        }
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
         logger.trace("remove all instances of {}", type);
@@ -272,7 +251,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             logger.trace("successfully removed " + removed
                             + " entries of type " + type);
             return removed;
-        } catch (Exception t) {
+        } catch (JDOUserException t) {
             printSQLException("remove all instances of " + type, t);
             throw new BillingQueryException(t);
         } finally {
@@ -305,9 +284,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     @Override
     public <T> long remove(Class<T> type, String filter, String parameters,
                     Object... values) throws BillingQueryException {
-        if (!isRunning()) {
-            return 0;
-        }
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
         long removed;
@@ -323,7 +299,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             logger.trace("successfully removed {} entries of type {}", removed,
                             type);
             return removed;
-        } catch (Exception t) {
+        } catch (JDOUserException t) {
             String message = "remove: " + type + ", " + filter + ", "
                             + parameters + ", " + Arrays.asList(values);
             printSQLException(message, t);
@@ -344,41 +320,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     @Override
     public void setPropertiesPath(String propetiesPath) {
         propertiesPath = propetiesPath;
-    }
-
-    @Override
-    protected void doCommitIfNeeded(boolean force) throws BillingQueryException {
-        synchronized (this) {
-            logger.trace("doCommitIfNeeded, count={}", insertCount);
-            if (force || insertCount >= maxInsertsBeforeCommit) {
-                Transaction tx = null;
-                try {
-                    if (insertManager != null) {
-                        logger.trace("committing {} cached objects",
-                                        insertCount);
-                        tx = insertManager.currentTransaction();
-                        tx.commit();
-                    }
-                } catch (Exception t) {
-                    printSQLException("committing  " + insertCount
-                                    + " cached objects", t);
-                    throw new BillingQueryException(t);
-                } finally {
-                    try {
-                        rollbackIfActive(tx);
-                    } finally {
-                        /*
-                         * closing is necessary in order to avoid memory leaks
-                         */
-                        if (insertManager != null) {
-                            insertManager.close();
-                            insertManager = null;
-                        }
-                        insertCount = 0;
-                    }
-                }
-            }
-        }
     }
 
     /**

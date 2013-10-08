@@ -57,94 +57,84 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.db;
+package org.dcache.services.billing.db.impl;
 
-import java.util.Collection;
-
+import org.dcache.services.billing.db.data.DoorRequestData;
+import org.dcache.services.billing.db.data.MoverData;
+import org.dcache.services.billing.db.data.PoolHitData;
+import org.dcache.services.billing.db.data.StorageData;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.histograms.data.IHistogramData;
 
 /**
- * Defines DAO API for interacting with billing information.
+ * Provides direct insertion into the queues without any special handling.
  *
  * @author arossi
  */
-public interface IBillingInfoAccess {
+public class DirectQueueDelegate extends QueueDelegate {
 
-    void close();
+    @Override
+    protected void handlePut(DoorRequestData data)
+                    throws BillingQueryException {
+        if (!dropMessagesAtLimit) {
+            try {
+                doorQueue.put(data);
+            } catch (InterruptedException t) {
+                throw new BillingQueryException(t.getMessage(), t.getCause());
+            }
+        } else if (!doorQueue.offer(data)) {
+            processDroppedData(data);
+        }
+    }
 
-    /**
-     * @param type
-     *            class of object to be retrieved
-     * @return all existing objects of this type
-     */
-    <T> Collection<T> get(Class<T> type) throws BillingQueryException;
+    @Override
+    protected void handlePut(MoverData data) throws BillingQueryException {
+        if (!dropMessagesAtLimit) {
+            try {
+                moverQueue.put(data);
+            } catch (InterruptedException t) {
+                throw new BillingQueryException(t.getMessage(), t.getCause());
+            }
+        } else if (!moverQueue.offer(data)) {
+            processDroppedData(data);
+        }
+    }
 
-    /**
-     * @param type
-     *            class of object to be retrieved
-     * @param filter
-     *            expression
-     * @param values
-     *            to bind to filter
-     * @return all matching objects of this type
-     */
-    <T> Collection<T> get(Class<T> type, String filter, Object... values)
-                    throws BillingQueryException;
+    @Override
+    protected void handlePut(PoolHitData data) throws BillingQueryException {
+        if (!dropMessagesAtLimit) {
+            try {
+                hitQueue.put(data);
+            } catch (InterruptedException t) {
+                throw new BillingQueryException(t.getMessage(), t.getCause());
+            }
+        } else if (!hitQueue.offer(data)) {
+            processDroppedData(data);
+        }
+    }
 
-    /**
-     * @param type
-     *            class of object to be retrieved
-     * @param filter
-     *            expression
-     * @param type
-     *            definitions for variables in filter
-     * @param values
-     *            to bind to parameters
-     * @return all matching objects of this type
-     */
-    <T> Collection<T> get(Class<T> type, String filter, String parameters,
-                    Object... values) throws BillingQueryException;
+    @Override
+    protected void handlePut(StorageData data) throws BillingQueryException {
+        if (!dropMessagesAtLimit) {
+            try {
+                storageQueue.put(data);
+            } catch (InterruptedException t) {
+                throw new BillingQueryException(t.getMessage(), t.getCause());
+            }
+        } else if (!storageQueue.offer(data)) {
+            processDroppedData(data);
+        }
+    }
 
-    void initialize() throws BillingInitializationException;
+    @Override
+    protected void initializeInternal() throws BillingInitializationException {
+    }
 
-    /**
-     * @param data
-     *            mapped type to be stored
-     */
-    void put(IHistogramData data) throws BillingQueryException;
-
-    /**
-     * @param type
-     *            class of object to be deleted
-     * @return number of objects deleted
-     */
-    <T> long remove(Class<T> type) throws BillingQueryException;
-
-    /**
-     * @param type
-     *            class of object to be deleted
-     * @param filter
-     *            expression
-     * @param values
-     *            to bind to parameters
-      * @return number of objects deleted
-     */
-    <T> long remove(Class<T> type, String filter, Object... values)
-                    throws BillingQueryException;
-
-    /**
-     * @param type
-     *            class of object to be deleted
-     * @param filter
-     *            expression
-     * @param type
-     *            definitions for variables in filter
-     * @param values
-     *            to bind to parameters
-      * @return number of objects deleted
-     */
-    <T> long remove(Class<T> type, String filter, String parameters,
-                    Object... values) throws BillingQueryException;
+    private void processDroppedData(IHistogramData data) {
+        dropped.incrementAndGet();
+        logger.info("encountered max queue limit; "
+                        + "{} entries have been dropped", dropped.get());
+        logger.debug("queue limit prevented storage of {}", data);
+    }
 }
