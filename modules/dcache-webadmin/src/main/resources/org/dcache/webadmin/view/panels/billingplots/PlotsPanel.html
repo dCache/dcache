@@ -1,4 +1,3 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
 </head>
@@ -9,106 +8,234 @@
         </h1>
         <div class="clear">&nbsp;</div>
         <table class="plots">
-                <thead>
-                    <tr>
-                        <th>Plot Type</th>
-                        <th>24-Hour</th>
-                        <th>Weekly</th>
-                        <th>Monthly</th>
-                        <th>Yearly</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-					<td><wicket:message key="bytes.read"></wicket:message></td>
-					<td><a href="#" wicket:id="link_00"><img wicket:id="image_00" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_01"><img wicket:id="image_01" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_02"><img wicket:id="image_02" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_03"><img wicket:id="image_03" width="80%" /></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><wicket:message key="bytes.written"></wicket:message></td>
-                        <td><a href="#" wicket:id="link_10"><img wicket:id="image_10" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_11"><img wicket:id="image_11" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_12"><img wicket:id="image_12" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_13"><img wicket:id="image_13" width="80%" /></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><wicket:message key="bytes.p2p"></wicket:message></td>
-                        <td><a href="#" wicket:id="link_20"><img wicket:id="image_20" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_21"><img wicket:id="image_21" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_22"><img wicket:id="image_22" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_23"><img wicket:id="image_23" width="80%" /></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><wicket:message key="transfers.read"></wicket:message></td>
-                        <td><a href="#" wicket:id="link_30"><img wicket:id="image_30" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_31"><img wicket:id="image_31" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_32"><img wicket:id="image_32" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_33"><img wicket:id="image_33" width="80%" /></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><wicket:message key="transfers.write"></wicket:message></td>
-                        <td><a href="#" wicket:id="link_40"><img wicket:id="image_40" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_41"><img wicket:id="image_41" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_42"><img wicket:id="image_42" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_43"><img wicket:id="image_43" width="80%" /></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><wicket:message key="transfers.p2p"></wicket:message></td>
-                        <td><a href="#" wicket:id="link_50"><img wicket:id="image_50" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_51"><img wicket:id="image_51" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_52"><img wicket:id="image_52" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_53"><img wicket:id="image_53" width="80%" /></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><wicket:message key="connection.time"></wicket:message></td>
-                        <td><a href="#" wicket:id="link_60"><img wicket:id="image_60" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_61"><img wicket:id="image_61" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_62"><img wicket:id="image_62" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_63"><img wicket:id="image_63" width="80%" /></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><wicket:message key="cache.hits"></wicket:message></td>
-                        <td><a href="#" wicket:id="link_70"><img wicket:id="image_70" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_71"><img wicket:id="image_71" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_72"><img wicket:id="image_72" width="80%" /></a>
-                        </td>
-                        <td><a href="#" wicket:id="link_73"><img wicket:id="image_73" width="80%" /></a>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <thead>
+                <tr>
+                    <th>Plot Type</th>
+                    <th>24-Hour</th>
+                    <th>Weekly</th>
+                    <th>Monthly</th>
+                    <th>Yearly</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><wicket:message key="bytes.read"></wicket:message></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_00">
+                        <img
+                            wicket:id="image_00"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_01">
+                        <img
+                            wicket:id="image_01"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_02">
+                        <img
+                            wicket:id="image_02"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_03">
+                        <img
+                            wicket:id="image_03"
+                            width="80%" /></a></td>
+                </tr>
+                <tr>
+                    <td><wicket:message key="bytes.written"></wicket:message></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_10">
+                        <img
+                            wicket:id="image_10"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_11">
+                        <img
+                            wicket:id="image_11"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_12">
+                        <img
+                            wicket:id="image_12"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_13">
+                        <img
+                            wicket:id="image_13"
+                            width="80%" /></a></td>
+                </tr>
+                <tr>
+                    <td><wicket:message key="bytes.p2p"></wicket:message></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_20">
+                        <img
+                            wicket:id="image_20"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_21">
+                        <img
+                            wicket:id="image_21"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_22">
+                        <img
+                            wicket:id="image_22"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_23">
+                        <img
+                            wicket:id="image_23"
+                            width="80%" /></a></td>
+                </tr>
+                <tr>
+                    <td><wicket:message key="transfers.read"></wicket:message></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_30">
+                        <img
+                            wicket:id="image_30"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_31">
+                        <img
+                            wicket:id="image_31"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_32">
+                        <img
+                            wicket:id="image_32"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_33">
+                        <img
+                            wicket:id="image_33"
+                            width="80%" /></a></td>
+                </tr>
+                <tr>
+                    <td><wicket:message key="transfers.write"></wicket:message></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_40">
+                        <img
+                            wicket:id="image_40"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_41">
+                        <img
+                            wicket:id="image_41"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_42">
+                        <img
+                            wicket:id="image_42"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_43">
+                        <img
+                            wicket:id="image_43"
+                            width="80%" /></a></td>
+                </tr>
+                <tr>
+                    <td><wicket:message key="transfers.p2p"></wicket:message></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_50">
+                        <img
+                            wicket:id="image_50"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_51">
+                        <img
+                            wicket:id="image_51"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_52">
+                        <img
+                            wicket:id="image_52"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_53">
+                        <img
+                            wicket:id="image_53"
+                            width="80%" /></a></td>
+                </tr>
+                <tr>
+                    <td><wicket:message key="connection.time"></wicket:message></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_60">
+                        <img
+                            wicket:id="image_60"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_61">
+                        <img
+                            wicket:id="image_61"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_62">
+                        <img
+                            wicket:id="image_62"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_63">
+                        <img
+                            wicket:id="image_63"
+                            width="80%" /></a></td>
+                </tr>
+                <tr>
+                    <td><wicket:message key="cache.hits"></wicket:message></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_70">
+                        <img
+                            wicket:id="image_70"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_71">
+                        <img
+                            wicket:id="image_71"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_72">
+                        <img
+                            wicket:id="image_72"
+                            width="80%" /></a></td>
+                    <td><a
+                        href="#"
+                        wicket:id="link_73">
+                        <img
+                            wicket:id="image_73"
+                            width="80%" /></a></td>
+                </tr>
+            </tbody>
+        </table>
     </wicket:panel>
 </body>
 </html>

@@ -1,43 +1,53 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="TapeTransferQueue.css" rel="stylesheet" type="text/css"  />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="TapeTransferQueue.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <h1><wicket:message key="header1"></wicket:message></h1>
-    <span wicket:id="feedback"/>
-    <table id="sortable">
-        <thead>
-            <tr>
-                <th><wicket:message key="TapeTransferQueue.pnfsid.header"></wicket:message></th>
-    <th><wicket:message key="TapeTransferQueue.subnet.header"></wicket:message></th>
-    <th><wicket:message key="TapeTransferQueue.candidate.header"></wicket:message></th>
-    <th><wicket:message key="TapeTransferQueue.started.header"></wicket:message></th>
-    <th><wicket:message key="TapeTransferQueue.clients.header"></wicket:message></th>
-    <th><wicket:message key="TapeTransferQueue.retries.header"></wicket:message></th>
-    <th><wicket:message key="TapeTransferQueue.status.header"></wicket:message>
-    </th>
-    </tr>
-    </thead>
-    <tbody>
-        <tr wicket:id="TapeTransferQueueListview">
-            <td><span wicket:id="pnfsid"></span></td>
-            <td><span wicket:id="subnet"></span></td>
-            <td><span wicket:id="candidate"></span></td>
-            <td><span wicket:id="started"></span></td>
-            <td><span wicket:id="clients"></span></td>
-            <td><span wicket:id="retries"></span></td>
-            <td><span wicket:id="status"></span>
-            </td>
-        </tr>
-    </tbody>
-    </table>
-</wicket:extend>
+    <wicket:extend>
+        <h1>
+            <wicket:message key="header1"></wicket:message>
+        </h1>
+        <span wicket:id="feedback" />
+        <table id="sortable">
+            <thead>
+                <tr>
+                    <th><wicket:message
+                            key="TapeTransferQueue.pnfsid.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="TapeTransferQueue.subnet.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="TapeTransferQueue.candidate.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="TapeTransferQueue.started.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="TapeTransferQueue.clients.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="TapeTransferQueue.retries.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="TapeTransferQueue.status.header"></wicket:message>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr wicket:id="TapeTransferQueueListview">
+                    <td><span wicket:id="pnfsid"></span></td>
+                    <td><span wicket:id="subnet"></span></td>
+                    <td><span wicket:id="candidate"></span></td>
+                    <td><span wicket:id="started"></span></td>
+                    <td><span wicket:id="clients"></span></td>
+                    <td><span wicket:id="retries"></span></td>
+                    <td><span wicket:id="status"></span></td>
+                </tr>
+            </tbody>
+        </table>
+    </wicket:extend>
 </body>
 </html>
-

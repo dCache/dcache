@@ -1,27 +1,40 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="DCacheServices.css" rel="stylesheet" type="text/css"  />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="DCacheServices.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <h1><span wicket:id="dCacheInstanceName"></span></h1>
-    <div class="clear">&nbsp;</div>
-    <span wicket:id="feedback"></span>
-    <p><wicket:message key="loginLinkMessage"></wicket:message>
-    <a href="#" wicket:id="loginLink">
-        <img wicket:id="loginImage" class="login"></img>
-
-    </a></p>
-<p><wicket:message key="logoutLinkMessage"></wicket:message>
-<a href="#" wicket:id="logoutLink">
-    <img wicket:id="logoutImage" class="logout"></img>
-</a></p>
-</wicket:extend>
+    <wicket:extend>
+        <h1>
+            <span wicket:id="dCacheInstanceName"></span>
+        </h1>
+        <div class="clear">&nbsp;</div>
+        <span wicket:id="feedback"></span>
+        <p>
+            <wicket:message key="loginLinkMessage"></wicket:message>
+            <a
+                href="#"
+                wicket:id="loginLink"> <img
+                wicket:id="loginImage"
+                class="login"></img>
+            </a>
+        </p>
+        <p>
+            <wicket:message key="logoutLinkMessage"></wicket:message>
+            <a
+                href="#"
+                wicket:id="logoutLink"> <img
+                wicket:id="logoutImage"
+                class="logout"></img>
+            </a>
+        </p>
+    </wicket:extend>
 </body>
 </html>
-

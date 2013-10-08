@@ -1,66 +1,83 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="PoolGroupView.css" rel="stylesheet" type="text/css"  />
-            <script type="text/javascript" src="js/infobox.js"></script>
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="PoolGroupView.css"
+            rel="stylesheet"
+            type="text/css" />
+        <script
+            type="text/javascript"
+            src="js/infobox.js"></script>
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <form wicket:id="poolGroupsForm">
-        <h1><wicket:message key="header1"></wicket:message></h1>
-        <span wicket:id="feedback"/>
-
-        <div id="infobox" style="position:absolute;visibility:show; left:25px; top:-100px; z-index:+1" onmouseover="overdiv='1';" onmouseout="overdiv='0'; setTimeout('hideBox()',2000)">
-        </div>
-
-        <table class="sortable">
-            <thead>
-                <tr>
-                    <th><wicket:message key="PoolGroupView.poolGroup.header"></wicket:message></th>
-            <th><wicket:message key="PoolGroupView.total.header"></wicket:message></th>
-            <th><wicket:message key="PoolGroupView.free.header"></wicket:message></th>
-            <th><wicket:message key="PoolGroupView.precious.header"></wicket:message></th>
-            <th><span wicket:id="layoutHeaderPanel"></span></th>
-            </tr>
-            </thead>
-            <tbody>
-                <tr wicket:id="poolGroupView">
-                    <td><a wicket:id="nameLink"><span wicket:id="nameMessage"></span></a></td>
-                    <td><span wicket:id="totalSpace"></span></td>
-                    <td><span wicket:id="freeSpace"></span></td>
-                    <td><span wicket:id="preciousSpace"></span></td>
-                    <td><span wicket:id="layoutItemPanel"></span></td>
-                </tr>
-            </tbody>
-        </table>
-        <h2><span wicket:id="specialPoolGroupHeader"></span></h2>
-        <wicket:fragment wicket:id="navigationFragment">
-            <ul>
-                <li>
-                    <a href="#" wicket:id="cellViewLink">
-                        <span wicket:id="cellViewMessage"></span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" wicket:id="spaceUsageLink">
-                        <span wicket:id="spaceUsageMessage"></span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" wicket:id="moverViewLink">
-                        <span wicket:id="moverViewMessage"></span>
-                    </a>
-                </li>
-            </ul>
-        </wicket:fragment>
-        <span class="horizontalNav" wicket:id="miniNavigationFragment"></span>
-        <div id="main"><span wicket:id="specialPoolGroupPanel"></span></div>
-    </form>
-</wicket:extend>
+    <wicket:extend>
+        <form wicket:id="poolGroupsForm">
+            <h1>
+                <wicket:message key="header1"></wicket:message>
+            </h1>
+            <span wicket:id="feedback" />
+            <div
+                id="infobox"
+                style="position: absolute; visibility: show; left: 25px; top: -100px; z-index: +1"
+                onmouseover="overdiv='1';"
+                onmouseout="overdiv='0'; setTimeout('hideBox()',2000)"></div>
+            <table class="sortable">
+                <thead>
+                    <tr>
+                        <th><wicket:message
+                                key="PoolGroupView.poolGroup.header"></wicket:message></th>
+                        <th><wicket:message
+                                key="PoolGroupView.total.header"></wicket:message></th>
+                        <th><wicket:message key="PoolGroupView.free.header"></wicket:message></th>
+                        <th><wicket:message
+                                key="PoolGroupView.precious.header"></wicket:message></th>
+                        <th><span wicket:id="layoutHeaderPanel"></span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr wicket:id="poolGroupView">
+                        <td><a wicket:id="nameLink"><span
+                                    wicket:id="nameMessage"></span></a></td>
+                        <td><span wicket:id="totalSpace"></span></td>
+                        <td><span wicket:id="freeSpace"></span></td>
+                        <td><span wicket:id="preciousSpace"></span></td>
+                        <td><span wicket:id="layoutItemPanel"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <h2>
+                <span wicket:id="specialPoolGroupHeader"></span>
+            </h2>
+            <wicket:fragment wicket:id="navigationFragment">
+                <ul>
+                    <li><a
+                        href="#"
+                        wicket:id="cellViewLink"> <span
+                                wicket:id="cellViewMessage"></span>
+                    </a></li>
+                    <li><a
+                        href="#"
+                        wicket:id="spaceUsageLink"> <span
+                                wicket:id="spaceUsageMessage"></span>
+                    </a></li>
+                    <li><a
+                        href="#"
+                        wicket:id="moverViewLink"> <span
+                                wicket:id="moverViewMessage"></span>
+                    </a></li>
+                </ul>
+            </wicket:fragment>
+            <span
+                class="horizontalNav"
+                wicket:id="miniNavigationFragment"></span>
+            <div id="main">
+                <span wicket:id="specialPoolGroupPanel"></span>
+            </div>
+        </form>
+    </wicket:extend>
 </body>
 </html>
-

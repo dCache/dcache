@@ -1,44 +1,60 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="CellServicesPanel.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="CellServicesPanel.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:panel>
-    <wicket:message key="CellServicesPanel.quickFind"></wicket:message>&nbsp;<input type="text" id="quickfind"/>&nbsp;
-    <input type="button" value="Clear Filters" id="cleanfilters">
-    <div class="clear"></div>
-    <br>
-    <table id="sortable">
-        <thead>
-            <tr>
-               <th><wicket:message key="CellServicesPanel.name.header"></wicket:message></th>
-        <th><wicket:message key="CellServicesPanel.domainName.header"></wicket:message></th>
-        <th><wicket:message key="CellServicesPanel.EventQueues.header"></wicket:message></th>
-        <th><wicket:message key="CellServicesPanel.Threadcount.header"></wicket:message></th>
-        <th><wicket:message key="CellServicesPanel.Ping.header"></wicket:message></th>
-        <th><wicket:message key="CellServicesPanel.CreationTime.header"></wicket:message></th>
-        <th><wicket:message key="CellServicesPanel.Version.header"></wicket:message>
-        </th>
-        </tr>
-        </thead>
-        <tbody>
-            <tr wicket:id="CellServicesPanelListview">
-                <td><span wicket:id="CellServicesPanel.name"></span></td>
-                <td><span wicket:id="CellServicesPanel.domainName"></span></td>
-                <td><span wicket:id="CellServicesPanel.EventQueues"></span></td>
-                <td><span wicket:id="CellServicesPanel.Threadcount"></span></td>
-                <td><span wicket:id="CellServicesPanel.Ping"></span></td>
-                <td><span wicket:id="CellServicesPanel.CreationTime"></span></td>
-                <td><span wicket:id="CellServicesPanel.Version"></span>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</wicket:panel>
+    <wicket:panel>
+        <wicket:message key="CellServicesPanel.quickFind"></wicket:message>
+        &nbsp;
+        <input
+            type="text"
+            id="quickfind"/>
+        &nbsp;
+        <input
+            type="button"
+            value="Clear Filters"
+            id="cleanfilters"/>
+        <div class="clear"></div>
+        <br>
+        <table id="sortable">
+            <thead>
+                <tr>
+                    <th><wicket:message key="CellServicesPanel.name.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="CellServicesPanel.domainName.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="CellServicesPanel.EventQueues.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="CellServicesPanel.Threadcount.header"></wicket:message></th>
+                    <th><wicket:message key="CellServicesPanel.Ping.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="CellServicesPanel.CreationTime.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="CellServicesPanel.Version.header"></wicket:message>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr wicket:id="CellServicesPanelListview">
+                    <td><span wicket:id="CellServicesPanel.name"></span></td>
+                    <td><span wicket:id="CellServicesPanel.domainName"></span></td>
+                    <td><span wicket:id="CellServicesPanel.EventQueues"></span></td>
+                    <td><span wicket:id="CellServicesPanel.Threadcount"></span></td>
+                    <td><span wicket:id="CellServicesPanel.Ping"></span></td>
+                    <td><span wicket:id="CellServicesPanel.CreationTime"></span></td>
+                    <td><span wicket:id="CellServicesPanel.Version"></span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </wicket:panel>
 </body>
 </html>

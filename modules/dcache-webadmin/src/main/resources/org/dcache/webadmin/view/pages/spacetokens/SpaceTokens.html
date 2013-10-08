@@ -1,44 +1,56 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="SpaceTokens.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="SpaceTokens.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <h1><wicket:message key="header1"></wicket:message></h1>
-    <span wicket:id="feedback"/>
-    <table class="sortable">
-        <thead>
-            <tr>
-                <th><wicket:message key="linkGroupView.linkGroup.header"></wicket:message></th>
-    <th><wicket:message key="linkGroupView.id.header"></wicket:message></th>
-    <th><wicket:message key="linkGroupView.allowed.header"></wicket:message></th>
-    <th><wicket:message key="linkGroupView.vo.header"></wicket:message></th>
-    <th><wicket:message key="linkGroupView.availableSpace.header"></wicket:message></th>
-    <th><wicket:message key="linkGroupView.reservedSpace.header"></wicket:message></th>
-    <th><wicket:message key="linkGroupView.freeSpace.header"></wicket:message></th>
-    <th><wicket:message key="linkGroupView.totalSpace.header"></wicket:message></th>
-    </tr>
-    </thead>
-    <tbody>
-        <tr wicket:id="linkGroupView">
-            <td><a wicket:id="linkGroupLink"><span wicket:id="nameMessage"></span></a></td>
-            <td><span wicket:id="id"></span></td>
-            <td><span wicket:id="allowed"></span></td>
-            <td><span wicket:id="vo"></span></td>
-            <td><span wicket:id="availableSpace"></span></td>
-            <td><span wicket:id="reservedSpace"></span></td>
-            <td><span wicket:id="freeSpace"></span></td>
-            <td><span wicket:id="totalSpace"></span></td>
-        </tr>
-    </tbody>
-    </table>
-    <div id="main"><span wicket:id="spaceReservationsPanel"></span></div>
-</wicket:extend>
+    <wicket:extend>
+        <h1>
+            <wicket:message key="header1"></wicket:message>
+        </h1>
+        <span wicket:id="feedback" />
+        <table class="sortable">
+            <thead>
+                <tr>
+                    <th><wicket:message
+                            key="linkGroupView.linkGroup.header"></wicket:message></th>
+                    <th><wicket:message key="linkGroupView.id.header"></wicket:message></th>
+                    <th><wicket:message key="linkGroupView.allowed.header"></wicket:message></th>
+                    <th><wicket:message key="linkGroupView.vo.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="linkGroupView.availableSpace.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="linkGroupView.reservedSpace.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="linkGroupView.freeSpace.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="linkGroupView.totalSpace.header"></wicket:message></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr wicket:id="linkGroupView">
+                    <td><a wicket:id="linkGroupLink">
+                        <span wicket:id="nameMessage"></span></a></td>
+                    <td><span wicket:id="id"></span></td>
+                    <td><span wicket:id="allowed"></span></td>
+                    <td><span wicket:id="vo"></span></td>
+                    <td><span wicket:id="availableSpace"></span></td>
+                    <td><span wicket:id="reservedSpace"></span></td>
+                    <td><span wicket:id="freeSpace"></span></td>
+                    <td><span wicket:id="totalSpace"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="main">
+            <span wicket:id="spaceReservationsPanel"></span>
+        </div>
+    </wicket:extend>
 </body>
 </html>
-

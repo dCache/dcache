@@ -1,62 +1,87 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="ActiveTransfersPanel.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="ActiveTransfersPanel.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:panel>
-    <wicket:message key="activeTransfersPanel.quickFind"></wicket:message>&nbsp;<input type="text" id="quickfind"/>&nbsp;
-    <input type="button" value="Clear Filters" id="cleanfilters">
-    <div class="clear"></div>
-    <br>
-    <table  id="sortable">
-        <thead>
-            <tr>
-                <th wicket:id="selectBoxHeader"/>
-                <th wicket:id="doorHeader"/>
-                <th filter-type="ddl"><wicket:message key="activeTransfersPanel.domain.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.seq.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.protocol.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.owner.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.process.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.pnfsid.header"></wicket:message></th>
-        <th filter-type="ddl"><wicket:message key="activeTransfersPanel.pool.header"></wicket:message></th>
-        <th wicket:id="hostHeader"/>
-        <th><wicket:message key="activeTransfersPanel.status.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.since.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.state.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.transferred.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.speed.header"></wicket:message></th>
-        <th><wicket:message key="activeTransfersPanel.jobid.header"></wicket:message></th>
-        </tr>
-        </thead>
-        <tbody>
-            <tr wicket:id="activeTransfersPanelListview">
-                <td wicket:id="activeTransfersPanel.checkboxRow">
-                    <input type="checkbox" wicket:id="activeTransfersPanel.selected"/></td>
-                <td wicket:id="activeTransfersPanel.door"/>
-                <td><span wicket:id="activeTransfersPanel.domain"></span></td>
-                <td><span wicket:id="activeTransfersPanel.seq"></span></td>
-                <td><span wicket:id="activeTransfersPanel.protocol"></span></td>
-                <td><span wicket:id="activeTransfersPanel.owner"></span></td>
-                <td><span wicket:id="activeTransfersPanel.process"></span></td>
-                <td><span wicket:id="activeTransfersPanel.pnfsid"></span></td>
-                <td><span wicket:id="activeTransfersPanel.pool"></span></td>
-                <td wicket:id="activeTransfersPanel.host"/>
-                <td><span wicket:id="activeTransfersPanel.status"></span></td>
-                <td><span wicket:id="activeTransfersPanel.since"></span></td>
-                <td><span wicket:id="activeTransfersPanel.health"></span></td>
-                <td><span wicket:id="activeTransfersPanel.transferred"></span></td>
-                <td><span wicket:id="activeTransfersPanel.speed"></span></td>
-                <td><span wicket:id="activeTransfersPanel.jobid"></span>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</wicket:panel>
+    <wicket:panel>
+        <wicket:message key="activeTransfersPanel.quickFind"></wicket:message>
+        &nbsp;
+        <input
+            type="text"
+            id="quickfind" />
+        &nbsp;
+        <input
+            type="button"
+            value="Clear Filters"
+            id="cleanfilters" />
+        <div class="clear"></div>
+        <br>
+        <table id="sortable">
+            <thead>
+                <tr>
+                    <th wicket:id="selectBoxHeader" />
+                    <th wicket:id="doorHeader" />
+                    <th filter-type="ddl"><wicket:message
+                            key="activeTransfersPanel.domain.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.seq.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.protocol.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.owner.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.process.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.pnfsid.header"></wicket:message></th>
+                    <th filter-type="ddl"><wicket:message
+                            key="activeTransfersPanel.pool.header"></wicket:message></th>
+                    <th wicket:id="hostHeader" />
+                    <th><wicket:message
+                            key="activeTransfersPanel.status.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.since.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.state.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.transferred.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.speed.header"></wicket:message></th>
+                    <th><wicket:message
+                            key="activeTransfersPanel.jobid.header"></wicket:message></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr wicket:id="activeTransfersPanelListview">
+                    <td wicket:id="activeTransfersPanel.checkboxRow"><input
+                        type="checkbox"
+                        wicket:id="activeTransfersPanel.selected" /></td>
+                    <td wicket:id="activeTransfersPanel.door" />
+                    <td><span wicket:id="activeTransfersPanel.domain"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.seq"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.protocol"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.owner"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.process"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.pnfsid"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.pool"></span></td>
+                    <td wicket:id="activeTransfersPanel.host" />
+                    <td><span wicket:id="activeTransfersPanel.status"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.since"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.health"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.transferred"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.speed"></span></td>
+                    <td><span wicket:id="activeTransfersPanel.jobid"></span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </wicket:panel>
 </body>
 </html>
