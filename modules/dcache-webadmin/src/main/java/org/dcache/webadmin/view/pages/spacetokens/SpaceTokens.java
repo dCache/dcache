@@ -9,7 +9,7 @@ import org.apache.wicket.model.PropertyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.dcache.webadmin.controller.exceptions.LinkGroupsServiceException;
@@ -28,9 +28,8 @@ public class SpaceTokens extends BasePage {
     private SpaceReservationPanel _spaceReservationsPanel =
             new SpaceReservationPanel("spaceReservationsPanel",
             new PropertyModel<List<SpaceReservationBean>>(
-            this, "_currentLinkGroup._reservations"));
+            this, "reservations"));
     private LinkGroupBean _currentLinkGroup;
-    private List<LinkGroupBean> _linkGroups;
     private static final Logger _log = LoggerFactory.getLogger(SpaceTokens.class);
 
     public SpaceTokens() {
@@ -41,17 +40,24 @@ public class SpaceTokens extends BasePage {
     private void createMarkup() {
         add(new FeedbackPanel("feedback"));
         add(new LinkGroupListView("linkGroupView", new PropertyModel(this,
-                "_linkGroups")));
+                "tokenInfo")));
         add(_spaceReservationsPanel);
     }
 
-    private void getTokenInfo() {
+    public List<SpaceReservationBean> getReservations() {
+        if (_currentLinkGroup == null) {
+            return Collections.emptyList();
+        }
+        return _currentLinkGroup.getReservations();
+    }
+
+    public List<LinkGroupBean> getTokenInfo() {
         try {
-            _linkGroups = getWebadminApplication().getLinkGroupsService().getLinkGroups();
+            return getWebadminApplication().getLinkGroupsService().getLinkGroups();
         } catch (LinkGroupsServiceException ex) {
             this.error(getStringResource("error.getTokenInfoFailed") + ex.getMessage());
             _log.debug("getTokenInfo failed {}", ex.getMessage());
-            _linkGroups = new ArrayList<>();
+            return Collections.emptyList();
         }
     }
 
