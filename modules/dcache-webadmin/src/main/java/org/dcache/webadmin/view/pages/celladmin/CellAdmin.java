@@ -37,7 +37,6 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
     private static final String EMPTY_STRING = "";
     private static final Logger _log = LoggerFactory.getLogger(CellAdmin.class);
     private static final long serialVersionUID = -61395248592530110L;
-    private Map<String, List<String>> _domainMap = new HashMap<>();
     private String _selectedDomain;
     private String _selectedCell;
     private String _command = "";
@@ -45,16 +44,16 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
     private String _response = "";
 
     public CellAdmin() {
-        initDomainMap();
         addMarkup();
     }
 
-    private void initDomainMap() {
+    private  Map<String, List<String>> getDomainMap() {
         try {
-            _domainMap = getCellAdminService().getDomainMap();
+            return getCellAdminService().getDomainMap();
         } catch (CellAdminServiceException e) {
             error(getStringResource("error.noCells"));
             _log.error("could not retrieve cells: {}", e.getMessage());
+            return Collections.emptyMap();
         }
     }
 
@@ -156,7 +155,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
 
         @Override
         public List<String> getObject() {
-            List<String> domains = new ArrayList<>(_domainMap.keySet());
+            List<String> domains = new ArrayList<>(getDomainMap().keySet());
             Collections.sort(domains);
             return domains;
         }
@@ -168,7 +167,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
 
         @Override
         public List<String> getObject() {
-            List<String> cells = _domainMap.get(_selectedDomain);
+            List<String> cells = getDomainMap().get(_selectedDomain);
             if (cells == null) {
                 cells = Collections.emptyList();
             }
