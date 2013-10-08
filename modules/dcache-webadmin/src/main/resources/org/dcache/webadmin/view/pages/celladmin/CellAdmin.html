@@ -1,30 +1,42 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="CellAdmin.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="CellAdmin.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <form wicket:id="cellAdminForm">
-        <h1><wicket:message key="header1"></wicket:message></h1>
-        <select wicket:id="cellAdminDomain"/>&nbsp;<select wicket:id="cellAdminCell"/>
-        <div class="clear">&nbsp;</div>
-        <div>
-            <span wicket:id="feedback"></span>
-            <input wicket:id="commandText" type="text"/>
-            <input type="submit" wicket:message="value:submitButton" wicket:id="submit" />
+    <wicket:extend>
+        <form wicket:id="cellAdminForm">
+            <h1>
+                <wicket:message key="header1"></wicket:message>
+            </h1>
+            <select wicket:id="cellAdminDomain" />&nbsp;<select
+                wicket:id="cellAdminCell" />
             <div class="clear">&nbsp;</div>
-            <span wicket:id="lastCommand"></span>
-        </div>
-        <div class="clear">&nbsp;</div>
-        <h2><span wicket:id="cellAdmin.receiver"></span></h2>
-        <br/><span wicket:id="cellAdmin.cellresponsevalue"></span>
-    </form>
-</wicket:extend>
+            <div>
+                <span wicket:id="feedback"></span>
+                <input
+                    wicket:id="commandText"
+                    type="text" /> <input
+                    type="submit"
+                    wicket:message="value:submitButton"
+                    wicket:id="submit" />
+                <div class="clear">&nbsp;</div>
+                <span wicket:id="lastCommand"></span>
+            </div>
+            <div class="clear">&nbsp;</div>
+            <h2>
+                <span wicket:id="cellAdmin.receiver"></span>
+            </h2>
+            <br />
+            <span wicket:id="cellAdmin.cellresponsevalue"></span>
+        </form>
+    </wicket:extend>
 </body>
 </html>
-

@@ -1,43 +1,47 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="PoolListPanel.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="PoolListPanel.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:panel>
-    <table id="sortable">
-        <thead>
-            <tr>
-                <th wicket:id="selectBoxHeader"/>
-        <th><wicket:message key="PoolPanel.name.header"></wicket:message></th>
-        <th><wicket:message key="PoolPanel.domainName.header"></wicket:message></th>
-        <th><wicket:message key="PoolPanel.poolMode.header"></wicket:message></th>
-        <th><wicket:message key="PoolPanel.total.header"></wicket:message></th>
-        <th><wicket:message key="PoolPanel.free.header"></wicket:message></th>
-        <th><wicket:message key="PoolPanel.precious.header"></wicket:message></th>
-        <th><span wicket:id="PoolPanel.layoutHeaderPanel"></span>
-        </th>
-        </tr>
-        </thead>
-        <tbody>
-            <tr wicket:id="poolPanelListview">
-                <td wicket:id="PoolPanel.checkboxRow">
-                    <input type="checkbox" wicket:id="PoolPanel.selected"/></td>
-                <td><span wicket:id="PoolPanel.name"></span></td>
-                <td><span wicket:id="PoolPanel.domainName"></span></td>
-                <td><span wicket:id="PoolPanel.poolMode"></span></td>
-                <td><span wicket:id="PoolPanel.totalSpace"></span></td>
-                <td><span wicket:id="PoolPanel.freeSpace"></span></td>
-                <td><span wicket:id="PoolPanel.preciousSpace"></span></td>
-                <td><span wicket:id="PoolPanel.layoutItemPanel"></span>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</wicket:panel>
+    <wicket:panel>
+        <table id="sortable">
+            <thead>
+                <tr>
+                    <th wicket:id="selectBoxHeader" />
+                    <th><wicket:message key="PoolPanel.name.header"></wicket:message></th>
+                    <th><wicket:message key="PoolPanel.domainName.header"></wicket:message></th>
+                    <th><wicket:message key="PoolPanel.poolMode.header"></wicket:message></th>
+                    <th><wicket:message key="PoolPanel.total.header"></wicket:message></th>
+                    <th><wicket:message key="PoolPanel.free.header"></wicket:message></th>
+                    <th><wicket:message key="PoolPanel.precious.header"></wicket:message></th>
+                    <th><span wicket:id="PoolPanel.layoutHeaderPanel"></span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr wicket:id="poolPanelListview">
+                    <td wicket:id="PoolPanel.checkboxRow"><input
+                        type="checkbox"
+                        wicket:id="PoolPanel.selected" /></td>
+                    <td><span wicket:id="PoolPanel.name"></span></td>
+                    <td><span wicket:id="PoolPanel.domainName"></span></td>
+                    <td><span wicket:id="PoolPanel.poolMode"></span></td>
+                    <td><span wicket:id="PoolPanel.totalSpace"></span></td>
+                    <td><span wicket:id="PoolPanel.freeSpace"></span></td>
+                    <td><span wicket:id="PoolPanel.preciousSpace"></span></td>
+                    <td><span wicket:id="PoolPanel.layoutItemPanel"></span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </wicket:panel>
 </body>
 </html>

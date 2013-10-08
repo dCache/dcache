@@ -1,18 +1,23 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-     <wicket:link>
-            <link href="UserPanel.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="UserPanel.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:panel>
-    <wicket:enclosure child="logout">Logged in as <b><span wicket:id="username">[name]</span></b><span class="stripe">&nbsp;&nbsp;&#124;&nbsp;&nbsp;</span><a wicket:id="logout">logout</a>
-    </wicket:enclosure>
-    <a wicket:id="login">login</a>
-</wicket:panel>
+    <wicket:panel>
+        <wicket:enclosure child="logout">Logged in as <b><span
+                    wicket:id="username">[name]</span></b>
+            <span class="stripe">&nbsp;&nbsp;&#124;&nbsp;&nbsp;</span>
+            <a wicket:id="logout">logout</a>
+        </wicket:enclosure>
+        <a wicket:id="login">login</a>
+    </wicket:panel>
 </body>
 </html>
-
