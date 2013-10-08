@@ -1,23 +1,30 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="ActiveTransfers.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="ActiveTransfers.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <form wicket:id="activeTransfersForm">
-        <h1><wicket:message key="header1"></wicket:message></h1>
-        <div>
-            <input type="submit" wicket:message="value:submitButton" wicket:id="submit" />
-            <span wicket:id="feedback"/>
-        </div>
-        <span wicket:id="activeTransfersPanel"></span>
-    </form>
-</wicket:extend>
+    <wicket:extend>
+        <form wicket:id="activeTransfersForm">
+            <h1>
+                <wicket:message key="header1"></wicket:message>
+            </h1>
+            <div>
+                <input
+                    type="submit"
+                    wicket:message="value:submitButton"
+                    wicket:id="submit" />
+                <span wicket:id="feedback" />
+            </div>
+            <span wicket:id="activeTransfersPanel"></span>
+        </form>
+    </wicket:extend>
 </body>
 </html>
-

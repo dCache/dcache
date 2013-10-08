@@ -1,31 +1,40 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="PoolList.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-        <wicket:link>
-            <script type="text/javascript" src="js/infobox.js"></script>
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="PoolList.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+    <wicket:link>
+        <script
+            type="text/javascript"
+            src="js/infobox.js"></script>
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <form wicket:id="poolUsageForm">
-        <h1><wicket:message key="header1"></wicket:message></h1>
-        <div>
-            <select wicket:id="mode"/>
-            <input type="submit" wicket:message="value:submitButton" wicket:id="submit" />
-            <span wicket:id="feedback"/>
-        </div>
-
-        <div id="infobox" style="position:absolute;visibility:show; left:25px; top:-100px; z-index:+1" onmouseover="overdiv='1';" onmouseout="overdiv='0'; setTimeout('hideBox()',2000)">
-        </div>
-
-        <span wicket:id="poolListPanel"></span>
-    </form>
-</wicket:extend>
+    <wicket:extend>
+        <form wicket:id="poolUsageForm">
+            <h1>
+                <wicket:message key="header1"></wicket:message>
+            </h1>
+            <div>
+                <select wicket:id="mode" /> <input
+                    type="submit"
+                    wicket:message="value:submitButton"
+                    wicket:id="submit" />
+                <span wicket:id="feedback" />
+            </div>
+            <div
+                id="infobox"
+                style="position: absolute; visibility: show; left: 25px; top: -100px; z-index: +1"
+                onmouseover="overdiv='1';"
+                onmouseout="overdiv='0'; setTimeout('hideBox()',2000)"></div>
+            <span wicket:id="poolListPanel"></span>
+        </form>
+    </wicket:extend>
 </body>
 </html>
-

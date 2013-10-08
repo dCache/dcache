@@ -1,47 +1,66 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="LogIn.css" rel="stylesheet" type="text/css"  />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="LogIn.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <h1><span wicket:id="dCacheInstanceName"></span></h1>
-    <h5><span><wicket:message key="adminuser">missing</wicket:message></span></h5>
-    <span wicket:id="feedback"/>
-    <form wicket:id="LogInForm">
-        <div class="clear">&nbsp;</div>
-        <table>
-            <tr>
-                <td align="right"><wicket:message key="table1.row1">missing</wicket:message></td>
-            <td>
-                <input wicket:id="username" type="text" value="" size="30"/>
-            </td>
-            </tr>
-            <tr>
-                <td align="right"><wicket:message key="table1.row2">missing</wicket:message></td>
-            <td>
-                <input wicket:id="password" type="password" value="password" size="30"/>
-            </td>
-            </tr>
-            <tr wicket:id="rememberMeRow">
-                <td></td>
-                <td> <input wicket:id="remembering" type="checkbox" /><wicket:message key="table1.checkbox">missing</wicket:message></td>
-            </tr>
-            <tr>
-                <td></td>
-                <td>
-                    <input type="submit" wicket:id="submit" wicket:message="value:submitButton"/>
-                    <input type="reset" wicket:message="value:resetButton"/>
-                    <input type="submit" wicket:id="certsignin" wicket:message="value:certSignInButton"/>
-                </td>
-            </tr>
-        </table>
-    </form>
-</wicket:extend>
+    <wicket:extend>
+        <h1>
+            <span wicket:id="dCacheInstanceName"></span>
+        </h1>
+        <h5>
+            <span>
+                <wicket:message key="adminuser">missing</wicket:message>
+            </span>
+        </h5>
+        <span wicket:id="feedback" />
+        <form wicket:id="LogInForm">
+            <div class="clear">&nbsp;</div>
+            <table>
+                <tr>
+                    <td align="right"><wicket:message key="table1.row1">missing</wicket:message></td>
+                    <td><input
+                        wicket:id="username"
+                        type="text"
+                        value=""
+                        size="30" /></td>
+                </tr>
+                <tr>
+                    <td align="right"><wicket:message key="table1.row2">missing</wicket:message></td>
+                    <td><input
+                        wicket:id="password"
+                        type="password"
+                        value="password"
+                        size="30" /></td>
+                </tr>
+                <tr wicket:id="rememberMeRow">
+                    <td></td>
+                    <td><input
+                        wicket:id="remembering"
+                        type="checkbox" />
+                    <wicket:message key="table1.checkbox">missing</wicket:message></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td><input
+                        type="submit"
+                        wicket:id="submit"
+                        wicket:message="value:submitButton" /> <input
+                        type="reset"
+                        wicket:message="value:resetButton" /> <input
+                        type="submit"
+                        wicket:id="certsignin"
+                        wicket:message="value:certSignInButton" /></td>
+                </tr>
+            </table>
+        </form>
+    </wicket:extend>
 </body>
 </html>
-

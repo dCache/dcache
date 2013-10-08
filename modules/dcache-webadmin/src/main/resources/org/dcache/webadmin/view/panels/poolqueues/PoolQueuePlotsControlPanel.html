@@ -3,27 +3,41 @@
 <head>
 </head>
 <body>
-	<wicket:panel>
-	    <h3><wicket:message key="filterTitle"></wicket:message></h3>
-		<table class="control">
-			<tr class="control">
-				<td class="control"><b><wicket:message key=sortOrder /> </b></td>
-				<td class="control">
-				    <span wicket:id="sortgroup">
-				        <b>up</b><input wicket:id="ascending" type="radio"/>
-				        <b>down</b><input wicket:id="descending" type="radio" />
-				    </span>
-			    </td>
-			    <td class="control"><input wicket:id="refresh" type="submit"
+    <wicket:panel>
+        <h3>
+            <wicket:message key="filterTitle"></wicket:message>
+        </h3>
+        <table class="control">
+            <tr class="control">
+                <td class="control"><b><wicket:message key=sortOrder /></b></td>
+                <td class="control"><span wicket:id="sortgroup">
+                        <b>up</b>
+                        <input
+                            wicket:id="ascending"
+                            type="radio" />
+                        <b>down</b>
+                        <input
+                            wicket:id="descending"
+                            type="radio" />
+                    </span></td>
+                <td class="control">
+                <input
+                    wicket:id="refresh"
+                    type="submit"
                     wicket:message="value:refreshButton" /></td>
-			</tr>
-			<tr class="control">
-                <td class="control"><b><wicket:message key="filter" /> </b></td>
-                <td class="control"><input wicket:id="filterField" type="text" /></td>
-                <td class="control"><b><wicket:message key="useRegex" /> </b><input
-                    wicket:id="regex" type="checkbox" /></td>
             </tr>
-		</table>
-	</wicket:panel>
+            <tr class="control">
+                <td class="control"><b><wicket:message key="filter" /></b></td>
+                <td class="control">
+                <input
+                    wicket:id="filterField"
+                    type="text" /></td>
+                <td class="control"><b><wicket:message key="useRegex" /></b>
+                <input
+                    wicket:id="regex"
+                    type="checkbox" /></td>
+            </tr>
+        </table>
+    </wicket:panel>
 </body>
 </html>

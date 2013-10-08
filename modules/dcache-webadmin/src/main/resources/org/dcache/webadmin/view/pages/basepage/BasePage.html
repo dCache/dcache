@@ -1,48 +1,70 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-    <head>
-       <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <title wicket:id="pageTitle" >missing</title>
-        <!-- add your meta tags here -->
-        <link href="css/common.css" rel="stylesheet" type="text/css" />
-        <wicket:head>
-            <wicket:link>
-                <link href="BasePage.css" rel="stylesheet" type="text/css" />
-            </wicket:link>
-        </wicket:head>
-    </head>
-    <body>
-        <div class="page_margins">
-            <!-- start: skip link navigation -->
-            <a class="skip" title="skip link" href="#navigation">Skip to the navigation</a><span class="hideme">.</span>
-            <a class="skip" title="skip link" href="#content">Skip to the content</a><span class="hideme">.</span>
-            <!-- end: skip link navigation -->
-            <div id="border-top">
-                <div id="edge-tl"></div>
-                <div id="edge-tr"></div>
-            </div>
-            <div class="page">
-                <div id="header">
-                    <div wicket:id="headerPanel"></div>
-                    <span class="userLogin">
-                        <div wicket:id="userPanel"></div>
-                    </span>
-                </div>
-                <div id="nav">
-                    <!-- skiplink anchor: navigation -->
-                    <a id="navigation" name="navigation"></a>
-                    <div class="hlist" wicket:id="navigationPanel">
-                    </div>
-                </div>
-                <div id="main">
-                    <wicket:child></wicket:child>
-                </div>
-                <!-- begin: #footer -->
-            </div>
-            <div id="border-bottom">
-                <div id="edge-bl"></div>
-                <div id="edge-br"></div>
-            </div>
+<html
+    xmlns="http://www.w3.org/1999/xhtml"
+    xml:lang="en"
+    lang="en">
+<head>
+<meta
+    http-equiv="content-type"
+    content="text/html; charset=utf-8" />
+<title wicket:id="pageTitle">missing</title>
+<!-- add your meta tags here -->
+<link
+    href="css/common.css"
+    rel="stylesheet"
+    type="text/css" />
+<wicket:head>
+    <wicket:link>
+        <link
+            href="BasePage.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
+</head>
+<body>
+    <div class="page_margins">
+        <!-- start: skip link navigation -->
+        <a
+            class="skip"
+            title="skip link"
+            href="#navigation">Skip to the navigation</a>
+        <span class="hideme">.</span>
+        <a
+            class="skip"
+            title="skip link"
+            href="#content">Skip to the content</a>
+        <span class="hideme">.</span>
+        <!-- end: skip link navigation -->
+        <div id="border-top">
+            <div id="edge-tl"></div>
+            <div id="edge-tr"></div>
         </div>
-    </body>
+        <div class="page">
+            <div id="header">
+                <div wicket:id="headerPanel"></div>
+                <span class="userLogin">
+                    <div wicket:id="userPanel"></div>
+                </span>
+            </div>
+            <div id="nav">
+                <!-- skiplink anchor: navigation -->
+                <a
+                    id="navigation"
+                    name="navigation"></a>
+                <div
+                    class="hlist"
+                    wicket:id="navigationPanel"></div>
+            </div>
+            <div id="main">
+                <wicket:child></wicket:child>
+            </div>
+            <!-- begin: #footer -->
+        </div>
+        <div id="border-bottom">
+            <div id="edge-bl"></div>
+            <div id="edge-br"></div>
+        </div>
+    </div>
+</body>
 </html>
