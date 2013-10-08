@@ -62,11 +62,19 @@ package org.dcache.services.billing.cells.receivers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+
+import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.DoorRequestData;
@@ -81,7 +89,8 @@ import org.dcache.services.billing.db.exceptions.BillingQueryException;
  * implementation to handle persistence of the data.<br>
  * <br>
  */
-public class BillingInfoMessageReceiver implements CellMessageReceiver {
+public class BillingInfoMessageReceiver implements CellMessageReceiver,
+                CellCommandListener {
 
     private static final Logger logger
         = LoggerFactory.getLogger(BillingInfoMessageReceiver.class);
@@ -91,6 +100,94 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver {
      */
     private IBillingInfoAccess access;
 
+    private Thread commitStatistics;
+
+    @Command(name = "display insert statistics",
+             hint = "prints once a minute to stdout/pinboard the queue "
+                                    + "and database commit totals and rate for "
+                                    + "billing message inserts",
+             usage = "use 'start' or 'stop' to control")
+    class StatisticsCommand implements Callable<String> {
+
+        @Argument(help = "<start|stop>")
+        String option;
+
+        public String call() throws Exception {
+            if ("start".equals(option)) {
+                stopStatistics();
+                startStatistics();
+                return "display insert statistics has been started";
+            } else if ("stop".equals(option)) {
+                stopStatistics();
+                return "display insert statistics has been stopped";
+            } else {
+                return "Unrecognized option: needs 'start' or 'stop'";
+            }
+        }
+    }
+
+    private class StatisticsMonitor implements Runnable {
+
+        private class Values {
+            long insertQueueCurrent;
+            long commitCurrent;
+            long droppedCurrent;
+
+            long insertQueueLast;
+            long commitLast;
+            long droppedLast;
+
+            long insertQueueDelta;
+            long commitDelta;
+            long droppedDelta;
+
+            private void update() {
+                insertQueueLast = insertQueueCurrent;
+                commitLast = commitCurrent;
+                droppedLast = droppedCurrent;
+
+                insertQueueCurrent = access.getInsertQueueSize();
+                commitCurrent = access.getCommittedMessages();
+                droppedCurrent = access.getDroppedMessages();
+
+                insertQueueDelta = insertQueueCurrent - insertQueueLast;
+                commitDelta = commitCurrent - commitLast;
+                droppedDelta = droppedCurrent - droppedLast;
+            }
+
+            /**
+             * report at error level so that no adjustment of logger is
+             * necessary
+             */
+            private void log() {
+                logger.error("insert queue (last {}, current {}, change {}/minute)",
+                                insertQueueLast, insertQueueCurrent,
+                                insertQueueDelta);
+                logger.error("commits (last {}, current {}, change {}/minute)",
+                                commitLast, commitCurrent, commitDelta);
+                logger.error("dropped (last {}, current {}, change {}/minute)",
+                                droppedLast, droppedCurrent, droppedDelta);
+                logger.error("total memory {}; free memory {}",
+                                Runtime.getRuntime().totalMemory(),
+                                Runtime.getRuntime().freeMemory());
+            }
+        }
+
+        public void run() {
+            Values v = new Values();
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    v.update();
+                    v.log();
+                    Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+                }
+            } catch (InterruptedException e) {
+                logger.debug("statistics thread interrupted, "
+                                + "probably due to cell shutdown");
+            }
+        }
+    }
+
     public void setAccess(IBillingInfoAccess access) {
         this.access = access;
     }
@@ -98,60 +195,77 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver {
     public void messageArrived(MoverInfoMessage info) {
         /*
          * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller
-         * (using a synchronous sendAndWait); we follow suit here
+         * presumably because these would be returned to the caller (using a
+         * synchronous sendAndWait); we follow suit here
          */
         try {
             access.put(new MoverData(info));
         } catch (BillingQueryException e) {
-            logger.error("the following billing message could not be stored: {};"
-                            + "this data will be lost", info.toString() );
-            logger.trace("{}; {}", info.toString(), e.getMessage());
+            processDroppedMessage(e, info);
         }
     }
 
     public void messageArrived(StorageInfoMessage info) {
         /*
          * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller
-         * (using a synchronous sendAndWait); we follow suit here
+         * presumably because these would be returned to the caller (using a
+         * synchronous sendAndWait); we follow suit here
          */
         try {
             access.put(new StorageData(info));
         } catch (BillingQueryException e) {
-            logger.error("the following billing message could not be stored: {};"
-                            + "this data will be lost", info.toString() );
-            logger.trace("{}; {}", info.toString(), e.getMessage());
+            processDroppedMessage(e, info);
         }
     }
 
     public void messageArrived(DoorRequestInfoMessage info) {
         /*
          * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller
-         * (using a synchronous sendAndWait); we follow suit here
+         * presumably because these would be returned to the caller (using a
+         * synchronous sendAndWait); we follow suit here
          */
         try {
             access.put(new DoorRequestData(info));
         } catch (BillingQueryException e) {
-            logger.error("the following billing message could not be stored: {};"
-                            + "this data will be lost", info.toString() );
-            logger.trace("{}; {}", info.toString(), e.getMessage());
+            processDroppedMessage(e, info);
         }
     }
 
     public void messageArrived(PoolHitInfoMessage info) {
         /*
          * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller
-         * (using a synchronous sendAndWait); we follow suit here
+         * presumably because these would be returned to the caller (using a
+         * synchronous sendAndWait); we follow suit here
          */
         try {
             access.put(new PoolHitData(info));
         } catch (BillingQueryException e) {
-            logger.error("the following billing message could not be stored: {};"
-                            + "this data will be lost", info.toString() );
-            logger.trace("{}; {}", info.toString(), e.getMessage());
+            processDroppedMessage(e, info);
         }
+    }
+
+    private synchronized void startStatistics() {
+        commitStatistics = new Thread(new StatisticsMonitor());
+        commitStatistics.setName("billing commit statistics");
+        commitStatistics.start();
+    }
+
+    private synchronized void stopStatistics() {
+        if (commitStatistics != null) {
+            commitStatistics.interrupt();
+            try {
+                commitStatistics.join();
+            } catch (InterruptedException e) {
+                logger.trace("stopStatistics join interrupted");
+            } finally {
+                commitStatistics = null;
+            }
+        }
+    }
+
+    private static void processDroppedMessage(Exception e, InfoMessage info) {
+        logger.error("the following billing message could not be stored: {};"
+                        + "this data will be lost", info.toString());
+        logger.trace("{}; {}", info.toString(), e.getMessage());
     }
 }

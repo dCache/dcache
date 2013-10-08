@@ -109,6 +109,12 @@ public interface IBillingInfoAccess {
 
     void initialize() throws BillingInitializationException;
 
+    long getInsertQueueSize();
+
+    long getCommittedMessages();
+
+    long getDroppedMessages();
+
     /**
      * @param data
      *            mapped type to be stored
