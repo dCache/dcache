@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.PnfsBaseInfo;
+import org.dcache.services.billing.db.data.StorageData;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.db.exceptions.BillingStorageException;
 
@@ -20,142 +21,75 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
 
     private long then;
     private long mod;
+    private long sleep = 1000L;
 
     protected void setUp() throws Exception {
-        if (getName().equals("testPutGetDelete")) {
-            timeout = 1;
-            maxBefore = 1;
-        } else if (getName().equals("testDelayedCommit")) {
-            timeout = Integer.MAX_VALUE;
-            maxBefore = 1000;
-        } else if (getName().equals("testSelect")) {
-            timeout = 1;
-            maxBefore = 1;
-        }
         super.setUp();
         mod = TimeUnit.DAYS.toMillis(365);
         long now = System.currentTimeMillis();
         then = now - mod;
     }
 
+    public void test0PutGetDelete() throws BillingQueryException,
+                    BillingStorageException {
+        PnfsBaseInfo[] data = new PnfsBaseInfo[] {
+                        messageGenerator.newPnfsInfo(0),
+                        messageGenerator.newPnfsInfo(1),
+                        messageGenerator.newPnfsInfo(2),
+                        messageGenerator.newPnfsInfo(3) };
 
-    /**
-     * Test simple inserts and retrievals on the 5 basic info objects. The
-     * CommitTimer is set to 0.
-     */
-    public void testPutGetDelete() {
-        long sleep = 1500L * timeout;
-        for (int i = 0; i < 5; i++) {
-            PnfsBaseInfo original = messageGenerator.newPnfsInfo(i);
-            randomizeDate(original);
-            try {
-                getAccess().put(original);
-            } catch (BillingStorageException t) {
-                t.printStackTrace();
-                assertNull(t);
-            }
-            try {
-                Thread.sleep(sleep);
-            } catch (InterruptedException ignored) {
-            }
-            Collection<?> retrieved = null;
-            try {
-                retrieved = getAccess().get(original.getClass());
-            } catch (BillingQueryException t) {
-                t.printStackTrace();
-                assertNull(t);
-            }
-            assertNotNull(retrieved);
-            assertEquals(1, retrieved.size());
-            compare(original, retrieved.iterator().next());
-            try {
-                getAccess().remove(original.getClass());
-                retrieved = getAccess().get(original.getClass());
-            } catch (BillingQueryException t) {
-                t.printStackTrace();
-                assertNull(t);
-            }
-            assertNotNull(retrieved);
-            assertEquals(0, retrieved.size());
+        for (PnfsBaseInfo d : data) {
+            randomizeDate(d);
+            getAccess().put(d);
+        }
+
+        try {
+            Thread.sleep(sleep);
+        } catch (InterruptedException ignored) {
+        }
+
+        for (PnfsBaseInfo d : data) {
+            Collection<?> retrieved = getAccess().get(d.getClass());
+
+            assertNotNull("class " + d.getClass(), retrieved);
+            assertEquals("class " + d.getClass(), 1, retrieved.size());
+        }
+
+        for (PnfsBaseInfo d : data) {
+            getAccess().remove(d.getClass());
+
+            Collection<?> retrieved = getAccess().get(d.getClass());
+
+            assertNotNull("class " + d.getClass(), retrieved);
+            assertEquals("class " + d.getClass(), 0, retrieved.size());
         }
     }
 
-    /**
-     * Test the delayed commit mechanism. Timeout is infinite, so commit will
-     * only take place when the insert margin has been reached;
-     */
-    public void testDelayedCommit() {
-        int k = maxBefore / 2;
-        for (int i = 0; i < k; i++) {
-            try {
-                getAccess().put(messageGenerator.newPnfsInfo(1));
-            } catch (BillingStorageException t) {
-                t.printStackTrace();
-                assertNull(t);
-            }
-        }
-        Collection<?> retrieved = null;
-        try {
-            retrieved = getAccess().get(DoorRequestData.class);
-        } catch (BillingQueryException t) {
-            t.printStackTrace();
-            assertNull(t);
-        }
-        assertNotNull(retrieved);
-        assertEquals(0, retrieved.size());
-        for (int i = 0; i < k; i++) {
-            try {
-                getAccess().put(messageGenerator.newPnfsInfo(1));
-            } catch (BillingStorageException t) {
-                t.printStackTrace();
-                assertNull(t);
-            }
-        }
-        try {
-            retrieved = getAccess().get(DoorRequestData.class);
-        } catch (BillingQueryException t) {
-            t.printStackTrace();
-            assertNull(t);
-        }
-        assertNotNull(retrieved);
-        assertEquals(maxBefore, retrieved.size());
-
-        cleanup(DoorRequestData.class);
-    }
-
-    /**
-     * Check that filter works.
-     */
-    public void testSelect() {
-        PnfsBaseInfo p1 = messageGenerator.newPnfsInfo(1);
-        PnfsBaseInfo p2 = messageGenerator.newPnfsInfo(1);
+    public void test1Select() throws BillingQueryException,
+                    BillingStorageException {
+        PnfsBaseInfo p1 = messageGenerator.newPnfsInfo(2);
+        PnfsBaseInfo p2 = messageGenerator.newPnfsInfo(2);
         p1.setAction("store");
         p2.setAction("restore");
+        getAccess().put(p1);
+        getAccess().put(p2);
+
         try {
-            getAccess().put(p1);
-            getAccess().put(p2);
-        } catch (BillingStorageException t) {
-            t.printStackTrace();
-            assertNull(t);
+            Thread.sleep(sleep);
+        } catch (InterruptedException ignored) {
         }
 
         String filter = "action == val";
         String parameters = "java.lang.String val";
         Object[] value = new Object[] { "restore" };
 
-        Collection<?> retrieved = null;
-        try {
-            retrieved = getAccess().get(p1.getClass(), filter, parameters,
-                            value);
-        } catch (BillingQueryException t) {
-            t.printStackTrace();
-            assertNull(t);
-        }
+        Collection<?> retrieved = getAccess().get(p1.getClass(), filter,
+                        parameters, value);
         assertNotNull(retrieved);
         assertEquals(1, retrieved.size());
         compare(p2, retrieved.iterator().next());
 
-        cleanup(DoorRequestData.class);
+        cleanup(StorageData.class);
     }
 
     /**
@@ -185,9 +119,6 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
         }
     }
 
-    /**
-     * @param o
-     */
     private void randomizeDate(PnfsBaseInfo o) {
         long time = then + (Math.abs(r.nextLong()) % mod);
         time = (time / (1000 * 60 * 60)) * 1000 * 60 * 60;

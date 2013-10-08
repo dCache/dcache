@@ -1,49 +1,24 @@
 package org.dcache.services.billing.db.impl;
 
-import java.util.Properties;
+import com.google.common.base.Strings;
 
-import org.dcache.services.billing.db.IBillingInfoAccess;
-import org.dcache.services.billing.db.exceptions.BillingInitializationException;
-import org.dcache.services.billing.db.exceptions.BillingStorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+import java.util.Properties;
+
+import org.dcache.services.billing.db.IBillingInfoAccess;
+import org.dcache.services.billing.db.data.IPlotData;
+import org.dcache.services.billing.db.exceptions.BillingInitializationException;
+import org.dcache.services.billing.db.exceptions.BillingStorageException;
+
 /**
- * Declares abstract methods for configuration, initialization and closing;
- * provides functionality for delayed commits, plus setters for JDBC arguments.
- *
- * @see IBillingInfoAccess
+ * Framework for database access; composes delegate for handling inserts.
  *
  * @author arossi
  */
 public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
-
-    protected static final String MAX_INSERTS_PROPERTY = "dbAccessMaxInsertsBeforeCommit";
-    protected static final String MAX_TIMEOUT_PROPERTY = "dbAccessMaxTimeBeforeCommit";
-
-    /**
-     * Daemon which periodically flushes to the persistent store.
-     *
-     * @author arossi
-     */
-    protected class TimedCommitter extends Thread {
-        @Override
-        public void run() {
-            while (isRunning()) {
-                try {
-                    logger.debug("{} sleeping", this);
-                    Thread.sleep(maxTimeBeforeCommit*1000L);
-                    logger.debug("{} calling doCommitIfNeeded", this);
-                    doCommitIfNeeded(true);
-                } catch (InterruptedException ignored) {
-                }
-            }
-            logger.debug("{} calling doCommitIfNeeded", this);
-            doCommitIfNeeded(true);
-            logger.debug("{} exiting", this);
-        }
-    }
-
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected Properties properties;
 
@@ -56,145 +31,99 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     protected String jdbcUser;
     protected String jdbcPassword;
 
-    /*
-     * for delayed/batched commits on put (performance optimization)
-     */
-    protected int insertCount = 0;
-    protected int maxInsertsBeforeCommit = 1;
-    protected int maxTimeBeforeCommit = 0;
+    private String delegateType;
+    private QueueDelegate delegate;
+    private int maxQueueSize;
+    private int maxBatchSize;
+    private boolean dropMessagesAtLimit;
 
-    private Thread flushD;
-    private boolean running;
-
-    /**
-     * Main initialization method. Calls the internal configure method and
-     * possibly starts the flush daemon.
-     *
-     * @throws BillingInitializationException
-     */
-    public final void initialize() throws BillingInitializationException {
-        properties = new Properties();
-        initializeInternal();
-
-        logger.debug("maxInsertsBeforeCommit {}", maxInsertsBeforeCommit);
-        logger.debug("maxTimeBeforeCommit {}", maxTimeBeforeCommit);
-
-        /*
-         * if using delayed commits, run a flush thread
-         */
-        if (maxTimeBeforeCommit > 0) {
-            flushD = new TimedCommitter();
-            setRunning(true);
-            flushD.start();
+    public void close() {
+        if (delegate != null) {
+            delegate.close();
         }
     }
 
-    /**
-     * Shuts down flush daemon.
-     */
-    public void close() {
-        setRunning(false);
-        if (flushD != null)
-            try {
-                logger.debug("interrupting flush daemon");
-                flushD.interrupt();
-                logger.debug("waiting for flush daemon to exit");
-                flushD.join();
-            } catch (InterruptedException ignored) {
-            }
-        logger.debug("{} close exiting", this);
-    }
+    public abstract void commit(Collection<IPlotData> data)
+                    throws BillingStorageException;
 
-    /**
-     * Does any necessary internal initialization
-     *
-     * @throws BillingInitializationException
-     */
-    protected abstract void initializeInternal() throws BillingInitializationException;
-
-    /**
-     * @return if timer thread is running
-     */
-    protected synchronized boolean isRunning() {
-        return running;
-    }
-
-    /**
-     * @param running
-     */
-    protected synchronized void setRunning(boolean running) {
-        this.running = running;
-    }
-
-    /**
-     * Commits if threshold is reached.
-     *
-     * @param force
-     *            force commit if true
-     * @throws BillingStorageException
-     */
-    protected abstract void doCommitIfNeeded(boolean force);
-
-    /**
-     * @return the properties
-     */
     public Properties getProperties() {
         return properties;
     }
 
-    /**
-     * @param jdbcDriver
-     *            the jdbcDriver to set
-     */
+    public void initialize() throws BillingInitializationException {
+        logger.debug("access type: {}", this.getClass().getName());
+
+        properties = new Properties();
+        initializeInternal();
+
+        /*
+         * it is possible to configure the DAO layer for read-only,
+         * meaning there is no insert delegate; see #put() below
+         */
+        if (delegateType != null) {
+            try {
+                Class clzz = Class.forName(delegateType);
+                delegate = (QueueDelegate) clzz.newInstance();
+                delegate.setDropMessagesAtLimit(dropMessagesAtLimit);
+                delegate.setMaxQueueSize(maxQueueSize);
+                delegate.setMaxBatchSize(maxBatchSize);
+                delegate.setCallback(this);
+                delegate.initialize();
+                logger.debug("delegate type: {}", clzz);
+            } catch (Exception e) {
+                throw new BillingInitializationException(e.getMessage(),
+                                e.getCause());
+            }
+        }
+    }
+
+    public void put(IPlotData data) throws BillingStorageException {
+        if (delegate == null) {
+            logger.warn("attempting to insert data but database access has not"
+                            + " been initialized to handle inserts; please set "
+                            + "billing.db.inserts.queue-delegate.type property");
+            return;
+        }
+        delegate.handlePut(data);
+    }
+
+    public void setDelegateType(String delegateType) {
+        this.delegateType = Strings.emptyToNull(delegateType);
+    }
+
+    public void setDropMessagesAtLimit(boolean dropMessagesAtLimit) {
+        this.dropMessagesAtLimit = dropMessagesAtLimit;
+    }
+
+    public void setMaxQueueSize(int maxQueueSize) {
+        this.maxQueueSize = maxQueueSize;
+    }
+
+    public void setMaxBatchSize(int maxBatchSize) {
+        this.maxBatchSize = maxBatchSize;
+    }
+
     public void setJdbcDriver(String jdbcDriver) {
         this.jdbcDriver = jdbcDriver;
     }
 
-    /**
-     * @param jdbcUrl
-     *            the jdbcUrl to set
-     */
-    public void setJdbcUrl(String jdbcUrl) {
-        this.jdbcUrl = jdbcUrl;
-    }
-
-    /**
-     * @param jdbcUser
-     *            the jdbcUser to set
-     */
-    public void setJdbcUser(String jdbcUser) {
-        this.jdbcUser = jdbcUser;
-    }
-
-    /**
-     * @param jdbcPassword
-     *            the jdbcPassword to set
-     */
     public void setJdbcPassword(String jdbcPassword) {
         this.jdbcPassword = jdbcPassword;
     }
 
-    /**
-     * @param maxInsertsBeforeCommit
-     *            the maxInsertsBeforeCommit to set
-     */
-    public void setMaxInsertsBeforeCommit(int maxInsertsBeforeCommit) {
-        this.maxInsertsBeforeCommit = maxInsertsBeforeCommit;
+    public void setJdbcUrl(String jdbcUrl) {
+        this.jdbcUrl = jdbcUrl;
     }
 
-    /**
-     * @param maxTimeBeforeCommit
-     *            the maxTimeBeforeCommit to set
-     */
-    public void setMaxTimeBeforeCommit(int maxTimeBeforeCommit) {
-        this.maxTimeBeforeCommit = maxTimeBeforeCommit;
+    public void setJdbcUser(String jdbcUser) {
+        this.jdbcUser = jdbcUser;
     }
 
-    /**
-     * @param propetiesPath
-     *            the propetiesPath to set
-     */
     public void setPropertiesPath(String propetiesPath) {
         this.propertiesPath = propetiesPath;
     }
+
+    protected abstract void initializeInternal()
+                    throws BillingInitializationException;
+
 }
