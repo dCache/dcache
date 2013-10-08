@@ -17,7 +17,7 @@ Group: Applications/System
 %description
 dCache is a distributed mass storage system.
 
-This package contains the clinet components.
+This package contains the client components.
 
 #%prep
 #%setup -c

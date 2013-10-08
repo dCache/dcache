@@ -1,0 +1,44 @@
+<assembly>
+    <id>srmclient</id>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+          <outputDirectory>share/srm/lib</outputDirectory>
+          <useProjectArtifact>true</useProjectArtifact>
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.basedir}/src/main/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+            <fileMode>755</fileMode>
+            <directoryMode>755</directoryMode>
+            <excludes>
+                <exclude>command-line-client</exclude>
+                <exclude>srm_v1</exclude>
+                <exclude>gridftpcopy</exclude>
+                <exclude>gridftplist</exclude>
+                <exclude>Makefile</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/src/main/lib</directory>
+            <outputDirectory>share/srm/lib</outputDirectory>
+            <fileMode>755</fileMode>
+            <directoryMode>755</directoryMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/src/main/conf</directory>
+            <outputDirectory>share/srm/conf</outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+            <includes>
+                <include>SRMServerV1.map</include>
+                <include>JHRM.map</include>
+                <include>logback*.xml</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</assembly>
