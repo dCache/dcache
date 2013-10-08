@@ -130,8 +130,6 @@ define context billingHistory-db-yes.exe endDefine
      -dbAccessContext=classpath:org/dcache/services/billing/plot/billinghistory.xml \
      -dbAccess=${billingInfoAccess} \
      -dbAccessProperties=${billingInfoAccessPropertiesFile} \
-     -dbAccessMaxInsertsBeforeCommit=${billingMaxInsertsBeforeCommit} \
-     -dbAccessMaxTimeBeforeCommit=${billingMaxTimeBeforeCommitInSecs} \
      -dbUrl=${billingDbUrl} \
      -dbDriver=${billingDbDriver} \
      -dbUser=${billingDbUser} \

@@ -1,19 +1,9 @@
 package org.dcache.services.billing.db;
 
-import java.net.InetSocketAddress;
-import java.util.Random;
 import javax.security.auth.Subject;
 
-import org.dcache.services.billing.db.data.DoorRequestData;
-import org.dcache.services.billing.db.data.MoverData;
-import org.dcache.services.billing.db.data.PnfsBaseInfo;
-import org.dcache.services.billing.db.data.PoolCostData;
-import org.dcache.services.billing.db.data.PoolHitData;
-import org.dcache.services.billing.db.data.StorageData;
-
-import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.auth.GidPrincipal;
+import java.net.InetSocketAddress;
+import java.util.Random;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -25,6 +15,15 @@ import diskCacheV111.vehicles.PoolHitInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
+
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.services.billing.db.data.DoorRequestData;
+import org.dcache.services.billing.db.data.MoverData;
+import org.dcache.services.billing.db.data.PnfsBaseInfo;
+import org.dcache.services.billing.db.data.PoolHitData;
+import org.dcache.services.billing.db.data.StorageData;
 
 /**
  * Generates InfoMessage with randomized values.
@@ -45,8 +44,6 @@ public class InfoMessageGenerator {
         case 2:
             return new StorageData(newStorageMessage());
         case 3:
-            return new PoolCostData(newCostMessage());
-        case 4:
             return new PoolHitData(newHitMessage());
         }
         return null;

@@ -2,6 +2,7 @@ package org.dcache.services.billing.db;
 
 import java.util.Collection;
 
+import org.dcache.services.billing.db.data.IPlotData;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.db.exceptions.BillingStorageException;
@@ -13,16 +14,7 @@ import org.dcache.services.billing.db.exceptions.BillingStorageException;
  */
 public interface IBillingInfoAccess {
 
-    void initialize() throws BillingInitializationException;
-
     void close();
-
-    /**
-     * @param data
-     *            mapped type to be stored
-     * @throws BillingStorageException
-     */
-    <T> void put(T data) throws BillingStorageException;
 
     /**
      * @param type
@@ -58,6 +50,14 @@ public interface IBillingInfoAccess {
      */
     <T> Collection<T> get(Class<T> type, String filter, String parameters,
                     Object... values) throws BillingQueryException;
+
+    void initialize() throws BillingInitializationException;
+
+    /**
+     * @param data
+     *            mapped type to be stored
+     */
+    void put(IPlotData data) throws BillingStorageException;
 
     /**
      * @param type

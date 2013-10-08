@@ -23,8 +23,10 @@ define env billingToDb.exe endExe
 
   check -strong billingInfoAccess
   check billingInfoAccessPropertiesFile
-  check billingMaxInsertsBeforeCommit
-  check billingMaxTimeBeforeCommitInSecs
+  check -strong billing.db.inserts.max-queue-size
+  check -strong billing.db.inserts.max-batch-size
+  check -strong billing.db.inserts.queue-delegate.type
+  check -strong billing.db.inserts.drop-messages-at-limit
 endExe
 
 onerror continue
@@ -42,13 +44,15 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -billingDisableTxt=${billingDisableTxt} \
         -dbAccess=${billingInfoAccess} \
         -dbAccessProperties=${billingInfoAccessPropertiesFile} \
-        -dbAccessMaxInsertsBeforeCommit=${billingMaxInsertsBeforeCommit} \
-        -dbAccessMaxTimeBeforeCommit=${billingMaxTimeBeforeCommitInSecs} \
         -dbUrl=${db.url} \
         -dbDriver=${db.driver} \
         -dbUser=${db.user} \
         -dbPass=${db.password} \
         -pgPass=${db.password.file} \
+        -billing.db.inserts.queue-delegate.type=${billing.db.inserts.queue-delegate.type} \
+        -billing.db.inserts.max-queue-size=${billing.db.inserts.max-queue-size} \
+        -billing.db.inserts.max-batch-size=${billing.db.inserts.max-batch-size} \
+        -billing.db.inserts.drop-messages-at-limit=${billing.db.inserts.drop-messages-at-limit} \
         -billingChangelog=${db.schema.changelog} \
         -shouldUpdate=${db.schema.auto} \
         -poolManager=${poolManager} \

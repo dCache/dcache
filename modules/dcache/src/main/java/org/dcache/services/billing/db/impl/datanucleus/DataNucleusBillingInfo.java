@@ -3,6 +3,7 @@ package org.dcache.services.billing.db.impl.datanucleus;
 import org.datanucleus.FetchPlan;
 
 import javax.jdo.JDOHelper;
+import javax.jdo.JDOUserException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
+import org.dcache.services.billing.db.data.IPlotData;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.db.exceptions.BillingStorageException;
@@ -35,7 +37,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         = "org/dcache/services/billing/db/datanucleus.properties";
 
     private PersistenceManagerFactory pmf;
-    private PersistenceManager insertManager;
 
     /*
      * Initializes DataNucleus factory and in-memory object caching.
@@ -64,7 +65,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                 properties.load(resource.openStream());
             }
             pmf = JDOHelper.getPersistenceManagerFactory(properties);
-        } catch (Throwable t) {
+        } catch (Exception t) {
             throw new BillingInitializationException(t);
         }
     }
@@ -86,103 +87,35 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
                             jdbcPassword);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.dcache.services.billing.db.IBillingInfoAccess#put(java.lang.Object)
-     */
     @Override
-    public <T> void put(T data) throws BillingStorageException {
-        if (!isRunning()) {
-            return;
-        }
-        synchronized (this) {
-            Transaction tx = null;
+    public void commit(Collection<IPlotData> data)
+                    throws BillingStorageException {
+        PersistenceManager insertManager = pmf.getPersistenceManager();
+        Transaction tx = insertManager.currentTransaction();
+        try {
+            tx.begin();
+            insertManager.makePersistentAll(data);
+            tx.commit();
+        } catch (JDOUserException t) {
+            printSQLException("committing  " + data.size() + " cached objects",
+                            t);
+            throw new BillingStorageException(t.getMessage(), t.getCause());
+        } finally {
             try {
-                if (insertManager == null) {
-                    logger.trace("put, new write manager ...");
-                    insertManager = pmf.getPersistenceManager();
-                }
-                tx = insertManager.currentTransaction();
-                if (!tx.isActive()) {
-                    tx.setIsolationLevel("serializable");
-                    tx.begin();
-                }
-                insertManager.makePersistent(data);
-                insertCount++;
-
-            } catch (Exception e) {
-                if (tx != null) {
-                    tx.rollback();
-                }
-                printSQLException("put failed for " + data, e);
-                throw new BillingStorageException(e);
-            }
-            /*
-             * we do not rollback active transactions under finally{...} because
-             * the transaction normally remains open until the committer thread
-             * closes it
-             */
-        }
-
-        doCommitIfNeeded(false);
-    }
-
-    /*
-     * (non-Javadoc) Runs DataNucleus transaction if threshold is reached or
-     * force is true.
-     *
-     * @see
-     * org.dcache.billing.impl.AbstractBillingInfoAccess#doCommitIfNeeded(boolean
-     * )
-     */
-    protected void doCommitIfNeeded(boolean force) {
-        synchronized (this) {
-            logger.debug("doCommitIfNeeded, count={}", insertCount);
-            if (force || insertCount >= maxInsertsBeforeCommit) {
-                Transaction tx = null;
-                try {
-                    if (insertManager != null) {
-                        logger.debug("committing {} cached objects",
-                                        insertCount);
-                        tx = insertManager.currentTransaction();
-                        tx.commit();
-                    }
-                } catch (Exception t) {
-                    printSQLException("committing  " + insertCount
-                                                     + " cached objects", t);
-                } finally {
-                    try {
-                        rollbackIfActive(tx);
-                    } finally {
-                        /*
-                         * closing is necessary in order to avoid memory leaks
-                         */
-                        if (insertManager != null) {
-                            insertManager.close();
-                            insertManager = null;
-                        }
-                        insertCount = 0;
-                    }
-                }
+                rollbackIfActive(tx);
+            } finally {
+                /*
+                 * closing is necessary in order to avoid memory leaks
+                 */
+                insertManager.close();
             }
         }
     }
 
-    /*
-     * Returns detached copy of query result. (non-Javadoc)
-     *
-     * @see
-     * org.dcache.services.billing.db.IBillingInfoAccess#get(java.lang.Class,
-     * java.lang.String, java.lang.String, java.lang.Object[])
-     */
     @Override
     public <T> Collection<T> get(Class<T> type, String filter,
                     String parameters, Object... values)
                                     throws BillingQueryException {
-        if (!isRunning())
-            return null;
         PersistenceManager readManager = pmf.getPersistenceManager();
         Transaction tx = readManager.currentTransaction();
         try {
@@ -196,12 +129,8 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             Collection<T> detached = readManager.detachCopyAll(c);
             logger.debug("got detatched collection {}", detached);
             tx.commit();
-            logger.debug("successfully executed {}",
-                            "get: {}, {}. {}. {}",
-                            new Object[] { type, filter, parameters,
-                            Arrays.asList(values) });
             return detached;
-        } catch (Exception t) {
+        } catch (JDOUserException t) {
             String message = "get: " + type + ", " + filter + ", " + parameters
                             + ", " + Arrays.asList(values);
             printSQLException(message, t);
@@ -219,57 +148,27 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#get(java.lang.Class)
-     */
     @Override
     public <T> Collection<T> get(Class<T> type) throws BillingQueryException {
         return get(type, null, null, (Object) null);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#get(java.lang.Class,
-     * java.lang.String, java.lang.Object[])
-     */
     @Override
     public <T> Collection<T> get(Class<T> type, String filter, Object... values)
                     throws BillingQueryException {
         return get(type, filter, null, values);
     }
 
-    /*
-     * Close the daemon (super), then shut down the thread and close the
-     * manager. (non-Javadoc)
-     *
-     * @see org.dcache.billing.AbstractBillingInfoAccess#close()
-     */
     @Override
     public void close() {
         super.close();
         if (pmf != null) {
-            synchronized (this) {
-                if (insertManager != null) {
-                    insertManager.close();
-                }
-            }
             pmf.close();
         }
     }
 
-    /*
-     * Does bulk deletes. Properties file must set
-     * <code>datanucleus.query.jdoql.allowAll=true</code> (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#removeAll(java.lang.Class)
-     */
     @Override
     public <T> long remove(Class<T> type) throws BillingQueryException {
-        if (!isRunning())
-            return 0;
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
         logger.debug("remove all instances of {}", type);
@@ -283,7 +182,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             logger.debug("successfully removed " + removed
                             + " entries of type " + type);
             return removed;
-        } catch (Exception t) {
+        } catch (JDOUserException t) {
             String message = "remove all instances of " + type;
             printSQLException(message, t);
             throw new BillingQueryException(message, t);
@@ -303,9 +202,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     /*
      * NB: This form of delete will only work if identity-type is NOT
      * "nondurable". Currently unused. (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#remove(java.lang.Class,
-     * java.lang.String, java.lang.Object[])
      */
     @Override
     public <T> long remove(Class<T> type, String filter, Object... values)
@@ -316,15 +212,10 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
     /*
      * NB: This form of delete will only work if identity-type is NOT
      * "nondurable". Currently unused. (non-Javadoc)
-     *
-     * @see org.dcache.billing.IBillingInfoAccess#remove(java.lang.Class,
-     * java.lang.String, java.lang.String, java.lang.Object[])
      */
     @Override
     public <T> long remove(Class<T> type, String filter, String parameters,
                     Object... values) throws BillingQueryException {
-        if (!isRunning())
-            return 0;
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
         long removed = 0;
@@ -339,7 +230,7 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
             logger.debug("successfully removed {} entries of type {}", removed,
                             type);
             return removed;
-        } catch (Exception t) {
+        } catch (JDOUserException t) {
             String message = "remove: " + type + ", " + filter + ", "
                             + parameters + ", " + Arrays.asList(values);
             printSQLException(message, t);
@@ -357,12 +248,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
     }
 
-    /**
-     * Tries to extract embedded messages from SQL exceptions.
-     *
-     * @param message
-     * @param t
-     */
     private void printSQLException(String message, Throwable t) {
         if (message != null) {
             logger.trace(message);
@@ -377,15 +262,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         printSQLException(t.getMessage(), t.getCause());
     }
 
-    /**
-     * Convenience method.
-     *
-     * @param pm
-     * @param type
-     * @param filter
-     * @param parameters
-     * @return appropriate Query
-     */
     private static Query createQuery(PersistenceManager pm, Class type,
                     String filter, String parameters) {
         if (parameters == null) {
@@ -403,23 +279,9 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         return query;
     }
 
-    /**
-     * Convenience method.
-     *
-     * @param tx
-     *            transaction
-     */
     private static void rollbackIfActive(Transaction tx) {
         if (tx != null && tx.isActive()) {
             tx.rollback();
         }
-    }
-
-    /**
-     * @param propetiesPath
-     *            the propetiesPath to set
-     */
-    public void setPropertiesPath(String propetiesPath) {
-        this.propertiesPath = propetiesPath;
     }
 }

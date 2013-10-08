@@ -33,7 +33,6 @@
     <property name="poolManagerStub" ref="poolmanager-stub"/>
   </bean>
 
-
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-yes">
     <!-- rather than allow an arbitrary number of access beans, two
@@ -47,11 +46,11 @@
       <property name="jdbcUser" value="${dbUser}"/>
       <property name="jdbcPassword"
 		value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${dbUrl}', '${dbUser}', '${dbPass}') }"/>
-      <property name="maxInsertsBeforeCommit"
-		value="${dbAccessMaxInsertsBeforeCommit}"/>
-      <property name="maxTimeBeforeCommit"
-		value="${dbAccessMaxTimeBeforeCommit}"/>
       <property name="propertiesPath" value="${dbAccessProperties}"/>
+      <property name="delegateType" value="${billing.db.inserts.queue-delegate.type}"/>
+      <property name="maxQueueSize" value="${billing.db.inserts.max-queue-size}"/>
+      <property name="maxBatchSize" value="${billing.db.inserts.max-batch-size}"/>
+      <property name="dropMessagesAtLimit" value="${billing.db.inserts.drop-messages-at-limit}"/>
     </bean>
 
     <bean id="billing-database"
