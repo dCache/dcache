@@ -24,13 +24,10 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
     private static final String PASS = "";
 
     protected InfoMessageGenerator messageGenerator;
-    protected int timeout = 5;
-    protected int maxBefore = 2000;
     protected Random r = new Random(System.currentTimeMillis());
 
     private File testProperties;
     private BaseBillingInfoAccess access;
-
 
     @Override
     protected void setUp() throws Exception {
@@ -98,8 +95,9 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
             access.setJdbcUrl(URL);
             access.setJdbcUser(USER);
             access.setJdbcPassword(PASS);
-            access.setMaxInsertsBeforeCommit(maxBefore);
-            access.setMaxTimeBeforeCommit(timeout);
+            access.setDelegateType("org.dcache.services.billing.db.impl.DirectQueueDelegate");
+            access.setMaxBatchSize(1000);
+            access.setMaxQueueSize(1000);
             access.initialize();
         } catch (Throwable t) {
             throw new Exception(t.getMessage(), t.getCause());
