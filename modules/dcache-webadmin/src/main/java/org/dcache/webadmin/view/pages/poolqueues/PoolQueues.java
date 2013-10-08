@@ -1,15 +1,16 @@
 package org.dcache.webadmin.view.pages.poolqueues;
 
+import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+import org.apache.wicket.markup.head.OnLoadHeaderItem;
+import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.model.PropertyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.OnLoadHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
 
 import org.dcache.webadmin.controller.PoolQueuesService;
 import org.dcache.webadmin.controller.exceptions.PoolQueuesServiceException;
@@ -27,32 +28,35 @@ public class PoolQueues extends BasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(PoolQueues.class);
     private static final long serialVersionUID = -6482302256752371950L;
-    private PoolGroupBean _allPoolsGroup = new PoolGroupBean("all",
-            new ArrayList<PoolSpaceBean>(), new ArrayList<PoolQueueBean>());
 
     public PoolQueues() {
         add(new PoolQueuesPanel("poolQueuesPanel",
-                new PropertyModel<PoolGroupBean>(this, "_allPoolsGroup")));
-        getPoolQueuesAction();
+                        new PropertyModel<PoolGroupBean>(this, "allPoolsGroup")));
+    }
+
+    public PoolGroupBean getAllPoolsGroup() {
+        PoolGroupBean allPoolsGroup = new PoolGroupBean("all",
+                        new ArrayList<PoolSpaceBean>(),
+                        new ArrayList<PoolQueueBean>());
+        getPoolQueuesAction(allPoolsGroup);
+        return allPoolsGroup;
     }
 
     private PoolQueuesService getPoolQueuesService() {
         return getWebadminApplication().getPoolQueuesService();
     }
 
-    private void getPoolQueuesAction() {
+    private void getPoolQueuesAction(PoolGroupBean bean) {
+        List<PoolQueueBean> poolQueues;
         try {
             _log.debug("getPoolQueuesAction called");
-            setPoolQueues(getPoolQueuesService().getPoolQueues());
+            poolQueues = getPoolQueuesService().getPoolQueues();
         } catch (PoolQueuesServiceException ex) {
             this.error(getStringResource("error.getPoolsQueuesFailed") + ex.getMessage());
             _log.debug("getPoolQueuesAction failed {}", ex.getMessage());
-            setPoolQueues(null);
+            poolQueues = Collections.emptyList();
         }
-    }
-
-    private void setPoolQueues(List<PoolQueueBean> poolQueues) {
-        _allPoolsGroup.setPoolQueues(poolQueues);
+        bean.setPoolQueues(poolQueues);
     }
 
     @Override
