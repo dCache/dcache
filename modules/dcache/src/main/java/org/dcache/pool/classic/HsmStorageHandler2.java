@@ -741,7 +741,8 @@ public class HsmStorageHandler2
                     String output = new HsmRunSystem(storeCommand, MAX_LINES, _maxStoreRun).execute();
                     for (String uri : Splitter.on("\n").trimResults().omitEmptyStrings().split(output)) {
                         try {
-                            URI location = HsmLocationExtractorFactory.validate(new URI(uri));
+                            URI location = new URI(uri);
+                            HsmLocationExtractorFactory.validate(location);
                             storageInfo.addLocation(location);
                             storageInfo.isSetAddLocation(true);
                             LOGGER.debug("{}: added HSM location {}", pnfsId, location);
