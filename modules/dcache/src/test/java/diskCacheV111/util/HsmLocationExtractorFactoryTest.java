@@ -31,26 +31,10 @@ public class HsmLocationExtractorFactoryTest {
     }
 
     @Test
-    public void testValidateNoHsmInstance2() throws Exception {
+    public void testValidateNoPath() throws Exception {
 
         URI location = new URI("osm://osm?group");
-        try {
-            HsmLocationExtractorFactory.validate(location);
-            fail("invalid location not detected");
-        } catch (IllegalArgumentException e) {
-            // OK
-        }
-    }
-
-    @Test
-    public void testValidateNoUniqueId() throws Exception {
-        URI location = new URI("osm://aRandomString");
-        try {
-            HsmLocationExtractorFactory.validate(location);
-            fail("invalid location not detected");
-        } catch (IllegalArgumentException e) {
-            // OK
-        }
+        HsmLocationExtractorFactory.validate(location);
     }
 
     @Test

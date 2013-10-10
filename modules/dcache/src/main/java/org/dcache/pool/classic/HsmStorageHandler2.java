@@ -931,7 +931,8 @@ public class HsmStorageHandler2
                                 if(uri.isEmpty()) {
                                     continue;
                                 }
-                                URI location = HsmLocationExtractorFactory.validate(new URI(uri));
+                                URI location = new URI(uri);
+                                HsmLocationExtractorFactory.validate(location);
                                 storageInfo.addLocation(location);
                                 storageInfo.isSetAddLocation(true);
                                 _log.debug(pnfsId.toString()
