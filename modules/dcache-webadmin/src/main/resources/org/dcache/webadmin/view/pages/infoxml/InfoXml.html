@@ -1,28 +1,46 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="InfoXml.css" rel="stylesheet" type="text/css"  />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="InfoXml.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <form wicket:id="requestInfoXmlForm">
-        <h1><wicket:message key="header1"></wicket:message></h1>
-        <span><wicket:message key="commandLine.Explain"></wicket:message></span>
-        <span wicket:id="feedback"/>
-        <div>
-            <span><wicket:message key="statepath.example"></wicket:message></span>
-            <div class="clear">&nbsp;</div>
-            <input wicket:id="statepath" type="text" value="" size="30"/>
-            <input type="submit" wicket:message="value:submitButton"wicket:id="submit"/>
-            <input type="submit" wicket:message="value:downloadButton" wicket:id="downloadXml"/>
-        </div>
-        <span wicket:id="xmlOutput"><p></p></span>
-    </form>
-</wicket:extend>
+    <wicket:extend>
+        <form wicket:id="requestInfoXmlForm">
+            <h1>
+                <wicket:message key="header1"></wicket:message>
+            </h1>
+            <span>
+                <wicket:message key="commandLine.Explain"></wicket:message>
+            </span>
+            <span wicket:id="feedback" />
+            <div>
+                <span>
+                    <wicket:message key="statepath.example"></wicket:message>
+                </span>
+                <div class="clear">&nbsp;</div>
+                <input
+                    wicket:id="statepath"
+                    type="text"
+                    value=""
+                    size="30" /> <input
+                    type="submit"
+                    wicket:message="value:submitButton"
+                    wicket:id="submit" /> <input
+                    type="submit"
+                    wicket:message="value:downloadButton"
+                    wicket:id="downloadXml" />
+            </div>
+            <span wicket:id="xmlOutput">
+                <p></p>
+            </span>
+        </form>
+    </wicket:extend>
 </body>
 </html>
-

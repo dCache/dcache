@@ -3,26 +3,36 @@
 <head>
 </head>
 <body>
-	<wicket:panel>
-		<h1>
-			<wicket:message key="title"></wicket:message>
-		</h1>
-		<p />
-		<table class="display">
-			<tr class="display" wicket:id="PoolQueuePlotsGridView">
-				<td class="display" wicket:id="cols">
-					<table class="thumbnail">
-						<tr class="thumbnail">
-							<td class="thumbnail"><a href="#" wicket:id="plotlink"><img
-									class="thumbnail" wicket:id="thumbnail" /></a></td>
-						</tr>
-						<tr class="thumbnail">
-							<td class="thumbnail"><b><span wicket:id="poolname"></span></b></td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		</table>
-	</wicket:panel>
+    <wicket:panel>
+        <h1>
+            <wicket:message key="title"></wicket:message>
+        </h1>
+        <p />
+        <table class="display">
+            <tr
+                class="display"
+                wicket:id="PoolQueuePlotsGridView">
+                <td
+                    class="display"
+                    wicket:id="cols">
+                    <table class="thumbnail">
+                        <tr class="thumbnail">
+                            <td class="thumbnail">
+                            <a
+                                href="#"
+                                wicket:id="plotlink">
+                                <img
+                                    class="thumbnail"
+                                    wicket:id="thumbnail" /></a></td>
+                        </tr>
+                        <tr class="thumbnail">
+                            <td class="thumbnail">
+                            <b><span wicket:id="poolname"></span></b></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </wicket:panel>
 </body>
 </html>

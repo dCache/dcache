@@ -1,53 +1,79 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="PoolQueuesPanel.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="PoolQueuesPanel.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:panel>
-    <wicket:message key="poolQueuesPanel.quickFind"></wicket:message>&nbsp;<input type="text" id="quickfind"/>&nbsp;
-    <input type="button" value="Clear Filters" id="cleanfilters">
-    <div class="clear"></div>
-    <br>
-    <table id="sortable">
-        <thead>
-            <tr>
-                <th rowspan="2" filter-type="ddl"><wicket:message key="poolName.header"></wicket:message></th>
-        <th rowspan="2" filter-type="ddl"><wicket:message key="pooldomainName.header"></wicket:message></th>
-        <th wicket:id="tableHeaderView" colspan="3"><span wicket:id="requestQueueName"></span></th>
-        </tr>
-        <tr>
-        <wicket:fragment wicket:id="headerFragment">
-            <th><wicket:message key="active"></wicket:message></th>
-            <th><wicket:message key="max"></wicket:message></th>
-            <th><wicket:message key="queued"></wicket:message></th>
-        </wicket:fragment>
-        <span wicket:id="headerFragmentView"><span wicket:id="colheader"></span></span>
-        </tr>
-        </thead>
-        <tbody>
-            <tr wicket:id="poolsListview">
-        <span wicket:id="pool"></span>
-        </tr>
-        <tr>
-        <span wicket:id="total"></span>
-        </tr>
-        <wicket:fragment wicket:id="queueFragment">
-            <td><span wicket:id="active"></span></td>
-            <td><span wicket:id="max"></span></td>
-            <td><span wicket:id="queued"></span></td>
-        </wicket:fragment>
-        <wicket:fragment wicket:id="poolFragment">
-            <td><span wicket:id="poolName"></span></td>
-            <td><span wicket:id="pooldomainName"></span></td>
-            <span wicket:id="poolMoversView"><span wicket:id="movers"></span></span>
-        </wicket:fragment>
-        </tbody>
-    </table>
-</wicket:panel>
+    <wicket:panel>
+        <wicket:message key="poolQueuesPanel.quickFind"></wicket:message>
+        &nbsp;
+        <input
+            type="text"
+            id="quickfind" />
+        &nbsp;
+        <input
+            type="button"
+            value="Clear Filters"
+            id="cleanfilters"/>
+        <div class="clear"></div>
+        <br>
+        <table id="sortable">
+            <thead>
+                <tr>
+                    <th
+                        rowspan="2"
+                        filter-type="ddl">
+                        <wicket:message
+                            key="poolName.header"></wicket:message></th>
+                    <th
+                        rowspan="2"
+                        filter-type="ddl">
+                        <wicket:message
+                            key="pooldomainName.header"></wicket:message></th>
+                    <th
+                        wicket:id="tableHeaderView"
+                        colspan="3">
+                        <span wicket:id="requestQueueName"></span></th>
+                </tr>
+                <tr>
+                    <wicket:fragment wicket:id="headerFragment">
+                        <th><wicket:message key="active"></wicket:message></th>
+                        <th><wicket:message key="max"></wicket:message></th>
+                        <th><wicket:message key="queued"></wicket:message></th>
+                    </wicket:fragment>
+                    <span wicket:id="headerFragmentView">
+                        <span wicket:id="colheader"></span>
+                    </span>
+                </tr>
+            </thead>
+            <tbody>
+                <tr wicket:id="poolsListview">
+                    <span wicket:id="pool"></span>
+                </tr>
+                <tr>
+                    <span wicket:id="total"></span>
+                </tr>
+                <wicket:fragment wicket:id="queueFragment">
+                    <td><span wicket:id="active"></span></td>
+                    <td><span wicket:id="max"></span></td>
+                    <td><span wicket:id="queued"></span></td>
+                </wicket:fragment>
+                <wicket:fragment wicket:id="poolFragment">
+                    <td><span wicket:id="poolName"></span></td>
+                    <td><span wicket:id="pooldomainName"></span></td>
+                    <span wicket:id="poolMoversView">
+                        <span wicket:id="movers"></span>
+                    </span>
+                </wicket:fragment>
+            </tbody>
+        </table>
+    </wicket:panel>
 </body>
 </html>

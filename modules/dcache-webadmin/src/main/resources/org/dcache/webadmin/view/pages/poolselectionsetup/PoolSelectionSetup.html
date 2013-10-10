@@ -1,133 +1,165 @@
 <html>
-    <head>
-        <title></title>
-    <wicket:head>
-        <wicket:link>
-            <link href="PoolSelectionSetup.css" rel="stylesheet" type="text/css"  />
-        </wicket:link>
-    </wicket:head>
+<head>
+<title></title>
+<wicket:head>
+    <wicket:link>
+        <link
+            href="PoolSelectionSetup.css"
+            rel="stylesheet"
+            type="text/css" />
+    </wicket:link>
+</wicket:head>
 </head>
 <body>
-<wicket:extend>
-    <h1><wicket:message key="header1"></wicket:message></h1>
-    <span wicket:id="feedback"></span>
-    <table class="selection">
-        <tr>
-            <td><a wicket:id="partitionsLink"><wicket:message key="partitionsLink"></wicket:message></a></td>
-            <td><a wicket:id="poolsLink"><wicket:message key="poolsLink"></wicket:message></a></td>
-            <td><a wicket:id="poolGroupsLink"><wicket:message key="poolGroupsLink"></wicket:message></a></td>
-            <td><a wicket:id="selectionLink"><wicket:message key="selectionLink"></wicket:message></a></td>
-        </tr>
-        <tr>
-            <td><a wicket:id="selectionGroupsLink"><wicket:message key="selectionGroupsLink"></wicket:message></a></td>
-            <td><a wicket:id="linksLink"><wicket:message key="linksLink"></wicket:message></a></td>
-            <td><a wicket:id="linkListLink"><wicket:message key="linkListLink"></wicket:message></a></td>
-            <td><a wicket:id="matchLink"><wicket:message key="matchLink"></wicket:message></a></td>
-        </tr>
-    </table>
-    <div class="clear">&nbsp;</div>
-    <span wicket:id="resultPanel"></span>
-    <wicket:fragment wicket:id="entityListShowingFragment">
-        <h3><span wicket:id="listTitle"></span></h3>
-        <table class="content">
-            <tr wicket:id="entityRows">
-                <td wicket:id="cols">
-                    <a href="#" wicket:id="link">
-                        <span wicket:id="name"></span>
-                    </a>
-                </td>
-            </tr>
-        </table>
-    </wicket:fragment>
-    <wicket:fragment wicket:id="particularEntityFragment">
-        <h2><span wicket:id="entityTitle"></span></h2>
-        <span wicket:id="particularProperties"></span>
-        <span wicket:id="firstLinkList"></span>
-        <span wicket:id="secondLinkList"></span>
-    </wicket:fragment>
-    <wicket:fragment wicket:id="poolFragment">
-        <table class="content_1">
-            <tr><th><wicket:message key="poolFragment.enabled"></wicket:message></th>
-            <td><span wicket:id="_isEnabled"></span></td>
-            </tr>
-            <tr><th><wicket:message key="poolFragment.mode"></wicket:message></th>
-            <td><span wicket:id="_mode"></span></td>
-            </tr>
-            <tr><th><wicket:message key="poolFragment.active"></wicket:message></th>
-            <td><span wicket:id="_isActive"></span></td>
-            </tr>
-        </table>
-    </wicket:fragment>
-    <wicket:fragment wicket:id="poolGroupFragment">
-        <table class="content_1">
-            <tr><th><wicket:message key="poolGroupFragment.name"></wicket:message></th>
-            <td><span wicket:id="_name"></span></td>
-            </tr>
-        </table>
-    </wicket:fragment>
-    <wicket:fragment wicket:id="linkFragment">
-        <table class="content_1">
-            <tr><th><wicket:message key="linkFragment.properties"></wicket:message></th>
-            <td><span wicket:id="_name"></span></td>
-            <td><span wicket:id="_writePreference"></span></td>
-            <td><span wicket:id="_readPreference"></span></td>
-            <td><span wicket:id="_restorePreference"></span></td>
-            <td><span wicket:id="_p2pPreference"></span></td>
-            <td><span wicket:id="_partition"></span></td>
-            </tr>
-        </table>
-    </wicket:fragment>
-    <wicket:fragment wicket:id="unitFragment">
-        <table class="content_1">
-            <tr><th><wicket:message key="unitFragment.name"></wicket:message></th>
-            <td><span wicket:id="_name"></span></td>
-            <td><span wicket:id="_type"></span></td>
-            </tr>
-        </table>
-    </wicket:fragment>
-    <wicket:fragment wicket:id="unitGroupFragment">
-        <table class="content_1">
-            <tr><th><wicket:message key="unitGroupFragment.name"></wicket:message></th>
-            <td><span wicket:id="_name"></span></td>
-            </tr>
-        </table>
-    </wicket:fragment>
-    <wicket:fragment wicket:id="linkListFragment">
-        <table class="content">
-            <thead>
-                <tr>
-                    <th rowspan=2><wicket:message key="linkListFragment.name"></wicket:message></th>
-            <th rowspan=2><wicket:message key="linkListFragment.partition"></wicket:message></th>
-            <th colspan=4><wicket:message key="linkListFragment.preferences"></wicket:message></th>
-            <th rowspan=2 colspan=4><wicket:message key="linkListFragment.unitGroups"></wicket:message></th>
-            <th rowspan=2><wicket:message key="linkListFragment.poolGroups"></wicket:message></th>
-            <th rowspan=2><wicket:message key="linkListFragment.pools"></wicket:message></th>
+    <wicket:extend>
+        <h1>
+            <wicket:message key="header1"></wicket:message>
+        </h1>
+        <span wicket:id="feedback"></span>
+        <table class="selection">
+            <tr>
+                <td><a wicket:id="partitionsLink"><wicket:message
+                            key="partitionsLink"></wicket:message></a></td>
+                <td><a wicket:id="poolsLink"><wicket:message
+                            key="poolsLink"></wicket:message></a></td>
+                <td><a wicket:id="poolGroupsLink"><wicket:message
+                            key="poolGroupsLink"></wicket:message></a></td>
+                <td><a wicket:id="selectionLink"><wicket:message
+                            key="selectionLink"></wicket:message></a></td>
             </tr>
             <tr>
-                <th><wicket:message key="linkListFragment.read"></wicket:message></th>
-            <th><wicket:message key="linkListFragment.write"></wicket:message></th>
-            <th><wicket:message key="linkListFragment.cache"></wicket:message></th>
-            <th><wicket:message key="linkListFragment.p2p"></wicket:message></th>
+                <td><a wicket:id="selectionGroupsLink"><wicket:message
+                            key="selectionGroupsLink"></wicket:message></a></td>
+                <td><a wicket:id="linksLink"><wicket:message
+                            key="linksLink"></wicket:message></a></td>
+                <td><a wicket:id="linkListLink"><wicket:message
+                            key="linkListLink"></wicket:message></a></td>
+                <td><a wicket:id="matchLink"><wicket:message
+                            key="matchLink"></wicket:message></a></td>
             </tr>
-            </thead><tbody>
-                <tr wicket:id="linkListView">
-                    <td><a wicket:id="linkLink"><span wicket:id="_name"></span></a></td>
-                    <td><span wicket:id="_partition"></span></td>
-                    <td><span wicket:id="_readPreference"></span></td>
+        </table>
+        <div class="clear">&nbsp;</div>
+        <span wicket:id="resultPanel"></span>
+        <wicket:fragment wicket:id="entityListShowingFragment">
+            <h3>
+                <span wicket:id="listTitle"></span>
+            </h3>
+            <table class="content">
+                <tr wicket:id="entityRows">
+                    <td wicket:id="cols"><a
+                        href="#"
+                        wicket:id="link"> <span wicket:id="name"></span>
+                    </a></td>
+                </tr>
+            </table>
+        </wicket:fragment>
+        <wicket:fragment wicket:id="particularEntityFragment">
+            <h2>
+                <span wicket:id="entityTitle"></span>
+            </h2>
+            <span wicket:id="particularProperties"></span>
+            <span wicket:id="firstLinkList"></span>
+            <span wicket:id="secondLinkList"></span>
+        </wicket:fragment>
+        <wicket:fragment wicket:id="poolFragment">
+            <table class="content_1">
+                <tr>
+                    <th><wicket:message key="poolFragment.enabled"></wicket:message></th>
+                    <td><span wicket:id="_isEnabled"></span></td>
+                </tr>
+                <tr>
+                    <th><wicket:message key="poolFragment.mode"></wicket:message></th>
+                    <td><span wicket:id="_mode"></span></td>
+                </tr>
+                <tr>
+                    <th><wicket:message key="poolFragment.active"></wicket:message></th>
+                    <td><span wicket:id="_isActive"></span></td>
+                </tr>
+            </table>
+        </wicket:fragment>
+        <wicket:fragment wicket:id="poolGroupFragment">
+            <table class="content_1">
+                <tr>
+                    <th><wicket:message key="poolGroupFragment.name"></wicket:message></th>
+                    <td><span wicket:id="_name"></span></td>
+                </tr>
+            </table>
+        </wicket:fragment>
+        <wicket:fragment wicket:id="linkFragment">
+            <table class="content_1">
+                <tr>
+                    <th><wicket:message key="linkFragment.properties"></wicket:message></th>
+                    <td><span wicket:id="_name"></span></td>
                     <td><span wicket:id="_writePreference"></span></td>
+                    <td><span wicket:id="_readPreference"></span></td>
                     <td><span wicket:id="_restorePreference"></span></td>
                     <td><span wicket:id="_p2pPreference"></span></td>
-                    <td><span wicket:id="storage"></span></td>
-                    <td><span wicket:id="net"></span></td>
-                    <td><span wicket:id="protocol"></span></td>
-                    <td><span wicket:id="cacheClass"></span></td>
-                    <td><span wicket:id="poolGroups"></span></td>
-                    <td><span wicket:id="pools"></span></td>
+                    <td><span wicket:id="_partition"></span></td>
                 </tr>
-            </tbody>
-        </table>
-    </wicket:fragment>
-</wicket:extend>
+            </table>
+        </wicket:fragment>
+        <wicket:fragment wicket:id="unitFragment">
+            <table class="content_1">
+                <tr>
+                    <th><wicket:message key="unitFragment.name"></wicket:message></th>
+                    <td><span wicket:id="_name"></span></td>
+                    <td><span wicket:id="_type"></span></td>
+                </tr>
+            </table>
+        </wicket:fragment>
+        <wicket:fragment wicket:id="unitGroupFragment">
+            <table class="content_1">
+                <tr>
+                    <th><wicket:message key="unitGroupFragment.name"></wicket:message></th>
+                    <td><span wicket:id="_name"></span></td>
+                </tr>
+            </table>
+        </wicket:fragment>
+        <wicket:fragment wicket:id="linkListFragment">
+            <table class="content">
+                <thead>
+                    <tr>
+                        <th rowspan=2><wicket:message
+                                key="linkListFragment.name"></wicket:message></th>
+                        <th rowspan=2><wicket:message
+                                key="linkListFragment.partition"></wicket:message></th>
+                        <th colspan=4><wicket:message
+                                key="linkListFragment.preferences"></wicket:message></th>
+                        <th
+                            rowspan=2
+                            colspan=4><wicket:message
+                                key="linkListFragment.unitGroups"></wicket:message></th>
+                        <th rowspan=2><wicket:message
+                                key="linkListFragment.poolGroups"></wicket:message></th>
+                        <th rowspan=2><wicket:message
+                                key="linkListFragment.pools"></wicket:message></th>
+                    </tr>
+                    <tr>
+                        <th><wicket:message key="linkListFragment.read"></wicket:message></th>
+                        <th><wicket:message key="linkListFragment.write"></wicket:message></th>
+                        <th><wicket:message key="linkListFragment.cache"></wicket:message></th>
+                        <th><wicket:message key="linkListFragment.p2p"></wicket:message></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr wicket:id="linkListView">
+                        <td><a wicket:id="linkLink"><span
+                                    wicket:id="_name"></span></a></td>
+                        <td><span wicket:id="_partition"></span></td>
+                        <td><span wicket:id="_readPreference"></span></td>
+                        <td><span wicket:id="_writePreference"></span></td>
+                        <td><span wicket:id="_restorePreference"></span></td>
+                        <td><span wicket:id="_p2pPreference"></span></td>
+                        <td><span wicket:id="storage"></span></td>
+                        <td><span wicket:id="net"></span></td>
+                        <td><span wicket:id="protocol"></span></td>
+                        <td><span wicket:id="cacheClass"></span></td>
+                        <td><span wicket:id="poolGroups"></span></td>
+                        <td><span wicket:id="pools"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </wicket:fragment>
+    </wicket:extend>
 </body>
 </html>
-
