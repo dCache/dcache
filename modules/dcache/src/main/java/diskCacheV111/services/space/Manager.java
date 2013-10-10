@@ -5049,7 +5049,7 @@ public final class Manager
                                                            selectPool.getFileSize(),
                                                            lifetime,
                                                            pnfsPath,
-                                                           selectPool.getPnfsId());
+                                                           null);
                                 file = getFile(fileId);
                         }
                 }
