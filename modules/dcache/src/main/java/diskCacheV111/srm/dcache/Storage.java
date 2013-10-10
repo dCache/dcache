@@ -1517,9 +1517,6 @@ public final class Storage
             FileAttributes updatedAttributes = new FileAttributes();
             updatedAttributes.setMode(dfmd.permMode);
             handler.setFileAttributes(dfmd.getPnfsId(), updatedAttributes);
-
-            FileAttributes attributes = dfmd.getFileAttributes();
-            attributes.setMode(dfmd.permMode);
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("PnfsManager is unavailable: "
                                                 + e.getMessage(), e);

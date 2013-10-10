@@ -1,33 +1,20 @@
-//______________________________________________________________________________
-//
-// $Id$
-// $Author$
-//
-// created 06/27 by Neha Sharma (neha@fnal.gov)
-//
-//______________________________________________________________________________
-
-/*
- * SrmCheckPermission
- *
- * Created on 06/27
- */
-
 package org.dcache.srm.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidPathException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn;
 import org.dcache.srm.v2_2.SrmCheckPermissionRequest;
 import org.dcache.srm.v2_2.SrmCheckPermissionResponse;
@@ -35,120 +22,100 @@ import org.dcache.srm.v2_2.TPermissionMode;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLPermissionReturn;
 import org.dcache.srm.v2_2.TStatusCode;
-/**
- *
- * @author neha
- */
 
-public class SrmCheckPermission {
-        private static Logger logger =
+public class SrmCheckPermission
+{
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmCheckPermission.class);
-	AbstractStorageElement storage;
-	SrmCheckPermissionRequest request;
-	SrmCheckPermissionResponse response;
-	SRMUser user;
+    private final AbstractStorageElement storage;
+    private final SrmCheckPermissionRequest request;
+    private final SRMUser user;
+    private SrmCheckPermissionResponse response;
 
-	public SrmCheckPermission(SRMUser user,
-				  RequestCredential credential,
-				  SrmCheckPermissionRequest request,
-				  AbstractStorageElement storage,
-				  SRM srm,
-				  String client_host ) {
-		this.request = request;
-		this.user = user;
-		this.storage = storage;
-	}
+    public SrmCheckPermission(SRMUser user,
+                              RequestCredential credential,
+                              SrmCheckPermissionRequest request,
+                              AbstractStorageElement storage,
+                              SRM srm,
+                              String client_host)
+    {
+        this.request = request;
+        this.user = user;
+        this.storage = storage;
+    }
 
-	public SrmCheckPermissionResponse getResponse() {
-		if(response != null ) {
-                    return response;
-                }
-		try {
-			response = srmCheckPermission();
-		}
-		catch(Exception e) {
-			logger.error(e.toString());
-		}
-		return response;
-	}
+    public SrmCheckPermissionResponse getResponse()
+    {
+        if (response == null) {
+            try {
+                response = srmCheckPermission();
+            } catch (SRMInternalErrorException e) {
+                LOGGER.error(e.getMessage());
+                return getFailedResponse(e.getMessage(), TStatusCode.SRM_INTERNAL_ERROR);
+            } catch (SRMInvalidRequestException e) {
+                return getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
+            }
+        }
+        return response;
+    }
 
-	public static final SrmCheckPermissionResponse getFailedResponse(String error) {
-		return getFailedResponse(error,null);
-	}
-
-	public static final SrmCheckPermissionResponse getFailedResponse(String error,TStatusCode statusCode) {
-		if(statusCode == null) {
-			statusCode =TStatusCode.SRM_FAILURE;
-		}
-		TReturnStatus status = new TReturnStatus(statusCode, error);
-		SrmCheckPermissionResponse response = new SrmCheckPermissionResponse();
-		response.setReturnStatus(status);
-		return response;
-	}
-
-
-	/**
-	 * implementation of srm check permission
-	 */
-
-	public SrmCheckPermissionResponse srmCheckPermission()
-		throws SRMException, URISyntaxException
-        {
-		if(request==null) {
-			return getFailedResponse(" null request passed to SrmCheckPermission()");
-		}
-		ArrayOfAnyURI anyuriarray=request.getArrayOfSURLs();
-		String authorizationID=request.getAuthorizationID();
-		org.apache.axis.types.URI[] uriarray=anyuriarray.getUrlArray();
-		int length=uriarray.length;
-		if (length==0) {
-			return getFailedResponse(" zero length array of URLS");
-		}
-		ArrayOfTSURLPermissionReturn arrayOfPermissions=new ArrayOfTSURLPermissionReturn();
-		TSURLPermissionReturn surlPermissionArray[] = new TSURLPermissionReturn[length];
-		arrayOfPermissions.setSurlPermissionArray(surlPermissionArray);
-		int nfailed = 0;
-		for(int i=0;i <length;i++){
-                        TSURLPermissionReturn pr = new TSURLPermissionReturn();
-			pr.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
-			pr.setSurl(uriarray[i]);
-			logger.debug("SURL[{}]= {}", i, uriarray[i]);
-			URI surl = new URI(uriarray[i].toString());
-			try {
-                            FileMetaData fmd = storage.getFileMetaData(user,surl,false);
-				int permissions = fmd.permMode;
-				TPermissionMode pm;
-				if (fmd.isOwner(user)) {
-					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>6)&0x7));
-				}
-				else if (fmd.isGroupMember(user)) {
-					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>3)&0x7));
-				}
-				else {
-					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode((permissions&0x7));
-				}
-				pr.setPermission(pm);
-			}
-			catch (SRMException srme) {
-				logger.warn(srme.toString());
-				pr.setStatus(new TReturnStatus(TStatusCode.SRM_FAILURE, uriarray[i] + " " + srme
-                                        .getMessage()));
-				nfailed++;
-			}
-			finally {
-				arrayOfPermissions.setSurlPermissionArray(i,pr);
-			}
-		}
-                TReturnStatus returnStatus;
-                if (nfailed == 0) {
-                    returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, "success");
-                } else if (nfailed == length) {
-                    returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE,
-                            "failed to check Permission for all requested surls");
+    private SrmCheckPermissionResponse srmCheckPermission()
+            throws SRMInternalErrorException, SRMInvalidRequestException
+    {
+        org.apache.axis.types.URI[] surls = request.getArrayOfSURLs().getUrlArray();
+        if (surls == null || surls.length == 0) {
+            throw new SRMInvalidRequestException("arrayOfSURLs is empty");
+        }
+        int length = surls.length;
+        TSURLPermissionReturn permissions[] = new TSURLPermissionReturn[length];
+        boolean hasSuccess = false;
+        boolean hasFailure = false;
+        for (int i = 0; i < length; i++) {
+            TReturnStatus returnStatus;
+            TPermissionMode pm = null;
+            try {
+                FileMetaData fmd = storage.getFileMetaData(user, URI.create(surls[i].toString()), false);
+                int mode = fmd.permMode;
+                if (fmd.isOwner(user)) {
+                    pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((mode >> 6) & 0x7));
+                } else if (fmd.isGroupMember(user)) {
+                    pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((mode >> 3) & 0x7));
                 } else {
-                    returnStatus = new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
-                            "failed to check Permission for at least one file");
+                    pm = PermissionMaskToTPermissionMode.maskToTPermissionMode((mode & 0x7));
                 }
-                return new SrmCheckPermissionResponse(returnStatus, arrayOfPermissions);
-	}
+                returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+                hasSuccess = true;
+            } catch (SRMInternalErrorException e) {
+                throw e;
+            } catch (SRMInvalidPathException e) {
+                returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+                hasFailure = true;
+            } catch (SRMAuthorizationException e) {
+                returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+                hasFailure = true;
+            } catch (SRMException e) {
+                LOGGER.warn(e.toString());
+                returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
+                hasFailure = true;
+            }
+
+            permissions[i] = new TSURLPermissionReturn(surls[i], returnStatus, pm);
+        }
+        return new SrmCheckPermissionResponse(
+                ReturnStatuses.getSummaryReturnStatus(hasFailure, hasSuccess),
+                new ArrayOfTSURLPermissionReturn(permissions));
+    }
+
+    public static final SrmCheckPermissionResponse getFailedResponse(String error)
+    {
+        return getFailedResponse(error, TStatusCode.SRM_FAILURE);
+    }
+
+    public static final SrmCheckPermissionResponse getFailedResponse(String error, TStatusCode statusCode)
+    {
+        TReturnStatus status = new TReturnStatus(statusCode, error);
+        SrmCheckPermissionResponse response = new SrmCheckPermissionResponse();
+        response.setReturnStatus(status);
+        return response;
+    }
 }
