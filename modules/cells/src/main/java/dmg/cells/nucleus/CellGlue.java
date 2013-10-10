@@ -539,7 +539,7 @@ class CellGlue {
                       NoRouteToCellException(
                            transponder.getUOID(),
                            destination,
-                           "Initial Send");
+                           cellName + "@" + _cellDomainName + " not found");
                }else{
                   sendException( nucleus , transponder , destination , cellName ) ;
                   return ;
@@ -584,7 +584,7 @@ class CellGlue {
                        NoRouteToCellException(
                           transponder.getUOID(),
                           destination ,
-                          "Initial Send");
+                          cellName + " not found and routing limit reached");
                }else{
                   sendException( nucleus , transponder , destination ,  cellName ) ;
                   return ;
