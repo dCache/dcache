@@ -4903,7 +4903,7 @@ public final class Manager
                                                            selectWritePool.getPreallocated(),
                                                            lifetime,
                                                            pnfsPath,
-                                                           selectWritePool.getPnfsId());
+                                                           null);
                                 file = getFile(fileId);
                         }
                 }
