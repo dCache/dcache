@@ -44,13 +44,14 @@
       <property name="jdbcDriver" value="${billing.db.driver}"/>
       <property name="jdbcUser" value="${billing.db.user}"/>
       <property name="jdbcPassword" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
-      <property name="maxInsertsBeforeCommit" value="${billing.db.inserts.max-before-commit}"/>
-      <property name="maxTimeBeforeCommit" value="${billing.db.inserts.timeout-before-commit}"/>
-      <property name="maxTimeBeforeCommitUnit" value="${billing.db.inserts.timeout-before-commit.unit}"/>
       <property name="propertiesPath" value="${billing.db.config.path}"/>
       <property name="partitionCount" value="${billing.db.connections.partition-count}"/>
       <property name="maxConnectionsPerPartition" value="${billing.db.connections.max-per-partition}"/>
       <property name="minConnectionsPerPartition" value="${billing.db.connections.min-per-partition}"/>
+      <property name="delegateType" value="${billing.db.inserts.queue-delegate.type}"/>
+      <property name="maxQueueSize" value="${billing.db.inserts.max-queue-size}"/>
+      <property name="maxBatchSize" value="${billing.db.inserts.max-batch-size}"/>
+      <property name="dropMessagesAtLimit" value="${billing.db.inserts.drop-messages-at-limit}"/>
     </bean>
 
     <bean id="histogram-service" class="org.dcache.services.billing.histograms.data.JDOTimeFrameHistogramDataService">
