@@ -59,14 +59,17 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.impl;
 
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Properties;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.BillingInitializationException;
 import org.dcache.services.billing.db.exceptions.BillingQueryException;
+import org.dcache.services.billing.histograms.data.IHistogramData;
 
 /**
  * Declares abstract methods for configuration, initialization and closing;
@@ -78,49 +81,8 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
 
     protected static final int DUMMY_VALUE = -1;
 
-    protected static final String MAX_INSERTS_PROPERTY
-        = "dbAccessMaxInsertsBeforeCommit";
-    protected static final String MAX_TIMEOUT_PROPERTY
-        = "dbAccessMaxTimeBeforeCommit";
-
-    /**
-     * Daemon which periodically flushes to the persistent store.
-     */
-    protected class TimedCommitter extends Thread {
-        @Override
-        public void run() {
-            while (isRunning()) {
-                try {
-                    logger.trace("TimedCommitter thread sleeping");
-                    Thread.sleep(maxTimeBeforeCommit * 1000L);
-                    logger.trace("TimedCommitter thread calling doCommitIfNeeded");
-                } catch (InterruptedException ignored) {
-                    logger.trace("TimedCommitter thread sleep interrupted");
-                }
-
-                try {
-                    doCommitIfNeeded(true);
-                } catch (BillingQueryException t) {
-                    logger.error("{}; {}",
-                                 "could not not commit",
-                                 "some billing data may be lost");
-                    logger.debug("{}: {}", "timed commit failure", t.toString());
-                }
-            }
-            logger.trace("TimedCommitter thread doCommitIfNeeded");
-            try {
-                doCommitIfNeeded(true);
-            } catch (BillingQueryException t) {
-                logger.error("{}; {}",
-                             "could not not commit",
-                             "some billing data may be lost");
-                logger.debug("{}: {}", "timed commit failure", t.toString());
-            }
-            logger.trace("TimedCommitter thread exiting");
-        }
-    }
-
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     protected Properties properties;
 
     /**
@@ -135,81 +97,99 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     protected int maxConnectionsPerPartition = DUMMY_VALUE;
     protected int minConnectionsPerPartition = DUMMY_VALUE;
 
-    /**
-     * for delayed/batched commits on put (performance optimization)
-     */
-    protected int insertCount;
-    protected int maxInsertsBeforeCommit = 1;
-    protected int maxTimeBeforeCommit;
-
-    private Thread flushD;
-    private boolean running;
-
-    /**
-     * Main initialization method. Calls the internal configure method and
-     * possibly starts the flush daemon.
-     */
-    @Override
-    public final void initialize() throws BillingInitializationException {
-        properties = new Properties();
-        initializeInternal();
-
-        logger.trace("maxInsertsBeforeCommit {}", maxInsertsBeforeCommit);
-        logger.trace("maxTimeBeforeCommit {}", maxTimeBeforeCommit);
-
-        /*
-         * if using delayed commits, run a flush thread
-         */
-        if (maxTimeBeforeCommit > 0) {
-            flushD = new TimedCommitter();
-            setRunning(true);
-            flushD.start();
-        }
-    }
+    private String delegateType;
+    private QueueDelegate delegate;
+    private int maxQueueSize;
+    private int maxBatchSize;
+    private boolean dropMessagesAtLimit;
 
     /**
      * Shuts down flush daemon.
      */
     @Override
     public void close() {
-        setRunning(false);
-        if (flushD != null) {
-            try {
-                logger.trace("interrupting flush daemon");
-                flushD.interrupt();
-                logger.trace("waiting for flush daemon to exit");
-                flushD.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.trace("close interrupted");
-            }
+        if (delegate != null) {
+            delegate.close();
         }
         logger.trace("close exiting");
     }
 
-    /**
-     * Does any necessary internal initialization
-     */
-    protected abstract void initializeInternal()
-                    throws BillingInitializationException;
-
-    protected synchronized boolean isRunning() {
-        return running;
-    }
-
-    protected synchronized void setRunning(boolean running) {
-        this.running = running;
-    }
-
-    protected abstract void doCommitIfNeeded(boolean force)
+    public abstract void commit(Collection<IHistogramData> data)
                     throws BillingQueryException;
+
+    public long getCommittedMessages() {
+        if (delegate == null) {
+            return 0;
+        }
+        return delegate.getCommitted();
+    }
+
+    public long getDroppedMessages() {
+        if (delegate == null) {
+            return 0;
+        }
+        return delegate.getDropped();
+    }
+
+    public long getInsertQueueSize() {
+        if (delegate == null) {
+            return 0;
+        }
+        return delegate.getQueueSize();
+    }
 
     public Properties getProperties() {
         return properties;
     }
 
+    public void initialize() throws BillingInitializationException {
+        logger.debug("access type: {}", this.getClass().getName());
+        properties = new Properties();
+        initializeInternal();
+        /*
+         * can be null (configuration for read-only access; see #put())
+         */
+        if (delegateType != null) {
+            try {
+                Class clzz = Class.forName(delegateType);
+                delegate = (QueueDelegate) clzz.newInstance();
+                delegate.setDropMessagesAtLimit(dropMessagesAtLimit);
+                delegate.setMaxQueueSize(maxQueueSize);
+                delegate.setMaxBatchSize(maxBatchSize);
+                delegate.setCallback(this);
+                delegate.initialize();
+                logger.debug("delegate type: {}", clzz);
+            } catch (Exception e) {
+                throw new BillingInitializationException(e.getMessage(),
+                                e.getCause());
+            }
+        }
+    }
+
+    public void put(IHistogramData data) throws BillingQueryException {
+        if (delegate == null) {
+            logger.warn("attempting to insert data but database access has not"
+                            + " been initialized to handle inserts; please set the "
+                            + "billing.db.inserts.queue-delegate.type property");
+            return;
+        }
+        delegate.handlePut(data);
+    }
+
+    public void setDelegateType(String delegateType) {
+        this.delegateType = Strings.emptyToNull(delegateType);
+    }
+
+    public void setDropMessagesAtLimit(boolean dropMessagesAtLimit) {
+        this.dropMessagesAtLimit = dropMessagesAtLimit;
+    }
+
     public void setJdbcDriver(String jdbcDriver) {
         this.jdbcDriver = jdbcDriver;
+    }
+
+    public void setJdbcPassword(String jdbcPassword) {
+        this.jdbcPassword = jdbcPassword;
     }
 
     public void setJdbcUrl(String jdbcUrl) {
@@ -220,31 +200,29 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         this.jdbcUser = jdbcUser;
     }
 
-    public void setJdbcPassword(String jdbcPassword) {
-        this.jdbcPassword = jdbcPassword;
-    }
-
-    public void setMaxInsertsBeforeCommit(int maxInsertsBeforeCommit) {
-        this.maxInsertsBeforeCommit = maxInsertsBeforeCommit;
-    }
-
-    public void setMaxTimeBeforeCommit(int maxTimeBeforeCommit) {
-        this.maxTimeBeforeCommit = maxTimeBeforeCommit;
-    }
-
-    public void setPropertiesPath(String propetiesPath) {
-        this.propertiesPath = propetiesPath;
-    }
-
-    public void setPartitionCount(int count) {
-        partitionCount = count;
+    public void setMaxBatchSize(int maxBatchSize) {
+        this.maxBatchSize = maxBatchSize;
     }
 
     public void setMaxConnectionsPerPartition(int count) {
         maxConnectionsPerPartition = count;
     }
 
+    public void setMaxQueueSize(int maxQueueSize) {
+        this.maxQueueSize = maxQueueSize;
+    }
+
     public void setMinConnectionsPerPartition(int count) {
         minConnectionsPerPartition = count;
     }
+
+    public void setPartitionCount(int count) {
+        partitionCount = count;
+    }
+
+    public void setPropertiesPath(String propetiesPath) {
+        this.propertiesPath = propetiesPath;
+    }
+
+    protected abstract void initializeInternal() throws BillingInitializationException;
 }
