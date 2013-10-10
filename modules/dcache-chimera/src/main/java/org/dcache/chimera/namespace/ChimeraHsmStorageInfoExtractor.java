@@ -215,8 +215,8 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                     if(location.toString().isEmpty()) {
                         continue;
                     }
-                    URI validatedUri = HsmLocationExtractorFactory.validate(location);
-                    inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, validatedUri.toString());
+                    HsmLocationExtractorFactory.validate(location);
+                    inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, location.toString());
                 }
             }
 
