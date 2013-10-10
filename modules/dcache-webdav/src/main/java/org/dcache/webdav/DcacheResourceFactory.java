@@ -79,6 +79,7 @@ import org.dcache.missingfiles.MissingFileStrategy;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.RedirectedTransfer;
+import org.dcache.util.Slf4jSTErrorListener;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.TransferRetryPolicy;
@@ -452,6 +453,7 @@ public class DcacheResourceFactory
         throws IOException
     {
         _listingGroup = new STGroupFile(resource.getURL(), "UTF-8", '$', '$');
+        _listingGroup.setListener(new Slf4jSTErrorListener(_log));
     }
 
     /**

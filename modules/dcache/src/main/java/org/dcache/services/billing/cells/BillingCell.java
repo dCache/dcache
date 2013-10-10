@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.compiler.STException;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import dmg.util.Replaceable;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
+import org.dcache.util.Slf4jSTErrorListener;
 
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.Iterables.transform;
@@ -86,6 +88,7 @@ public final class BillingCell
     public BillingCell()
     {
         _templateGroup.registerRenderer(Date.class, new DateRenderer());
+        _templateGroup.setListener(new Slf4jSTErrorListener(_log));
     }
 
     @Override
@@ -179,9 +182,14 @@ public final class BillingCell
         if (format == null) {
             return msg.toString();
         } else {
-            ST template = new ST(_templateGroup, format);
-            msg.fillTemplate(template);
-            return template.render();
+            try {
+                ST template = new ST(_templateGroup, format);
+                msg.fillTemplate(template);
+                return template.render();
+            } catch (STException e) {
+                _log.error("Unable to render format '{}'. Falling back to internal default.", format);
+                return msg.toString();
+            }
         }
     }
 
@@ -418,4 +426,5 @@ public final class BillingCell
     public void setEnableTxt(boolean enableText) {
         _enableText = enableText;
     }
+
 }
