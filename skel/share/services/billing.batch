@@ -20,11 +20,12 @@ define env billingToDb.exe endExe
   check db.password.file
   check -strong db.schema.changelog
   check -strong db.schema.auto
-
+  check -strong billing.db.inserts.max-queue-size
+  check -strong billing.db.inserts.max-batch-size
+  check -strong billing.db.inserts.queue-delegate.type
+  check -strong billing.db.inserts.drop-messages-at-limit
   check -strong billingInfoAccess
   check billingInfoAccessPropertiesFile
-  check billingMaxInsertsBeforeCommit
-  check billingMaxTimeBeforeCommitInSecs
 endExe
 
 onerror continue
@@ -42,8 +43,10 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -billingDisableTxt=${billingDisableTxt} \
         -dbAccess=${billingInfoAccess} \
         -dbAccessProperties=${billingInfoAccessPropertiesFile} \
-        -dbAccessMaxInsertsBeforeCommit=${billingMaxInsertsBeforeCommit} \
-        -dbAccessMaxTimeBeforeCommit=${billingMaxTimeBeforeCommitInSecs} \
+        -billing.db.inserts.max-queue-size=${billing.db.inserts.max-queue-size} \
+        -billing.db.inserts.max-batch-size=${billing.db.inserts.max-batch-size} \
+        -billing.db.inserts.queue-delegate.type=${billing.db.inserts.queue-delegate.type} \
+        -billing.db.inserts.drop-messages-at-limit=${billing.db.inserts.drop-messages-at-limit} \
         -dbUrl=${db.url} \
         -dbDriver=${db.driver} \
         -dbUser=${db.user} \
