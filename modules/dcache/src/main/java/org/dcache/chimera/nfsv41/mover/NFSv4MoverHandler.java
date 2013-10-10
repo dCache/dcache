@@ -12,11 +12,10 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.dcache.auth.Subjects;
-import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
-import org.dcache.chimera.nfs.v4.HimeraNFS4Utils;
 import org.dcache.chimera.nfs.v4.NFSServerV41;
 import org.dcache.chimera.nfs.v4.NFSv4OperationFactory;
 import org.dcache.chimera.nfs.v4.OperationBIND_CONN_TO_SESSION;
@@ -31,7 +30,6 @@ import org.dcache.chimera.nfs.v4.OperationPUTFH;
 import org.dcache.chimera.nfs.v4.OperationPUTROOTFH;
 import org.dcache.chimera.nfs.v4.OperationRECLAIM_COMPLETE;
 import org.dcache.chimera.nfs.v4.OperationSEQUENCE;
-import org.dcache.chimera.nfs.v4.ServerIdProvider;
 import org.dcache.chimera.nfs.v4.SimpleIdMap;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
@@ -52,7 +50,6 @@ import org.dcache.xdr.OncRpcSvcBuilder;
 import org.dcache.xdr.RpcDispatchable;
 import org.dcache.xdr.RpcLoginService;
 import org.dcache.xdr.gss.GssSessionManager;
-import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.xdr.OncRpcException;
 
 /**
@@ -172,7 +169,7 @@ public class NFSv4MoverHandler {
      */
     private final OncRpcSvc _rpcService;
 
-    private final Map<stateid4, NfsMover> _activeIO = new HashMap<>();
+    private final Map<stateid4, NfsMover> _activeIO = new ConcurrentHashMap<>();
     private final NFSv4OperationFactory _operationFactory =
             new EDSNFSv4OperationFactory(_activeIO);
     private final NFSServerV41 _embededDS;
