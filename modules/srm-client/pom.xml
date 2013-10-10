@@ -136,11 +136,14 @@
                                     <goal>single</goal>
                                 </goals>
                                 <configuration>
-                                    <descriptors>
-                                        <descriptor>src/main/assembly/spec.xml</descriptor>
-                                    </descriptors>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <finalName>SPECS</finalName>
+                                  <descriptors>
+                                    <descriptor>src/main/assembly/spec.xml</descriptor>
+                                  </descriptors>
+                                  <formats>
+                                    <format>dir</format>
+                                  </formats>
+                                  <outputDirectory>${project.build.directory}</outputDirectory>
+                                  <finalName>SPECS</finalName>
                                 </configuration>
                             </execution>
                         </executions>
