@@ -57,8 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.services.space.message.CancelUse;
 import diskCacheV111.services.space.message.ExtendLifetime;
@@ -99,8 +97,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
@@ -110,7 +106,6 @@ import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellMessageSender;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.JdbcConnectionPool;
@@ -3429,7 +3424,7 @@ public final class Manager
         {
             if (spaceManagerEnabled &&
                 (isInterceptedMessage(message) || isPoolAcceptFileReply(message)) ) {
-                    envelope.touch();
+                    envelope.nextDestination();
                     ThreadManager.execute(new Runnable() {
                         @Override
                         public void run()
@@ -3437,14 +3432,8 @@ public final class Manager
                             processMessageToForward(envelope, message);
                         }
                     });
-            } else {
-                if (message instanceof PoolIoFileMessage &&
-                    !((Message) message).isReply()) {
-                        envelope.
-                                getDestinationPath().
-                                insert(poolManagerStub.
-                                       getDestinationPath());
-                }
+            } else if (message instanceof PoolIoFileMessage && !message.isReply()) {
+                envelope.getDestinationPath().insert(poolManagerStub.getDestinationPath());
             }
         }
 
@@ -3478,7 +3467,6 @@ public final class Manager
                         logger.error("forwarding msg failed: {}",
                                 e.getMessage(), e);
                 }
-                envelope.nextDestination();
                 try {
                         sendMessage(envelope);
                 }

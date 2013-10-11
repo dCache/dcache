@@ -157,7 +157,7 @@ public class CellPath  implements Cloneable , Serializable {
    public synchronized boolean isFirstDestination(){
       return _position == 0 ;
    }
-   synchronized CellAddressCore getCurrent(){
+   public synchronized CellAddressCore getCurrent(){
      if( ( _list.size() == 0            ) ||
          ( _position    <  0            ) ||
           ( _position    >=_list.size()  )     ) {
