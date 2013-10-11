@@ -3141,52 +3141,6 @@ public final class Manager
                 long creationTime=System.currentTimeMillis();
                 int rc;
                 Space space = selectSpaceForUpdate(connection,spaceReservationId,0L); // "0L" is a hack needed to get a better error code from comparison below
-                if (voGroup==null) {
-                        if (space.getVoGroup()!=null) {
-                                if (!space.getVoGroup().equals("")&&!space.getVoGroup().equals("*")) {
-                                        throw new SpaceAuthorizationException("VO group does not match, specified null, must be "+
-                                                                              space.getVoGroup());
-                                }
-                        }
-                }
-                else {
-                        if (space.getVoGroup()!=null) {
-                                if (!space.getVoGroup().equals(voGroup)&&!space.getVoGroup().equals("*")) {
-                                        throw new SpaceAuthorizationException("VO group does not match, specified "+
-                                                                              voGroup+
-                                                                              ", must be "+
-                                                                              space.getVoGroup());
-                                }
-                        }
-                        else {
-                                throw new SpaceAuthorizationException("VO group does not match, specified "+
-                                                                      voGroup+
-                                                                      ", must be null");
-                        }
-                }
-                if (voRole==null) {
-                        if (space.getVoRole()!=null) {
-                                if (!space.getVoRole().equals("")&&!space.getVoRole().equals("*")) {
-                                        throw new SpaceAuthorizationException("VO role does not match, specified null, must be "+
-                                                                              space.getVoRole());
-                                }
-                        }
-                }
-                else {
-                        if (space.getVoRole()!=null) {
-                                if (!space.getVoRole().equals(voRole)&&!space.getVoRole().equals("*")) {
-                                        throw new SpaceAuthorizationException("VO role does not match, specified "+
-                                                                              voRole+
-                                                                              ", must be "+
-                                                                              space.getVoRole());
-                                }
-                        }
-                        else {
-                                throw new SpaceAuthorizationException("VO role does not match, specified "+
-                                                                      voRole+
-                                                                      ", must be null");
-                        }
-                }
                 long currentTime = System.currentTimeMillis();
                 if(space.getLifetime() != -1 && space.getCreationTime()+space.getLifetime()  < currentTime) {
                         throw new SpaceExpiredException("space with id="+
