@@ -39,9 +39,9 @@
             "cellname"       varchar(256),
             "datestamp"      timestamp with time zone,
             "errorcode"      integer,
-            "errormessage"   varchar(256),
+            "errormessage"   varchar(8000),
             "pnfsid"         varchar(36),
-            "transaction"    varchar(8000)
+            "transaction"    varchar(256)
             );
 
             CREATE TABLE "doorinfo"
@@ -57,9 +57,9 @@
             "cellname"       varchar(256),
             "datestamp"      timestamp with time zone,
             "errorcode"      integer,
-            "errormessage"   varchar(256),
+            "errormessage"   varchar(8000),
             "pnfsid"         varchar(36),
-            "transaction"    varchar(8000)
+            "transaction"    varchar(256)
             );
 
             CREATE TABLE "hitinfo"
