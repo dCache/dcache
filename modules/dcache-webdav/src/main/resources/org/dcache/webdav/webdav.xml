@@ -275,7 +275,7 @@
           <description>HTTPS connector using jGlobus</description>
 
 	  <property name="port" value="${webdav.net.port}"/>
-	  <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}"/>
+	  <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
 	  <property name="hostCertificatePath" value="${webdav.authn.hostcert.cert}"/>
 	  <property name="hostKeyPath" value="${webdav.authn.hostcert.key}"/>
 	  <property name="caCertificatePath" value="${webdav.authn.capath}"/>
