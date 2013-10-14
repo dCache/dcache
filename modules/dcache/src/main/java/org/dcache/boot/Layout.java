@@ -43,7 +43,7 @@ public class Layout
 
     public Layout(ConfigurationProperties config)
     {
-        _properties = new ConfigurationProperties(config);
+        _properties = new ConfigurationProperties(config, new DcacheConfigurationUsageChecker());
     }
 
     public ConfigurationProperties properties()

@@ -221,6 +221,11 @@ public class BootLoader
         public void warning( String message) {
             _inner.warning(message);
         }
+
+        @Override
+        public void info( String message) {
+            _inner.info(message);
+        }
     }
 
     /**
@@ -252,6 +257,12 @@ public class BootLoader
         {
             _out.println("[WARNING] " + addContextTo(message));
             _warnings++;
+        }
+
+        @Override
+        public void info(String message)
+        {
+            _out.println("[INFO] " + addContextTo(message));
         }
 
         public int getReturnCode()

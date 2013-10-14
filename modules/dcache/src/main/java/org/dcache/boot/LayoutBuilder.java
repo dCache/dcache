@@ -62,10 +62,10 @@ public class LayoutBuilder
     }
 
     private ConfigurationProperties loadConfigurationFromPath(
-            ConfigurationProperties defaults, File path)
+            ConfigurationProperties defaults, File path, ConfigurationProperties.UsageChecker usageChecker)
             throws IOException
     {
-        ConfigurationProperties config = new ConfigurationProperties(defaults);
+        ConfigurationProperties config = new ConfigurationProperties(defaults, usageChecker);
         if (path.isFile()) {
             _sourceFiles.add(path);
             config.loadFile(path);
@@ -86,14 +86,14 @@ public class LayoutBuilder
     }
 
     private ConfigurationProperties loadConfigurationByProperty(
-            ConfigurationProperties defaults, String property)
+            ConfigurationProperties defaults, String property, ConfigurationProperties.UsageChecker usageChecker)
             throws IOException
     {
         ConfigurationProperties config = defaults;
         String paths = config.getValue(property);
         if (paths != null) {
             for (String path: paths.split(PATH_DELIMITER)) {
-                config = loadConfigurationFromPath(config, new File(path));
+                config = loadConfigurationFromPath(config, new File(path), usageChecker);
             }
         }
         return config;
@@ -115,7 +115,7 @@ public class LayoutBuilder
         if (files != null) {
             for (File file: files) {
                 if (file.isDirectory()) {
-                    config = loadConfigurationFromPath(config, file);
+                    config = loadConfigurationFromPath(config, file, new ConfigurationProperties.UniversalUsageChecker());
                 }
             }
         }
@@ -133,11 +133,11 @@ public class LayoutBuilder
         config.setProblemConsumer(problemConsumer);
 
         /* ... and a chain of properties files. */
-        config = loadConfigurationByProperty(config, PROPERTY_DEFAULTS_PATH);
+        config = loadConfigurationByProperty(config, PROPERTY_DEFAULTS_PATH, new ConfigurationProperties.UniversalUsageChecker());
         for (String dir: getPluginDirs()) {
             config = loadPlugins(config, new File(dir));
         }
-        config = loadConfigurationByProperty(config, PROPERTY_SETUP_PATH);
+        config = loadConfigurationByProperty(config, PROPERTY_SETUP_PATH, new DcacheConfigurationUsageChecker());
 
         return config;
     }
@@ -176,8 +176,8 @@ public class LayoutBuilder
     {
         ConfigurationProperties config = loadSystemProperties();
         config.setProblemConsumer(new SilentProblemConsumer());
-        config = loadConfigurationByProperty(config, PROPERTY_DEFAULTS_PATH);
-        config = loadConfigurationByProperty(config, PROPERTY_SETUP_PATH);
+        config = loadConfigurationByProperty(config, PROPERTY_DEFAULTS_PATH, new ConfigurationProperties.UniversalUsageChecker());
+        config = loadConfigurationByProperty(config, PROPERTY_SETUP_PATH, new DcacheConfigurationUsageChecker());
         config = loadLayout(config).properties();
         String dir = config.getValue(PROPERTY_PLUGIN_PATH);
         return (dir == null) ? new String[0] : dir.split(PATH_DELIMITER);
@@ -202,6 +202,11 @@ public class LayoutBuilder
 
         @Override
         public void warning(String message)
+        {
+        }
+
+        @Override
+        public void info(String message)
         {
         }
     }

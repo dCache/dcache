@@ -49,7 +49,7 @@ public class Domain
 
     public Domain(String name, ConfigurationProperties defaults)
     {
-        _properties = new ConfigurationProperties(defaults);
+        _properties = new ConfigurationProperties(defaults, new DcacheConfigurationUsageChecker());
         _properties.put(PROPERTY_DOMAIN_NAME, name);
         _services = new ArrayList<>();
     }
@@ -73,7 +73,7 @@ public class Domain
 
     public ConfigurationProperties createService(String source, LineNumberReader reader, String type) throws IOException
     {
-        ConfigurationProperties service = new ConfigurationProperties(_properties);
+        ConfigurationProperties service = new ConfigurationProperties(_properties, new DcacheConfigurationUsageChecker());
         service.setIsService(true);
         service.put(PROPERTY_DOMAIN_SERVICE, type);
         service.load(source, reader);
@@ -271,4 +271,5 @@ public class Domain
                     new Args(""));
         }
     }
+
 }
