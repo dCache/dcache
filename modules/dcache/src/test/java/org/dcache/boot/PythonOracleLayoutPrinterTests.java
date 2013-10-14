@@ -8,7 +8,10 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.LineNumberReader;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.util.Properties;
 
 import org.dcache.util.ConfigurationProperties;
@@ -34,7 +37,8 @@ public class PythonOracleLayoutPrinterTests
     @Before
     public void setUp()
     {
-        _globalDefaults = new ConfigurationProperties( new Properties());
+        _globalDefaults = new ConfigurationProperties(new Properties());
+        _globalDefaults.setProperty(org.dcache.boot.Properties.PROPERTY_DOMAIN_SERVICE_URI, "classpath:/org/dcache/boot/empty.batch");
         _dCacheConf = new ConfigurationProperties(_globalDefaults);
 
         _layout = new Layout(_dCacheConf);
@@ -142,7 +146,7 @@ public class PythonOracleLayoutPrinterTests
 
 
     @Test
-    public void shouldFindServiceValueIfDefined()
+    public void shouldFindServiceValueIfDefined() throws IOException
     {
         givenDefaults().with("property.name", "default value");
         givenDcacheConf().with("property.name", "dCache.conf value");
@@ -162,7 +166,7 @@ public class PythonOracleLayoutPrinterTests
     }
 
     @Test
-    public void shouldFindSpecificServiceValueIfDefined()
+    public void shouldFindSpecificServiceValueIfDefined() throws IOException
     {
         givenDefaults().with("property.name", "default value");
         givenDcacheConf().with("property.name", "dCache.conf value");
@@ -293,10 +297,10 @@ public class PythonOracleLayoutPrinterTests
             return this;
         }
 
-        public DomainBuilder withService(String scope, String cellName)
+        public DomainBuilder withService(String type, String cellName) throws IOException
         {
-            _properties = _domain.createService(scope);
-            _properties.put(scope + "." + PROPERTY_CELL_NAME_SUFFIX, cellName);
+            _properties = _domain.createService("source", new LineNumberReader(new StringReader("")), type);
+            _properties.put(type + "." + PROPERTY_CELL_NAME_SUFFIX, cellName);
             return this;
         }
     }

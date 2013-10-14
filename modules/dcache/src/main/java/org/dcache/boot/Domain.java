@@ -6,11 +6,16 @@ import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.FileSystemResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -24,7 +29,6 @@ import dmg.util.Args;
 import dmg.util.CommandException;
 
 import org.dcache.util.ConfigurationProperties;
-import org.dcache.util.NetworkUtils;
 
 import static org.dcache.boot.Properties.*;
 
@@ -35,13 +39,13 @@ import static org.dcache.boot.Properties.*;
 public class Domain
 {
     private static final String SYSTEM_CELL_NAME = "System";
-    private static final String SCHEME_FILE = "file";
 
     private static final Logger _log =
         LoggerFactory.getLogger(SystemCell.class);
 
     private final ConfigurationProperties _properties;
     private final List<ConfigurationProperties> _services;
+    private final ResourceLoader _resourceLoader = new FileSystemResourceLoader();
 
     public Domain(String name, ConfigurationProperties defaults)
     {
@@ -67,13 +71,37 @@ public class Domain
         return cells;
     }
 
-    public ConfigurationProperties createService(String type)
+    public ConfigurationProperties createService(String source, LineNumberReader reader, String type) throws IOException
     {
         ConfigurationProperties service = new ConfigurationProperties(_properties);
         service.setIsService(true);
         service.put(PROPERTY_DOMAIN_SERVICE, type);
+        service.load(source, reader);
+
+        try {
+            Resource batchFile = findBatchFile(service);
+            service.put(PROPERTY_DOMAIN_SERVICE_BATCH, batchFile.getURI().toString());
+            checkExists(batchFile);
+
+            Resource logConfiguration = getLogConfiguration();
+            if (logConfiguration != null) {
+                checkExists(logConfiguration);
+            }
+        } catch (IOException e) {
+            service.getProblemConsumer().setFilename(source);
+            service.getProblemConsumer().setLineNumberReader(reader);
+            service.getProblemConsumer().error(e.getMessage());
+        }
+
         _services.add(service);
         return service;
+    }
+
+    private void checkExists(Resource resource) throws IOException
+    {
+        if (!resource.exists()) {
+            throw new IOException(resource.getDescription() + " (no such resource)");
+        }
     }
 
     public String getName()
@@ -106,33 +134,18 @@ public class Domain
         }
     }
 
-    private URI getLogConfigurationUri()
-        throws URISyntaxException
+    private Resource getLogConfiguration()
     {
         String property = _properties.getValue(PROPERTY_LOG_CONFIG);
-        if (property == null) {
-            return null;
-        }
-
-        URI uri = new URI(property);
-        String path = uri.getPath();
-        if (path == null) {
-            throw new URISyntaxException(property, "Path is missing");
-        }
-
-        if (uri.getScheme() == null || uri.getScheme().equals(SCHEME_FILE)) {
-            File f = new File(path);
-            uri = f.toURI();
-        }
-        return uri;
+        return (property == null) ? null : _resourceLoader.getResource(property);
     }
 
     private void initializeLogging()
         throws URISyntaxException, IOException
     {
         try {
-            URI uri = getLogConfigurationUri();
-            if (uri == null) {
+            Resource configuration = getLogConfiguration();
+            if (configuration == null) {
                 return;
             }
 
@@ -147,7 +160,7 @@ public class Domain
             try {
                 JoranConfigurator configurator = new JoranConfigurator();
                 configurator.setContext(loggerContext);
-                configurator.doConfigure(NetworkUtils.toURL(uri));
+                configurator.doConfigure(configuration.getURL());
             } finally {
                 StatusPrinter.printInCaseOfErrorsOrWarnings(loggerContext);
             }
@@ -177,7 +190,7 @@ public class Domain
         if (preload != null) {
             CellShell shell = new CellShell(cell.getNucleus());
             importParameters(shell.environment(), _properties);
-            executeBatchFile(shell, new URI(preload));
+            executeBatchFile(shell, _resourceLoader.getResource(preload));
         }
     }
 
@@ -199,62 +212,63 @@ public class Domain
         throws URISyntaxException, IOException, CommandException
     {
         CellShell shell = createShellForService(system, properties);
-        URI uri = findBatchFile(properties);
-        executeBatchFile(shell, uri);
+        Resource resource = _resourceLoader.getResource(properties.getValue(PROPERTY_DOMAIN_SERVICE_BATCH));
+        executeBatchFile(shell, resource);
     }
 
     /**
      * Scans the service directories to locate the service batch file.
      */
-    private URI findBatchFile(ConfigurationProperties properties)
-        throws URISyntaxException
+    private Resource findBatchFile(ConfigurationProperties properties)
+            throws IOException
     {
         String name = properties.getValue(PROPERTY_DOMAIN_SERVICE_URI);
-
-        /* Don't search if we have an absolute position.
-         */
-        URI uri = new URI(name);
-        if (uri.isAbsolute()) {
-            return uri;
+        if (name == null) {
+            throw new IOException("Property " + PROPERTY_DOMAIN_SERVICE_URI + " is undefined");
         }
 
-        File file = new File(uri.getPath());
-        if (file.isAbsolute()) {
-            return file.toURI();
+        /* Don't search if the URI is absolute.
+         */
+        URI uri;
+        try {
+            uri = new URI(name);
+        } catch (URISyntaxException e) {
+            throw new IOException(e.getMessage(), e);
+        }
+        if (uri.isAbsolute()) {
+            return _resourceLoader.getResource(name);
         }
 
         /* Search in plugin directories.
          */
         String pluginPath = properties.getValue(PROPERTY_PLUGIN_PATH);
-        for (String s: pluginPath.split(PATH_DELIMITER)) {
-            File dir = new File(s);
-            if (dir.isDirectory()) {
-                for (File plugin: dir.listFiles()) {
-                    file = new File(plugin, name);
+        for (String dir: pluginPath.split(PATH_DELIMITER)) {
+            File[] files = new File(dir).listFiles();
+            if (files != null) {
+                for (File plugin: files) {
+                    File file = new File(plugin, name);
                     if (file.exists()) {
-                        return file.toURI();
+                        return new FileSystemResource(file);
                     }
                 }
             }
         }
 
-        /* Resolve relativ to base path.
+        /* Resolve relative to base URI.
          */
-        URI base =
-            new URI(properties.getValue(PROPERTY_DOMAIN_SERVICE_URI_BASE));
-        return base.resolve(uri);
+        Resource base = _resourceLoader.getResource(properties.getValue(PROPERTY_DOMAIN_SERVICE_URI_BASE));
+        return base.createRelative(name);
     }
 
     /**
      * Executes the batch file in the resource.
      */
-    private void executeBatchFile(CellShell shell, URI resource)
+    private void executeBatchFile(CellShell shell, Resource resource)
         throws URISyntaxException, IOException, CommandException
     {
-        try (InputStream input = NetworkUtils.toURL(resource).openStream()) {
+        try (InputStream input = resource.getInputStream()) {
             shell.execute(resource.toString(), new InputStreamReader(input),
                     new Args(""));
         }
-
     }
 }

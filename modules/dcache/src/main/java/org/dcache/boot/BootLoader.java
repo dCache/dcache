@@ -104,7 +104,7 @@ public class BootLoader
              */
             Layout layout = new LayoutBuilder().setProblemConsumer(problemConsumer).build();
 
-            /* The BootLoader is not limitted to starting dCache. The
+            /* The BootLoader is not limited to starting dCache. The
              * behaviour is controlled by a command provided as a
              * command line argument.
              */

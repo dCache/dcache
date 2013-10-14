@@ -22,7 +22,10 @@ public class LayoutTests {
 
     @Before
     public void setUp() {
-        _layout = new Layout( new ConfigurationProperties( new Properties()));
+        ConfigurationProperties config = new ConfigurationProperties(new Properties());
+        config.setProperty(org.dcache.boot.Properties.PROPERTY_DOMAIN_SERVICE_URI, "classpath:/org/dcache/boot/empty.batch");
+        _layout = new Layout(config);
+
         _readerSource = new LayoutStringBuffer();
     }
 
@@ -105,7 +108,7 @@ public class LayoutTests {
         assertDomainServicesSize( domain, 1);
 
         ConfigurationProperties serviceProperties = domain.getServices().get(0);
-        assertServicePropertySize( serviceProperties, 1);
+        assertServicePropertySize( serviceProperties, 2);
         assertServiceHasProperty( serviceProperties, PROPERTY_DOMAIN_NAME_KEY, domainName);
     }
 

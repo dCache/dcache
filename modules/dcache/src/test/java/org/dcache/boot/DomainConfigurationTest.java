@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.util.Properties;
 
@@ -23,6 +24,7 @@ public class DomainConfigurationTest
     private final static String SERVICE2_NAME = "service2";
 
     private final static String DEFAULTS =
+        "dcache.domain.service.uri=classpath:/org/dcache/boot/empty.batch\n" +
         "a=1\n" +
         "b=${a}\n" +
         "c=2\n";
@@ -41,6 +43,9 @@ public class DomainConfigurationTest
         "c=5\n";
 
     private final static SystemCell system = new SystemCell(DOMAIN_NAME);
+    private static final String SOURCE = "source";
+    private static final LineNumberReader EMPTY_READER =
+            new LineNumberReader(new StringReader(""));
 
     private ConfigurationProperties defaults;
     private ConfigurationProperties configuration;
@@ -67,10 +72,10 @@ public class DomainConfigurationTest
 
     @Test
     public void testWithDefaults()
-        throws CommandException
+            throws CommandException, IOException
     {
         Domain domain = new Domain(DOMAIN_NAME, defaults);
-        ConfigurationProperties service = domain.createService(SERVICE1_NAME);
+        ConfigurationProperties service = domain.createService(SOURCE, EMPTY_READER, SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("1", "a", shell);
@@ -79,7 +84,7 @@ public class DomainConfigurationTest
         assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
         assertPropertyEquals(SERVICE1_NAME, "dcache.domain.service", shell);
 
-        service = domain.createService(SERVICE2_NAME);
+        service = domain.createService(SOURCE, EMPTY_READER, SERVICE2_NAME);
         shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("1", "a", shell);
@@ -91,11 +96,11 @@ public class DomainConfigurationTest
 
     @Test
     public void testWithConfiguration()
-        throws CommandException
+            throws CommandException, IOException
     {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
-        ConfigurationProperties service = domain.createService(SERVICE1_NAME);
+        ConfigurationProperties service = domain.createService(SOURCE, EMPTY_READER, SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("2", "a", shell);
@@ -104,7 +109,7 @@ public class DomainConfigurationTest
         assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
         assertPropertyEquals(SERVICE1_NAME, "dcache.domain.service", shell);
 
-        service = domain.createService(SERVICE2_NAME);
+        service = domain.createService(SOURCE, EMPTY_READER, SERVICE2_NAME);
         shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("2", "a", shell);
@@ -120,8 +125,8 @@ public class DomainConfigurationTest
     {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
-        ConfigurationProperties service = domain.createService(SERVICE1_NAME);
-        service.load(new StringReader(SERVICE1_CONFIG));
+        ConfigurationProperties service =
+                domain.createService(SOURCE, new LineNumberReader(new StringReader(SERVICE1_CONFIG)), SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("3", "a", shell);
@@ -130,8 +135,7 @@ public class DomainConfigurationTest
         assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
         assertPropertyEquals(SERVICE1_NAME, "dcache.domain.service", shell);
 
-        service = domain.createService(SERVICE2_NAME);
-        service.load(new StringReader(SERVICE2_CONFIG));
+        service = domain.createService(SOURCE, new LineNumberReader(new StringReader(SERVICE2_CONFIG)), SERVICE2_NAME);
         shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("3", "a", shell);
@@ -147,8 +151,8 @@ public class DomainConfigurationTest
     {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
-        ConfigurationProperties service = domain.createService(SERVICE1_NAME);
-        service.load(new StringReader(SERVICE1_CONFIG));
+        ConfigurationProperties service =
+                domain.createService(SOURCE, new LineNumberReader(new StringReader(SERVICE1_CONFIG)), SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("3", "a", shell);

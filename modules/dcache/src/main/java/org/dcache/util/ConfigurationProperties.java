@@ -1,7 +1,9 @@
 package org.dcache.util;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +34,6 @@ import dmg.util.PropertiesBackedReplaceable;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Sets;
 
 /**
  * The ConfigurationProperties class represents a set of dCache
@@ -196,7 +196,6 @@ public class ConfigurationProperties
         try (Reader reader = new FileReader(file)) {
             load(file.getName(), 0, reader);
         }
-
     }
 
     /**
@@ -210,10 +209,21 @@ public class ConfigurationProperties
     {
         LineNumberReader lnr = new LineNumberReader(reader);
         lnr.setLineNumber(line);
+        load(source, lnr);
+    }
+
+    /**
+     * Wrapper method that ensures error and warning messages have
+     * the correct line number.
+     * @param source a label describing where Reader is obtaining information
+     * @param reader Source of the property information
+     */
+    public void load(String source, LineNumberReader reader) throws IOException
+    {
         _problemConsumer.setFilename(source);
-        _problemConsumer.setLineNumberReader(lnr);
+        _problemConsumer.setLineNumberReader(reader);
         try {
-            load(new ConfigurationParserAwareReader(lnr));
+            load(new ConfigurationParserAwareReader(reader));
         } finally {
             _problemConsumer.setFilename(null);
         }

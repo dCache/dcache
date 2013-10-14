@@ -18,6 +18,7 @@ public class Properties
     public static final String PROPERTY_DOMAIN_CELLS = "dcache.domain.cells";
     public static final String PROPERTY_DOMAIN_SERVICE_URI_BASE = "dcache.domain.service.uri.base";
     public static final String PROPERTY_DOMAIN_SERVICE_URI = "dcache.domain.service.uri";
+    public static final String PROPERTY_DOMAIN_SERVICE_BATCH = "dcache.domain.service.batch";
     public static final String PROPERTY_DOMAIN_PRELOAD = "dcache.domain.preload";
     public static final String PROPERTY_LOG_CONFIG = "dcache.log.configuration";
 

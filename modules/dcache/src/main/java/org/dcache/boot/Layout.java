@@ -2,11 +2,9 @@ package org.dcache.boot;
 
 import com.google.common.base.Joiner;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
@@ -94,13 +92,13 @@ public class Layout
     /**
      * Reads a layout definition from the input character stream.
      *
-     * @param reader the input character stream.
+     * @param in the input character stream.
      */
     public void load(Reader in)
         throws IOException
     {
         LineNumberReader reader = new LineNumberReader(in);
-        loadSection(reader, _properties);
+        _properties.load(_source, loadSection(reader));
 
         String s;
         while ((s = reader.readLine()) != null) {
@@ -116,7 +114,7 @@ public class Layout
 
             if (serviceType == null) {
                 Domain domain = createDomain(domainName);
-                loadSection(reader, domain.properties());
+                domain.properties().load(_source, loadSection(reader));
             } else {
                 Domain domain = getDomain(domainName);
                 if (domain == null) {
@@ -125,7 +123,8 @@ public class Layout
                             domainName, serviceType, domainName);
                     discardSection(reader, message);
                 } else {
-                    loadSection(reader, domain.createService(serviceType));
+                    LineNumberReader sectionReader = loadSection(reader);
+                    domain.createService(_source, sectionReader, serviceType);
                 }
             }
         }
@@ -134,6 +133,31 @@ public class Layout
         for (Domain domain : _domains.values()) {
             domain.properties().put(PROPERTY_DOMAIN_CELLS, Joiner.on(" ").join(domain.getCellNames()));
         }
+    }
+
+    /**
+     * Reads properties until the next section header, returning the result as a
+     * reader. The position is advanced until the next section header or the end
+     * of file.
+     *
+     * @param reader The reader to read from
+     * @return LineNumberReader for the section
+     */
+    private LineNumberReader loadSection(LineNumberReader reader) throws IOException
+    {
+        int lineNumber = reader.getLineNumber();
+        StringBuilder section = new StringBuilder();
+        reader.mark(READ_AHEAD_LIMIT);
+        String line;
+        while ( (line = reader.readLine()) != null &&
+                !SECTION_HEADER.matcher(line).matches()) {
+            section.append(line).append('\n');
+            reader.mark(READ_AHEAD_LIMIT);
+        }
+        reader.reset();
+        LineNumberReader sectionReader = new LineNumberReader(new StringReader(section.toString()));
+        sectionReader.setLineNumber(lineNumber);
+        return sectionReader;
     }
 
     private void discardSection(LineNumberReader reader, String message)
@@ -146,66 +170,4 @@ public class Layout
         loadSection(reader); // discard any configuration for this section
     }
 
-    /**
-     * Reads properties until the next section header. The position is
-     * advanced until the next section header or the end of file.
-     *
-     * @param reader The reader to read from
-     * @param config The Properties to which to add the properties
-     */
-    private void loadSection(LineNumberReader reader, ConfigurationProperties config)
-        throws IOException
-    {
-        int linesRead = reader.getLineNumber();
-        String section = loadSection(reader);
-        config.load(_source, linesRead, new StringReader(section));
-    }
-
-    /**
-     * Reads properties until the next section header. The position is
-     * advanced until the next section header or the end of file.
-     *
-     * @param reader The reader to read from
-     * @return Property declarations.
-     */
-    private String loadSection(BufferedReader reader) throws IOException
-    {
-        String line;
-        StringBuilder section = new StringBuilder();
-        reader.mark(READ_AHEAD_LIMIT);
-        while ( (line = reader.readLine()) != null &&
-                !SECTION_HEADER.matcher(line).matches()) {
-            section.append(line).append('\n');
-            reader.mark(READ_AHEAD_LIMIT);
-        }
-        reader.reset();
-        return section.toString();
-    }
-
-    /**
-     * Prints the list of domains in the layout.
-     */
-    public void printDomainNames(PrintStream out)
-    {
-        for (Domain domain: _domains.values()) {
-            out.println(domain.getName());
-        }
-    }
-
-    /**
-     * Prints the domains in the layout matching one of the
-     * patterns.
-     */
-    public void printMatchingDomainNames(PrintStream out, Collection<Pattern> patterns)
-    {
-        for (Domain domain: _domains.values()) {
-            for (Pattern pattern: patterns) {
-                String name = domain.getName();
-                if (pattern.matcher(name).matches()) {
-                    out.println(name);
-                    break;
-                }
-            }
-        }
-    }
 }
