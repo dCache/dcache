@@ -284,6 +284,14 @@
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>io.milton</groupId>
+                        <artifactId>milton-mail-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.milton</groupId>
+                        <artifactId>milton-mail-server</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
