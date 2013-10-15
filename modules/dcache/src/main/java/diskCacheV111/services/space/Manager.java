@@ -151,7 +151,6 @@ public final class Manager
 
         private boolean reserveSpaceForNonSRMTransfers;
         private boolean returnFlushedSpaceToReservation;
-        private boolean returnRemovedSpaceToReservation;
         private boolean cleanupExpiredSpaceFiles;
         private String linkGroupAuthorizationFileName;
         private boolean spaceManagerEnabled;
@@ -327,8 +326,6 @@ public final class Manager
                                     + reserveSpaceForNonSRMTransfers);
                 printWriter.println("returnFlushedSpaceToReservation="
                                     + returnFlushedSpaceToReservation);
-                printWriter.println("returnRemovedSpaceToReservation="
-                                    + returnRemovedSpaceToReservation);
                 printWriter.println("linkGroupAuthorizationFileName="
                                     + linkGroupAuthorizationFileName);
         }
@@ -4146,9 +4143,6 @@ public final class Manager
                                 continue;
                         }
                         logger.trace("fileRemoved({})", pnfsId);
-                        if(!returnRemovedSpaceToReservation) {
-                            return;
-                        }
                         Connection connection = null;
                         try {
                                 connection = connection_pool.getConnection();
