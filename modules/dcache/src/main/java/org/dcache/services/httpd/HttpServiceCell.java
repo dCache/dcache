@@ -47,7 +47,6 @@ public class HttpServiceCell extends CommandInterpreter
                                         CellInfoProvider,
                                         DomainContextAware,
                                         EnvironmentAware {
-    private static final String IPV4_INETADDR_ANY = "0.0.0.0";
     private static final Logger logger
         = LoggerFactory.getLogger(HttpServiceCell.class);
     private final ConcurrentMap<String, AliasEntry> aliases
@@ -67,6 +66,11 @@ public class HttpServiceCell extends CommandInterpreter
      * Enablement of secure connection (HTTPS)
      */
     private boolean authenticated;
+
+    /**
+     * Host to set connector to
+     */
+    private String host;
 
     /**
      * Main port for the service
@@ -263,6 +267,11 @@ public class HttpServiceCell extends CommandInterpreter
     }
 
     @Required
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    @Required
     public void setHttpPort(int httpPort) {
         this.httpPort = httpPort;
     }
@@ -360,6 +369,7 @@ public class HttpServiceCell extends CommandInterpreter
 
     private Connector createSimpleConnector() {
         Connector connector = new SelectChannelConnector();
+        connector.setHost(host);
         connector.setPort(httpPort);
         connector.setMaxIdleTime((int)maxIdleTimeUnit.toMillis(maxIdleTime));
         return connector;
@@ -368,8 +378,8 @@ public class HttpServiceCell extends CommandInterpreter
     @SuppressWarnings("deprecation")
     private Connector createSslConnector() {
         SslSelectChannelConnector connector = new SslSelectChannelConnector();
+        connector.setHost(host);
         connector.setPort(httpsPort);
-        connector.setHost(IPV4_INETADDR_ANY);
         connector.setExcludeCipherSuites(Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
         SslContextFactory factory = connector.getSslContextFactory();
         factory.setKeyStorePath(keystore);

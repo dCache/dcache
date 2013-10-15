@@ -20,6 +20,7 @@
         <property name="webappResourceUrl" value="${httpd.container.default-webapp}"/>
         <property name="tmpUnpackDir" value="${httpd.container.webapps.tmp-dir}"/>
         <property name="authenticated" value="${httpd.enable.authn}"/>
+        <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
         <property name="httpPort" value="${httpd.net.port}"/>
         <property name="httpsPort" value="${httpd.net.https-port}"/>
         <property name="keystore" value="${httpd.authn.keystore}"/>
