@@ -3,12 +3,16 @@ package org.dcache.services.httpd;
 import com.google.common.collect.Maps;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.RequestLog;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
@@ -116,6 +120,13 @@ public class HttpServiceCell extends CommandInterpreter
     private String defaultWebappsXml;
     private Map<String, Object> domainContext;
     private Map<String, Object> environment;
+
+    private static class HttpdRequestLog extends AbstractLifeCycle
+        implements RequestLog {
+        public void log(Request request, Response response) {
+            logger.trace("request: {}; response: {}", request, response);
+        }
+    }
 
     public static final String hh_ls_alias = "[<alias>]";
 
@@ -334,8 +345,10 @@ public class HttpServiceCell extends CommandInterpreter
 
     private void createAndSetHandlers() {
         HandlerCollection handlers = new HandlerCollection();
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        requestLogHandler.setRequestLog(new HttpdRequestLog());
         handlers.setHandlers(new Handler[] { new HandlerDelegator(aliases),
-                        new DefaultHandler(), new RequestLogHandler() });
+                        new DefaultHandler(), requestLogHandler });
         server.setHandler(handlers);
     }
 
