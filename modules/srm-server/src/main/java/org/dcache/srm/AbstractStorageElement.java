@@ -409,9 +409,16 @@ public interface AbstractStorageElement {
 
     /**
      * @param user User ID
-     * @param surls List of SURLs
+     * @param surl SURL
+     * @param recursive Whether to delete directories recursively
+     * @throws SRMAuthorizationException if {@code subject} is not authorized to delete {@code dir} 
+     *                                   or one of its subdirectories.
+     * @throws SRMNonEmptyDirectoryException if {@code dir} is not empty.
+     * @throws SRMInternalErrorException in case of transient errors.
+     * @throws SRMInvalidPathException if {@code dir} is not a directory or does not exist
+     * @throws SRMException in case of other errors.
      */
-    public void removeDirectory(SRMUser user, List<URI> surls)
+    public void removeDirectory(SRMUser user, URI surl, boolean recursive)
         throws SRMException;
 
     /**
@@ -469,20 +476,6 @@ public interface AbstractStorageElement {
      * @return StorageElementInfo object contained information about the Storage Element
      */
     public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException;
-
-    /**
-     * Provides a directory listing of surl if and only if surl is not
-     * a symbolic link. As a side effect, the method checks that surl
-     * can be deleted by the user.
-     *
-     * @param user The SRMUser performing the operation; this myst be
-     * of type AuthorizationRecord
-     * @param surl The directory to delete
-     * @return The array of directory entries or null if directoryName
-     * is a symbolic link
-     */
-    public List<URI> listNonLinkedDirectory(SRMUser user, URI surl)
-        throws SRMException;
 
     /**
      *

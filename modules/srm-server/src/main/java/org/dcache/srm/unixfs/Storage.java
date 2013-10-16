@@ -958,57 +958,15 @@ public class Storage
       }
 
       @Override
-      public void removeDirectory(final SRMUser user,
-				  final List<URI> surls)  throws SRMException {
+      public void removeDirectory(SRMUser user,
+				  URI surl,
+                                  boolean recursive)  throws SRMException {
       }
 
       @Override
       public void createDirectory(final SRMUser user,
 				  final URI directory) throws SRMException {
       }
-
-        @Override
-	public List<URI> listNonLinkedDirectory(SRMUser user, URI surl) throws SRMException {
-            String directoryName = getPath(surl);
-            FileMetaData fmd = _getFileMetaData(user, directoryName);
-         int uid = Integer.parseInt(fmd.owner);
-         int gid = Integer.parseInt(fmd.group);
-         int permissions = fmd.permMode;
-
-         if(permissions == 0 ) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!Permissions.worldCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(uid == -1 || gid == -1) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(user == null ) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!fmd.isGroupMember(user)  || ! Permissions.groupCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!fmd.isOwner(user)  || ! Permissions.userCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-         File f = new File(directoryName);
-         if(!f.isDirectory()) {
-             throw new SRMException("not a directory");
-         }
-         String base = addTrailingSlash(surl.toString());
-         List<URI> result = new ArrayList<>();
-         for (String file: f.list()) {
-             result.add(URI.create(base + file));
-         }
-         return result;
-	}
 
       @Override
       public List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException {

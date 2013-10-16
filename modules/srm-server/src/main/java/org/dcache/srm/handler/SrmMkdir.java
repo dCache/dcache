@@ -1,31 +1,16 @@
-//______________________________________________________________________________
-//
-// $Id$
-// $Author$
-//
-// created 11/05 by Dmitry Litvintsev (litvinse@fnal.gov)
-//
-//______________________________________________________________________________
-
-/*
- * SrmMkdir
- *
- * Created on 11/05
- */
-
 package org.dcache.srm.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
@@ -34,99 +19,67 @@ import org.dcache.srm.v2_2.SrmMkdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-/**
- *
- * @author  litvinse
- */
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SrmMkdir {
-        private static final Logger logger =
-                LoggerFactory.getLogger(SrmMkdir.class.getName());
-	private final static String SFN_STRING="?SFN=";
-	AbstractStorageElement storage;
-	SrmMkdirRequest        request;
-	SrmMkdirResponse       response;
-	SRMUser            user;
+public class SrmMkdir
+{
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(SrmMkdir.class.getName());
+    private final AbstractStorageElement storage;
+    private final SrmMkdirRequest request;
+    private final SRMUser user;
+    SrmMkdirResponse response;
 
-	public SrmMkdir(SRMUser user,
-			RequestCredential credential,
-			SrmMkdirRequest request,
-			AbstractStorageElement storage,
-			SRM srm,
-			String client_host ) {
-		this.request = request;
-		this.user = user;
-		this.storage = storage;
-	}
+    public SrmMkdir(SRMUser user,
+                    RequestCredential credential,
+                    SrmMkdirRequest request,
+                    AbstractStorageElement storage,
+                    SRM srm,
+                    String client_host)
+    {
+        this.request = checkNotNull(request);
+        this.user = checkNotNull(user);
+        this.storage = checkNotNull(storage);
+    }
 
-	public SrmMkdirResponse getResponse() {
-		if(response != null ) {
-                    return response;
-                }
-		try {
-			response = srmMkdir();
-        } catch(URISyntaxException e) {
-            logger.debug(" malformed uri : "+e.getMessage());
-            response = getFailedResponse(" malformed uri : "+e.getMessage(),
-                    TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SRMException srme) {
-            logger.error(srme.toString());
-            response = getFailedResponse(srme.toString());
+    public SrmMkdirResponse getResponse()
+    {
+        if (response == null) {
+            response = srmMkdir();
         }
-		return response;
-	}
+        return response;
+    }
 
-	public static final SrmMkdirResponse getFailedResponse(String error) {
-		return getFailedResponse(error,null);
-	}
+    private SrmMkdirResponse srmMkdir()
+    {
+        TReturnStatus returnStatus;
+        try {
+            storage.createDirectory(user, URI.create(request.getSURL().toString()));
+            returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+        } catch (SRMInternalErrorException e) {
+            LOGGER.error(e.getMessage());
+            returnStatus = new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
+        } catch (SRMDuplicationException e) {
+            returnStatus = new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR, e.getMessage());
+        } catch (SRMAuthorizationException e) {
+            returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+        } catch (SRMInvalidPathException e) {
+            returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+        } catch (SRMException e) {
+            returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
+        }
+        return new SrmMkdirResponse(returnStatus);
+    }
 
-	public static final SrmMkdirResponse getFailedResponse(String error,TStatusCode statusCode) {
-		if(statusCode == null) {
-			statusCode =TStatusCode.SRM_FAILURE;
-		}
-                SrmMkdirResponse response = new SrmMkdirResponse();
-		response.setReturnStatus(new TReturnStatus(statusCode, error));
-		return response;
-	}
+    public static final SrmMkdirResponse getFailedResponse(String error)
+    {
+        return getFailedResponse(error, TStatusCode.SRM_FAILURE);
+    }
 
-
-	/**
-	 * implementation of srm mkdir
-     */
-
-	public SrmMkdirResponse srmMkdir()
-            throws SRMException, URISyntaxException
-        {
-            if(request==null) {
-                return getFailedResponse("null request passed to srmMkdir()");
-            }
-            TReturnStatus returnStatus;
-            try {
-                storage.createDirectory(user, new URI(request.getSURL().toString()));
-                returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, "success");
-            }
-            catch (SRMDuplicationException e) {
-                logger.debug("srmMkdir duplication: {}", e.toString());
-                returnStatus = new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR,
-                        request.getSURL() + " : " + e.getMessage());
-            }
-            catch (SRMAuthorizationException e) {
-                logger.debug("srmMkdir authorization exception: {}", e.toString());
-                returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
-                        request.getSURL() + " : " + e.getMessage());
-
-            }
-            catch (SRMInvalidPathException e) {
-                logger.debug("srmMkdir invalid pathh: {}", e.toString());
-                returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
-                        request.getSURL() + " : " + e.getMessage());
-
-            }
-            catch (SRMException srme) {
-                logger.debug("srmMkdir error: {}", srme.toString());
-                returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE,
-                        request.getSURL() + " " + srme.getMessage());
-            }
-            return new SrmMkdirResponse(returnStatus);
-	}
+    public static final SrmMkdirResponse getFailedResponse(String error, TStatusCode statusCode)
+    {
+        SrmMkdirResponse response = new SrmMkdirResponse();
+        response.setReturnStatus(new TReturnStatus(statusCode, error));
+        return response;
+    }
 }

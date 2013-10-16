@@ -129,6 +129,7 @@ import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -185,6 +186,7 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMNonEmptyDirectoryException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
@@ -208,6 +210,8 @@ import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.DirectoryListSource;
+import org.dcache.util.list.DirectoryStream;
+import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
@@ -261,6 +265,7 @@ public final class Storage
     private final PermissionHandler permissionHandler =
             new ChainedPermissionHandler(new ACLPermissionHandler(),
                                          new PosixPermissionHandler());
+    private final Set<FileAttribute> attributesRequiredForRmdir;
 
     private PoolMonitor _poolMonitor;
 
@@ -276,6 +281,12 @@ public final class Storage
 
     private boolean _isOnlinePinningEnabled = true;
     private boolean _isSpaceManagerEnabled;
+
+    public Storage()
+    {
+        attributesRequiredForRmdir = EnumSet.of(TYPE);
+        attributesRequiredForRmdir.addAll(permissionHandler.getRequiredAttributes());
+    }
 
     @Required
     public void setLoginBrokerStub(CellStub loginBrokerStub)
@@ -1732,25 +1743,146 @@ public final class Storage
         }
     }
 
+    /**
+     * Adds transitive subdirectories of {@code dir} to {@code result}.
+     *
+     * @param subject Issuer of rmdir
+     * @param dir Path to directory
+     * @param attributes File attributes of {@code dir}
+     * @param result List that subdirectories are added to
+     * @throws SRMAuthorizationException if {@code subject} is not authorized to list
+     *                                   {@code dir} or not authorized to list or delete
+     *                                   any of its transitive subdirectories.
+     * @throws SRMNonEmptyDirectoryException if {@code dir} or any of its transitive
+     *                                       subdirectories contains non-directory entries.
+     * @throws SRMInternalErrorException in case of transient errors.
+     * @throws SRMInvalidPathException if {@code dir} is not a directory.
+     * @throws SRMException in case of other errors.
+     */
+    private void listSubdirectoriesRecursivelyForDelete(Subject subject, FsPath dir, FileAttributes attributes,
+                                                        List<FsPath> result)
+            throws SRMException
+    {
+        List<DirectoryEntry> children = new ArrayList<>();
+        try (DirectoryStream list = _listSource.list(subject, dir, null, Range.<Integer>all(), attributesRequiredForRmdir)) {
+            for (DirectoryEntry child: list) {
+                FileAttributes childAttributes = child.getFileAttributes();
+                AccessType canDelete = permissionHandler.canDeleteDir(subject, attributes, childAttributes);
+                if (canDelete != AccessType.ACCESS_ALLOWED) {
+                    throw new SRMAuthorizationException(dir + "/" + child.getName() + " (permission denied)");
+                }
+                if (childAttributes.getFileType() != FileType.DIR) {
+                    throw new SRMNonEmptyDirectoryException(dir + "/" + child.getName() + " (not empty)");
+                }
+                children.add(child);
+            }
+        } catch (NotDirCacheException e) {
+            throw new SRMInvalidPathException(dir + " (not a directory)", e);
+        } catch (FileNotFoundCacheException | NotInTrashCacheException ignored) {
+            // Somebody removed the directory before we could.
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException(dir + " (permission denied)", e);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("Operation interrupted", e);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Name space timeout", e);
+        } catch (CacheException e) {
+            throw new SRMException(dir + " (" + e.getMessage() + ")");
+        }
+
+        // Result list uses post-order so directories will be deleted bottom-up.
+        for (DirectoryEntry child : children) {
+            FsPath path = new FsPath(dir, child.getName());
+            listSubdirectoriesRecursivelyForDelete(subject, path, child.getFileAttributes(), result);
+            result.add(path);
+        }
+    }
+
+    private void removeSubdirectories(Subject subject, FsPath path) throws SRMException
+    {
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
+
+        FileAttributes parentAttributes;
+        FileAttributes attributes;
+        try {
+            parentAttributes = pnfs.getFileAttributes(path.getParent().toString(), attributesRequiredForRmdir);
+            attributes = pnfs.getFileAttributes(path.toString(), attributesRequiredForRmdir);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Name space timeout", e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied", e);
+        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
+            throw new SRMInvalidPathException("No such file or directory", e);
+        } catch (CacheException e) {
+            throw new SRMException("Name space failure (" + e.getMessage() + ")");
+        }
+        if (attributes.getFileType() != FileType.DIR) {
+            throw new SRMInvalidPathException("Not a directory");
+        }
+        if (permissionHandler.canDeleteDir(subject, parentAttributes, attributes) != AccessType.ACCESS_ALLOWED) {
+            throw new SRMAuthorizationException("Permission denied");
+        }
+
+        List<FsPath> directories = new ArrayList<>();
+        listSubdirectoriesRecursivelyForDelete(subject, path, attributes, directories);
+
+        for (FsPath directory: directories) {
+            try {
+                pnfs.deletePnfsEntry(directory.toString(), EnumSet.of(FileType.DIR));
+            } catch (TimeoutCacheException e) {
+                throw new SRMInternalErrorException("Name space timeout", e);
+            } catch (FileNotFoundCacheException | NotInTrashCacheException ignored) {
+                // Somebody removed the directory before we could.
+            } catch (PermissionDeniedCacheException | InvalidMessageCacheException e) {
+                // Only directories are included in the list output, and we checked that we
+                // have permission to delete them.
+                throw new SRMException(directory + " (directory tree was modified concurrently)");
+            } catch (CacheException e) {
+                // Could be because the directory is no longer empty (concurrent modification),
+                // but could also be some other error.
+                _log.error("Failed to delete {}: {}", directory, e.getMessage());
+                throw new SRMException(directory + " (" + e.getMessage() + ")");
+            }
+        }
+    }
+
     @Override
-    public void removeDirectory(SRMUser user, List<URI> surls)
+    public void removeDirectory(SRMUser user, URI surl, boolean recursive)
         throws SRMException
     {
-        _log.debug("Storage.removeDirectory");
-        for (URI surl: surls) {
-            FsPath path = getPath(surl);
+        Subject subject = ((DcacheUser) user).getSubject();
+        FsPath path = getPath(surl);
+
+        if (path.isEmpty()) {
+            throw new SRMAuthorizationException("Permission denied");
+        }
+
+        if (recursive) {
+            removeSubdirectories(subject, path);
+        }
+
+        try {
+            PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
+            pnfs.deletePnfsEntry(path.toString(), EnumSet.of(FileType.DIR));
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Name space timeout");
+        } catch (FileNotFoundCacheException | NotInTrashCacheException ignored) {
+            throw new SRMInvalidPathException("No such file or directory");
+        } catch (InvalidMessageCacheException e) {
+            throw new SRMInvalidPathException("Not a directory");
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied", e);
+        } catch (CacheException e) {
             try {
-                _pnfs.deletePnfsEntry(path.toString());
-            } catch (TimeoutCacheException e) {
-                _log.error("Failed to delete " + path + " due to timeout");
-                throw new SRMInternalErrorException("Internal name space timeout while deleting " + surl);
-            } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
-                throw new SRMException("File does not exist: " + surl);
-            } catch (CacheException e) {
-                _log.error("Failed to delete " + path + ": " + e.getMessage());
-                throw new SRMException("Failed to delete " + surl + ": "
-                                       + e.getMessage());
+                int count = _listSource.printDirectory(subject, new NullListPrinter(), path, null, Range.<Integer>all());
+                if (count > 0) {
+                    throw new SRMNonEmptyDirectoryException("Directory is not empty", e);
+                }
+            } catch (InterruptedException | CacheException suppressed) {
+                e.addSuppressed(suppressed);
             }
+            _log.error("Failed to delete {}: {}", path, e.getMessage());
+            throw new SRMException("Name space failure (" + e.getMessage() + ")", e);
         }
     }
 
@@ -1955,7 +2087,7 @@ public final class Storage
      * @param remoteTURL
      * @param surl
      * @param remoteUser
-     * @param remoteCredetial
+     * @param remoteCredentialId
      * @param callbacks
      * @throws SRMException
      * @return copy handler id
@@ -2007,7 +2139,7 @@ public final class Storage
      * @param surl
      * @param remoteTURL
      * @param remoteUser
-     * @param remoteCredetial
+     * @param remoteCredentialId
      * @param callbacks
      * @throws SRMException
      * @return copy handler id
@@ -2316,57 +2448,6 @@ public final class Storage
         } catch (InterruptedException e) {
             _log.debug("Storage info update thread shut down");
         }
-    }
-
-    /**
-     * Provides a directory listing of surl if and only if surl is not
-     * a symbolic link. As a side effect, the method checks that surl
-     * can be deleted by the user.
-     *
-     * @param user The SRMUser performing the operation; this must be
-     * of type AuthorizationRecord
-     * @param surl The directory to delete
-     * @return The array of directory entries or null if directoryName
-     * is a symbolic link
-     */
-    @Override
-    public List<URI> listNonLinkedDirectory(SRMUser user, URI surl)
-        throws SRMException
-    {
-        Subject subject = ((DcacheUser) user).getSubject();
-
-        FsPath path = getPath(surl);
-        try {
-            Set<FileAttribute> requestedAttributes = EnumSet.of(TYPE);
-            requestedAttributes.addAll(permissionHandler.getRequiredAttributes());
-            FileAttributes parentAttr =
-                _pnfs.getFileAttributes(path.getParent().toString(), requestedAttributes);
-            FileAttributes childAttr =
-                _pnfs.getFileAttributes(path.toString(), requestedAttributes);
-
-            AccessType canDelete =
-                permissionHandler.canDeleteDir(subject, parentAttr, childAttr);
-            if (canDelete != AccessType.ACCESS_ALLOWED) {
-                _log.warn("Cannot delete directory " + path +
-                          ": Permission denied");
-                throw new SRMAuthorizationException("Permission denied");
-            }
-
-            if (childAttr.getFileType() == FileType.LINK)  {
-                return null;
-            }
-        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
-            throw new SRMInvalidPathException("No such file or directory", e);
-        } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("Internal name space timeout", e);
-        } catch (CacheException e) {
-            _log.error("Failed to list directory " + path + ": "
-                       + e.getMessage());
-            throw new SRMException(String.format("Failed delete directory [rc=%d,msg=%s]",
-                                                 e.getRc(), e.getMessage()));
-        }
-
-        return listDirectory(user, surl, null);
     }
 
     @Override
@@ -2848,7 +2929,7 @@ public final class Storage
      * the call to succeed.
      *
      * @param user The user ID
-     * @param path The path to the file
+     * @param surl The path to the file
      * @throws SRMAuthorizationException if the user lacks write privileges
      *         for this path.
      * @throws SRMInvalidPathException if the file does not exist
