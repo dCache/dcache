@@ -27,6 +27,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.cert.X509Certificate;
 import java.util.Iterator;
 
 import dmg.util.Args;
@@ -110,14 +111,16 @@ class GsiTunnel extends GssTunnel  {
     }
 
     @Override
-    public boolean verify( InputStream in, OutputStream out, Object addon) {
-
+    public boolean verify(InputStream in, OutputStream out, Object addon) {
         try {
-        	if( super.verify(in, out, addon) ) {
-                    _subject.getPrincipals().add( new GlobusPrincipal(_e_context.getSrcName().toString()) );
-        		scanExtendedAttributes(_e_context);
-        	}
-        } catch( GSSException e) {
+            if (super.verify(in, out, addon)) {
+                X509Certificate[] chain = (X509Certificate[]) _e_context.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+                _subject.getPublicCredentials().add(chain);
+                _subject.getPrincipals().add(new GlobusPrincipal(
+                                       _e_context.getSrcName().toString()));
+                scanExtendedAttributes(_e_context);
+            }
+        } catch (GSSException e) {
             _log.error("Failed to verify: {}", e.toString());
         }
 
