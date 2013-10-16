@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
-import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -145,23 +144,13 @@ public class ListDirectoryHandler
             printer.getRequiredAttributes();
         FileAttributes dirAttr =
             _pnfs.getFileAttributes(path.toString(), required);
-        DirectoryStream stream =
-            list(subject, path, glob, range, required);
-        try {
+        try (DirectoryStream stream = list(subject, path, glob, range, required)) {
             int total = 0;
             for (DirectoryEntry entry: stream) {
                 printer.print(path, dirAttr, entry);
                 total++;
             }
             return total;
-        } finally {
-            try {
-                stream.close();
-            } catch (IOException e) {
-                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                         "Failed to close directory stream (" +
-                                         e.getMessage() + ")");
-            }
         }
     }
 

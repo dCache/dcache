@@ -173,16 +173,12 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
             Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
             throws CacheException
     {
-        DirectoryStream stream;
-        try {
-            stream = _handler.list(subject, new FsPath(path), glob, range,
-                    attrs);
+        try (DirectoryStream stream = _handler.list(subject, new FsPath(path), glob, range, attrs)) {
+            for (DirectoryEntry entry : stream) {
+                handler.addEntry(entry.getName(), entry.getFileAttributes());
+            }
         } catch (InterruptedException e) {
             throw new TimeoutCacheException(e.getMessage());
-        }
-
-        for(DirectoryEntry entry : stream) {
-            handler.addEntry(entry.getName(), entry.getFileAttributes());
         }
     }
 }
