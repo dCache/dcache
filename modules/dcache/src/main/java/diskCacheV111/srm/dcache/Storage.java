@@ -1953,7 +1953,7 @@ public final class Storage
             throw new SRMInvalidPathException("No such directory: " +
                                               parent, e);
         } catch (PermissionDeniedCacheException e) {
-            throw new SRMException("Permission denied");
+            throw new SRMAuthorizationException("Permission denied");
         } catch (TimeoutCacheException e) {
             _log.error("Failed to rename " + fromPath + " due to timeout");
             throw new SRMInternalErrorException("Internal name space timeout");

@@ -435,13 +435,15 @@ public interface AbstractStorageElement {
      * @param user
      * @param from
      * @param to
+     * @throws SRMInvalidPathException
+     * @throws SRMDuplicationException
+     * @throws SRMAuthorizationException
+     * @throws SRMInternalErrorException
      * @throws SRMException
      */
     public void moveEntry(SRMUser user,
                           URI from,
                           URI to) throws SRMException;
-
-
 
     /** This method tells if the specified file can be written
      * @param user User ID
