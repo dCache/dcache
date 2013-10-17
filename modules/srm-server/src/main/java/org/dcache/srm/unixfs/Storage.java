@@ -42,7 +42,7 @@ import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.ReleaseSpaceCallbacks;
-import org.dcache.srm.RemoveFileCallbacks;
+import org.dcache.srm.RemoveFileCallback;
 import org.dcache.srm.ReserveSpaceCallbacks;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
@@ -954,7 +954,7 @@ public class Storage
       @Override
       public void removeFile(final SRMUser user,
 			     final URI path,
-			     RemoveFileCallbacks callbacks) {
+			     RemoveFileCallback callbacks) {
       }
 
       @Override

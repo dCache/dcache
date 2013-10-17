@@ -405,7 +405,7 @@ public interface AbstractStorageElement {
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to remove file from the storage
      */
-    public void removeFile(SRMUser user, URI surl,RemoveFileCallbacks callbacks);
+    public void removeFile(SRMUser user, URI surl,RemoveFileCallback callbacks);
 
     /**
      * @param user User ID

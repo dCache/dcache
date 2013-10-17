@@ -178,7 +178,7 @@ import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.PrepareToPutInSpaceCallbacks;
-import org.dcache.srm.RemoveFileCallbacks;
+import org.dcache.srm.RemoveFileCallback;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
@@ -1676,39 +1676,33 @@ public final class Storage
             return;
         }
 
-        RemoveFileCallbacks removeFileCallback = new RemoveFileCallbacks() {
+        RemoveFileCallback removeFileCallback = new RemoveFileCallback() {
                 @Override
-                public void RemoveFileSucceeded()
+                public void success()
                 {
                     callback.AdvisoryDeleteSuccesseded();
                 }
 
                 @Override
-                public void RemoveFileFailed(String reason)
+                public void failure(String reason)
                 {
                     callback.AdvisoryDeleteFailed(reason);
                 }
 
                 @Override
-                public void FileNotFound(String error)
+                public void notFound(String error)
                 {
                     callback.AdvisoryDeleteFailed(error);
                 }
 
                 @Override
-                public void Exception(Exception e)
-                {
-                    callback.Exception(e);
-                }
-
-                @Override
-                public void Timeout()
+                public void timeout()
                 {
                     callback.Timeout();
                 }
 
                 @Override
-                public void PermissionDenied()
+                public void permissionDenied()
                 {
                     callback.AdvisoryDeleteFailed("Permission denied");
                 }
@@ -1728,10 +1722,9 @@ public final class Storage
     @Override
     public void removeFile(final SRMUser user,
                            final URI surl,
-                           RemoveFileCallbacks callbacks)
+                           RemoveFileCallback callbacks)
     {
-        _log.debug("Storage.removeFile");
-
+        _log.trace("Storage.removeFile");
         try {
             RemoveFileCompanion.removeFile(((DcacheUser) user).getSubject(),
                                            getPath(surl).toString(),
@@ -1739,7 +1732,7 @@ public final class Storage
                                            _pnfsStub,
                                            getCellEndpoint());
         } catch (SRMInvalidPathException e) {
-            callbacks.FileNotFound(e.getMessage());
+            callbacks.notFound(e.getMessage());
         }
     }
 

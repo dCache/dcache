@@ -93,7 +93,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.srm.RemoveFileCallbacks;
+import org.dcache.srm.RemoveFileCallback;
 
 import static org.dcache.namespace.FileType.LINK;
 import static org.dcache.namespace.FileType.REGULAR;
@@ -107,24 +107,24 @@ public class RemoveFileCompanion
     private final static CellPath BILLING_PATH = new CellPath("billing");
 
     private final Subject _subject;
-    private final RemoveFileCallbacks _callbacks;
+    private final RemoveFileCallback _callback;
     private final String _path;
     private final CellEndpoint _endpoint;
 
     private RemoveFileCompanion(Subject subject,
                                 String path,
-                                RemoveFileCallbacks callbacks,
+                                RemoveFileCallback callbacks,
                                 CellEndpoint endpoint)
     {
         _subject = subject;
         _path = path;
-        _callbacks = callbacks;
+        _callback = callbacks;
         _endpoint = endpoint;
     }
 
     public static void removeFile(Subject subject,
                                   String path,
-                                  RemoveFileCallbacks callbacks,
+                                  RemoveFileCallback callbacks,
                                   CellStub pnfsStub,
                                   CellEndpoint endpoint)
     {
@@ -140,7 +140,7 @@ public class RemoveFileCompanion
     public void success(PnfsDeleteEntryMessage message)
     {
         sendRemoveInfoToBilling(message.getPnfsId());
-        _callbacks.RemoveFileSucceeded();
+        _callback.success();
     }
 
     @Override
@@ -148,11 +148,11 @@ public class RemoveFileCompanion
     {
         switch (rc) {
         case CacheException.FILE_NOT_FOUND:
-            _callbacks.FileNotFound("No such file");
+            _callback.notFound("No such file");
             break;
 
         case CacheException.INVALID_ARGS:
-            _callbacks.FileNotFound("File is a directory");
+            _callback.notFound("Path is a directory");
             break;
 
         case CacheException.TIMEOUT:
@@ -160,24 +160,27 @@ public class RemoveFileCompanion
             break;
 
         case CacheException.PERMISSION_DENIED:
-            _callbacks.PermissionDenied();
+            _callback.permissionDenied();
             break;
 
         default:
-            _callbacks.RemoveFileFailed(String.format("Deletion failed [rc=%d,msg=%s]",
-                                                      rc, error));
+            _callback.failure(String.format("Deletion failed [rc=%d,msg=%s]",
+                    rc, error));
             break;
         }
     }
 
     public void noroute()
     {
-        _callbacks.RemoveFileFailed("Deletion failed due to internal communication problem");
+        /* No route and timeout are both transient errors and to the client it doesn't
+         * matter whether we fail because of one or the other condition.
+         */
+        _callback.timeout();
     }
 
     public void timeout()
     {
-        _callbacks.Timeout();
+        _callback.timeout();
     }
 
     private void sendRemoveInfoToBilling(PnfsId pnfsid)
