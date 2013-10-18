@@ -32,6 +32,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.srm.handler.ReturnStatuses.*;
 
 public class SrmExtendFileLifeTime
 {
@@ -216,20 +217,6 @@ public class SrmExtendFileLifeTime
         }
         status.setStatus(returnStatus);
         return status;
-    }
-
-    private static TReturnStatus getSummaryReturnStatus(TSURLLifetimeReturnStatus[] surlStatus)
-    {
-        boolean hasFailure = false;
-        boolean hasSuccess = false;
-        for (TSURLLifetimeReturnStatus returnStatus : surlStatus) {
-            if (returnStatus.getStatus().getStatusCode() == TStatusCode.SRM_SUCCESS) {
-                hasSuccess = true;
-            } else {
-                hasFailure = true;
-            }
-        }
-        return ReturnStatuses.getSummaryReturnStatus(hasFailure, hasSuccess);
     }
 
     private static long toMillis(int seconds, long max)

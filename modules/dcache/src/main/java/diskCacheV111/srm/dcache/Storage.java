@@ -215,6 +215,7 @@ import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -249,7 +250,7 @@ public final class Storage
      * loops.
      */
     private final static long TRANSIENT_FAILURE_DELAY =
-        TimeUnit.MILLISECONDS.toMillis(10);
+        MILLISECONDS.toMillis(10);
     private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
@@ -461,7 +462,7 @@ public final class Storage
 
     public static long parseTime(String s, TimeUnit unit)
     {
-        return s.equals(INFINITY) ? Long.MAX_VALUE : TimeUnit.MILLISECONDS.convert(Long.parseLong(s),unit);
+        return s.equals(INFINITY) ? Long.MAX_VALUE : MILLISECONDS.convert(Long.parseLong(s),unit);
     }
 
     @Required
@@ -1294,7 +1295,7 @@ public final class Storage
                 Thread.sleep(5 * 1000);
             } while (++retry < MAX_LOGIN_BROKER_RETRIES);
         } catch (InterruptedException e) {
-            throw new SRMException("Request was interrupted", e);
+            throw new SRMInternalErrorException("Request was interrupted", e);
         }
 
         throw new SRMException(error);
@@ -2743,17 +2744,16 @@ public final class Storage
                                                 String[] spaceTokens)
         throws SRMException
     {
-        _log.debug("srmGetSpaceMetaData");
         guardSpaceManagerEnabled();
-        if(spaceTokens == null) {
-            throw new SRMException("null array of space tokens");
-        }
         long[] tokens = new long[spaceTokens.length];
-        for(int i = 0; i<spaceTokens.length; ++i) {
-            try{
+        for (int i = 0; i < spaceTokens.length; ++i) {
+            try {
                 tokens[i] = Long.parseLong(spaceTokens[i]);
-            } catch (Exception e) {
-                throw new SRMException("invalid token: "+spaceTokens[i]);
+            } catch (NumberFormatException e) {
+                /* Space manager enumerates spaces starting at 0, so -1 will cause it to return
+                 * a null value below, which in turn will be reported as SRM_INVALID_REQUEST.
+                 */
+                tokens[i] = -1;
             }
         }
 
@@ -2761,84 +2761,68 @@ public final class Storage
         try {
             getSpaces = _spaceManagerStub.sendAndWait(getSpaces);
         } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("SrmSpaceManager is unavailable: " +
-                                                e.getMessage(), e);
-        } catch (CacheException e) {
-            _log.warn("GetSpaceMetaData failed with rc=" + e.getRc()+
-                      " error="+e.getMessage());
-            throw new SRMException("GetSpaceMetaData failed with rc="+
-                                   e.getRc() + " error=" + e.getMessage(), e);
+            throw new SRMInternalErrorException("Space manager timeout", e);
         } catch (InterruptedException e) {
-            throw new SRMException("Request to SrmSpaceManaget got interrupted", e);
+            throw new SRMInternalErrorException("Operation interrupted", e);
+        } catch (CacheException e) {
+            _log.warn("GetSpaceMetaData failed with rc={} error={}", e.getRc(), e.getMessage());
+            throw new SRMException("Space manager failure: " + e.getMessage(), e);
         }
 
         Space[] spaces = getSpaces.getSpaces();
-        tokens =  getSpaces.getSpaceTokens();
         TMetaDataSpace[] spaceMetaDatas = new TMetaDataSpace[spaces.length];
-        for(int i = 0; i<spaceMetaDatas.length; ++i){
-            if(spaces[i] != null) {
-                Space space = spaces[i];
-                spaceMetaDatas[i] = new TMetaDataSpace();
-                spaceMetaDatas[i].setSpaceToken(Long.toString(space.getId()));
+        for (int i = 0; i < spaceMetaDatas.length; ++i){
+            Space space = spaces[i];
+            TMetaDataSpace metaDataSpace = new TMetaDataSpace();
+            TReturnStatus status;
+            if (space != null) {
                 long lifetime = space.getLifetime();
                 int lifetimeleft;
-                if ( lifetime == -1) {  // -1 corresponds to infinite lifetime
+                if (lifetime == -1) {  // -1 corresponds to infinite lifetime
                     lifetimeleft = -1;
-                    spaceMetaDatas[i].setLifetimeAssigned(-1);
-                    spaceMetaDatas[i].setLifetimeLeft(-1);
+                    metaDataSpace.setLifetimeAssigned(-1);
+                    metaDataSpace.setLifetimeLeft(-1);
                 } else {
-			lifetimeleft = (int)((space.getCreationTime()+lifetime - System.currentTimeMillis())/1000);
-                    lifetimeleft= lifetimeleft < 0? 0: lifetimeleft;
-                    spaceMetaDatas[i].setLifetimeAssigned((int) (lifetime / 1000));
-                    spaceMetaDatas[i].setLifetimeLeft(lifetimeleft);
+                    lifetimeleft = (int) MILLISECONDS.toSeconds(space.getCreationTime() + lifetime - System.currentTimeMillis());
+                    lifetimeleft = (lifetimeleft < 0) ? 0 : lifetimeleft;
+                    metaDataSpace.setLifetimeAssigned((int) MILLISECONDS.toSeconds(lifetime));
+                    metaDataSpace.setLifetimeLeft(lifetimeleft);
                 }
+
+                RetentionPolicy retentionPolicy = space.getRetentionPolicy();
                 TRetentionPolicy policy =
-                    space.getRetentionPolicy().equals( RetentionPolicy.CUSTODIAL)?
-                      TRetentionPolicy.CUSTODIAL :
-                        space.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)?
-                            TRetentionPolicy.OUTPUT:TRetentionPolicy.REPLICA;
+                    retentionPolicy.equals(RetentionPolicy.CUSTODIAL)
+                            ? TRetentionPolicy.CUSTODIAL
+                            : retentionPolicy.equals(RetentionPolicy.OUTPUT) ? TRetentionPolicy.OUTPUT : TRetentionPolicy.REPLICA;
+                AccessLatency accessLatency = space.getAccessLatency();
                 TAccessLatency latency =
-                    space.getAccessLatency().equals(AccessLatency.ONLINE) ?
-                            TAccessLatency.ONLINE: TAccessLatency.NEARLINE;
-                spaceMetaDatas[i].setRetentionPolicyInfo(
-                    new TRetentionPolicyInfo(policy,latency));
-                spaceMetaDatas[i].setTotalSize(
-                    new UnsignedLong(
-                        space.getSizeInBytes()));
-                spaceMetaDatas[i].setGuaranteedSize(
-                    spaceMetaDatas[i].getTotalSize());
-                spaceMetaDatas[i].setUnusedSize(
-                    new UnsignedLong(
-                        space.getSizeInBytes() - space.getUsedSizeInBytes()));
-                SpaceState spaceState =space.getState();
-                if(SpaceState.RESERVED.equals(spaceState)) {
-                    if(lifetimeleft == 0 ) {
-                        spaceMetaDatas[i].setStatus(
-                                new TReturnStatus(
-                                TStatusCode.SRM_SPACE_LIFETIME_EXPIRED,"expired"));
-                    }
-                    else {
-                        spaceMetaDatas[i].setStatus(
-                                new TReturnStatus(TStatusCode.SRM_SUCCESS,"ok"));
-                    }
-                } else if(SpaceState.EXPIRED.equals(
-                    spaceState)) {
-                    spaceMetaDatas[i].setStatus(
-                        new TReturnStatus(
-                        TStatusCode.SRM_SPACE_LIFETIME_EXPIRED,"expired"));
+                    accessLatency.equals(AccessLatency.ONLINE)
+                            ? TAccessLatency.ONLINE
+                            : TAccessLatency.NEARLINE;
+                UnsignedLong totalSize = new UnsignedLong(space.getSizeInBytes());
+                UnsignedLong unusedSize = new UnsignedLong(space.getSizeInBytes() - space.getUsedSizeInBytes());
+
+                metaDataSpace.setRetentionPolicyInfo(new TRetentionPolicyInfo(policy, latency));
+                metaDataSpace.setTotalSize(totalSize);
+                metaDataSpace.setGuaranteedSize(totalSize);
+                metaDataSpace.setUnusedSize(unusedSize);
+
+                SpaceState spaceState = space.getState();
+                if (SpaceState.RESERVED.equals(spaceState) && lifetimeleft > 0) {
+                    status = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+                } else if (SpaceState.EXPIRED.equals(spaceState) || lifetimeleft == 0) {
+                    status = new TReturnStatus(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED,
+                            "The lifetime on the space that is associated with the spaceToken has expired already");
                 } else {
-                    spaceMetaDatas[i].setStatus(
-                            new TReturnStatus(TStatusCode.SRM_FAILURE,
-                            "space has been released "));
+                    status = new TReturnStatus(TStatusCode.SRM_FAILURE, "Space has been released");
                 }
-                spaceMetaDatas[i].setOwner("VoGroup="+space.getVoGroup()+"" +
-                    " VoRole="+space.getVoRole());
+                metaDataSpace.setOwner("VoGroup=" + space.getVoGroup() + " VoRole=" + space.getVoRole());
             } else {
-                spaceMetaDatas[i] = new TMetaDataSpace();
-                spaceMetaDatas[i].setSpaceToken(Long.toString(tokens[i]));
-                spaceMetaDatas[i].setStatus(new TReturnStatus(
-						   TStatusCode.SRM_INVALID_REQUEST,"space not found"));
+                status = new TReturnStatus(TStatusCode.SRM_INVALID_REQUEST, "No such space");
             }
+            metaDataSpace.setStatus(status);
+            metaDataSpace.setSpaceToken(spaceTokens[i]);
+            spaceMetaDatas[i] = metaDataSpace;
         }
         return spaceMetaDatas;
     }
@@ -2849,11 +2833,11 @@ public final class Storage
      * @throws SRMException
      * @return
      */
-    @Override
+    @Override @Nonnull
     public String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException
     {
-        _log.debug("srmGetSpaceTokens ("+description+")");
+        _log.trace("srmGetSpaceTokens ({})", description);
         guardSpaceManagerEnabled();
         DcacheUser duser = (DcacheUser) user;
         GetSpaceTokens getTokens = new GetSpaceTokens(description);
@@ -2861,27 +2845,27 @@ public final class Storage
         try {
             getTokens = _spaceManagerStub.sendAndWait(getTokens);
         } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("SrmSpaceManager is unavailable: " +
-                                                e.getMessage(), e);
+            throw new SRMInternalErrorException("Space manager timeout", e);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("Operation interrupted", e);
         } catch (CacheException e) {
             _log.warn("GetSpaceTokens failed with rc=" + e.getRc() +
                       " error="+e.getMessage());
             throw new SRMException("GetSpaceTokens failed with rc="+
                                    e.getRc() + " error=" + e.getMessage(), e);
-        } catch (InterruptedException e) {
-            throw new SRMException("Request to SrmSpaceManager got interrupted", e);
         }
         long tokens[] = getTokens.getSpaceTokens();
         String tokenStrings[] = new String[tokens.length];
-        for(int i = 0; i < tokens.length; ++i) {
+        for (int i = 0; i < tokens.length; ++i) {
             tokenStrings[i] = Long.toString(tokens[i]);
-            _log.debug("srmGetSpaceTokens returns token#"+i+" : "+tokenStrings[i]);
         }
-
+        if (_log.isTraceEnabled()) {
+            _log.trace("srmGetSpaceTokens returns: {}", Arrays.toString(tokenStrings));
+        }
         return tokenStrings;
     }
 
-    @Override
+    @Override @Nonnull
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException {
         try {
@@ -2898,14 +2882,13 @@ public final class Storage
             Long[] tokenLongs = tokens
                     .toArray(new Long[tokens.size()]);
             String[] tokenStrings = new String[tokenLongs.length];
-            for(int i=0;i<tokenLongs.length;++i) {
+            for (int i = 0; i < tokenLongs.length; ++i) {
                 tokenStrings[i] = tokenLongs[i].toString();
             }
             return tokenStrings;
         } catch (DataAccessException e) {
             _log.error("srmGetRequestTokens failed: {}", e.getMessage());
-            throw new SRMException("srmGetRequestTokens failed: " +
-                                   e.getMessage(), e);
+            throw new SRMInternalErrorException("Database failure", e);
         }
     }
 

@@ -597,6 +597,7 @@ public interface AbstractStorageElement {
      * @throws SRMException
      * @return
      */
+    @Nonnull
     public String[] srmGetSpaceTokens(SRMUser user,String description)
         throws SRMException;
 
@@ -616,6 +617,7 @@ public interface AbstractStorageElement {
      * @throws SRMException
      * @return
      */
+    @Nonnull
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException;
 

@@ -1,30 +1,15 @@
-//______________________________________________________________________________
-//
-// $Id$
-// $Author$
-//
-// created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
-//
-//______________________________________________________________________________
-
-/*
- * SrmCopy
- *
- * Created on 10/05
- */
-
 package org.dcache.srm.handler;
 
-import org.apache.axis.types.URI.MalformedURIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.ArrayOfTRequestTokenReturn;
 import org.dcache.srm.v2_2.SrmGetRequestTokensRequest;
 import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
@@ -32,110 +17,74 @@ import org.dcache.srm.v2_2.TRequestTokenReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- *
- * @author  timur
- */
-
-public class SrmGetRequestTokens {
-    private static Logger logger =
+public class SrmGetRequestTokens
+{
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmGetRequestTokens.class);
-    private final static String SFN_STRING="?SFN=";
-    AbstractStorageElement  storage;
-    SrmGetRequestTokensRequest  request;
-    SrmGetRequestTokensResponse response;
-    SRMUser             user;
-    RequestCredential       credential;
-    Configuration           configuration;
+
+    private final AbstractStorageElement storage;
+    private final SrmGetRequestTokensRequest request;
+    private final SRMUser user;
+    private SrmGetRequestTokensResponse response;
 
     public SrmGetRequestTokens(SRMUser user,
-            RequestCredential credential,
-            SrmGetRequestTokensRequest request,
-            AbstractStorageElement storage,
-            SRM srm,
-            String client_host) {
-
-        if (request == null) {
-            throw new NullPointerException("request is null");
-        }
-        this.request    = request;
-        this.user       = user;
-        this.credential = credential;
-        if (storage == null) {
-            throw new NullPointerException("storage is null");
-        }
-        this.storage = storage;
-        this.configuration = srm.getConfiguration();
-        if (configuration == null) {
-            throw new NullPointerException("configuration is null");
-        }
+                               RequestCredential credential,
+                               SrmGetRequestTokensRequest request,
+                               AbstractStorageElement storage,
+                               SRM srm,
+                               String client_host)
+    {
+        this.request = checkNotNull(request);
+        this.user = checkNotNull(user);
+        this.storage = checkNotNull(storage);
     }
 
-    public SrmGetRequestTokensResponse getResponse() {
-        if(response != null ) {
-            return response;
-        }
-        try {
-            response = srmGetRequestTokens();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
-                    TStatusCode.SRM_INVALID_REQUEST);
-        } catch(SRMException srme) {
-            logger.error(srme.toString());
-            response = getFailedResponse(srme.toString());
+    public SrmGetRequestTokensResponse getResponse()
+    {
+        if (response == null) {
+            try {
+                response = srmGetRequestTokens();
+            } catch (SRMInvalidRequestException e) {
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
+            } catch (SRMInternalErrorException e) {
+                LOGGER.error(e.toString());
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INTERNAL_ERROR);
+            } catch (SRMException e) {
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_FAILURE);
+            }
         }
         return response;
     }
 
-    public static final SrmGetRequestTokensResponse getFailedResponse(String text) {
-        return getFailedResponse(text,null);
+    private SrmGetRequestTokensResponse srmGetRequestTokens()
+            throws SRMException
+    {
+        String description = request.getUserRequestDescription();
+        String[] requestTokens = storage.srmGetRequestTokens(user, description);
+        if (requestTokens.length == 0) {
+            throw new SRMInvalidRequestException("No such requests");
+        }
+        TRequestTokenReturn[] requestTokenReturns =
+                new TRequestTokenReturn[requestTokens.length];
+        for (int i = 0; i < requestTokens.length; ++i) {
+            requestTokenReturns[i] = new TRequestTokenReturn(requestTokens[i], null);
+        }
+        return new SrmGetRequestTokensResponse(
+                new TReturnStatus(TStatusCode.SRM_SUCCESS, null),
+                new ArrayOfTRequestTokenReturn(requestTokenReturns));
     }
 
-    public static final SrmGetRequestTokensResponse getFailedResponse(String text, TStatusCode statusCode) {
-        if(statusCode == null) {
-            statusCode = TStatusCode.SRM_FAILURE;
-        }
+    public static final SrmGetRequestTokensResponse getFailedResponse(String text)
+    {
+        return getFailedResponse(text, TStatusCode.SRM_FAILURE);
+    }
 
+    public static final SrmGetRequestTokensResponse getFailedResponse(String text, TStatusCode statusCode)
+    {
         SrmGetRequestTokensResponse response = new SrmGetRequestTokensResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;
     }
-    /**
-     * implementation of srm SrmGetSpaceMetaData
-     */
-
-    public SrmGetRequestTokensResponse srmGetRequestTokens()
-        throws SRMException, MalformedURIException {
-        if(request==null) {
-            return getFailedResponse(
-                    "srmGetRequestTokens: null request passed to SrmGetRequestTokens",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        String description = request.getUserRequestDescription();
-
-        String[] requestTokens = storage.srmGetRequestTokens(user,description);
-        if(requestTokens.length >0) {
-            TRequestTokenReturn[] requestTokenReturns =
-                    new TRequestTokenReturn[requestTokens.length];
-            for(int i =0; i <requestTokens.length; ++i) {
-                requestTokenReturns[i] =
-                        new TRequestTokenReturn(requestTokens[i],null);
-            }
-            SrmGetRequestTokensResponse response =
-                    new SrmGetRequestTokensResponse(
-                    new TReturnStatus(TStatusCode.SRM_SUCCESS,"OK"),
-                    new ArrayOfTRequestTokenReturn(requestTokenReturns));
-
-            return response;
-        } else {
-               return getFailedResponse("userRequestDescription does not refer to any existing known requests",
-               TStatusCode.SRM_INVALID_REQUEST);
-
-        }
-
-   }
-
-
 }

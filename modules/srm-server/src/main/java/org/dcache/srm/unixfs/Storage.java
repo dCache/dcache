@@ -1067,16 +1067,16 @@ public class Storage
      * @throws SRMException
      * @return
      */
-    @Override
+    @Override @Nonnull
     public String[] srmGetSpaceTokens(SRMUser user,String description)
         throws SRMException {
-        return null;
+        return new String[0];
     }
 
-    @Override
+    @Override @Nonnull
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException{
-        return null;
+        return new String[0];
     }
 
     /**

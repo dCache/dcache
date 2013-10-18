@@ -74,6 +74,8 @@ documents or software obtained from this server.
 package org.dcache.srm;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,6 +87,7 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -126,6 +129,9 @@ import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.TFileStorageType;
+
+import static com.google.common.collect.Iterables.concat;
+import static java.util.Arrays.asList;
 
 /**
  * SRM class creates an instance of SRM client class and publishes it on a
@@ -717,15 +723,13 @@ public class SRM {
         return fmds;
     }
 
-    /**
-     * not implemented
-     */
-    public String[] getProtocols(SRMUser user, RequestCredential credential) {
-        try {
-            return storage.supportedGetProtocols();
-        } catch (SRMException srme) {
-            return new String[0];
-        }
+    public String[] getProtocols(SRMUser user, RequestCredential credential) throws SRMException
+    {
+        List<String> getProtocols = asList(storage.supportedGetProtocols());
+        List<String> putProtocols = asList(storage.supportedPutProtocols());
+        ImmutableList<String> protocols =
+                ImmutableSet.copyOf(concat(getProtocols, putProtocols)).asList();
+        return protocols.toArray(new String[protocols.size()]);
     }
 
     /**
