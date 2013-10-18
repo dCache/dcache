@@ -91,8 +91,8 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmReleaseSpaceCallback;
+import org.dcache.srm.SrmReserveSpaceCallback;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -524,7 +524,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 long remaining_lifetime;
                 setState(State.ASYNCWAIT,"reserving space");
                 remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
-                SrmReserveSpaceCallbacks callbacks = new PutReserveSpaceCallbacks(getId());
+                SrmReserveSpaceCallback callbacks = new PutReserveSpaceCallbacks(getId());
                 //
                 //the following code allows the inheritance of the
                 // retention policy from the directory metatada
@@ -602,7 +602,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             }
             if(getSpaceReservationId() != null && isWeReservedSpace()) {
                 logger.debug("storage.releaseSpace("+getSpaceReservationId()+"\"");
-                SrmReleaseSpaceCallbacks callbacks =
+                SrmReleaseSpaceCallback callbacks =
                         new PutReleaseSpaceCallbacks(this.getId());
                 getStorage().srmReleaseSpace(  user,getSpaceReservationId(),
                         null, //release all of space we reserved
@@ -989,7 +989,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
     }
 
-    public static class PutReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
+    public static class PutReserveSpaceCallbacks implements SrmReserveSpaceCallback
+    {
         private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
@@ -1003,7 +1004,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         @Override
-        public void ReserveSpaceFailed( Exception e) {
+        public void failed(Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
@@ -1019,7 +1020,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         @Override
-        public void ReserveSpaceFailed(String reason) {
+        public void internalError(String reason)
+        {
+            failed(reason);
+        }
+
+        @Override
+        public void failed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
@@ -1035,7 +1042,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         @Override
-        public void NoFreeSpace(String reason) {
+        public void noFreeSpace(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
@@ -1054,7 +1061,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         @Override
-        public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
+        public void success(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 logger.debug("Space Reserved: spaceReservationToken:"+spaceReservationToken);
@@ -1079,7 +1086,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
     }
 
-    public static class PutReleaseSpaceCallbacks implements SrmReleaseSpaceCallbacks {
+    public static class PutReleaseSpaceCallbacks implements SrmReleaseSpaceCallback
+    {
         private final long fileRequestJobId;
 
         public PutFileRequest getPutFileRequest()
@@ -1093,18 +1101,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         @Override
-        public void ReleaseSpaceFailed( Exception e) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                String error = e.toString();
-                logger.error("PutReleaseSpaceCallbacks exception",e);
-            } catch(Exception e1) {
-                logger.error(e1.toString());
-            }
-        }
-
-        @Override
-        public void ReleaseSpaceFailed(String reason) {
+        public void failed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
 
@@ -1115,7 +1112,19 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         @Override
-        public void SpaceReleased(String spaceReservationToken, long reservedSpaceSize) {
+        public void internalError(String reason)
+        {
+            failed(reason);
+        }
+
+        @Override
+        public void invalidRequest(String reason)
+        {
+            failed(reason);
+        }
+
+        @Override
+        public void success(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 logger.debug("Space Released: spaceReservationToken:"+spaceReservationToken+" remaining space="+reservedSpaceSize);

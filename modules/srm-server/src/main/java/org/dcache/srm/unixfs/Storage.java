@@ -49,8 +49,8 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmReleaseSpaceCallback;
+import org.dcache.srm.SrmReserveSpaceCallback;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.request.RequestCredential;
@@ -1032,7 +1032,7 @@ public class Storage
 	}
 
     @Override
-    public void srmReserveSpace(SRMUser user, long sizeInBytes, long spaceReservationLifetime, String retentionPolicy, String accessLatency, String description,SrmReserveSpaceCallbacks callbacks) {
+    public void srmReserveSpace(SRMUser user, long sizeInBytes, long spaceReservationLifetime, String retentionPolicy, String accessLatency, String description,SrmReserveSpaceCallback callbacks) {
     }
 
     @Override
@@ -1040,7 +1040,7 @@ public class Storage
     }
 
     @Override
-    public void srmReleaseSpace(SRMUser user, String spaceToken, Long sizeInBytes, SrmReleaseSpaceCallbacks callbacks) {
+    public void srmReleaseSpace(SRMUser user, String spaceToken, Long sizeInBytes, SrmReleaseSpaceCallback callbacks) {
     }
 
     @Override

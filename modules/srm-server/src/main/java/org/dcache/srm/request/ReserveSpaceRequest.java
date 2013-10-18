@@ -80,6 +80,7 @@ import java.util.Date;
 
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SrmReserveSpaceCallback;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
@@ -126,7 +127,7 @@ public final class ReserveSpaceRequest extends Request {
             TRetentionPolicy retentionPolicy,
             TAccessLatency accessLatency,
             String description,
-            String clienthost) throws Exception {
+            String clienthost) {
               super(user,
               requestCredentalId,
               maxNumberOfRetries,
@@ -313,28 +314,34 @@ public final class ReserveSpaceRequest extends Request {
         }
     }
 
-    public static ReserveSpaceRequest getRequest(Long requestId)
-            throws SRMInvalidRequestException {
-        return Job.getJob( requestId, ReserveSpaceRequest.class);
+    public static ReserveSpaceRequest getRequest(String requestToken)
+            throws SRMInvalidRequestException
+    {
+        try {
+            return Job.getJob(Long.parseLong(requestToken), ReserveSpaceRequest.class);
+        } catch (NumberFormatException e) {
+            throw new SRMInvalidRequestException("No such reservation request");
+        }
     }
 
-    private class SrmReserveSpaceCallbacks implements org.dcache.srm.SrmReserveSpaceCallbacks {
+    private class SrmReserveSpaceCallbacks implements SrmReserveSpaceCallback
+    {
         private final long requestJobId;
         public SrmReserveSpaceCallbacks(long requestJobId){
             this.requestJobId = requestJobId;
         }
 
-        public ReserveSpaceRequest getReserveSpacetRequest()
+        public ReserveSpaceRequest getReserveSpaceRequest()
                 throws SRMInvalidRequestException {
             return Job.getJob(requestJobId, ReserveSpaceRequest.class);
         }
 
         @Override
-        public void ReserveSpaceFailed(String reason) {
+        public void failed(String reason) {
 
             ReserveSpaceRequest request;
             try {
-                  request  = getReserveSpacetRequest();
+                  request  = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
                 return;
@@ -349,10 +356,10 @@ public final class ReserveSpaceRequest extends Request {
         }
 
         @Override
-        public void NoFreeSpace(String  reason) {
+        public void noFreeSpace(String reason) {
             ReserveSpaceRequest request;
             try {
-                  request  = getReserveSpacetRequest();
+                  request  = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
                 return;
@@ -368,10 +375,10 @@ public final class ReserveSpaceRequest extends Request {
         }
 
         @Override
-        public void ReserveSpaceFailed(Exception e) {
+        public void failed(Exception e) {
             ReserveSpaceRequest request;
             try {
-                  request  = getReserveSpacetRequest();
+                  request  = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
                 return;
@@ -387,10 +394,29 @@ public final class ReserveSpaceRequest extends Request {
         }
 
         @Override
-        public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
+        public void internalError(String reason)
+        {
             ReserveSpaceRequest request;
             try {
-                  request  = getReserveSpacetRequest();
+                request = getReserveSpaceRequest();
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.toString());
+                return;
+            }
+            try {
+                request.setStateAndStatusCode(State.FAILED, reason, TStatusCode.SRM_INTERNAL_ERROR);
+            } catch (IllegalStateTransition e) {
+                logger.error(e.getMessage());
+            }
+
+            logger.error("ReserveSpace failed: {}", reason);
+        }
+
+        @Override
+        public void success(String spaceReservationToken, long reservedSpaceSize) {
+            ReserveSpaceRequest request;
+            try {
+                  request  = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
                 return;

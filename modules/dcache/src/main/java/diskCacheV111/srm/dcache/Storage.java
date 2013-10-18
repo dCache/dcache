@@ -189,8 +189,8 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMNonEmptyDirectoryException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmReleaseSpaceCallback;
+import org.dcache.srm.SrmReserveSpaceCallback;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.request.Job;
@@ -2656,14 +2656,13 @@ public final class Storage
             String retentionPolicy,
             String accessLatency,
             String description,
-            SrmReserveSpaceCallbacks callbacks) {
-
+            SrmReserveSpaceCallback callback) {
         if (_isSpaceManagerEnabled) {
             SrmReserveSpaceCompanion.reserveSpace(((DcacheUser) user).getSubject(),
                     sizeInBytes, spaceReservationLifetime, retentionPolicy,
-                    accessLatency, description, callbacks, _spaceManagerStub);
+                    accessLatency, description, callback, _spaceManagerStub);
         } else {
-            callbacks.ReserveSpaceFailed(SPACEMANAGER_DISABLED_MESSAGE);
+            callback.failed(SPACEMANAGER_DISABLED_MESSAGE);
         }
     }
 
@@ -2671,18 +2670,12 @@ public final class Storage
     public void srmReleaseSpace(SRMUser user,
             String spaceToken,
             Long releaseSizeInBytes, // everything is null
-            SrmReleaseSpaceCallbacks callbacks) {
+            SrmReleaseSpaceCallback callbacks) {
         if (_isSpaceManagerEnabled) {
-            try {
-                long token = Long.parseLong(spaceToken);
-
-                SrmReleaseSpaceCompanion.releaseSpace(((DcacheUser) user).getSubject(),
-                    token, releaseSizeInBytes, callbacks, _spaceManagerStub);
-            } catch(NumberFormatException e){
-                callbacks.ReleaseSpaceFailed("invalid space token="+spaceToken);
-            }
+            SrmReleaseSpaceCompanion.releaseSpace(((DcacheUser) user).getSubject(),
+                    spaceToken, releaseSizeInBytes, callbacks, _spaceManagerStub);
         } else {
-            callbacks.ReleaseSpaceFailed(SPACEMANAGER_DISABLED_MESSAGE);
+            callbacks.failed(SPACEMANAGER_DISABLED_MESSAGE);
         }
     }
 

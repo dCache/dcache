@@ -539,7 +539,7 @@ public interface AbstractStorageElement {
             String retentionPolicy,
             String accessLatency,
             String description,
-            SrmReserveSpaceCallbacks callbacks);
+            SrmReserveSpaceCallback callbacks);
 
     /**
      *
@@ -551,7 +551,7 @@ public interface AbstractStorageElement {
     public void srmReleaseSpace(SRMUser user,
             String spaceToken,
             Long sizeInBytes,
-            SrmReleaseSpaceCallbacks callbacks);
+            SrmReleaseSpaceCallback callbacks);
 
     /**
      *

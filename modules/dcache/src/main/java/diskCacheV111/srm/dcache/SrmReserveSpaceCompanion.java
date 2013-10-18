@@ -64,11 +64,6 @@ obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
 
-/*
- * StageAndPinCompanion.java
- *
- * Created on January 2, 2003, 2:08 PM
- */
 package diskCacheV111.srm.dcache;
 
 import org.slf4j.Logger;
@@ -87,92 +82,56 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmReserveSpaceCallback;
 
-/**
- *
- * @author  timur
- */
-/**
- * this class does all the dcache specific work needed for staging and pinning a
- * file represented by a path. It notifies the caller about each next stage
- * of the process via a StageAndPinCompanionCallbacks interface.
- * Boolean functions of the callback interface need to return true in order for
- * the process to continue
- */
 public final class SrmReserveSpaceCompanion
-    extends AbstractMessageCallback<Reserve>
+        extends AbstractMessageCallback<Reserve>
 {
-    private final static Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmReserveSpaceCompanion.class);
-    private final long sizeInBytes;
-    private final long spaceReservationLifetime;
-    private final String retentionPolicy;
-    private final String accessLatency;
-    private final String description;
-    private final SrmReserveSpaceCallbacks callbacks;
 
-    /** Creates a new instance of StageAndPinCompanion */
-    private SrmReserveSpaceCompanion(
-            long sizeInBytes,
-            long spaceReservationLifetime,
-            String retentionPolicy,
-            String accessLatency,
-            String description,
-            SrmReserveSpaceCallbacks callbacks) {
-        this.sizeInBytes = sizeInBytes;
-        this.spaceReservationLifetime = spaceReservationLifetime;
-        this.retentionPolicy = retentionPolicy;
-        this.accessLatency = accessLatency;
-        this.description = description;
-        this.callbacks = callbacks;
+    private final SrmReserveSpaceCallback callback;
+
+    private SrmReserveSpaceCompanion(SrmReserveSpaceCallback callback)
+    {
+        this.callback = callback;
     }
 
     @Override
-    public void failure(int rc, Object error) {
-        _log.error("Space Reservation Failed rc:" + rc + " error:" + error);
+    public void failure(int rc, Object error)
+    {
+        LOGGER.error("Space Reservation Failed rc:" + rc + " error:" + error);
         if (error instanceof NoFreeSpaceException) {
             NoFreeSpaceException nfse = (NoFreeSpaceException) error;
-            callbacks.NoFreeSpace(nfse.getMessage());
-            return;
-        }
-        if (error instanceof SpaceException) {
+            callback.noFreeSpace(nfse.getMessage());
+        } else if (error instanceof SpaceException) {
             SpaceException se = (SpaceException) error;
-            callbacks.ReserveSpaceFailed(se.getMessage());
-            return;
-
+            callback.failed(se.getMessage());
+        } else {
+            callback.failed("Space reservation failed:" + error);
         }
-        callbacks.ReserveSpaceFailed("Space Reservation Failed rc:" + rc +
-                " error:" + error);
     }
 
     @Override
-    public void noroute(CellPath path) {
-        _log.error("No Route to SrmSpaceManager");
-        callbacks.ReserveSpaceFailed("No Route to SrmSpaceManager");
+    public void noroute(CellPath path)
+    {
+        LOGGER.error("No Route to SrmSpaceManager");
+        callback.internalError("Space manager unavailable");
     }
 
     @Override
-    public void success(Reserve reservationResponse) {
-        _log.trace("success");
-        callbacks.SpaceReserved(
+    public void success(Reserve reservationResponse)
+    {
+        callback.success(
                 Long.toString(reservationResponse.getSpaceToken()),
                 reservationResponse.getSizeInBytes());
     }
 
     @Override
-    public void timeout(CellPath path) {
-        _log.error("Timeout waiting for answer from SrmSpaceManager");
-        callbacks.ReserveSpaceFailed("Timeout waiting for answer from " +
-                "SrmSpaceManager");
-    }
-
-    @Override
-    public String toString() {
-
-        return this.getClass().getName() + " [size:" + sizeInBytes + " " +
-                accessLatency + " " + retentionPolicy +
-                " lifetime:" + spaceReservationLifetime + "]";
+    public void timeout(CellPath path)
+    {
+        LOGGER.error("Timeout waiting for answer from SrmSpaceManager");
+        callback.internalError("Space manager timeout");
     }
 
     public static void reserveSpace(
@@ -182,20 +141,13 @@ public final class SrmReserveSpaceCompanion
             String retentionPolicyString,
             String accessLatencyString,
             String description,
-            SrmReserveSpaceCallbacks callbacks,
-            CellStub spaceManagerStub) {
-        _log.trace(" SrmReserveSpaceCompanion.reserveSpace({} for {} bytes, access lat.={} retention pol.={} lifetime={})",
+            SrmReserveSpaceCallback callback,
+            CellStub spaceManagerStub)
+    {
+        LOGGER.trace(" SrmReserveSpaceCompanion.reserveSpace({} for {} bytes, access lat.={} retention pol.={} lifetime={})",
                 subject.getPrincipals(), sizeInBytes, accessLatencyString, retentionPolicyString, spaceReservationLifetime);
 
-
-
-        SrmReserveSpaceCompanion companion = new SrmReserveSpaceCompanion(
-                sizeInBytes,
-                spaceReservationLifetime,
-                retentionPolicyString,
-                accessLatencyString,
-                description,
-                callbacks);
+        SrmReserveSpaceCompanion companion = new SrmReserveSpaceCompanion(callback);
         AccessLatency accessLatency = null;
         RetentionPolicy retentionPolicy = null;
         if (accessLatencyString != null) {
@@ -203,31 +155,30 @@ public final class SrmReserveSpaceCompanion
                 accessLatency =
                         AccessLatency.getAccessLatency(accessLatencyString);
             } catch (IllegalArgumentException iae) {
-                callbacks.ReserveSpaceFailed(iae);
+                callback.failed("Invalid access latency");
                 return;
             }
         }
         if (retentionPolicyString != null) {
             try {
-
                 retentionPolicy =
                         RetentionPolicy.getRetentionPolicy(retentionPolicyString);
             } catch (IllegalArgumentException iae) {
-                callbacks.ReserveSpaceFailed(iae);
+                callback.failed("Invalid retention policy");
                 return;
             }
         }
 
         Reserve reserve =
                 new Reserve(
-                sizeInBytes,
-                retentionPolicy,
-                accessLatency,
-                spaceReservationLifetime,
-                description);
+                        sizeInBytes,
+                        retentionPolicy,
+                        accessLatency,
+                        spaceReservationLifetime,
+                        description);
         reserve.setSubject(subject);
         spaceManagerStub.send(reserve, Reserve.class,
-                new ThreadManagerMessageCallback(companion));
+                new ThreadManagerMessageCallback<>(companion));
     }
 }
 

@@ -2075,7 +2075,7 @@ public final class Manager
                                                          SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
                                                          id);
                 if (spaces.isEmpty()) {
-                        throw new SQLException("space reservation with id="+id+" not found", "02000");
+                        throw new SQLException("Space reservation " + id + " not found.", "02000");
                 }
                 return Iterables.getFirst(spaces,null);
         }
@@ -3756,6 +3756,10 @@ public final class Manager
                 long spaceToken = release.getSpaceToken();
                 Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
                 Space space = getSpace(spaceToken);
+                if (space.getState() == SpaceState.RELEASED) {
+                    /* Stupid way to signal that it isn't found, but there is no other way at the moment. */
+                    throw new SQLException("Space reservation " + spaceToken + " was already released.", "02000");
+                }
                 Subject subject =  release.getSubject();
                 authorizationPolicy.checkReleasePermission(subject, space);
                 if(spaceToReleaseInBytes == null) {

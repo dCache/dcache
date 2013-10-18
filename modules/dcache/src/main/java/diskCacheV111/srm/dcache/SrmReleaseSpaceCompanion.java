@@ -64,11 +64,6 @@ obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
 
-/*
- * StageAndPinCompanion.java
- *
- * Created on January 2, 2003, 2:08 PM
- */
 package diskCacheV111.srm.dcache;
 
 import org.slf4j.Logger;
@@ -76,95 +71,86 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
+import java.sql.SQLException;
+import java.util.Objects;
+
+import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.services.space.message.Release;
+
+import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
+import org.dcache.srm.SrmReleaseSpaceCallback;
 
-/**
- *
- * @author  timur
- */
-/**
- * this class does all the dcache specific work needed for staging and pinning a
- * file represented by a path. It notifies the caller about each next stage
- * of the process via a StageAndPinCompanionCallbacks interface.
- * Boolean functions of the callback interface need to return true in order for
- * the process to continue
- */
 public final class SrmReleaseSpaceCompanion
-    extends AbstractMessageCallback<Release>
+        extends AbstractMessageCallback<Release>
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SrmReleaseSpaceCompanion.class);
 
-    private final static Logger _log = LoggerFactory.getLogger(SrmReleaseSpaceCompanion.class);
-    private final long spaceToken;
-    private final Long spaceToReleaseInBytes;
-    private final SrmReleaseSpaceCallbacks callbacks;
+    private final SrmReleaseSpaceCallback callback;
 
-    /** Creates a new instance of StageAndPinCompanion */
-    private SrmReleaseSpaceCompanion(
-            long spaceToken,
-            Long spaceToReleaseInBytes,
-            SrmReleaseSpaceCallbacks callbacks) {
-        this.spaceToken = spaceToken;
-        this.spaceToReleaseInBytes = spaceToReleaseInBytes;
-        this.callbacks = callbacks;
+    private SrmReleaseSpaceCompanion(SrmReleaseSpaceCallback callback)
+    {
+        this.callback = callback;
     }
 
     @Override
-    public void failure(int rc, Object error) {
-        _log.error("Space Release Failed rc" + rc + " error:" + error);
-        callbacks.ReleaseSpaceFailed("Space Release Failed rc" + rc +
-                " error:" + error);
-    }
-
-    public void noroute() {
-        _log.error("No Route to SrmSpaceManager");
-        callbacks.ReleaseSpaceFailed("No Route to SrmSpaceManager");
+    public void failure(int rc, Object error)
+    {
+        if (error instanceof SQLException && Objects.equals(((SQLException) error).getSQLState(), "02000")) {
+            callback.invalidRequest("No such space");
+        } else if (error instanceof SpaceException) {
+            SpaceException se = (SpaceException) error;
+            callback.failed(se.getMessage());
+        } else {
+            LOGGER.error("Space Release Failed rc: {} error: {}", rc, error);
+            callback.failed("Failed to release space: " + error);
+        }
     }
 
     @Override
-    public void success(Release releaseResponse) {
-        _log.trace("success");
-        callbacks.SpaceReleased(
+    public void noroute(CellPath path)
+    {
+        LOGGER.error("No Route to SrmSpaceManager");
+        callback.internalError("Space manager is unavailable");
+    }
+
+    @Override
+    public void success(Release releaseResponse)
+    {
+        callback.success(
                 Long.toString(releaseResponse.getSpaceToken()),
                 releaseResponse.getRemainingSizeInBytes());
     }
 
-    public void timeout() {
-        _log.error("Timeout waiting for answer from SrmSpaceManager");
-        callbacks.ReleaseSpaceFailed("Timeout waiting for answer from " +
-                "SrmSpaceManager");
-    }
-
     @Override
-    public String toString() {
-
-        return getClass().getName() + " token:" + spaceToken +
-                " releasesize:" + spaceToReleaseInBytes;
+    public void timeout(CellPath path)
+    {
+        LOGGER.error("Timeout waiting for answer from SrmSpaceManager");
+        callback.internalError("Space manager timeout");
     }
 
     public static void releaseSpace(
             Subject subject,
-            long spaceToken,
+            String spaceToken,
             Long spaceToReleaseInBytes,
-            SrmReleaseSpaceCallbacks callbacks,
-            CellStub spaceManagerStub) {
-        _log.trace("SrmReleaseSpaceCompanion.releaseSpace({}, token {}, spaceToReleaseInBytes {})",
-                subject.getPrincipals(),  spaceToken, spaceToReleaseInBytes);
-
-        SrmReleaseSpaceCompanion companion = new SrmReleaseSpaceCompanion(
-                spaceToken,
-                spaceToReleaseInBytes,
-                callbacks);
-        Release release =
-                new Release(spaceToken,
-                spaceToReleaseInBytes);
-        release.setSubject(subject);
-        spaceManagerStub.send(release, Release.class,
-                new ThreadManagerMessageCallback(companion));
+            SrmReleaseSpaceCallback callback,
+            CellStub spaceManagerStub)
+    {
+        LOGGER.trace("SrmReleaseSpaceCompanion.releaseSpace({}, token {}, spaceToReleaseInBytes {})",
+                subject.getPrincipals(), spaceToken, spaceToReleaseInBytes);
+        try {
+            long token = Long.parseLong(spaceToken);
+            SrmReleaseSpaceCompanion companion = new SrmReleaseSpaceCompanion(callback);
+            Release release = new Release(token, spaceToReleaseInBytes);
+            release.setSubject(subject);
+            spaceManagerStub.send(release, Release.class,
+                    new ThreadManagerMessageCallback<>(companion));
+        } catch (NumberFormatException e) {
+            callback.invalidRequest("No such space");
+        }
     }
 }
 

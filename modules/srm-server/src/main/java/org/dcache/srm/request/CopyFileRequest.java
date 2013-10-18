@@ -100,8 +100,8 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import org.dcache.srm.SrmReleaseSpaceCallbacks;
-import org.dcache.srm.SrmReserveSpaceCallbacks;
+import org.dcache.srm.SrmReleaseSpaceCallback;
+import org.dcache.srm.SrmReserveSpaceCallback;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -631,7 +631,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 				accessLatency = getToParentFmd().retentionPolicyInfo.getAccessLatency();
 			}
 
-			SrmReserveSpaceCallbacks callbacks =
+			SrmReserveSpaceCallback callbacks =
                     new TheReserveSpaceCallbacks (getId());
 			getStorage().srmReserveSpace(
 				getUser(),
@@ -723,7 +723,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 			if(accessLatency == null && getToParentFmd() != null && getToParentFmd().retentionPolicyInfo != null ) {
 				accessLatency = getToParentFmd().retentionPolicyInfo.getAccessLatency();
 			}
-			SrmReserveSpaceCallbacks callbacks = new TheReserveSpaceCallbacks (getId());
+			SrmReserveSpaceCallback callbacks = new TheReserveSpaceCallbacks (getId());
 			getStorage().srmReserveSpace(
 				getUser(),
 				size==0?1L:size,
@@ -1040,7 +1040,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
                         }
 			if(getSpaceReservationId() != null && isWeReservedSpace()) {
 				logger.debug("storage.releaseSpace("+getSpaceReservationId()+"\"");
-				SrmReleaseSpaceCallbacks callbacks = new TheReleaseSpaceCallbacks(this.getId());
+				SrmReleaseSpaceCallback callbacks = new TheReleaseSpaceCallbacks(this.getId());
 				getStorage().srmReleaseSpace(  user,getSpaceReservationId(),
 							  null,
 							  callbacks);
@@ -1694,7 +1694,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
         }
 	}
 
-	public static class TheReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
+	public static class TheReserveSpaceCallbacks implements SrmReserveSpaceCallback
+        {
 		private final long fileRequestJobId;
 		public CopyFileRequest getCopyFileRequest()
                         throws SRMInvalidRequestException
@@ -1707,7 +1708,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 
 		@Override
-                public void ReserveSpaceFailed(String reason) {
+                public void failed(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1723,7 +1724,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 			}
 		}
 		@Override
-                public void NoFreeSpace(String reason) {
+                public void noFreeSpace(String reason) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				try {
@@ -1743,7 +1744,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 
 		@Override
-                public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
+                public void success(String spaceReservationToken, long reservedSpaceSize) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				logger.debug("Space Reserved: spaceReservationToken:"+spaceReservationToken);
@@ -1767,7 +1768,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 
 		@Override
-                public void ReserveSpaceFailed(Exception e) {
+                public void failed(Exception e) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				String error = e.toString();
@@ -1784,10 +1785,17 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 				logger.error(e1.toString());
 			}
 		}
-	}
+
+            @Override
+            public void internalError(String reason)
+            {
+                failed(reason);
+            }
+        }
 
 
-	private  static class TheReleaseSpaceCallbacks implements  SrmReleaseSpaceCallbacks {
+	private  static class TheReleaseSpaceCallbacks implements SrmReleaseSpaceCallback
+        {
 		private final long fileRequestJobId;
 
 		public TheReleaseSpaceCallbacks(long fileRequestJobId) {
@@ -1800,7 +1808,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 
 		@Override
-                public void ReleaseSpaceFailed( String error) {
+                public void failed(String error) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				fr.setSpaceReservationId(null);
@@ -1811,32 +1819,20 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 			}
 		}
 
-		@Override
-                public void ReleaseSpaceFailed( Exception e) {
-			try {
-				CopyFileRequest fr = getCopyFileRequest();
-				fr.setSpaceReservationId(null);
-				logger.error("TheReleaseSpaceCallbacks exception");
-				logger.error(e.toString());
-			}
-			catch(Exception e1) {
-				logger.error(e1.toString());
-			}
-		}
+                @Override
+                public void internalError(String reason)
+                {
+                        failed(reason);
+                }
 
-		public void Timeout() {
-			try {
-				CopyFileRequest fr = getCopyFileRequest();
-				fr.setSpaceReservationId(null);
-				logger.error("TheReleaseSpaceCallbacks Timeout");
-			}
-			catch(Exception e) {
-				logger.error(e.toString());
-			}
-		}
+                @Override
+                public void invalidRequest(String reason)
+                {
+                        failed(reason);
+                }
 
-		@Override
-                public void SpaceReleased(String spaceReservationToken, long remainingSpaceSize) {
+                @Override
+                public void success(String spaceReservationToken, long remainingSpaceSize) {
 			try {
 				CopyFileRequest fr = getCopyFileRequest();
 				logger.debug("TheReleaseSpaceCallbacks: SpaceReleased");
