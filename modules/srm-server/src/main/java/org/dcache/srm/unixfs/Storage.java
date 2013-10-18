@@ -165,8 +165,7 @@ public class Storage
   /** */
   @Override
   public String[] supportedGetProtocols()
-      throws SRMException {
-
+  {
     for( String protocol: getProtocols) {
         logger.debug("supportedGetProtocols: " + protocol );
     }
@@ -177,12 +176,10 @@ public class Storage
   /** */
   @Override
   public String[] supportedPutProtocols()
-      throws SRMException {
-
+  {
     for( String protocol: putProtocols) {
         logger.debug("supportedPutProtocols: " + protocol );
     }
-
     return putProtocols;
   }
 

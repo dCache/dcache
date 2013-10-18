@@ -85,6 +85,7 @@ import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.qos.QOSTicket;
@@ -94,6 +95,10 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static com.google.common.base.Predicates.in;
+import static com.google.common.collect.Iterables.any;
+import static java.util.Arrays.asList;
 
 /**
  * A FileRequest is used by ContainerRequest (and its subclasses) to represent
@@ -420,15 +425,8 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     }
 
     protected boolean isProtocolSupported(String[] protocols)
-        throws SRMException
+            throws SRMInternalErrorException
     {
-        for (String supported: getStorage().supportedGetProtocols()) {
-            for (String protocol: protocols) {
-                if (supported.equals(protocol)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return any(asList(protocols), in(asList(getStorage().supportedGetProtocols())));
     }
 }

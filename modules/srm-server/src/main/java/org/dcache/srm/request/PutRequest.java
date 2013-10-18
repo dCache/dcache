@@ -79,11 +79,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
@@ -237,30 +234,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         for (PutFileRequest request : getFileRequests()) {
             request.schedule();
         }
-    }
-
-    public void proccessRequest() {
-        logger.debug("proccessing put request");
-        String supported_protocols[];
-        try {
-            supported_protocols = getStorage().supportedGetProtocols();
-        }
-        catch(SRMException srme) {
-            logger.error(" protocols are not supported");
-            logger.error(srme.toString());
-            //setFailedStatus ("protocols are not supported");
-            return;
-        }
-        Set<String> supported_protocols_set = new HashSet<>(Arrays.asList(supported_protocols));
-        supported_protocols_set.retainAll(Arrays.asList(protocols));
-        if(supported_protocols_set.isEmpty()) {
-            logger.error("processPutRequest() : error selecting protocol");
-            //setFailedStatus ("protocols are not supported");
-            return;
-        }
-        //do not need it, let it be garbagecollected
-        supported_protocols_set = null;
-
     }
 
     /**

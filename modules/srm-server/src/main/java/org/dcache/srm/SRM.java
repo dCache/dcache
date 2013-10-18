@@ -723,7 +723,8 @@ public class SRM {
         return fmds;
     }
 
-    public String[] getProtocols(SRMUser user, RequestCredential credential) throws SRMException
+    public String[] getProtocols(SRMUser user, RequestCredential credential)
+            throws SRMInternalErrorException
     {
         List<String> getProtocols = asList(storage.supportedGetProtocols());
         List<String> putProtocols = asList(storage.supportedPutProtocols());

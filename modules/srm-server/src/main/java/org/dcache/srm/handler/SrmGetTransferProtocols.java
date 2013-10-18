@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
-import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
@@ -51,14 +50,12 @@ public class SrmGetTransferProtocols
             } catch (SRMInternalErrorException e) {
                 LOGGER.error(e.getMessage());
                 response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INTERNAL_ERROR);
-            } catch (SRMException e) {
-                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_FAILURE);
             }
         }
         return response;
     }
 
-    private TSupportedTransferProtocol[] getSupportedTransferProtocols() throws SRMException
+    private TSupportedTransferProtocol[] getSupportedTransferProtocols() throws SRMInternalErrorException
     {
         String[] protocols = srm.getProtocols(user, credential);
         TSupportedTransferProtocol[] arrayOfProtocols =

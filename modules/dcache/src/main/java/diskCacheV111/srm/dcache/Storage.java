@@ -70,6 +70,9 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import org.apache.axis.types.UnsignedLong;
@@ -109,6 +112,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -216,6 +220,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -1021,57 +1026,52 @@ public final class Storage
                                  new PnfsId(fileId), callbacks, _pinManagerStub);
     }
 
-    public String selectGetProtocol(String[] protocols)
+    private String selectGetProtocol(String[] protocols)
             throws SRMException {
         return selectProtocolFor(protocols, srmGetNotSupportedProtocols);
     }
 
-    public String selectPutProtocol(String[] protocols)
+    private String selectPutProtocol(String[] protocols)
             throws SRMException {
         return selectProtocolFor(protocols, srmPutNotSupportedProtocols);
     }
 
     private String selectProtocolFor(String[] protocols, String[] excludes)
-    throws SRMException {
-        Set<String> available_protocols = listAvailableProtocols();
-        available_protocols.retainAll(Arrays.asList(protocols));
-        available_protocols.removeAll(Arrays.asList(excludes));
-        if(available_protocols.isEmpty()) {
-            _log.error("can not find sutable protocol");
-            throw new SRMException("can not find sutable put protocol");
-        }
-
+            throws SRMException
+    {
+        Set<String> availableProtocols = listAvailableProtocols();
+        availableProtocols.retainAll(Arrays.asList(protocols));
+        availableProtocols.removeAll(Arrays.asList(excludes));
         for (String protocol : srmPreferredProtocols) {
-            if (available_protocols.contains(protocol)) {
+            if (availableProtocols.contains(protocol)) {
                 return protocol;
             }
         }
-
         for (String protocol : protocols) {
-            if (available_protocols.contains(protocol)) {
+            if (availableProtocols.contains(protocol)) {
                 return protocol;
             }
         }
-
-        // we should never get here
-        throw new SRMException("can not find sutable put protocol");
+        _log.warn("Cannot find suitable protocol. Client requested one of {}.",
+                Arrays.toString(protocols));
+        throw new SRMException("Cannot find suitable transfer protocol.");
     }
 
     @Override
     public String[] supportedGetProtocols()
-    throws SRMException {
+            throws SRMInternalErrorException
+    {
         Set<String> protocols = listAvailableProtocols();
+        protocols.removeAll(Arrays.asList(srmGetNotSupportedProtocols));
         return protocols.toArray(new String[protocols.size()]);
     }
 
     @Override
     public String[] supportedPutProtocols()
-    throws SRMException {
+            throws SRMInternalErrorException
+    {
         Set<String> protocols = listAvailableProtocols();
-        // "http" is for getting only
-        if(protocols.contains("http")) {
-            protocols.remove("http");
-        }
+        protocols.removeAll(Arrays.asList(srmPutNotSupportedProtocols));
         return protocols.toArray(new String[protocols.size()]);
     }
 
@@ -1233,12 +1233,6 @@ public final class Storage
         return transferPath;
     }
 
-    public LoginBrokerInfo[] getLoginBrokerInfos()
-        throws SRMException
-    {
-        return getLoginBrokerInfos(null);
-    }
-
     // These hashtables are used as a caching mechanizm for the login
     // broker infos. Here we asume that no protocol called "null" is
     // going to be ever used.
@@ -1247,10 +1241,10 @@ public final class Storage
     private final Map<String,Long> latestLoginBrokerInfosTimes =
         new HashMap<>();
     private long LOGINBROKERINFO_VALIDITYSPAN = 30 * 1000;
-    private static final int MAX_LOGIN_BROKER_RETRIES=5;
+    private static final int MAX_LOGIN_BROKER_RETRIES = 5;
 
-    public LoginBrokerInfo[] getLoginBrokerInfos(String protocol)
-        throws SRMException
+    private LoginBrokerInfo[] getLoginBrokerInfos(String protocol)
+        throws SRMInternalErrorException
     {
         String key = (protocol == null) ? "null" : protocol;
 
@@ -1276,8 +1270,7 @@ public final class Storage
         try {
             int retry = 0;
             do {
-                _log.debug("getLoginBrokerInfos sending \"" + brokerMessage +
-                           "\"  to LoginBroker");
+                _log.debug("getLoginBrokerInfos sending \"{}\" to LoginBroker", brokerMessage);
                 try {
                     LoginBrokerInfo[] infos =
                         _loginBrokerStub.sendAndWait(brokerMessage,
@@ -1298,14 +1291,14 @@ public final class Storage
             throw new SRMInternalErrorException("Request was interrupted", e);
         }
 
-        throw new SRMException(error);
+        throw new SRMInternalErrorException(error);
     }
 
     public Set<String> listAvailableProtocols()
-        throws SRMException
+            throws SRMInternalErrorException
     {
         Set<String> protocols = new HashSet<>();
-        for (LoginBrokerInfo info: getLoginBrokerInfos()) {
+        for (LoginBrokerInfo info: getLoginBrokerInfos(null)) {
             protocols.add(info.getProtocolFamily());
         }
         return protocols;
@@ -1313,7 +1306,7 @@ public final class Storage
 
     @Override
     public boolean isLocalTransferUrl(URI url)
-        throws SRMException
+            throws SRMInternalErrorException
     {
         String protocol = url.getScheme();
         String host = url.getHost();
@@ -1328,77 +1321,58 @@ public final class Storage
 
 
     private String selectHost(String protocol)
-        throws SRMException
+            throws SRMInternalErrorException
     {
-        _log.debug("selectHost("+protocol+")");
-        LoginBrokerInfo[]loginBrokerInfos = getLoginBrokerInfos(protocol);
-        return selectHost(loginBrokerInfos);
+        _log.trace("selectHost({})", protocol);
+        LoginBrokerInfo[] loginBrokerInfos = getLoginBrokerInfos(protocol);
+        Arrays.sort(loginBrokerInfos, LOAD_ORDER);
+        int len = loginBrokerInfos.length;
+        if (len <=0){
+            return null;
+        }
+        int selected_indx;
+        synchronized (rand) {
+            selected_indx = rand.nextInt(Math.min(len, numDoorInRanSelection));
+        }
+        String doorHostPort = lbiToDoor(loginBrokerInfos[selected_indx]);
+
+        _log.trace("selectHost returns {}", doorHostPort);
+        return doorHostPort;
     }
 
     private final Random rand = new Random();
 
-    int numDoorInRanSelection=3;
+    private int numDoorInRanSelection = 3;
 
-   /**
-     *  HostnameCacheRecord TTL in millis
-     */
-    private static final long doorToHostnameCacheTTL = 600000L; // ten minutes
+    private final LoadingCache<String,String> doorToHostnameCache =
+            CacheBuilder.newBuilder()
+                    .expireAfterWrite(10, MINUTES)
+                    .build(new CacheLoader<String, String>()
+                    {
+                        @Override
+                        public String load(String door) throws Exception
+                        {
+                            InetAddress address = InetAddress.getByName(door);
+                            String resolvedHost = address.getHostName();
+                            if (customGetHostByAddr && isInetAddress(resolvedHost)) {
+                                resolvedHost = getHostByAddr(address.getAddress());
+                            }
+                            return resolvedHost;
+                        }
+                    });
 
-    private static final class HostnameCacheRecord {
-        private String hostname;
-        /**
-         *  in millis
-         */
-        private long  creationTime;
-        public HostnameCacheRecord( String hostname ) {
-            this.hostname = hostname;
-            this.creationTime = System.currentTimeMillis();
+    private String lbiToDoor(LoginBrokerInfo lbi) throws SRMInternalErrorException
+    {
+        try {
+            String resolvedHost = doorToHostnameCache.get(lbi.getHost());
+            return resolvedHost +":"+ lbi.getPort();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            throw new SRMInternalErrorException("Failed to resolve door: " + cause, cause);
         }
-        /**
-         * @return the hostname
-         */
-        public String getHostname() {
-            return hostname;
-        }
-
-        public boolean expired() {
-            return
-                System.currentTimeMillis() - creationTime >
-                doorToHostnameCacheTTL;
-        }
-
-    }
-     private Map<String,HostnameCacheRecord> doorToHostnameMap =
-            new HashMap<>();
-    private String lbiToDoor(LoginBrokerInfo lbi) throws SRMException {
-
-            String thehost =lbi.getHost();
-            String resolvedHost;
-            HostnameCacheRecord resolvedHostRecord = doorToHostnameMap.get(thehost);
-            if(resolvedHostRecord == null || resolvedHostRecord.expired() ) {
-                try {
-
-                    InetAddress address = InetAddress.getByName(thehost);
-                    resolvedHost = address.getHostName();
-                    if ( customGetHostByAddr && isInetAddress(resolvedHost) ) {
-                        resolvedHost = getHostByAddr( address.getAddress() );
-                    }
-                } catch (IOException e) {
-                    throw new SRMException("selectHost " + e, e);
-                }
-                // cache record
-                doorToHostnameMap.put(thehost,
-                        new HostnameCacheRecord(resolvedHost));
-            } else {
-                resolvedHost = resolvedHostRecord.getHostname();
-            }
-
-
-            return resolvedHost+":"+ lbi.getPort();
-
     }
 
-    private final static Comparator<LoginBrokerInfo> LOAD_ORDER =
+    private static final Comparator<LoginBrokerInfo> LOAD_ORDER =
         new Comparator<LoginBrokerInfo>() {
             @Override
             public int compare(LoginBrokerInfo info1, LoginBrokerInfo info2)
@@ -1406,25 +1380,6 @@ public final class Storage
                 return (int)Math.signum(info1.getLoad() - info2.getLoad());
             }
         };
-
-    public String selectHost(LoginBrokerInfo[]loginBrokerInfos)
-        throws SRMException
-    {
-        Arrays.sort(loginBrokerInfos, LOAD_ORDER);
-        int len = loginBrokerInfos.length;
-        if (len <=0){
-            return null;
-        }
-
-        int selected_indx;
-        synchronized (rand) {
-            selected_indx = rand.nextInt(Math.min(len, numDoorInRanSelection));
-        }
-        String doorHostPort = lbiToDoor(loginBrokerInfos[selected_indx]);
-
-        _log.debug("selectHost returns "+doorHostPort);
-        return doorHostPort;
-    }
 
 
     /**

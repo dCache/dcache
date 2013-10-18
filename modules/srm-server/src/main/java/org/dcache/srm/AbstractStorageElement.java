@@ -114,16 +114,16 @@ public interface AbstractStorageElement {
      * Method must be called before any "get" operations. It gives the list of all
      * protocols implemented in the Storage Element for "get" operations
      * @return Array of strings with protocol names.
-     * @throws SRMException in case of error
+     * @throws SRMInternalErrorException in case of error
      */
-    public String[] supportedGetProtocols() throws SRMException;
+    public String[] supportedGetProtocols() throws SRMInternalErrorException;
 
     /** Method must be called before any "put" operations. It gives the list of all
      * protocols implemented in the Storage Element for "put" operations
-     * @throws SRMException
+     * @throws SRMInternalErrorException
      * @return Array of strings with protocol names.
      */
-    public String[] supportedPutProtocols()throws SRMException;
+    public String[] supportedPutProtocols()throws SRMInternalErrorException;
 
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
