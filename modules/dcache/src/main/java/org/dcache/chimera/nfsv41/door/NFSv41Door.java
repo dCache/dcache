@@ -104,10 +104,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
 
     /** dCache-friendly NFS device id to pool name mapping */
-    private Map<String, PoolDS> _poolNameToIpMap = new HashMap<>();
+    private final Map<String, PoolDS> _poolNameToIpMap = new HashMap<>();
 
     /** All known devices */
-    private Map<deviceid4, PoolDS> _deviceMap = new HashMap<>();
+    private final Map<deviceid4, PoolDS> _deviceMap = new HashMap<>();
 
     /** next device id, 0 reserved for MDS */
     private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
@@ -508,8 +508,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             pw.println();
             pw.println("  Known movers (layouts):");
-            for (Transfer io : _ioMessages.values()) {
-                pw.println(String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPool()));
+            for (NfsTransfer io : _ioMessages.values()) {
+                pw.println(String.format("    %s : %s@%s, OS=%s,cl=[%s]",
+                        io.getPnfsId(),
+                        io.getMoverId(),
+                        io.getPool(),
+                        io.getProtocolInfoForPool().stateId(),
+                        io.getProtocolInfoForPool().getSocketAddress().getAddress().getHostAddress()));
             }
 
             pw.println();

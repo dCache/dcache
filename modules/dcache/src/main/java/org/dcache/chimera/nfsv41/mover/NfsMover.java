@@ -51,4 +51,15 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     public stateid4 getStateId() {
         return getProtocolInfo().stateId();
     }
+
+    @Override
+    protected String getStatus() {
+        StringBuilder s = new StringBuilder();
+        s.append("NFSv4.1/pNFS,OS=")
+                .append(getStateId())
+                .append(",cl=[")
+                .append(getProtocolInfo().getSocketAddress().getAddress().getHostAddress())
+                .append("]");
+        return s.toString();
+    }
 }
