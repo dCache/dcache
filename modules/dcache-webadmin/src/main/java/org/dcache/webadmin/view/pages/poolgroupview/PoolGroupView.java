@@ -22,7 +22,7 @@ import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
 import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
-import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.panels.cellservices.CellServicesPanel;
 import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
 import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
@@ -34,7 +34,7 @@ import org.dcache.webadmin.view.util.EvenOddListView;
  *
  * @author jans
  */
-public class PoolGroupView extends BasePage {
+public class PoolGroupView extends SortableBasePage {
 
     private static final long serialVersionUID = 5336661788688627752L;
     private String SPECIAL_POOLGROUP_HEADER = "specialPoolGroup.header";

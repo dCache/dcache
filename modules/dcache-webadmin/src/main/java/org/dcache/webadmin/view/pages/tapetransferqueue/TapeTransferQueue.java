@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.dcache.webadmin.controller.exceptions.TapeTransfersServiceException;
-import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
 import org.dcache.webadmin.view.util.EvenOddListView;
 
@@ -20,7 +20,7 @@ import org.dcache.webadmin.view.util.EvenOddListView;
  *
  * @author jans
  */
-public class TapeTransferQueue extends BasePage {
+public class TapeTransferQueue extends SortableBasePage {
 
     private static final long serialVersionUID = 8313857084027604473L;
     private static final Logger _log = LoggerFactory.getLogger(TapeTransferQueue.class);

@@ -1,5 +1,8 @@
 package org.dcache.webadmin.view.pages.basepage;
 
+import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.PropertyModel;
@@ -9,9 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.MissingResourceException;
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
 
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
@@ -23,21 +23,26 @@ import org.dcache.webadmin.view.panels.userpanel.UserPanel;
  * Main Page for all WebAdminInterface Pages
  * @author jans
  */
-public class BasePage extends WebPage {
-
+public abstract class BasePage extends WebPage {
     private static final long serialVersionUID = 7817347486820155316L;
+
+    protected final Logger _log = LoggerFactory.getLogger(this.getClass());
+
     private String _title = "";
-    private static final Logger _log = LoggerFactory.getLogger(BasePage.class);
 
     public BasePage() {
         setTimeout();
         setTitle(getStringResource("title"));
-        add(new Label("pageTitle", new PropertyModel<String>(this, "_title")));
+        add(new Label("pageTitle", new PropertyModel<String>(this, "title")));
         add(new HeaderPanel("headerPanel"));
         add(new UserPanel("userPanel"));
         BasicNavigationPanel navigation = new BasicNavigationPanel("navigationPanel",
-                this.getClass());
+                        this.getClass());
         add(navigation);
+    }
+
+    public String getTitle() {
+        return _title;
     }
 
     protected void setTitle(String title) {
@@ -45,7 +50,7 @@ public class BasePage extends WebPage {
     }
 
     /*
-     * conveniance method to access Property-File Stringresources
+     * convenience method to access Property-File Stringresources
      * since (nearly) every Page will need access to them. When a Resource is
      * not found it catches the Exception and returns a String that tells to
      * report/fix the missing ressource.
@@ -55,11 +60,11 @@ public class BasePage extends WebPage {
             return new StringResourceModel(resourceKey, this, null).getString();
         } catch (MissingResourceException e) {
         }
-        return getString(getWebadminApplication().MISSING_RESOURCE_KEY);
+        return getString(WebAdminInterface.MISSING_RESOURCE_KEY);
     }
 
     /*
-     * conveniance method since (nearly) every Page will need the
+     * convenience method since (nearly) every Page will need the
      * session-object to retrive the user
      */
     public WebAdminInterfaceSession getWebadminSession() {
@@ -67,7 +72,7 @@ public class BasePage extends WebPage {
     }
 
     /*
-     * conveniance method since every Page will need the
+     * convenience method since every Page will need the
      * application-object to retrive the user
      */
     public WebAdminInterface getWebadminApplication() {
@@ -91,10 +96,20 @@ public class BasePage extends WebPage {
     @Override
     public void renderHead(IHeaderResponse response) {
         super.renderHead(response);
+        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header BEGIN -->\n"));
+        renderHeadInternal(response);
+        response.render(new StringHeaderItem("<!-- wicket " +  this.getClass().getSimpleName() + " header END -->\n"));
+    }
 
-        response.render(new StringHeaderItem("<!-- wicket " + BasePage.class.getSimpleName() + " header BEGIN -->\n"));
-        response.render(JavaScriptHeaderItem.forReference(getApplication().getJavaScriptLibrarySettings()
-                .getJQueryReference()));
-        response.render(new StringHeaderItem("<!-- wicket " +  BasePage.class.getSimpleName() + " header END -->\n"));
+    /**
+     * Adapter; additional scripting for this page header
+     * Each successive subclass should call the super of this method before
+     * add its own specific rendering.
+     */
+    protected void renderHeadInternal(IHeaderResponse response) {
+        response.render(JavaScriptHeaderItem.forReference(getApplication()
+                        .getJavaScriptLibrarySettings()
+                        .getJQueryReference()));
+        response.render(JavaScriptHeaderItem.forUrl("js/infobox.js"));
     }
 }

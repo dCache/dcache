@@ -170,6 +170,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
             if (cells == null) {
                 cells = Collections.emptyList();
             }
+            Collections.sort(cells);
             return cells;
         }
     }

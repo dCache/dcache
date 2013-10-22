@@ -17,14 +17,14 @@ import org.dcache.webadmin.controller.exceptions.PoolQueuesServiceException;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
-import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.panels.poolQueuesPanel.PoolQueuesPanel;
 
 /**
  * The Pool Request Queues Page
  * @author jans
  */
-public class PoolQueues extends BasePage {
+public class PoolQueues extends SortableBasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(PoolQueues.class);
     private static final long serialVersionUID = -6482302256752371950L;
@@ -57,23 +57,5 @@ public class PoolQueues extends BasePage {
             poolQueues = Collections.emptyList();
         }
         bean.setPoolQueues(poolQueues);
-    }
-
-    @Override
-    public void renderHead(IHeaderResponse response) {
-        super.renderHead(response);
-
-        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header BEGIN -->\n"));
-        response.render(JavaScriptHeaderItem.forUrl("js/picnet.table.filter.full.js"));
-        response.render(JavaScriptHeaderItem.forUrl("js/jquery.tablesorter.min.js"));
-        response.render(OnLoadHeaderItem.forScript(
-                "                $('#sortable').tablesorter();\n"
-                + "                // Initialise Plugin\n"
-                + "                var options1 = {\n"
-                + "                    additionalFilterTriggers: [$('#quickfind')],\n"
-                + "                    clearFiltersControls: [$('#cleanfilters')],\n"
-                + "                };\n"
-                + "                $('#sortable').tableFilter(options1);\n"));
-        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header END -->\n"));
     }
 }

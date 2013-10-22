@@ -1,10 +1,6 @@
 package org.dcache.webadmin.view.pages.activetransfers;
 
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.OnLoadHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
@@ -18,12 +14,12 @@ import java.util.List;
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
-import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.panels.activetransfers.ActiveTransfersPanel;
 import org.dcache.webadmin.view.util.Role;
 import org.dcache.webadmin.view.util.SelectableWrapper;
 
-public class ActiveTransfers extends BasePage {
+public class ActiveTransfers extends SortableBasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(ActiveTransfers.class);
     private static final long serialVersionUID = -1360523434922193867L;
@@ -75,23 +71,5 @@ public class ActiveTransfers extends BasePage {
             }
             getActiveTransfers();
         }
-    }
-
-    @Override
-    public void renderHead(IHeaderResponse response) {
-        super.renderHead(response);
-
-        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header BEGIN -->\n"));;
-        response.render(JavaScriptHeaderItem.forUrl("js/picnet.table.filter.full.js"));
-        response.render(JavaScriptHeaderItem.forUrl("js/jquery.tablesorter.min.js"));
-        response.render(OnLoadHeaderItem.forScript(
-                "                $('#sortable').tablesorter();\n"
-                + "                // Initialise Plugin\n"
-                + "                var options1 = {\n"
-                + "                    additionalFilterTriggers: [$('#quickfind')],\n"
-                + "                    clearFiltersControls: [$('#cleanfilters')],\n"
-                + "                };\n"
-                + "                $('#sortable').tableFilter(options1);\n"));
-        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header END -->\n"));
     }
 }

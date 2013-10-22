@@ -24,7 +24,7 @@ import org.dcache.webadmin.controller.exceptions.PoolAdminServiceException;
 import org.dcache.webadmin.view.beans.PoolAdminBean;
 import org.dcache.webadmin.view.beans.PoolCommandBean;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
-import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
 import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.SelectableWrapper;
@@ -34,7 +34,7 @@ import org.dcache.webadmin.view.util.SelectableWrapper;
  * @author jans
  */
 @RequireHttps
-public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
+public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage {
 
     private static final String EMPTY_STRING = "";
     public static final int RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS = 120;

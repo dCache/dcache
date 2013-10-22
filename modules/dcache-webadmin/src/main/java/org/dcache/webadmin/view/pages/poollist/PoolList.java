@@ -1,10 +1,6 @@
 package org.dcache.webadmin.view.pages.poollist;
 
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.OnLoadHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -16,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -25,7 +20,7 @@ import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
-import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.Role;
@@ -34,7 +29,7 @@ import org.dcache.webadmin.view.util.Role;
  * The PoolUsage Webpage
  * @author jans
  */
-public class PoolList extends BasePage {
+public class PoolList extends SortableBasePage {
 
     private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
     private static final long serialVersionUID = -3519762401458479856L;
@@ -124,24 +119,5 @@ public class PoolList extends BasePage {
                 }
             }
         }
-    }
-
-    @Override
-    public void renderHead(IHeaderResponse response) {
-        super.renderHead(response);
-
-        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header BEGIN -->\n"));
-        response.render(JavaScriptHeaderItem.forUrl("js/picnet.table.filter.full.js"));
-        response.render(JavaScriptHeaderItem.forUrl("js/jquery.tablesorter.min.js"));
-        response.render(OnLoadHeaderItem.forScript(
-                "                $('#sortable').tablesorter();\n"
-                + "                // Initialise Plugin\n"
-                + "                var options1 = {\n"
-                + "                    additionalFilterTriggers: [$('#quickfind')],\n"
-                + "                    clearFiltersControls: [$('#cleanfilters')],\n"
-                + "                };\n"
-                + "                $('#sortable').tableFilter(options1);\n"));
-
-        response.render(new StringHeaderItem("<!-- wicket " + this.getClass().getSimpleName() + " header END -->\n"));
     }
 }

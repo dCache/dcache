@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.dcache.webadmin.controller.exceptions.LinkGroupsServiceException;
-import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
 import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
 import org.dcache.webadmin.view.pages.spacetokens.spacereservationpanel.SpaceReservationPanel;
@@ -22,7 +22,7 @@ import org.dcache.webadmin.view.util.EvenOddListView;
 /**
  * @author jans
  */
-public class SpaceTokens extends BasePage {
+public class SpaceTokens extends SortableBasePage {
 
     private static final long serialVersionUID = -8335635306002254217L;
     private SpaceReservationPanel _spaceReservationsPanel =
