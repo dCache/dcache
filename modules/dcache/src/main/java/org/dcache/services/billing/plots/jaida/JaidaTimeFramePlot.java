@@ -81,7 +81,7 @@ import org.dcache.services.billing.plots.util.TimeFramePlotProperties;
 import org.dcache.services.billing.plots.util.PlotGridPosition;
 
 /**
- * JAIDA-specific plot wrapper.  Delegates properties to JAIDA API.
+ * JAIDA-specific plot wrapper. Delegates properties to JAIDA API.
  *
  * @author arossi
  */
@@ -115,32 +115,35 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
                 List<HistogramWrapper<IHistogram1D>> histograms
                     = getHistogramsForPosition(p);
                 for (HistogramWrapper<IHistogram1D> h : histograms) {
-                    try {
-                        IPlotterStyle style = factory.createPlotterStyle();
-                        normalizeTitleStyle(style);
-                        normalizeDataStyle(style, h);
-                        normalizeXAxisStyle(style, h);
-                        normalizeYAxisStyle(style, h);
-                        if (region < titles.length) {
-                            plotter.region(region).setTitle(titles[region]);
-                        }
-                        plotter.region(region).plot(h.getHistogram(), style);
-                    } catch (Exception t) {
-                       logger.error("the following plot could not be written: {}",
-                                       h.getTitle());
-                    } catch (Throwable t) {
-                        logger.error("the following plot could not be written: {}",
-                                        h.getTitle(), t);
+                    IPlotterStyle style = factory.createPlotterStyle();
+                    normalizeTitleStyle(style);
+                    normalizeDataStyle(style, h);
+                    normalizeXAxisStyle(style, h);
+                    normalizeYAxisStyle(style, h);
+                    if (region < titles.length) {
+                        plotter.region(region).setTitle(titles[region]);
                     }
+                    plotter.region(region).plot(h.getHistogram(), style);
                 }
                 region++;
             }
         }
 
-        if (exportSubdir != null) {
-            exportPlot();
-        } else {
-            plotter.show();
+        try {
+            if (exportSubdir != null) {
+                exportPlot();
+            } else {
+                plotter.show();
+            }
+        } catch (RuntimeException e) {
+            /*
+             * JAIDA show() actually declares RuntimeException thrown
+             * We do not want these exceptions to be fatal, so we
+             * only let JVM errors pass here
+             */
+            logger.error("plotting failed from unexpected error: {}",
+                            e.getMessage());
+            logger.debug("plot", e);
         }
     }
 
@@ -171,7 +174,7 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
         Double opacity
             = Double.parseDouble(properties.getProperty(TimeFramePlotProperties.OPACITY));
 
-        switch(histogram.getStyle()) {
+        switch (histogram.getStyle()) {
             case CONNECTED:
                 histogramStyle.dataStyle().fillStyle().setVisible(false);
                 histogramStyle.dataStyle().outlineStyle().setVisible(true);

@@ -63,8 +63,6 @@ import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.exceptions.BillingInitializationException;
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.histograms.data.IHistogramData;
 
 /**
@@ -75,13 +73,12 @@ import org.dcache.services.billing.histograms.data.IHistogramData;
 public class DirectQueueDelegate extends QueueDelegate {
 
     @Override
-    protected void handlePut(DoorRequestData data)
-                    throws BillingQueryException {
+    protected void handlePut(DoorRequestData data) {
         if (!dropMessagesAtLimit) {
             try {
                 doorQueue.put(data);
             } catch (InterruptedException t) {
-                throw new BillingQueryException(t.getMessage(), t.getCause());
+                processInterrupted(data);
             }
         } else if (!doorQueue.offer(data)) {
             processDroppedData(data);
@@ -89,12 +86,12 @@ public class DirectQueueDelegate extends QueueDelegate {
     }
 
     @Override
-    protected void handlePut(MoverData data) throws BillingQueryException {
+    protected void handlePut(MoverData data) {
         if (!dropMessagesAtLimit) {
             try {
                 moverQueue.put(data);
             } catch (InterruptedException t) {
-                throw new BillingQueryException(t.getMessage(), t.getCause());
+                processInterrupted(data);
             }
         } else if (!moverQueue.offer(data)) {
             processDroppedData(data);
@@ -102,12 +99,12 @@ public class DirectQueueDelegate extends QueueDelegate {
     }
 
     @Override
-    protected void handlePut(PoolHitData data) throws BillingQueryException {
+    protected void handlePut(PoolHitData data) {
         if (!dropMessagesAtLimit) {
             try {
                 hitQueue.put(data);
             } catch (InterruptedException t) {
-                throw new BillingQueryException(t.getMessage(), t.getCause());
+                processInterrupted(data);
             }
         } else if (!hitQueue.offer(data)) {
             processDroppedData(data);
@@ -115,12 +112,12 @@ public class DirectQueueDelegate extends QueueDelegate {
     }
 
     @Override
-    protected void handlePut(StorageData data) throws BillingQueryException {
+    protected void handlePut(StorageData data) {
         if (!dropMessagesAtLimit) {
             try {
                 storageQueue.put(data);
             } catch (InterruptedException t) {
-                throw new BillingQueryException(t.getMessage(), t.getCause());
+                processInterrupted(data);
             }
         } else if (!storageQueue.offer(data)) {
             processDroppedData(data);
@@ -128,7 +125,14 @@ public class DirectQueueDelegate extends QueueDelegate {
     }
 
     @Override
-    protected void initializeInternal() throws BillingInitializationException {
+    protected void initializeInternal() {
+    }
+
+    private void processInterrupted(IHistogramData data) {
+        dropped.incrementAndGet();
+        logger.warn("queueing of data was interrupted; "
+                        + "{} entries have been dropped", dropped.get());
+        logger.debug("failed to store {}", data);
     }
 
     private void processDroppedData(IHistogramData data) {

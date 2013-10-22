@@ -210,7 +210,7 @@ public class CellStatusCollector extends Collector {
      * @see java.util.concurrent.Callable#call()
      */
     @Override
-    public Status call() throws Exception {
+    public Status call() throws InterruptedException {
         collectCellStates();
         return Status.SUCCESS;
     }

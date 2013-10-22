@@ -91,7 +91,6 @@ import java.util.TreeMap;
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.dao.ILogEntryDAO;
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.alarms.dao.LogEntryStorageException;
 import org.dcache.alarms.dao.impl.DataNucleusLogEntryStore;
 
 /**
@@ -224,48 +223,43 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
             }
 
             super.start();
-        } catch ( LogEntryStorageException | JDOMException | IOException t) {
-            addError(t.getMessage() + "; " + t.getCause());
-            // do not set started to true
+        } catch ( JDOMException | IOException t) {
+            throw new RuntimeException(t);
         }
     }
 
     @Override
     protected void append(ILoggingEvent eventObject) {
-        try {
-            if (isStarted()) {
-                if (currentDomain.equals(eventObject.getMDCPropertyMap()
-                                                    .get(IAlarms.DOMAIN_TAG))) {
-                    Logger logger = (Logger)LoggerFactory.getLogger("domain");
-                    if (logger != null &&
-                                    logger.isEnabledFor(eventObject.getLevel())) {
-                        logger.callAppenders(eventObject);
-                    }
-                    return;
+        if (isStarted()) {
+            if (currentDomain.equals(eventObject.getMDCPropertyMap()
+                                                .get(IAlarms.DOMAIN_TAG))) {
+                Logger logger = (Logger)LoggerFactory.getLogger("domain");
+                if (logger != null &&
+                                logger.isEnabledFor(eventObject.getLevel())) {
+                    logger.callAppenders(eventObject);
                 }
-
-                LogEntry entry = createEntryFromEvent(eventObject);
-                String type = entry.getType();
-                if (type != null && !Level.ERROR.toString().equals(type)
-                                 && !Level.WARN.toString().equals(type)
-                                 && !Level.INFO.toString().equals(type)
-                                 && !Level.DEBUG.toString().equals(type)
-                                 && !Level.TRACE.toString().equals(type)) {
-                    /*
-                     * means it was possibly not sent with an ALARM marker; add
-                     * one so any delegated appender with an ALARM marker filter
-                     * will catch the event
-                     */
-                    eventObject = cloneAndMark(type, eventObject);
-                }
-
-                for (Appender<ILoggingEvent> delegate : childAppenders.values()) {
-                    delegate.doAppend(eventObject);
-                }
-                store.put(entry);
+                return;
             }
-        } catch (Exception t) {
-            addError(t.getMessage() + "; " + t.getCause());
+
+            LogEntry entry = createEntryFromEvent(eventObject);
+            String type = entry.getType();
+            if (type != null && !Level.ERROR.toString().equals(type)
+                             && !Level.WARN.toString().equals(type)
+                             && !Level.INFO.toString().equals(type)
+                             && !Level.DEBUG.toString().equals(type)
+                             && !Level.TRACE.toString().equals(type)) {
+                /*
+                 * means it was possibly not sent with an ALARM marker; add
+                 * one so any delegated appender with an ALARM marker filter
+                 * will catch the event
+                 */
+                eventObject = cloneAndMark(type, eventObject);
+            }
+
+            for (Appender<ILoggingEvent> delegate : childAppenders.values()) {
+                delegate.doAppend(eventObject);
+            }
+            store.put(entry);
         }
     }
 

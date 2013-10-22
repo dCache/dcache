@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.Random;
 
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.db.impl.BaseBillingInfoAccess;
 import org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo;
 
@@ -112,10 +111,6 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
     }
 
     protected void cleanup(Class<?> clzz) {
-        try {
-            access.remove(clzz);
-        } catch (BillingQueryException t) {
-            t.printStackTrace();
-        }
+        access.remove(clzz);
     }
 }

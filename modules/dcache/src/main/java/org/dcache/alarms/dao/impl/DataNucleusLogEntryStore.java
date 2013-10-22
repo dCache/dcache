@@ -79,7 +79,6 @@ import java.util.Properties;
 
 import org.dcache.alarms.dao.ILogEntryDAO;
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.alarms.dao.LogEntryStorageException;
 
 /**
  * DataNucleus wrapper to underlying alarm store.<br>
@@ -95,14 +94,14 @@ public class DataNucleusLogEntryStore implements ILogEntryDAO {
     private PersistenceManagerFactory pmf;
 
     public DataNucleusLogEntryStore(String xmlPath, Properties properties)
-                    throws LogEntryStorageException {
+                    throws IOException {
         this.xmlPath = xmlPath;
         this.properties.putAll(properties);
         initialize();
     }
 
     @Override
-    public void put(LogEntry entry) throws LogEntryStorageException {
+    public void put(LogEntry entry) {
         PersistenceManager insertManager = pmf.getPersistenceManager();
         Transaction tx = insertManager.currentTransaction();
         Query query = insertManager.newQuery(LogEntry.class);
@@ -123,7 +122,7 @@ public class DataNucleusLogEntryStore implements ILogEntryDAO {
             logger.trace("duplicate? {}", dup);
             if (dup != null && !dup.isEmpty()) {
                 if (dup.size() > 1) {
-                    throw new LogEntryStorageException
+                    throw new RuntimeException
                         ("data store inconsistency!"
                           + " more than one alarm with the same id: "
                                                     + entry.getKey());
@@ -150,12 +149,6 @@ public class DataNucleusLogEntryStore implements ILogEntryDAO {
             }
             tx.commit();
             logger.debug("finished putting alarm, key={}", entry.getKey());
-        } catch (Throwable t) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
-            String message = "committing alarm, key=" + entry.getKey();
-            throw new LogEntryStorageException(message, t);
         } finally {
             /*
              * closing is necessary in order to avoid memory leaks
@@ -164,18 +157,14 @@ public class DataNucleusLogEntryStore implements ILogEntryDAO {
         }
     }
 
-    private void initialize() throws LogEntryStorageException {
-        try {
-            if (properties.getProperty("datanucleus.ConnectionURL")
-                            .startsWith("xml:")) {
-                initializeXmlFile();
-            }
-            properties.put("javax.jdo.PersistenceManagerFactoryClass",
-                            "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-            pmf = JDOHelper.getPersistenceManagerFactory(properties);
-        } catch (IOException t) {
-            throw new LogEntryStorageException(t);
+    private void initialize() throws IOException {
+        if (properties.getProperty("datanucleus.ConnectionURL")
+                        .startsWith("xml:")) {
+            initializeXmlFile();
         }
+        properties.put("javax.jdo.PersistenceManagerFactoryClass",
+                        "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+        pmf = JDOHelper.getPersistenceManagerFactory(properties);
     }
 
     /**

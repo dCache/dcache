@@ -53,7 +53,7 @@ public class RestoreHandlerCollector extends Collector {
     }
 
     @Override
-    public Status call() throws Exception {
+    public Status call() throws InterruptedException {
         try {
             collectRestores();
         } catch (CacheException ex) {

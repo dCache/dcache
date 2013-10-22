@@ -67,8 +67,7 @@ import java.util.Collection;
 import java.util.Properties;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
-import org.dcache.services.billing.db.exceptions.BillingInitializationException;
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
+import org.dcache.services.billing.db.exceptions.RetryException;
 import org.dcache.services.billing.histograms.data.IHistogramData;
 
 /**
@@ -108,7 +107,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     }
 
     public abstract void commit(Collection<IHistogramData> data)
-                    throws BillingQueryException;
+                    throws RetryException;
 
     public long getCommittedMessages() {
         if (delegate == null) {
@@ -135,7 +134,7 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         return properties;
     }
 
-    public void initialize() throws BillingInitializationException {
+    public void initialize() {
         logger.debug("access type: {}", this.getClass().getName());
 
         properties = new Properties();
@@ -145,29 +144,34 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
          * can be null (configuration for read-only access; see #put())
          */
         if (delegateType != null) {
+            Class clzz;
             try {
-                Class clzz = Class.forName(delegateType);
-                delegate = (QueueDelegate) clzz.newInstance();
-                delegate.setDropMessagesAtLimit(dropMessagesAtLimit);
-                delegate.setMaxQueueSize(maxQueueSize);
-                delegate.setMaxBatchSize(maxBatchSize);
-                delegate.setCallback(this);
-                delegate.initialize();
-                logger.debug("delegate type: {}", clzz);
-            } catch (Exception e) {
-                throw new BillingInitializationException(e.getMessage(),
-                                e.getCause());
+                clzz = Class.forName(delegateType);
+            } catch (ClassNotFoundException t) {
+                throw new RuntimeException(t);
             }
+            try {
+                delegate = (QueueDelegate) clzz.newInstance();
+            } catch (InstantiationException | IllegalAccessException t) {
+                throw new RuntimeException(t);
+            }
+            delegate.setDropMessagesAtLimit(dropMessagesAtLimit);
+            delegate.setMaxQueueSize(maxQueueSize);
+            delegate.setMaxBatchSize(maxBatchSize);
+            delegate.setCallback(this);
+            delegate.initialize();
+            logger.debug("delegate type: {}", clzz);
         }
     }
 
-    public void put(IHistogramData data) throws BillingQueryException {
+    public void put(IHistogramData data) {
         if (delegate == null) {
             logger.warn("attempting to insert data but database access has not"
                             + " been initialized to handle inserts; please set the "
                             + "billing.db.inserts.queue-delegate.type property");
             return;
         }
+
         delegate.handlePut(data);
     }
 
@@ -219,7 +223,5 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         this.propertiesPath = propetiesPath;
     }
 
-    protected abstract void initializeInternal()
-                    throws BillingInitializationException;
-
+    protected abstract void initializeInternal();
 }

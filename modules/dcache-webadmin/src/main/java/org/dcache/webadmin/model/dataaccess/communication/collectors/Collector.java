@@ -59,29 +59,33 @@ public abstract class Collector implements Runnable,
     public void run() {
         Status status = Status.SUCCESS;
         long timeout = sleepIntervalUnit.toMillis(sleepInterval);
-        while (isEnabled()) {
-            try {
+        try {
+            while (isEnabled()) {
                 logger.debug("collector {} calling controller.call", this);
                 status = controller.call(this);
-            } catch (InterruptedException t) {
-                break;
-            } catch (Exception t) {
-                logger.error("call threw unexpected exception", t);
-                break;
-            }
 
-            if (status == Status.FAILURE) {
-                logger.error("call failed unexpectedly");
-                break;
-            }
-
-            synchronized (this) {
-                try {
-                    wait(timeout);
-                } catch (InterruptedException t) {
+                if (status == Status.FAILURE) {
+                    logger.error("call returned failure status; exiting collection loop");
                     break;
                 }
+
+                synchronized (this) {
+                    wait(timeout);
+                }
             }
+            /*
+             * BackoffController preserves the generic Exception
+             * contract on Callable, so we have to deal with
+             * RuntimeExceptions as a subset of Exception first
+             */
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (InterruptedException t) {
+            logger.debug("controller.call() was interrupted; exiting");
+        } catch (Exception t) {
+            logger.error("unexpected exception: {}; exiting collection loop",
+                            t.getMessage());
+            logger.debug("controller.call()", t);
         }
     }
 

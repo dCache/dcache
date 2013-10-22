@@ -81,7 +81,6 @@ import org.dcache.webadmin.controller.IAlarmDisplayService;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
-import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.util.AlarmJDOUtils;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 
@@ -153,15 +152,11 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
         Integer rangeStart = alarmTableProvider.getFrom();
         Integer rangeEnd = alarmTableProvider.getTo();
 
-        try {
-            AlarmDAOFilter filter
-                = AlarmJDOUtils.getFilter(after, before, severity, type,
-                                          alarm, rangeStart, rangeEnd);
-            Collection<LogEntry> refreshed = access.get(filter);
-            alarmTableProvider.setEntries(refreshed);
-        } catch (DAOException e) {
-            logger.error("refresh error: {}", e.getMessage());
-        }
+        AlarmDAOFilter filter
+            = AlarmJDOUtils.getFilter(after, before, severity, type,
+                                      alarm, rangeStart, rangeEnd);
+        Collection<LogEntry> refreshed = access.get(filter);
+        alarmTableProvider.setEntries(refreshed);
     }
 
     public void setDefinitions(String definitions) {
@@ -173,11 +168,7 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
     }
 
     private void delete() {
-        try {
-            getDataProvider().delete(access);
-        } catch (DAOException t) {
-            logger.error("deletion error: {}", t.getMessage());
-        }
+        getDataProvider().delete(access);
     }
 
     private void loadDefinitions(File xmlFile, List<String> types) {
@@ -200,10 +191,6 @@ public class StandardAlarmDisplayService implements IAlarmDisplayService {
     }
 
     private void update() {
-        try {
-            getDataProvider().update(access);
-        } catch (DAOException t) {
-            logger.error("update error: {}", t.getMessage());
-        }
+        getDataProvider().update(access);
     }
 }

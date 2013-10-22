@@ -37,7 +37,7 @@ public class PoolMonitorCollector extends Collector {
     }
 
     @Override
-    public Status call() throws Exception {
+    public Status call() throws InterruptedException {
         try {
             collectPoolSelectionUnit();
         } catch (CacheException ex) {

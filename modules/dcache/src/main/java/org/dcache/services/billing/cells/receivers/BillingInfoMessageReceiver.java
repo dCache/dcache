@@ -81,7 +81,6 @@ import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
 
 /**
  * This class is responsible for the processing of messages from other domains
@@ -91,9 +90,8 @@ import org.dcache.services.billing.db.exceptions.BillingQueryException;
  */
 public class BillingInfoMessageReceiver implements CellMessageReceiver,
                 CellCommandListener {
-
-    private static final Logger logger
-        = LoggerFactory.getLogger(BillingInfoMessageReceiver.class);
+    private static final Logger logger =
+                    LoggerFactory.getLogger(BillingInfoMessageReceiver.class);
 
     /**
      * Injected
@@ -193,55 +191,19 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
     }
 
     public void messageArrived(MoverInfoMessage info) {
-        /*
-         * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller (using a
-         * synchronous sendAndWait); we follow suit here
-         */
-        try {
-            access.put(new MoverData(info));
-        } catch (BillingQueryException e) {
-            processDroppedMessage(e, info);
-        }
+        access.put(new MoverData(info));
     }
 
     public void messageArrived(StorageInfoMessage info) {
-        /*
-         * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller (using a
-         * synchronous sendAndWait); we follow suit here
-         */
-        try {
-            access.put(new StorageData(info));
-        } catch (BillingQueryException e) {
-            processDroppedMessage(e, info);
-        }
+        access.put(new StorageData(info));
     }
 
     public void messageArrived(DoorRequestInfoMessage info) {
-        /*
-         * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller (using a
-         * synchronous sendAndWait); we follow suit here
-         */
-        try {
-            access.put(new DoorRequestData(info));
-        } catch (BillingQueryException e) {
-            processDroppedMessage(e, info);
-        }
+        access.put(new DoorRequestData(info));
     }
 
     public void messageArrived(PoolHitInfoMessage info) {
-        /*
-         * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller (using a
-         * synchronous sendAndWait); we follow suit here
-         */
-        try {
-            access.put(new PoolHitData(info));
-        } catch (BillingQueryException e) {
-            processDroppedMessage(e, info);
-        }
+        access.put(new PoolHitData(info));
     }
 
     private synchronized void startStatistics() {

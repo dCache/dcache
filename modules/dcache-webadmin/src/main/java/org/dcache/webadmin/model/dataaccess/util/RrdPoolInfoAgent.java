@@ -139,7 +139,7 @@ public class RrdPoolInfoAgent implements Runnable {
         } catch (InterruptedException t) {
             logger.error("pool queue plot update interrupted ...");
             return;
-        } catch (Exception t) {
+        } catch (CacheException t) {
             logger.error("problem updating pool queue plots: {}", t.getMessage());
             return;
         }
@@ -148,7 +148,7 @@ public class RrdPoolInfoAgent implements Runnable {
             try {
                 new RrdGraph(getGraphDef(pool.getName()));
                 logger.debug("created plot for {}", pool.getName());
-            } catch (Exception t) {
+            } catch (IOException t) {
                 logger.error("problem during plot creation for {}: {}",
                                 pool.getName(), t.getMessage());
                 return;
@@ -158,7 +158,7 @@ public class RrdPoolInfoAgent implements Runnable {
         try {
             new RrdGraph(getGraphDef(ALL_POOLS));
             logger.debug("created plot for {}", ALL_POOLS);
-        } catch (Exception t) {
+        } catch (IOException t) {
             logger.error("problem during plot creation for {}: {}",
                             ALL_POOLS, t.getMessage());
         }

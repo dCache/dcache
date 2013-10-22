@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.services.billing.histograms.data;
 
 import org.dcache.services.billing.histograms.TimeFrame;
-import org.dcache.services.billing.histograms.exceptions.TimeFrameHistogramException;
 
 /**
  * Defines factory interface for generating requests for
@@ -79,29 +78,27 @@ public interface ITimeFrameHistogramDataService {
      *            (reads = false)
      */
     TimeFrameHistogramData[] getDcBytesHistogram(TimeFrame timeFrame,
-                    Boolean write) throws TimeFrameHistogramException;
+                    Boolean write);
 
     /**
      * Histograms for connection time on DCache operations.
      *
      * @return triple histogram array (maximum, average, minimum)
      */
-    TimeFrameHistogramData[] getDcConnectTimeHistograms(TimeFrame timeFrame)
-                    throws TimeFrameHistogramException;
+    TimeFrameHistogramData[] getDcConnectTimeHistograms(TimeFrame timeFrame);
 
     /**
      * Histogram for DCache number of read/write operations.
      */
     TimeFrameHistogramData[] getDcTransfersHistogram(TimeFrame timeFrame,
-                    Boolean write) throws TimeFrameHistogramException;
+                    Boolean write);
 
     /**
      * Histogram for cache hits/misses.
      *
      * @return histogram pair (cached, notcached)
      */
-    TimeFrameHistogramData[] getHitHistograms(TimeFrame timeFrame)
-                    throws TimeFrameHistogramException;
+    TimeFrameHistogramData[] getHitHistograms(TimeFrame timeFrame);
 
     /**
      * Histogram for HSM system stage/store (size).
@@ -110,7 +107,7 @@ public interface ITimeFrameHistogramDataService {
      *            (true = store; false = stage)
      */
     TimeFrameHistogramData[] getHsmBytesHistogram(TimeFrame timeFrame,
-                    Boolean write) throws TimeFrameHistogramException;
+                    Boolean write);
 
     /**
      * Histogram for HSM number of stage/store operations.
@@ -119,18 +116,15 @@ public interface ITimeFrameHistogramDataService {
      *            (true = store; false = stage)
      */
     TimeFrameHistogramData[] getHsmTransfersHistogram(TimeFrame timeFrame,
-                    Boolean write) throws TimeFrameHistogramException;
+                    Boolean write);
 
     /**
      * Histogram for DCache pool-to-pool transfers (size).
      */
-    TimeFrameHistogramData[] getP2pBytesHistogram(TimeFrame timeFrame)
-                    throws TimeFrameHistogramException;
+    TimeFrameHistogramData[] getP2pBytesHistogram(TimeFrame timeFrame);
 
     /**
      * Histogram for DCache number of pool-to-pool operations.
      */
-    TimeFrameHistogramData[] getP2pTransfersHistogram(TimeFrame timeFrame)
-                    throws TimeFrameHistogramException;
-
+    TimeFrameHistogramData[] getP2pTransfersHistogram(TimeFrame timeFrame);
 }

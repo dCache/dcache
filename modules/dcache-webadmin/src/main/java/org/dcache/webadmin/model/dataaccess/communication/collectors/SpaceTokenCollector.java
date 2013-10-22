@@ -38,7 +38,7 @@ public class SpaceTokenCollector extends Collector {
     }
 
     @Override
-    public Status call() throws Exception {
+    public Status call() throws InterruptedException {
         try {
             collectSpaceTokens();
         } catch (CacheException ce) {

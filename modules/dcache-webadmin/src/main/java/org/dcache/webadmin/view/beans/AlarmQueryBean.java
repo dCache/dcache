@@ -67,7 +67,6 @@ import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
-import org.dcache.webadmin.model.exceptions.DAOException;
 
 /**
  * Session data bean, for use with {@link AlarmTableProvider}.
@@ -102,7 +101,7 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
         updated.add(toUpdate);
     }
 
-    public void delete(ILogEntryDAO access) throws DAOException {
+    public void delete(ILogEntryDAO access) {
         if (!deleted.isEmpty()) {
             access.remove(deleted);
             deleted.clear();
@@ -204,7 +203,7 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
         return deleted.contains(entry);
     }
 
-    public void update(ILogEntryDAO access) throws DAOException {
+    public void update(ILogEntryDAO access) {
         if (!updated.isEmpty()) {
             access.update(updated);
             updated.clear();

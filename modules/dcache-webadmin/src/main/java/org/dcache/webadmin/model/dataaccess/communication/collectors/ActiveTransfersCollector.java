@@ -147,7 +147,7 @@ public class ActiveTransfersCollector extends Collector {
     }
 
     @Override
-    public Status call() throws Exception {
+    public Status call() throws InterruptedException {
         try {
             Map<CellAddressCore, LoginManagerChildrenInfo> doorInfos
                 = getDoorChildrenInfo(getAllDoorsToAsk());
