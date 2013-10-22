@@ -77,7 +77,7 @@ public class DcacheDirectoryResource
             return Collections.emptyList();
         } catch (PermissionDeniedCacheException e) {
             throw new UnauthorizedException(e.getMessage(), e, this);
-        } catch (CacheException | InterruptedException e) {
+        } catch (URISyntaxException | CacheException | InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }
     }

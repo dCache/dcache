@@ -120,7 +120,7 @@ public class SecurityFilter implements Filter
              */
             Auth auth = request.getAuthorization();
             if (auth != null) {
-                auth.setTag(subject);
+                auth.setTag(login);
             }
 
             /* Process the request as the authenticated user.
@@ -164,22 +164,9 @@ public class SecurityFilter implements Filter
         }
 
         String path = request.getAbsolutePath();
-        FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
-        if (!fullPath.startsWith(userRoot)) {
-            if (!path.equals("/")) {
-                throw new PermissionDeniedCacheException("Permission denied: " +
-                        "path outside user's root");
-            }
-
-            try {
-                FsPath redirectFullPath = new FsPath(userRoot, userHome);
-                String redirectPath = _rootPath.relativize(redirectFullPath).toString();
-                URI uri = new URI(request.getAbsoluteUrl());
-                URI redirect = new URI(uri.getScheme(), uri.getAuthority(), redirectPath, null, null);
-                throw new RedirectException(null, redirect.toString());
-            } catch (URISyntaxException e) {
-                throw new CacheException(e.getMessage(), e);
-            }
+        FsPath fullRequestPath = new FsPath(userRoot, userHome, new FsPath(path));
+        if (!fullRequestPath.startsWith(_rootPath)) {
+            throw new PermissionDeniedCacheException("Permission denied");
         }
     }
 

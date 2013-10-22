@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.NoSuchElementException;
+import org.dcache.auth.LoginReply;
 
 import org.dcache.auth.Subjects;
 
@@ -115,8 +116,12 @@ public class LoggingFilter implements Filter
             return "";
         }
 
-        Subject subject = (Subject) auth.getTag();
+        LoginReply login = (LoginReply) auth.getTag();
+        if (login == null) {
+            return "";
+        }
 
+        Subject subject = login.getSubject();
         if(subject == null) {
             return "";
         }
