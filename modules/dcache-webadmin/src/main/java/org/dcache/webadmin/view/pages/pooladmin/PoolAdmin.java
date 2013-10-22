@@ -49,7 +49,7 @@ public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage 
     }
 
     private void addMarkup() {
-        Form<Object> poolAdminForm = new Form<>("poolAdminForm");
+        Form<?> poolAdminForm = getAutoRefreshingForm("poolAdminForm");
         poolAdminForm.add(new FeedbackPanel("feedback"));
         TextField<Object> commandInput = new TextField<>("commandText",
                 new PropertyModel<>(this, "_command"));

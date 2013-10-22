@@ -59,14 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.pages.alarms;
 
-import org.apache.wicket.Component;
-import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.protocol.https.RequireHttps;
-import org.apache.wicket.util.time.Duration;
-
-import java.util.concurrent.TimeUnit;
 
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
@@ -93,14 +88,14 @@ public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
 
             @Override
             public void onSubmit() {
-                getWebadminApplication().getAlarmDisplayService().refresh();
+                refresh();
                 if (displayPanel != null) {
                     displayPanel.clearHeaders();
                 }
             }
         };
 
-        Form<?> form = new Form<Void>("form");
+        Form<?> form = getAutoRefreshingForm("alarmsPageForm");
         form.add(new QueryPanel("filterPanel", this));
         if(getWebadminApplication().getAlarmDisplayService().isConnected()) {
             displayPanel = new DisplayPanel("displayPanel", this);
@@ -109,24 +104,15 @@ public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
             form.add(new ErrorPanel("displayPanel"));
         }
 
-        /*
-         * auto-refresh the entire form: this is necessary because the table in
-         * the display is built on the basis of the query fields
-         */
-        form.add(new AjaxSelfUpdatingTimerBehavior(
-                        Duration.valueOf(TimeUnit.MINUTES.toMillis(1))) {
-
-            private static final long serialVersionUID = -8757270889198228816L;
-
-            public void beforeRender(Component component) {
-                getWebadminApplication().getAlarmDisplayService().refresh();
-            }
-        });
-
         add(form);
     }
 
     public Button getRefreshButton() {
         return refreshButton;
+    }
+
+    @Override
+    protected void refresh() {
+        getWebadminApplication().getAlarmDisplayService().refresh();
     }
 }

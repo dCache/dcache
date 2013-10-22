@@ -1,17 +1,22 @@
 package org.dcache.webadmin.view.pages.basepage;
 
+import org.apache.wicket.Component;
+import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.head.JavaScriptHeaderItem;
 import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
+import org.apache.wicket.util.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.MissingResourceException;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
@@ -111,5 +116,44 @@ public abstract class BasePage extends WebPage {
                         .getJavaScriptLibrarySettings()
                         .getJQueryReference()));
         response.render(JavaScriptHeaderItem.forUrl("js/infobox.js"));
+    }
+
+    protected Form<?> getAutoRefreshingForm(String name) {
+        return getAutoRefreshingForm(name, 1, TimeUnit.MINUTES);
+    }
+
+    protected Form<?> getAutoRefreshingForm(String name,
+                                            long refresh,
+                                            TimeUnit unit) {
+        Form<?> form = new Form<Void>(name);
+        addAutoRefreshToForm(form, refresh, unit);
+        return form;
+    }
+
+    protected void addAutoRefreshToForm(Form<?> form,
+                                        long refresh,
+                                        TimeUnit unit) {
+        _log.trace("addAutoRefreshToForm to {}", form);
+        form.add(new AjaxSelfUpdatingTimerBehavior
+                        (Duration.valueOf(unit.toMillis(refresh))) {
+            private static final long serialVersionUID = 541235165961670681L;
+
+            @Override
+            public void beforeRender(Component component) {
+                refresh();
+            }
+
+            @Override
+            protected boolean shouldTrigger() {
+                _log.trace("checking to see if {} should be triggered", this);
+                return super.shouldTrigger();
+            }
+        });
+    }
+
+    /**
+     * Adapter; called by AjaxSelfUpdatedingTimerBehavior instance
+     */
+    protected void refresh() {
     }
 }

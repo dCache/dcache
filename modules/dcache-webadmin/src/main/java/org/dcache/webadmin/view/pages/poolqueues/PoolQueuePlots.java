@@ -59,12 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.pages.poolqueues;
 
-import org.apache.wicket.Component;
-import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.util.time.Duration;
-
-import java.util.concurrent.TimeUnit;
 
 import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
@@ -81,29 +76,20 @@ public class PoolQueuePlots extends BasePage {
 
     private static final long serialVersionUID = -1267479540778078027L;
 
+    private final ThumbnailPanelProvider provider;
+
     public PoolQueuePlots() {
-        final ThumbnailPanelProvider provider
-                = getWebadminApplication().getThumbnailPanelProvider();
+        provider = getWebadminApplication().getThumbnailPanelProvider();
         provider.refresh();
 
-        Form<?> form = new Form<Void>("form");
+        Form<?> form = getAutoRefreshingForm("poolQueuePlotsForm");
         form.add(new PoolQueuePlotsControlPanel("controlPanel", provider));
         form.add(new PoolQueuePlotsDisplayPanel("displayPanel", provider));
-
-        /*
-         * auto-refresh the entire form: this is necessary because the table in
-         * the display is built on the basis of the query fields
-         */
-        form.add(new AjaxSelfUpdatingTimerBehavior(
-                        Duration.valueOf(TimeUnit.MINUTES.toMillis(5))) {
-
-            private static final long serialVersionUID = -8757270889198228816L;
-
-            public void beforeRender(Component component) {
-                provider.refresh();
-            }
-        });
-
         add(form);
+    }
+
+    @Override
+    protected void refresh(){
+        provider.refresh();
     }
 }

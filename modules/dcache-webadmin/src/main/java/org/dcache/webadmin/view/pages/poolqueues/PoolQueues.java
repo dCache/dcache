@@ -1,9 +1,6 @@
 package org.dcache.webadmin.view.pages.poolqueues;
 
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.OnLoadHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,8 +27,10 @@ public class PoolQueues extends SortableBasePage {
     private static final long serialVersionUID = -6482302256752371950L;
 
     public PoolQueues() {
-        add(new PoolQueuesPanel("poolQueuesPanel",
+        Form<?> form = getAutoRefreshingForm("poolQueuesForm");
+        form.add(new PoolQueuesPanel("poolQueuesPanel",
                         new PropertyModel<PoolGroupBean>(this, "allPoolsGroup")));
+        add(form);
     }
 
     public PoolGroupBean getAllPoolsGroup() {

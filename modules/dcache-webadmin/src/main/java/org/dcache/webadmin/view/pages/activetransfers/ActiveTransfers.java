@@ -25,7 +25,7 @@ public class ActiveTransfers extends SortableBasePage {
     private static final long serialVersionUID = -1360523434922193867L;
 
     public ActiveTransfers() {
-        Form activeTransfersForm = new Form("activeTransfersForm");
+        Form activeTransfersForm = getAutoRefreshingForm("activeTransfersForm");
         activeTransfersForm.add(new FeedbackPanel("feedback"));
         Button button = new SubmitButton("submit");
         MetaDataRoleAuthorizationStrategy.authorize(button, RENDER, Role.ADMIN);

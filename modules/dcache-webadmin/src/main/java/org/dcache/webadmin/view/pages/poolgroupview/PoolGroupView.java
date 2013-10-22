@@ -57,7 +57,7 @@ public class PoolGroupView extends SortableBasePage {
     }
 
     private void addMarkup() {
-        Form poolGroups = new Form("poolGroupsForm");
+        Form poolGroups = getAutoRefreshingForm("poolGroupsForm");
         poolGroups.add(new FeedbackPanel("feedback"));
         poolGroups.add(new LayoutHeaderPanel("layoutHeaderPanel"));
         poolGroups.add(createListview());

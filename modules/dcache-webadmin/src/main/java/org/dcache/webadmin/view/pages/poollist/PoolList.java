@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.PoolV2Mode;
 
@@ -30,7 +31,6 @@ import org.dcache.webadmin.view.util.Role;
  * @author jans
  */
 public class PoolList extends SortableBasePage {
-
     private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
     private static final long serialVersionUID = -3519762401458479856L;
     private List<PoolSpaceBean> _poolBeans;
@@ -38,8 +38,17 @@ public class PoolList extends SortableBasePage {
     private final EvenOddListView view;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
+    /*
+     * set to false when using the Junit FormTester; otherwise, the autorefreshing
+     * form produces incorrect results
+     */
+    public static boolean autorefresh = true;
+
     public PoolList() {
         Form poolUsageForm = new PoolUsageForm("poolUsageForm");
+        if (autorefresh) {
+            addAutoRefreshToForm(poolUsageForm, 1, TimeUnit.MINUTES);
+        }
         poolUsageForm.add(createPoolModeDropDown("mode"));
         poolUsageForm.add(new FeedbackPanel("feedback"));
         getPoolSpaceBeans();
@@ -48,6 +57,10 @@ public class PoolList extends SortableBasePage {
         view = poolListPanel.getView();
         poolUsageForm.add(poolListPanel);
         add(poolUsageForm);
+    }
+
+    protected void refresh() {
+        getPoolSpaceBeans();
     }
 
     private DropDownChoice<SelectOption> createPoolModeDropDown(String id) {

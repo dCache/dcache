@@ -59,12 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.pages.billingplots;
 
-import org.apache.wicket.ajax.AjaxSelfUpdatingTimerBehavior;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.request.http.WebResponse;
-import org.apache.wicket.util.time.Duration;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.billingplots.OptionPanel;
@@ -74,19 +73,12 @@ public class BillingPlots extends BasePage {
     private static final long serialVersionUID = -1267479540778078927L;
 
     public BillingPlots() {
-        super();
-
-        Form<?> form = new Form<Void>("billingForm");
         long t = getWebadminApplication().getBillingService()
-                                         .getRefreshIntervalInMillis();
-
+                        .getRefreshIntervalInMillis();
+        Form<?> form = getAutoRefreshingForm("billingForm",
+                        t, TimeUnit.MILLISECONDS);
         form.add(new OptionPanel("optionPanel", this));
         form.add(new PlotsPanel("plotsPanel", this));
-
-        /*
-         * reload the form every timeout interval
-         */
-        form.add(new AjaxSelfUpdatingTimerBehavior(Duration.valueOf(t)));
         add(form);
     }
 

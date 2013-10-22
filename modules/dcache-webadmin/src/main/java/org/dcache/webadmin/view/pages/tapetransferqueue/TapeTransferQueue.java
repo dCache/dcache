@@ -1,6 +1,7 @@
 package org.dcache.webadmin.view.pages.tapetransferqueue;
 
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
@@ -26,7 +27,8 @@ public class TapeTransferQueue extends SortableBasePage {
     private static final Logger _log = LoggerFactory.getLogger(TapeTransferQueue.class);
 
     public TapeTransferQueue() {
-        add(new FeedbackPanel("feedback"));
+        Form<?> form = getAutoRefreshingForm("tapeTransferQueueForm");
+        form.add(new FeedbackPanel("feedback"));
         ListView<RestoreBean> listview =
                 new EvenOddListView<RestoreBean>("TapeTransferQueueListview",
                 new PropertyModel(this, "restoreBeans")) {
@@ -52,7 +54,8 @@ public class TapeTransferQueue extends SortableBasePage {
                                 new PropertyModel<RestoreBean>(restore, "_status")));
                     }
                 };
-        add(listview);
+        form.add(listview);
+        add(form);
     }
 
     public List<RestoreBean> getRestoreBeans() {

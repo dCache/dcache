@@ -1,6 +1,7 @@
 package org.dcache.webadmin.view.pages.spacetokens;
 
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
@@ -34,14 +35,15 @@ public class SpaceTokens extends SortableBasePage {
 
     public SpaceTokens() {
         createMarkup();
-        getTokenInfo();
     }
 
     private void createMarkup() {
-        add(new FeedbackPanel("feedback"));
-        add(new LinkGroupListView("linkGroupView", new PropertyModel(this,
+        Form<?> form = getAutoRefreshingForm("spaceTokensForm");
+        form.add(new FeedbackPanel("feedback"));
+        form.add(new LinkGroupListView("linkGroupView", new PropertyModel(this,
                 "tokenInfo")));
-        add(_spaceReservationsPanel);
+        form.add(_spaceReservationsPanel);
+        add(form);
     }
 
     public List<SpaceReservationBean> getReservations() {
