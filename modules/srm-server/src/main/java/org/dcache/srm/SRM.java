@@ -638,9 +638,13 @@ public class SRM {
                 errorsb.append(']');
                 return createFailedRequestStatus(errorsb.toString());
             }
+            URI[] uris = new URI[surls.length];
+            for (int i = 0; i < surls.length; i++) {
+                uris[i] = new URI(surls[i]);
+            }
             GetRequest r =
                     new GetRequest(user, credential.getId(),
-                            surls, protocols,
+                            uris, protocols,
                             configuration.getGetLifetime(),
                             configuration.getGetRetryTimeout(),
                             configuration.getGetMaxNumOfRetries(),

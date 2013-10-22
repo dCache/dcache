@@ -78,6 +78,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import diskCacheV111.srm.RequestFileStatus;
 
@@ -120,18 +121,17 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     /** Creates new FileRequest */
     public GetFileRequest(long requestId,
-    Long  requestCredentalId,
-    String url,
-    long lifetime,
-    int maxNumberOfRetries
-
-    ) throws Exception {
+                          Long  requestCredentalId,
+                          URI surl,
+                          long lifetime,
+                          int maxNumberOfRetries)
+    {
         super(requestId,
             requestCredentalId,
             lifetime,
             maxNumberOfRetries);
         logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
-        surl = URI.create(url);
+        this.surl = surl;
     }
 
     /**
