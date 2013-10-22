@@ -62,10 +62,13 @@ package org.dcache.webadmin.controller.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.naming.ServiceUnavailableException;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -84,7 +87,6 @@ import org.dcache.services.billing.histograms.config.HistogramWrapper;
 import org.dcache.services.billing.histograms.data.ITimeFrameHistogramDataService;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramDataProxy;
-import org.dcache.services.billing.histograms.exceptions.TimeFrameHistogramException;
 import org.dcache.services.billing.plots.util.ITimeFramePlot;
 import org.dcache.services.billing.plots.util.ITimeFramePlotGenerator;
 import org.dcache.services.billing.plots.util.PlotGridPosition;
@@ -140,7 +142,7 @@ public final class StandardBillingService implements IBillingService, Runnable {
     private Thread refresher;
 
     public List<TimeFrameHistogramData> load(PlotType plotType,
-                    TimeFrame timeFrame) throws TimeFrameHistogramException {
+                    TimeFrame timeFrame) {
         logger.debug("remote fetch of {} {}", plotType, timeFrame);
         List<TimeFrameHistogramData> histograms = new ArrayList<>();
         switch (plotType) {
@@ -292,12 +294,8 @@ public final class StandardBillingService implements IBillingService, Runnable {
             Date low = timeFrames[tFrame].getLow();
             for (PlotType type : PlotType.values()) {
                 String fileName = getFileName(type.ordinal(), tFrame);
-                try {
-                    generatePlot(type, timeFrames[tFrame], fileName,
-                                    getTitle(type.ordinal(), tFrame, low));
-                } catch (TimeFrameHistogramException t) {
-                    logger.error("generatePlot {}", type, t);
-                }
+                generatePlot(type, timeFrames[tFrame], fileName,
+                                getTitle(type.ordinal(), tFrame, low));
             }
         }
         lastUpdate = System.currentTimeMillis();
@@ -305,15 +303,30 @@ public final class StandardBillingService implements IBillingService, Runnable {
 
     @Override
     public void run() {
-        while(true) {
-            refresh();
-
-            try {
+        try {
+            while(true) {
+                refresh();
                 Thread.sleep(timeout);
-            } catch (InterruptedException interrupted) {
-                logger.trace("{} interrupted; exiting ...", refresher);
-                break;
             }
+        } catch (InterruptedException interrupted) {
+            logger.trace("{} interrupted; exiting ...", refresher);
+        } catch (UndeclaredThrowableException ute) {
+            Throwable cause = ute.getCause();
+            if (cause instanceof ServiceUnavailableException) {
+                logger.error("The billing database has been disabled.  "
+                                + "To generate plots, please restart the service when "
+                                + "the billing database is once again available");
+            } else if (cause instanceof Error) {
+                throw ute;
+            }
+
+            /*
+             * if the service can't handle the client's requests, then we
+             * back out here because there is nothing we can do
+             */
+            logger.error("fatal billing request exception; "
+                            + "client loop is exiting");
+            logger.debug("refresh", ute);
         }
     }
 
@@ -348,8 +361,7 @@ public final class StandardBillingService implements IBillingService, Runnable {
     }
 
     private void generatePlot(PlotType type, TimeFrame timeFrame,
-                              String fileName, String title)
-                    throws TimeFrameHistogramException {
+                              String fileName, String title) {
         List<TimeFrameHistogramData> data = load(type, timeFrame);
         List<HistogramWrapper<?>> config = new ArrayList<>();
         int i = 0;

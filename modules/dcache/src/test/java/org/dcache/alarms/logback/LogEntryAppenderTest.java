@@ -65,7 +65,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +72,6 @@ import org.slf4j.Marker;
 
 import org.dcache.alarms.dao.ILogEntryDAO;
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.alarms.dao.LogEntryStorageException;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -109,7 +107,7 @@ public class LogEntryAppenderTest {
 
     private final ILogEntryDAO store = new ILogEntryDAO() {
         @Override
-        public void put(LogEntry entry) throws LogEntryStorageException {
+        public void put(LogEntry entry) {
             lastEntry = entry;
         }
     };
@@ -143,7 +141,7 @@ public class LogEntryAppenderTest {
     };
 
     @Before
-    public void setup() throws LogEntryStorageException, JSONException {
+    public void setup() {
         clearLast();
         LogEntryAppender appender = new LogEntryAppender();
         appender.setContext(new LoggerContext());
