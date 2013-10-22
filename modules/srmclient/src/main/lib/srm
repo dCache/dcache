@@ -104,7 +104,7 @@ for i in $SRM_PATH/lib/*.jar
   do
   SRM_CP=$SRM_CP:$i
 done
-SRM_CP=/usr/share/srm/conf:$SRM_CP
+SRM_CP=${SRM_PATH}/conf:$SRM_CP
 
 if [ "${SRM_JAVA_OPTIONS}" = "" ]
     then
@@ -178,7 +178,7 @@ then
       echo configuration file not found, configuring srmcp >&2
       use_proxy=true
       url_copy=$SRM_PATH/sbin/url-copy.sh
-      mapfile=/usr/share/srm/conf/SRMServerV1.map
+      mapfile="${SRM_PATH}/conf/SRMServerV1.map"
 
       cmd="$java_location -cp $SRM_CP $OPTIONS gov.fnal.srm.util.SRMDispatcher \
 	    -mapfile=$mapfile \
