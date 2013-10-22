@@ -1,6 +1,10 @@
 package org.dcache.webadmin.view.pages.poollist;
 
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
+import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+import org.apache.wicket.markup.head.OnLoadHeaderItem;
+import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -12,13 +16,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import diskCacheV111.pools.PoolV2Mode;
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.OnLoadHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
 
 import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
@@ -26,6 +27,7 @@ import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
+import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.Role;
 
 /**
@@ -38,15 +40,17 @@ public class PoolList extends BasePage {
     private static final long serialVersionUID = -3519762401458479856L;
     private List<PoolSpaceBean> _poolBeans;
     private SelectOption _selectedOption;
+    private final EvenOddListView view;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
     public PoolList() {
         Form poolUsageForm = new PoolUsageForm("poolUsageForm");
         poolUsageForm.add(createPoolModeDropDown("mode"));
         poolUsageForm.add(new FeedbackPanel("feedback"));
-        getPoolsAction();
+        getPoolSpaceBeans();
         PoolListPanel poolListPanel = new PoolListPanel("poolListPanel",
                 new PropertyModel(this, "_poolBeans"), true);
+        view = poolListPanel.getView();
         poolUsageForm.add(poolListPanel);
         add(poolUsageForm);
     }
@@ -81,14 +85,14 @@ public class PoolList extends BasePage {
         return getWebadminApplication().getPoolSpaceService();
     }
 
-    private void getPoolsAction() {
+    private void getPoolSpaceBeans() {
         try {
             _log.debug("getPoolListAction called");
-            this._poolBeans = getPoolSpaceService().getPoolBeans();
+            _poolBeans = getPoolSpaceService().getPoolBeans();
         } catch (PoolSpaceServiceException ex) {
             this.error(getStringResource("error.getPoolsFailed") + ex.getMessage());
             _log.debug("getPoolListAction failed {}", ex.getMessage());
-            this._poolBeans = null;
+            _poolBeans = null;
         }
     }
 
@@ -113,7 +117,7 @@ public class PoolList extends BasePage {
                     PoolV2Mode poolMode = new PoolV2Mode(_selectedOption.getKey());
                     getPoolSpaceService().changePoolMode(_poolBeans, poolMode,
                             getWebadminSession().getUserName());
-                    getPoolsAction();
+                    view.render();
                 } catch (PoolSpaceServiceException ex) {
                     _log.error("something went wrong with enable/disable");
                     this.error(getStringResource("error.changePoolModeFailed") + ex.getMessage());

@@ -1,6 +1,10 @@
 package org.dcache.webadmin.view.pages.activetransfers;
 
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
+import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+import org.apache.wicket.markup.head.OnLoadHeaderItem;
+import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
@@ -8,11 +12,8 @@ import org.apache.wicket.model.PropertyModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.OnLoadHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
 
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException;
@@ -26,7 +27,6 @@ public class ActiveTransfers extends BasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(ActiveTransfers.class);
     private static final long serialVersionUID = -1360523434922193867L;
-    private List<SelectableWrapper<ActiveTransfersBean>> _activeTransfers;
 
     public ActiveTransfers() {
         Form activeTransfersForm = new Form("activeTransfersForm");
@@ -36,7 +36,7 @@ public class ActiveTransfers extends BasePage {
         activeTransfersForm.add(button);
         getActiveTransfers();
         activeTransfersForm.add(new ActiveTransfersPanel("activeTransfersPanel",
-                new PropertyModel(this, "_activeTransfers")));
+                new PropertyModel(this, "activeTransfers")));
         add(activeTransfersForm);
     }
 
@@ -44,14 +44,14 @@ public class ActiveTransfers extends BasePage {
         return getWebadminApplication().getActiveTransfersService();
     }
 
-    private void getActiveTransfers() {
+    public List<SelectableWrapper<ActiveTransfersBean>> getActiveTransfers() {
         try {
             _log.debug("getActiveTransfers called");
-            _activeTransfers = getActiveTransfersService().getActiveTransferBeans();
+            return getActiveTransfersService().getActiveTransferBeans();
         } catch (ActiveTransfersServiceException ex) {
             this.error(getStringResource("error.getActiveTransfersFailed") + ex.getMessage());
             _log.debug("getActiveTransfers failed {}", ex.getMessage());
-            _activeTransfers = null;
+            return Collections.emptyList();
         }
     }
 
@@ -67,7 +67,7 @@ public class ActiveTransfers extends BasePage {
         public void onSubmit() {
             try {
                 _log.debug("Kill Movers submitted");
-                getActiveTransfersService().killTransfers(_activeTransfers);
+                getActiveTransfersService().killTransfers(getActiveTransfers());
             } catch (ActiveTransfersServiceException e) {
                 _log.info("couldn't kill some movers - jobIds: {}",
                         e.getMessage());
