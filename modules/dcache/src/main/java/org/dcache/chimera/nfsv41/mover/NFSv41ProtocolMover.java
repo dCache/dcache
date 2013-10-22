@@ -91,4 +91,8 @@ public class NFSv41ProtocolMover implements ManualMover {
         _lastAccessTime = System.currentTimeMillis();
     }
 
+    @Override
+    public String toString() {
+        return "NFSv4.1/pNFS";
+    }
 }
