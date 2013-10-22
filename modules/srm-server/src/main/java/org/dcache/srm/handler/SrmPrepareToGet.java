@@ -173,9 +173,7 @@ public class SrmPrepareToGet
                  */
                 throw new SRMInvalidRequestException("Negative desiredTotalRequestTime is invalid.");
             }
-            if (lifetimeInSeconds < reqLifetime) {
-                lifetimeInSeconds = reqLifetime;
-            }
+            lifetimeInSeconds = reqLifetime;
         }
 
         if (lifetimeInSeconds > 0) {

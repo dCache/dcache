@@ -129,22 +129,21 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     private TRetentionPolicy retentionPolicy;//null default value
     private boolean spaceMarkedAsBeingUsed;
 
-    /** Creates new FileRequest */
     public PutFileRequest(long requestId,
             Long requestCredentalId,
-            String url,
+            URI url,
             long size,
             long lifetime,
             int maxNumberOfRetires,
             String spaceReservationId,
             TRetentionPolicy retentionPolicy,
-            TAccessLatency accessLatency
-            ) throws Exception {
+            TAccessLatency accessLatency)
+    {
         super(requestId,
                 requestCredentalId,
                 lifetime,
                 maxNumberOfRetires);
-        this.surl = URI.create(url);
+        this.surl = url;
         this.size = size;
         this.spaceReservationId = spaceReservationId;
         if(accessLatency != null) {

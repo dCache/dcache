@@ -816,7 +816,7 @@ public class SRM {
             String[] protocols,
             String clientHost) {
         int len = dests.length;
-        String[] dests_urls = new String[len];
+        URI[] dests_urls = new URI[len];
 
         String srmprefix;
         // we do this to support implementations that
@@ -839,14 +839,14 @@ public class SRM {
         srmprefix = "srm://" + configuration.getSrmHost() +
                 ":" + configuration.getPort() + "/";
 
-        for (int i = 0; i < len; ++i) {
-            if (dests[i].startsWith("srm://")) {
-                dests_urls[i] = dests[i];
-            } else {
-                dests_urls[i] = srmprefix + dests[i];
-            }
-        }
         try {
+            for (int i = 0; i < len; ++i) {
+                if (dests[i].startsWith("srm://")) {
+                    dests_urls[i] = new URI(dests[i]);
+                } else {
+                    dests_urls[i] = new URI(srmprefix + dests[i]);
+                }
+            }
 
             String[] supportedProtocols = storage.supportedPutProtocols();
             boolean foundMatchedProtocol = false;
@@ -870,7 +870,7 @@ public class SRM {
             // create a new put request
             PutRequest r = new PutRequest(user,
                     credential.getId(),
-                    sources, dests_urls, sizes,
+                    dests_urls, sizes,
                     wantPerm, protocols, configuration.getPutLifetime(),
                     configuration.getPutRetryTimeout(),
                     configuration.getPutMaxNumOfRetries(),

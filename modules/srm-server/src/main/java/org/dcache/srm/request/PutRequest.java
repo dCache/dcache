@@ -79,6 +79,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -119,8 +120,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
     public PutRequest(SRMUser user,
     Long requestCredentialId,
-    String[] srcFileNames,
-    String[] destUrls,
+    URI[] surls,
     long[] sizes,
     boolean[] wantPermanent,
     String[] protocols,
@@ -131,8 +131,8 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     String spaceToken,
     TRetentionPolicy retentionPolicy,
     TAccessLatency accessLatency,
-    String description
-    ) throws Exception {
+    String description)
+    {
 
         super(user,
                 requestCredentialId,
@@ -141,21 +141,17 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
                 lifetime,
                 description,
                 client_host);
-        int len = protocols.length;
-        this.protocols = new String[len];
-        System.arraycopy(protocols,0,this.protocols,0,len);
+        this.protocols = Arrays.copyOf(protocols, protocols.length);
 
-        len = srcFileNames.length;
-        if(len != destUrls.length || len != sizes.length ||
-        len != wantPermanent.length) {
+        int len = surls.length;
+        if (len != sizes.length || len != wantPermanent.length) {
             throw new IllegalArgumentException(
-            "srcFileNames, destUrls, sizes,"+
-            " wantPermanent arrays dimensions mismatch");
+            "surls, sizes, wantPermanent arrays sizes mismatch");
         }
         List<PutFileRequest> requests = Lists.newArrayListWithCapacity(len);
         for(int i = 0; i < len; ++i) {
             PutFileRequest request = new PutFileRequest(getId(),
-                    requestCredentialId, destUrls[i], sizes[i], lifetime,
+                    requestCredentialId, surls[i], sizes[i], lifetime,
                     max_number_of_retries, spaceToken, retentionPolicy,
                     accessLatency);
             requests.add(request);
@@ -359,7 +355,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
      */
     public final SrmPrepareToPutResponse
         getSrmPrepareToPutResponse(long timeout)
-        throws SRMException, InterruptedException
+            throws InterruptedException, SRMInvalidRequestException
     {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
@@ -381,8 +377,9 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         return response;
     }
 
-    public final SrmPrepareToPutResponse getSrmPrepareToPutResponse()
-    throws SRMException {
+    private final SrmPrepareToPutResponse getSrmPrepareToPutResponse()
+            throws SRMInvalidRequestException
+    {
         SrmPrepareToPutResponse response = new SrmPrepareToPutResponse();
        // getTReturnStatus should be called before we get the
        // statuses of the each file, as the call to the
@@ -390,22 +387,18 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
-        ArrayOfTPutRequestFileStatus  arrayOfTPutRequestFileStatus =
-            new ArrayOfTPutRequestFileStatus();
-        arrayOfTPutRequestFileStatus.setStatusArray(
-            getArrayOfTPutRequestFileStatus(null));
-        response.setArrayOfFileStatuses(arrayOfTPutRequestFileStatus);
+        response.setArrayOfFileStatuses(new ArrayOfTPutRequestFileStatus(getArrayOfTPutRequestFileStatus()));
         return response;
     }
 
     public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse()
-            throws SRMException
+            throws SRMFileRequestNotFoundException, SRMInvalidRequestException
     {
             return getSrmStatusOfPutRequestResponse(null);
     }
 
-    public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(URI[] surls)
-            throws SRMException
+    public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(org.apache.axis.types.URI[] surls)
+            throws SRMFileRequestNotFoundException, SRMInvalidRequestException
     {
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
 
@@ -434,21 +427,30 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         return String.valueOf(getId());
     }
 
-    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(URI[] surls) throws SRMException {
-         int len = surls == null ? getNumOfFileRequest():surls.length;
-        TPutRequestFileStatus[] putFileStatuses
-            = new TPutRequestFileStatus[len];
-        if(surls == null) {
-            for(int i = 0; i< len; ++i) {
-                PutFileRequest fr = getFileRequests().get(i);
-                putFileStatuses[i] = fr.getTPutRequestFileStatus();
-            }
-        } else {
-            for(int i = 0; i< len; ++i) {
-                PutFileRequest fr = getFileRequestBySurl(surls[i]);
-                putFileStatuses[i] = fr.getTPutRequestFileStatus();
-            }
+    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus()
+            throws SRMInvalidRequestException
+    {
+        List<PutFileRequest> fileRequests = getFileRequests();
+        int len = fileRequests.size();
+        TPutRequestFileStatus[] putFileStatuses = new TPutRequestFileStatus[len];
+        for (int i = 0; i < len; ++i) {
+            putFileStatuses[i] = fileRequests.get(i).getTPutRequestFileStatus();
+        }
+        return putFileStatuses;
+    }
 
+    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(org.apache.axis.types.URI[] surls)
+            throws SRMInvalidRequestException, SRMFileRequestNotFoundException
+    {
+        if(surls == null) {
+            return getArrayOfTPutRequestFileStatus();
+        }
+        int len = surls.length;
+        TPutRequestFileStatus[] putFileStatuses
+                = new TPutRequestFileStatus[len];
+        for (int i = 0; i< len; ++i) {
+            URI surl = URI.create(surls[i].toString());
+            putFileStatuses[i] = getFileRequestBySurl(surl).getTPutRequestFileStatus();
         }
         return putFileStatuses;
     }
