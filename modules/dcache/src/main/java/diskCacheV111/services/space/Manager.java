@@ -4108,7 +4108,7 @@ public final class Manager
                 Space space = getSpace(reservationId);
                 long fileId = useSpace(reservationId,
                                        space.getVoGroup(),
-                                       space.getVoGroup(),
+                                       space.getVoRole(),
                                        sizeInBytes,
                                        lifetime,
                                        pnfsPath,
@@ -4903,7 +4903,7 @@ public final class Manager
                                                            selectWritePool.getPreallocated(),
                                                            lifetime,
                                                            pnfsPath,
-                                                           selectWritePool.getPnfsId());
+                                                           null);
                                 file = getFile(fileId);
                         }
                 }

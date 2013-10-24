@@ -63,6 +63,7 @@ import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jdo.JDOException;
 import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
@@ -158,7 +159,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     @Override
-    public Collection<LogEntry> get(AlarmDAOFilter filter) throws DAOException {
+    public Collection<LogEntry> get(AlarmDAOFilter filter) {
         PersistenceManager readManager = getManager();
         if (readManager == null) {
             return Collections.emptyList();
@@ -177,16 +178,15 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             tx.commit();
             logger.debug("successfully executed get for filter {}", filter);
             return detached;
-        } catch (Exception t) {
-            String message = "get, filter = " + filter + ": "
-                            + t.getLocalizedMessage();
-            throw new DAOException(message, t);
+        } catch (JDOException t) {
+            logJDOException("get", filter, t);
+            return Collections.emptyList();
         } finally {
-            rollbackIfActive(tx);
-            /*
-             * closing is necessary in order to avoid memory leaks
-             */
-            readManager.close();
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                readManager.close();
+            }
         }
     }
 
@@ -201,15 +201,11 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     public boolean isConnected() {
-        try {
-            return active && (getManager() != null);
-        } catch (DAOException t) {
-            return false;
-        }
+        return active && (getManager() != null);
     }
 
     @Override
-    public long remove(Collection<LogEntry> selected) throws DAOException {
+    public long remove(Collection<LogEntry> selected) {
         if (selected.isEmpty()) {
             return 0;
         }
@@ -228,17 +224,15 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             tx.commit();
             logger.debug("successfully removed {} entries", removed);
             return removed;
-        } catch (Exception t) {
-            String message = "remove: " + filter + ": "
-                            + t.getLocalizedMessage();
-            throw new DAOException(message, t);
+        } catch (JDOException t) {
+            logJDOException("remove", filter, t);
+            return 0;
         } finally {
-            rollbackIfActive(tx);
-            /*
-             * closing is necessary in order to avoid memory leak in the
-             * persistence manager factory
-             */
-            deleteManager.close();
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                deleteManager.close();
+            }
         }
     }
 
@@ -272,7 +266,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     @Override
-    public long update(Collection<LogEntry> selected) throws DAOException {
+    public long update(Collection<LogEntry> selected) {
         if (selected.isEmpty()) {
             return 0;
         }
@@ -308,21 +302,19 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             logger.debug("successfully updated {} entries", updated);
 
             return updated;
-        } catch (Exception t) {
-            String message = "update: " + filter + ": "
-                            + t.getLocalizedMessage();
-            throw new DAOException(message, t);
+        } catch (JDOException t) {
+            logJDOException("update", filter, t);
+            return 0;
         } finally {
-            rollbackIfActive(tx);
-            /*
-             * closing is necessary in order to avoid memory leak in the
-             * persistence manager factory
-             */
-            updateManager.close();
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                updateManager.close();
+            }
         }
     }
 
-    private PersistenceManager getManager() throws DAOException {
+    private PersistenceManager getManager() {
         if (usesXml) {
             if (!xml.exists() || !xml.isFile()) {
                 if (pmf != null) {
@@ -344,6 +336,17 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
         return active && cleanerThread != null && !cleanerThread.isInterrupted();
     }
 
+    private void logJDOException(String action, AlarmDAOFilter filter,
+                    JDOException e)  {
+        /*
+         * JDOException extends RuntimeException, but we treat it as
+         * a checked exception here; the SQL error should neither
+         * be dealt with by the client nor be propagated up in this case
+         */
+        logger.error("alarm data, failed to {}, {}", filter);
+        logger.debug("{}", action, e);
+    }
+
     /**
      * Used only internally by the cleaner daemon (run()).
      */
@@ -361,17 +364,15 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             tx.commit();
             logger.debug("successfully removed {} entries", removed);
             return removed;
-        } catch (Exception t) {
-            String message = "remove: " + filter + ": "
-                            + t.getLocalizedMessage();
-            throw new DAOException(message, t);
+        } catch (JDOException t) {
+            logJDOException("remove", filter, t);
+            return 0;
         } finally {
-            rollbackIfActive(tx);
-            /*
-             * closing is necessary in order to avoid memory leak in the
-             * persistence manager factory
-             */
-            deleteManager.close();
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                deleteManager.close();
+            }
         }
     }
 }

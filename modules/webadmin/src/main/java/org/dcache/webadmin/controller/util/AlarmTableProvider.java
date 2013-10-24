@@ -70,7 +70,6 @@ import java.util.List;
 
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
-import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
 import org.dcache.webadmin.view.beans.AlarmQueryBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
@@ -225,7 +224,7 @@ public class AlarmTableProvider extends
         getAlarmQueryBean().addToUpdated(toUpdate);
     }
 
-    public void delete(ILogEntryDAO access) throws DAOException {
+    public void delete(ILogEntryDAO access) {
         getAlarmQueryBean().delete(access);
     }
 
@@ -233,7 +232,7 @@ public class AlarmTableProvider extends
         return getAlarmQueryBean().shouldDelete(entry);
     }
 
-    public void update(ILogEntryDAO access) throws DAOException {
+    public void update(ILogEntryDAO access) {
         getAlarmQueryBean().update(access);
     }
 

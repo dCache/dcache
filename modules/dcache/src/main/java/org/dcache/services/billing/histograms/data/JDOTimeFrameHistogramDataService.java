@@ -85,11 +85,9 @@ import org.dcache.services.billing.db.data.HitsHourly;
 import org.dcache.services.billing.db.data.MissesHourly;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersDaily;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersHourly;
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
 import org.dcache.services.billing.histograms.TimeFrame;
 import org.dcache.services.billing.histograms.TimeFrame.BinType;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData.HistogramDataType;
-import org.dcache.services.billing.histograms.exceptions.TimeFrameHistogramException;
 
 /**
  * Implementation of service interface which accesses {@link IBillingInfoAccess}
@@ -126,7 +124,7 @@ public final class JDOTimeFrameHistogramDataService implements
 
     @Override
     public TimeFrameHistogramData[] getDcBytesHistogram(TimeFrame timeFrame,
-                    Boolean write) throws TimeFrameHistogramException {
+                    Boolean write) {
         TimeFrameHistogramData[] histogram
             = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
         histogram[0].setType(write ? HistogramDataType.BYTES_UPLOADED
@@ -155,7 +153,7 @@ public final class JDOTimeFrameHistogramDataService implements
 
     @Override
     public TimeFrameHistogramData[] getDcConnectTimeHistograms(
-                    TimeFrame timeFrame) throws TimeFrameHistogramException {
+                    TimeFrame timeFrame) {
         Collection<IHistogramData> plotData;
 
         if (BinType.HOUR == timeFrame.getTimebin()) {
@@ -187,8 +185,7 @@ public final class JDOTimeFrameHistogramDataService implements
 
     @Override
     public TimeFrameHistogramData[] getDcTransfersHistogram(
-                    TimeFrame timeFrame, Boolean write)
-                    throws TimeFrameHistogramException {
+                    TimeFrame timeFrame, Boolean write) {
         TimeFrameHistogramData[] histogram
             = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
         histogram[0].setType(write ? HistogramDataType.TRANSFERS_UPLOADED
@@ -215,8 +212,7 @@ public final class JDOTimeFrameHistogramDataService implements
     }
 
     @Override
-    public TimeFrameHistogramData[] getHitHistograms(TimeFrame timeFrame)
-                    throws TimeFrameHistogramException {
+    public TimeFrameHistogramData[] getHitHistograms(TimeFrame timeFrame) {
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             plotData = getHourlyAggregateForHits();
@@ -237,7 +233,7 @@ public final class JDOTimeFrameHistogramDataService implements
 
     @Override
     public TimeFrameHistogramData[] getHsmBytesHistogram(TimeFrame timeFrame,
-                    Boolean write) throws TimeFrameHistogramException {
+                    Boolean write) {
         TimeFrameHistogramData[] histogram
             = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
         histogram[0].setType(write ? HistogramDataType.BYTES_STORED
@@ -264,8 +260,7 @@ public final class JDOTimeFrameHistogramDataService implements
 
     @Override
     public TimeFrameHistogramData[] getHsmTransfersHistogram(
-                    TimeFrame timeFrame, Boolean write)
-                    throws TimeFrameHistogramException {
+                    TimeFrame timeFrame, Boolean write) {
         TimeFrameHistogramData[] histogram
             = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
         histogram[0].setType(write ? HistogramDataType.TRANSFERS_STORED
@@ -290,8 +285,7 @@ public final class JDOTimeFrameHistogramDataService implements
     }
 
     @Override
-    public TimeFrameHistogramData[] getP2pBytesHistogram(TimeFrame timeFrame)
-                    throws TimeFrameHistogramException {
+    public TimeFrameHistogramData[] getP2pBytesHistogram(TimeFrame timeFrame) {
         TimeFrameHistogramData[] histogram
             = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
         histogram[0].setType(HistogramDataType.BYTES_P2P);
@@ -309,8 +303,7 @@ public final class JDOTimeFrameHistogramDataService implements
     }
 
     @Override
-    public TimeFrameHistogramData[] getP2pTransfersHistogram(TimeFrame timeFrame)
-                    throws TimeFrameHistogramException {
+    public TimeFrameHistogramData[] getP2pTransfersHistogram(TimeFrame timeFrame) {
         TimeFrameHistogramData[] histogram
             = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
         histogram[0].setType(HistogramDataType.TRANSFERS_P2P);
@@ -331,41 +324,30 @@ public final class JDOTimeFrameHistogramDataService implements
     }
 
     private <T extends IHistogramData> Collection<IHistogramData> getCoarseGrainedData(
-                    Class<T> clzz, TimeFrame timeFrame)
-                    throws TimeFrameHistogramException {
+                    Class<T> clzz, TimeFrame timeFrame) {
         return getData(clzz, "date >= date1 && date <= date2",
                         "java.util.Date date1, java.util.Date date2",
                         timeFrame.getLow(), timeFrame.getHigh());
     }
 
     private <T extends IHistogramData> Collection<IHistogramData> getViewData(
-                    Class<T> clzz) throws TimeFrameHistogramException {
-        try {
-            Collection<T> c = (Collection<T>) access.get(clzz);
-            Collection<IHistogramData> plotData = new ArrayList<IHistogramData>();
-            plotData.addAll(c);
-            return plotData;
-        } catch (BillingQueryException t) {
-            throw new TimeFrameHistogramException(t);
-        }
+                    Class<T> clzz) {
+        Collection<T> c = (Collection<T>) access.get(clzz);
+        Collection<IHistogramData> plotData = new ArrayList<IHistogramData>();
+        plotData.addAll(c);
+        return plotData;
     }
 
     private <T extends IHistogramData> Collection<IHistogramData> getData(
                     Class<T> clzz, String filter, String params,
-                    Object... values) throws TimeFrameHistogramException {
-        Collection<T> c;
-        try {
-            c = access.get(clzz, filter, params, values);
-        } catch (BillingQueryException t) {
-            throw new TimeFrameHistogramException(t.getMessage(), t);
-        }
+                    Object... values) {
+        Collection<T> c = access.get(clzz, filter, params, values);
         Collection<IHistogramData> plotData = new ArrayList<>();
         plotData.addAll(c);
         return plotData;
     }
 
-    private Collection<IHistogramData> getHourlyAggregateForHits()
-                    throws TimeFrameHistogramException {
+    private Collection<IHistogramData> getHourlyAggregateForHits() {
         Map<String, HourlyHitData> hourlyAggregate
             = new TreeMap<String, HourlyHitData>();
         Collection<IHistogramData> histogramData = getViewData(HitsHourly.class);

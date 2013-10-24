@@ -57,25 +57,26 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms.dao;
+package org.dcache.services.billing.db.exceptions;
 
-/**
- * Wrapper exception for exception thrown from storage implementation.
- *
- * @author arossi
- */
-public class LogEntryStorageException extends Exception {
-    private static final long serialVersionUID = -2120028255263450793L;
+public class RetryException extends RuntimeException {
 
-    public LogEntryStorageException(String msg, Throwable cause) {
-        super(msg, cause);
+    private static final long serialVersionUID = -3751457701108254445L;
+
+    public RetryException(String message) {
+        super(message);
     }
 
-    public LogEntryStorageException(Throwable cause) {
+    public RetryException(Throwable cause) {
         super(cause);
     }
 
-    public LogEntryStorageException(String msg) {
-        super(msg);
+    public RetryException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public RetryException(String message, Throwable cause,
+                    boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

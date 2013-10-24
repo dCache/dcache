@@ -62,7 +62,6 @@ package org.dcache.webadmin.model.dataaccess;
 import java.util.Collection;
 
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 
 /**
@@ -78,12 +77,12 @@ public interface ILogEntryDAO {
      * It is assumed that any filtering beyond what the DAO filter takes
      * will be done in memory.
      */
-    Collection<LogEntry> get(AlarmDAOFilter filter) throws DAOException;
+    Collection<LogEntry> get(AlarmDAOFilter filter);
 
     /**
      * @return number of entries removed
      */
-    long remove(Collection<LogEntry> selected) throws DAOException;
+    long remove(Collection<LogEntry> selected);
 
     /**
      * The only properties which can be updated through this method are
@@ -93,7 +92,7 @@ public interface ILogEntryDAO {
      *
      * @return number of entries updated
      */
-    long update(Collection<LogEntry> selected) throws DAOException;
+    long update(Collection<LogEntry> selected);
 
     /**
      * Indicate whether the DAO layer is actually "live" (that is, connected

@@ -59,9 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.cells.receivers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
@@ -73,7 +70,6 @@ import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
 
 /**
  * This class is responsible for the processing of messages from other domains
@@ -82,9 +78,6 @@ import org.dcache.services.billing.db.exceptions.BillingQueryException;
  * <br>
  */
 public class BillingInfoMessageReceiver implements CellMessageReceiver {
-
-    private static final Logger logger
-        = LoggerFactory.getLogger(BillingInfoMessageReceiver.class);
 
     /**
      * Injected
@@ -96,62 +89,18 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver {
     }
 
     public void messageArrived(MoverInfoMessage info) {
-        /*
-         * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller
-         * (using a synchronous sendAndWait); we follow suit here
-         */
-        try {
-            access.put(new MoverData(info));
-        } catch (BillingQueryException e) {
-            logger.error("the following billing message could not be stored: {};"
-                            + "this data will be lost", info.toString() );
-            logger.trace("{}; {}", info.toString(), e.getMessage());
-        }
+        access.put(new MoverData(info));
     }
 
     public void messageArrived(StorageInfoMessage info) {
-        /*
-         * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller
-         * (using a synchronous sendAndWait); we follow suit here
-         */
-        try {
-            access.put(new StorageData(info));
-        } catch (BillingQueryException e) {
-            logger.error("the following billing message could not be stored: {};"
-                            + "this data will be lost", info.toString() );
-            logger.trace("{}; {}", info.toString(), e.getMessage());
-        }
+        access.put(new StorageData(info));
     }
 
     public void messageArrived(DoorRequestInfoMessage info) {
-        /*
-         * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller
-         * (using a synchronous sendAndWait); we follow suit here
-         */
-        try {
-            access.put(new DoorRequestData(info));
-        } catch (BillingQueryException e) {
-            logger.error("the following billing message could not be stored: {};"
-                            + "this data will be lost", info.toString() );
-            logger.trace("{}; {}", info.toString(), e.getMessage());
-        }
+        access.put(new DoorRequestData(info));
     }
 
     public void messageArrived(PoolHitInfoMessage info) {
-        /*
-         * Other instances of this method do not throw checked exceptions
-         * presumably because these would be returned to the caller
-         * (using a synchronous sendAndWait); we follow suit here
-         */
-        try {
-            access.put(new PoolHitData(info));
-        } catch (BillingQueryException e) {
-            logger.error("the following billing message could not be stored: {};"
-                            + "this data will be lost", info.toString() );
-            logger.trace("{}; {}", info.toString(), e.getMessage());
-        }
+        access.put(new PoolHitData(info));
     }
 }

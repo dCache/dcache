@@ -72,8 +72,7 @@ import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.exceptions.BillingInitializationException;
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
+import org.dcache.services.billing.db.exceptions.RetryException;
 import org.dcache.services.billing.histograms.data.IHistogramData;
 
 /**
@@ -137,11 +136,11 @@ public abstract class QueueDelegate {
                         logger.trace("calling commit");
                         callback.commit(data);
                         committed.addAndGet(data.size());
-                    } catch (BillingQueryException t) {
+                    } catch (RetryException t) {
                         logger.warn("commit failed; retrying once ...");
                         try {
                             callback.commit(data);
-                        } catch (BillingQueryException t1) {
+                        } catch (RetryException t1) {
                             logger.error("commit retry failed, "
                                             + "{} inserts have been lost",
                                             data.size());
@@ -211,7 +210,7 @@ public abstract class QueueDelegate {
                         + hitQueue.size();
     }
 
-    public void handlePut(IHistogramData data) throws BillingQueryException {
+    public void handlePut(IHistogramData data) {
         if (data instanceof MoverData) {
             handlePut((MoverData) data);
         } else if (data instanceof StorageData) {
@@ -223,7 +222,7 @@ public abstract class QueueDelegate {
         }
     }
 
-    public void initialize() throws BillingInitializationException {
+    public void initialize() {
         initializeInternal();
 
         moverQueue = new LinkedBlockingQueue(maxQueueSize);
@@ -260,20 +259,15 @@ public abstract class QueueDelegate {
         this.maxQueueSize = maxQueueSize;
     }
 
-    protected abstract void handlePut(DoorRequestData data)
-                    throws BillingQueryException;
+    protected abstract void handlePut(DoorRequestData data);
 
-    protected abstract void handlePut(MoverData data)
-                    throws BillingQueryException;
+    protected abstract void handlePut(MoverData data);
 
-    protected abstract void handlePut(PoolHitData data)
-                    throws BillingQueryException;
+    protected abstract void handlePut(PoolHitData data);
 
-    protected abstract void handlePut(StorageData data)
-                    throws BillingQueryException;
+    protected abstract void handlePut(StorageData data);
 
-    protected abstract void initializeInternal()
-                    throws BillingInitializationException;
+    protected abstract void initializeInternal();
 
     protected synchronized boolean isRunning() {
         return running;
