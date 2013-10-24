@@ -1,6 +1,5 @@
 package org.dcache.cells;
 
-import java.lang.reflect.Array;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Set;
@@ -15,7 +14,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -25,7 +23,7 @@ import java.io.IOException;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.beans.PropertyDescriptor;
-
+import java.util.concurrent.ThreadPoolExecutor;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -264,18 +262,18 @@ public class UniversalSpringCell
     {
         if (callbackExecutor != null) {
             Object executor = getBean(callbackExecutor);
-            if (!(executor instanceof ExecutorService)) {
+            if (!(executor instanceof ThreadPoolExecutor)) {
                 throw new IllegalStateException("No such bean: " + callbackExecutor);
             }
-            getNucleus().setCallbackExecutor((ExecutorService) executor);
+            getNucleus().setCallbackExecutor((ThreadPoolExecutor) executor);
         }
 
         if (messageExecutor != null) {
             Object executor = getBean(messageExecutor);
-            if (!(executor instanceof ExecutorService)) {
+            if (!(executor instanceof ThreadPoolExecutor)) {
                 throw new IllegalStateException("No such bean: " + messageExecutor);
             }
-            getNucleus().setMessageExecutor((ExecutorService) executor);
+            getNucleus().setMessageExecutor((ThreadPoolExecutor) executor);
         }
     }
 
