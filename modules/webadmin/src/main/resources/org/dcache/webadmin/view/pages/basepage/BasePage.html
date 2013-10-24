@@ -11,11 +11,15 @@
         <script type="text/javascript" src="js/jquery.min.js"></script>
         <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
         <script type="text/javascript">
-            $(document).ready(function()
-            {
-                $('table.sortable').tablesorter();
-            }
-        );
+            $(document).ready(function() {
+                $('.sortable').tablesorter();
+                // Initialise Plugin
+                var options1 = {
+                    additionalFilterTriggers: [$('.quickfind')],
+                    clearFiltersControls: [$('.cleanfilters')],
+                };
+                $('.sortable').tableFilter(options1);
+            });
         </script>
         <wicket:head>
             <wicket:link>

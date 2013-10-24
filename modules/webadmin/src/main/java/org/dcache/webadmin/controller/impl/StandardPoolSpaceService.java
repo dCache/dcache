@@ -84,6 +84,11 @@ public class StandardPoolSpaceService implements PoolSpaceService {
         } catch (DAOException ex) {
             throw new PoolSpaceServiceException(ex);
         }
+        for (PoolSpaceBean pool: pools) {
+            if (poolIds.contains(pool.getName())) {
+                pool.setPoolMode(poolMode);
+            }
+        }
     }
 
     private Set<String> getSelectedIds(List<PoolSpaceBean> pools) {
