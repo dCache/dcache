@@ -481,8 +481,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         pw.println();
         pw.println("  Known movers (layouts):");
-        for(Transfer io: _ioMessages.values()) {
-            pw.println( String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPool() ));
+        for (NfsTransfer io : _ioMessages.values()) {
+            pw.println(String.format(" %s : %s@%s, OS=%s,cl=[%s]",
+                    io.getPnfsId(),
+                    io.getMoverId(),
+                    io.getPool(),
+                    io.getProtocolInfoForPool().stateId(),
+                    io.getProtocolInfoForPool().getSocketAddress().getAddress().getHostAddress()));
         }
 
         pw.println();

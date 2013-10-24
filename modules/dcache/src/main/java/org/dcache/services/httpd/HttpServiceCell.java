@@ -3,12 +3,16 @@ package org.dcache.services.httpd;
 import com.google.common.collect.Maps;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.RequestLog;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
@@ -31,7 +35,6 @@ import org.dcache.services.httpd.util.AliasEntry;
 import org.dcache.util.Crypto;
 
 public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
-    private static final String IPV4_INETADDR_ANY = "0.0.0.0";
     private static final Logger logger
         = LoggerFactory.getLogger(HttpServiceCell.class);
     private final ConcurrentMap<String, AliasEntry> aliases
@@ -101,6 +104,13 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
                     throws InterruptedException, ExecutionException {
         super(name, args);
         doInit();
+    }
+
+    private static class HttpdRequestLog extends AbstractLifeCycle
+        implements RequestLog {
+        public void log(Request request, Response response) {
+            logger.trace("request: {}; response: {}", request, response);
+        }
     }
 
     public static final String hh_ls_alias = "[<alias>]";
@@ -233,8 +243,10 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
 
     private void createAndSetHandlers() {
         final HandlerCollection handlers = new HandlerCollection();
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        requestLogHandler.setRequestLog(new HttpdRequestLog());
         handlers.setHandlers(new Handler[] { new HandlerDelegator(aliases),
-                        new DefaultHandler(), new RequestLogHandler() });
+                        new DefaultHandler(), requestLogHandler });
         server.setHandler(handlers);
     }
 
@@ -254,7 +266,6 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
     private Connector createSslConnector() {
         final SslSelectChannelConnector connector = new SslSelectChannelConnector();
         connector.setPort(httpsPort);
-        connector.setHost(IPV4_INETADDR_ANY);
         connector.setExcludeCipherSuites(Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
         final SslContextFactory factory = connector.getSslContextFactory();
         factory.setKeyStorePath(keystore);

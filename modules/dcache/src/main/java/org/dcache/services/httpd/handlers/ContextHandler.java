@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.SortedMap;
 
 import dmg.util.CollectionFactory;
-import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 
 import org.dcache.services.httpd.exceptions.OnErrorException;
@@ -41,21 +40,24 @@ public class ContextHandler extends AbstractHandler {
 
         try {
             final HttpRequest proxy = new StandardHttpRequest(request, response);
-            String html;
-            final String[] tokens = proxy.getRequestTokens();
-            if ((tokens.length < 2) || tokens[1].equals("index.html")) {
-                html = createContextDirectory();
+
+            Object value;
+            if (specificName.equals("*")) {
+                final String[] tokens = proxy.getRequestTokens();
+                if (tokens.length < 2 || tokens[1].equals("index.html")) {
+                    value = createContextDirectory();
+                } else {
+                    value = context.get(tokens[1]);
+                }
+
             } else {
-                if(!specificName.equals("*") && !specificName.equals(tokens[1])) {
-                    throw new HttpException(HttpServletResponse.SC_FORBIDDEN,
-                                                "Forbidden");
-                }
-                Object value = context.get(tokens[1]);
-                if (value == null) {
-                    throw new OnErrorException();
-                }
-                html = String.valueOf(value);
+                 value = context.get(specificName);
             }
+
+            if (value == null) {
+                throw new OnErrorException();
+            }
+            String html = String.valueOf(value);
 
             proxy.getPrintWriter().println(html);
             proxy.getPrintWriter().flush();
