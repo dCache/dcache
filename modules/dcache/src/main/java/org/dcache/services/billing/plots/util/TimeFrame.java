@@ -19,7 +19,7 @@ public class TimeFrame {
      * @param hourly
      *            bin; if false, daily bin is assumed
      * @return Current time rounded up to next hour for hourly and
-     *         to the next day for daily data.
+     *         down to the current day for daily data.
      */
     public static Calendar computeHighTimeFromNow(BinType type) {
         Calendar cal = Calendar.getInstance();
@@ -28,8 +28,6 @@ public class TimeFrame {
         int dd = cal.get(Calendar.DAY_OF_MONTH);
         if (type == BinType.HOUR) {
             hh = cal.get(Calendar.HOUR_OF_DAY) + 1;
-        } else {
-            dd++;
         }
         cal.set(Calendar.DAY_OF_MONTH, dd);
         cal.set(Calendar.HOUR_OF_DAY, hh);
