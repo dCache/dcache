@@ -1012,13 +1012,20 @@ public void cleanUp(){
           _loginCounter ++ ;
 
        }catch( Exception e ){
+          if (e instanceof InvocationTargetException) {
+              Throwable cause = e.getCause();
+              if (cause instanceof Error) {
+                  throw (Error) cause;
+              }
+              _log.warn("Exception (ITE) in secure protocol : {}",
+                      (cause == null ? "(null)" : cause.toString()));
+          } else {
+              _log.warn( "Exception in secure protocol : {}", e.toString() ) ;
+          }
           try{ _socket.close() ; }catch(IOException ee ){/* dead any way....*/}
-          _log.warn( "Exception in secure protocol : {}", e.toString() ) ;
           _loginFailures ++ ;
           synchronized( _childHash ){ _childCount -- ; }
        }
-
-
      }
   }
   private void childrenCounterChanged(){
