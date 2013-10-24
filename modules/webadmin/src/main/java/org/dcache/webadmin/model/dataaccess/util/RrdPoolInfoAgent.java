@@ -139,7 +139,7 @@ public class RrdPoolInfoAgent implements Runnable {
         } catch (InterruptedException t) {
             logger.error("collectPoolSeclectionUnit interrupted", t);
             return;
-        } catch (Exception t) {
+        } catch (CacheException t) {
             logger.error("problem running collectPoolSeclectionUnit", t);
             return;
         }
@@ -148,7 +148,7 @@ public class RrdPoolInfoAgent implements Runnable {
             try {
                 new RrdGraph(getGraphDef(pool.getName()));
                 logger.debug("created plot for {}", pool.getName());
-            } catch (Exception t) {
+            } catch (IOException t) {
                 logger.error("could not create plot for {}", pool.getName(), t);
                 return;
             }
@@ -157,7 +157,7 @@ public class RrdPoolInfoAgent implements Runnable {
         try {
             new RrdGraph(getGraphDef(ALL_POOLS));
             logger.debug("created plot for {}", ALL_POOLS);
-        } catch (Exception t) {
+        } catch (IOException t) {
             logger.error("could not create plot for {}", ALL_POOLS, t);
         }
     }

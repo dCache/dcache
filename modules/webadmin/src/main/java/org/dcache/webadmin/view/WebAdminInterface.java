@@ -388,8 +388,9 @@ public class WebAdminInterface extends WebApplication {
                         LogIn.signInWithCert(_logInService);
                         signedIn = true;
                     } catch (IllegalArgumentException | LogInServiceException e) {
-                        _log.debug("could not automatically authorize {}: {}",
-                                   "using browser certificate", e.toString());
+                        _log.debug("could not automatically authorize "
+                                        + "using browser certificate: {}",
+                                    e.toString());
                     }
                 }
                 return signedIn;

@@ -30,7 +30,9 @@ public class PrivilegeDelegate implements IMapCredentialsClient {
             /*
              * Generic exception is thrown by privilege API ...
              */
-        } catch (final Exception t) {
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Exception t) {
             throw new AuthenticationException(t.getMessage(), t);
         }
     }

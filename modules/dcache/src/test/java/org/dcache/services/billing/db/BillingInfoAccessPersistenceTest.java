@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.services.billing.db.data.PnfsBaseInfo;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.exceptions.BillingQueryException;
 
 /**
  * Exercises basic put, get, remove.
@@ -27,7 +26,7 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
         then = now - mod;
     }
 
-    public void testPutGetDelete() throws BillingQueryException {
+    public void testPutGetDelete() {
         PnfsBaseInfo[] data = new PnfsBaseInfo[] {
                         messageGenerator.newPnfsInfo(0),
                         messageGenerator.newPnfsInfo(1),
@@ -61,7 +60,7 @@ public class BillingInfoAccessPersistenceTest extends BaseBillingInfoAccessTest 
         }
     }
 
-    public void testSelect() throws BillingQueryException {
+    public void testSelect() {
         PnfsBaseInfo p1 = messageGenerator.newPnfsInfo(2);
         PnfsBaseInfo p2 = messageGenerator.newPnfsInfo(2);
         p1.setAction("store");

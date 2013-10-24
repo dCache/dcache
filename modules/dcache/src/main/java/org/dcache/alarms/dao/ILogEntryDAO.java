@@ -78,5 +78,5 @@ public interface ILogEntryDAO {
      * most cases this will involve a check for key equivalence and a subsequent
      * update instead of insert.
      */
-    void put(LogEntry alarm) throws LogEntryStorageException;
+    void put(LogEntry alarm);
 }
