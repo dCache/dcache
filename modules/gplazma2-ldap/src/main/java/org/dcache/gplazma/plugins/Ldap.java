@@ -8,9 +8,9 @@ import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.naming.ldap.InitialLdapContext;
 
 import java.security.Principal;
 import java.util.HashSet;
@@ -80,6 +80,12 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     static final String LDAP_USER_FILTER = "gplazma.ldap.userfilter";
 
     /**
+     * The ldap properties
+     */
+    private final String server;
+    private final String port;
+
+    /**
      * The OU (organizational unit) to add users to
      */
     private final String peopleOU;
@@ -91,32 +97,21 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
      * The search filter to use to locate a user's entry in the LDAP directory.
      */
     private final String userFilter;
-    private final InitialDirContext _ctx;
 
     /**
      * Create a NIS identity plugin.
-     *
-     * @throws NamingException
      */
-    public Ldap(Properties properties) throws NamingException {
+    public Ldap(Properties properties) {
 
-        String server = properties.getProperty(LDAP_SERVER);
-        String port = properties.getProperty(LDAP_PORT);
+        server = properties.getProperty(LDAP_SERVER);
+        port = properties.getProperty(LDAP_PORT);
         String organization = properties.getProperty(LDAP_ORG);
         String peopleTree = properties.getProperty(LDAP_PEOPLE_TREE);
         String groupTree = properties.getProperty(LDAP_GROUP_TREE);
         userFilter = properties.getProperty(LDAP_USER_FILTER);
 
-
         peopleOU = String.format("ou=%s,%s", peopleTree, organization);
         groupOU = String.format("ou=%s,%s", groupTree, organization);
-
-        Properties env = new Properties();
-        env.put(DirContext.INITIAL_CONTEXT_FACTORY,
-                "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(DirContext.PROVIDER_URL, String.format("ldap://%s:%s", server, port));
-
-        _ctx = new InitialDirContext(env);
     }
 
     @Override
@@ -124,8 +119,8 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         Principal principal =
                 find(principals, instanceOf(UserNamePrincipal.class), null);
         if (principal != null) {
-            try {
-                NamingEnumeration<SearchResult> sResult = _ctx.search(peopleOU,
+            try (ClosableContext ctx = new ClosableContext()) {
+                NamingEnumeration<SearchResult> sResult = ctx.get().search(peopleOU,
                         String.format(userFilter, principal.getName()),
                         getSimplSearchControls(UID_NUMBER_ATTRIBUTE, GID_NUMBER_ATTRIBUTE));
                 if (sResult.hasMore()) {
@@ -133,7 +128,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
                     principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
 
-                    NamingEnumeration<SearchResult> groupResult = _ctx.search(groupOU,
+                    NamingEnumeration<SearchResult> groupResult = ctx.get().search(groupOU,
                             new BasicAttributes(MEMBER_UID_ATTRIBUTE, principal.getName()));
                     while (groupResult.hasMore()) {
                         SearchResult result = groupResult.next();
@@ -142,7 +137,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     }
                 }
             } catch (NamingException e) {
-                _log.warn("Faild to get mapping: {}", e.toString());
+                _log.warn("Failed to get mapping: {}", e.toString());
             }
         }
     }
@@ -151,10 +146,10 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     public Principal map(Principal principal) throws NoSuchPrincipalException {
 
         String name = principal.getName();
-        try {
+        try (ClosableContext ctx = new ClosableContext()) {
             NamingEnumeration<SearchResult> sResult;
             if (principal instanceof UserNamePrincipal) {
-                sResult = _ctx.search(peopleOU,
+                sResult = ctx.get().search(peopleOU,
                         String.format("(%s=%s)", USER_ID_ATTRIBUTE, name),
                         getSimplSearchControls(UID_NUMBER_ATTRIBUTE));
                 if (sResult.hasMore()) {
@@ -162,7 +157,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     return new UidPrincipal((String) rs.getAttributes().get(UID_NUMBER_ATTRIBUTE).get());
                 }
             } else if (principal instanceof GroupNamePrincipal) {
-                sResult = _ctx.search(groupOU,
+                sResult = ctx.get().search(groupOU,
                         String.format("(%s=%s)", COMMON_NAME_ATTRIBUTE, name),
                         getSimplSearchControls(GID_NUMBER_ATTRIBUTE));
                 if (sResult.hasMore()) {
@@ -172,7 +167,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             }
 
         } catch (NamingException e) {
-            _log.warn("Faild to get mapping: {}", e.toString());
+            _log.warn("Failed to get mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
@@ -180,12 +175,12 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     @Override
     public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException {
         String id = principal.getName();
-        try {
+        try (ClosableContext ctx = new ClosableContext()) {
 
             Set<Principal> principals = new HashSet<>();
 
             if (principal instanceof GidPrincipal) {
-                NamingEnumeration<SearchResult> ne = _ctx.search(groupOU,
+                NamingEnumeration<SearchResult> ne = ctx.get().search(groupOU,
                         new BasicAttributes(GID_NUMBER_ATTRIBUTE, id));
 
 
@@ -195,7 +190,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     principals.add(new GroupNamePrincipal(name));
                 }
             } else if (principal instanceof UidPrincipal) {
-                NamingEnumeration<SearchResult> ne = _ctx.search(peopleOU,
+                NamingEnumeration<SearchResult> ne = ctx.get().search(peopleOU,
                         new BasicAttributes(UID_NUMBER_ATTRIBUTE, id));
 
 
@@ -207,7 +202,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             }
             return principals;
         } catch (NamingException e) {
-            _log.warn("Faild to get reverse mapping: {}", e.toString());
+            _log.warn("Failed to get reverse mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
@@ -217,8 +212,8 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         Principal principal =
                 find(authorizedPrincipals, instanceOf(UserNamePrincipal.class), null);
         if (principal != null) {
-            try {
-                NamingEnumeration<?> sResult = _ctx.search(peopleOU,
+            try (ClosableContext ctx = new ClosableContext()) {
+                NamingEnumeration<?> sResult = ctx.get().search(peopleOU,
                         String.format(userFilter, principal.getName()),
                         getSimplSearchControls(HOME_DIR_ATTRIBUTE));
                 if (sResult.hasMore()) {
@@ -237,9 +232,44 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     private SearchControls getSimplSearchControls(String... attr) {
         SearchControls constraints = new SearchControls();
         constraints.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        String attrList[] = attr;
-        constraints.setReturningAttributes(attrList);
+        constraints.setReturningAttributes(attr);
         return constraints;
+    }
+
+    private class ClosableContext implements AutoCloseable {
+
+        private DirContext _ctx;
+
+        public DirContext get() {
+            return _ctx;
+        }
+
+        public ClosableContext() throws NamingException {
+            _ctx = newContext();
+        }
+
+        @Override
+        public void close() {
+            try {
+                if (_ctx != null) {
+                    _ctx.close();
+                }
+            } catch (NamingException ignore) { }
+        }
+
+        /**
+         * Creates a DirContext with a new connection from the plugin's
+         * configuration properties.
+         * @throws NamingException
+         */
+        private DirContext newContext() throws NamingException {
+            Properties env = new Properties();
+            env.put(DirContext.INITIAL_CONTEXT_FACTORY,
+                    "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put(DirContext.PROVIDER_URL, String.format("ldap://%s:%s", server, port));
+
+            return new InitialLdapContext(env, null);
+        }
     }
 
     public static void main(String[] args) throws NamingException, AuthenticationException, NoSuchPrincipalException {
