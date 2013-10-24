@@ -1,5 +1,7 @@
 package org.dcache.services.billing.plots;
 
+import com.google.common.base.Preconditions;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -251,7 +253,9 @@ public class BillingHistory implements Runnable {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         initializeProperties(classLoader);
         synchronizeProperties();
-        initializeAccess(classLoader);
+        access = (IBillingInfoAccess) new BillingHistoryApplicationContext()
+                                        .getBean(ACCESS_BEAN);
+        Preconditions.checkNotNull(access);
         TimeFramePlotFactory plotFactory = TimeFramePlotFactory.getInstance(access);
         String impl = properties.getProperty(ITimeFramePlot.FACTORY_TYPE);
         factory = plotFactory.create(impl, properties);
@@ -349,24 +353,6 @@ public class BillingHistory implements Runnable {
                             ITimeFramePlot.THREAD_TIMEOUT_TYPE, DEFAULT_SLEEP);
         }
         timeout = 60000 * Long.parseLong(plotsTimeout);
-    }
-
-    /**
-     * Initializes database access.
-     *
-     * @param classLoader
-     * @throws BillingInitializationException
-     */
-    private void initializeAccess(ClassLoader classLoader)
-                    throws NoSuchBeanDefinitionException,
-                    BillingInitializationException {
-        logger.debug("initializeAccess ...");
-        ApplicationContext context = new BillingHistoryApplicationContext();
-        if (context != null && context.isSingleton(ACCESS_BEAN)) {
-            access = (IBillingInfoAccess) context.getBean(ACCESS_BEAN);
-        }
-        access.initialize();
-        logger.debug("initializeAccess successful");
     }
 
     /**
@@ -481,10 +467,6 @@ public class BillingHistory implements Runnable {
      */
     public synchronized void setRunning(boolean running) {
         this.running = running;
-    }
-
-    public void close() {
-        access.close();
     }
 
     /**
