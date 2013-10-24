@@ -4229,7 +4229,7 @@ public final class Manager
                 Space space = getSpace(reservationId);
                 long fileId = useSpace(reservationId,
                                        space.getVoGroup(),
-                                       space.getVoGroup(),
+                                       space.getVoRole(),
                                        sizeInBytes,
                                        lifetime,
                                        pnfsPath,
