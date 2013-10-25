@@ -7,26 +7,12 @@
             <script src="js/jquery.stickytableheaders.js" type="text/javascript" ></script>
             <script type="text/javascript" src="js/picnet.table.filter.full.js"></script>
         </wicket:link>
-
-        <script type="text/javascript">
-            $(document).ready(function() {
-                $('.sortable').tablesorter();
-                // Initialise Plugin
-                var options1 = {
-                    additionalFilterTriggers: [$('#quickfind')],
-                    clearFiltersControls: [$('#cleanfilters')],
-                };
-                $('.sortable').tableFilter(options1);
-                $("table").stickyTableHeaders();
-            });
-
-        </script>
     </wicket:head>
 </head>
 <body>
 <wicket:panel>
-    <wicket:message key="activeTransfersPanel.quickFind"></wicket:message>&nbsp;<input type="text" id="quickfind"/>&nbsp;
-    <input type="button" value="Clear Filters" id="cleanfilters">
+    <wicket:message key="activeTransfersPanel.quickFind"></wicket:message>&nbsp;<input type="text" class="quickfind"/>&nbsp;
+    <input type="button" value="Clear Filters" class="cleanfilters">
     <div class="clear"></div>
     <br>
     <table  class="sortable">

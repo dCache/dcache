@@ -6,27 +6,15 @@
             <link href="CellServicesPanel.css" rel="stylesheet" type="text/css" />
             <script type="text/javascript" src="js/picnet.table.filter.full.js"></script>
         </wicket:link>
-
-        <script type="text/javascript">
-            $(document).ready(function() {
-                $('#sortable').tablesorter();
-                // Initialise Plugin
-                var options1 = {
-                    additionalFilterTriggers: [$('#quickfind')],
-                    clearFiltersControls: [$('#cleanfilters')],
-                };
-                $('#sortable').tableFilter(options1);
-            });
-        </script>
     </wicket:head>
 </head>
 <body>
 <wicket:panel>
-    <wicket:message key="CellServicesPanel.quickFind"></wicket:message>&nbsp;<input type="text" id="quickfind"/>&nbsp;
-    <input type="button" value="Clear Filters" id="cleanfilters">
+    <wicket:message key="CellServicesPanel.quickFind"></wicket:message>&nbsp;<input type="text" class="quickfind"/>&nbsp;
+    <input type="button" value="Clear Filters" class="cleanfilters">
     <div class="clear"></div>
     <br>
-    <table id="sortable">
+    <table class="sortable">
         <thead>
             <tr>
                <th><wicket:message key="CellServicesPanel.name.header"></wicket:message></th>
