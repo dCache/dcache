@@ -44,13 +44,13 @@ public class SrmReserveSpace
                            SrmReserveSpaceRequest request,
                            AbstractStorageElement storage,
                            SRM srm,
-                           String client_host)
+                           String clientHost)
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
         this.credential = checkNotNull(credential);
         this.configuration = checkNotNull(srm.getConfiguration());
-        this.client_host = checkNotNull(client_host);
+        this.client_host = checkNotNull(clientHost);
     }
 
     public SrmReserveSpaceResponse getResponse()

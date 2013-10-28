@@ -37,12 +37,12 @@ public class SrmMv
                  SrmMvRequest request,
                  AbstractStorageElement storage,
                  SRM srm,
-                 String client_host)
+                 String clientHost)
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
         this.storage = checkNotNull(storage);
-        this.srm = srm;
+        this.srm = checkNotNull(srm);
     }
 
     public SrmMvResponse getResponse()

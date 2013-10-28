@@ -15,6 +15,7 @@ import org.dcache.srm.v2_2.TRequestSummary;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 public class SrmGetRequestSummary
@@ -28,9 +29,9 @@ public class SrmGetRequestSummary
             SrmGetRequestSummaryRequest request,
             AbstractStorageElement storage,
             SRM srm,
-            String client_host)
+            String clientHost)
     {
-        this.request = request;
+        this.request = checkNotNull(request);
     }
 
     public SrmGetRequestSummaryResponse getResponse()

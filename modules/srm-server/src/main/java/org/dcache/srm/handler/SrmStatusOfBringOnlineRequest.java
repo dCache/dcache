@@ -1,8 +1,5 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -21,9 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SrmStatusOfBringOnlineRequest
 {
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmStatusOfBringOnlineRequest.class);
-
     private final SrmStatusOfBringOnlineRequestRequest request;
     private SrmStatusOfBringOnlineRequestResponse response;
 

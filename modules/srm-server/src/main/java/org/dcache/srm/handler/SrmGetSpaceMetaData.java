@@ -35,7 +35,7 @@ public class SrmGetSpaceMetaData
                                SrmGetSpaceMetaDataRequest request,
                                AbstractStorageElement storage,
                                SRM srm,
-                               String client_host)
+                               String clientHost)
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);

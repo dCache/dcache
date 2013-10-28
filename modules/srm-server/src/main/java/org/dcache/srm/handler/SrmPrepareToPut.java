@@ -52,7 +52,6 @@ public class SrmPrepareToPut
     private final Configuration configuration;
     private final String clientHost;
 
-    /** Creates a new instance of SrmLs */
     public SrmPrepareToPut(SRMUser user,
                            RequestCredential credential,
                            SrmPrepareToPutRequest request,

@@ -1,8 +1,6 @@
 package org.dcache.srm.handler;
 
 import org.apache.axis.types.URI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -21,9 +19,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SrmStatusOfCopyRequest
 {
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmStatusOfCopyRequest.class);
-
     private final SrmStatusOfCopyRequestRequest request;
     private SrmStatusOfCopyRequestResponse response;
 

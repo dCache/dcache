@@ -35,7 +35,7 @@ public class SrmReleaseSpace
                            SrmReleaseSpaceRequest request,
                            AbstractStorageElement storage,
                            SRM srm,
-                           String client_host)
+                           String clientHost)
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
@@ -50,7 +50,7 @@ public class SrmReleaseSpace
         return response;
     }
 
-    public SrmReleaseSpaceResponse releaseSpace()
+    private SrmReleaseSpaceResponse releaseSpace()
     {
         String token = request.getSpaceToken();
         Callback callback = new Callback();

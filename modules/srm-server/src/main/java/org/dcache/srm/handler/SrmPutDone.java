@@ -41,7 +41,7 @@ public class SrmPutDone
                       SrmPutDoneRequest request,
                       AbstractStorageElement storage,
                       SRM srm,
-                      String client_host)
+                      String clientHost)
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
@@ -66,7 +66,7 @@ public class SrmPutDone
         return response;
     }
 
-    public SrmPutDoneResponse srmPutDone()
+    private SrmPutDoneResponse srmPutDone()
             throws SRMInvalidRequestException, SRMRequestTimedOutException, SRMAbortedException,
                    SRMInternalErrorException
     {

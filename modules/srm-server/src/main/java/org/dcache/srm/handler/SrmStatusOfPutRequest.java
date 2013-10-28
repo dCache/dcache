@@ -34,7 +34,7 @@ public class SrmStatusOfPutRequest
             SrmStatusOfPutRequestRequest statusOfPutRequestRequest,
             AbstractStorageElement storage,
             SRM srm,
-            String client_host)
+            String clientHost)
     {
         this.statusOfPutRequestRequest = checkNotNull(statusOfPutRequestRequest);
     }

@@ -33,7 +33,7 @@ public class SrmGetSpaceTokens
                              SrmGetSpaceTokensRequest request,
                              AbstractStorageElement storage,
                              SRM srm,
-                             String client_host)
+                             String clientHost)
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);

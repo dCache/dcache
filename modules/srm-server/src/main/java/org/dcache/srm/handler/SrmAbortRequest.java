@@ -12,6 +12,8 @@ import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class SrmAbortRequest
 {
     private final SrmAbortRequestRequest request;
@@ -25,7 +27,7 @@ public class SrmAbortRequest
             SRM srm,
             String clientHost)
     {
-        this.request = request;
+        this.request = checkNotNull(request);
     }
 
     public SrmAbortRequestResponse getResponse()

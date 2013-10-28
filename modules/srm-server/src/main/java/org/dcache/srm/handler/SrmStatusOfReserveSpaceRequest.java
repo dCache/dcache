@@ -24,7 +24,7 @@ public class SrmStatusOfReserveSpaceRequest
                                           SrmStatusOfReserveSpaceRequestRequest request,
                                           AbstractStorageElement storage,
                                           SRM srm,
-                                          String client_host)
+                                          String clientHost)
     {
         this.request = checkNotNull(request);
     }

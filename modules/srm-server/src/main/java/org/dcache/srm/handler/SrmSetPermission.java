@@ -24,6 +24,8 @@ import org.dcache.srm.v2_2.TPermissionType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class SrmSetPermission
 {
     private static final Logger LOGGER =
@@ -41,11 +43,11 @@ public class SrmSetPermission
                             SrmSetPermissionRequest request,
                             AbstractStorageElement storage,
                             SRM srm,
-                            String client_host)
+                            String clientHost)
     {
-        this.request = request;
-        this.user = user;
-        this.storage = storage;
+        this.request = checkNotNull(request);
+        this.user = checkNotNull(user);
+        this.storage = checkNotNull(storage);
     }
 
     public SrmSetPermissionResponse getResponse()

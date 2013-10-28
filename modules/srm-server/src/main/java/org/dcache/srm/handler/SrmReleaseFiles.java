@@ -45,7 +45,6 @@ public class SrmReleaseFiles
     private final SRMUser user;
     private SrmReleaseFilesResponse response;
 
-    /** Creates a new instance of SrmReleaseFiles */
     public SrmReleaseFiles(SRMUser user,
                            RequestCredential credential,
                            SrmReleaseFilesRequest srmReleaseFilesRequest,

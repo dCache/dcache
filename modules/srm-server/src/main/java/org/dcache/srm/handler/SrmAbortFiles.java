@@ -21,6 +21,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 public class SrmAbortFiles
@@ -28,7 +29,6 @@ public class SrmAbortFiles
     private final SrmAbortFilesRequest request;
     private SrmAbortFilesResponse response;
 
-    /** Creates a new instance of SrmLs */
     public SrmAbortFiles(
             SRMUser user,
             RequestCredential credential,
@@ -37,15 +37,19 @@ public class SrmAbortFiles
             SRM srm,
             String clientHost)
     {
-        this.request = request;
+        this.request = checkNotNull(request);
     }
 
-    public static SrmAbortFilesResponse getFailedResponse(String error,
-                                                          TStatusCode statusCode)
+    public SrmAbortFilesResponse getResponse()
     {
-        SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
-        srmAbortFilesResponse.setReturnStatus(new TReturnStatus(statusCode, error));
-        return srmAbortFilesResponse;
+        if (response == null) {
+            try {
+                response = abortFiles();
+            } catch (SRMInvalidRequestException e) {
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
+            }
+        }
+        return response;
     }
 
     private SrmAbortFilesResponse abortFiles()
@@ -93,20 +97,16 @@ public class SrmAbortFiles
         return arrayOfSURLs.getUrlArray();
     }
 
-    public SrmAbortFilesResponse getResponse()
-    {
-        if (response == null) {
-            try {
-                response = abortFiles();
-            } catch (SRMInvalidRequestException e) {
-                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
-            }
-        }
-        return response;
-    }
-
     public static SrmAbortFilesResponse getFailedResponse(String error)
     {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
+    }
+
+    public static SrmAbortFilesResponse getFailedResponse(String error,
+                                                          TStatusCode statusCode)
+    {
+        SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
+        srmAbortFilesResponse.setReturnStatus(new TReturnStatus(statusCode, error));
+        return srmAbortFilesResponse;
     }
 }

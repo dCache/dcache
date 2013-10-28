@@ -32,7 +32,7 @@ public class SrmGetTransferProtocols
                                    SrmGetTransferProtocolsRequest request,
                                    AbstractStorageElement storage,
                                    SRM srm,
-                                   String client_host)
+                                   String clientHost)
     {
         this.user = checkNotNull(user);
         this.credential = checkNotNull(credential);

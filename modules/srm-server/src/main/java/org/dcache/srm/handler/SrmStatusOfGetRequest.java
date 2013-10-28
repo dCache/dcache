@@ -19,18 +19,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SrmStatusOfGetRequest
 {
-    private final SrmStatusOfGetRequestRequest statusOfGetRequestRequest;
+    private final SrmStatusOfGetRequestRequest request;
     private SrmStatusOfGetRequestResponse response;
 
     public SrmStatusOfGetRequest(
             SRMUser user,
             RequestCredential credential,
-            SrmStatusOfGetRequestRequest statusOfGetRequestRequest,
+            SrmStatusOfGetRequestRequest request,
             AbstractStorageElement storage,
             SRM srm,
-            String client_host)
+            String clientHost)
     {
-        this.statusOfGetRequestRequest = checkNotNull(statusOfGetRequestRequest);
+        this.request = checkNotNull(request);
     }
 
     public SrmStatusOfGetRequestResponse getResponse()
@@ -49,14 +49,14 @@ public class SrmStatusOfGetRequest
     private SrmStatusOfGetRequestResponse srmGetStatus()
             throws SRMInvalidRequestException
     {
-        String requestToken = statusOfGetRequestRequest.getRequestToken();
+        String requestToken = request.getRequestToken();
         GetRequest getRequest = Request.getRequest(requestToken, GetRequest.class);
         try (JDC ignored = getRequest.applyJdc()) {
-            if (statusOfGetRequestRequest.getArrayOfSourceSURLs() == null) {
+            if (request.getArrayOfSourceSURLs() == null) {
                 return getRequest.getSrmStatusOfGetRequestResponse();
             }
 
-            URI[] surls = statusOfGetRequestRequest.getArrayOfSourceSURLs().getUrlArray();
+            URI[] surls = request.getArrayOfSourceSURLs().getUrlArray();
             if (surls.length == 0) {
                 return getRequest.getSrmStatusOfGetRequestResponse();
             }
