@@ -28,6 +28,7 @@ import java.util.List;
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -59,6 +60,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private int _port;
     private int _adminGroupId;
     private LoginStrategy _loginStrategy;
+    private TimeUnit _idleTimeoutUnit;
+    private long _idleTimeout;
 
     public Ssh2Admin() {
         _server = SshServer.setUpDefaultServer();
@@ -135,6 +138,17 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         _server.setSubsystemFactories(subsystemFactories);
     }
 
+    @Required
+    public void setIdleTimeout(long timeout)
+    {
+        _idleTimeout = timeout;
+    }
+
+    @Required
+    public void setIdleTimeoutUnit(TimeUnit unit) {
+        _idleTimeoutUnit = unit;
+    }
+
     public void configureAuthentication() {
         _server.setPasswordAuthenticator(new AdminPasswordAuthenticator());
         _server.setPublickeyAuthenticator(new AdminPublickeyAuthenticator());
@@ -206,6 +220,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     private void startServer() {
+        long effectiveTimeout = _idleTimeoutUnit.toMillis(_idleTimeout > 0? _idleTimeout : Long.MAX_VALUE);
+        _server.getProperties().put(SshServer.IDLE_TIMEOUT, Long.toString(effectiveTimeout));
         _server.setPort(_port);
         _server.setHost(_host);
 
