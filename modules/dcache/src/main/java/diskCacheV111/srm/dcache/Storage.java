@@ -2980,7 +2980,8 @@ public final class Storage
     }
 
     @Override
-    public boolean exists(SRMUser user, URI surl)  throws SRMException
+    public boolean exists(SRMUser user, URI surl)
+            throws SRMInternalErrorException, SRMInvalidPathException
     {
         FsPath path = getPath(surl);
         try {
@@ -2991,7 +2992,7 @@ public final class Storage
             return false;
         } catch (CacheException e) {
             _log.error("Failed to find file by path : " + e.getMessage());
-            throw new SRMException("Failed to find file by path due to internal system failure or timeout: " + e.getMessage());
+            throw new SRMInternalErrorException("Failed to check existence of file: " + e.getMessage());
         }
     }
 

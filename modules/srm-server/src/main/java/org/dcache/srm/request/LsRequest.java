@@ -458,12 +458,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         @Override
-        public  TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls)
-        {
-                return null;
-        }
-
-        @Override
         public void toString(StringBuilder sb, boolean longformat) {
                 sb.append(getMethod()).append("Request #").append(getId()).append(" created by ").append(getUser());
                 sb.append(" with credentials : ").append(getCredential()).append(" state = ").append(getState());

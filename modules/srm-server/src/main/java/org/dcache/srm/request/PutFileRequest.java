@@ -88,6 +88,8 @@ import org.dcache.srm.ReleaseSpaceCallbacks;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
@@ -375,27 +377,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException {
-        org.apache.axis.types.URI anSurl;
-        try {
-            anSurl = new org.apache.axis.types.URI(getSurlString());
-        } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            logger.error(e.toString());
-            throw new SRMInvalidRequestException("wrong surl format");
-        }
-        TReturnStatus returnStatus = getReturnStatus();
-        if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
-            //SRM_SPACE_LIFETIME_EXPIRED is illeal on the file level,
-            // but we use it to correctly calculate the request level status
-            // so we do the translation here
-            returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
-        }
-        TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
-        surlReturnStatus.setSurl(anSurl);
-        surlReturnStatus.setStatus(returnStatus);
-        return surlReturnStatus;
-    }
-
     private URI getTURL() throws SRMException {
         PutRequest request = getContainerRequest();
         // do not synchronize on request, since it might cause deadlock
@@ -645,6 +626,45 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 throw new IllegalStateTransition("Put request completed successfully and cannot be aborted",
                         State.DONE, State.CANCELED);
             }
+        } finally {
+            wunlock();
+        }
+    }
+
+    public TReturnStatus done(SRMUser user) throws SRMInternalErrorException
+    {
+        wlock();
+        try {
+            switch (getState()) {
+            case READY:
+            case TRANSFERRING:
+                try {
+                    if (getStorage().exists(user, getSurl())) {
+                        setState(State.DONE, "SrmPutDone called.");
+                        return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+                    } else {
+                        setStateAndStatusCode(State.FAILED, "SrmPutDone called when no file was uploaded.", TStatusCode.SRM_INVALID_PATH);
+                        return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "File does not exist.");
+                    }
+                } catch (SRMInvalidPathException e) {
+                    return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+                }
+            case DONE:
+                return new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR, "File exists already.");
+            case CANCELED:
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, "The SURL has been aborted.");
+            case FAILED:
+                TStatusCode statusCode = getStatusCode();
+                if (statusCode != null) {
+                    return new TReturnStatus(statusCode, "Upload failed.");
+                }
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, "Upload failed.");
+            default:
+                setStateAndStatusCode(State.FAILED, "SrmPutDone called before TURL was made available.", TStatusCode.SRM_INVALID_PATH);
+                return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "File does not exist.");
+            }
+        } catch (IllegalStateTransition e) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, "Scheduling failure.");
         } finally {
             wunlock();
         }

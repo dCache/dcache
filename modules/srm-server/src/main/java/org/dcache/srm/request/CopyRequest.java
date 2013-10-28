@@ -126,7 +126,6 @@ import org.dcache.srm.v2_2.TFileStorageType;
 import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TRetentionPolicy;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
 
 
 /**
@@ -1130,33 +1129,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
             }
         }
         throw new SRMFileRequestNotFoundException("file request for url =" + surl + " is not found");
-    }
-
-    @Override
-    public final TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException {
-        int len ;
-        TSURLReturnStatus[] surlLReturnStatuses;
-        if(surls == null) {
-            len = getNumOfFileRequest();
-           surlLReturnStatuses = new TSURLReturnStatus[len];
-        }
-        else {
-            len = surls.length;
-           surlLReturnStatuses = new TSURLReturnStatus[surls.length];
-        }
-        if(surls == null) {
-            for(int i = 0; i< len; ++i) {
-                CopyFileRequest fr = getFileRequests().get(i);
-                surlLReturnStatuses[i] = fr.getTSURLReturnStatus( null);
-            }
-        } else {
-            for(int i = 0; i< len; ++i) {
-                CopyFileRequest fr = getFileRequestBySurl(surls[i]);
-                surlLReturnStatuses[i] = fr.getTSURLReturnStatus(surls[i]);
-            }
-
-        }
-        return surlLReturnStatuses;
     }
 
     @Override

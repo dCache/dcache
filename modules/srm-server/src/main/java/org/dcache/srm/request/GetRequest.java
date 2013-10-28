@@ -389,34 +389,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException {
-        int len ;
-        TSURLReturnStatus[] surlLReturnStatuses;
-
-        if(surls == null) {
-            len = getNumOfFileRequest();
-            surlLReturnStatuses = new TSURLReturnStatus[len];
-        }
-        else {
-            len = surls.length;
-            surlLReturnStatuses = new TSURLReturnStatus[surls.length];
-        }
-        if(surls == null) {
-            for(int i = 0; i< len; ++i) {
-                GetFileRequest fr = getFileRequests().get(i);
-                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-            }
-        } else {
-            for(int i = 0; i< len; ++i) {
-                GetFileRequest fr = getFileRequestBySurl(surls[i]);
-                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-            }
-
-        }
-        return surlLReturnStatuses;
-    }
-
-    @Override
     public TRequestType getRequestType() {
         return TRequestType.PREPARE_TO_GET;
     }

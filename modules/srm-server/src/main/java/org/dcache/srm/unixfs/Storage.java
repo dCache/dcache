@@ -1154,7 +1154,8 @@ public class Storage
     }
 
     @Override
-    public boolean exists(SRMUser user, URI surl)  throws SRMException {
+    public boolean exists(SRMUser user, URI surl)
+    {
             return true;
     }
 

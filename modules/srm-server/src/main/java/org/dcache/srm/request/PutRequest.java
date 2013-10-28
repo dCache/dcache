@@ -101,7 +101,6 @@ import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
@@ -285,8 +284,11 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
                         hasFailure = true;
                     }
                 }
-                // FIXME: Trigger state update now that we aborted the file requests
-                getRequestStatus();
+                try {
+                    setStateAndStatusCode(State.CANCELED, "Request aborted", TStatusCode.SRM_ABORTED);
+                } catch (IllegalStateTransition e) {
+                    hasFailure = true;
+                }
             } else if (state == State.DONE) {
                 return new TReturnStatus(TStatusCode.SRM_FAILURE,
                         "Put request completed successfully and cannot be aborted");
@@ -455,40 +457,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         return putFileStatuses;
     }
 
-
-    @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException {
-        int len ;
-        TSURLReturnStatus[] surlLReturnStatuses;
-        if(surls == null) {
-            len = getNumOfFileRequest();
-            surlLReturnStatuses = new TSURLReturnStatus[len];
-        }
-        else {
-            len = surls.length;
-            surlLReturnStatuses = new TSURLReturnStatus[surls.length];
-        }
-        boolean failed_req = false;
-        boolean pending_req = false;
-        boolean running_req = false;
-        boolean ready_req = false;
-        boolean done_req = false;
-        String fr_error="";
-        if(surls == null) {
-            for(int i = 0; i< len; ++i) {
-                PutFileRequest fr = getFileRequests().get(i);
-                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-            }
-        } else {
-            for(int i = 0; i< len; ++i) {
-                PutFileRequest fr = getFileRequestBySurl(surls[i]);
-                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-            }
-
-        }
-        return surlLReturnStatuses;
-    }
-
     @Override
     public TRequestType getRequestType() {
         return TRequestType.PREPARE_TO_PUT;
@@ -537,6 +505,24 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             return super.extendLifetimeMillis(newLifetimeInMillis);
         } catch(SRMReleasedException releasedException) {
             throw new SRMInvalidRequestException(releasedException.getMessage());
+        }
+    }
+
+    @Override
+    public void checkExpiration()
+    {
+        wlock();
+        try {
+            if (creationTime + lifetime < System.currentTimeMillis()) {
+                logger.debug("expiring job #{}", getId());
+                if (!getState().isFinalState()) {
+                    setStateAndStatusCode(State.FAILED, "Total request time exceeded.", TStatusCode.SRM_REQUEST_TIMED_OUT);
+                }
+            }
+        } catch (IllegalStateTransition e) {
+            logger.error("Illegal state transition while expiring job: {}", e.toString());
+        } finally {
+            wunlock();
         }
     }
 }

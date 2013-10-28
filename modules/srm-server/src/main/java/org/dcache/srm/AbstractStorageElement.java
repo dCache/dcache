@@ -633,5 +633,6 @@ public interface AbstractStorageElement {
 
     public String getStorageBackendVersion();
 
-    public boolean exists(SRMUser user, URI surl) throws SRMException;
+    public boolean exists(SRMUser user, URI surl)
+            throws SRMInternalErrorException, SRMInvalidPathException;
 }

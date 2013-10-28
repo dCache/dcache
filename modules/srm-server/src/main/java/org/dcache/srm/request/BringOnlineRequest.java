@@ -382,34 +382,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         return getFileStatuses;
     }
 
-    @Override
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException {
-        int len ;
-        TSURLReturnStatus[] surlLReturnStatuses;
-        if(surls == null) {
-            len = getNumOfFileRequest();
-           surlLReturnStatuses = new TSURLReturnStatus[len];
-        }
-        else {
-            len = surls.length;
-           surlLReturnStatuses = new TSURLReturnStatus[surls.length];
-        }
-        if(surls == null) {
-            List<BringOnlineFileRequest> requests = getFileRequests();
-            for(int i = 0; i< len; ++i) {
-                BringOnlineFileRequest fr = requests.get(i);
-                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-            }
-        } else {
-            for(int i = 0; i< len; ++i) {
-                BringOnlineFileRequest fr = getFileRequestBySurl(surls[i]);
-                surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
-            }
-
-        }
-        return surlLReturnStatuses;
-    }
-
     public TSURLReturnStatus[] release()
             throws SRMInternalErrorException
     {
