@@ -83,9 +83,9 @@ import java.net.URI;
 import java.util.Date;
 import java.util.List;
 
-import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -98,6 +98,7 @@ import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
 
 /*
  * @author  timur
@@ -282,9 +283,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
      * non-queued state and then returns the current
      * SrmBringOnlineResponse for this BringOnlineRequest.
      */
-    public final SrmBringOnlineResponse
-        getSrmBringOnlineResponse(long timeout)
-        throws SRMException, InterruptedException
+    public final SrmBringOnlineResponse getSrmBringOnlineResponse(long timeout)
+            throws InterruptedException, SRMInvalidRequestException
     {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
@@ -306,8 +306,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         return response;
     }
 
-    public  final SrmBringOnlineResponse getSrmBringOnlineResponse()
-            throws SRMException
+    public final SrmBringOnlineResponse getSrmBringOnlineResponse()
+            throws SRMInvalidRequestException
     {
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
       // getTReturnStatus should be called before we get the
@@ -319,7 +319,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
 
         ArrayOfTBringOnlineRequestFileStatus arrayOfTBringOnlineRequestFileStatus =
             new ArrayOfTBringOnlineRequestFileStatus();
-        arrayOfTBringOnlineRequestFileStatus.setStatusArray(getArrayOfTBringOnlineRequestFileStatus(null));
+        arrayOfTBringOnlineRequestFileStatus.setStatusArray(getArrayOfTBringOnlineRequestFileStatus());
         response.setArrayOfFileStatuses(arrayOfTBringOnlineRequestFileStatus);
         return response;
     }
@@ -327,15 +327,14 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
 
     public final SrmStatusOfBringOnlineRequestResponse
             getSrmStatusOfBringOnlineRequestResponse()
-    throws SRMException {
+            throws SRMInvalidRequestException
+    {
         return getSrmStatusOfBringOnlineRequestResponse(null);
     }
 
-
     public final SrmStatusOfBringOnlineRequestResponse
-            getSrmStatusOfBringOnlineRequestResponse(
-            URI[] surls)
-            throws SRMException
+            getSrmStatusOfBringOnlineRequestResponse(org.apache.axis.types.URI[] surls)
+            throws SRMInvalidRequestException
     {
         SrmStatusOfBringOnlineRequestResponse response =
                 new SrmStatusOfBringOnlineRequestResponse();
@@ -362,22 +361,35 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         return String.valueOf(getId());
     }
 
-    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(URI[] surls) throws SRMException {
-        int len = surls == null ? getNumOfFileRequest():surls.length;
-         TBringOnlineRequestFileStatus[] getFileStatuses
-            = new TBringOnlineRequestFileStatus[len];
-        if(surls == null) {
-            List<BringOnlineFileRequest> requests = getFileRequests();
-            for(int i = 0; i< len; ++i) {
-                BringOnlineFileRequest fr = requests.get(i);
-                getFileStatuses[i] = fr.getTGetRequestFileStatus();
-            }
-        } else {
-            for(int i = 0; i< len; ++i) {
-                BringOnlineFileRequest fr = getFileRequestBySurl(surls[i]);
-                getFileStatuses[i] = fr.getTGetRequestFileStatus();
-            }
+    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus()
+            throws SRMInvalidRequestException
+    {
+        List<BringOnlineFileRequest> requests = getFileRequests();
+        int len = requests.size();
+        TBringOnlineRequestFileStatus[] getFileStatuses = new TBringOnlineRequestFileStatus[len];
+        for (int i = 0; i < len; ++i) {
+            getFileStatuses[i] = requests.get(i).getTGetRequestFileStatus();
+        }
+        return getFileStatuses;
+    }
 
+    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(org.apache.axis.types.URI[] surls)
+            throws SRMInvalidRequestException
+    {
+        if (surls == null) {
+            return getArrayOfTBringOnlineRequestFileStatus();
+        }
+        int len = surls.length;
+        TBringOnlineRequestFileStatus[] getFileStatuses = new TBringOnlineRequestFileStatus[len];
+        for (int i = 0; i < len; ++i) {
+            try {
+                getFileStatuses[i] = getFileRequestBySurl(URI.create(surls[i].toString())).getTGetRequestFileStatus();
+            } catch (SRMFileRequestNotFoundException e) {
+                getFileStatuses[i] = new TBringOnlineRequestFileStatus();
+                getFileStatuses[i].setSourceSURL(surls[i]);
+                getFileStatuses[i].setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
+                        "SURL does not refer to an existing known file request associated with the request token."));
+            }
         }
         return getFileStatuses;
     }

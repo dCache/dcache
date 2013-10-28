@@ -1,11 +1,10 @@
 #!/usr/bin/env ruby
 
-require 'rubygems'
 require 'optparse'
 require 'ostruct'
 require 'fileutils'
 require 'tempfile'
-require 'ansi'
+require 'ansi/code'
 require 'etc'
 
 include ANSI::Code
@@ -15,6 +14,7 @@ include ANSI::Code
 @srmls = 'srmls'
 @srmrm = 'srmrm'
 @srmmv = 'srmmv'
+@srmbringonline = 'srm-bring-online'
 @srmmkdir = 'srmmkdir'
 @srmrmdir = 'srmrmdir'
 @srmcheck = 'srm-check-permissions'
@@ -33,7 +33,7 @@ def makeTempName
 end
 
 def run(*args)
-  s = *args.join(' ')
+  s = args.join(" ")
   puts yellow { s }
   begin
     print faint
@@ -81,6 +81,8 @@ def srmcp(source, dest, *args)
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/f")
   run(@srmmv, args,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/f",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g")
+  run(@srmbringonline, args,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g")
   run(@srmcp, args, '-streams_num=1',
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g",
