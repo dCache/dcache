@@ -93,6 +93,7 @@ import java.util.List;
 
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
+import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMProtocol;
 import org.dcache.srm.SRMReleasedException;
@@ -126,6 +127,10 @@ import org.dcache.srm.v2_2.TFileStorageType;
 import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TRetentionPolicy;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 
 /**
@@ -165,8 +170,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
 
     public CopyRequest( SRMUser user,
     Long requestCredentialId,
-    String[] from_urls,
-    String[] to_urls,
+    URI[] from_urls,
+    URI[] to_urls,
     String spaceToken,
     long lifetime,
     long max_update_period,
@@ -177,8 +182,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     TAccessLatency targetAccessLatency,
     String description,
     String client_host,
-    TOverwriteMode overwriteMode
-    ) throws Exception{
+    TOverwriteMode overwriteMode)
+    {
         super(user,
             requestCredentialId,
                 max_number_of_retries,
@@ -878,21 +883,16 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         }
     }
 
-
-
-    public final CopyFileRequest getFileRequestBySurls(String fromurl,String tourl)
-    throws SRMException{
-        if(fromurl == null || tourl == null) {
-           throw new SRMException("surl is null");
-        }
+    private CopyFileRequest getFileRequestBySurls(String fromurl, String tourl)
+            throws SRMInvalidRequestException, SRMInvalidPathException
+    {
         for (CopyFileRequest request : getFileRequests()) {
-            if(request.getFromURL().equals(fromurl) &&
-               request.getToURL().equals(tourl)) {
+            if (request.getFromURL().equals(fromurl) &&
+                    request.getToURL().equals(tourl)) {
                 return request;
             }
         }
-        throw new SRMException("file request for from url ="+fromurl+
-        " and to url="+tourl +" is not found");
+        throw new SRMInvalidPathException("file request for from url ="+fromurl+" and to url="+tourl +" is not found");
     }
 
 
@@ -1054,60 +1054,58 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         }
     }
 
-    public final SrmCopyResponse getSrmCopyResponse()
-        throws SRMException {
-        SrmCopyResponse response = new SrmCopyResponse();
-        response.setReturnStatus(getTReturnStatus());
-        response.setRequestToken(getTRequestToken());
-        ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
-            new ArrayOfTCopyRequestFileStatus();
-        arrayOfTCopyRequestFileStatus.setStatusArray(
-            getArrayOfTCopyRequestFileStatuses(null,null));
-        response.setArrayOfFileStatuses(arrayOfTCopyRequestFileStatus);
-        return response;
+    public final SrmCopyResponse getSrmCopyResponse() throws SRMInvalidRequestException
+    {
+        ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus = new ArrayOfTCopyRequestFileStatus(getArrayOfTCopyRequestFileStatuses());
+        return new SrmCopyResponse(getTReturnStatus(), getTRequestToken(), arrayOfTCopyRequestFileStatus, null);
     }
-
 
     private String getTRequestToken() {
         return String.valueOf(getId());
     }
 
-    public final TCopyRequestFileStatus[]  getArrayOfTCopyRequestFileStatuses(
-        String[] fromurls,String[] tourls)
-        throws SRMException {
-            if(fromurls != null) {
-               if(tourls == null ||
-                  fromurls.length != tourls.length ) {
-                      throw new SRMException("incompatible fromurls and tourls arrays");
-
-               }
-            }
-            int len = fromurls == null ? getNumOfFileRequest():fromurls.length;
-            TCopyRequestFileStatus[] copyRequestFileStatuses =
-             new TCopyRequestFileStatus[len];
-            if(fromurls == null) {
-                for(int i = 0; i< len; ++i) {
-                    CopyFileRequest fr = getFileRequests().get(i);
-                    copyRequestFileStatuses[i] = fr.getTCopyRequestFileStatus();
-                }
-            } else {
-                for(int i = 0; i< len; ++i) {
-                    CopyFileRequest fr = getFileRequestBySurls(fromurls[i],tourls[i]);
-                    copyRequestFileStatuses[i] = fr.getTCopyRequestFileStatus();
-                }
-
-            }
-            return copyRequestFileStatuses;
+    public final TCopyRequestFileStatus[] getArrayOfTCopyRequestFileStatuses()
+            throws SRMInvalidRequestException
+    {
+        List<CopyFileRequest> fileRequests = getFileRequests();
+        int len = fileRequests.size();
+        TCopyRequestFileStatus[] copyRequestFileStatuses = new TCopyRequestFileStatus[len];
+        for (int i = 0; i < len; ++i) {
+            copyRequestFileStatuses[i] = fileRequests.get(i).getTCopyRequestFileStatus();
         }
+        return copyRequestFileStatuses;
+    }
+
+    public final TCopyRequestFileStatus[]  getArrayOfTCopyRequestFileStatuses(
+            org.apache.axis.types.URI[] fromurls, org.apache.axis.types.URI[] tourls)
+            throws SRMInvalidRequestException
+    {
+        if (fromurls == null && tourls == null) {
+            return getArrayOfTCopyRequestFileStatuses();
+        }
+        checkArgument(fromurls != null && tourls != null && fromurls.length == tourls.length);
+        int len = fromurls.length;
+        TCopyRequestFileStatus[] copyRequestFileStatuses = new TCopyRequestFileStatus[len];
+        for (int i = 0; i < len; ++i) {
+            try {
+                copyRequestFileStatuses[i] = getFileRequestBySurls(fromurls[i].toString(), tourls[i].toString()).getTCopyRequestFileStatus();
+            } catch (SRMInvalidPathException e) {
+                copyRequestFileStatuses[i] = new TCopyRequestFileStatus(fromurls[i], tourls[i],
+                        new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "No such file request"), null,  null, null);
+            }
+        }
+        return copyRequestFileStatuses;
+    }
 
     public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest()
-        throws SRMException
+            throws SRMInvalidRequestException
     {
         return getSrmStatusOfCopyRequest(null,null);
     }
 
-    public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(String[] fromurls,String[] tourls)
-        throws SRMException {
+    public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(org.apache.axis.types.URI[] fromurls, org.apache.axis.types.URI[] tourls)
+            throws SRMInvalidRequestException
+    {
         SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
         response.setReturnStatus(getTReturnStatus());
         ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
@@ -1123,8 +1121,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     public final CopyFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
     {
         for (CopyFileRequest request : getFileRequests()) {
-            if(request.getFrom_surl().equals(surl) ||
-               request.getTo_surl().equals(surl) ) {
+            if (request.getFrom_surl().equals(surl) || request.getTo_surl().equals(surl) ) {
                 return request;
             }
         }

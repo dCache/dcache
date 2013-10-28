@@ -152,17 +152,17 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
 	public CopyFileRequest(long requestId,
 			       Long  requestCredentalId,
-			       String from_surl,
-			       String to_surl,
+			       URI from_surl,
+			       URI to_surl,
 			       String spaceToken,
 			       long lifetime,
-			       int max_number_of_retries) throws Exception {
+			       int max_number_of_retries) {
 		super(requestId,
 		      requestCredentalId,
                     lifetime, max_number_of_retries);
 		logger.debug("CopyFileRequest");
-		this.from_surl = URI.create(from_surl);
-		this.to_surl = URI.create(to_surl);
+		this.from_surl = from_surl;
+		this.to_surl = to_surl;
 		this.spaceReservationId = spaceToken;
 		logger.debug("constructor from_url=" +from_surl+" to_url="+to_surl);
 	}

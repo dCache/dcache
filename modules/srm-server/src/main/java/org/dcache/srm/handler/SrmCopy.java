@@ -1,32 +1,24 @@
-//______________________________________________________________________________
-//
-// $Id$
-// $Author$
-//
-// created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
-//
-//______________________________________________________________________________
-
-/*
- * SrmCopy
- *
- * Created on 10/05
- */
-
 package org.dcache.srm.handler;
 
-import org.apache.axis.types.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
-import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.SRMProtocol;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.RequestCredential;
+import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmCopyRequest;
 import org.dcache.srm.v2_2.SrmCopyResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
@@ -37,170 +29,185 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-/**
- *
- * @author  litvinse
- */
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SrmCopy {
-    private static Logger logger =
+public class SrmCopy
+{
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmCopy.class);
-    private final static String SFN_STRING="?SFN=";
-    AbstractStorageElement storage;
-    SrmCopyRequest         request;
-    SrmCopyResponse        response;
-    SRMUser            user;
-    RequestCredential      credential;
-    Configuration          configuration;
-    private String client_host;
+
+    private final SrmCopyRequest request;
+    private SrmCopyResponse response;
+    private final SRMUser user;
+    private final RequestCredential credential;
+    private final Configuration configuration;
+    private String clientHost;
 
     public SrmCopy(SRMUser user,
-            RequestCredential credential,
-            SrmCopyRequest request,
-            AbstractStorageElement storage,
-            SRM srm,
-            String client_host) {
-
-        if (request == null) {
-            throw new NullPointerException("request is null");
-        }
-        this.request    = request;
-        this.user       = user;
-        this.credential = credential;
-        if (storage == null) {
-            throw new NullPointerException("storage is null");
-        }
-        this.storage = storage;
+                   RequestCredential credential,
+                   SrmCopyRequest request,
+                   AbstractStorageElement storage,
+                   SRM srm,
+                   String clientHost)
+    {
+        this.request = checkNotNull(request);
+        this.user = checkNotNull(user);
+        this.credential = checkNotNull(credential);
         this.configuration = srm.getConfiguration();
-        if (configuration == null) {
-            throw new NullPointerException("configuration is null");
-        }
-        this.client_host = client_host;
+        this.clientHost = clientHost;
     }
 
-    public SrmCopyResponse getResponse() {
-        if(response != null ) {
-            return response;
-        }
-        try {
-            response = srmCopy();
-        } catch(Exception e) {
-            logger.error(e.toString());
-            response = getFailedResponse("Exception : "+e.toString());
-        }
-        return response;
-    }
-
-    public static final SrmCopyResponse getFailedResponse(String text) {
-        return getFailedResponse(text,null);
-    }
-
-    public static final SrmCopyResponse getFailedResponse(String text, TStatusCode statusCode) {
-        if(statusCode == null) {
-            statusCode = TStatusCode.SRM_FAILURE;
-        }
-        SrmCopyResponse response = new SrmCopyResponse();
-        response.setReturnStatus(new TReturnStatus(statusCode, text));
-        return response;
-    }
-    /**
-     * implementation of srm copy
-     */
-
-    public SrmCopyResponse srmCopy() throws SRMException,URI.MalformedURIException {
-        if(request==null) {
-            return getFailedResponse("SrmCopy: null request passed to SrmCopy",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        if(request.getArrayOfFileRequests() == null) {
-            return getFailedResponse("SrmCopy: ArrayOfFileRequests is null",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        TCopyFileRequest[] arrayOfFileRequests  =
-                request.getArrayOfFileRequests().getRequestArray();
-        if (arrayOfFileRequests==null) {
-            return getFailedResponse("SrmCopy: null array of file requests",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        if (arrayOfFileRequests.length==0) {
-            return getFailedResponse("SrmCopy: empty array of file requests",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        String from_urls[] = new String[arrayOfFileRequests.length];
-        String to_urls[]   = new String[arrayOfFileRequests.length];
-        long lifetimeInSeconds = 0;
-        if( request.getDesiredTotalRequestTime() != null ) {
-            long reqLifetime = (long)request.getDesiredTotalRequestTime().intValue();
-            if(  lifetimeInSeconds < reqLifetime) {
-                lifetimeInSeconds = reqLifetime;
+    public SrmCopyResponse getResponse()
+    {
+        if (response == null) {
+            try {
+                response = srmCopy();
+            } catch (SRMInvalidRequestException e) {
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
+            } catch (SRMNotSupportedException e) {
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_NOT_SUPPORTED);
+            } catch (SRMInternalErrorException e) {
+                LOGGER.error(e.getMessage());
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INTERNAL_ERROR);
             }
         }
+        return response;
+    }
 
-        long lifetime =
-                lifetimeInSeconds>0
-                ?lifetimeInSeconds*1000>configuration.getCopyLifetime()
-                ?configuration.getCopyLifetime()
-                :lifetimeInSeconds*1000
-                :configuration.getCopyLifetime();
+    private SrmCopyResponse srmCopy()
+            throws SRMInvalidRequestException, SRMNotSupportedException,
+                   SRMInternalErrorException
+    {
+        TCopyFileRequest[] arrayOfFileRequests = getFileRequests(request);
+        long lifetime = getTotalRequestTime(request, configuration.getCopyLifetime());
         String spaceToken = request.getTargetSpaceToken();
-        for (int i=0; i<arrayOfFileRequests.length; i++) {
-            URI fromSURL = arrayOfFileRequests[i].getSourceSURL();
-            URI toSURL   = arrayOfFileRequests[i].getTargetSURL();
-            from_urls[i]  = fromSURL.toString();
-            to_urls[i]    = toSURL.toString();
+
+        URI from_urls[] = new URI[arrayOfFileRequests.length];
+        URI to_urls[] = new URI[arrayOfFileRequests.length];
+        for (int i = 0; i < arrayOfFileRequests.length; i++) {
+            from_urls[i] = URI.create(arrayOfFileRequests[i].getSourceSURL().toString());
+            to_urls[i] = URI.create(arrayOfFileRequests[i].getTargetSURL().toString());
         }
-        TRetentionPolicy targetRetentionPolicy=null;
-        TAccessLatency targetAccessLatency=null;
-        if (request.getTargetFileRetentionPolicyInfo() !=null) {
+
+        TRetentionPolicy targetRetentionPolicy = null;
+        TAccessLatency targetAccessLatency = null;
+        if (request.getTargetFileRetentionPolicyInfo() != null) {
             targetRetentionPolicy = request.getTargetFileRetentionPolicyInfo().getRetentionPolicy();
             targetAccessLatency = request.getTargetFileRetentionPolicyInfo().getAccessLatency();
         }
-        TOverwriteMode overwriteMode = request.getOverwriteOption();
-        if( overwriteMode != null &&
-            overwriteMode.equals(TOverwriteMode.WHEN_FILES_ARE_DIFFERENT)) {
-            getFailedResponse(
-                    "Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported",
-                    TStatusCode.SRM_NOT_SUPPORTED);
-        }
 
-        try {
-            CopyRequest r = new CopyRequest(
-                    user,
-                    credential.getId(),
-                    from_urls,
-                    to_urls,
-                    spaceToken,
-                    lifetime,
-                    configuration.getCopyRetryTimeout(),
-                    configuration.getCopyMaxNumOfRetries(),
-                    SRMProtocol.V2_1,
-                    request.getTargetFileStorageType(),
-                    targetRetentionPolicy,
-                    targetAccessLatency,
-                    request.getUserRequestDescription(),
-                    client_host,
-                    overwriteMode);
-            r.applyJdc();
-            if (request.getSourceStorageSystemInfo()!=null) {
-                if ( request.getSourceStorageSystemInfo().getExtraInfoArray()!=null) {
-                    if (request.getSourceStorageSystemInfo().getExtraInfoArray().length>0) {
-                        for (int i=0;i<request.getSourceStorageSystemInfo().getExtraInfoArray().length;i++) {
-                            TExtraInfo extraInfo = request.getSourceStorageSystemInfo().getExtraInfoArray()[i];
-                            if (extraInfo.getKey().equals("priority")) {
-                                int priority = Integer.parseInt(extraInfo.getValue());
-                                r.setPriority(priority);
-                            }
-                        }
-                    }
+        TOverwriteMode overwriteMode = getOverwriteMode(request);
+
+        CopyRequest r = new CopyRequest(
+                user,
+                credential.getId(),
+                from_urls,
+                to_urls,
+                spaceToken,
+                lifetime,
+                configuration.getCopyRetryTimeout(),
+                configuration.getCopyMaxNumOfRetries(),
+                SRMProtocol.V2_1,  // Revisit: v2.1?
+                request.getTargetFileStorageType(),
+                targetRetentionPolicy,
+                targetAccessLatency,
+                request.getUserRequestDescription(),
+                clientHost,
+                overwriteMode);
+        try (JDC ignored = r.applyJdc()) {
+            String priority = getExtraInfo(request, "priority");
+            if (priority != null) {
+                try {
+                    r.setPriority(Integer.parseInt(priority));
+                } catch (NumberFormatException e) {
+                    LOGGER.warn("Ignoring non-integer priority value: {}", priority);
                 }
             }
             r.schedule();
-            response = ((CopyRequest)r).getSrmCopyResponse();
-            return response;
-        } catch(Exception e) {
-            logger.error(e.toString());
-            return getFailedResponse("copy request generated error : "+e.toString(),
-                    TStatusCode.SRM_INTERNAL_ERROR);
+            return r.getSrmCopyResponse();
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("Operation interrupted", e);
+        } catch (IllegalStateTransition e) {
+            throw new SRMInternalErrorException("Scheduling failure", e);
         }
+    }
+
+    private static String getExtraInfo(SrmCopyRequest request, String key)
+    {
+        ArrayOfTExtraInfo sourceStorageSystemInfo = request.getSourceStorageSystemInfo();
+        if (sourceStorageSystemInfo == null) {
+            return null;
+        }
+        TExtraInfo[] extraInfoArray = sourceStorageSystemInfo.getExtraInfoArray();
+        if (extraInfoArray == null || extraInfoArray.length <= 0) {
+            return null;
+        }
+        for (TExtraInfo extraInfo : extraInfoArray) {
+            if (extraInfo.getKey().equals(key)) {
+                return extraInfo.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static TOverwriteMode getOverwriteMode(SrmCopyRequest request) throws SRMNotSupportedException
+    {
+        TOverwriteMode overwriteMode = request.getOverwriteOption();
+        if (overwriteMode != null && overwriteMode.equals(TOverwriteMode.WHEN_FILES_ARE_DIFFERENT)) {
+            throw new SRMNotSupportedException("Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported");
+        }
+        return overwriteMode;
+    }
+
+    private static long getTotalRequestTime(SrmCopyRequest request, long max) throws SRMInvalidRequestException
+    {
+        long lifetimeInSeconds = 0;
+        if (request.getDesiredTotalRequestTime() != null) {
+            long reqLifetime = (long) request.getDesiredTotalRequestTime().intValue();
+            /* [ SRM 2.2, 5.7.2 ]
+             *
+             * o)    If input parameter desiredTotalRequestTime is 0 (zero),
+             *       each file request must be tried at least once. Negative
+             *       value must be invalid.
+             */
+            if (reqLifetime < 0) {
+                throw new SRMInvalidRequestException("Negative desiredTotalRequestTime is invalid");
+            }
+            lifetimeInSeconds = reqLifetime;
+        }
+
+        if (lifetimeInSeconds <= 0) {
+            /* FIXME: This is not spec compliant. */
+            return max;
+        }
+        return Math.min(TimeUnit.SECONDS.toMillis(lifetimeInSeconds), max);
+    }
+
+    private static TCopyFileRequest[] getFileRequests(SrmCopyRequest request) throws SRMInvalidRequestException
+    {
+        if (request.getArrayOfFileRequests() == null) {
+            throw new SRMInvalidRequestException("ArrayOfFileRequests is null");
+        }
+        TCopyFileRequest[] arrayOfFileRequests =
+                request.getArrayOfFileRequests().getRequestArray();
+        if (arrayOfFileRequests == null) {
+            throw new SRMInvalidRequestException("null array of file requests");
+        }
+        if (arrayOfFileRequests.length == 0) {
+            throw new SRMInvalidRequestException("empty array of file requests");
+        }
+        return arrayOfFileRequests;
+    }
+
+    public static final SrmCopyResponse getFailedResponse(String text)
+    {
+        return getFailedResponse(text, TStatusCode.SRM_FAILURE);
+    }
+
+    public static final SrmCopyResponse getFailedResponse(String text, TStatusCode statusCode)
+    {
+        SrmCopyResponse response = new SrmCopyResponse();
+        response.setReturnStatus(new TReturnStatus(statusCode, text));
+        return response;
     }
 }

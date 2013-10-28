@@ -522,15 +522,24 @@ public class SRM {
                         "delegated credentials lifetime is too short:" + credential.getDelegatedCredentialRemainingLifetime() + " ms");
 
             }
-            if (srcSURLS == null || srcSURLS.length == 0 ||
-                    destSURLS == null || destSURLS.length == 0) {
-                String error = " number of source or destination SURLs is zero";
+            if (srcSURLS == null || srcSURLS.length == 0) {
+                String error = "number of source SURLs is zero";
                 logger.error(error);
                 return createFailedRequestStatus(error);
-
             }
-            String[] from_urls = srcSURLS;
-            String[] to_urls = destSURLS;
+            if (destSURLS == null || destSURLS.length == 0) {
+                String error = "number of destination SURLs is zero";
+                logger.error(error);
+                return createFailedRequestStatus(error);
+            }
+            URI[] from_urls = new URI[srcSURLS.length];
+            for (int i = 0; i < from_urls.length; i++) {
+                from_urls[i] = new URI(srcSURLS[i]);
+            }
+            URI[] to_urls = new URI[destSURLS.length];
+            for (int i = 0; i < to_urls.length; i++) {
+                to_urls[i] = new URI(destSURLS[i]);
+            }
             int src_num = from_urls.length;
             int dst_num = to_urls.length;
             // this is for loggin
