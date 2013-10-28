@@ -8,11 +8,13 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.collect.Iterators.forArray;
 import static com.google.common.collect.Iterators.transform;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  *
@@ -24,6 +26,8 @@ public final class Strings {
         LoggerFactory.getLogger( Strings.class);
 
     private static final String[] ZERO_LENGTH_STRING_ARRAY=new String[0];
+    private static final String INFINITY = "infinity";
+
     /**
      * Splits a string into an array of strings using white space as dividers
      * Substring surrounded by white space and single or double quotes is
@@ -141,6 +145,33 @@ public final class Strings {
         sb.append(Joiner.on(c).join(transform(forArray(m.getParameterTypes()), GET_SIMPLE_NAME)));
         sb.append(')');
         return sb.toString();
+    }
+
+    /**
+     * Like Integer#parseInt, but parses "infinity" to Integer.MAX_VALUE.
+     */
+    public static int parseInt(String s)
+            throws NumberFormatException
+    {
+        return s.equals(INFINITY) ? Integer.MAX_VALUE : Integer.parseInt(s);
+    }
+
+    /**
+     * Like Long#parseLong, but parses "infinity" to Long.MAX_VALUE.
+     */
+    public static long parseLong(String s)
+            throws NumberFormatException
+    {
+        return s.equals(INFINITY) ? Long.MAX_VALUE : Long.parseLong(s);
+    }
+
+    /**
+     * Parses a string to a time value, converting from milliseconds to the specified unit. Parses
+     * "infinity" to Long.MAX_VALUE.
+     */
+    public static long parseTime(String s, TimeUnit unit)
+    {
+        return s.equals(INFINITY) ? Long.MAX_VALUE : MILLISECONDS.convert(Long.parseLong(s), unit);
     }
 
     private static final Function<Class<?>, String> GET_SIMPLE_NAME = new Function<Class<?>, String>() {

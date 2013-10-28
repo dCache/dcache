@@ -167,6 +167,7 @@ import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellStub;
+import org.dcache.commons.util.Strings;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.FileAttribute;
@@ -235,8 +236,6 @@ public final class Storage
                CellCommandListener, CellMessageReceiver
 {
     private final static Logger _log = LoggerFactory.getLogger(Storage.class);
-
-    private final static String INFINITY = "infinity";
 
     private static final String SPACEMANAGER_DISABLED_MESSAGE =
             "space reservation is disabled";
@@ -460,16 +459,6 @@ public final class Storage
         _listSource = source;
     }
 
-    public static long parseTime(String s)
-    {
-        return s.equals(INFINITY) ? Long.MAX_VALUE : Long.parseLong(s);
-    }
-
-    public static long parseTime(String s, TimeUnit unit)
-    {
-        return s.equals(INFINITY) ? Long.MAX_VALUE : MILLISECONDS.convert(Long.parseLong(s),unit);
-    }
-
     @Required
     public void setLoginBrokerHandler(LoginBrokerHandler handler)
         throws UnknownHostException
@@ -510,7 +499,7 @@ public final class Storage
         "always use asynchronous replies.";
     public String ac_set_switch_to_async_mode_delay_get_$_1(Args args)
     {
-        config.setGetSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        config.setGetSwitchToAsynchronousModeDelay(Strings.parseTime(args.argv(0), TimeUnit.MILLISECONDS));
         return "";
     }
 
@@ -522,7 +511,7 @@ public final class Storage
         "always use asynchronous replies.";
     public String ac_set_switch_to_async_mode_delay_put_$_1(Args args)
     {
-        config.setPutSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        config.setPutSwitchToAsynchronousModeDelay(Strings.parseTime(args.argv(0), TimeUnit.MILLISECONDS));
         return "";
     }
 
@@ -534,7 +523,7 @@ public final class Storage
         "always use asynchronous replies.";
     public String ac_set_switch_to_async_mode_delay_ls_$_1(Args args)
     {
-        config.setLsSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        config.setLsSwitchToAsynchronousModeDelay(Strings.parseTime(args.argv(0), TimeUnit.MILLISECONDS));
         return "";
     }
 
@@ -546,7 +535,7 @@ public final class Storage
         "and use 0 to always use asynchronous replies.";
     public String ac_set_switch_to_async_mode_delay_bring_online_$_1(Args args)
     {
-        config.setBringOnlineSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        config.setBringOnlineSwitchToAsynchronousModeDelay(Strings.parseTime(args.argv(0), TimeUnit.MILLISECONDS));
         return "";
     }
 

@@ -10,7 +10,6 @@ import java.net.URI;
 import java.util.Date;
 import java.util.List;
 
-import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.SRMUser;
@@ -20,13 +19,11 @@ import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
-import org.dcache.srm.v2_2.SrmLsRequest;
 import org.dcache.srm.v2_2.SrmLsResponse;
 import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
 import org.dcache.srm.v2_2.TMetaDataPathDetail;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 public final class LsRequest extends ContainerRequest<LsFileRequest> {
@@ -35,7 +32,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
 
         private final long offset;         // starting entry number
         private final long count;          // max number of entries to be returned as set by client
-        private int maxNumOfResults=100;  // max number of entries allowed by server, settable via configuration
+        private final int maxNumOfResults; // max number of entries allowed by server, settable via configuration
         private int numberOfResults;    // counts only entries allowed to be returned
         private long counter;           // counts all entries
         private final int numOfLevels;    // recursion level
@@ -44,7 +41,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
 
         public LsRequest(SRMUser user,
                          Long requestCredentialId,
-                         SrmLsRequest request,
+                         URI[] surls,
                          long lifetime,
                          long max_update_period,
                          int max_number_of_retries,
@@ -53,7 +50,8 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                          long offset,
                          int numOfLevels,
                          boolean longFormat,
-                         int maxNumOfResults ) throws Exception {
+                         int maxNumOfResults )
+        {
                 super(user,
                       requestCredentialId,
                       max_number_of_retries,
@@ -66,11 +64,10 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 this.numOfLevels = numOfLevels;
                 this.longFormat = longFormat;
                 this.maxNumOfResults = maxNumOfResults;
-                org.apache.axis.types.URI[] urls = request.getArrayOfSURLs().getUrlArray();
-                List<LsFileRequest> requests = Lists.newArrayListWithCapacity(urls.length);
-                for(org.apache.axis.types.URI url : urls) {
+                List<LsFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
+                for (URI surl: surls) {
                     LsFileRequest fileRequest = new LsFileRequest(getId(),
-                            requestCredentialId, url, lifetime,
+                            requestCredentialId, surl, lifetime,
                             max_number_of_retries);
                     requests.add(fileRequest);
                 }
@@ -126,6 +123,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 this.explanation=explanation;
                 this.longFormat=longFormat;
                 this.numOfLevels=numOfLevels;
+                this.maxNumOfResults = 100;
                 this.count=count;
                 this.offset=offset;
 
@@ -198,9 +196,8 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
          * reach a non-queued state and then returns the current
          * SrmLsResponse for this LsRequest.
          */
-        public final SrmLsResponse
-                getSrmLsResponse(long timeout)
-                throws SRMException, InterruptedException
+        public final SrmLsResponse getSrmLsResponse(long timeout)
+                throws InterruptedException
         {
                 /* To avoid a race condition between us querying the
                  * current response and us waiting for a state change
@@ -224,7 +221,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public final SrmLsResponse getSrmLsResponse()
-                throws SRMException {
+        {
                 SrmLsResponse response = new SrmLsResponse();
                 response.setReturnStatus(getTReturnStatus());
                 if (!response.getReturnStatus().getStatusCode().isProcessing()) {
@@ -240,7 +237,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public final SrmStatusOfLsRequestResponse getSrmStatusOfLsRequestResponse()
-                throws SRMException {
+        {
                 SrmStatusOfLsRequestResponse response = new SrmStatusOfLsRequestResponse();
                 response.setReturnStatus(getTReturnStatus());
                 ArrayOfTMetaDataPathDetail details = new ArrayOfTMetaDataPathDetail();
@@ -254,7 +251,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public TMetaDataPathDetail[] getPathDetailArray()
-                throws SRMException {
+        {
                 int len = getFileRequests().size();
                 TMetaDataPathDetail detail[] = new TMetaDataPathDetail[len];
                 for(int i = 0; i<len; ++i) {
@@ -360,7 +357,9 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         @Override
-        public synchronized final TReturnStatus getTReturnStatus()  {
+        public  final TReturnStatus getTReturnStatus()  {
+            wlock();
+            try {
                 getRequestStatus();
                 if(getStatusCode() != null) {
                         return new TReturnStatus(getStatusCode(),getExplanation());
@@ -455,6 +454,9 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                  return new TReturnStatus(TStatusCode.SRM_FAILURE, "All ls requests failed in some way or another");
                         }
                 }
+            } finally {
+                wunlock();
+            }
         }
 
         @Override

@@ -67,15 +67,15 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
 
         public LsFileRequest(long requestId,
                              Long  requestCredentalId,
-                             org.apache.axis.types.URI url,
+                             URI surl,
                              long lifetime,
-                             int maxNumberOfRetries) throws Exception {
-
+                             int maxNumberOfRetries)
+        {
                 super(requestId,
                       requestCredentalId,
                       lifetime,
                       maxNumberOfRetries);
-                this.surl = URI.create(url.toString());
+                this.surl = surl;
         }
 
         public LsFileRequest(

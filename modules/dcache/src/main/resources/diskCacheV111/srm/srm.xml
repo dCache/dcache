@@ -227,9 +227,9 @@
     <property name="sizeOfSingleRemoveBatch"
               value="${srm.limits.remove-batch-size}"/>
     <property name="maxNumberOfLsEntries"
-              value="${srm.limits.request.ls.entries.max}"/>
+              value="#{T(org.dcache.commons.util.Strings).parseInt('${srm.limits.request.ls.entries.max}')}"/>
     <property name="maxNumberOfLsLevels"
-              value="${srm.limits.request.ls.levels.max}"/>
+              value="#{T(org.dcache.commons.util.Strings).parseInt('${srm.limits.request.ls.levels.max}')}"/>
     <property name="authzCacheLifetime"
               value="#{T(java.util.concurrent.TimeUnit).
                      SECONDS.convert(
@@ -279,7 +279,7 @@
     <property name="getMaxRunningBySameOwner"
               value="${srm.limits.request.get.scheduler.same-owner-running.max}"/>
     <property name="getSwitchToAsynchronousModeDelay"
-              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
+              value="#{T(org.dcache.commons.util.Strings).parseTime(
                      '${srm.limits.request.get.switch-to-async-mode.delay}',
                      '${srm.limits.request.get.switch-to-async-mode.delay.unit}')}"/>
     <property name="bringOnlineReqTQueueSize"
@@ -301,7 +301,7 @@
     <property name="bringOnlineMaxRunningBySameOwner"
               value="${srm.limits.request.bring-online.scheduler.same-owner-running.max}"/>
     <property name="bringOnlineSwitchToAsynchronousModeDelay"
-              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
+              value="#{T(org.dcache.commons.util.Strings).parseTime(
                      '${srm.limits.request.bring-online.switch-to-async-mode.delay}',
                      '${srm.limits.request.bring-online.switch-to-async-mode.delay.unit}')}"/>
     <property name="lsReqTQueueSize" value="${srm.limits.request.ls.scheduler.thread.queue.size}"/>
@@ -316,7 +316,7 @@
     <property name="lsMaxRunningBySameOwner"
               value="${srm.limits.request.ls.scheduler.same-owner-running.max}"/>
     <property name="lsSwitchToAsynchronousModeDelay"
-              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
+              value="#{T(org.dcache.commons.util.Strings).parseTime(
                      '${srm.limits.request.ls.switch-to-async-mode.delay}',
                      '${srm.limits.request.ls.switch-to-async-mode.delay.unit}')}"/>
     <property name="putReqTQueueSize" value="${srm.limits.request.put.scheduler.thread.queue.size}"/>
@@ -331,7 +331,7 @@
                      '${srm.limits.request.put.scheduler.retry-timeout.unit}')}" />
     <property name="putMaxRunningBySameOwner" value="${srm.limits.request.put.scheduler.same-owner-running.max}"/>
     <property name="putSwitchToAsynchronousModeDelay"
-              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime(
+              value="#{T(org.dcache.commons.util.Strings).parseTime(
                      '${srm.limits.request.put.switch-to-async-mode.delay}',
                      '${srm.limits.request.put.switch-to-async-mode.delay.unit}')}"/>
     <property name="copyReqTQueueSize" value="${srm.limits.request.copy.scheduler.thread.queue.size}"/>
