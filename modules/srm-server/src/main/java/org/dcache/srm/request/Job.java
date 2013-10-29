@@ -128,7 +128,6 @@ public abstract class Job  {
     protected final long id;
 
     private volatile State state = State.PENDING;
-    protected StringBuilder errorMessage=new StringBuilder();
 
     protected int priority;
     protected String schedulerId;
@@ -178,7 +177,6 @@ public abstract class Job  {
             throw new NullPointerException(" job state is null");
         }
         this.state = State.getState(stateId);
-        this.errorMessage.append(errorMessage);
         this.schedulerId = schedulerId;
         this.schedulerTimeStamp = schedulerTimestamp;
         this.numberOfRetries = numberOfRetries;
@@ -353,15 +351,6 @@ public abstract class Job  {
 
             jobHistory.add( new JobHistory(nextLong(),newState,description,lastStateTransitionTime));
 
-            if( errorMessage.length()== 0) {
-                  errorMessage.append(description);
-            } else {
-                 errorMessage.append("\nat ");
-                 errorMessage.append(new Date(lastStateTransitionTime));
-                 errorMessage.append(" appended:\n");
-                 errorMessage.append(description);
-            }
-
             if(newState == State.RETRYWAIT) {
                 inclreaseNumberOfRetries();
             }
@@ -497,7 +486,6 @@ public abstract class Job  {
      */
 
     public String getErrorMessage() {
-
         StringBuilder errorsb = new StringBuilder();
         rlock();
         try {

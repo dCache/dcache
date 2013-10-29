@@ -318,25 +318,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
 
         }
 
-        public void setErrorMessage(String txt) {
-            wlock();
-            try {
-                errorMessage.append(txt);
-            } finally {
-                wunlock();
-            }
-        }
-
-        @Override
-        public String getErrorMessage() {
-            rlock();
-            try {
-                return errorMessage.toString();
-            } finally {
-                runlock();
-            }
-        }
-
         public String getExplanation() {
             rlock();
             try {

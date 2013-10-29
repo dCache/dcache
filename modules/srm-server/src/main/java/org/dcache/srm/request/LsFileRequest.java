@@ -271,32 +271,25 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
 
     @Override
         public TReturnStatus getReturnStatus() {
-                State state = getState();
-                if(getStatusCode() != null) {
-                    return new TReturnStatus(getStatusCode(), state.toString());
+                String description = getLastJobChange().getDescription();
+                TStatusCode statusCode = getStatusCode();
+                if(statusCode != null) {
+                    return new TReturnStatus(statusCode, description);
                 }
-                else if(state == State.DONE) {
-                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, state.toString());
-                }
-                else if(state == State.READY) {
-                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, state.toString());
-                }
-                else if(state == State.FAILED) {
-                    return new TReturnStatus(TStatusCode.SRM_FAILURE, "FAILED: " + getErrorMessage());
-                }
-                else if(state == State.CANCELED ) {
-                    return new TReturnStatus(TStatusCode.SRM_ABORTED, state.toString());
-                }
-                else if(state == State.TQUEUED ) {
-                    return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
-                }
-                else if(state == State.RUNNING ||
-                        state == State.RQUEUED ||
-                        state == State.ASYNCWAIT ) {
-                    return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
-                }
-                else {
-                    return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
+                switch (getState()) {
+                case DONE:
+                case READY:
+                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+                case FAILED:
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
+                case CANCELED:
+                    return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
+                case RUNNING:
+                case RQUEUED:
+                case ASYNCWAIT:
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
+                default:
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
                 }
         }
 

@@ -373,11 +373,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         getRequestStatusCalled();
         RequestStatus rs = new RequestStatus();
         rs.requestId = getRequestNum();
-        rs.errorMessage = getErrorMessage();
-        if(rs.errorMessage == null)
-        {
-            rs.errorMessage="";
-        }
+        rs.errorMessage = getLastJobChange().getDescription();
         int len = getNumOfFileRequest();
         rs.fileStatuses = new RequestFileStatus[len];
         boolean haveFailedRequests = false;
@@ -498,10 +494,14 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         //
         getRequestStatus();
 
+        String description;
+
         rlock();
         try {
-           if (getStatusCode() != null) {
-                return new TReturnStatus(getStatusCode(), getErrorMessage());
+            description = getLastJobChange().getDescription();
+            TStatusCode statusCode = getStatusCode();
+            if (statusCode != null) {
+                return new TReturnStatus(statusCode, description);
            }
         } finally {
             runlock();
@@ -565,50 +565,50 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
 
         int len = getNumOfFileRequest();
         if (canceled_req == len ) {
-            return new TReturnStatus(TStatusCode.SRM_ABORTED, getErrorMessage());
+            return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
         }
 
         if (failed_req==len) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, getErrorMessage());
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
         }
         if (ready_req==len || done_req==len || ready_req+done_req==len ) {
             if (failure) {
-                return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, getErrorMessage());
+                return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
             }
             else {
-                return new TReturnStatus(TStatusCode.SRM_SUCCESS, getErrorMessage());
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
             }
         }
         if (pending_req==len) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, getErrorMessage());
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         }
         // SRM space is not enough to hold all requested SURLs for free. (so me thinks one fails - all fail)
         if (failed_no_free_space>0) {
-            return new TReturnStatus(TStatusCode.SRM_NO_FREE_SPACE, getErrorMessage());
+            return new TReturnStatus(TStatusCode.SRM_NO_FREE_SPACE, description);
         }
         // space associated with the targetSpaceToken is expired. (so me thinks one fails - all fail)
         if (failed_space_expired>0) {
-            return new TReturnStatus(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED, getErrorMessage());
+            return new TReturnStatus(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED, description);
         }
         // we still have work to do:
         if (running_req > 0 || pending_req > 0) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, getErrorMessage());
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
         }
         else {
             // all are done here
             if (failure) {
                 if (ready_req > 0 || done_req > 0 ) {
                     //some succeeded some not
-                    return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, getErrorMessage());
+                    return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
                 }
                 else {
                     //none succeeded
-                    return new TReturnStatus(TStatusCode.SRM_FAILURE, getErrorMessage());
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
                 }
             }
             else {
                 //no single failure - we should not get to this piece if code
-                return new TReturnStatus(TStatusCode.SRM_SUCCESS, getErrorMessage());
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
             }
         }
     }
