@@ -169,11 +169,20 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         }
 
                         if (SRM.getSRM().isFileBusy(surl)) {
-                            // [SRM 2.2, 4.4.3] client requests for a file which there is an active
-                            // srmPrepareToPut (no srmPutDone is yet called) request for.
-                            metaDataPathDetail = new TMetaDataPathDetail();
-                            metaDataPathDetail.setPath(getPath(surl));
-                            metaDataPathDetail.setType(TFileType.FILE);
+                            // [SRM 2.2, 4.4.3]
+                            //
+                            // SRM_FILE_BUSY
+                            //
+                            //     client requests for a file which there is an active
+                            //     srmPrepareToPut (no srmPutDone is yet called) request for.
+                            try {
+                                metaDataPathDetail =
+                                        getMetaDataPathDetail(surl, 0, 0, 0, 0, parent.getLongFormat());
+                            } catch (SRMInvalidPathException e) {
+                                metaDataPathDetail = new TMetaDataPathDetail();
+                                metaDataPathDetail.setPath(getPath(surl));
+                                metaDataPathDetail.setType(TFileType.FILE);
+                            }
                             metaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
                                     "The requested SURL is being used by another client."));
                         } else {
