@@ -72,9 +72,12 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+
+import javax.annotation.Nonnull;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -193,6 +196,8 @@ public abstract class Job  {
                      return 1;
                  } });
             Collections.addAll(jobHistory, jobHistoryArray);
+        } else {
+            jobHistory.add(new JobHistory(nextLong(), state, "Request restored from database", System.currentTimeMillis()));
         }
     }
 
@@ -206,7 +211,7 @@ public abstract class Job  {
         this.lifetime = lifetime;
         this.maxNumberOfRetries = maxNumberOfRetries;
         this.jdc = new JDC();
-        jobHistory.add(new JobHistory(nextLong(), state, "created", lastStateTransitionTime));
+        jobHistory.add(new JobHistory(nextLong(), state, "Request created", lastStateTransitionTime));
     }
 
     protected JobStorage<Job> getJobStorage() {
@@ -544,6 +549,17 @@ public abstract class Job  {
         rlock();
         try {
             return new ArrayList<>(jobHistory);
+        } finally {
+            runlock();
+        }
+    }
+
+    @Nonnull
+    public JobHistory getLastJobChange()
+    {
+        rlock();
+        try {
+            return Iterables.getLast(jobHistory);
         } finally {
             runlock();
         }

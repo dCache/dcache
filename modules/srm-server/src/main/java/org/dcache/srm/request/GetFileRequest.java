@@ -78,7 +78,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import diskCacheV111.srm.RequestFileStatus;
 
@@ -522,35 +521,34 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     }
 
     @Override
-    public TReturnStatus getReturnStatus() {
-        State state = getState();
-        if (getStatusCode() != null) {
-            return new TReturnStatus(getStatusCode(), state.toString());
-        } else if(state == State.DONE) {
-            return new TReturnStatus(TStatusCode.SRM_RELEASED, state.toString());
+    public TReturnStatus getReturnStatus()
+    {
+        String description = getLastJobChange().getDescription();
+
+        TStatusCode statusCode = getStatusCode();
+        if (statusCode != null) {
+            if (statusCode == TStatusCode.SRM_DONE || statusCode == TStatusCode.SRM_FILE_PINNED) {
+                description = null;
+            }
+            return new TReturnStatus(statusCode, description);
         }
-        else if(state == State.READY) {
-            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, state.toString());
-        }
-        else if(state == State.TRANSFERRING) {
-            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, state.toString());
-        }
-        else if(state == State.FAILED) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, "FAILED: " + getErrorMessage());
-        }
-        else if(state == State.CANCELED ) {
-            return new TReturnStatus(TStatusCode.SRM_ABORTED, state.toString());
-        }
-        else if(state == State.TQUEUED ) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
-        }
-        else if(state == State.RUNNING ||
-                state == State.RQUEUED ||
-                state == State.ASYNCWAIT ) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
-        }
-        else {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
+
+        switch (getState()) {
+        case RESTORED:
+        case PENDING:
+        case RQUEUED:
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
+        case READY:
+        case TRANSFERRING:
+            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, null);
+        case DONE:
+            return new TReturnStatus(TStatusCode.SRM_RELEASED, null);
+        case CANCELED:
+            return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
+        case FAILED:
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
+        default:
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
         }
     }
 
