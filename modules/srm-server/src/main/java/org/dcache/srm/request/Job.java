@@ -92,7 +92,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimerTask;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMException;
@@ -151,9 +150,8 @@ public abstract class Job  {
 
     protected transient JDC jdc;
 
-    private final ReentrantReadWriteLock reentrantReadWriteLock =
+    private final ReentrantReadWriteLock lock =
             new ReentrantReadWriteLock();
-    private final WriteLock writeLock = reentrantReadWriteLock.writeLock();
 
     // this constructor is used for restoring the job from permanent storage
     // should be called through the Job.getJob only, otherwise the expireRestoredJobOrCreateExperationTimer
@@ -567,11 +565,11 @@ public abstract class Job  {
      *
      */
     public final int getNumberOfRetries() {
-        wlock();
+        rlock();
         try {
             return numberOfRetries;
         } finally {
-            wunlock();
+            runlock();
         }
     }
 
@@ -1112,27 +1110,20 @@ public abstract class Job  {
     }
 
     public final void wlock() {
-        writeLock.lock();
+        lock.writeLock().lock();
     }
 
     public final void wunlock() {
-        writeLock.unlock();
+        lock.writeLock().unlock();
     }
 
+    /* Note that a read lock cannot be upgraded to a write lock. */
     public final void rlock() {
-        // Terracotta currently does not support upgrading read lock to
-        // write lock. So we use write logs everywhere.
-        // See bug at
-        // https://jira.terracotta.org/jira/browse/CDV-787
-        writeLock.lock();
+        lock.readLock().lock();
     }
 
     public final void runlock() {
-        // Terracotta currently does not support upgrading read lock to
-        // write lock. So we use write logs everywhere.
-        // See bug at
-        // https://jira.terracotta.org/jira/browse/CDV-787
-        writeLock.unlock();
+        lock.readLock().unlock();
     }
 
     @Override

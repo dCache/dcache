@@ -261,46 +261,15 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         return getSurl().toASCIIString();
     }
 
-    public String getTurlString() {
-        wlock();
+    public String getTurlString()
+    {
+        rlock();
         try {
-            State state = getState();
-            if(getTurl() == null && (state == State.READY ||
-                    state == State.TRANSFERRING)) {
-                try {
-                    setTurl(getTURL());
-
-                }
-            catch(SRMAuthorizationException srme) {
-                String error =srme.getMessage();
-                logger.error(error);
-                try {
-                    setStateAndStatusCode(State.FAILED,
-                            error,
-                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-            }
-            catch(SRMException e) {
-                    String error = "cannot obtain turl for file:" + e.getMessage();
-                    logger.error(error);
-                    try {
-                        setState(State.FAILED,error);
-                    }
-                    catch(IllegalStateTransition ist)
-                    {
-                        logger.warn("Illegal State Transition : " +ist.getMessage());
-                    }
-                }
-            }
-
-            if(getTurl()!= null) {
-                return getTurl().toASCIIString();
+            if (turl != null) {
+                return turl.toASCIIString();
             }
         } finally {
-            wunlock();
+            runlock();
         }
         return null;
     }
@@ -372,25 +341,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         fileStatus.setStatus(returnStatus);
 
         return fileStatus;
-    }
-
-    private URI getTURL() throws SRMException {
-        PutRequest request = getContainerRequest();
-        // do not synchronize on request, since it might cause deadlock
-        String firstDcapTurl = request.getFirstDcapTurl();
-        if(firstDcapTurl == null) {
-            URI turl =
-                getStorage().getPutTurl(getUser(), getSurl(),
-                                        request.getProtocols());
-            if(turl.getScheme().equals("dcap")) {
-                request.setFirstDcapTurl(turl.toString());
-            }
-            return turl;
-        }
-
-        return getStorage().getPutTurl(request.getUser(),
-                                       getSurl(),
-                                       URI.create(firstDcapTurl));
     }
 
     @Override
@@ -540,6 +490,29 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                                     callbacks );
                 return;
             }
+
+            try {
+                computeTurl();
+            } catch (SRMAuthorizationException e) {
+                String error = e.getMessage();
+                logger.error(error);
+                try {
+                    setStateAndStatusCode(State.FAILED,
+                            error,
+                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
+                } catch (IllegalStateTransition ist) {
+                    logger.error("Illegal State Transition : " + ist.getMessage());
+                }
+            } catch (SRMException e) {
+                String error = "cannot obtain turl for file:" + e.getMessage();
+                logger.error(error);
+                try {
+                    setState(State.FAILED, error);
+                } catch (IllegalStateTransition ist) {
+                    logger.error("Illegal State Transition : " + ist.getMessage());
+                }
+            }
+
             logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
         }
         catch(SRMException | DataAccessException | IllegalStateTransition e) {
@@ -589,6 +562,27 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         super.stateChanged(oldState);
+    }
+
+    private void computeTurl() throws SRMException
+    {
+        PutRequest request = getContainerRequest();
+        // do not synchronize on request, since it might cause deadlock
+        String firstDcapTurl = request.getFirstDcapTurl();
+        URI turl;
+        if (firstDcapTurl != null) {
+            turl = getStorage().getPutTurl(request.getUser(),
+                    getSurl(),
+                    URI.create(firstDcapTurl));
+        } else {
+            turl = getStorage().getPutTurl(getUser(), getSurl(),
+                    request.getProtocols());
+            if(turl.getScheme().equals("dcap")) {
+                request.setFirstDcapTurl(turl.toString());
+            }
+        }
+
+        setTurl(turl);
     }
 
     @Override
