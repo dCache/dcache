@@ -84,10 +84,6 @@ public class SRMGetRequestSummaryClientV2 extends SRMClient  {
             if ( rs == null) {
                 throw new IOException(" null TReturnStatus ");
             }
-            if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                throw new IOException("srmGetRequestSummary failed, unexpected or failed return status : "+
-                        rs.getStatusCode()+" explanation="+rs.getExplanation());
-            }
             if (response.getArrayOfRequestSummaries()!=null) {
                 ArrayOfTRequestSummary summaries = response.getArrayOfRequestSummaries();
                 if (summaries.getSummaryArray()!=null) {
@@ -108,6 +104,10 @@ public class SRMGetRequestSummaryClientV2 extends SRMClient  {
                         }
                     }
                 }
+            }
+            if (RequestStatusTool.isFailedRequestStatus(rs)) {
+                throw new IOException("srmGetRequestSummary failed, unexpected or failed return status : "+
+                        rs.getStatusCode()+" explanation="+rs.getExplanation());
             }
         }
         catch(Exception e) {

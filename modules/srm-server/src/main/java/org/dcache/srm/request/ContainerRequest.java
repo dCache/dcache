@@ -634,31 +634,12 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             }
             TReturnStatus fileReqRS = fr.getReturnStatus();
             TStatusCode fileReqSC = fileReqRS.getStatusCode();
-            try{
-                if( fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
-                    num_of_waiting++;
-                }
-                /*
-                    //not counted
-                    // but if we do it the way Jean-Philippe does it
-                    // then uncomment this code
-                else if(fileReqSC == TStatusCode.SRM_REQUEST_INPROGRESS) {
-                    then num_of_waiting++;
-                }
-                else if(fileReqSC == TStatusCode.SRM_FILE_PINNED ||
-                        fileReqSC == TStatusCode.SRM_SPACE_AVAILABLE) {
-                    num_of_waiting++;
-                }
-                 */
-                else if(fileReqSC == TStatusCode.SRM_SUCCESS ||
-                        fileReqSC == TStatusCode.SRM_RELEASED) {
-                    num_of_completed ++;
-                }
-                else if(RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
-                    num_of_failed ++;
-                }
-            }catch (Exception e) {
-                logger.error(e.toString());
+            if( fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
+                num_of_waiting++;
+            } else if(fileReqSC == TStatusCode.SRM_SUCCESS ||
+                    fileReqSC == TStatusCode.SRM_RELEASED) {
+                num_of_completed ++;
+            } else if (RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
                 num_of_failed ++;
             }
         }

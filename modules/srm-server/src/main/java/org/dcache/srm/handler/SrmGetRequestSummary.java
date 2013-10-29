@@ -16,7 +16,6 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 public class SrmGetRequestSummary
 {
@@ -53,6 +52,8 @@ public class SrmGetRequestSummary
             throw new SRMInvalidRequestException("arrayOfRequestTokens is empty");
         }
         TRequestSummary[] requestSummaries = new TRequestSummary[requestTokens.length];
+        boolean hasFailure = false;
+        boolean hasSuccess = false;
         for (int i = 0; i < requestTokens.length; ++i) {
             String requestToken = requestTokens[i];
             TRequestSummary summary;
@@ -61,16 +62,29 @@ public class SrmGetRequestSummary
                 try (JDC ignored = request.applyJdc()) {
                     summary = request.getRequestSummary();
                 }
+                hasSuccess = true;
             } catch (SRMInvalidRequestException e) {
                 summary = new TRequestSummary();
                 summary.setRequestToken(requestToken);
                 summary.setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_REQUEST, e.getMessage()));
+                hasFailure = true;
             }
             requestSummaries[i] = summary;
         }
         return new SrmGetRequestSummaryResponse(
-                getSummaryReturnStatus(requestSummaries),
+                getSummaryReturnStatus(hasFailure, hasSuccess),
                 new ArrayOfTRequestSummary(requestSummaries));
+    }
+
+    public static TReturnStatus getSummaryReturnStatus(boolean hasFailure, boolean hasSuccess)
+    {
+        if (!hasFailure) {
+            return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+        } else if (!hasSuccess) {
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, "The operation failed for all request tokens");
+        } else {
+            return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, "The operation failed for some request tokens");
+        }
     }
 
     public static final SrmGetRequestSummaryResponse getFailedResponse(String error)
