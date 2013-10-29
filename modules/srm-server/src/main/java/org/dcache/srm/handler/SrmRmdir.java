@@ -13,6 +13,8 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMNonEmptyDirectoryException;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.Job;
+import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmRmdirRequest;
 import org.dcache.srm.v2_2.SrmRmdirResponse;
@@ -67,6 +69,21 @@ public class SrmRmdir
             throws SRMException
     {
         URI surl = URI.create(request.getSURL().toString());
+
+        /* If surl is a prefix to any active upload, then we report the directory as
+         * non-empty. This is not strictly required by the SRM spec, however S2 tests
+         * (usecase.RmdirBeingPutInto) check for this behaviour.
+         */
+        for (PutFileRequest request : Job.getActiveJobs(PutFileRequest.class)) {
+            URI requestSurl = request.getSurl();
+            if (requestSurl.equals(surl)) {
+                throw new SRMInvalidPathException("Not a directory");
+            }
+            if (!surl.relativize(requestSurl).equals(requestSurl)) {
+                throw new SRMNonEmptyDirectoryException("Directory is not empty");
+            }
+        }
+
         storage.removeDirectory(user, surl, request.getRecursive() != null && request.getRecursive());
         return new SrmRmdirResponse(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
     }
