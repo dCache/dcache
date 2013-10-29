@@ -74,8 +74,8 @@ public class SrmRmdir
          * non-empty. This is not strictly required by the SRM spec, however S2 tests
          * (usecase.RmdirBeingPutInto) check for this behaviour.
          */
-        for (PutFileRequest request : Job.getActiveJobs(PutFileRequest.class)) {
-            URI requestSurl = request.getSurl();
+        for (PutFileRequest putFileRequest : Job.getActiveJobs(PutFileRequest.class)) {
+            URI requestSurl = putFileRequest.getSurl();
             if (requestSurl.equals(surl)) {
                 throw new SRMInvalidPathException("Not a directory");
             }
