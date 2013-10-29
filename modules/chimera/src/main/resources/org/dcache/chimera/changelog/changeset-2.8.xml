@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <changeSet author="litvinse" id="17" dbms="postgresql">
+       <createProcedure>
+	 ---  RFC 2396 :  http://www.ietf.org/rfc/rfc2396.txt
+	 ---        unreserved = alpha num | mark
+	 ---        mark = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
+	 --- NB: "/" are excluded from encoding as they are path separators
+	 ---
+
+	 ---
+	 --- uri encode
+	 ---
+
+	 CREATE OR REPLACE FUNCTION uri_encode(input_txt text) RETURNS text
+	 IMMUTABLE STRICT AS $$
+	 DECLARE
+	 output_txt text = '';
+	 ch text;
+	 BEGIN
+	 IF input_txt IS NULL THEN
+	 return NULL;
+	 END IF;
+	 FOR ch IN (select (regexp_matches(input_txt, '(.)', 'g'))[1]) LOOP
+	 --
+	 -- chr(39) is a single quote
+	 --
+	 IF  ch ~ '[-a-zA-Z0-9.*_!~()/]' OR ch = chr(39) THEN
+         output_txt = output_txt || ch;
+	 ELSE
+         output_txt = output_txt || '%' || encode(ch::bytea,'hex');
+	 END IF;
+	 END LOOP;
+	 RETURN output_txt;
+	 END
+	 $$
+	 LANGUAGE 'plpgsql';
+       </createProcedure>
+
+       <createProcedure>
+	 ---
+	 --- uri decode
+	 ---
+
+	 CREATE OR REPLACE FUNCTION uri_decode(input_txt text) RETURNS text
+	 IMMUTABLE STRICT AS $$
+	 DECLARE
+	 output_txt bytea = '';
+	 byte text;
+	 BEGIN
+	 IF input_txt IS NULL THEN
+	 return NULL;
+	 END IF;
+	 FOR byte IN (select (regexp_matches(input_txt, '(%..|.)', 'g'))[1]) LOOP
+	 IF length(byte) = 3 THEN
+	 output_txt = output_txt || decode(substring(byte, 2, 2), 'hex');
+	 ELSE
+	 output_txt = output_txt || byte::bytea;
+	 END IF;
+	 END LOOP;
+	 RETURN convert_from(output_txt, 'utf8');
+	 END
+	 $$
+	 LANGUAGE 'plpgsql';
+       </createProcedure>
+
+
+       <createProcedure>
+	  ---
+	  --- This function takes level_4 data and converts it into
+          --- location URI. uri_encode is applied to original_path
+	  ---
+	  CREATE OR REPLACE FUNCTION f_enstore2uri(varchar) RETURNS varchar AS $$
+	  DECLARE
+	    l_level4 varchar := $1;
+            l_entries text[];
+	  BEGIN
+	    -- convert level4 data into array of strings
+	    l_entries = string_to_array(l_level4, E'\n');
+	    -- string_to_array skips empty lines. as a result we get 9 lines instead of 11
+	    return 'enstore://enstore/?volume=' || l_entries[1]  || '&amp;location_cookie=' || l_entries[2]  ||
+            '&amp;size='                        || l_entries[3]  || '&amp;file_family='     || l_entries[4]  ||
+            '&amp;map_file='                    || l_entries[6]  || '&amp;pnfsid_file='     || l_entries[7]  ||
+            '&amp;pnfsid_map='                  || l_entries[8]  || '&amp;bfid='            || l_entries[9]  ||
+            '&amp;origdrive='                   || l_entries[10] || '&amp;crc='             || l_entries[11] ||
+            '&amp;original_name='               || uri_encode(l_entries[5]);
+	  END;
+	  $$
+	  LANGUAGE 'plpgsql';
+       </createProcedure>
+    </changeSet>
+</databaseChangeLog>
