@@ -246,7 +246,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                 metaDataPathDetail =  new TMetaDataPathDetail();
                                 metaDataPathDetail.setPath(getPath(surl));
                                 metaDataPathDetail.setStatus(status);
-                                setState(State.FAILED, e.toString());
+                                setState(State.FAILED, msg);
                         }
                         catch(IllegalStateTransition ist) {
                                 logger.error("Illegal State Transition : " +ist.getMessage());

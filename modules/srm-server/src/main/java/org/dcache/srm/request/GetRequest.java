@@ -84,7 +84,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -252,7 +251,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                     {
 
                         logger.debug("changing fr#"+request.getId()+" to "+state);
-                        request.setState(state,"changing file state because request state has changed");
+                        request.setState(state, "Changing file state because request state has changed.");
                     }
                 }
                 catch(IllegalStateTransition ist) {

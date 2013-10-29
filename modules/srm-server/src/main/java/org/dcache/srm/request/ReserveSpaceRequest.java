@@ -244,8 +244,7 @@ public final class ReserveSpaceRequest extends Request {
             getDescription(),
             callbacks
             );
-            setState(State.ASYNCWAIT,
-                    "waiting Space Reservation completion");
+            setState(State.ASYNCWAIT, "Reserving space.");
         } catch(IllegalStateTransition e) {
             throw new FatalJobFailure("cannot reserve space: " + e.getMessage());
         }
@@ -385,7 +384,7 @@ public final class ReserveSpaceRequest extends Request {
             }
 
             try {
-                request.setState(State.FAILED,e.toString());
+                request.setState(State.FAILED,e.getMessage());
             } catch(IllegalStateTransition ist) {
               logger.error("Illegal State Transition : " +ist.getMessage());
             }

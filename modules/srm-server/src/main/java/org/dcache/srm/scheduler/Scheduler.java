@@ -261,12 +261,12 @@ public final class Scheduler implements Runnable  {
 			}
 			if(state == State.PENDING  || state == State.RESTORED) {
                 if(getTotalTQueued() >= maxThreadQueueSize) {
-                    job.setState(State.FAILED,"too many jobs in the queue");
+                    job.setState(State.FAILED, "Roo many jobs in the queue.");
                     return;
                 }
                 // now we try to add the job to the thread queue without blocking
                 try {
-                    job.setState(State.TQUEUED,"put on the thread queue");
+                    job.setState(State.TQUEUED, "Queued for execution.");
                     if(threadQueue(job)) {
                         // offer returned true -> successfully added job to the queue
                         return;
@@ -274,23 +274,24 @@ public final class Scheduler implements Runnable  {
 
                 }
                 catch(InterruptedException ie) {
-                    job.setState(State.FAILED,"scheduler interrupted");
+                    job.setState(State.FAILED, "Service shutting down.");
                     return;
                 }
 				// if offer returned false or if it threw an exception,
 				// the job could not be scheduled, so it fails
-				job.setState(State.FAILED,"Thread queue is full");
+				job.setState(State.FAILED, "Site busy: too many queued requests.");
                         }
 			// job is either ASYNCWAIT or RETRYWAIT
-			else if(state == state.ASYNCWAIT || state == State.RETRYWAIT ||
-				state == state.RUNNINGWITHOUTTHREAD ) {
+			else if(state == State.ASYNCWAIT || state == State.RETRYWAIT ||
+				state == State.RUNNINGWITHOUTTHREAD ) {
 				// put blocks if priorityThreadQueue is full
 				// this will block the retry timer (or the event handler)
                 logger.debug("putting job in a priority thread queue, which might block, job#"+job.getId());
-                job.setState(State.PRIORITYTQUEUED, "in priority thread queue");
+                job.setState(State.PRIORITYTQUEUED, "queued for execution");
                 if(!priorityQueue(job))
                 {
-                    job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
+                    logger.warn("Thread queue limit reached.");
+                    job.setState(State.FAILED, "Site busy: too many queued requests.");
                 }
                 logger.debug("done putting job in a priority thread queue");
                         }
@@ -641,7 +642,7 @@ public final class Scheduler implements Runnable  {
             return;
         }
         try {
-            job.setState(State.READY,"execution succeeded");
+            job.setState(State.READY, "Execution succeeded.");
 
         }
         catch(IllegalStateTransition ist) {
@@ -817,11 +818,13 @@ public final class Scheduler implements Runnable  {
 
                         }
                         if(state == State.PENDING ||
-                        state == State.TQUEUED ||
-                        state == State.PRIORITYTQUEUED ) {
+                                state == State.TQUEUED ||
+                                state == State.PRIORITYTQUEUED ||
+                                state == State.ASYNCWAIT ||
+                                state == State.RETRYWAIT) {
                             try {
-                                 logger.debug("Scheduler(id="+getId()+") changing job state to runinng");
-                                job.setState(State.RUNNING," executing ",false);
+                                 logger.debug("Scheduler(id={}) changing job state to running", getId());
+                                job.setState(State.RUNNING, "Processing request", false);
                                 started();
                                 job.saveJob();
                             }
@@ -829,19 +832,6 @@ public final class Scheduler implements Runnable  {
                                 logger.error("Illegal State Transition : " +ist.getMessage());
                                 return;
                             }
-                        }
-                        else if(state == State.ASYNCWAIT ||
-                        state == State.RETRYWAIT ) {
-                                try {
-                                 logger.debug("Scheduler(id="+getId()+") changing job state to runinng");
-                                    job.setState(State.RUNNING," executing ",false);
-                                    started();
-                                    job.saveJob();
-                                }
-                                catch( IllegalStateTransition ist) {
-                                    logger.error("Illegal State Transition : " +ist.getMessage());
-                                    return;
-                                }
                         }
                         else {
                             logger.error("Scheduler(id="+getId()+") job is in state "+state+"; can not execute, returning");
@@ -872,16 +862,16 @@ public final class Scheduler implements Runnable  {
                             else if(state == State.RUNNING) {
                                 try {
                                     // put blocks if ready queue is full
-                                    job.setState(State.RQUEUED, "putting on a \"Ready\" Queue");
+                                    job.setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
                                     if(!readyQueue(job))
                                     {
-                                           job.setState(State.FAILED,"All Ready slots are taken and Ready Thread Queue is full. Failing request");
+                                           logger.warn("All ready slots are taken and ready queue is full.");
+                                           job.setState(State.FAILED, "Site busy: too many active requests.");
                                     }
-
                                 }
                                 catch(InterruptedException ie) {
                                     try {
-                                        job.setState(State.FAILED,"InterruptedException while putting on the ready queue");
+                                        job.setState(State.FAILED, "Service shutting down.");
                                     }
                                     catch( IllegalStateTransition ist) {
                                         logger.error("Illegal State Transition : " +ist.getMessage());
@@ -912,7 +902,7 @@ public final class Scheduler implements Runnable  {
                                 else {
                                     try {
                                         job.setState(State.FAILED,
-                                        "number of retries exceeded: "+failure.toString());
+                                                "Maximum number of retries exceeded: "+failure.getMessage());
                                     }
                                     catch( IllegalStateTransition ist) {
                                         logger.error("Illegal State Transition : " +ist.getMessage());
@@ -983,17 +973,16 @@ public final class Scheduler implements Runnable  {
                     }
 
                     try {
-                        job.setState(State.PRIORITYTQUEUED, "retrying job, putting on priority queue");
+                        job.setState(State.PRIORITYTQUEUED, "Queuing request for retry.");
                         if(!priorityQueue(job))
                         {
-                            job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
+                            job.setState(State.FAILED, "Site busy: too many queued requests.");
                         }
                         //schedule(job);
                     }
                     catch(InterruptedException ie) {
                         try {
-                            job.setState(State.FAILED,
-                            "scheduler is interrupted");
+                            job.setState(State.FAILED, "Service is shutting down.");
                         }
                         catch(IllegalStateTransition ist) {
                             logger.error("Illegal State Transition : " +ist.getMessage());
@@ -1003,8 +992,7 @@ public final class Scheduler implements Runnable  {
                         logger.error("can not retry: Illegal State Transition : " +
                                 ist.getMessage());
                         try {
-                                job.setState(State.FAILED,
-                                "scheduler is interrupted");
+                                job.setState(State.FAILED, "Scheduling failure.");
                         }
                         catch(IllegalStateTransition ist1) {
                             logger.error("Illegal State Transition : " +ist1.getMessage());

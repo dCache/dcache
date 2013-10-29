@@ -181,7 +181,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                 try {
                                         State fr_state = fr.getState();
                                         if(!State.isFinalState(fr_state)) {
-                                                fr.setState(state,"changing file state because request state has changed");
+                                                fr.setState(state, "Changing file state because request state has changed.");
                                         }
                                 }
                                 catch(IllegalStateTransition ist) {
@@ -388,7 +388,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 if (done_req == len ) {
                         if (!State.isFinalState(getState())) {
                                 try {
-                                       setState(State.DONE,State.DONE.toString());
+                                       setState(State.DONE, "Operation completed.");
                                  }
                                  catch(IllegalStateTransition ist) {
                                          logger.error("Illegal State Transition : " +ist.getMessage());

@@ -449,7 +449,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             // all requests are done
             try
             {
-                setState(State.DONE,"All files are done");
+                setState(State.DONE,"All files are done.");
                 stopUpdating();
             }
             catch(IllegalStateTransition ist)
@@ -465,7 +465,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             stopUpdating();
             try
             {
-                setState(State.FAILED,"request state is unknown or no files in request!!!");
+                setState(State.FAILED, "Request state is unknown or no files in request!!!");
             }
             catch(IllegalStateTransition ist)
             {

@@ -568,7 +568,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
 		RequestCredential credential = getCredential();
 		if(getToFileId() == null && getToParentFileId() == null) {
-            setState(State.ASYNCWAIT,"calling storage.prepareToPut");
+                        setState(State.ASYNCWAIT, "Doing name space lookup.");
 			PutCallbacks callbacks = new PutCallbacks(this.getId());
 			logger.debug("calling storage.prepareToPut("+getLocal_to_path()+")");
 			getStorage().prepareToPut(getUser(),getTo_surl(),
@@ -607,7 +607,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
 		if (getConfiguration().isReserve_space_implicitely() &&
                 getSpaceReservationId() == null) {
-            setState(State.ASYNCWAIT,"reserving space");
+                        setState(State.ASYNCWAIT, "Reserving space.");
 			long remaining_lifetime =
                     lifetime - ( System.currentTimeMillis() -creationTime);
 			logger.debug("reserving space, size="+(size==0?1L:size));
@@ -646,7 +646,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 
 		if( getSpaceReservationId() != null &&
 		    !isSpaceMarkedAsBeingUsed()) {
-            setState(State.ASYNCWAIT,"marking space as being used");
+            setState(State.ASYNCWAIT, "Marking space as being used.");
 			long remaining_lifetime =
                     lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
@@ -668,7 +668,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		logger.debug("copying from remote to local ");
 		RequestCredential credential = getCredential();
 		if(getToFileId() == null && getToParentFileId() == null) {
-			setState(State.ASYNCWAIT,"calling storage.prepareToPut");
+			setState(State.ASYNCWAIT, "Doing name space lookup.");
 			PutCallbacks callbacks = new PutCallbacks(this.getId());
 			logger.debug("calling storage.prepareToPut("+getLocal_to_path()+")");
 			getStorage().prepareToPut(getUser(),
@@ -706,7 +706,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 
 		if (getConfiguration().isReserve_space_implicitely()&&getSpaceReservationId() == null) {
-			setState(State.ASYNCWAIT,"reserving space");
+			setState(State.ASYNCWAIT, "Reserving space.");
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			logger.debug("reserving space, size="+(size==0?1L:size));
 			//
@@ -736,7 +736,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 		}
 		if( getSpaceReservationId() != null &&
 		    !isSpaceMarkedAsBeingUsed()) {
-            setState(State.ASYNCWAIT,"marking space as being used");
+            setState(State.ASYNCWAIT, "Marking space as being used.");
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
 			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getTo_surl(),
@@ -803,7 +803,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 			RequestCredential credential = getCredential();
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
 			setTransferId(getStorage().putToRemoteTURL(getUser(), getFrom_surl(), getTo_turl(), getUser(), credential.getId(), copycallbacks));
-			setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
+			setState(State.RUNNINGWITHOUTTHREAD, "Transferring file.");
 			saveJob();
                 }
 		// transfer id is not null and we are scheduled

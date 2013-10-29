@@ -329,7 +329,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
                     if(!State.isFinalState(fr_state ))
                     {
                         logger.debug("changing fr#"+request.getId()+" to "+state);
-                        request.setState(state,"changing file state because request state has changed");
+                        request.setState(state, "Changing file state because request state has changed.");
                     }
                 }
                 catch(IllegalStateTransition ist) {

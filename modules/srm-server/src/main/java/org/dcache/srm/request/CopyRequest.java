@@ -319,7 +319,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         logger.debug("Proccessing request");
         if( getNumOfFileRequest() == 0) {
             try {
-                setState(State.FAILED,"Request contains zero file requests");
+                setState(State.FAILED, "Request contains zero file requests.");
                 return;
             }
             catch(IllegalStateTransition ist)
@@ -765,7 +765,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
                     logger.error(e.toString());
                     logger.error("failed to schedule CopyFileRequest " + cfr);
                     try {
-                        cfr.setState(State.FAILED, "failed to schedule CopyFileRequest " + cfr + " rasaon: " + e);
+                        cfr.setState(State.FAILED, "Failed to schedule request: " + e.getMessage());
                     } catch (IllegalStateTransition ist) {
                         logger.error("Illegal State Transition : " + ist
                                 .getMessage());
@@ -929,10 +929,10 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
 
             setProcessingDone(true);
             if(done) {
-                setState(State.DONE,"all file request completed");
+                setState(State.DONE, "All transfers completed.");
             }
             else {
-                setState(State.ASYNCWAIT, "waiting for files to complete");
+                setState(State.ASYNCWAIT, "Waiting for transfers to complete.");
             }
         } catch(SRMException | IllegalStateTransition | DataAccessException e) {
             // FIXME some SRMException failures are temporary and others are
@@ -962,7 +962,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
                     {
 
                         logger.debug("changing fr#"+request.getId()+" to "+state);
-                            request.setState(state,"Request state changed, changing file state");
+                            request.setState(state,"Request state changed, changing file state.");
                     }
                 }
                 catch(IllegalStateTransition ist) {
@@ -1031,7 +1031,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
                 State state = getState();
                 if(!State.isFinalState(state)) {
                     if(done) {
-                        setState(State.DONE,"all files requests have completed ");
+                        setState(State.DONE, "All transfers have completed.");
                     }
                 }
             }

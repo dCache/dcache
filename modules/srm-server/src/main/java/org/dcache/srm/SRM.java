@@ -948,10 +948,10 @@ public class SRM {
                                 if (storage.exists(user, pfr.getSurl())) {
                                     fr.setStatus(state);
                                 } else {
-                                    pfr.setState(State.FAILED, "file transfer was not performed on SURL");
+                                    pfr.setState(State.FAILED, "File transfer was not performed on SURL.");
                                 }
                             } catch (SRMException srme) {
-                                pfr.setState(State.FAILED, "file transfer was not performed on SURL");
+                                pfr.setState(State.FAILED, "File transfer was not performed on SURL.");
                             }
                         }
 
@@ -1277,7 +1277,7 @@ public class SRM {
         }
         ContainerRequest<?> r = (ContainerRequest<?>) job;
         try {
-            r.setState(State.CANCELED, "Canceled by admin through cancel command");
+            r.setState(State.CANCELED, "Canceled by admin through cancel command.");
             sb.append("state changed, no guarantee that the process will end immediately\n");
             sb.append(r.toString(false)).append('\n');
         } catch (IllegalStateTransition ist) {
@@ -1354,7 +1354,7 @@ public class SRM {
                     @Override
                     public void run() {
                         try {
-                            job.setState(State.CANCELED, "Canceled by admin through cancelall command");
+                            job.setState(State.CANCELED, "Canceled by admin through cancelall command.");
                         } catch (IllegalStateTransition ist) {
                             logger.error("Illegal State Transition : " +ist.getMessage());
                         }

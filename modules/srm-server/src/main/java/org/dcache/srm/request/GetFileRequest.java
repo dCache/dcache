@@ -256,9 +256,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     }
 
                 }
-                catch(Exception srme) {
-                    String error =
-                    "can not obtain turl for file:"+srme;
+                catch(SRMException e) {
+                    String error = "cannot obtain turl for file:" + e.getMessage();
                     logger.error(error);
                     try {
                         setState(State.FAILED,error);
@@ -447,7 +446,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
                 pinFile();
                 if(getPinId() == null) {
-                    setState(State.ASYNCWAIT, "pinning file");
+                    setState(State.ASYNCWAIT, "Pinning file.");
                     logger.debug("GetFileRequest: waiting async notification about pinId...");
                     return;
                 }
@@ -636,7 +635,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             State state = getState();
             switch (state) {
             case READY:
-                setState(State.DONE, "TURL released");
+                setState(State.DONE, "TURL released.");
                 return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
             case DONE:
                 return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
@@ -645,7 +644,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             case FAILED:
                 return new TReturnStatus(TStatusCode.SRM_FAILURE, "Pinning failed");
             default:
-                setState(State.CANCELED, "Aborted by srmReleaseFile request");
+                setState(State.CANCELED, "Aborted by srmReleaseFile request.");
                 return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL is not yet pinned, pinning aborted");
             }
         } catch (IllegalStateTransition e) {
@@ -749,7 +748,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             try {
                 GetFileRequest fr = getGetFileRequest();
                 try {
-                    fr.setState(State.FAILED,"ThePinCallbacks Timeout");
+                    fr.setState(State.FAILED, "Pin operation timed out.");
                 }
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());

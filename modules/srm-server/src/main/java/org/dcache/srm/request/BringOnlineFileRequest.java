@@ -357,7 +357,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 logger.debug("pinId is null, asking to pin ");
                 pinFile();
                 if(getPinId() == null) {
-                    setState(State.ASYNCWAIT,"pinning file");
+                    setState(State.ASYNCWAIT, "Pinning file.");
                     logger.debug("BringOnlineFileRequest: waiting async notification about pinId...");
                     return;
                 }
@@ -463,7 +463,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 return new TReturnStatus(TStatusCode.SRM_FAILURE, "Pinning failed");
             default:
                 logger.warn("Canceled by the srmReleaseFiles");
-                setState(State.CANCELED, "Aborted by srmReleaseFile request");
+                setState(State.CANCELED, "Aborted by srmReleaseFile request.");
                 return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL is not yet pinned, pinning aborted");
             }
         } catch (IllegalStateTransition e) {
@@ -650,7 +650,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                    fr.setState(State.FAILED,e.toString());
+                    fr.setState(State.FAILED, e.getMessage());
                 }
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
@@ -688,7 +688,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                         fr.setFileId(fileMetaData.fileId);
                         fr.fileMetaData = fileMetaData;
                         fr.setPinId(pinId);
-                        fr.setState(State.DONE, " file is pinned, pinId="+pinId);
+                        fr.setState(State.DONE, "File is pinned.");
                     }
                 } finally {
                     fr.wunlock();

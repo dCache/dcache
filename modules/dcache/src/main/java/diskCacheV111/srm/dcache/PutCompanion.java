@@ -412,14 +412,8 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         dirMsg.setReplyRequired(true);
 
 
-        try {
-            pnfsStub.send(dirMsg,PnfsMessage.class,
-                    new ThreadManagerMessageCallback(this) );
-        }
-        catch(Exception ee ) {
-            _log.error(ee.toString());
-            callbacks.Exception(ee);
-        }
+        pnfsStub.send(dirMsg,PnfsMessage.class,
+                new ThreadManagerMessageCallback<>(this) );
         lastOperationTime = System.currentTimeMillis();
     }
 

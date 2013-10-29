@@ -243,15 +243,15 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
                         if(state == State.READY ||
                            state == State.TRANSFERRING ||
                            state == State.RUNNING) {
-                            setState(State.DONE,"set by setStatus to \"Done\"");
+                            setState(State.DONE, "SRM client set state to Done.");
                         }
                         else {
-                            setState(State.CANCELED,"set by setStatus to \"Done\"");
+                            setState(State.CANCELED, "SRM client cancelled operation by setting state to Done.");
                         }
                     }
                 }
                 else if(status.equalsIgnoreCase("Running")) {
-                    setState(State.TRANSFERRING,"set by setStatus to \"Running\"");
+                    setState(State.TRANSFERRING, "SRM client set state to Running.");
                 }
                 else {
                     String error =  "Can't set Status to "+status;
@@ -303,7 +303,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
              * requests. Some subclasses thus override this method.
              */
             if (!getState().isFinalState()) {
-                setState(State.CANCELED, "Request aborted");
+                setState(State.CANCELED, "Request aborted.");
             }
         } finally {
             wunlock();

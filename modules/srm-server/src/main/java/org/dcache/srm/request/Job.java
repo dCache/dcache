@@ -812,9 +812,9 @@ public abstract class Job  {
             if (creationTime + lifetime < System.currentTimeMillis()) {
                 logger.debug("expiring job #{}", getId());
                 if (state == State.READY || state == State.TRANSFERRING) {
-                    setState(State.DONE, "lifetime expired");
+                    setState(State.DONE, "Request lifetime expired.");
                 } else if (!state.isFinalState()) {
-                    setState(State.FAILED, "lifetime expired");
+                    setState(State.FAILED, "Request lifetime expired.");
                 }
             }
         } catch (IllegalStateTransition e) {

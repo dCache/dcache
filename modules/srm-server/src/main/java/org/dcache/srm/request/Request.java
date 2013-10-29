@@ -448,7 +448,7 @@ public abstract class Request extends Job {
              */
             State state = getState();
             if (!State.isFinalState(state)) {
-                setState(State.CANCELED, "Request aborted");
+                setState(State.CANCELED, "Request aborted.");
             }
         } catch (IllegalStateTransition e) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE, "Cannot abort request in its current state");

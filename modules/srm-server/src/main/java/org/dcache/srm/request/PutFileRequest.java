@@ -283,9 +283,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
             }
-            catch(Exception srme) {
-                    String error =
-                "can not obtain turl for file:"+srme;
+            catch(SRMException e) {
+                    String error = "cannot obtain turl for file:" + e.getMessage();
                     logger.error(error);
                     try {
                         setState(State.FAILED,error);
@@ -477,7 +476,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
                 //storage.getPutTurl(getUser(),path,request.protocols);
                 PutCallbacks callbacks = new PutCallbacks(this.getId());
-                setState(State.ASYNCWAIT, "calling Storage.prepareToPut()");
+                setState(State.ASYNCWAIT, "Doing name space lookup.");
                 getStorage().prepareToPut(getUser(),getSurl(),callbacks,
                         getContainerRequest().isOverwrite());
                 return;
@@ -500,7 +499,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
             if (getConfiguration().isReserve_space_implicitely()&&getSpaceReservationId() == null) {
                 long remaining_lifetime;
-                setState(State.ASYNCWAIT,"reserving space");
+                setState(State.ASYNCWAIT, "Reserving space.");
                 remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
                 SrmReserveSpaceCallback callbacks = new PutReserveSpaceCallbacks(getId());
                 //
@@ -530,7 +529,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             }
             if( getSpaceReservationId() != null &&
             !   isSpaceMarkedAsBeingUsed()) {
-                setState(State.ASYNCWAIT,"marking space as being used");
+                setState(State.ASYNCWAIT, "Marking space as being used.");
                 long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
                 SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
                     getStorage().srmMarkSpaceAsBeingUsed(getUser(),
@@ -619,7 +618,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
              */
             State state = getState();
             if (!State.isFinalState(state)) {
-                setState(State.CANCELED, "Request aborted");
+                setState(State.CANCELED, "Request aborted.");
             } else if (state == State.DONE) {
                 throw new IllegalStateTransition("Put request completed successfully and cannot be aborted",
                         State.DONE, State.CANCELED);
@@ -903,9 +902,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         public void Exception( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                String error = e.toString();
                 try {
-                    fr.setState(State.FAILED,error);
+                    fr.setState(State.FAILED, e.getMessage());
                 } catch(IllegalStateTransition ist) {
                     logger.error("can not fail state:"+ist);
                 }
@@ -962,7 +960,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    fr.setState(State.FAILED,"PutCallbacks Timeout");
+                    fr.setState(State.FAILED, "Name space timeout.");
                 } catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
@@ -1174,9 +1172,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         public void SrmUseSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                String error = e.toString();
                 try {
-                            fr.setState(State.FAILED,error);
+                            fr.setState(State.FAILED, e.getMessage());
                 } catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
