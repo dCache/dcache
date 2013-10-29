@@ -298,23 +298,19 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
         fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
-        TReturnStatus returnStatus = getReturnStatus();
-        fileStatus.setStatus(returnStatus);
+        fileStatus.setStatus(getReturnStatus());
 
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException {
-        TReturnStatus returnStatus = getReturnStatus();
-        TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
+    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException
+    {
         try {
-            surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
+            return new TSURLReturnStatus(new org.apache.axis.types.URI(getSurlString()), getReturnStatus());
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
             logger.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
         }
-        surlReturnStatus.setStatus(returnStatus);
-        return surlReturnStatus;
     }
 
     @Override
@@ -496,39 +492,39 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     }
 
     @Override
-    public TReturnStatus getReturnStatus() {
-        State state = getState();
-        if(getStatusCode() != null) {
-            return new TReturnStatus(getStatusCode(), state.toString());
-        } else if(state == State.DONE) {
-            if(getPinId() != null) {
-                return new TReturnStatus(TStatusCode.SRM_SUCCESS, state.toString());
-            }  else {
-                return new TReturnStatus(TStatusCode.SRM_RELEASED, state.toString());
+    public TReturnStatus getReturnStatus()
+    {
+        String description = getLastJobChange().getDescription();
+        TStatusCode statusCode = getStatusCode();
+        if (statusCode != null) {
+            if (statusCode == TStatusCode.SRM_FILE_PINNED ||
+                    statusCode == TStatusCode.SRM_SUCCESS ||
+                    statusCode == TStatusCode.SRM_RELEASED) {
+                description = null;
             }
+            return new TReturnStatus(statusCode, description);
         }
-        else if(state == State.READY) {
-            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, state.toString());
-        }
-        else if(state == State.TRANSFERRING) {
-            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, state.toString());
-        }
-        else if(state == State.FAILED) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, "FAILED: " + getErrorMessage());
-        }
-        else if(state == State.CANCELED ) {
-            return new TReturnStatus(TStatusCode.SRM_ABORTED, state.toString());
-        }
-        else if(state == State.TQUEUED ) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
-        }
-        else if(state == State.RUNNING ||
-                state == State.RQUEUED ||
-                state == State.ASYNCWAIT ) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
-        }
-        else {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
+
+        switch (getState()) {
+        case PENDING:
+        case RESTORED:
+        case RQUEUED:
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
+        case READY:
+        case TRANSFERRING:
+            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, null);
+        case DONE:
+            if (getPinId() != null) {
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+            }  else {
+                return new TReturnStatus(TStatusCode.SRM_RELEASED, null);
+            }
+        case CANCELED:
+            return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
+        case FAILED:
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
+        default:
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
         }
     }
 

@@ -361,23 +361,19 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
         fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
-        TReturnStatus returnStatus = getReturnStatus();
-        fileStatus.setStatus(returnStatus);
+        fileStatus.setStatus(getReturnStatus());
 
         return fileStatus;
     }
 
-    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException {
-        TReturnStatus returnStatus = getReturnStatus();
-        TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
+    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException
+    {
         try {
-            surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
+            return new TSURLReturnStatus(new org.apache.axis.types.URI(getSurlString()), getReturnStatus());
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
             logger.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
         }
-        surlReturnStatus.setStatus(returnStatus);
-        return surlReturnStatus;
     }
 
     private URI getTURL() throws SRMException {

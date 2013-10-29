@@ -370,8 +370,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
         }
 
-        returnStatus.setExplanation(getErrorMessage());
-
         fileStatus.setStatus(returnStatus);
 
         return fileStatus;
@@ -716,28 +714,34 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
-    public TReturnStatus getReturnStatus() {
-        State state = getState();
-        if(getStatusCode() != null) {
-            return new TReturnStatus(getStatusCode(), state.toString());
-        } else if(state == State.DONE) {
-            return new TReturnStatus(TStatusCode.SRM_SUCCESS, state.toString());
-        } else if(state == State.READY) {
-            return new TReturnStatus(TStatusCode.SRM_SPACE_AVAILABLE, state.toString());
-        } else if(state == State.TRANSFERRING) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
-        } else if(state == State.FAILED) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, "FAILED: " + getErrorMessage());
-        } else if(state == State.CANCELED ) {
-            return new TReturnStatus(TStatusCode.SRM_ABORTED, state.toString());
-        } else if(state == State.TQUEUED ) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
-        } else if(state == State.RUNNING ||
-                state == State.RQUEUED ||
-                state == State.ASYNCWAIT ) {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, state.toString());
-        } else {
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, state.toString());
+    public TReturnStatus getReturnStatus()
+    {
+        String description = getLastJobChange().getDescription();
+        TStatusCode statusCode = getStatusCode();
+        if (statusCode != null) {
+            if (statusCode == TStatusCode.SRM_SUCCESS || statusCode == TStatusCode.SRM_SPACE_AVAILABLE) {
+                description = null;
+            }
+            return new TReturnStatus(statusCode, description);
+        }
+
+        switch (getState()) {
+        case PENDING:
+        case RQUEUED:
+        case RESTORED:
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
+        case READY:
+        case TRANSFERRING:
+            return new TReturnStatus(TStatusCode.SRM_SPACE_AVAILABLE, null);
+        case DONE:
+            // REVISIT: Spec doesn't allow this for statusOfPut
+            return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+        case CANCELED:
+            return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
+        case FAILED:
+            return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
+        default:
+            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
         }
     }
 
