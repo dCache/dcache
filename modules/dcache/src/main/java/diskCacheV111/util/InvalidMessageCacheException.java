@@ -15,4 +15,8 @@ public class InvalidMessageCacheException extends CacheException {
         super(CacheException.INVALID_ARGS, msg);
     }
 
+    public InvalidMessageCacheException(String message, Throwable cause)
+    {
+        super(INVALID_ARGS, message, cause);
+    }
 }
