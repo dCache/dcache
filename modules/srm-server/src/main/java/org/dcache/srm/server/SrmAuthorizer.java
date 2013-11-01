@@ -208,25 +208,10 @@ public class SrmAuthorizer
         try {
             String id = credential.secureId;
             GSSCredential gssCredential = credential.credential;
-
-            log.debug("About to call RequestCredential.getRequestCredential({},{})",
-                    id, role);
-
-            RequestCredential rc = RequestCredential.getRequestCredential(id,
-                    role);
-
-            log.debug("Received RequestCredential: {}", rc);
-
-            if(rc != null) {
-                rc.keepBestDelegatedCredential(gssCredential);
-            } else {
-                log.debug("About to create new RequestCredential");
-                rc = new RequestCredential(id, role, gssCredential, storage);
-            }
-
-            rc.saveCredential();
-            log.debug("About to return RequestCredential = {}", rc);
-            return rc;
+            RequestCredential requestCredential = RequestCredential.newRequestCredential(id, role, storage);
+            requestCredential.keepBestDelegatedCredential(gssCredential);
+            requestCredential.saveCredential();
+            return requestCredential;
         } catch(GSSException e) {
             throw new RuntimeException("Problem getting request credential", e);
         }

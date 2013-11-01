@@ -196,7 +196,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                 requestCredential.getCreationtime(),
                 requestCredential.getCredentialName(),
                 requestCredential.getRole(),
-                requestCredential.getCredential_users(),
+                0, // Legacy field - not used
                 credentialFileName,
                 requestCredential.getDelegatedCredentialExpiration());
     }
@@ -213,17 +213,13 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                     @Override
                     public RequestCredential mapRow(ResultSet rs, int rowNum) throws SQLException
                     {
-                        RequestCredential credential =
-                                new RequestCredential(rs.getLong("id"),
-                                        rs.getLong("creationtime"),
-                                        rs.getString("credentialname"),
-                                        rs.getString("role"),
-                                        fileNameToGSSCredentilal(rs
-                                                .getString("delegatedcredentials")),
-                                        rs.getLong("credentialexpiration"),
-                                        DatabaseRequestCredentialStorage.this);
-                        credential.setSaved(true);
-                        return credential;
+                        return new RequestCredential(rs.getLong("id"),
+                                rs.getLong("creationtime"),
+                                rs.getString("credentialname"),
+                                rs.getString("role"),
+                                fileNameToGSSCredentilal(rs.getString("delegatedcredentials")),
+                                rs.getLong("credentialexpiration"),
+                                DatabaseRequestCredentialStorage.this);
                     }
                 });
         return getFirst(result, null);
@@ -270,7 +266,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                requestCredential.getCreationtime(),
                requestCredential.getCredentialName(),
                requestCredential.getRole(),
-               requestCredential.getCredential_users(),
+               0, // Legacy field - not used
                credentialFileName,
                requestCredential.getDelegatedCredentialExpiration(),
                requestCredential.getId());
