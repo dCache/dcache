@@ -866,29 +866,31 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             State.FAILED,
                             reason,
                             TStatusCode.SRM_DUPLICATION_ERROR);
-                } catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-
-                logger.error("PutCallbacks error: "+ reason);
-            } catch(Exception e) {
-                logger.error(e.toString());
+            } catch(SRMInvalidRequestException e) {
+                logger.warn(e.toString());
             }
         }
 
         @Override
-        public void Error( String error) {
+        public void Error(String error) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
-                    fr.setState(State.FAILED,error);
-                } catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                    fr.setState(State.FAILED, error);
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
 
-                logger.error("PutCallbacks error: "+ error);
-            } catch(Exception e) {
-                logger.error(e.toString());
+                logger.warn("PrepareToPut failed: {}", error);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -898,12 +900,14 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     fr.setState(State.FAILED, e.getMessage());
-                } catch(IllegalStateTransition ist) {
-                    logger.error("can not fail state:"+ist);
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                logger.error("PutCallbacks exception",e);
-            } catch(Exception e1) {
-                logger.error(e1.toString());
+                logger.error("PrepareToPut failed",e);
+            } catch (SRMInvalidRequestException ire) {
+                logger.warn(ire.getMessage());
             }
         }
 
@@ -913,13 +917,15 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     fr.setState(State.FAILED,reason);
-                } catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
 
-                logger.error("PutCallbacks error: "+ reason);
-            } catch(Exception e) {
-                logger.error(e.toString());
+                logger.error("Name space lookup failed: {}", reason);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -928,10 +934,9 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         public void StorageInfoArrived(String fileId,FileMetaData fmd,String parentFileId, FileMetaData parentFmd) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                logger.debug("StorageInfoArrived: FileId:"+fileId);
                 State state = fr.getState();
                 if(state == State.ASYNCWAIT) {
-                    logger.debug("PutCallbacks StorageInfoArrived for file "+fr.getSurlString());
+                    logger.trace("Storage info arrived for file {}.", fr.getSurlString());
                     fr.setFileId(fileId);
                     fr.setFmd(fmd);
                     fr.setParentFileId(parentFileId);
@@ -944,8 +949,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                         logger.error(ie.toString());
                     }
                 }
-            } catch(Exception e) {
-                logger.error(e.toString());
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -955,13 +960,15 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     fr.setState(State.FAILED, "Name space timeout.");
-                } catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
 
-                logger.error("PutCallbacks Timeout");
-            } catch(Exception e) {
-                logger.error(e.toString());
+                logger.error("PrepareToPut timed out,");
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -975,12 +982,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_INVALID_PATH);
                 } catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
 
-                logger.error("PutCallbacks error: "+ reason);
-            } catch(Exception e) {
-                logger.error(e.toString());
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -994,12 +1002,14 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
 
-                logger.error("PutCallbacks error: "+ reason);
-            } catch(Exception e) {
-                logger.error(e.toString());
+                logger.warn("Authorization error: {}", reason);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
     }

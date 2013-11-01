@@ -313,7 +313,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     private void fileExists(PnfsMapPathMessage message) {
 
         if(!overwrite) {
-            String errorString = String.format("file/directory %s exists, overwite is not allowed ",path);
+            String errorString = String.format("file/directory %s exists, overwrite is not allowed ",path);
             _log.debug(errorString);
             callbacks.DuplicationError(errorString);
             return;
