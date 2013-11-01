@@ -755,7 +755,7 @@
                     </exclusion>
                     <exclusion>
                         <groupId>net.java.dev</groupId>
-                        <artifactId>net.java.dev:truezip</artifactId>
+                        <artifactId>truezip</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>xerces</groupId>
