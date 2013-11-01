@@ -84,6 +84,11 @@ public class JdbcFs implements FileSystemProvider {
      */
     private static final long TOTAL_FILES = 62914560L;
 
+    /**
+     * maximal length of an object name in a directory.
+     */
+    private final static int MAX_NAME_LEN = 256;
+
     public JdbcFs(DataSource dataSource, String dialect) {
         this(dataSource, dialect, 0);
     }
@@ -182,6 +187,8 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public FsInode createLink(FsInode parent, String name, int uid, int gid, int mode, byte[] dest) throws ChimeraFsException {
 
+        checkNameLength(name);
+
         Connection dbConnection;
         try {
             // get from pool
@@ -234,6 +241,8 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public FsInode createHLink(FsInode parent, FsInode inode, String name) throws ChimeraFsException {
+
+        checkNameLength(name);
 
         Connection dbConnection;
         try {
@@ -386,6 +395,8 @@ public class JdbcFs implements FileSystemProvider {
 
             try {
 
+                checkNameLength(name);
+
                 if (!parent.exists()) {
                     throw new FileNotFoundHimeraFsException("parent=" + parent.toString());
                 }
@@ -444,6 +455,8 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void createFileWithId(FsInode parent, FsInode inode, String name, int owner, int group, int mode, int type) throws ChimeraFsException {
+
+        checkNameLength(name);
 
         Connection dbConnection;
         try {
@@ -778,6 +791,8 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public FsInode mkdir(FsInode parent, String name, int owner, int group, int mode) throws ChimeraFsException {
+
+        checkNameLength(name);
 
         Connection dbConnection;
         try {
@@ -1312,6 +1327,8 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void setFileName(FsInode dir, String oldName, String newName) throws ChimeraFsException {
 
+        checkNameLength(newName);
+
         Connection dbConnection;
         try {
             // get from pool
@@ -1750,6 +1767,8 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public boolean move(FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
+
+        checkNameLength(dest);
 
         Connection dbConnection;
         try {
@@ -2575,6 +2594,12 @@ public class JdbcFs implements FileSystemProvider {
             throw new IOHimeraFsException(e.getMessage());
         } finally {
             tryToClose(dbConnection);
+        }
+    }
+
+    private static void checkNameLength(String name) throws InvalidNameChimeraException {
+        if (name.length() > MAX_NAME_LEN) {
+            throw new InvalidNameChimeraException("Name too long");
         }
     }
 
