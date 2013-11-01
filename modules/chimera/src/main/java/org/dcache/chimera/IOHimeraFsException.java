@@ -28,4 +28,9 @@ public class IOHimeraFsException extends ChimeraFsException {
     public IOHimeraFsException(String msg) {
         super(msg);
     }
+
+    public IOHimeraFsException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }

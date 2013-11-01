@@ -383,14 +383,13 @@ public class FsInode {
         return _fs.readLink(this);
     }
 
-    public boolean remove(String name) throws ChimeraFsException {
+    public void remove(String name) throws ChimeraFsException {
 
         if (!isDirectory()) {
             throw new IOHimeraFsException("Not a directory");
         }
 
-        return _fs.remove(this, name);
-
+        _fs.remove(this, name);
     }
 
     public void setUID(int uid) throws ChimeraFsException {
