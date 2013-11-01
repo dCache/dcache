@@ -31,6 +31,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
@@ -1151,16 +1152,22 @@ public class PnfsManagerV3
                 }
 
                 if (!isOfType(pnfsId, allowed)) {
-                    throw new CacheException(CacheException.INVALID_ARGS,
-                                             "Path exists but is not of the expected type");
+                    if (allowed.contains(FileType.DIR)) {
+                        throw new NotDirCacheException("Path exists but is not of the expected type");
+                    } else {
+                        throw new NotFileCacheException("Path exists but is not of the expected type");
+                    }
                 }
 
                 _log.info("delete PNFS entry for "+ path );
                 _nameSpaceProvider.deleteEntry(subject, path);
             } else {
                 if (!isOfType(pnfsId, allowed)) {
-                    throw new CacheException(CacheException.INVALID_ARGS,
-                                             "Path exists but is not of the expected type");
+                    if (allowed.contains(FileType.DIR)) {
+                        throw new NotDirCacheException("Path exists but is not of the expected type");
+                    } else {
+                        throw new NotFileCacheException("Path exists but is not of the expected type");
+                    }
                 }
 
                 checkMask(pnfsMessage);

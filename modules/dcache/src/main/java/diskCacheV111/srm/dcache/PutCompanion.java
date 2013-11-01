@@ -276,9 +276,9 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                 askPnfsForParentInfo();
             }
             break;
-        case CacheException.INVALID_ARGS:
+        case CacheException.NOT_FILE:
             if (state == State.RECEIVED_FILE_DELETE_RESPONSE_MESSAGE) {
-                errorString = "Destination is not a file";
+                errorString = "Failed to overwrite: not a file.";
             }
             callbacks.InvalidPathError(errorString);
             break;

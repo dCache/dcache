@@ -133,7 +133,6 @@ import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -1771,7 +1770,7 @@ public final class Storage
                 throw new SRMInternalErrorException("Name space timeout", e);
             } catch (FileNotFoundCacheException | NotInTrashCacheException ignored) {
                 // Somebody removed the directory before we could.
-            } catch (PermissionDeniedCacheException | InvalidMessageCacheException e) {
+            } catch (PermissionDeniedCacheException | NotDirCacheException e) {
                 // Only directories are included in the list output, and we checked that we
                 // have permission to delete them.
                 throw new SRMException(directory + " (directory tree was modified concurrently)");
@@ -1806,7 +1805,7 @@ public final class Storage
             throw new SRMInternalErrorException("Name space timeout");
         } catch (FileNotFoundCacheException | NotInTrashCacheException ignored) {
             throw new SRMInvalidPathException("No such file or directory");
-        } catch (InvalidMessageCacheException e) {
+        } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException("Not a directory");
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied", e);

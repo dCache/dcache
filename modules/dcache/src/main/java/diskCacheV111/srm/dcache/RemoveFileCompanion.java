@@ -151,8 +151,8 @@ public class RemoveFileCompanion
             _callback.notFound("No such file");
             break;
 
-        case CacheException.INVALID_ARGS:
-            _callback.notFound("Path is a directory");
+        case CacheException.NOT_FILE:
+            _callback.notFound("Not a file");
             break;
 
         case CacheException.TIMEOUT:
