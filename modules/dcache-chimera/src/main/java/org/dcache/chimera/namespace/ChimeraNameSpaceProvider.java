@@ -40,6 +40,7 @@ import org.dcache.acl.ACL;
 import org.dcache.acl.enums.RsType;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.DirNotEmptyHimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
@@ -287,8 +288,6 @@ public class ChimeraNameSpaceProvider
     public void deleteEntry(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
-        boolean removed;
-
         try {
             FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
 
@@ -314,17 +313,14 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-            removed = _fs.remove(inode);
+            _fs.remove(inode);
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
+        }catch(DirNotEmptyHimeraFsException e) {
+            throw new CacheException("Directory is not empty: " + pnfsId);
         }catch(IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
-        }
-
-        if (!removed) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     "Entry could not be removed: " + pnfsId);
         }
     }
 
@@ -332,8 +328,6 @@ public class ChimeraNameSpaceProvider
     public void deleteEntry(Subject subject, String path)
         throws CacheException
     {
-        boolean removed;
-
         try {
             if (!Subjects.isRoot(subject)) {
                 File file = new File(path);
@@ -364,17 +358,14 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-            removed = _fs.remove(path);
+            _fs.remove(path);
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
+        }catch(DirNotEmptyHimeraFsException e) {
+            throw new CacheException("Directory is not empty: " + path);
         }catch(IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
-        }
-
-        if (!removed) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     "Entry could not be removed: " + path);
         }
     }
 

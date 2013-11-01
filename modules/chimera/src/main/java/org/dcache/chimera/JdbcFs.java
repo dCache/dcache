@@ -604,7 +604,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public boolean remove(String path) throws ChimeraFsException {
+    public void remove(String path) throws ChimeraFsException {
 
         File filePath = new File(path);
 
@@ -616,11 +616,11 @@ public class JdbcFs implements FileSystemProvider {
         FsInode parent = path2inode(parentPath);
         String name = filePath.getName();
 
-        return this.remove(parent, name);
+        this.remove(parent, name);
     }
 
     @Override
-    public boolean remove(FsInode parent, String name) throws ChimeraFsException {
+    public void remove(FsInode parent, String name) throws ChimeraFsException {
 
         Connection dbConnection;
         try {
@@ -629,8 +629,6 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             throw new BackEndErrorHimeraFsException(e.getMessage());
         }
-
-        boolean rc = false;
 
         try {
 
@@ -638,38 +636,36 @@ public class JdbcFs implements FileSystemProvider {
 
             if (inode.type() != FsInodeType.INODE) {
                 // now allowed
-                return false;
+                throw new FileNotFoundHimeraFsException("Not a file.");
             }
 
             // read/write only
             dbConnection.setAutoCommit(false);
 
-            rc = _sqlDriver.remove(dbConnection, parent, name);
-            if (rc) {
-                dbConnection.commit();
-            } else {
-                dbConnection.rollback();
-            }
-
+            _sqlDriver.remove(dbConnection, parent, name);
+            dbConnection.commit();
         } catch (ChimeraFsException hfe) {
-            rc = false;
+            try {
+                dbConnection.rollback();
+            } catch (SQLException e) {
+                _log.error("delete rollback", e);
+            }
+            throw hfe;
         } catch (SQLException e) {
             _log.error("delete", e);
             try {
                 dbConnection.rollback();
             } catch (SQLException e1) {
-                _log.error("delete rollback", e);
+                _log.error("delete rollback", e1);
             }
-            rc = false;
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
-
-        return rc;
     }
 
     @Override
-    public boolean remove(FsInode inode) throws ChimeraFsException {
+    public void remove(FsInode inode) throws ChimeraFsException {
 
 
         Connection dbConnection;
@@ -679,8 +675,6 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             throw new BackEndErrorHimeraFsException(e.getMessage());
         }
-
-        boolean rc = false;
 
         try {
 
@@ -689,36 +683,34 @@ public class JdbcFs implements FileSystemProvider {
 
             FsInode parent = _sqlDriver.getParentOf(dbConnection, inode);
             if (parent == null) {
-                return false;
+                throw new FileNotFoundHimeraFsException("No such file.");
             }
 
             if (inode.type() != FsInodeType.INODE) {
                 // now allowed
-                return false;
+                throw new FileNotFoundHimeraFsException("Not a file.");
             }
 
-            if (_sqlDriver.remove(dbConnection, parent, inode)) {
-                dbConnection.commit();
-                rc = true;
-            } else {
-                dbConnection.rollback();
-                rc = false;
-            }
+            _sqlDriver.remove(dbConnection, parent, inode);
+            dbConnection.commit();
         } catch (ChimeraFsException hfe) {
-            rc = false;
+            try {
+                dbConnection.rollback();
+            } catch (SQLException e) {
+                _log.error("delete rollback", e);
+            }
+            throw hfe;
         } catch (SQLException e) {
             _log.error("delete", e);
             try {
                 dbConnection.rollback();
             } catch (SQLException e1) {
-                _log.error("delete rollback", e);
+                _log.error("delete rollback", e1);
             }
-            rc = false;
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
-
-        return rc;
     }
 
     @Override

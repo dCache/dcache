@@ -36,4 +36,9 @@ public class ChimeraFsException extends IOException {
     public ChimeraFsException(String msg) {
         super(msg);
     }
+
+    public ChimeraFsException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }
