@@ -268,7 +268,7 @@
             <dependency>
                 <groupId>com.jolbox</groupId>
                 <artifactId>bonecp</artifactId>
-                <version>0.8.0-rc3</version>
+                <version>0.8.0-dcache1</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
