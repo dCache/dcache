@@ -1,5 +1,6 @@
 package org.dcache.chimera;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -822,6 +823,25 @@ public class BasicTest extends ChimeraTestCaseHelper {
         level1of1.write(0, data, 0, data.length);
         assertTrue(_fs.move(base, "testCreateFile2", base, "testCreateFile1"));
 
+    }
+
+    @Test(expected = InvalidNameChimeraException.class)
+    public void testNameTooDirLong() throws Exception {
+        String tooLongName = Strings.repeat("a", 257);
+        FsInode base = _rootInode.mkdir(tooLongName);
+    }
+
+    @Test(expected = InvalidNameChimeraException.class)
+    public void testNameTooFileLong() throws Exception {
+        String tooLongName = Strings.repeat("a", 257);
+        FsInode base = _rootInode.create(tooLongName, 0, 0, 0644);
+    }
+
+    @Test(expected = InvalidNameChimeraException.class)
+    public void testNameTooMoveLong() throws Exception {
+        String tooLongName = Strings.repeat("a", 257);
+        _rootInode.mkdir("testNameTooMoveLong");
+        _fs.move(_rootInode, "testNameTooMoveLong", _rootInode, tooLongName);
     }
 
     @Test
