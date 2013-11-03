@@ -596,14 +596,13 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                             State.FAILED,
                             reason,
                             TStatusCode.SRM_INVALID_PATH);
+                } catch(IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.warn("GetCallbacks error: "+ reason);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -619,12 +618,13 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                             TStatusCode.SRM_FILE_UNAVAILABLE);
                 }
                 catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                logger.warn("ThePinCallbacks error: "+ reason);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.warn("Pinning failed: " + reason);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -634,14 +634,14 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
                     fr.setState(State.FAILED,error);
+                } catch(IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.error("ThePinCallbacks error: "+ error);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.error("Pinning failed: "+ error);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -651,14 +651,14 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
                     fr.setState(State.FAILED, e.getMessage());
+                } catch(IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.error("ThePinCallbacks exception",e);
-            }
-            catch(Exception e1) {
-                logger.error(e1.toString());
+                logger.error("Pinning failed.", e);
+            } catch (SRMInvalidRequestException e1) {
+                logger.warn(e1.getMessage());
             }
         }
 
@@ -666,20 +666,21 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                logger.info("Pin request timed out");
+                logger.info("Pin request timed out.");
                 if (!fr.getState().isFinalState()) {
                     fr.pinFile();
                 }
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
+            } catch (NonFatalJobFailure | FatalJobFailure | SRMException e) {
+                logger.error(e.getMessage());
             }
         }
 
         @Override
         public void Pinned(FileMetaData fileMetaData, String pinId) {
             try {
-                logger.debug("File pinned (pinId={})", pinId);
+                logger.debug("File pinned (pinId={}).", pinId);
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 fr.wlock();
                 try {
@@ -694,9 +695,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     fr.wunlock();
                 }
             } catch (SRMInvalidRequestException e) {
-                logger.error("BringOnlineFileRequest failed: {}", e.getMessage());
+                logger.warn(e.getMessage());
             } catch (IllegalStateTransition e) {
-                logger.warn("Illegal State Transition: {}", e.getMessage());
+                logger.error(e.getMessage());
             }
         }
 
@@ -706,15 +707,15 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
                     fr.setState(State.FAILED,reason);
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                } catch(IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
 
-                logger.error("ThePinCallbacks error: "+ reason);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.error("Pinning failed: "+ reason);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -740,15 +741,12 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         public void Error( String error) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                this.error = "TheUnpinCallbacks error: "+ error;
-                if(fr != null) {
-                    logger.error(this.error);
-                }
+                this.error = "Unpinning failed: "+ error;
+                logger.warn(this.error);
                 success = false;
-                done();
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
+            } finally {
                 done();
             }
         }
@@ -757,15 +755,12 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         public void Exception( Exception e) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                if(fr != null) {
-                    logger.error("TheUnpinCallbacks exception",e);
-                }
-                this.error = "TheUnpinCallbacks exception: "+e.toString();
+                logger.error("Unpinning failed.", e);
+                this.error = "Unpinning failed: " + e.toString();
                 success = false;
-                done();
-            }
-            catch(Exception e1) {
-                logger.error(e1.toString());
+            } catch (SRMInvalidRequestException e1) {
+                logger.warn(e1.getMessage());
+            } finally {
                 done();
             }
         }
@@ -777,16 +772,12 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                this.error = "TheUnpinCallbacks Timeout";
-                if(fr  != null) {
-                    logger.error(this.error);
-               }
+                this.error = "Unpinning timed out.";
+                logger.error(this.error);
                 success = false;
-                done();
-
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+            } catch (SRMInvalidRequestException e) {
+                logger.error(e.getMessage());
+            } finally {
                 done();
             }
         }
@@ -796,24 +787,22 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 if(fr != null) {
-                    logger.debug("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
+                    logger.debug("File unpinned (pinId={}).", pinId);
                     State state = fr.getState();
                    if(state == State.ASYNCWAIT) {
                         fr.setPinId(pinId);
                         Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                        try {
-                            scheduler.schedule(fr);
-                        }
-                        catch(Exception ie) {
-                            logger.error(ie.toString());
-                        }
+                       scheduler.schedule(fr);
                     }
                 }
                 success = true;
-                done();
-            }
-            catch(Exception e) {
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
+            } catch (InterruptedException e) {
                 logger.error(e.toString());
+            } catch (IllegalStateTransition e) {
+                logger.error(e.getMessage());
+            } finally {
                 done();
             }
         }
@@ -822,16 +811,12 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         public void UnpinningFailed(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                this.error = "TheUnpinCallbacks error: "+ reason;
-                if(fr  != null) {
-                    logger.error(this.error);
-                }
+                this.error = "Unpinning failed: "+ reason;
+                logger.error(this.error);
                 success = false;
-                done();
-
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+            } catch (SRMInvalidRequestException e) {
+                logger.error(e.getMessage());
+            } finally {
                 done();
             }
         }
@@ -854,7 +839,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     else
                     {
                         if((System.currentTimeMillis() - starttime)>timeout) {
-                            error = " TheUnpinCallbacks Timeout";
+                            error = "Unpinning timed out.";
                             return false;
                         }
                     }

@@ -322,18 +322,20 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         State state = getState();
         if(State.isFinalState(state)) {
 
-            logger.debug("copy request state changed to "+state);
+            logger.debug("put request state changed to {}", state);
             for (PutFileRequest request : getFileRequests()) {
+                request.wlock();
                 try {
                     State fr_state = request.getState();
                     if(!State.isFinalState(fr_state ))
                     {
-                        logger.debug("changing fr#"+request.getId()+" to "+state);
+                        logger.debug("changing fr#{} to {}", request.getId(), state);
                         request.setState(state, "Changing file state because request state has changed.");
                     }
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.error("Illegal State Transition : " +ist.getMessage());
+                } catch (IllegalStateTransition ist) {
+                    logger.error(ist.getMessage());
+                } finally {
+                    request.wunlock();
                 }
             }
 

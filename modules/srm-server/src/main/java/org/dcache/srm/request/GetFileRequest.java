@@ -373,7 +373,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     @Override
     public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
-        logger.debug("run()");
+        logger.trace("run()");
         try {
             if(getPinId() == null) {
                 // [ SRM 2.2, 5.2.2, g)] The file request must fail with an error SRM_FILE_BUSY
@@ -385,12 +385,13 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 if (SRM.getSRM().isFileBusy(surl)) {
                     setStateAndStatusCode(State.FAILED, "The requested SURL is being used by another client.",
                             TStatusCode.SRM_FILE_BUSY);
+                    return;
                 }
 
                 pinFile();
                 if(getPinId() == null) {
                     setState(State.ASYNCWAIT, "Pinning file.");
-                    logger.debug("GetFileRequest: waiting async notification about pinId...");
+                    logger.trace("GetFileRequest: waiting async notification about pinId...");
                     return;
                 }
             }
@@ -398,24 +399,26 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             try {
                 computeTurl();
             } catch (SRMAuthorizationException e) {
-                String error =e.getMessage();
+                String error = e.getMessage();
                 logger.error(error);
                 try {
                     setStateAndStatusCode(
                             State.FAILED,
                             error,
                             TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                } catch(IllegalStateTransition ist) {
-                    logger.error("Illegal State Transition : " + ist.getMessage());
+                } catch (IllegalStateTransition ist) {
+                    logger.error(ist.getMessage());
                 }
+                return;
             } catch (SRMException e) {
                 String error = "cannot obtain turl for file:" + e.getMessage();
                 logger.error(error);
                 try {
                     setState(State.FAILED,error);
-                } catch(IllegalStateTransition ist) {
-                    logger.error("Illegal State Transition : " + ist.getMessage());
+                } catch (IllegalStateTransition ist) {
+                    logger.error(ist.getMessage());
                 }
+                return;
             }
         } catch (IllegalStateTransition | DataAccessException | SRMException e) {
             // FIXME some SRMException failures are temporary and others are
@@ -663,14 +666,13 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     fr.setStateAndStatusCode(State.FAILED,
                         reason,
                         TStatusCode.SRM_INVALID_PATH);
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.warn("GetCallbacks error: "+ reason);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+            } catch(SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -682,14 +684,14 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     fr.setStateAndStatusCode(State.FAILED,
                                              reason,
                                              TStatusCode.SRM_FILE_UNAVAILABLE);
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.error("GetCallbacks error: "+ reason);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.warn("File is unavailable: {}", reason);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -699,14 +701,14 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 GetFileRequest fr = getGetFileRequest();
                 try {
                     fr.setState(State.FAILED,error);
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.error("ThePinCallbacks error: "+ error);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.warn("Pinning failed: {}", error);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -716,14 +718,14 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 GetFileRequest fr = getGetFileRequest();
                 try {
                     fr.setState(State.FAILED,e.toString());
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.error("ThePinCallbacks exception",e);
-            }
-            catch(Exception e1) {
-                logger.error(e1.toString());
+                logger.error("Pinning failed",e);
+            } catch (SRMInvalidRequestException e1) {
+                logger.warn(e1.getMessage());
             }
         }
 
@@ -736,22 +738,22 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 GetFileRequest fr = getGetFileRequest();
                 try {
                     fr.setState(State.FAILED, "Pin operation timed out.");
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
 
-                logger.error("GetCallbacks Timeout");
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.error("Pinning timed out.");
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
         @Override
         public void Pinned(FileMetaData fileMetaData, String pinId) {
             try {
-                logger.debug("File pinned (pinId={})", pinId);
+                logger.debug("File pinned (pinId={}).", pinId);
 
                 GetFileRequest fr = getGetFileRequest();
                 fr.wlock();
@@ -771,12 +773,11 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     fr.wunlock();
                 }
             } catch (InterruptedException e) {
-                logger.error(e.getMessage());
                 Thread.currentThread().interrupt();
             } catch (SRMInvalidRequestException e) {
-                logger.error("BringOnlineFileRequest failed: {}", e.getMessage());
+                logger.warn(e.getMessage());
             } catch (IllegalStateTransition e) {
-                logger.warn("Illegal State Transition: {}", e.getMessage());
+                logger.error(e.getMessage());
             }
         }
 
@@ -786,15 +787,15 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 GetFileRequest fr = getGetFileRequest();
                 try {
                     fr.setState(State.FAILED,reason);
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                } catch (IllegalStateTransition ist) {
+                    if (!ist.getFromState().isFinalState()) {
+                        logger.error(ist.getMessage());
+                    }
                 }
 
-                logger.error("ThePinCallbacks error: "+ reason);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.error("Pinning failed: {}", reason);
+            } catch(SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -817,10 +818,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         public void Error( String error) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                logger.error("TheUnpinCallbacks error: "+ error);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.error("Unpinning failed: {}", error);
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -828,10 +828,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         public void Exception( Exception e) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                logger.error("TheUnpinCallbacks exception",e);
-            }
-            catch(Exception e1) {
-                logger.error(e1.toString());
+                logger.error("Unpinning failed.", e);
+            } catch (SRMInvalidRequestException e1) {
+                logger.warn(e1.getMessage());
             }
         }
 
@@ -842,10 +841,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         public void Timeout() {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                logger.error("TheUnpinCallbacks Timeout");
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                logger.error("Unpinning timed out.");
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -853,21 +851,19 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         public void Unpinned(String pinId) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                logger.debug("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
+                logger.debug("Unpinned (pinId={}).", pinId);
                 State state = fr.getState();
                if(state == State.ASYNCWAIT) {
-                    fr.setPinId(pinId);
-                    Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                    try {
-                        scheduler.schedule(fr);
-                    }
-                    catch(Exception ie) {
-                        logger.error(ie.toString());
-                    }
-                }
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+                   fr.setPinId(pinId);
+                   Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
+                   scheduler.schedule(fr);
+               }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (IllegalStateTransition e) {
+                logger.error(e.getMessage());
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -875,10 +871,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         public void UnpinningFailed(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                logger.error("TheUnpinCallbacks error: "+ reason);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+            } catch (SRMInvalidRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
     }

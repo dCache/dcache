@@ -264,8 +264,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
             }
         }
         catch(IllegalStateTransition ist) {
-            String error =  "Can't set Status to "+status+
-                    " due to Illegal State Transition : " +ist.getMessage();
+            String error =  "Can't set Status to " + status + " due to: " + ist.getMessage();
             logger.error(error);
             throw new SRMException(error);
         }
