@@ -22,7 +22,6 @@ import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
-import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.Role;
 
 /**
@@ -35,7 +34,7 @@ public class PoolList extends BasePage {
     private static final long serialVersionUID = -3519762401458479856L;
     private List<PoolSpaceBean> _poolBeans;
     private SelectOption _selectedOption;
-    private final EvenOddListView view;
+    private final PoolListPanel poolListPanel;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
     public PoolList() {
@@ -43,9 +42,8 @@ public class PoolList extends BasePage {
         poolUsageForm.add(createPoolModeDropDown("mode"));
         poolUsageForm.add(new FeedbackPanel("feedback"));
         getPoolSpaceBeans();
-        PoolListPanel poolListPanel = new PoolListPanel("poolListPanel",
+        poolListPanel = new PoolListPanel("poolListPanel",
                 new PropertyModel(this, "_poolBeans"), true);
-        view = poolListPanel.getView();
         poolUsageForm.add(poolListPanel);
         add(poolUsageForm);
     }
@@ -97,10 +95,8 @@ public class PoolList extends BasePage {
 
         public PoolUsageForm(String id) {
             super(id);
-            Button button = new Button("submit");
-            MetaDataRoleAuthorizationStrategy.authorize(button, RENDER, Role.ADMIN);
-            _log.debug("submit isEnabled : {}", String.valueOf(button.isEnabled()));
-            this.add(button);
+            Button submit = new Button("submit");
+            this.add(submit);;
         }
 
         @Override
@@ -112,11 +108,11 @@ public class PoolList extends BasePage {
                     PoolV2Mode poolMode = new PoolV2Mode(_selectedOption.getKey());
                     getPoolSpaceService().changePoolMode(_poolBeans, poolMode,
                             getWebadminSession().getUserName());
-                    view.render();
                 } catch (PoolSpaceServiceException ex) {
                     _log.error("something went wrong with enable/disable");
                     this.error(getStringResource("error.changePoolModeFailed") + ex.getMessage());
                 }
+                poolListPanel.render();
             }
         }
     }

@@ -11,6 +11,7 @@ import org.apache.wicket.model.PropertyModel;
 import java.util.List;
 
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
+import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.Role;
@@ -23,6 +24,8 @@ import org.dcache.webadmin.view.util.SelectableWrapper;
 public class ActiveTransfersPanel extends BasePanel {
 
     private static final long serialVersionUID = -4054050417645444230L;
+
+    private ActiveTransfers _activeTransfers;
 
     public ActiveTransfersPanel(String id,
             IModel<? extends List<SelectableWrapper<ActiveTransfersBean>>> model) {
@@ -55,6 +58,14 @@ public class ActiveTransfersPanel extends BasePanel {
         }
 
         @Override
+        protected void onBeforeRender() {
+            if (_activeTransfers != null) {
+                setList(_activeTransfers.getListViewList());
+            }
+            super.onBeforeRender();
+        }
+
+        @Override
         protected void populateItem(
                 final ListItem<SelectableWrapper<ActiveTransfersBean>> item) {
             SelectableWrapper<ActiveTransfersBean> wrapper = item.getModelObject();
@@ -67,6 +78,7 @@ public class ActiveTransfersPanel extends BasePanel {
                     new PropertyModel<Boolean>(wrapper, "selected"));
             checkboxColumn.add(checkbox);
             item.add(checkboxColumn);
+            String qualifier = wrapper.isPending() ? " (pending)" : "";
             Label doorLabel = new Label("activeTransfersPanel.door", activeTransfer.getCellName());
             MetaDataRoleAuthorizationStrategy.authorize(doorLabel, RENDER, Role.ADMIN);
             item.add(doorLabel);
@@ -84,7 +96,7 @@ public class ActiveTransfersPanel extends BasePanel {
             item.add(hostLabel);
             item.add(new Label("activeTransfersPanel.status", activeTransfer.getStatus()));
             item.add(new Label("activeTransfersPanel.since", activeTransfer.getWaitingSinceTime()));
-            item.add(new Label("activeTransfersPanel.health", activeTransfer.getState()));
+            item.add(new Label("activeTransfersPanel.health", activeTransfer.getState() + qualifier));
             item.add(new Label("activeTransfersPanel.transferred",
                     Long.valueOf(activeTransfer.getTransferred()).toString()));
             item.add(new Label("activeTransfersPanel.speed", activeTransfer.getTransferRate()));
@@ -92,5 +104,9 @@ public class ActiveTransfersPanel extends BasePanel {
                     Long.valueOf(activeTransfer.getJobId()).toString()));
 
         }
+    }
+
+    public void setActiveTransfersPage(ActiveTransfers activeTransfers) {
+        _activeTransfers = activeTransfers;
     }
 }
