@@ -10,5 +10,8 @@
     <!-- Sets the defaultTransactionIsolation. Should be set to one of: NONE, READ_COMMITTED, READ_UNCOMMITTED,
       REPEATABLE_READ or SERIALIZABLE. If not set, will use driver default. -->
     <property name="defaultTransactionIsolation">READ_COMMITTED</property>
+
+    <!-- Workaround a bug in BoneCP 0.8.0; see https://github.com/wwadge/bonecp/pull/18. -->
+    <property name="defaultTransactionIsolationValue">2</property>
   </default-config>
 </bonecp-config>
