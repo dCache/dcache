@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException;
@@ -24,30 +25,57 @@ public class ActiveTransfers extends SortableBasePage {
     private static final Logger _log = LoggerFactory.getLogger(ActiveTransfers.class);
     private static final long serialVersionUID = -1360523434922193867L;
 
+    private List<SelectableWrapper<ActiveTransfersBean>> _transfers;
+
+    /*
+     * set to false when using the Junit FormTester; otherwise, the autorefreshing
+     * form produces incorrect results
+     */
+
+    public static boolean autorefresh = true;
+
+    /*
+     * necessary so that submit uses the current list instance
+     */
+    private boolean submitFormCalled = false;
+
     public ActiveTransfers() {
-        Form activeTransfersForm = getAutoRefreshingForm("activeTransfersForm");
+        Form<?> activeTransfersForm = new Form<Void>("activeTransfersForm");
         activeTransfersForm.add(new FeedbackPanel("feedback"));
         Button button = new SubmitButton("submit");
         MetaDataRoleAuthorizationStrategy.authorize(button, RENDER, Role.ADMIN);
         activeTransfersForm.add(button);
-        getActiveTransfers();
-        activeTransfersForm.add(new ActiveTransfersPanel("activeTransfersPanel",
-                new PropertyModel(this, "activeTransfers")));
+        fetchActiveTransfers();
+        ActiveTransfersPanel panel = new ActiveTransfersPanel("activeTransfersPanel",
+                        new PropertyModel(this, "_transfers"));
+        panel.setActiveTransfersPage(this);
+        activeTransfersForm.add(panel);
+        if (autorefresh) {
+            addAutoRefreshToForm(activeTransfersForm, 1, TimeUnit.MINUTES);
+        }
         add(activeTransfersForm);
+    }
+
+    public List<SelectableWrapper<ActiveTransfersBean>> getListViewList() {
+        if (!submitFormCalled) {
+            fetchActiveTransfers();
+        }
+        submitFormCalled = false;
+        return _transfers;
     }
 
     private ActiveTransfersService getActiveTransfersService() {
         return getWebadminApplication().getActiveTransfersService();
     }
 
-    public List<SelectableWrapper<ActiveTransfersBean>> getActiveTransfers() {
+    public void fetchActiveTransfers() {
         try {
             _log.debug("getActiveTransfers called");
-            return getActiveTransfersService().getActiveTransferBeans();
+            _transfers = getActiveTransfersService().getActiveTransferBeans();
         } catch (ActiveTransfersServiceException ex) {
             this.error(getStringResource("error.getActiveTransfersFailed") + ex.getMessage());
             _log.debug("getActiveTransfers failed {}", ex.getMessage());
-            return Collections.emptyList();
+            _transfers = Collections.emptyList();
         }
     }
 
@@ -61,15 +89,15 @@ public class ActiveTransfers extends SortableBasePage {
 
         @Override
         public void onSubmit() {
+            submitFormCalled = true;
             try {
                 _log.debug("Kill Movers submitted");
-                getActiveTransfersService().killTransfers(getActiveTransfers());
+                getActiveTransfersService().killTransfers(_transfers);
             } catch (ActiveTransfersServiceException e) {
                 _log.info("couldn't kill some movers - jobIds: {}",
                         e.getMessage());
                 error(getStringResource("error.notAllMoversKilled"));
             }
-            getActiveTransfers();
         }
     }
 }

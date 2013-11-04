@@ -1,5 +1,6 @@
 package org.dcache.webadmin.view.panels.activetransfers;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
@@ -11,6 +12,7 @@ import org.apache.wicket.model.PropertyModel;
 import java.util.List;
 
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
+import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.Role;
@@ -23,6 +25,8 @@ import org.dcache.webadmin.view.util.SelectableWrapper;
 public class ActiveTransfersPanel extends BasePanel {
 
     private static final long serialVersionUID = -4054050417645444230L;
+
+    private ActiveTransfers _activeTransfers;
 
     public ActiveTransfersPanel(String id,
             IModel<? extends List<SelectableWrapper<ActiveTransfersBean>>> model) {
@@ -54,6 +58,24 @@ public class ActiveTransfersPanel extends BasePanel {
             super(id, model);
         }
 
+        /*
+         * This needs to be overridden to get the most recent data from Ajax
+         * autorefresh. The sequence of calls is such that the behavior's
+         * beforeRender is actually called after the form's, so the BasePage
+         * refresh() adapter method cannot be used in this case.
+         */
+        @Override
+        protected void onBeforeRender() {
+            /*
+             * may be null if this panel is embedded
+             * in a page other than PoolList
+             */
+            if (_activeTransfers != null) {
+                setList(_activeTransfers.getListViewList());
+            }
+            super.onBeforeRender();
+        }
+
         @Override
         protected void populateItem(
                 final ListItem<SelectableWrapper<ActiveTransfersBean>> item) {
@@ -66,6 +88,11 @@ public class ActiveTransfersPanel extends BasePanel {
             CheckBox checkbox = new CheckBox("activeTransfersPanel.selected",
                     new PropertyModel<Boolean>(wrapper, "selected"));
             checkboxColumn.add(checkbox);
+            String qualifier = "";
+            if (wrapper.isPending()) {
+                item.add(AttributeModifier.replace("style", "color: #880000;"));
+                qualifier = " (pending)";
+            }
             item.add(checkboxColumn);
             Label doorLabel = new Label("activeTransfersPanel.door", activeTransfer.getCellName());
             MetaDataRoleAuthorizationStrategy.authorize(doorLabel, RENDER, Role.ADMIN);
@@ -84,7 +111,7 @@ public class ActiveTransfersPanel extends BasePanel {
             item.add(hostLabel);
             item.add(new Label("activeTransfersPanel.status", activeTransfer.getStatus()));
             item.add(new Label("activeTransfersPanel.since", activeTransfer.getWaitingSinceTime()));
-            item.add(new Label("activeTransfersPanel.health", activeTransfer.getState()));
+            item.add(new Label("activeTransfersPanel.health", activeTransfer.getState() + qualifier));
             item.add(new Label("activeTransfersPanel.transferred",
                     Long.valueOf(activeTransfer.getTransferred()).toString()));
             item.add(new Label("activeTransfersPanel.speed", activeTransfer.getTransferRate()));
@@ -92,5 +119,9 @@ public class ActiveTransfersPanel extends BasePanel {
                     Long.valueOf(activeTransfer.getJobId()).toString()));
 
         }
+    }
+
+    public void setActiveTransfersPage(ActiveTransfers activeTransfers) {
+        _activeTransfers = activeTransfers;
     }
 }
