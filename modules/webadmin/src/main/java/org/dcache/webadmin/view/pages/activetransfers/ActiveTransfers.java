@@ -15,6 +15,7 @@ import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.activetransfers.ActiveTransfersPanel;
+import org.dcache.webadmin.view.panels.selectall.SelectAllPanel;
 import org.dcache.webadmin.view.util.SelectableWrapper;
 
 public class ActiveTransfers extends BasePage {
@@ -33,7 +34,22 @@ public class ActiveTransfers extends BasePage {
         Form<?> activeTransfersForm = new Form<Void>("activeTransfersForm");
         activeTransfersForm.add(new FeedbackPanel("feedback"));
         Button submit = new SubmitButton("submit");
-        activeTransfersForm.add(submit);
+        SelectAllPanel selectAll = new SelectAllPanel("selectAllPanel", submit){
+            private static final long serialVersionUID = -1886067539481596863L;
+
+            @Override
+            protected void setSubmitCalled() {
+                submitFormCalled = true;
+            }
+
+            @Override
+            protected void setSelectionForAll(Boolean selected) {
+                for (SelectableWrapper<ActiveTransfersBean> wrapper: _transfers) {
+                    wrapper.setSelected(true);
+                }
+            }
+        };
+        activeTransfersForm.add(selectAll);
         fetchActiveTransfers();
         ActiveTransfersPanel panel = new ActiveTransfersPanel("activeTransfersPanel",
                         new PropertyModel(this, "_transfers"));

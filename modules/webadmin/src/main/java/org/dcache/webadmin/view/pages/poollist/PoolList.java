@@ -22,6 +22,7 @@ import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
+import org.dcache.webadmin.view.panels.selectall.SelectAllPanel;
 import org.dcache.webadmin.view.util.Role;
 
 /**
@@ -96,7 +97,21 @@ public class PoolList extends BasePage {
         public PoolUsageForm(String id) {
             super(id);
             Button submit = new Button("submit");
-            this.add(submit);;
+            SelectAllPanel selectAll = new SelectAllPanel("selectAllPanel", submit){
+                private static final long serialVersionUID = -1886067539481596863L;
+
+                @Override
+                protected void setSubmitCalled() {
+                }
+
+                @Override
+                protected void setSelectionForAll(Boolean selected) {
+                    for (PoolSpaceBean bean: _poolBeans) {
+                        bean.setSelected(true);
+                    }
+                }
+            };
+            this.add(selectAll);
         }
 
         @Override
