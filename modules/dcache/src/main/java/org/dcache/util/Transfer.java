@@ -87,7 +87,8 @@ public class Transfer implements Comparable<Transfer>
     private String _poolName;
     private CellAddressCore _poolAddress;
     private Integer _moverId;
-    private boolean _hasMover;
+    private boolean _hasMoverBeenCreated;
+    private boolean _hasMoverFinished;
     private String _status;
     private CacheException _error;
     private FileAttributes _fileAttributes = new FileAttributes();
@@ -334,7 +335,7 @@ public class Transfer implements Comparable<Transfer>
     public synchronized void setMoverId(Integer moverId)
     {
         _moverId = moverId;
-        _hasMover = (_moverId != null);
+        _hasMoverBeenCreated = (_moverId != null);
     }
 
     /**
@@ -351,7 +352,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized boolean hasMover()
     {
-        return _hasMover;
+        return _hasMoverBeenCreated && !_hasMoverFinished;
     }
 
     /**
@@ -433,7 +434,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized void finished(CacheException error)
     {
-        _hasMover = false;
+        _hasMoverFinished = true;
         _error = error;
         notifyAll();
     }
@@ -531,7 +532,7 @@ public class Transfer implements Comparable<Transfer>
         throws CacheException, InterruptedException
     {
         long deadline = System.currentTimeMillis() + millis;
-        while (_hasMover && System.currentTimeMillis() < deadline) {
+        while (!_hasMoverFinished && System.currentTimeMillis() < deadline) {
             wait(deadline - System.currentTimeMillis());
         }
 
@@ -539,7 +540,7 @@ public class Transfer implements Comparable<Transfer>
             throw _error;
         }
 
-        return !_hasMover;
+        return _hasMoverFinished;
     }
 
     /**
