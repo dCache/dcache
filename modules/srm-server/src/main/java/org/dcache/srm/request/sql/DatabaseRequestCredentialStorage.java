@@ -64,18 +64,15 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * TestDatabaseJobStorage.java
- *
- * Created on April 26, 2004, 3:27 PM
- */
-
 package org.dcache.srm.request.sql;
 
+import com.google.common.io.Files;
+import org.globus.gsi.CredentialException;
 import org.globus.gsi.X509Credential;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.gridforum.jgss.ExtendedGSSCredential;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -83,11 +80,10 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -103,10 +99,6 @@ import org.dcache.srm.util.Configuration;
 import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 
-/**
- *
- * @author  timur
- */
 public class DatabaseRequestCredentialStorage implements RequestCredentialStorage {
     private static final Logger logger =
             LoggerFactory.getLogger(DatabaseRequestCredentialStorage.class);
@@ -189,7 +181,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         String credentialFileName = null;
         if (credential != null) {
             credentialFileName = credentialsDirectory + "/" + requestCredential.getId();
-            writeCredentialInFile(credential, credentialFileName);
+            write(credential, credentialFileName);
         }
         jdbcTemplate.update(INSERT,
                 requestCredential.getId(),
@@ -217,7 +209,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                                 rs.getLong("creationtime"),
                                 rs.getString("credentialname"),
                                 rs.getString("role"),
-                                fileNameToGSSCredentilal(rs.getString("delegatedcredentials")),
+                                read(rs.getString("delegatedcredentials")),
                                 rs.getLong("credentialexpiration"),
                                 DatabaseRequestCredentialStorage.this);
                     }
@@ -260,7 +252,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        String credentialFileName = null;
        if (credential != null) {
            credentialFileName = credentialsDirectory + "/" + requestCredential.getId();
-           writeCredentialInFile(credential,credentialFileName);
+           write(credential, credentialFileName);
        }
        int result = jdbcTemplate.update(UPDATE,
                requestCredential.getCreationtime(),
@@ -275,84 +267,33 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        }
    }
 
-   private void writeCredentialInFile(GSSCredential credential, String credentialFileName) {
-       FileWriter writer = null;
+   private void write(GSSCredential credential, String credentialFileName) {
        try {
-           String credentialString = gssCredentialToString(credential);
-           writer = new FileWriter(credentialFileName,
-                   false);
-            writer.write(credentialString);
-            writer.close();
-       }catch(IOException ioe) {
-           if(writer != null) {
-               try{
-                writer.close();
-               }catch(IOException ioe1) {
-               }
+           if (credential != null && credential instanceof ExtendedGSSCredential) {
+               byte [] data = ((ExtendedGSSCredential)(credential)).export(
+                       ExtendedGSSCredential.IMPEXP_OPAQUE);
+               Files.write(data, new File(credentialFileName));
            }
-           logger.error(ioe.toString());
+       } catch(IOException | GSSException e) {
+           logger.error(e.toString());
        }
-
    }
 
-   private static String gssCredentialToString(GSSCredential credential) {
-      try {
-         if(credential != null && credential instanceof ExtendedGSSCredential) {
-            byte [] data = ((ExtendedGSSCredential)(credential)).export(
-               ExtendedGSSCredential.IMPEXP_OPAQUE);
-            return new String(data);
-
-         }
-      } catch(Exception e) {
-         System.err.println("conversion of credential to string failed with exception");
-         e.printStackTrace();
-      }
-      return null;
-   }
-   private GSSCredential fileNameToGSSCredentilal(String fileName) {
-       if(fileName == null) {
-           return null;
-       }
-       FileReader reader = null;
-       try {
-           reader = new FileReader(fileName);
-           StringBuilder sb = new StringBuilder();
-           char[] cbuf = new char[1024];
-           int len;
-           while ( (len =reader.read(cbuf) ) != -1 ) {
-               sb.append(cbuf,0,len);
+   private GSSCredential read(String fileName) {
+       if (fileName != null) {
+           try (InputStream in = new FileInputStream(fileName)) {
+               X509Credential gc = new X509Credential(in);
+               return new GlobusGSSCredentialImpl(gc, GSSCredential.INITIATE_ONLY);
+           } catch (GSSException | CredentialException e) {
+               logger.error("error reading the credentials from database: {}", e.toString());
+           } catch (IOException ioe) {
+               // this is not an error, as the file will
+               // written if it is not found
+               // so we just make a debug log
+               logger.debug("fileNameToGSSCredentilal(" + fileName + ") failed with " + ioe);
            }
-           reader.close();
-           return stringToGSSCredential(sb.toString());
-
-       } catch (IOException ioe) {
-           if(reader != null) {
-               try{
-            reader.close();
-               }catch(IOException ioe1) {
-               }
-           }
-           // this is not an error, as the file will
-           // written if it is not found
-           // so we just make a debug log
-           logger.debug("fileNameToGSSCredentilal("+fileName+") failed with "+ioe);
        }
        return null;
-   }
-   private GSSCredential stringToGSSCredential(String credential_string) {
-      if(credential_string != null) {
-         ByteArrayInputStream in = new ByteArrayInputStream(credential_string.getBytes());
-         try {
-            X509Credential gc = new X509Credential(in);
-            GSSCredential cred =
-               new GlobusGSSCredentialImpl(gc, GSSCredential.INITIATE_ONLY);
-            return cred;
-         } catch(Exception e) {
-            logger.error("error reading the credentials from database");
-            logger.error(e.toString());
-         }
-      }
-      return null;
    }
 
     public static int update(Connection connection,
