@@ -22,17 +22,17 @@
                 <wicket:message key="header1"></wicket:message>
             </h1>
             <div>
-                <select wicket:id="mode" /> <input
-                    type="submit"
-                    wicket:message="value:submitButton"
-                    wicket:id="submit" />
+                <select wicket:id="mode" />
+                <div>&nbsp;</div>
+                <span wicket:id="selectAllPanel"></span>
                 <span wicket:id="feedback" />
             </div>
             <div
                 id="infobox"
                 style="position: absolute; visibility: show; left: 25px; top: -100px; z-index: +1"
                 onmouseover="overdiv='1';"
-                onmouseout="overdiv='0'; setTimeout('hideBox()',2000)"></div>
+                onmouseout="overdiv='0'; setTimeout('hideBox()',2000)">
+            </div>
             <span wicket:id="poolListPanel"></span>
         </form>
     </wicket:extend>

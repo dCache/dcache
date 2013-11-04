@@ -1,6 +1,5 @@
 package org.dcache.webadmin.view.pages.activetransfers;
 
-import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
@@ -17,7 +16,7 @@ import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.panels.activetransfers.ActiveTransfersPanel;
-import org.dcache.webadmin.view.util.Role;
+import org.dcache.webadmin.view.panels.selectall.SelectAllPanel;
 import org.dcache.webadmin.view.util.SelectableWrapper;
 
 public class ActiveTransfers extends SortableBasePage {
@@ -42,9 +41,23 @@ public class ActiveTransfers extends SortableBasePage {
     public ActiveTransfers() {
         Form<?> activeTransfersForm = new Form<Void>("activeTransfersForm");
         activeTransfersForm.add(new FeedbackPanel("feedback"));
-        Button button = new SubmitButton("submit");
-        MetaDataRoleAuthorizationStrategy.authorize(button, RENDER, Role.ADMIN);
-        activeTransfersForm.add(button);
+        Button submit = new SubmitButton("submit");
+        SelectAllPanel selectAllPanel = new SelectAllPanel("selectAllPanel", submit) {
+            private static final long serialVersionUID = -1886067539481596863L;
+
+            @Override
+            protected void setSubmitCalled() {
+                submitFormCalled = true;
+            }
+
+            @Override
+            protected void setSelectionForAll(Boolean selected) {
+                for (SelectableWrapper<ActiveTransfersBean> wrapper : _transfers) {
+                    wrapper.setSelected(selected);
+                }
+            }
+        };
+        activeTransfersForm.add(selectAllPanel);
         fetchActiveTransfers();
         ActiveTransfersPanel panel = new ActiveTransfersPanel("activeTransfersPanel",
                         new PropertyModel(this, "_transfers"));

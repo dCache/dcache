@@ -21,8 +21,10 @@ import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
+import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
+import org.dcache.webadmin.view.panels.selectall.SelectAllPanel;
 import org.dcache.webadmin.view.util.Role;
 
 /**
@@ -121,10 +123,23 @@ public class PoolList extends SortableBasePage {
 
         public PoolUsageForm(String id) {
             super(id);
-            Button button = new Button("submit");
-            MetaDataRoleAuthorizationStrategy.authorize(button, RENDER, Role.ADMIN);
-            _log.debug("submit isEnabled : {}", String.valueOf(button.isEnabled()));
-            this.add(button);
+            Button submit = new Button("submit");
+            SelectAllPanel selectAllPanel = new SelectAllPanel("selectAllPanel", submit) {
+                private static final long serialVersionUID = -1886067539481596863L;
+
+                @Override
+                protected void setSubmitCalled() {
+                    submitFormCalled = true;
+                }
+
+                @Override
+                protected void setSelectionForAll(Boolean selected) {
+                    for (PoolSpaceBean bean : _poolBeans) {
+                        bean.setSelected(selected);
+                    }
+                }
+            };
+            this.add(selectAllPanel);
         }
 
         @Override
