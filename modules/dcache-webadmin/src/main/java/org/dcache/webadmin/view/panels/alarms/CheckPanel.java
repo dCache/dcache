@@ -108,16 +108,6 @@ public final class CheckPanel extends Panel {
 
         protected abstract IModel<Boolean> newCheckBoxModel(IModel<T> rowModel);
 
-        /*
-         * javascript which checks or unchecks all boxes carrying the uuid
-         * associated with this table column.
-         */
-        private final String js = "var val=$(this).attr('checked');"
-                        + "if (val == undefined) val = false;"
-                        + " $('."
-                        + uuid
-                        + "').each(function() { $(this).attr('checked', val); });";
-
         @Override
         public Component getHeader(String componentId) {
             headerPanel = new CheckPanel(componentId, headerLabel,
@@ -127,7 +117,7 @@ public final class CheckPanel extends Panel {
 
                 @Override
                 public void onComponentTag(Component component, ComponentTag tag) {
-                    tag.put("onclick", js);
+                    tag.put("onclick", "checkAll(this, '" + uuid + "')");
                 }
             });
 

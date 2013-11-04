@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.pages.alarms;
 
+import org.apache.wicket.markup.head.IHeaderResponse;
+import org.apache.wicket.markup.head.JavaScriptHeaderItem;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.protocol.https.RequireHttps;
@@ -77,6 +79,15 @@ import org.dcache.webadmin.view.panels.alarms.QueryPanel;
  */
 @RequireHttps
 public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
+    private static final String CHECK_ALL =
+                    "function checkAll(bx, clzz) {\n" +
+                    "   var cbs = document.getElementsByClassName(clzz);\n" +
+                    "   for(var i=0; i < cbs.length; i++) {\n" +
+                    "     if(cbs[i].type == 'checkbox') {\n" +
+                    "       cbs[i].checked = bx.checked;\n" +
+                    "     }\n" +
+                    "   }\n" +
+                    "}";
 
     private static final long serialVersionUID = 993708875580341999L;
     private Button refreshButton;
@@ -114,5 +125,11 @@ public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
     @Override
     protected void refresh() {
         getWebadminApplication().getAlarmDisplayService().refresh();
+    }
+
+    @Override
+    protected void renderHeadInternal(IHeaderResponse response) {
+        super.renderHeadInternal(response);
+        response.render(JavaScriptHeaderItem.forScript(CHECK_ALL, "checkall"));
     }
 }
