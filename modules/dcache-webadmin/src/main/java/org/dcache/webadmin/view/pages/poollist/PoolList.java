@@ -23,7 +23,6 @@ import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
-import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.Role;
 
 /**
@@ -35,7 +34,6 @@ public class PoolList extends SortableBasePage {
     private static final long serialVersionUID = -3519762401458479856L;
     private List<PoolSpaceBean> _poolBeans;
     private SelectOption _selectedOption;
-    private final EvenOddListView view;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
     /*
@@ -44,23 +42,36 @@ public class PoolList extends SortableBasePage {
      */
     public static boolean autorefresh = true;
 
+    /*
+     * necessary so that submit uses the current list instance
+     */
+    private boolean submitFormCalled = false;
+
     public PoolList() {
         Form poolUsageForm = new PoolUsageForm("poolUsageForm");
+        poolUsageForm.add(createPoolModeDropDown("mode"));
+        poolUsageForm.add(new FeedbackPanel("feedback"));
+        fetchPoolSpaceBeans();
+        PoolListPanel poolListPanel = new PoolListPanel("poolListPanel",
+                new PropertyModel(this, "_poolBeans"), true);
+        poolListPanel.setPoolListPage(this);
+        poolUsageForm.add(poolListPanel);
         if (autorefresh) {
             addAutoRefreshToForm(poolUsageForm, 1, TimeUnit.MINUTES);
         }
-        poolUsageForm.add(createPoolModeDropDown("mode"));
-        poolUsageForm.add(new FeedbackPanel("feedback"));
-        getPoolSpaceBeans();
-        PoolListPanel poolListPanel = new PoolListPanel("poolListPanel",
-                new PropertyModel(this, "_poolBeans"), true);
-        view = poolListPanel.getView();
-        poolUsageForm.add(poolListPanel);
         add(poolUsageForm);
     }
 
-    protected void refresh() {
-        getPoolSpaceBeans();
+    /**
+     * See the {@link PoolListPanel} for why this must be used instead of
+     * {@link BasePage#refresh()} here.
+     */
+    public List<PoolSpaceBean> getListViewList() {
+        if (!submitFormCalled) {
+            fetchPoolSpaceBeans();
+        }
+        submitFormCalled = false;
+        return _poolBeans;
     }
 
     private DropDownChoice<SelectOption> createPoolModeDropDown(String id) {
@@ -93,7 +104,7 @@ public class PoolList extends SortableBasePage {
         return getWebadminApplication().getPoolSpaceService();
     }
 
-    private void getPoolSpaceBeans() {
+    private void fetchPoolSpaceBeans() {
         try {
             _log.debug("getPoolListAction called");
             _poolBeans = getPoolSpaceService().getPoolBeans();
@@ -118,6 +129,7 @@ public class PoolList extends SortableBasePage {
 
         @Override
         protected void onSubmit() {
+            submitFormCalled = true;
             _log.debug("button pressed");
             if (_poolBeans != null && _selectedOption != null) {
                 try {
@@ -125,7 +137,6 @@ public class PoolList extends SortableBasePage {
                     PoolV2Mode poolMode = new PoolV2Mode(_selectedOption.getKey());
                     getPoolSpaceService().changePoolMode(_poolBeans, poolMode,
                             getWebadminSession().getUserName());
-                    view.render();
                 } catch (PoolSpaceServiceException ex) {
                     _log.error("something went wrong with enable/disable");
                     this.error(getStringResource("error.changePoolModeFailed") + ex.getMessage());

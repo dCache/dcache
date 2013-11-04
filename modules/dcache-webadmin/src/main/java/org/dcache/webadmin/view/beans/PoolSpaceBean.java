@@ -34,6 +34,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     private float _percentagePinned;
     private float _percentageRemovable;
     private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
+    private boolean pending = false;
 
     public PoolSpaceBean() {
         calculatePercentages();
@@ -97,6 +98,14 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
 
     public boolean isEnabled() {
         return _enabled;
+    }
+
+    public boolean isStatePending() {
+        return pending;
+    }
+
+    public void setStatePending(boolean pending) {
+        this.pending = pending;
     }
 
     public float getPercentageFree() {
