@@ -87,7 +87,7 @@ public class JdbcFs implements FileSystemProvider {
     /**
      * maximal length of an object name in a directory.
      */
-    private final static int MAX_NAME_LEN = 256;
+    private final static int MAX_NAME_LEN = 255;
 
     public JdbcFs(DataSource dataSource, String dialect) {
         this(dataSource, dialect, 0);
