@@ -144,6 +144,7 @@
                                   </formats>
                                   <outputDirectory>${project.build.directory}</outputDirectory>
                                   <finalName>SPECS</finalName>
+                                  <appendAssemblyId>false</appendAssemblyId>
                                 </configuration>
                             </execution>
                         </executions>
