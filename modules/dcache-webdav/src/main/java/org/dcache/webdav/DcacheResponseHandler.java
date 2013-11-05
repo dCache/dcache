@@ -34,6 +34,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.dcache.util.Slf4jSTErrorListener;
+
 import static io.milton.http.Response.Status.*;
 
 /**
@@ -79,6 +81,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
             throws IOException
     {
         _templateGroup = new STGroupFile(resource.getURL(), "UTF-8", '$', '$');
+        _templateGroup.setListener(new Slf4jSTErrorListener(log));
     }
 
     /**
