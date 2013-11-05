@@ -823,7 +823,7 @@ public class XrootdDoor
                 flags |= kXR_readable;
             }
             if (attributes.getStorageInfo().isCreatedOnly()) {
-                flags |= kXR_opscpend;
+                flags |= kXR_poscpend;
             }
             break;
         default:

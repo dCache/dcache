@@ -32,7 +32,7 @@
         <version.xerces>2.9.1</version.xerces>
         <version.jetty>8.1.13.v20130916</version.jetty>
         <version.wicket>6.9.1</version.wicket>
-        <version.xrootd4j>1.2.0</version.xrootd4j>
+        <version.xrootd4j>1.2.1</version.xrootd4j>
         <version.jglobus>2.0.6-rc4.d</version.jglobus>
         <version.openmq>4.5.2</version.openmq>
 
@@ -600,12 +600,6 @@
                 <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-gsi</artifactId>
                 <version>${version.xrootd4j}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.dcache</groupId>
-                        <artifactId>cog-jglobus</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.dcache</groupId>
