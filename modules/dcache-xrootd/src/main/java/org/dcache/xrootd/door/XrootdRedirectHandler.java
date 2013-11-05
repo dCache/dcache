@@ -213,7 +213,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         } catch (PermissionDeniedCacheException e) {
             throw new XrootdException(kXR_NotAuthorized, e.getMessage());
         } catch (FileIsNewCacheException e) {
-            throw new XrootdException(kXR_FileLockedr, "File is locked by upload");
+            throw new XrootdException(kXR_FileLocked, "File is locked by upload");
         } catch (NotFileCacheException e) {
             throw new XrootdException(kXR_NotFile, "Not a file");
         } catch (CacheException e) {
