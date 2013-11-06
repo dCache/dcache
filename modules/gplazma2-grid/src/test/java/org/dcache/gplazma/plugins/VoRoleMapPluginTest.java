@@ -319,7 +319,7 @@ public class VoRoleMapPluginTest
 
         assertThat(_principals, hasPrimaryGroupName("cms001"));
         assertThat(_principals, hasDn("/DC=es/DC=irisgrid/O=ciemat/CN=antonio-delgado-peris"));
-        assertThat(_principals, hasPrimaryFqan("/cms"));
+        assertThat(_principals, hasPrimaryFqan("/cms/escms"));
     }
 
 
