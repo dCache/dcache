@@ -821,12 +821,11 @@ public final class Scheduler implements Runnable
             try (JDC ignored = job.applyJdc()) {
                 try {
                     increaseNumberOfRunningThreads(job);
-                    State state;
                     LOGGER.trace("Scheduler(id={}) entering sync(job) block", getId());
                     job.wlock();
                     try {
                         LOGGER.trace("Scheduler(id={}) entered sync(job) block", getId());
-                        state = job.getState();
+                        State state = job.getState();
                         LOGGER.trace("Scheduler(id={}) JobWrapper run() running job in state={}", getId(), state);
 
                         switch (state) {
@@ -858,86 +857,65 @@ public final class Scheduler implements Runnable
                     }
 
                     LOGGER.trace("Scheduler(id={}) exited sync block", getId());
-                    Exception exception = null;
                     try {
                         LOGGER.trace("Scheduler(id={}) calling job.run()", getId());
                         job.run();
                         LOGGER.trace("Scheduler(id={}) job.run() returned", getId());
-                    } catch (NonFatalJobFailure | FatalJobFailure | RuntimeException e) {
-                        exception = e;
+                    } catch (NonFatalJobFailure e) {
+                        job.wlock();
+                        try {
+                            if (job.getNumberOfRetries() < getMaxNumberOfRetries() &&
+                                    job.getNumberOfRetries() < job.getMaxNumberOfRetries()) {
+                                job.setState(State.RETRYWAIT,
+                                        " nonfatal error [" + e.toString() + "] retrying");
+                                startRetryTimer(job);
+                            } else {
+                                job.setState(State.FAILED,
+                                        "Maximum number of retries exceeded: " + e.getMessage());
+                            }
+                        } catch (IllegalStateTransition ist) {
+                            LOGGER.error("Illegal State Transition : " + ist.getMessage());
+                        } finally {
+                            job.wunlock();
+                        }
+                        return;
+                    } catch (FatalJobFailure e) {
+                        try {
+                            job.setState(State.FAILED, e.getMessage());
+                        } catch (IllegalStateTransition ist) {
+                            LOGGER.error("Illegal State Transition : " + ist.getMessage());
+                        }
+                        return;
+                    } catch (RuntimeException e) {
+                        try {
+                            LOGGER.error("Bug detected by SRM Scheduler", e);
+                            job.setState(State.FAILED, "Internal error: " + e.toString());
+                        } catch (IllegalStateTransition ist) {
+                            // FIXME how should we fail a request that is
+                            // already in a terminal state?
+                            LOGGER.error("Illegal State Transition : {}", ist.getMessage());
+                        }
+                        return;
                     }
+
                     job.wlock();
                     try {
-                        // if no exception was thrown
-                        if (exception == null) {
-                            state = job.getState();
-                            if (state == State.DONE) {
-                            } else if (state == State.RUNNING) {
-                                try {
-                                    // put blocks if ready queue is full
-                                    job.setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
-                                    if (!readyQueue(job)) {
-                                        LOGGER.warn("All ready slots are taken and ready queue is full.");
-                                        job.setState(State.FAILED, "Site busy: too many active requests.");
-                                    }
-                                } catch (IllegalStateTransition ist) {
-                                    LOGGER.error("Illegal State Transition : " + ist.getMessage());
-                                }
+                        if (job.getState() == State.RUNNING) {
+                            // put blocks if ready queue is full
+                            job.setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
+                            if (!readyQueue(job)) {
+                                LOGGER.warn("All ready slots are taken and ready queue is full.");
+                                job.setState(State.FAILED, "Site busy: too many active requests.");
                             }
-
-                        } else {
-
-                            if (exception instanceof NonFatalJobFailure) {
-
-                                NonFatalJobFailure failure = (NonFatalJobFailure) exception;
-                                if (job.getNumberOfRetries() < maxNumberOfRetries &&
-                                        job.getNumberOfRetries() < job.getMaxNumberOfRetries()) {
-                                    try {
-                                        job.setState(State.RETRYWAIT,
-                                                " nonfatal error [" + exception.toString() + "] retrying");
-                                    } catch (IllegalStateTransition ist) {
-                                        LOGGER.error("Illegal State Transition : " + ist.getMessage());
-                                        return;
-                                    }
-                                    Scheduler.this.startRetryTimer(job);
-                                } else {
-                                    try {
-                                        job.setState(State.FAILED,
-                                                "Maximum number of retries exceeded: " + failure.getMessage());
-                                    } catch (IllegalStateTransition ist) {
-                                        LOGGER.error("Illegal State Transition : " + ist.getMessage());
-                                    }
-                                }
-                            } else if (exception instanceof FatalJobFailure) {
-                                FatalJobFailure failure = (FatalJobFailure) exception;
-
-                                try {
-                                    job.setState(State.FAILED, failure.getMessage());
-                                } catch (IllegalStateTransition ist) {
-                                    LOGGER.error("Illegal State Transition : " + ist.getMessage());
-                                }
-                            } else {
-                                // Only possibility left is RuntimeException
-                                try {
-                                    LOGGER.error("Bug detected by SRM Scheduler",
-                                            exception);
-                                    job.setState(State.FAILED, "Internal error: " +
-                                            exception.toString());
-                                } catch (IllegalStateTransition ist) {
-                                    // FIXME how should we fail a request that is
-                                    // already in a terminal state?
-                                    LOGGER.error("Illegal State Transition : {}",
-                                            ist.getMessage());
-                                }
-                            }
-
-
                         }
+                    } catch (IllegalStateTransition e) {
+                        LOGGER.error("Illegal State Transition : " + e.getMessage());
                     } finally {
                         job.wunlock();
                     }
                 } catch (Throwable t) {
-                    LOGGER.error(t.toString());
+                    Thread thread = Thread.currentThread();
+                    thread.getUncaughtExceptionHandler().uncaughtException(thread, t);
                 } finally {
                     started();
                     decreaseNumberOfRunningThreads(job);
