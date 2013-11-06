@@ -5104,7 +5104,7 @@ public final class Manager
                                                            selectWritePool.getFileSize(),
                                                            lifetime,
                                                            pnfsPath,
-                                                           selectWritePool.getPnfsId());
+                                                           null);
                                 file = getFile(fileId);
                         }
                 }
