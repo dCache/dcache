@@ -154,7 +154,7 @@
                                     <name>rpm.version</name>
                                     <value>${project.version}</value>
                                     <regex>-</regex>
-                                    <replacement>~</replacement>
+                                    <replacement/>
                                     <failIfNoMatch>false</failIfNoMatch>
                                 </configuration>
                             </execution>
