@@ -4641,7 +4641,12 @@ public final class Manager
                          *
                          */
                         if (selectWritePool.getReturnCode()!=0) {
-                                file = getFile(pnfsId);
+                                try {
+                                        file = getFile(pnfsId);
+                                } catch(SQLException ignored) {
+                                        logger.trace(ignored.getMessage());
+                                        return;
+                                }
                                 Connection connection = null;
                                 try {
                                         connection = connection_pool.getConnection();
@@ -4652,7 +4657,7 @@ public final class Manager
                                         connection = null;
                                 }
                                 catch(SQLException sqle) {
-                                        logger.error("failed to remove file {}: {}",
+                                        logger.error("Failed to nullify pnfsid of file {}: {}",
                                                      file, sqle.getMessage());
                                         if (connection!=null) {
                                                 try {
@@ -4671,7 +4676,6 @@ public final class Manager
                         }
                 }
         }
-
 
     private void forwardToPoolManager(CellMessage cellMessage)
         {
