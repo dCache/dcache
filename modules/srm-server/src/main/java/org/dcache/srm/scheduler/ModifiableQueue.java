@@ -93,20 +93,13 @@ public class ModifiableQueue  {
     private final String scheduler_name;
     private final Class<? extends Job> type;
     private final List<Long> queue = new LinkedList<>();
-    private int capacity;
+    private int capacity = 1000;
 
-    /** Creates a new instance of ModifiableQueue */
-    public ModifiableQueue(String name, String scheduler_name, Class<? extends Job> type, int capacity) {
+    public ModifiableQueue(String name, String scheduler_name, Class<? extends Job> type) {
         this.name = name;
         this.scheduler_name = scheduler_name;
         this.type = type;
-        this.capacity=capacity;
     }
-
-    public ModifiableQueue(String name, String scheduler_name, Class<? extends Job> type) {
-        this(name, scheduler_name, type, 1024);
-    }
-
 
     public int size() {
         synchronized(queue){
@@ -257,6 +250,13 @@ public class ModifiableQueue  {
                  return job;
             }
             return null;
+        }
+    }
+
+    public int getCapacity()
+    {
+        synchronized (queue) {
+            return capacity;
         }
     }
 

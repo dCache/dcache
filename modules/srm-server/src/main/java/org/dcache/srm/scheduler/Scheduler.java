@@ -64,18 +64,12 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * Scheduler.java
- *
- * Created on March 22, 2004, 2:27 PM
- */
-
 package org.dcache.srm.scheduler;
 
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -91,10 +85,13 @@ import org.dcache.srm.scheduler.policies.DefaultJobAppraiser;
 import org.dcache.srm.scheduler.policies.JobPriorityPolicyInterface;
 import org.dcache.srm.util.JDC;
 
-/** @author timur */
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 public final class Scheduler implements Runnable
 {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(Scheduler.class);
 
     public static final int ON_RESTART_FAIL_REQUEST = 1;
@@ -103,7 +100,6 @@ public final class Scheduler implements Runnable
 
     public int restorePolicy = ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
     // thread queue variables
-    private int maxThreadQueueSize = 1000; //used for both thread and priority thread queue
     private final ModifiableQueue threadQueue;
     private final CountByCreator threadQueuedJobsNum =
             new CountByCreator();
@@ -124,13 +120,11 @@ public final class Scheduler implements Runnable
             new CountByCreator();
 
     // thread pool related variables
-    private int threadPoolSize = 30;
-    private ThreadPoolExecutor pooledExecutor;
+    private final ThreadPoolExecutor pooledExecutor;
     private final CountByCreator runningThreadsNum =
             new CountByCreator();
 
     // ready queue related variables
-    private int maxReadyQueueSize = 1000;
     private final CountByCreator readyQueuedJobsNum =
             new CountByCreator();
 
@@ -156,10 +150,10 @@ public final class Scheduler implements Runnable
             new CountByCreator();
 
 
-    private String id;
+    private final String id;
     private volatile boolean running;
 
-    private Thread thread;
+    private final Thread thread;
 
     // private Object waitingGuard = new Object();
     // private int waitingJobNum;
@@ -169,61 +163,56 @@ public final class Scheduler implements Runnable
     private final ModifiableQueue readyQueue;
     //
     // this timer is used for tracking the expiration of retry timeout
-    private Timer retryTimer;
+    private final Timer retryTimer;
 
     private boolean useFairness = true;
     //private boolean useJobPriority;
     //private boolean useCreatorPriority;
 
     // this will contain the number of
-    private long timeStamp = System.currentTimeMillis();
+    private final long timeStamp = System.currentTimeMillis();
     private long queuesUpdateMaxWait = 60 * 1000; // one
 
-    private final static Map<String, Scheduler> schedulers =
-            new HashMap();
-    private JobPriorityPolicyInterface jobAppraiser;
-    private String priorityPolicyPlugin = "DefaultJobAppraiser";
+    private static volatile Map<String, Scheduler> schedulers = ImmutableMap.of();
+
+    private volatile JobPriorityPolicyInterface jobAppraiser;
+    private String priorityPolicyPlugin;
 
     public static Scheduler getScheduler(String id)
     {
         return schedulers.get(id);
     }
 
+    public static synchronized void addScheduler(String id, Scheduler scheduler)
+    {
+        schedulers = ImmutableMap.<String, Scheduler>builder()
+                .putAll(schedulers)
+                .put(id, scheduler)
+                .build();
+    }
+
     public Scheduler(String id, Class<? extends Job> type)
     {
-        if (id == null || id.equals("")) {
-            throw new IllegalArgumentException(" need non-null non-empty string as an id");
-        }
-        this.id = id;
-        schedulers.put(id, this);
-        threadQueue = new ModifiableQueue("ThreadQueue", id, type, maxThreadQueueSize);
-        priorityThreadQueue = new ModifiableQueue("PriorityThreadQueue", id, type, maxThreadQueueSize);
-        readyQueue = new ModifiableQueue("ReadyQueue", id, type, maxReadyQueueSize);
+        this.id = checkNotNull(id);
+        checkArgument(!id.isEmpty(), "need non-empty string as an id");
 
+        threadQueue = new ModifiableQueue("ThreadQueue", id, type);
+        priorityThreadQueue = new ModifiableQueue("PriorityThreadQueue", id, type);
+        readyQueue = new ModifiableQueue("ReadyQueue", id, type);
 
-        String className = "org.dcache.srm.scheduler.policies." + priorityPolicyPlugin;
-        try {
-            Class<? extends JobPriorityPolicyInterface> appraiserClass =
-                    Class.forName(className).asSubclass(JobPriorityPolicyInterface.class);
-            jobAppraiser = appraiserClass.newInstance();
-        } catch (Exception e) {
-            logger.error("failed to load " + className);
-            jobAppraiser = new DefaultJobAppraiser();
-        }
+        jobAppraiser = new DefaultJobAppraiser();
+        priorityPolicyPlugin = jobAppraiser.getClass().getSimpleName();
+
+        thread = new Thread(this, "Scheduler-" + id);
+        retryTimer = new Timer();
+        pooledExecutor = new ThreadPoolExecutor(30, 30, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1));
+
+        addScheduler(id, this);
     }
 
     public synchronized void start() throws IllegalStateException
     {
-        if (thread != null) {
-            throw new IllegalStateException(" Scheduler is running ");
-        }
-        pooledExecutor = new ThreadPoolExecutor(threadPoolSize,
-                threadPoolSize,
-                0,
-                TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(1));
-        retryTimer = new Timer();
-        thread = new Thread(this, "Scheduler-" + id);
+        checkState(!running, "Scheduler is running.");
         running = true;
         thread.start();
     }
@@ -243,26 +232,17 @@ public final class Scheduler implements Runnable
                    InterruptedException,
                    IllegalStateTransition
     {
-        logger.debug("schedule is called for job with id=" + job.getId() + " in state=" + job.getState());
-        if (!running) {
-            throw new IllegalStateException("scheduler is not running");
-        }
+        checkState(running, "scheduler is not running");
+        LOGGER.trace("schedule is called for job with id={} in state={}", job.getId(), job.getState());
 
         job.wlock();
         try {
-            State state = job.getState();
-            if (state != State.RESTORED &&
-                    state != State.PENDING &&
-                    state != State.ASYNCWAIT &&
-                    state != State.RUNNINGWITHOUTTHREAD &&
-                    state != State.RETRYWAIT) {
-                throw new IllegalStateException("can not schedule job in state =" + job.getState());
-            }
-            if (state == State.PENDING) {
+            switch (job.getState()) {
+            case PENDING:
                 job.setScheduler(this.id, timeStamp);
-            }
-            if (state == State.PENDING || state == State.RESTORED) {
-                if (getTotalTQueued() >= maxThreadQueueSize) {
+                // fall through
+            case RESTORED:
+                if (getTotalTQueued() >= getMaxThreadQueueSize()) {
                     job.setState(State.FAILED, "Roo many jobs in the queue.");
                     return;
                 }
@@ -281,23 +261,22 @@ public final class Scheduler implements Runnable
                 // if offer returned false or if it threw an exception,
                 // the job could not be scheduled, so it fails
                 job.setState(State.FAILED, "Site busy: too many queued requests.");
-            }
-            // job is either ASYNCWAIT or RETRYWAIT
-            else if (state == State.ASYNCWAIT || state == State.RETRYWAIT ||
-                    state == State.RUNNINGWITHOUTTHREAD) {
+                break;
+            case ASYNCWAIT:
+            case RETRYWAIT:
+            case RUNNINGWITHOUTTHREAD:
                 // put blocks if priorityThreadQueue is full
                 // this will block the retry timer (or the event handler)
-                logger.debug("putting job in a priority thread queue, which might block, job#" + job.getId());
+                LOGGER.trace("putting job in a priority thread queue, which might block, job#{}", job.getId());
                 job.setState(State.PRIORITYTQUEUED, "queued for execution");
                 if (!priorityQueue(job)) {
-                    logger.warn("Thread queue limit reached.");
+                    LOGGER.warn("Thread queue limit reached.");
                     job.setState(State.FAILED, "Site busy: too many queued requests.");
                 }
-                logger.debug("done putting job in a priority thread queue");
-            } else {
-                // should never get here
-                logger.error("Job #" + job.getId() + " state is " + state + " can not schedule!!!");
-                job.setState(State.FAILED, "Job state is " + state + " can not schedule!!!");
+                LOGGER.trace("done putting job in a priority thread queue");
+                break;
+            default:
+                throw new IllegalStateException("can not schedule job in state =" + job.getState());
             }
         } finally {
             job.wunlock();
@@ -516,6 +495,9 @@ public final class Scheduler implements Runnable
                 ModifiableQueue.ValueCalculator calc =
                         new ModifiableQueue.ValueCalculator()
                         {
+                            private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
+                            private final int maxRunningByOwner = getMaxRunningByOwner();
+
                             @Override
                             public int calculateValue(
                                     int queueLength,
@@ -532,7 +514,7 @@ public final class Scheduler implements Runnable
                                         maxRunningByOwner,
                                         job);
                                 if (job instanceof FileRequest) {
-                                    logger.debug("UPDATEPRIORITYTHREADQUEUE ca " +
+                                    LOGGER.trace("UPDATEPRIORITYTHREADQUEUE ca {}",
                                             ((FileRequest<?>) job).getCredential());
                                 }
                                 return value;
@@ -557,35 +539,34 @@ public final class Scheduler implements Runnable
                 break;
             }
 
-            logger.debug("updatePriorityThreadQueue(), found job id " + job.getId());
+            LOGGER.trace("updatePriorityThreadQueue(), found job id {}", job.getId());
 
             if (job.getState() != State.PRIORITYTQUEUED) {
                 // someone has canceled the job or
                 // its lifetime has expired
-                logger.error("updatePriorityThreadQueue() : found a job in priority thread queue with a state different from PRIORITYTQUEUED, job id=" +
-                        job.getId() + " state=" + job.getState());
+                LOGGER.error("updatePriorityThreadQueue() : found a job in priority thread queue with a state different from PRIORITYTQUEUED, job id={} state={}",
+                        job.getId(), job.getState());
                 priorityThreadQueue.remove(job);
                 continue;
             }
             try {
-                logger.debug("updatePriorityThreadQueue ()  executing job id=" + job.getId());
+                LOGGER.trace("updatePriorityThreadQueue ()  executing job id={}", job.getId());
                 JobWrapper wrapper = new JobWrapper(job);
                 pooledExecutor.execute(wrapper);
-                logger.debug("updatePriorityThreadQueue() waiting startup");
+                LOGGER.trace("updatePriorityThreadQueue() waiting startup");
                 wrapper.waitStartup();
-                logger.debug("updatePriorityThreadQueue() job started");
+                LOGGER.trace("updatePriorityThreadQueue() job started");
                 /** let the stateChanged() always remove the jobs from the queue
                  */
                 // the job is running in a separate thread by this time
                 // when  ThreadPoolExecutor can not accept new Job,
                 // RejectedExecutionException will be thrown
             } catch (RejectedExecutionException ree) {
-                logger.debug("updatePriorityThreadQueue() cannot execute job id=" +
-                        job.getId() + " at this time: RejectedExecutionException");
-                return;
+                LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time: RejectedExecutionException", job.getId());
+                break;
             } catch (RuntimeException re) {
-                logger.debug("updatePriorityThreadQueue() cannot execute job id=" + job.getId() + " at this time");
-                return;
+                LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time", job.getId());
+                break;
             }
         }
     }
@@ -598,11 +579,14 @@ public final class Scheduler implements Runnable
 
         while (true) {
             Job job = null;
-            if (useFairness) {
+            if (isFair()) {
                 //logger.debug("updateThreadQueue(), using ValueCalculator to find next job");
                 ModifiableQueue.ValueCalculator calc =
                         new ModifiableQueue.ValueCalculator()
                         {
+                            private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
+                            private final int maxRunningByOwner = getMaxRunningByOwner();
+
                             @Override
                             public int calculateValue(
                                     int queueLength,
@@ -640,38 +624,36 @@ public final class Scheduler implements Runnable
             if (getTotalRunningThreads() + getTotalRunningWithoutThreadState() > getThreadPoolSize()) {
                 break;
             }
-            logger.debug("updateThreadQueue(), found job id " + job.getId());
+            LOGGER.trace("updateThreadQueue(), found job id {}", job.getId());
 
             State state = job.getState();
             if (state != State.TQUEUED) {
                 // someone has canceled the job or
                 // its lifetime has expired
-                logger.error("updateThreadQueue() : found a job in thread queue with a state different from TQUEUED, job id=" +
-                        job.getId() + " state=" + job.getState());
+                LOGGER.error("updateThreadQueue() : found a job in thread queue with a state different from TQUEUED, job id={} state={}",
+                        job.getId(), job.getState());
                 threadQueue.remove(job);
                 continue;
             }
 
             try {
-                logger.debug("updateThreadQueue() executing job id=" + job.getId());
+                LOGGER.trace("updateThreadQueue() executing job id={}", job.getId());
                 JobWrapper wrapper = new JobWrapper(job);
                 pooledExecutor.execute(wrapper);
-                logger.debug("updateThreadQueue() waiting startup");
+                LOGGER.trace("updateThreadQueue() waiting startup");
                 wrapper.waitStartup();
-                logger.debug("updateThreadQueue() job started");
+                LOGGER.trace("updateThreadQueue() job started");
                     /*
                      * let the stateChanged() always remove the jobs from the queue
                      */
                 // when  ThreadPoolExecutor can not accept new Job,
                 // RejectedExecutionException will be thrown
             } catch (RejectedExecutionException ree) {
-                logger.debug("updatePriorityThreadQueue() cannot execute job id=" +
-                        job.getId() + " at this time: RejectedExecutionException");
-                return;
+                LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time: RejectedExecutionException", job.getId());
+                break;
             } catch (RuntimeException ie) {
-                logger.error("updateThreadQueue() cannot execute job id=" + job
-                        .getId() + " at this time");
-                return;
+                LOGGER.error("updateThreadQueue() cannot execute job id={} at this time", job.getId());
+                break;
             }
 
         }
@@ -680,15 +662,14 @@ public final class Scheduler implements Runnable
     public void tryToReadyJob(Job job)
     {
         if (getTotalReady() >= maxReadyJobs) {
-            // cann't add any more jobs to ready state
+            // can't add any more jobs to ready state
             return;
         }
         try {
             job.setState(State.READY, "Execution succeeded.");
-
         } catch (IllegalStateTransition ist) {
             //nothing more we can do here
-            logger.error("Illegal State Transition : " + ist.getMessage());
+            LOGGER.error("Illegal State Transition : " + ist.getMessage());
 
         }
     }
@@ -698,16 +679,19 @@ public final class Scheduler implements Runnable
     {
         while (true) {
 
-            if (getTotalReady() >= maxReadyJobs) {
+            if (getTotalReady() >= getMaxReadyJobs()) {
                 // cann't add any more jobs to ready state
                 return;
             }
             Job job = null;
-            if (useFairness) {
+            if (isFair()) {
                 //logger.debug("updateReadyQueue(), using ValueCalculator to find next job");
                 ModifiableQueue.ValueCalculator calc =
                         new ModifiableQueue.ValueCalculator()
                         {
+                            private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
+                            private final int maxReadyJobs = getMaxReadyJobs();
+
                             @Override
                             public int calculateValue(
                                     int queueLength,
@@ -740,7 +724,7 @@ public final class Scheduler implements Runnable
                 return;
             }
 
-            logger.debug("updateReadyQueue(), found job id " + job.getId());
+            LOGGER.debug("updateReadyQueue(), found job id {}", job.getId());
             tryToReadyJob(job);
         }
     }
@@ -810,13 +794,13 @@ public final class Scheduler implements Runnable
                         notified = false;
                     }
                 } catch (SRMInvalidRequestException e) {
-                    logger.error("Sheduler(id={}) detected an SRM error: {}", getId(), e.toString());
+                    LOGGER.error("Sheduler(id={}) detected an SRM error: {}", getId(), e.toString());
                 } catch (RuntimeException e) {
-                    logger.error("Sheduler(id=" + getId() + ") detected a bug", e);
+                    LOGGER.error("Sheduler(id=" + getId() + ") detected a bug", e);
                 }
             }
         } catch (InterruptedException e) {
-            logger.error("Sheduler(id=" + getId() +
+            LOGGER.error("Sheduler(id=" + getId() +
                     ") terminating update thread, since it caught an InterruptedException",
                     e);
         }
@@ -857,46 +841,47 @@ public final class Scheduler implements Runnable
                 try {
                     increaseNumberOfRunningThreads(job);
                     State state;
-                    logger.debug("Scheduler(id=" + getId() + ") entering sync(job) block");
+                    LOGGER.trace("Scheduler(id={}) entering sync(job) block", getId());
                     job.wlock();
                     try {
-                        logger.debug("Scheduler(id=" + getId() + ") entered sync(job) block");
+                        LOGGER.trace("Scheduler(id={}) entered sync(job) block", getId());
                         state = job.getState();
-                        logger.debug("Scheduler(id=" + getId() + ") JobWrapper run() running job in state=" + state);
-                        if (state == State.CANCELED ||
-                                state == State.FAILED) {
-                            logger.debug("Scheduler(id=" + getId() + ") returning");
-                            return;
+                        LOGGER.trace("Scheduler(id={}) JobWrapper run() running job in state={}", getId(), state);
 
-                        }
-                        if (state == State.PENDING ||
-                                state == State.TQUEUED ||
-                                state == State.PRIORITYTQUEUED ||
-                                state == State.ASYNCWAIT ||
-                                state == State.RETRYWAIT) {
+                        switch (state) {
+                        case CANCELED:
+                        case FAILED:
+                            LOGGER.trace("Scheduler(id={}) returning", getId());
+                            return;
+                        case PENDING:
+                        case TQUEUED:
+                        case PRIORITYTQUEUED:
+                        case ASYNCWAIT:
+                        case RETRYWAIT:
                             try {
-                                logger.debug("Scheduler(id={}) changing job state to running", getId());
+                                LOGGER.debug("Scheduler(id={}) changing job state to running", getId());
                                 job.setState(State.RUNNING, "Processing request", false);
                                 started();
                                 job.saveJob();
                             } catch (IllegalStateTransition ist) {
-                                logger.error("Illegal State Transition : " + ist.getMessage());
+                                LOGGER.error("Illegal State Transition : " + ist.getMessage());
                                 return;
                             }
-                        } else {
-                            logger.error("Scheduler(id=" + getId() + ") job is in state " + state + "; can not execute, returning");
+                            break;
+                        default:
+                            LOGGER.error("Scheduler(id={}) job is in state {}; can not execute, returning", getId(), state);
                             return;
                         }
                     } finally {
                         job.wunlock();
                     }
 
-                    logger.debug("Scheduler(id=" + getId() + ") exited sync block");
+                    LOGGER.trace("Scheduler(id={}) exited sync block", getId());
                     Exception exception = null;
                     try {
-                        logger.debug("Scheduler(id=" + getId() + ") calling job.run()");
+                        LOGGER.trace("Scheduler(id={}) calling job.run()", getId());
                         job.run();
-                        logger.debug("Scheduler(id=" + getId() + ") job.run() returned");
+                        LOGGER.trace("Scheduler(id={}) job.run() returned", getId());
                     } catch (NonFatalJobFailure | FatalJobFailure | RuntimeException e) {
                         exception = e;
                     }
@@ -911,17 +896,17 @@ public final class Scheduler implements Runnable
                                     // put blocks if ready queue is full
                                     job.setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
                                     if (!readyQueue(job)) {
-                                        logger.warn("All ready slots are taken and ready queue is full.");
+                                        LOGGER.warn("All ready slots are taken and ready queue is full.");
                                         job.setState(State.FAILED, "Site busy: too many active requests.");
                                     }
                                 } catch (InterruptedException ie) {
                                     try {
                                         job.setState(State.FAILED, "Service shutting down.");
                                     } catch (IllegalStateTransition ist) {
-                                        logger.error("Illegal State Transition : " + ist.getMessage());
+                                        LOGGER.error("Illegal State Transition : " + ist.getMessage());
                                     }
                                 } catch (IllegalStateTransition ist) {
-                                    logger.error("Illegal State Transition : " + ist.getMessage());
+                                    LOGGER.error("Illegal State Transition : " + ist.getMessage());
                                 }
                             }
 
@@ -936,7 +921,7 @@ public final class Scheduler implements Runnable
                                         job.setState(State.RETRYWAIT,
                                                 " nonfatal error [" + exception.toString() + "] retrying");
                                     } catch (IllegalStateTransition ist) {
-                                        logger.error("Illegal State Transition : " + ist.getMessage());
+                                        LOGGER.error("Illegal State Transition : " + ist.getMessage());
                                         return;
                                     }
                                     Scheduler.this.startRetryTimer(job);
@@ -945,7 +930,7 @@ public final class Scheduler implements Runnable
                                         job.setState(State.FAILED,
                                                 "Maximum number of retries exceeded: " + failure.getMessage());
                                     } catch (IllegalStateTransition ist) {
-                                        logger.error("Illegal State Transition : " + ist.getMessage());
+                                        LOGGER.error("Illegal State Transition : " + ist.getMessage());
                                     }
                                 }
                             } else if (exception instanceof FatalJobFailure) {
@@ -954,19 +939,19 @@ public final class Scheduler implements Runnable
                                 try {
                                     job.setState(State.FAILED, failure.getMessage());
                                 } catch (IllegalStateTransition ist) {
-                                    logger.error("Illegal State Transition : " + ist.getMessage());
+                                    LOGGER.error("Illegal State Transition : " + ist.getMessage());
                                 }
                             } else {
                                 // Only possibility left is RuntimeException
                                 try {
-                                    logger.error("Bug detected by SRM Scheduler",
+                                    LOGGER.error("Bug detected by SRM Scheduler",
                                             exception);
                                     job.setState(State.FAILED, "Internal error: " +
                                             exception.toString());
                                 } catch (IllegalStateTransition ist) {
                                     // FIXME how should we fail a request that is
                                     // already in a terminal state?
-                                    logger.error("Illegal State Transition : {}",
+                                    LOGGER.error("Illegal State Transition : {}",
                                             ist.getMessage());
                                 }
                             }
@@ -977,7 +962,7 @@ public final class Scheduler implements Runnable
                         job.wunlock();
                     }
                 } catch (Throwable t) {
-                    logger.error(t.toString());
+                    LOGGER.error(t.toString());
                 } finally {
                     started();
                     decreaseNumberOfRunningThreads(job);
@@ -1003,7 +988,7 @@ public final class Scheduler implements Runnable
                 try {
                     State s = job.getState();
                     if (s != State.RETRYWAIT) {
-                        logger.error("retryTimer expired, but job state is " + s);
+                        LOGGER.error("retryTimer expired, but job state is {}", s);
                         return;
                     }
 
@@ -1017,15 +1002,15 @@ public final class Scheduler implements Runnable
                         try {
                             job.setState(State.FAILED, "Service is shutting down.");
                         } catch (IllegalStateTransition ist) {
-                            logger.error("Illegal State Transition : " + ist.getMessage());
+                            LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                         }
                     } catch (IllegalStateTransition ist) {
-                        logger.error("can not retry: Illegal State Transition : " +
+                        LOGGER.error("can not retry: Illegal State Transition : " +
                                 ist.getMessage());
                         try {
                             job.setState(State.FAILED, "Scheduling failure.");
                         } catch (IllegalStateTransition ist1) {
-                            logger.error("Illegal State Transition : " + ist1.getMessage());
+                            LOGGER.error("Illegal State Transition : {}", ist1.getMessage());
                         }
                     }
                 } finally {
@@ -1040,66 +1025,74 @@ public final class Scheduler implements Runnable
 
     public void stateChanged(Job job, State oldState, State newState)
     {
-        if (job == null) {
-            logger.error("stateChanged job is null!!!");
-            return;
-        }
-        if (newState == State.TQUEUED) {
+        checkNotNull(job);
+
+        switch (newState) {
+        case TQUEUED:
             increaseNumberOfTQueued(job);
-        } else if (newState == State.PRIORITYTQUEUED) {
+            break;
+        case PRIORITYTQUEUED:
             increaseNumberOfPriorityTQueued(job);
-        } else if (newState == State.RUNNING) {
+            break;
+        case RUNNING:
             increaseNumberOfRunningState(job);
-        } else if (newState == State.RQUEUED) {
+            break;
+        case RQUEUED:
             increaseNumberOfReadyQueued(job);
-        } else if (newState == State.READY || newState == State.TRANSFERRING) {
+            break;
+        case READY:
+        case TRANSFERRING:
             increaseNumberOfReady(job);
-        } else if (newState == State.ASYNCWAIT) {
+            break;
+        case ASYNCWAIT:
             increaseNumberOfAsyncWait(job);
-        } else if (newState == State.RETRYWAIT) {
+            break;
+        case RETRYWAIT:
             increaseNumberOfRetryWait(job);
-        } else if (newState == State.RUNNINGWITHOUTTHREAD) {
+            break;
+        case RUNNINGWITHOUTTHREAD:
             increaseNumberOfRunningWithoutThreadState(job);
+            break;
         }
 
-        if (oldState == State.RESTORED) {
+        switch (oldState) {
+        case RESTORED:
             decreaseNumberOfRestored(job);
-        } else if (oldState == State.TQUEUED) {
+            break;
+        case TQUEUED:
             threadQueue.remove(job);
             decreaseNumberOfTQueued(job);
-        } else if (oldState == State.PRIORITYTQUEUED) {
+            break;
+        case PRIORITYTQUEUED:
             priorityThreadQueue.remove(job);
             decreaseNumberOfPriorityTQueued(job);
-        } else if (oldState == State.RUNNING) {
+            break;
+        case RUNNING:
             decreaseNumberOfRunningState(job);
-        } else if (oldState == State.RQUEUED) {
+            break;
+        case RQUEUED:
             readyQueue.remove(job);
             decreaseNumberOfReadyQueued(job);
-        } else if (oldState == State.READY || oldState == State.TRANSFERRING) {
+            break;
+        case READY:
+        case TRANSFERRING:
             decreaseNumberOfReady(job);
-        } else if (oldState == State.ASYNCWAIT) {
+            break;
+        case ASYNCWAIT:
             decreaseNumberOfAsyncWait(job);
-        } else if (oldState == State.RETRYWAIT) {
+            break;
+        case RETRYWAIT:
             decreaseNumberOfRetryWait(job);
-        } else if (oldState == State.RUNNINGWITHOUTTHREAD) {
+            break;
+        case RUNNINGWITHOUTTHREAD:
             decreaseNumberOfRunningWithoutThreadState(job);
+            break;
         }
 
 
-        logger.debug("state changed for job id " + job.getId() + " from " + oldState + " to " + newState);
-        if (newState == State.DONE ||
-                newState == State.CANCELED ||
-                newState == State.FAILED) {
-
-
-            if (oldState == State.RETRYWAIT) {
-                TimerTask task = job.getRetryTimer();
-                if (task != null) {
-                    task.cancel();
-                    job.setRetryTimer(null);
-                }
-
-            }
+        LOGGER.debug("state changed for job id {} from {} to {}", job.getId(), oldState, newState);
+        if (oldState == State.RETRYWAIT && newState.isFinalState()) {
+            job.cancelRetryTimer();
         }
     }
 
@@ -1108,7 +1101,7 @@ public final class Scheduler implements Runnable
      *
      * @return Value of property useFairness.
      */
-    public boolean isUseFairness()
+    public synchronized boolean isFair()
     {
         return useFairness;
     }
@@ -1118,20 +1111,9 @@ public final class Scheduler implements Runnable
      *
      * @param useFairness New value of property useFairness.
      */
-    public void setUseFairness(boolean useFairness)
+    public synchronized void setUseFairness(boolean useFairness)
     {
         this.useFairness = useFairness;
-    }
-
-
-    /**
-     * Setter for property jobAppraiser.
-     *
-     * @param jobAppraiser New value of property jobAppraiser.
-     */
-    public void setJobAppraiser(JobPriorityPolicyInterface jobAppraiser)
-    {
-        this.jobAppraiser = jobAppraiser;
     }
 
     /**
@@ -1151,7 +1133,7 @@ public final class Scheduler implements Runnable
      */
     public synchronized int getThreadPoolSize()
     {
-        return threadPoolSize;
+        return pooledExecutor.getMaximumPoolSize();
     }
 
     /**
@@ -1161,10 +1143,8 @@ public final class Scheduler implements Runnable
      */
     public synchronized void setThreadPoolSize(int threadPoolSize)
     {
-        this.threadPoolSize = threadPoolSize;
-        if (thread != null) {
-            pooledExecutor.setMaximumPoolSize(threadPoolSize);
-        }
+        pooledExecutor.setCorePoolSize(threadPoolSize);
+        pooledExecutor.setMaximumPoolSize(threadPoolSize);
     }
 
     /**
@@ -1172,7 +1152,7 @@ public final class Scheduler implements Runnable
      *
      * @return Value of property maxReadyJobs.
      */
-    public int getMaxReadyJobs()
+    public synchronized int getMaxReadyJobs()
     {
         return maxReadyJobs;
     }
@@ -1182,7 +1162,7 @@ public final class Scheduler implements Runnable
      *
      * @param maxReadyJobs New value of property maxReadyJobs.
      */
-    public void setMaxReadyJobs(int maxReadyJobs)
+    public synchronized void setMaxReadyJobs(int maxReadyJobs)
     {
         this.maxReadyJobs = maxReadyJobs;
     }
@@ -1192,7 +1172,7 @@ public final class Scheduler implements Runnable
      *
      * @return Value of property maxRunningByOwner.
      */
-    public int getMaxRunningByOwner()
+    public synchronized int getMaxRunningByOwner()
     {
         return maxRunningByOwner;
     }
@@ -1202,7 +1182,7 @@ public final class Scheduler implements Runnable
      *
      * @param maxRunningByOwner New value of property maxRunningByOwner.
      */
-    public void setMaxRunningByOwner(int maxRunningByOwner)
+    public synchronized void setMaxRunningByOwner(int maxRunningByOwner)
     {
         this.maxRunningByOwner = maxRunningByOwner;
     }
@@ -1212,113 +1192,64 @@ public final class Scheduler implements Runnable
      *
      * @return Value of property maxThreadQueueSize.
      */
-    public int getMaxThreadQueueSize()
+    public synchronized int getMaxThreadQueueSize()
     {
-        return maxThreadQueueSize;
+        return threadQueue.getCapacity();
     }
 
-    /**
-     * Setter for property maxThreadQueueSize.
-     *
-     * @param maxThreadQueueSize New value of property maxThreadQueueSize.
-     */
-    public void setMaxThreadQueueSize(int maxThreadQueueSize)
+    public synchronized void setMaxThreadQueueSize(int maxThreadQueueSize)
     {
-        this.maxThreadQueueSize = maxThreadQueueSize;
         threadQueue.setCapacity(maxThreadQueueSize);
         priorityThreadQueue.setCapacity(maxThreadQueueSize);
     }
 
-    /**
-     * Getter for property maxWaitingJobNum.
-     *
-     * @return Value of property maxWaitingJobNum.
-     */
-    public int getMaxAsyncWaitJobNum()
+    public synchronized int getMaxAsyncWaitJobNum()
     {
         return maxAsyncWaitJobs;
     }
 
-    /** Setter for property maxWaitingJobNum. */
-    public void setMaxWaitingJobNum(int maxAsyncWaitJobs)
+    public synchronized void setMaxWaitingJobNum(int maxAsyncWaitJobs)
     {
         this.maxAsyncWaitJobs = maxAsyncWaitJobs;
     }
 
-    /**
-     * Getter for property maxWaitingJobNum.
-     *
-     * @return Value of property maxWaitingJobNum.
-     */
-    public int getMaxRetryWaitJobNum()
+    public synchronized int getMaxRetryWaitJobNum()
     {
         return maxRetryWaitJobs;
     }
 
-    /** Setter for property maxWaitingJobNum. */
-    public void setMaxRetryWaitJobNum(int maxRetryWaitJobs)
+    public synchronized void setMaxRetryWaitJobNum(int maxRetryWaitJobs)
     {
         this.maxRetryWaitJobs = maxRetryWaitJobs;
     }
 
-    /**
-     * Getter for property maxNumberOfRetries.
-     *
-     * @return Value of property maxNumberOfRetries.
-     */
-    public int getMaxNumberOfRetries()
+    public synchronized int getMaxNumberOfRetries()
     {
         return maxNumberOfRetries;
     }
 
-    /**
-     * Setter for property maxNumberOfRetries.
-     *
-     * @param maxNumberOfRetries New value of property maxNumberOfRetries.
-     */
-    public void setMaxNumberOfRetries(int maxNumberOfRetries)
+    public synchronized void setMaxNumberOfRetries(int maxNumberOfRetries)
     {
         this.maxNumberOfRetries = maxNumberOfRetries;
     }
 
-    /**
-     * Getter for property retryTimeout.
-     *
-     * @return Value of property retryTimeout.
-     */
-    public long getRetryTimeout()
+    public synchronized long getRetryTimeout()
     {
         return retryTimeout;
     }
 
-    /**
-     * Setter for property retryTimeout.
-     *
-     * @param retryTimeout New value of property retryTimeout.
-     */
-    public void setRetryTimeout(long retryTimeout)
+    public synchronized void setRetryTimeout(long retryTimeout)
     {
         this.retryTimeout = retryTimeout;
     }
 
-    /**
-     * Getter for property maxReadyQueueSize.
-     *
-     * @return Value of property maxReadyQueueSize.
-     */
     public int getMaxReadyQueueSize()
     {
-        return maxReadyQueueSize;
+        return readyQueue.getCapacity();
     }
 
-    /**
-     * Setter for property maxReadyQueueSize.
-     *
-     * @param maxReadyQueueSize New value of property maxReadyQueueSize.
-     */
     public void setMaxReadyQueueSize(int maxReadyQueueSize)
     {
-        this.maxReadyQueueSize = maxReadyQueueSize;
         readyQueue.setCapacity(maxReadyQueueSize);
     }
 
@@ -1329,7 +1260,7 @@ public final class Scheduler implements Runnable
         return sb.toString();
     }
 
-    public void getInfo(StringBuilder sb)
+    public synchronized void getInfo(StringBuilder sb)
     {
         sb.append("Scheduler id=").append(id).append('\n');
         sb.append("          useFairness=").append(useFairness).append('\n');
@@ -1355,7 +1286,7 @@ public final class Scheduler implements Runnable
         sb.append("          total number of threads running =")
                 .append(getTotalRunningThreads()).append('\n');
         sb.append("          retryTimeout=").append(retryTimeout).append('\n');
-        sb.append("          maxThreadQueueSize=").append(maxThreadQueueSize)
+        sb.append("          maxThreadQueueSize=").append(getMaxThreadQueueSize())
                 .append('\n');
         sb.append("          threadQueue size=").append(threadQueue.size())
                 .append('\n');
@@ -1365,7 +1296,7 @@ public final class Scheduler implements Runnable
                 .append(priorityThreadQueue.size()).append('\n');
         sb.append("          !!! priorityThreadQueued=")
                 .append(getTotalPriorityTQueued()).append('\n');
-        sb.append("          maxReadyQueueSize=").append(maxReadyQueueSize)
+        sb.append("          maxReadyQueueSize=").append(getMaxReadyQueueSize())
                 .append('\n');
         sb.append("          readyQueue size=").append(readyQueue.size())
                 .append('\n');
@@ -1415,7 +1346,7 @@ public final class Scheduler implements Runnable
      *
      * @return Value of property queuesUpdateMaxWait.
      */
-    public long getQueuesUpdateMaxWait()
+    public synchronized long getQueuesUpdateMaxWait()
     {
         return queuesUpdateMaxWait;
     }
@@ -1425,29 +1356,38 @@ public final class Scheduler implements Runnable
      *
      * @param queuesUpdateMaxWait New value of property queuesUpdateMaxWait.
      */
-    public void setQueuesUpdateMaxWait(long queuesUpdateMaxWait)
+    public synchronized void setQueuesUpdateMaxWait(long queuesUpdateMaxWait)
     {
         this.queuesUpdateMaxWait = queuesUpdateMaxWait;
     }
 
-    public void setPriorityPolicyPlugin(String txt)
+    public synchronized JobPriorityPolicyInterface getJobAppraiser()
     {
-        priorityPolicyPlugin = txt;
+        return jobAppraiser;
+    }
+
+    public synchronized void setJobAppraiser(JobPriorityPolicyInterface jobAppraiser)
+    {
+        this.jobAppraiser = jobAppraiser;
+    }
+
+    public synchronized void setPriorityPolicyPlugin(String name)
+    {
+        priorityPolicyPlugin = name;
         String className = "org.dcache.srm.scheduler.policies." + priorityPolicyPlugin;
         try {
             Class<? extends JobPriorityPolicyInterface> appraiserClass =
                     Class.forName(className).asSubclass(JobPriorityPolicyInterface.class);
             jobAppraiser = appraiserClass.newInstance();
-        } catch (Exception e) {
-            logger.error("failed to load " + className);
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            LOGGER.error("failed to load {}", className);
             jobAppraiser = new DefaultJobAppraiser();
         }
     }
 
-    public String getPriorityPolicyPlugin()
+    public synchronized String getPriorityPolicyPlugin()
     {
         return priorityPolicyPlugin;
     }
-
 }
 

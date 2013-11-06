@@ -923,6 +923,15 @@ public abstract class Job  {
         }
     }
 
+    public void cancelRetryTimer()
+    {
+        TimerTask task = getRetryTimer();
+        if (task != null) {
+            task.cancel();
+            setRetryTimer(null);
+        }
+    }
+
     public static class JobHistory implements Comparable<JobHistory> {
         private final long id;
         private final State state;
