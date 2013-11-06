@@ -11,6 +11,7 @@ public class SelectableWrapper<T extends Serializable> implements Serializable {
     private static final long serialVersionUID = 2540365244546137089L;
     private T _wrapped;
     private Boolean _selected = Boolean.FALSE;
+    private boolean _pending = false;
 
     public SelectableWrapper(T wrapped) {
         _wrapped = wrapped;
@@ -30,5 +31,13 @@ public class SelectableWrapper<T extends Serializable> implements Serializable {
 
     public void setWrapped(T wrapped) {
         _wrapped = wrapped;
+    }
+
+    public void setPending(boolean pending) {
+        _pending = pending;
+    }
+
+    public boolean isPending() {
+        return _pending;
     }
 }

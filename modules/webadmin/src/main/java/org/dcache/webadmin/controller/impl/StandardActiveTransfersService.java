@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
+import org.dcache.pool.classic.IoRequestState;
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
@@ -71,6 +72,7 @@ public class StandardActiveTransfersService implements ActiveTransfersService {
         if (failedIdsExist) {
             throw new ActiveTransfersServiceException(failedIds.toString());
         }
+        markPending(transfers);
     }
 
     private void killMoversOfPool(String pool, Set<Integer> jobIds) throws DAOException {
@@ -92,6 +94,16 @@ public class StandardActiveTransfersService implements ActiveTransfersService {
             }
         }
         return pools;
+    }
+
+    private void markPending(List<SelectableWrapper<ActiveTransfersBean>> transfers) {
+        for (SelectableWrapper<ActiveTransfersBean> transfer : transfers) {
+            if (transfer.isSelected() && !transfer.getWrapped().getPool().isEmpty()) {
+                transfer.setSelected(false);
+                transfer.setPending(true);
+                transfer.getWrapped().setState(IoRequestState.CANCELED.toString());
+            }
+        }
     }
 
     public void setDAOFactory(DAOFactory daoFactory) {

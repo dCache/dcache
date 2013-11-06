@@ -25,7 +25,6 @@ public class PoolListPanel extends BasePanel {
 
     private static final long serialVersionUID = 8191342980744557065L;
     private boolean _showCheckbox;
-    private final PoolBeanListView view;
 
     public PoolListPanel(String id, IModel<? extends List<PoolSpaceBean>> model,
             boolean showCheckbox) {
@@ -38,7 +37,7 @@ public class PoolListPanel extends BasePanel {
                 RENDER, Role.ADMIN);
         add(selectBoxHeaderLabel);
         add(new LayoutHeaderPanel("PoolPanel.layoutHeaderPanel"));
-        view = new PoolBeanListView("poolPanelListview", model);
+        PoolBeanListView view = new PoolBeanListView("poolPanelListview", model);
         add(view);
     }
 
@@ -78,9 +77,5 @@ public class PoolListPanel extends BasePanel {
                     poolBean.getPercentageRemovable(),
                     poolBean.getPercentageFree()));
         }
-    }
-
-    public EvenOddListView getView() {
-        return view;
     }
 }

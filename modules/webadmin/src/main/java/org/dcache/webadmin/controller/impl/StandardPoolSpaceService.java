@@ -87,6 +87,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
         for (PoolSpaceBean pool: pools) {
             if (poolIds.contains(pool.getName())) {
                 pool.setPoolMode(poolMode);
+                pool.setSelected(false);
             }
         }
     }
