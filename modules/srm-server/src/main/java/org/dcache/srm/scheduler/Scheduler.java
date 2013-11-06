@@ -247,17 +247,12 @@ public final class Scheduler implements Runnable
                     return;
                 }
                 // now we try to add the job to the thread queue without blocking
-                try {
-                    job.setState(State.TQUEUED, "Queued for execution.");
-                    if (threadQueue(job)) {
-                        // offer returned true -> successfully added job to the queue
-                        return;
-                    }
-
-                } catch (InterruptedException ie) {
-                    job.setState(State.FAILED, "Service shutting down.");
+                job.setState(State.TQUEUED, "Queued for execution.");
+                if (threadQueue(job)) {
+                    // offer returned true -> successfully added job to the queue
                     return;
                 }
+
                 // if offer returned false or if it threw an exception,
                 // the job could not be scheduled, so it fails
                 job.setState(State.FAILED, "Site busy: too many queued requests.");
@@ -733,9 +728,8 @@ public final class Scheduler implements Runnable
 
 
     private boolean threadQueue(Job job)
-            throws InterruptedException
     {
-        if (threadQueue.offer(job, 0)) {
+        if (threadQueue.offer(job)) {
             jobAddedToQueue();
             return true;
         }
@@ -743,9 +737,8 @@ public final class Scheduler implements Runnable
     }
 
     private boolean priorityQueue(Job job)
-            throws InterruptedException
     {
-        if (priorityThreadQueue.offer(job, 0)) {
+        if (priorityThreadQueue.offer(job)) {
             jobAddedToQueue();
             return true;
         }
@@ -753,9 +746,8 @@ public final class Scheduler implements Runnable
     }
 
     private boolean readyQueue(Job job)
-            throws InterruptedException
     {
-        if (readyQueue.offer(job, 0)) {
+        if (readyQueue.offer(job)) {
             jobAddedToQueue();
             return true;
         }
@@ -899,12 +891,6 @@ public final class Scheduler implements Runnable
                                         LOGGER.warn("All ready slots are taken and ready queue is full.");
                                         job.setState(State.FAILED, "Site busy: too many active requests.");
                                     }
-                                } catch (InterruptedException ie) {
-                                    try {
-                                        job.setState(State.FAILED, "Service shutting down.");
-                                    } catch (IllegalStateTransition ist) {
-                                        LOGGER.error("Illegal State Transition : " + ist.getMessage());
-                                    }
                                 } catch (IllegalStateTransition ist) {
                                     LOGGER.error("Illegal State Transition : " + ist.getMessage());
                                 }
@@ -998,12 +984,6 @@ public final class Scheduler implements Runnable
                             job.setState(State.FAILED, "Site busy: too many queued requests.");
                         }
                         //schedule(job);
-                    } catch (InterruptedException ie) {
-                        try {
-                            job.setState(State.FAILED, "Service is shutting down.");
-                        } catch (IllegalStateTransition ist) {
-                            LOGGER.error("Illegal State Transition : {}", ist.getMessage());
-                        }
                     } catch (IllegalStateTransition ist) {
                         LOGGER.error("can not retry: Illegal State Transition : " +
                                 ist.getMessage());

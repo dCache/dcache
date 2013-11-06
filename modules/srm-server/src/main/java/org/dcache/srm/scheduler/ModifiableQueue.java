@@ -199,6 +199,19 @@ public class ModifiableQueue  {
         }
     }
 
+    public boolean offer(Job job) {
+        checkArgument(type.isInstance(job));
+        long id = job.getId();
+
+        synchronized (queue) {
+            if (queue.size() < capacity) {
+                queue.add(id);
+                queue.notifyAll();
+                return true;
+            }
+        }
+        return false;
+    }
 
     public boolean offer(Job job, long msecs) throws InterruptedException {
         checkArgument(type.isInstance(job));
@@ -223,7 +236,6 @@ public class ModifiableQueue  {
                     throw ie;
                 }
                 waitTime = msecs - (System.currentTimeMillis() - start);
-
             }
         }
     }
