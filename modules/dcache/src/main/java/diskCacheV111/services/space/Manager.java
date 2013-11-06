@@ -252,7 +252,7 @@ public final class Manager
         }
 
         @Required
-        public void setCleanupExpiredSpaceFiles(boolean ceanupExpiredSpaceFiles)
+        public void setCleanupExpiredSpaceFiles(boolean cleanupExpiredSpaceFiles)
         {
                 this.cleanupExpiredSpaceFiles = cleanupExpiredSpaceFiles;
         }
