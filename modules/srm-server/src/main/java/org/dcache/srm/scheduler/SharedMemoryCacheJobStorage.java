@@ -172,7 +172,12 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
         public void run()
         {
             for (J job : jobsToExpire) {
-                job.checkExpiration();
+                try {
+                    job.checkExpiration();
+                } catch (RuntimeException e) {
+                    Thread thread = Thread.currentThread();
+                    thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
+                }
             }
         }
     }
