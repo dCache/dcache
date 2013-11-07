@@ -23,7 +23,7 @@ check -strong xrootd.service.gplazma
 check -strong xrootd.service.gplazma.timeout
 check -strong xrootd.service.gplazma.timeout.unit
 check -strong xrootd.service.billing
-check -strong xrootd.service.loginbroker
+check xrootd.service.loginbroker
 check -strong xrootd.service.loginbroker.update-period
 check -strong xrootd.service.loginbroker.update-period.unit
 check -strong xrootd.service.loginbroker.update-threshold

@@ -19,7 +19,7 @@ check -strong webdav.service.gplazma
 check -strong webdav.service.gplazma.timeout
 check -strong webdav.service.gplazma.timeout.unit
 check -strong webdav.service.billing
-check -strong webdav.service.loginbroker
+check webdav.service.loginbroker
 check -strong webdav.service.loginbroker.update-period
 check -strong webdav.service.loginbroker.update-period.unit
 check -strong webdav.service.loginbroker.update-threshold
