@@ -12,7 +12,7 @@ check -strong dcap.service.pnfsmanager
 check -strong dcap.service.gplazma
 check -strong dcap.service.billing
 check -strong dcap.service.pinmanager
-check -strong dcap.service.loginbroker
+check dcap.service.loginbroker
 check -strong dcap.service.loginbroker.update-period
 check -strong dcap.service.loginbroker.update-period.unit
 check -strong dcap.service.loginbroker.update-threshold

@@ -194,7 +194,7 @@ check -strong srm.service.gplazma
 check -strong srm.service.gplazma.timeout
 check -strong srm.service.gplazma.timeout.unit
 
-check -strong srm.service.loginbroker
+check srm.service.loginbroker
 check -strong srm.service.loginbroker.update-period
 check -strong srm.service.loginbroker.update-period.unit
 check -strong srm.service.loginbroker.update-threshold
