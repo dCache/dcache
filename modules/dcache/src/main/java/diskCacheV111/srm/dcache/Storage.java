@@ -2720,16 +2720,13 @@ public final class Storage
             TReturnStatus status;
             if (space != null) {
                 long lifetime = space.getLifetime();
-                int lifetimeleft;
                 if (lifetime == -1) {  // -1 corresponds to infinite lifetime
-                    lifetimeleft = -1;
                     metaDataSpace.setLifetimeAssigned(-1);
                     metaDataSpace.setLifetimeLeft(-1);
                 } else {
-                    lifetimeleft = (int) MILLISECONDS.toSeconds(space.getCreationTime() + lifetime - System.currentTimeMillis());
-                    lifetimeleft = (lifetimeleft < 0) ? 0 : lifetimeleft;
+                    long lifetimeleft = Math.max(0, MILLISECONDS.toSeconds(space.getCreationTime() + lifetime - System.currentTimeMillis()));
                     metaDataSpace.setLifetimeAssigned((int) MILLISECONDS.toSeconds(lifetime));
-                    metaDataSpace.setLifetimeLeft(lifetimeleft);
+                    metaDataSpace.setLifetimeLeft((int) lifetimeleft);
                 }
 
                 RetentionPolicy retentionPolicy = space.getRetentionPolicy();
@@ -2751,9 +2748,9 @@ public final class Storage
                 metaDataSpace.setUnusedSize(unusedSize);
 
                 SpaceState spaceState = space.getState();
-                if (SpaceState.RESERVED.equals(spaceState) && lifetimeleft > 0) {
+                if (SpaceState.RESERVED.equals(spaceState)) {
                     status = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-                } else if (SpaceState.EXPIRED.equals(spaceState) || lifetimeleft == 0) {
+                } else if (SpaceState.EXPIRED.equals(spaceState)) {
                     status = new TReturnStatus(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED,
                             "The lifetime on the space that is associated with the spaceToken has expired already");
                 } else {
