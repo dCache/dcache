@@ -75,7 +75,7 @@ EOF
 xsltProcessor="$(getProperty info-provider.processor)"
 xylophoneXMLFile="$(getProperty info-provider.configuration.location)"
 host="$(getProperty info-provider.http.host)"
-port="$(getProperty httpdPort)"
+port="$(getProperty info-provider.http.port)"
 xylophoneXSLTDir="$(getProperty info-provider.xylophone.dir)"
 saxonDir="$(getProperty info-provider.saxon.dir)"
 
@@ -85,11 +85,11 @@ if [ -n "$XSLT_PROCESSOR" ]; then
 fi
 
 if [ -n "$HTTP_HOST" ]; then
-    httpHost=$HTTP_HOST
+    host=$HTTP_HOST
 fi
 
 if [ -n "$HTTP_PORT" ]; then
-    httpPort=$HTTP_PORT
+    port=$HTTP_PORT
 fi
 
 
