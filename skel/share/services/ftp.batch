@@ -12,7 +12,7 @@ check -strong ftp.net.port-range
 check -strong ftp.limits.clients
 check -strong ftp.limits.retries
 check -strong ftp.limits.streams-per-client
-check -strong ftp.service.loginbroker
+check ftp.service.loginbroker
 check -strong ftp.service.loginbroker.update-period
 check -strong ftp.service.loginbroker.update-period.unit
 check -strong ftp.service.loginbroker.update-threshold
