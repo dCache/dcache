@@ -57,7 +57,9 @@ public class ReturnStatuses
         boolean hasFailure = false;
         boolean hasSuccess = false;
         for (TMetaDataSpace metaDataSpace : metadataSpaces) {
-            if (metaDataSpace.getStatus().getStatusCode() == TStatusCode.SRM_SUCCESS) {
+            if (metaDataSpace.getStatus().getStatusCode() == TStatusCode.SRM_SUCCESS ||
+                    metaDataSpace.getStatus().getStatusCode() == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED ||
+                    metaDataSpace.getStatus().getStatusCode() == TStatusCode.SRM_EXCEED_ALLOCATION) {
                 hasSuccess = true;
             } else {
                 hasFailure = true;
