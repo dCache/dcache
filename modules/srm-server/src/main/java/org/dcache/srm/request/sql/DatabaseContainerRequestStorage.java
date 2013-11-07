@@ -6,7 +6,7 @@
 
 package org.dcache.srm.request.sql;
 
-import com.google.common.collect.ObjectArrays;
+import com.google.common.collect.Iterables;
 import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,14 +111,15 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
         fileIdsSet.close();
         sqlStatement.close();
 
-        F[] fileRequests = ObjectArrays.newArray(fileRequestType, fileIds.size());
-        for(int i = 0; i<fileRequests.length; ++i) {
+        List<F> fileRequests = new ArrayList<>(fileIds.size());
+        for (Long fileId : fileIds) {
             try {
-                fileRequests[i] = Job.getJob(fileIds.get(i), fileRequestType, _con);
-            } catch (SRMInvalidRequestException ire){
-                logger.error(ire.toString());
+                fileRequests.add(Job.getJob(fileId, fileRequestType, _con));
+            } catch (SRMInvalidRequestException ire) {
+                logger.error("Failed to restore job from database: {}", ire.getMessage());
             }
         }
+
         return getContainerRequest(
         _con,
         ID,
@@ -139,7 +140,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
         DESCRIPTION,
         CLIENTHOST,
         STATUSCODE,
-        fileRequests,
+        Iterables.toArray(fileRequests, fileRequestType),
         set,
         next_index );
     }
