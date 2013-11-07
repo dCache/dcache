@@ -15,6 +15,7 @@ install_package_data:
 	dh_compress
 	dh_installinit --no-start
 	dh_installlogrotate
+	dh_installcron
 	dh_installdebconf
 	dh_installdeb
 	dh_installdocs
