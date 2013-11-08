@@ -184,7 +184,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                 metaDataPathDetail.setType(TFileType.FILE);
                             }
                             metaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
-                                    "The requested SURL is being used by another client."));
+                                    "The requested SURL is locked by an upload."));
                         } else {
                             metaDataPathDetail =
                                     getMetaDataPathDetail(surl,
