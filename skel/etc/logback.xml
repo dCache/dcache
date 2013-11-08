@@ -74,8 +74,12 @@
     </layout>
   </appender>
 
-  <appender name="events" class="ch.qos.logback.core.FileAppender">
-    <file>/tmp/events-${dcache.domain.name}.out</file>
+  <appender name="events" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${dcache.log.dir}/events-${dcache.domain.name}.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${dcache.log.dir}/events-${dcache.domain.name}.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>0</maxHistory>
+    </rollingPolicy>
     <encoder>
         <!-- Implements event based logging following the NetLogger format.
 
@@ -84,7 +88,21 @@
              be found at https://docs.google.com/document/d/1oeW_l_YgQbR-C_7R2cKl6eYBT5N4WSMbvz0AT6hYDvA
 
              The NetLogger project can be found at http://netlogger.lbl.gov -->
-        <pattern>ts=%d{yyyy-MM-dd}T%d{HH:mm:ss.SSS} %m%n</pattern>
+        <pattern>%m%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="access" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${dcache.log.dir}/access-${dcache.domain.name}.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${dcache.log.dir}/access-${dcache.domain.name}.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+      <maxHistory>${dcache.log.access.max-history}</maxHistory>
+    </rollingPolicy>
+    <encoder>
+       <!-- Access log for doors. Currently only supported by SRM. Follows
+            the NetLogger format as described above.
+         -->
+      <pattern>%m%n</pattern>
     </encoder>
   </appender>
 
@@ -103,8 +121,12 @@
     <appender-ref ref="remote"/>
   </root>
 
-  <logger name="events" additivity="false">
+  <logger name="org.dcache.events" additivity="false">
     <appender-ref ref="events"/>
+  </logger>
+
+  <logger name="org.dcache.access" additivity="false">
+    <appender-ref ref="access"/>
   </logger>
 
   <!-- Nothing is logged to this logger. Its sole purpose is to list
@@ -114,6 +136,7 @@
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
     <appender-ref ref="events"/>
+    <appender-ref ref="access"/>
     <appender-ref ref="remote"/>
   </logger>
 
@@ -181,9 +204,15 @@
     </threshold>
 
     <threshold>
-      <appender>events</appender>
+      <appender>org.dcache.events</appender>
       <logger>events</logger>
       <level>${dcache.log.level.events}</level>
+    </threshold>
+
+    <threshold>
+      <appender>org.dcache.access</appender>
+      <logger>access</logger>
+      <level>${dcache.log.level.access}</level>
     </threshold>
   </turboFilter>
 </configuration>

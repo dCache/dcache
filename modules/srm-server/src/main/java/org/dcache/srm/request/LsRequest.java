@@ -231,8 +231,8 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                     response.setDetails(details);
                 } else {
                     response.setDetails(null);
-                    response.setRequestToken(getTRequestToken());
                 }
+                response.setRequestToken(getTRequestToken());
                 return response;
         }
 
@@ -394,7 +394,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                          logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
                          }
-                         return new TReturnStatus(TStatusCode.SRM_SUCCESS, "All ls file requests completed");
+                         return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
                 }
                 if (canceled_req == len ) {
                         return new TReturnStatus(TStatusCode.SRM_ABORTED, "All ls file requests were cancelled");

@@ -105,6 +105,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,dcache,dcache) /var/lib/dcache/plots
 %attr(-,dcache,dcache) /var/lib/dcache/statistics
 %attr(-,dcache,dcache) /var/lib/dcache/star
+%attr(-,dcache,dcache) /var/log/dcache
 %attr(-,dcache,dcache) /var/spool/dcache/star
 %attr(700,dcache,dcache) /var/lib/dcache/credentials
 
