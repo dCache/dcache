@@ -389,12 +389,12 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                         if (!getContainerRequest().isOverwrite()) {
                             setStateAndStatusCode(
                                     State.FAILED,
-                                    "SURL exists already",
+                                    "The requested SURL is locked by another upload.",
                                     TStatusCode.SRM_DUPLICATION_ERROR);
                         } else {
                             setStateAndStatusCode(
                                     State.FAILED,
-                                    "The requested file is being used by another client.",
+                                    "The requested SURL is locked by another upload.",
                                     TStatusCode.SRM_FILE_BUSY);
                         }
                         return;

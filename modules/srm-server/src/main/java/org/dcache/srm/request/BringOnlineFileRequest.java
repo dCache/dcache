@@ -347,7 +347,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 // [ SRM 2.2, 5.4.3] SRM_FILE_BUSY: client requests for a file which there is an
                 // active srmPrepareToPut (no srmPutDone is yet called) request for.
                 if (SRM.getSRM().isFileBusy(surl)) {
-                    setStateAndStatusCode(State.FAILED, "The requested SURL is being used by another client.",
+                    setStateAndStatusCode(State.FAILED, "The requested SURL is locked by an upload.",
                             TStatusCode.SRM_FILE_BUSY);
                 }
 
