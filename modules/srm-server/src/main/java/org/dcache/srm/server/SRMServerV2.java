@@ -72,11 +72,17 @@ package org.dcache.srm.server;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import org.apache.axis.MessageContext;
+import org.apache.axis.transport.http.HTTPConstants;
 import org.glite.voms.PKIVerifier;
 import org.gridforum.jgss.ExtendedGSSContext;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+
+import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -182,13 +188,16 @@ import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
 import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.util.NetLoggerBuilder;
 
+import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
 import static org.dcache.srm.v2_2.TStatusCode.*;
+import static org.globus.axis.gsi.GSIConstants.GSI_CONTEXT;
 
 public class SRMServerV2 implements ISRM  {
 
     private static final Set<TStatusCode> FAILURES =
-            ImmutableSet.of(SRM_FAILURE, SRM_REQUEST_QUEUED, SRM_REQUEST_INPROGRESS, SRM_REQUEST_SUSPENDED,
+            ImmutableSet.of(SRM_FAILURE,
                     SRM_AUTHENTICATION_FAILURE, SRM_AUTHORIZATION_FAILURE, SRM_INVALID_REQUEST, SRM_INVALID_PATH,
                     SRM_FILE_LIFETIME_EXPIRED, SRM_SPACE_LIFETIME_EXPIRED, SRM_EXCEED_ALLOCATION, SRM_NO_USER_SPACE,
                     SRM_NO_FREE_SPACE, SRM_DUPLICATION_ERROR, SRM_NON_EMPTY_DIRECTORY, SRM_TOO_MANY_RESULTS,
@@ -196,12 +205,15 @@ public class SRMServerV2 implements ISRM  {
                     SRM_REQUEST_TIMED_OUT, SRM_FILE_BUSY, SRM_FILE_LOST, SRM_FILE_UNAVAILABLE, SRM_CUSTOM_STATUS);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SRMServerV2.class);
+
     private final SrmAuthorizer srmAuth;
     private final PKIVerifier pkiVerifier;
     private final AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerCounters;
     private final RequestExecutionTimeGauges<Class<?>> srmServerGauges;
     private final SRM srm;
+    private final RequestLogger[] loggers =
+            { new RequestExecutionTimeGaugeLogger(), new CounterLogger(), new AccessLogger() };
 
     public SRMServerV2() throws RemoteException{
         try {
@@ -225,120 +237,103 @@ public class SRMServerV2 implements ISRM  {
 
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
         long startTimeStamp = System.currentTimeMillis();
-        Class<?> requestClass = request.getClass();
         // requestName values all start "srm".  This is redundant, so may
         // be removed when creating the session id.  The initial character is
         // converted to lowercase, so "srmPrepareToPut" becomes "prepareToPut".
-        try (JDC ignored = JDC.createSession("srm2:" +
+        String session = "srm2:" +
                 Character.toLowerCase(requestName.charAt(3)) +
-                requestName.substring(4))) {
-            //count requests of each type
-            srmServerCounters.incrementRequests(requestClass);
-            String capitalizedRequestName =
-                    Character.toUpperCase(requestName.charAt(0))+
-                    requestName.substring(1);
-            try {
-                SRMUser user;
-                UserCredential userCred;
-                RequestCredential requestCredential;
-                try {
-                    userCred          = srmAuth.getUserCredentials();
-                    Collection<String> roles
-                        = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
-                                        pkiVerifier);
-                    String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
-                    LOGGER.debug("role is {}", role);
-                    requestCredential = srmAuth.getRequestCredential(userCred,role);
-                    user              = srmAuth.getRequestUser(requestCredential,
-                                                               null,
-                                                               userCred.context);
-                    if (user.isReadOnly()) {
-                        switch (requestName) {
-                        case "srmRmdir":
-                        case "srmMkdir":
-                        case "srmPrepareToPut":
-                        case "srmRm" :
-                        case "srmMv":
-                        case "srmSetPermission":
-                            return getFailedResponse(capitalizedRequestName,
-                                                     TStatusCode.SRM_AUTHORIZATION_FAILURE,
-                                                     "User account is read-only");
-                        }
-                    }
-                } catch (SRMAuthorizationException sae) {
-                    LOGGER.info("Authentication failed: {}", sae.getMessage());
-                    srmServerCounters.incrementFailed(requestClass);
-                    return getFailedResponse(capitalizedRequestName,
-                            TStatusCode.SRM_AUTHENTICATION_FAILURE,
-                            "Authentication failed (server log contains additional information)");
-                }
-                LOGGER.debug("About to call {} handler", requestName);
-                Constructor<?> handlerConstructor;
-                Object handler;
-                Method handleGetResponseMethod;
-                try {
-                    Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+
-                            capitalizedRequestName);
-                    handlerConstructor =
-                            handlerClass.getConstructor(SRMUser.class,
-                            RequestCredential.class,
-                            requestClass,
-                            AbstractStorageElement.class,
-                            SRM.class,
-                            String.class);
-                    handler = handlerConstructor.newInstance(user,
-                            requestCredential,
-                            request,
-                            storage,
-                            srm,
-                            userCred.clientHost);
-                    handleGetResponseMethod = handlerClass.getMethod("getResponse");
-                } catch (ClassNotFoundException e) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.info("handler discovery and dynamic loading failed", e);
-                    } else {
-                        LOGGER.info("handler discovery and dynamic loading failed");
-                    }
-                    srmServerCounters.incrementFailed(requestClass);
-                    return getFailedResponse(capitalizedRequestName,
-                            TStatusCode.SRM_NOT_SUPPORTED,
-                            requestName + " is unsupported");
-                }
-                Object response = handleGetResponseMethod.invoke(handler);
-                if (isFailure(response)) {
-                    srmServerCounters.incrementFailed(requestClass);
-                }
-                return response;
-            } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | RuntimeException e) {
-                LOGGER.error("Please report this failure to support@dcache.org", e);
-                srmServerCounters.incrementFailed(requestClass);
-                return getFailedResponse(capitalizedRequestName,
-                        TStatusCode.SRM_INTERNAL_ERROR,
-                        "Internal error (server log contains additional information)");
+                requestName.substring(4);
+        try (JDC ignored = JDC.createSession(session)) {
+            for (RequestLogger logger : loggers) {
+                logger.request(requestName, request);
             }
-        } finally {
-            srmServerGauges.update(requestClass,
-                    System.currentTimeMillis() - startTimeStamp);
+            Object response = dispatch(requestName, request);
+            long time = System.currentTimeMillis() - startTimeStamp;
+            for (RequestLogger logger : loggers) {
+                logger.response(requestName, request, response, time);
+            }
+            return response;
         }
     }
 
-    private static boolean isFailure(Object response)
-            throws IllegalAccessException, InvocationTargetException
+    private Object dispatch(String requestName, Object request) throws RemoteException
     {
+        Class<?> requestClass = request.getClass();
+        String capitalizedRequestName =
+                Character.toUpperCase(requestName.charAt(0))+
+                requestName.substring(1);
         try {
-            Class<?> type = response.getClass();
-            Method getReturnStatus = type.getDeclaredMethod("getReturnStatus");
-            Class<?> returnType = getReturnStatus.getReturnType();
-            if (TReturnStatus.class.isAssignableFrom(returnType)) {
-                TReturnStatus status = (TReturnStatus) getReturnStatus.invoke(response);
-                return FAILURES.contains(status.getStatusCode());
+            SRMUser user;
+            UserCredential userCred;
+            RequestCredential requestCredential;
+            try {
+                userCred          = srmAuth.getUserCredentials();
+                Collection<String> roles
+                    = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
+                        pkiVerifier);
+                String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
+                LOGGER.debug("role is {}", role);
+                requestCredential = srmAuth.getRequestCredential(userCred,role);
+                user              = srmAuth.getRequestUser(requestCredential,
+                                                           null,
+                                                           userCred.context);
+                if (user.isReadOnly()) {
+                    switch (requestName) {
+                    case "srmRmdir":
+                    case "srmMkdir":
+                    case "srmPrepareToPut":
+                    case "srmRm" :
+                    case "srmMv":
+                    case "srmSetPermission":
+                        return getFailedResponse(capitalizedRequestName,
+                                                 TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                                                 "User account is read-only");
+                    }
+                }
+            } catch (SRMAuthorizationException sae) {
+                LOGGER.info("Authentication failed: {}", sae.getMessage());
+                return getFailedResponse(capitalizedRequestName,
+                        TStatusCode.SRM_AUTHENTICATION_FAILURE,
+                        "Authentication failed (server log contains additional information)");
             }
-        } catch (NoSuchMethodException e) {
-            // Unfortunately, Java standard API provides no nice way of
-            // discovering if a method exists by reflection.  This is perhaps
-            // the least ugly.
+            LOGGER.debug("About to call {} handler", requestName);
+            Constructor<?> handlerConstructor;
+            Object handler;
+            Method handleGetResponseMethod;
+            try {
+                Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+
+                        capitalizedRequestName);
+                handlerConstructor =
+                        handlerClass.getConstructor(SRMUser.class,
+                        RequestCredential.class,
+                        requestClass,
+                        AbstractStorageElement.class,
+                        SRM.class,
+                        String.class);
+                handler = handlerConstructor.newInstance(user,
+                        requestCredential,
+                        request,
+                        storage,
+                        srm,
+                        userCred.clientHost);
+                handleGetResponseMethod = handlerClass.getMethod("getResponse");
+            } catch (ClassNotFoundException e) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.info("handler discovery and dynamic loading failed", e);
+                } else {
+                    LOGGER.info("handler discovery and dynamic loading failed");
+                }
+                return getFailedResponse(capitalizedRequestName,
+                        TStatusCode.SRM_NOT_SUPPORTED,
+                        requestName + " is unsupported");
+            }
+            return handleGetResponseMethod.invoke(handler);
+        } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | RuntimeException e) {
+            LOGGER.error("Please report this failure to support@dcache.org", e);
+            return getFailedResponse(capitalizedRequestName,
+                    TStatusCode.SRM_INTERNAL_ERROR,
+                    "Internal error (server log contains additional information)");
         }
-        return false;
     }
 
     private Object getFailedResponse(String capitalizedRequestName, TStatusCode statusCode, String errorMessage)
@@ -686,5 +681,169 @@ public class SRMServerV2 implements ISRM  {
     public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
         return (SrmStatusOfLsRequestResponse)
         handleRequest("srmStatusOfLsRequest",srmStatusOfLsRequestRequest);
+    }
+
+    private interface RequestLogger
+    {
+        void request(String requestName, Object request);
+        void response(String requestName, Object request, Object response, long time);
+    }
+
+    public class AccessLogger implements RequestLogger
+    {
+        private final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.srm");
+
+        @Override
+        public void request(String requestName, Object request)
+        {
+        }
+
+        @Override
+        public void response(String requestName, Object request, Object response, long time)
+        {
+            if (ACCESS_LOGGER.isErrorEnabled()) {
+                TReturnStatus status = getReturnStatus(response);
+                boolean isFailure = status != null && FAILURES.contains(status.getStatusCode());
+                if (!isFailure && !ACCESS_LOGGER.isInfoEnabled()) {
+                    return;
+                }
+
+                NetLoggerBuilder.Level level = isFailure ? NetLoggerBuilder.Level.ERROR : NetLoggerBuilder.Level.INFO;
+                NetLoggerBuilder log = new NetLoggerBuilder(level, "org.dcache.srm.request").omitNullValues();
+                MessageContext context = MessageContext.getCurrentContext();
+                HttpServletRequest servletRequest = (HttpServletRequest) context.getProperty(MC_HTTP_SERVLETREQUEST);
+                log.add("host.remote", servletRequest.getRemoteAddr());
+                log.add("dn", getDn(servletRequest));
+                log.add("request.method", requestName);
+                String requestToken = getRequestToken(request, response);
+                if (requestToken != null) {
+                    log.add("request.token", requestToken);
+                } else {
+                    log.add("request.surl", getSurl(request));
+                }
+                if (status != null) {
+                    log.add("status.code", status.getStatusCode());
+                    log.add("status.explanation", status.getExplanation());
+                }
+                log.add("session", JDC.getSession());
+
+                log.add("user-agent", servletRequest.getHeader(HTTPConstants.HEADER_USER_AGENT));
+                log.toLogger(ACCESS_LOGGER);
+            }
+        }
+    }
+
+    public class CounterLogger implements RequestLogger
+    {
+        @Override
+        public void request(String requestName, Object request)
+        {
+            srmServerCounters.incrementRequests(request.getClass());
+        }
+
+        @Override
+        public void response(String requestName, Object request, Object response, long time)
+        {
+            TReturnStatus status = getReturnStatus(response);
+            if (status != null && FAILURES.contains(status.getStatusCode())) {
+                srmServerCounters.incrementFailed(request.getClass());
+            }
+        }
+    }
+
+    private class RequestExecutionTimeGaugeLogger implements RequestLogger
+    {
+        @Override
+        public void request(String requestName, Object request)
+        {
+        }
+
+        @Override
+        public void response(String requestName, Object request, Object response, long time)
+        {
+            srmServerGauges.update(request.getClass(), time);
+        }
+    }
+
+    private static String getSurl(Object request)
+    {
+        try {
+            Method getReturnStatus = request.getClass().getDeclaredMethod("getSURL");
+            Class<?> returnType = getReturnStatus.getReturnType();
+            if (org.apache.axis.types.URI.class.isAssignableFrom(returnType)) {
+                Object uri = getReturnStatus.invoke(request);
+                if (uri != null) {
+                    return uri.toString();
+                }
+            }
+        } catch (NoSuchMethodException e) {
+            // Unfortunately, Java standard API provides no nice way of
+            // discovering if a method exists by reflection.  This is perhaps
+            // the least ugly.
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            LOGGER.debug("Failed to extract SURL: {}", e.toString());
+        }
+        return null;
+    }
+
+    private static String getRequestToken(Object request, Object response)
+    {
+        String requestToken = getRequestToken(response);
+        if (requestToken != null) {
+            return requestToken;
+        }
+        requestToken = getRequestToken(request);
+        if (requestToken != null) {
+            return requestToken;
+        }
+        return null;
+    }
+
+    private static String getRequestToken(Object response)
+    {
+        try {
+            Method getReturnStatus = response.getClass().getDeclaredMethod("getRequestToken");
+            Class<?> returnType = getReturnStatus.getReturnType();
+            if (String.class.isAssignableFrom(returnType)) {
+                return (String) getReturnStatus.invoke(response);
+            }
+        } catch (NoSuchMethodException e) {
+            // Unfortunately, Java standard API provides no nice way of
+            // discovering if a method exists by reflection.  This is perhaps
+            // the least ugly.
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            LOGGER.debug("Failed to extract request token: {}", e.toString());
+        }
+        return null;
+    }
+
+    private static TReturnStatus getReturnStatus(Object response)
+    {
+        try {
+            Method getReturnStatus = response.getClass().getDeclaredMethod("getReturnStatus");
+            Class<?> returnType = getReturnStatus.getReturnType();
+            if (TReturnStatus.class.isAssignableFrom(returnType)) {
+                return (TReturnStatus) getReturnStatus.invoke(response);
+            }
+        } catch (NoSuchMethodException e) {
+            // Unfortunately, Java standard API provides no nice way of
+            // discovering if a method exists by reflection.  This is perhaps
+            // the least ugly.
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            LOGGER.debug("Failed to extract status code: {}", e.toString());
+        }
+        return null;
+    }
+
+    private static String getDn(HttpServletRequest request)
+    {
+        try {
+            GSSContext gssContext = (GSSContext) request.getAttribute(GSI_CONTEXT);
+            if (gssContext != null) {
+                return gssContext.getSrcName().toString();
+            }
+        } catch (GSSException ignored) {
+        }
+        return "-";
     }
 }
