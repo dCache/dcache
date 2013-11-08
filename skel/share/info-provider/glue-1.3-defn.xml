@@ -63,7 +63,7 @@
                   select="/d:dCache/d:doors/d:door"
                   classes="GlueSETop GlueSEAccessProtocol GlueKey GlueSchemaVersion">
             <!-- Never publish SRM here -->
-            <suppress test="SRM">
+            <suppress test="srm">
               <lookup path="d:protocol/d:metric[@name='family']"/>
             </suppress>
 
@@ -106,7 +106,7 @@
                   select-mode="default-suppress"
                   classes="GlueSETop GlueSEControlProtocol GlueKey GlueSchemaVersion">
             <!-- Only publish the SRM door here -->
-            <allow test="SRM">
+            <allow test="srm">
               <lookup path="d:protocol/d:metric[@name='family']"/>
             </allow>
 

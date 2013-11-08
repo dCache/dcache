@@ -380,7 +380,7 @@
                   select="/d:dCache/d:doors/d:door"
                   classes="GLUE2StorageAccessProtocol">
 
-            <suppress test="SRM">
+            <suppress test="srm">
               <lookup path="d:protocol/d:metric[@name='family']"/>
             </suppress>
 
@@ -450,7 +450,7 @@
 
             <choose>
               <optionally>
-                <when test="SRM">
+                <when test="srm">
                   <lookup path="d:protocol/d:metric[@name='family']"/>
                 </when>
                 <attr name="GLUE2EndpointInterfaceVersion">2.2</attr>
