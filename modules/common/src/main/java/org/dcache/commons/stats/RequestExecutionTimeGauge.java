@@ -78,4 +78,9 @@ public interface RequestExecutionTimeGauge {
      * @param nextExecTime
      */
     void update(long nextExecTime);
+
+    /**
+     * Reset the gauge.
+     */
+    void reset();
 }

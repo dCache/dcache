@@ -174,4 +174,12 @@ public class RequestExecutionTimeGauges<T> {
     }
 
 
+    /**
+     * reset all gauges.
+     */
+    public synchronized void reset() {
+        for (RequestExecutionTimeGauge gauge: gauges.values()) {
+            gauge.reset();
+        }
+    }
 }

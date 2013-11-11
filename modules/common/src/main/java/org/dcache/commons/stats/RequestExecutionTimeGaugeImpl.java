@@ -286,5 +286,16 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
         return periodUpdateNum;
     }
 
-
+    @Override
+    public synchronized void reset() {
+        periodStartTime = System.currentTimeMillis();
+        periodAverageExecutionTime = 0;
+        periodUpdateNum = 0;
+        averageExecutionTime=0;
+        minExecutionTime=0;
+        maxExecutionTime=0;
+        executionTimeRMSS=0;
+        lastExecutionTime = 0;
+        updateNum = 0;
+    }
 }
