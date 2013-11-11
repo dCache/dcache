@@ -56,7 +56,7 @@ public class EventLogger
             log.add("lastuoid", envelope.getLastUOID());
             log.add("session", envelope.getSession());
             log.add("message", getMessage(envelope));
-            log.add("source", envelope.getSourcePath())
+            log.add("source", envelope.getSourcePath());
             log.add("destination", envelope.getDestinationPath());
             deliver.info(log.toString());
         }
