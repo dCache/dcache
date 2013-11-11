@@ -83,6 +83,7 @@ import org.dcache.nfs.vfs.ChimeraVfs;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.util.NDC;
 import org.dcache.util.LoginBrokerHandler;
 import org.dcache.util.RedirectedTransfer;
@@ -712,10 +713,19 @@ public class NFSv41Door extends AbstractCellComponent implements
         return multipath;
     }
 
+    public final static String fh_stats =
+            "stats [-c] # show nfs requests statstics\n\n" +
+            "  Print nfs operation statistics.\n" +
+            "    -c clear current statistics values";
+    public final static String hh_stats = " [-c] # show nfs requests statstics";
     public String ac_stats(Args args) {
+        RequestExecutionTimeGauges<String> gauges = _nfs4.getStatistics();
         StringBuilder sb = new StringBuilder();
-        sb.append("Stats:").append("\n").append(_nfs4.getStatistics());
+        sb.append("Stats:").append("\n").append(gauges);
 
+        if (args.hasOption("c")) {
+            gauges.reset();
+        }
         return sb.toString();
     }
 }

@@ -27,6 +27,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.xdr.stateid4;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -145,10 +146,20 @@ public class NfsTransferService extends AbstractCellComponent
         return socketAddresses;
     }
 
-    public final static String hh_nfs_stats = " # show nfs mover statstics";
+    public final static String fh_nfs_stats =
+            "nfs stats [-c] # show nfs requests statstics\n\n" +
+            "  Print nfs operation statistics.\n" +
+            "    -c clear current statistics values";
+    public final static String hh_nfs_stats = " [-c] # show nfs mover statstics";
     public String ac_nfs_stats(Args args) {
+
+        RequestExecutionTimeGauges<String> gauges = _nfsIO.getNFSServer().getStatistics();
         StringBuilder sb = new StringBuilder();
-        sb.append("Stats:").append("\n").append(_nfsIO.getNFSServer().getStatistics());
+        sb.append("Stats:").append("\n").append(gauges);
+
+        if (args.hasOption("c")) {
+            gauges.reset();
+        }
 
         return sb.toString();
     }
