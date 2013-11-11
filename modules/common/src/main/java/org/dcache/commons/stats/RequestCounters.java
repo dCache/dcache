@@ -105,24 +105,22 @@ public class RequestCounters<T> {
     @Override
     public String  toString() {
        StringBuilder sb = new StringBuilder();
-        Formatter formatter = new Formatter(sb);
-        formatter.format("%-36s %9s %9s", name,"requests", "failed");
-        formatter.flush();
-        formatter.close();
-        int totalRequests=0;
-        int totalFailed=0;
-        synchronized(this) {
-            for(T key: counters.keySet()) {
-                RequestCounterImpl counter = counters.get(key);
-                totalRequests += counter.getTotalRequests();
-                totalFailed += counter.getFailed();
-                sb.append("\n  ").append(counter);
+        try (Formatter formatter = new Formatter(sb)) {
+            formatter.format("%-36s %9s %9s", name, "requests", "failed");
+
+            int totalRequests=0;
+            int totalFailed=0;
+            synchronized(this) {
+                for(T key: counters.keySet()) {
+                    RequestCounterImpl counter = counters.get(key);
+                    totalRequests += counter.getTotalRequests();
+                    totalFailed += counter.getFailed();
+                    sb.append("\n  ").append(counter);
+                }
             }
+
+            formatter.format("\n%-36s %9s %9s", "  Total", totalRequests, totalFailed);
         }
-        formatter = new Formatter(sb);
-        formatter.format("\n%-36s %9s %9s","  Total",totalRequests, totalFailed);
-        formatter.flush();
-        formatter.close();
         return sb.toString();
     }
 

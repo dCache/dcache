@@ -65,13 +65,9 @@ public class RequestCounterImpl implements RequestCounterMXBean {
              aName = aName.substring(0,34);
         }
         StringBuilder sb = new StringBuilder();
-
-        Formatter formatter = new Formatter(sb);
-
-
-        formatter.format("%-34s %9d %9d", aName, requests,  failed);
-        formatter.flush();
-        formatter.close();
+        try (Formatter formatter = new Formatter(sb)) {
+            formatter.format("%-34s %9d %9d", aName, requests,  failed);
+        }
 
         return sb.toString();
     }

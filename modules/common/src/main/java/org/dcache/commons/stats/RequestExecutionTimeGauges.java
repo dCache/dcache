@@ -91,11 +91,10 @@ public class RequestExecutionTimeGauges<T> {
     @Override
     public String  toString() {
        StringBuilder sb = new StringBuilder();
-        Formatter formatter = new Formatter(sb);
-        formatter.format("%-36s %23s %12s %12s %12s %12s %12s", name, "average\u00B1stderr(ms)",
-                "min(ms)", "max(ms)","STD(ms)", "Samples","Period(s)");
-        formatter.flush();
-        formatter.close();
+        try (Formatter formatter = new Formatter(sb)) {
+            formatter.format("%-36s %23s %12s %12s %12s %12s %12s", name, "average\u00B1stderr(ms)",
+                    "min(ms)", "max(ms)","STD(ms)", "Samples","Period(s)");
+        }
         synchronized(this) {
             for(T key: gauges.keySet()) {
                 RequestExecutionTimeGauge gauge = gauges.get(key);

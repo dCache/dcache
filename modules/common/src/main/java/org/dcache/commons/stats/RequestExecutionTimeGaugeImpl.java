@@ -180,16 +180,13 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
         long updatePeriod= System.currentTimeMillis() -
                 startTime;
         StringBuilder sb = new StringBuilder();
-
-        Formatter formatter = new Formatter(sb);
-
-        formatter.format("%-34s %12d\u00B1%10f %,12d %,12d %,12d %,12d %,12d",
-                aName, averageExecutionTime,getStandardError(),
-                minExecutionTime,maxExecutionTime,
-                getStandardDeviation(), updateNum,
-                TimeUnit.MILLISECONDS.toSeconds(updatePeriod));
-        formatter.flush();
-        formatter.close();
+        try (Formatter formatter = new Formatter(sb)) {
+            formatter.format("%-34s %12d\u00B1%10f %,12d %,12d %,12d %,12d %,12d",
+                    aName, averageExecutionTime,getStandardError(),
+                    minExecutionTime,maxExecutionTime,
+                    getStandardDeviation(), updateNum,
+                    TimeUnit.MILLISECONDS.toSeconds(updatePeriod));
+        }
 
         return sb.toString();
     }
