@@ -4755,14 +4755,26 @@ public final class Manager
                 }
                 Space[] spaces = new Space[tokens.length];
                 for(int i=0;i<spaces.length; ++i){
+
+                        Space space = null;
                         try {
-                                spaces[i] = getSpace(tokens[i]);
+                                space = getSpace(tokens[i]);
+                                // Expiration of space reservations is a background activity and is not immediate.
+                                // S2 tests however expect the state to be accurate at any point, hence we report
+                                // the state as EXPIRED even when the actual state has not been updated in the
+                                // database yet. See usecase.CheckGarbageSpaceCollector (S2).
+                                if (space.getState().equals(SpaceState.RESERVED)) {
+                                        long expirationTime = space.getExpirationTime();
+                                        if (expirationTime > -1 && expirationTime - System.currentTimeMillis() <= 0) {
+                                                space.setState(SpaceState.EXPIRED);
+                                        }
+                                }
                         }
                         catch(Exception e) {
                                 logger.error("failed to find space {}: {}",
                                         tokens[i], e.getMessage());
-                                spaces[i]= null;
                         }
+                        spaces[i] = space;
                 }
                 gsmd.setSpaces(spaces);
         }
