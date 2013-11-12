@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.PoolV2Mode;
 
@@ -39,12 +38,6 @@ public class PoolList extends SortableBasePage {
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
     /*
-     * set to false when using the Junit FormTester; otherwise, the autorefreshing
-     * form produces incorrect results
-     */
-    public static boolean autorefresh = true;
-
-    /*
      * necessary so that submit uses the current list instance
      */
     private boolean submitFormCalled = false;
@@ -58,9 +51,6 @@ public class PoolList extends SortableBasePage {
                 new PropertyModel(this, "_poolBeans"), true);
         poolListPanel.setPoolListPage(this);
         poolUsageForm.add(poolListPanel);
-        if (autorefresh) {
-            addAutoRefreshToForm(poolUsageForm, 1, TimeUnit.MINUTES);
-        }
         add(poolUsageForm);
     }
 
