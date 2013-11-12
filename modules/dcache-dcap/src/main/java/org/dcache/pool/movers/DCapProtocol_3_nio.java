@@ -611,7 +611,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE, CacheException.ERROR_IO_DISK, errmsg);
                         socketChannel.write(cntOut.buffer());
-                    } else if (access == IoMode.WRITE) {
+                    } else if (access != IoMode.WRITE) {
                         String errmsg = "SEEK_AND_WRITE denied (not allowed)";
                         _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE, CacheException.ERROR_IO_DISK, errmsg);
