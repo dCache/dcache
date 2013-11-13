@@ -220,8 +220,11 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     private void startServer() {
-        long effectiveTimeout = _idleTimeoutUnit.toMillis(_idleTimeout > 0? _idleTimeout : Long.MAX_VALUE);
-        _server.getProperties().put(SshServer.IDLE_TIMEOUT, Long.toString(effectiveTimeout));
+        // MINA SSH uses int to store timeout. Strip the long valued to max int if required.
+        int effectiveTimeout = (int)Math.min((long)Integer.MAX_VALUE,
+                _idleTimeoutUnit.toMillis(_idleTimeout > 0? _idleTimeout : Long.MAX_VALUE));
+
+        _server.getProperties().put(SshServer.IDLE_TIMEOUT, Integer.toString(effectiveTimeout));
         _server.setPort(_port);
         _server.setHost(_host);
 
