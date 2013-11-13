@@ -242,13 +242,13 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        if(State.isFinalState(state)) {
+        if(state.isFinal()) {
             logger.debug("Get request state changed to {}.", state);
             for (GetFileRequest request : getFileRequests()) {
                 request.wlock();
                 try {
                     State fr_state = request.getState();
-                    if(!State.isFinalState(fr_state ))
+                    if(!fr_state.isFinal())
                     {
                         logger.debug("Changing fr#{} to {}.", request.getId(), state);
                         request.setState(state, "Changing file state because request state has changed.");

@@ -84,7 +84,6 @@ import diskCacheV111.srm.RequestFileStatus;
 
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PrepareToPutCallbacks;
-import org.dcache.srm.ReleaseSpaceCallbacks;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
@@ -105,7 +104,6 @@ import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 
@@ -541,7 +539,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
              logger.error(ire.toString());
              return;
          }
-        if(State.isFinalState(state)) {
+        if(state.isFinal()) {
             logger.debug("space reservation is "+getSpaceReservationId());
 
             if ( getSpaceReservationId() != null &&
@@ -613,7 +611,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
              * finished successfully. Otherwise nothing happens.
              */
             State state = getState();
-            if (!State.isFinalState(state)) {
+            if (!state.isFinal()) {
                 setState(State.CANCELED, "Request aborted.");
             } else if (state == State.DONE) {
                 throw new IllegalStateTransition("Put request completed successfully and cannot be aborted",
@@ -869,7 +867,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_DUPLICATION_ERROR);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -885,7 +883,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 try {
                     fr.setState(State.FAILED, error);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -903,7 +901,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 try {
                     fr.setState(State.FAILED, e.getMessage());
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -920,7 +918,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 try {
                     fr.setState(State.FAILED,reason);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -963,7 +961,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 try {
                     fr.setState(State.FAILED, "Name space timeout.");
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -984,7 +982,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_INVALID_PATH);
                 } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1004,7 +1002,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1038,7 +1036,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 try {
                     fr.setState(State.FAILED, error);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1061,7 +1059,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 try {
                     fr.setState(State.FAILED, reason);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1082,7 +1080,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_NO_FREE_SPACE);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1185,7 +1183,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 try {
                     fr.setState(State.FAILED, e.getMessage());
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1202,7 +1200,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 try {
                     fr.setState(State.FAILED,reason);
                 } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1225,7 +1223,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_NO_FREE_SPACE);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1248,7 +1246,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_NO_FREE_SPACE);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1272,7 +1270,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -1296,7 +1294,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                             reason,
                             TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }

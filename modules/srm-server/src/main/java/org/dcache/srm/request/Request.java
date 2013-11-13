@@ -447,7 +447,7 @@ public abstract class Request extends Job {
              *    duplicate abort requests are performed.
              */
             State state = getState();
-            if (!State.isFinalState(state)) {
+            if (!state.isFinal()) {
                 setState(State.CANCELED, "Request aborted.");
             }
         } catch (IllegalStateTransition e) {

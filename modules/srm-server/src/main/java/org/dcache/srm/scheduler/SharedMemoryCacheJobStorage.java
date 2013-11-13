@@ -59,7 +59,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
 
     private void updateExpirationSet(J job)
     {
-        if (job.getState().isFinalState()) {
+        if (job.getState().isFinal()) {
             jobsToExpire.remove(job);
         } else {
             jobsToExpire.add(job);

@@ -176,16 +176,18 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         @Override
         protected void stateChanged(State oldState) {
                 State state = getState();
-                if(State.isFinalState(state)) {
+                if(state.isFinal()) {
                         for (LsFileRequest fr : getFileRequests() ) {
+                                fr.wlock();
                                 try {
                                         State fr_state = fr.getState();
-                                        if(!State.isFinalState(fr_state)) {
+                                        if(!fr_state.isFinal()) {
                                                 fr.setState(state, "Changing file state because request state has changed.");
                                         }
-                                }
-                                catch(IllegalStateTransition ist) {
+                                } catch(IllegalStateTransition ist) {
                                         logger.error("Illegal State Transition : " +ist.getMessage());
+                                } finally {
+                                    fr.wunlock();
                                 }
                         }
                 }
@@ -385,8 +387,9 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                 got_exception++;
                         }
                 }
+                boolean isFinalState = getState().isFinal();
                 if (done_req == len ) {
-                        if (!State.isFinalState(getState())) {
+                        if (!isFinalState) {
                                 try {
                                        setState(State.DONE, "Operation completed.");
                                  }
@@ -416,23 +419,27 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 }
                 else {
                         if (done_req>0) {
+                            if (!isFinalState) {
                                  try {
                                          setState(State.DONE,State.DONE.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
                                          logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
-                                 return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
-                                         "Some SURL requests successfully completed, and some SURL requests failed. Details are on the files status");
+                            }
+                            return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
+                                    "Some SURL requests successfully completed, and some SURL requests failed. Details are on the files status");
                         }
                         else {
+                            if (!isFinalState) {
                                  try {
                                          setState(State.FAILED,State.FAILED.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
                                          logger.error("Illegal State Transition : " +ist.getMessage());
                                  }
-                                 return new TReturnStatus(TStatusCode.SRM_FAILURE, "All ls requests failed in some way or another");
+                            }
+                            return new TReturnStatus(TStatusCode.SRM_FAILURE, "All ls requests failed in some way or another");
                         }
                 }
             } finally {

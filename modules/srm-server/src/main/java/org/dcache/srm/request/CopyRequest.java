@@ -922,7 +922,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
             boolean done = true;
             for (CopyFileRequest request : getFileRequests()) {
                 State state = request.getState();
-                if(!(State.isFinalState(state))) {
+                if(!state.isFinal()) {
                     done = false;
                 }
             }
@@ -947,7 +947,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        if(State.isFinalState(state)) {
+        if (state.isFinal()) {
 
             TurlGetterPutter a_getter_putter = getGetter_putter();
             if(a_getter_putter != null) {
@@ -958,7 +958,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
             for (CopyFileRequest request : getFileRequests()) {
                 try {
                     State fr_state = request.getState();
-                    if(!(State.isFinalState(fr_state)))
+                    if(!(fr_state.isFinal()))
                     {
 
                         logger.debug("changing fr#"+request.getId()+" to "+state);
@@ -1023,13 +1023,13 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
                 boolean done = true;
                 for (CopyFileRequest request : getFileRequests()) {
                     State state = request.getState();
-                    if(!(State.isFinalState(state ))) {
+                    if(!(state.isFinal())) {
                         done = false;
                     }
                 }
 
                 State state = getState();
-                if(!State.isFinalState(state)) {
+                if(!state.isFinal()) {
                     if(done) {
                         setState(State.DONE, "All transfers have completed.");
                     }
@@ -1042,7 +1042,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
                 try
                 {
                     State state = getState();
-                    if(!State.isFinalState(state)) {
+                    if(!state.isFinal()) {
                         setState(State.DONE,e.toString());
                     }
                 }

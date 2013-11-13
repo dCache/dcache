@@ -937,7 +937,7 @@ public class SRM {
             }
             synchronized (fr) {
                 State s = fr.getState();
-                if (s.isFinalState()) {
+                if (s.isFinal()) {
                     logger.debug("can not set status, the file status is already " + s);
                 } else {
                     if (state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&

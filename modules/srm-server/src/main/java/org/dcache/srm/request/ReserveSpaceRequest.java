@@ -423,7 +423,7 @@ public final class ReserveSpaceRequest extends Request {
             request.wlock();
             try {
                 State state = request.getState();
-                if(!State.isFinalState(state)) {
+                if(!state.isFinal()) {
 
                     request.setSpaceToken(spaceReservationToken);
                     request.setSizeInBytes(reservedSpaceSize);

@@ -272,7 +272,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             // FIXME: we do this to make the srm update the status of the request if it changed
             getRequestStatus();
             State state = getState();
-            if (!State.isFinalState(state)) {
+            if (!state.isFinal()) {
                 for (PutFileRequest file : getFileRequests()) {
                     try {
                         file.abort();
@@ -320,14 +320,14 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        if(State.isFinalState(state)) {
+        if(state.isFinal()) {
 
             logger.debug("put request state changed to {}", state);
             for (PutFileRequest request : getFileRequests()) {
                 request.wlock();
                 try {
                     State fr_state = request.getState();
-                    if(!State.isFinalState(fr_state ))
+                    if(!fr_state.isFinal())
                     {
                         logger.debug("changing fr#{} to {}", request.getId(), state);
                         request.setState(state, "Changing file state because request state has changed.");
@@ -517,7 +517,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         try {
             if (creationTime + lifetime < System.currentTimeMillis()) {
                 logger.debug("expiring job #{}", getId());
-                if (!getState().isFinalState()) {
+                if (!getState().isFinal()) {
                     setStateAndStatusCode(State.FAILED, "Total request time exceeded.", TStatusCode.SRM_REQUEST_TIMED_OUT);
                 }
             }

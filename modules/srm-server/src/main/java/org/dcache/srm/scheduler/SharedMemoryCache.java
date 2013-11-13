@@ -54,7 +54,7 @@ public class SharedMemoryCache {
                     throw new IllegalStateException("Conflicting types for request " + job.getId() + ": " + job.getClass() + " and " + other.getClass());
                 }
                 job = (T) other;
-            } else if (!job.getState().isFinalState()) {
+            } else if (!job.getState().isFinal()) {
                 sharedMemoryCache.put(job.getId(), job);
             }
         } finally {
@@ -81,11 +81,11 @@ public class SharedMemoryCache {
                 if (other != job) {
                     throw new IllegalArgumentException("Duplicate job #" + job.getId());
                 }
-                if (job.getState().isFinalState()) {
+                if (job.getState().isFinal()) {
                     sharedMemoryCache.remove(job.getId());
                 }
             } else {
-                if (!job.getState().isFinalState()) {
+                if (!job.getState().isFinal()) {
                     sharedMemoryCache.put(job.getId(), job);
                 }
             }

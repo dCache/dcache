@@ -1027,7 +1027,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	@Override
         protected void stateChanged(State oldState) {
 		State state = getState();
-		if(State.isFinalState(state)) {
+		if(state.isFinal()) {
                         if (getTransferId() != null && state != State.DONE) {
 				getStorage().killRemoteTransfer(getTransferId());
 			}
@@ -1557,7 +1557,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 			logger.error(e.toString());
 			State state =  copyFileRequest.getState();
 			Scheduler scheduler = Scheduler.getScheduler(copyFileRequest.getSchedulerId());
-			if(!State.isFinalState(state) && scheduler != null) {
+			if(!state.isFinal() && scheduler != null) {
 				try {
 					scheduler.schedule(copyFileRequest);
 				}

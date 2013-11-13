@@ -460,7 +460,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             }
         }
 
-        if(State.isFinalState(state)) {
+        if(state.isFinal()) {
             if(getFileId() != null && getPinId() != null) {
                 UnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
                 logger.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
@@ -667,7 +667,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         reason,
                         TStatusCode.SRM_INVALID_PATH);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -685,7 +685,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                                              reason,
                                              TStatusCode.SRM_FILE_UNAVAILABLE);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -700,9 +700,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             try {
                 GetFileRequest fr = getGetFileRequest();
                 try {
-                    fr.setState(State.FAILED,error);
+                    fr.setState(State.FAILED, error);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -719,7 +719,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 try {
                     fr.setState(State.FAILED,e.toString());
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -739,7 +739,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 try {
                     fr.setState(State.FAILED, "Pin operation timed out.");
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -788,7 +788,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 try {
                     fr.setState(State.FAILED,reason);
                 } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }

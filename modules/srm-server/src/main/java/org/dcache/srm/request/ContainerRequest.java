@@ -327,7 +327,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
 
             // FIXME: we do this to make the srm update the status of the request if it changed
             getRequestStatus();
-            if (!getState().isFinalState()) {
+            if (!getState().isFinal()) {
                 for (R file : getFileRequests()) {
                     try {
                         file.abort();

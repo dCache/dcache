@@ -597,7 +597,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                             reason,
                             TStatusCode.SRM_INVALID_PATH);
                 } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -618,7 +618,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                             TStatusCode.SRM_FILE_UNAVAILABLE);
                 }
                 catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -633,9 +633,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                    fr.setState(State.FAILED,error);
+                    fr.setState(State.FAILED, error);
                 } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -652,7 +652,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 try {
                     fr.setState(State.FAILED, e.getMessage());
                 } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
@@ -667,7 +667,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 logger.info("Pin request timed out.");
-                if (!fr.getState().isFinalState()) {
+                if (!fr.getState().isFinal()) {
                     fr.pinFile();
                 }
             } catch (SRMInvalidRequestException e) {
@@ -708,7 +708,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 try {
                     fr.setState(State.FAILED,reason);
                 } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinalState()) {
+                    if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }

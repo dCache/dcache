@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -91,15 +91,15 @@ public enum State {
     FAILED         ("Failed"         ,11, true),
     RESTORED       ("Restored"       ,12),
     RUNNINGWITHOUTTHREAD("RunningWithoutThread"       ,13);
-    
+
     private final String name;
     private final int stateId;
     private final boolean isFinal;
-    
-    
-    
+
+
+
     private static final long serialVersionUID = 4561665427863772427L;
-    
+
     /** Creates a new instance of non final State  */
     private State(String name,int stateId) {
         this(name, stateId, false);
@@ -111,11 +111,11 @@ public enum State {
         this.stateId = stateId;
         this.isFinal = isFinal;
     }
-    
+
     public String toString() {
         return name;
     }
-    
+
     public int getStateId() {
         return stateId;
     }
@@ -138,9 +138,9 @@ public enum State {
             throw new IllegalArgumentException("Unknown State:"+state);
         }
         }
-    
+
     public static State getState(int stateId) throws IllegalArgumentException {
-        
+
       for(State aState: values()) {
             if(aState.stateId == stateId) {
                 return aState;
@@ -148,22 +148,8 @@ public enum State {
         }
         throw new IllegalArgumentException("Unknown State Id:"+stateId);
     }
-    
-   /**
-     * a utility method which tells if the given state is a final state
-     * @param state
-     * @return true if the state is final
-     */
-    public static boolean isFinalState(State state) {
-        return state.isFinal;
-    }
-    
-    /**
-     * a utility method which tells if this state is a final state
-     * @return true if the state is final
-     */
-    public boolean isFinalState() {
+
+    public boolean isFinal() {
         return isFinal;
-}
-    
+    }
 }

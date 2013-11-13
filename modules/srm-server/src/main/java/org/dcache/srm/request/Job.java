@@ -228,7 +228,7 @@ public abstract class Job  {
             if(savedInFinalState){
                 return;
             }
-            boolean isFinalState = this.getState().isFinalState();
+            boolean isFinalState = this.getState().isFinal();
             getJobStorage().saveJob(this, isFinalState || force);
             savedInFinalState = isFinalState;
         } catch (DataAccessException e) {
@@ -355,11 +355,11 @@ public abstract class Job  {
 
             notifySchedulerOfStateChange(oldState, newState);
 
-            if (!newState.isFinalState() && schedulerId == null) {
+            if (!newState.isFinal() && schedulerId == null) {
                 throw new IllegalStateTransition("Scheduler ID is null");
             }
             stateChanged(oldState);
-            if(save || !oldState.isFinalState() && newState.isFinalState()) {
+            if(save || !oldState.isFinal() && newState.isFinal()) {
                 saveJob();
             }
         } finally {
@@ -723,7 +723,7 @@ public abstract class Job  {
     public long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
         wlock();
         try {
-            if (state.isFinalState()){
+            if (state.isFinal()){
                 /* [ SRM 2.2, 5.16.2 ]
                  *
                  * h) Lifetime cannot be extended on the released files, aborted files, expired
@@ -811,7 +811,7 @@ public abstract class Job  {
                 logger.debug("expiring job #{}", getId());
                 if (state == State.READY || state == State.TRANSFERRING) {
                     setState(State.DONE, "Request lifetime expired.");
-                } else if (!state.isFinalState()) {
+                } else if (!state.isFinal()) {
                     setState(State.FAILED, "Request lifetime expired.");
                 }
             }
@@ -872,7 +872,7 @@ public abstract class Job  {
     public long getRemainingLifetime() {
         rlock();
         try {
-            if (state.isFinalState()) {
+            if (state.isFinal()) {
                 return 0;
             }
             long remainingLifetime = creationTime + lifetime - System.currentTimeMillis();
@@ -1099,7 +1099,7 @@ public abstract class Job  {
                     scheduler.stateChanged(this, oldState, newState);
                     // set schedulerId to null only in jvm
                     // that has scheduler that "owns" this job
-                    if(state.isFinalState()) {
+                    if(state.isFinal()) {
                         schedulerId = null;
                     }
                 }

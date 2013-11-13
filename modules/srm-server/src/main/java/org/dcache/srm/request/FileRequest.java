@@ -239,7 +239,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
             try {
                 if(status.equalsIgnoreCase("Done")) {
                     State state = getState();
-                    if( !state.isFinalState()) {
+                    if( !state.isFinal()) {
                         if(state == State.READY ||
                            state == State.TRANSFERRING ||
                            state == State.RUNNING) {
@@ -301,7 +301,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
              * Note that the remaining items more constraints for particular types of
              * requests. Some subclasses thus override this method.
              */
-            if (!getState().isFinalState()) {
+            if (!getState().isFinal()) {
                 setState(State.CANCELED, "Request aborted.");
             }
         } finally {
