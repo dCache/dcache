@@ -139,9 +139,7 @@ public interface PinCallbacks {
 
     public void Pinned(FileMetaData fileMetaData, String pinId);
 
-    public void Exception(Exception e);
-
     public void Timeout();
 
-    public void Error(String error);
+    public void AuthorizationError(String reason);
 }

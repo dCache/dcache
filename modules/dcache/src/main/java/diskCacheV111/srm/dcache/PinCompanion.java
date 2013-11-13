@@ -184,7 +184,7 @@ public class PinCompanion
             _attributes = message.getFileAttributes();
 
             if (isDirectory(_attributes)) {
-                _callbacks.FileNotFound("Path is a directory");
+                _callbacks.FileNotFound("Path is a directory.");
                 _state = new FailedState();
             } else if (!isDiskFile(_attributes) || _isOnlinePinningEnabled) {
                 _state = new PinningState();
@@ -197,8 +197,7 @@ public class PinCompanion
                     succeed(DISK_PIN_ID);
                     break;
                 case UNAVAILABLE:
-                    fail(FILE_NOT_IN_REPOSITORY,
-                         "File is currently unavailable");
+                    fail(FILE_NOT_IN_REPOSITORY, "File is not online.");
                     break;
                 case NEARLINE:
                 default:
@@ -304,28 +303,29 @@ public class PinCompanion
     {
         switch (rc) {
         case FILE_NOT_FOUND:
-            _callbacks.FileNotFound("No such file");
+            _callbacks.FileNotFound("No such file.");
             break;
 
         case FILE_NOT_IN_REPOSITORY:
+            _log.warn("Pinning failed for {} ({})", _path, error);
             _callbacks.Unavailable(error.toString());
             break;
 
         case PERMISSION_DENIED:
-            _callbacks.Error("Permission denied");
+            _log.warn("Pinning failed for {} ({})", _path, error);
+            _callbacks.AuthorizationError(error.toString());
             break;
 
         case TIMEOUT:
-            _log.error("Internal timeout");
+            _log.info("Pinning failed: {}", error);
             _callbacks.Timeout();
             break;
 
         default:
-            _log.error(String.format("Pinning failed for %s [rc=%d,msg=%s]",
-                                     _path, rc, error));
+            _log.error("Pinning failed for {} [rc={},msg={}].", _path, rc, error);
 
             String reason =
-                String.format("Failed to pin file [rc=%d,msg=%s]", rc, error);
+                String.format("Failed to pin file [rc=%d,msg=%s].", rc, error);
             _callbacks.PinningFailed(reason);
             break;
         }

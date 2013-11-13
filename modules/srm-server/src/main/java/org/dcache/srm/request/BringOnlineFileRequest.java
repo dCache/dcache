@@ -622,43 +622,24 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                         logger.error(ist.getMessage());
                     }
                 }
-                logger.warn("Pinning failed: " + reason);
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
             }
         }
 
         @Override
-        public void Error( String error) {
+        public void AuthorizationError( String error) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 try {
-                    fr.setState(State.FAILED, error);
+                    fr.setStateAndStatusCode(State.FAILED, error, TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch(IllegalStateTransition ist) {
                     if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
-                logger.error("Pinning failed: "+ error);
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void Exception( Exception e) {
-            try {
-                BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                try {
-                    fr.setState(State.FAILED, e.getMessage());
-                } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-                logger.error("Pinning failed.", e);
-            } catch (SRMInvalidRequestException e1) {
-                logger.warn(e1.getMessage());
             }
         }
 
@@ -666,7 +647,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                logger.info("Pin request timed out.");
                 if (!fr.getState().isFinal()) {
                     fr.pinFile();
                 }
@@ -712,8 +692,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                         logger.error(ist.getMessage());
                     }
                 }
-
-                logger.error("Pinning failed: "+ reason);
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
             }

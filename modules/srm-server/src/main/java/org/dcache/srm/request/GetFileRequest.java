@@ -689,48 +689,26 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         logger.error(ist.getMessage());
                     }
                 }
-                logger.warn("File is unavailable: {}", reason);
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
             }
         }
 
         @Override
-        public void Error( String error) {
+        public void AuthorizationError( String error) {
             try {
                 GetFileRequest fr = getGetFileRequest();
                 try {
-                    fr.setState(State.FAILED, error);
+                    fr.setStateAndStatusCode(State.FAILED, error, TStatusCode.SRM_AUTHORIZATION_FAILURE);
                 } catch (IllegalStateTransition ist) {
                     if (!ist.getFromState().isFinal()) {
                         logger.error(ist.getMessage());
                     }
                 }
-                logger.warn("Pinning failed: {}", error);
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
             }
         }
-
-        @Override
-        public void Exception( Exception e) {
-            try {
-                GetFileRequest fr = getGetFileRequest();
-                try {
-                    fr.setState(State.FAILED,e.toString());
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-                logger.error("Pinning failed",e);
-            } catch (SRMInvalidRequestException e1) {
-                logger.warn(e1.getMessage());
-            }
-        }
-
-
-
 
         @Override
         public void Timeout() {
@@ -743,8 +721,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         logger.error(ist.getMessage());
                     }
                 }
-
-                logger.error("Pinning timed out.");
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
             }
@@ -792,8 +768,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         logger.error(ist.getMessage());
                     }
                 }
-
-                logger.error("Pinning failed: {}", reason);
             } catch(SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
             }
