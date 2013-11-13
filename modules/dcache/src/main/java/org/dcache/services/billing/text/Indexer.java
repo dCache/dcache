@@ -4,7 +4,9 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeTraverser;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.google.common.io.CharStreams;
@@ -35,7 +37,9 @@ import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -49,7 +53,6 @@ import org.dcache.boot.LayoutBuilder;
 import org.dcache.util.ConfigurationProperties;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.io.Files.fileTreeTraverser;
 import static com.google.common.io.Files.isFile;
 
 public class Indexer
@@ -60,6 +63,26 @@ public class Indexer
     private static final String BILLING_TEXT_FLAT_DIR = "billing.text.flat-dir";
     private static final String BILLING_TEXT_DIR = "billing.text.dir";
     private static final String BZ2 = "bz2";
+
+    /**
+     * Almost identical to the file tree traverser from Guava, sorts directory entries
+     * lexicographically.
+     */
+    private static final TreeTraverser<File> SORTED_FILE_TREE_TRAVERSER = new TreeTraverser<File>() {
+        @Override
+        public Iterable<File> children(File file) {
+            // check isDirectory() just because it may be faster than listFiles() on a non-directory
+            if (file.isDirectory()) {
+                File[] files = file.listFiles();
+                if (files != null) {
+                    return Ordering.natural().sortedCopy(Arrays.asList(files));
+                }
+            }
+
+            return Collections.emptyList();
+        }
+    };
+
 
     private final ConfigurationProperties configuration;
     private final boolean isFlat;
@@ -82,7 +105,7 @@ public class Indexer
             boolean shouldOutputFilesNames = args.hasOption("files");
             String searchTerm = args.argv(0);
             FluentIterable<File> filesWithPossibleMatch =
-                    fileTreeTraverser().preOrderTraversal(dir).filter(isBillingFileAndMightContain(searchTerm));
+                    SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isBillingFileAndMightContain(searchTerm));
             if (shouldOutputFilesNames) {
                 for (File file : filesWithPossibleMatch) {
                     System.out.println(file);
@@ -97,7 +120,7 @@ public class Indexer
                 }
             }
         } else if (args.hasOption("all")) {
-            for (File file : fileTreeTraverser().preOrderTraversal(dir).filter(isFile())) {
+            for (File file : SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isFile())) {
                 Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
                 if (matcher.matches()) {
                     System.out.println("Indexing " + file);
@@ -438,7 +461,7 @@ public class Indexer
             @Override
             public void uncaughtException(Thread t, Throwable e)
             {
-                LOGGER.error("Uncaught exception", t);
+                LOGGER.error("Uncaught exception", e);
             }
         });
 
