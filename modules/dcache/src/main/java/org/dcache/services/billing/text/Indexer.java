@@ -101,6 +101,7 @@ public class Indexer
         } else if (args.hasOption("yesterday")) {
             Date yesterday = getYesterday();
             File billingFile = getBillingFile(yesterday);
+            File errorFile = getErrorFile(yesterday);
             File indexFile = getIndexFile(yesterday);
             if (billingFile.exists()) {
                 index(fpp, billingFile, indexFile);
@@ -108,17 +109,26 @@ public class Indexer
                     compress(billingFile);
                 }
             }
-        } else if (args.hasOption("index")) {
-            File file = new File(args.argv(0));
-            Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
-            if (!matcher.matches()) {
-                throw new IllegalArgumentException("File name not follow the format of billing files.");
+            if (errorFile.exists() && args.hasOption("compress")) {
+                compress(errorFile);
             }
-            index(fpp, file, getIndexFile(file.getParentFile(), matcher.group(1)));
+        } else if (args.hasOption("index")) {
+            for (String name : args.getArguments()) {
+                File file = new File(name);
+                Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
+                if (!matcher.matches()) {
+                    throw new IllegalArgumentException("File name does not follow the format of billing files: " + name);
+                }
+                index(fpp, file, getIndexFile(file.getParentFile(), matcher.group(1)));
+            }
         } else if (args.hasOption("compress")) {
-            compress(new File(args.argv(0)));
+            for (String name : args.getArguments()) {
+                compress(new File(name));
+            }
         } else if (args.hasOption("decompress")) {
-            decompress(new File(args.argv(0)));
+            for (String name : args.getArguments()) {
+                decompress(new File(name));
+            }
         } else if (args.hasOption("help")) {
             help(System.err);
         } else {
@@ -159,16 +169,16 @@ public class Indexer
     {
         String path = compressedFile.getPath();
         checkArgument(Files.getFileExtension(path).equals(BZ2), "File must have " + BZ2 + " extension.");
-        File billingFile = new File(compressedFile.getParent(), Files.getNameWithoutExtension(path));
-        Files.copy(new Bzip2CompressorInputStreamSupplier(compressedFile), billingFile);
+        File file = new File(compressedFile.getParent(), Files.getNameWithoutExtension(path));
+        Files.copy(new Bzip2CompressorInputStreamSupplier(compressedFile), file);
         java.nio.file.Files.delete(compressedFile.toPath());
     }
 
-    private void compress(File billingFile) throws IOException
+    private void compress(File file) throws IOException
     {
-        File compressedFile = new File(billingFile.getPath() + "." + BZ2);
-        Files.copy(billingFile, new Bzip2CompressorOutputStreamSupplier(compressedFile));
-        java.nio.file.Files.delete(billingFile.toPath());
+        File compressedFile = new File(file.getPath() + "." + BZ2);
+        Files.copy(file, new Bzip2CompressorOutputStreamSupplier(compressedFile));
+        java.nio.file.Files.delete(file.toPath());
     }
 
     private static void help(PrintStream out)
@@ -176,15 +186,15 @@ public class Indexer
         out.println("COMMANDS:");
         out.println("   -all [-fpp=PROP] [-dir=BASE]");
         out.println("          (Re)index all billing files.");
-        out.println("   -compress FILE");
+        out.println("   -compress FILE...");
         out.println("          Compress FILE.");
-        out.println("   -decompress FILE");
+        out.println("   -decompress FILE...");
         out.println("          Decompress FILE.");
         out.println("   -find [-files] [-dir=BASE] SEARCHTERM");
         out.println("          Output billing entries that contain SEARCHTERM. Valid search terms are");
         out.println("          path, pnfsid, dn and path prefixes of those. Optionally output names");
         out.println("          of billing files that might contain the search term.");
-        out.println("   -index [-fpp=PROP] FILE");
+        out.println("   -index [-fpp=PROP] FILE...");
         out.println("          Create index for FILE.");
         out.println("   -yesterday [-compress] [-fpp=PROP] [-dir=BASE] [-flat=BOOL]");
         out.println("          Index yesterday's billing file. Optionally compresses the billing file");
@@ -217,6 +227,11 @@ public class Indexer
     private synchronized File getBillingFile(Date date)
     {
         return new File(getDirectory(date), "billing-" + fileNameFormat.format(date));
+    }
+
+    private synchronized File getErrorFile(Date date)
+    {
+        return new File(getDirectory(date), "billing-error-" + fileNameFormat.format(date));
     }
 
     private synchronized File getIndexFile(Date date)
