@@ -3,6 +3,8 @@ package dmg.cells.nucleus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.util.NetLoggerBuilder;
+
 /**
  * Implements cell event logging following the NetLogger format.
  *
@@ -14,27 +16,27 @@ import org.slf4j.LoggerFactory;
  */
 public class EventLogger
 {
-    private final static Logger deliver =
-        LoggerFactory.getLogger("events.org.dcache.cells.deliver");
-    private final static Logger send =
-        LoggerFactory.getLogger("events.org.dcache.cells.send");
-    private final static Logger queue =
-        LoggerFactory.getLogger("events.org.dcache.cells.queue");
+    private static final Logger deliver =
+        LoggerFactory.getLogger("org.dcache.events.cells.deliver");
+    private static final Logger send =
+        LoggerFactory.getLogger("org.dcache.events.cells.send");
+    private static final Logger queue =
+        LoggerFactory.getLogger("org.dcache.events.cells.queue");
 
-    private final static String DELIVER_BEGIN =
+    private static final String DELIVER_BEGIN =
         "org.dcache.cells.deliver.begin";
-    private final static String DELIVER_END =
+    private static final String DELIVER_END =
         "org.dcache.cells.deliver.end";
-    private final static String SEND_BEGIN =
+    private static final String SEND_BEGIN =
         "org.dcache.cells.send.begin";
-    private final static String SEND_END =
+    private static final String SEND_END =
         "org.dcache.cells.send.end";
-    private final static String QUEUE_BEGIN =
+    private static final String QUEUE_BEGIN =
         "org.dcache.cells.queue.begin";
-    private final static String QUEUE_END =
+    private static final String QUEUE_END =
         "org.dcache.cells.queue.end";
 
-    static private String getMessage(CellMessage envelope)
+    private static String getMessage(CellMessage envelope)
     {
         Object o = envelope.getMessageObject();
         if (o == null) {
@@ -46,34 +48,31 @@ public class EventLogger
         }
     }
 
-    static private String toString(Object o)
-    {
-        return (o == null) ? "" : o.toString();
-    }
-
-    static public void deliverBegin(CellMessage envelope)
+    public static void deliverBegin(CellMessage envelope)
     {
         if (deliver.isInfoEnabled()) {
-            deliver.info(String.format("event=%s uoid=%s lastuoid=%s session=%s message=%s source=%s destination=%s",
-                                       DELIVER_BEGIN,
-                                       envelope.getUOID(), envelope.getLastUOID(),
-                                       toString(envelope.getSession()),
-                                       getMessage(envelope),
-                                       envelope.getSourcePath(),
-                                       envelope.getDestinationPath()));
+            NetLoggerBuilder log = new NetLoggerBuilder(DELIVER_BEGIN);
+            log.add("uoid", envelope.getUOID());
+            log.add("lastuoid", envelope.getLastUOID());
+            log.add("session", envelope.getSession());
+            log.add("message", getMessage(envelope));
+            log.add("source", envelope.getSourcePath());
+            log.add("destination", envelope.getDestinationPath());
+            deliver.info(log.toString());
         }
     }
 
-    static public void deliverEnd(Object session, UOID uoid)
+    public static void deliverEnd(Object session, UOID uoid)
     {
         if (deliver.isInfoEnabled()) {
-            deliver.info(String.format("event=%s uoid=%s session=%s",
-                                       DELIVER_END,
-                                       uoid, toString(session)));
+            NetLoggerBuilder log = new NetLoggerBuilder(DELIVER_END);
+            log.add("uoid", uoid);
+            log.add("session", session);
+            deliver.info(log.toString());
         }
     }
 
-    static public void sendBegin(CellNucleus nucleus, CellMessage envelope, String mode)
+    public static void sendBegin(CellNucleus nucleus, CellMessage envelope, String mode)
     {
         if (send.isInfoEnabled() && !envelope.isStreamMode()) {
             /* The envelope does not have a source yet, so we need to
@@ -84,48 +83,50 @@ public class EventLogger
                 source = new CellPath();
                 source.add(nucleus.getThisAddress());
             }
-            send.info(String.format("event=%s uoid=%s lastuoid=%s session=%s mode=%s message=%s source=%s destination=%s",
-                                    SEND_BEGIN,
-                                    envelope.getUOID(), envelope.getLastUOID(),
-                                    toString(envelope.getSession()),
-                                    mode,
-                                    getMessage(envelope),
-                                    source,
-                                    envelope.getDestinationPath()));
+            NetLoggerBuilder log = new NetLoggerBuilder(SEND_BEGIN);
+            log.add("uoid", envelope.getUOID());
+            log.add("lastuoid", envelope.getLastUOID());
+            log.add("session", envelope.getSession());
+            log.add("mode", mode);
+            log.add("message", getMessage(envelope));
+            log.add("source", source);
+            log.add("destination", envelope.getDestinationPath());
+            send.info(log.toString());
         }
     }
 
-    static public void sendEnd(CellMessage envelope)
+    public static void sendEnd(CellMessage envelope)
     {
         if (send.isInfoEnabled() && !envelope.isStreamMode()) {
-            send.info(String.format("event=%s uoid=%s session=%s",
-                                    SEND_END, envelope.getUOID(),
-                                    toString(envelope.getSession())));
+            NetLoggerBuilder log = new NetLoggerBuilder(SEND_END);
+            log.add("uoid", envelope.getUOID());
+            log.add("session", envelope.getSession());
+            send.info(log.toString());
         }
     }
 
-    static public void queueBegin(CellEvent event)
+    public static void queueBegin(CellEvent event)
     {
         if (queue.isInfoEnabled() && event.getClass().equals(MessageEvent.class)) {
             CellMessage envelope = ((MessageEvent) event).getMessage();
-            queue.info(String.format("event=%s uoid=%s lastuoid=%s session=%s source=%s destination=%s",
-                                     QUEUE_BEGIN,
-                                     envelope.getUOID(), envelope.getLastUOID(),
-                                     toString(envelope.getSession()),
-                                     envelope.getSourcePath(),
-                                     envelope.getDestinationPath()));
+            NetLoggerBuilder log = new NetLoggerBuilder(QUEUE_BEGIN);
+            log.add("uoid", envelope.getUOID());
+            log.add("lastuoid", envelope.getLastUOID());
+            log.add("session", envelope.getSession());
+            log.add("source", envelope.getSourcePath());
+            log.add("destination", envelope.getDestinationPath());
+            queue.info(log.toString());
         }
     }
 
-    static public void queueEnd(CellEvent event)
+    public static void queueEnd(CellEvent event)
     {
         if (queue.isInfoEnabled() && event.getClass().equals(MessageEvent.class)) {
             CellMessage envelope = ((MessageEvent) event).getMessage();
-            queue.info(String.format("event=%s uoid=%s session=%s",
-                                     QUEUE_END,
-                                     envelope.getUOID(),
-                                     toString(envelope.getSession())));
+            NetLoggerBuilder log = new NetLoggerBuilder(QUEUE_END);
+            log.add("uoid", envelope.getUOID());
+            log.add("session", envelope.getSession());
+            queue.info(log.toString());
         }
     }
-
 }

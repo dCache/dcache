@@ -77,22 +77,14 @@
   <appender name="events" class="ch.qos.logback.core.FileAppender">
     <file>${dcache.log.dir}/events-${dcache.domain.name}.out</file>
     <encoder>
-      <pattern>ts=%d{yyyy-MM-dd}T%d{HH:mm:ss.SSS} %m%n</pattern>
+      <pattern>%m%n</pattern>
     </encoder>
   </appender>
 
-  <appender name="traceFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${dcache.log.dir}/trace-${dcache.domain.name}.out</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-      <fileNamePattern>trace-${dcache.domain.name}.out.%i</fileNamePattern>
-      <minIndex>1</minIndex>
-      <maxIndex>1</maxIndex>
-    </rollingPolicy>
-    <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-      <maxFileSize>100MB</maxFileSize>
-    </triggeringPolicy>
+  <appender name="access"  class="ch.qos.logback.core.FileAppender">
+    <file>${dcache.log.dir}/access-${dcache.domain.name}.log</file>
     <encoder>
-      <pattern>%d{yyMMdd HH:mm:ss} (%X{cells.cell}@%X{cells.domain}) [%t] [%x] %c %l %m%n</pattern>
+      <pattern>%m%n</pattern>
     </encoder>
   </appender>
 
@@ -108,16 +100,12 @@
     <appender-ref ref="pinboard"/>
   </root>
 
-  <logger name="events" additivity="false">
+  <logger name="org.dcache.events" additivity="false">
     <appender-ref ref="events"/>
   </logger>
 
-  <!-- dCache developers logging -->
-  <logger name="logger.dev" additivity="false">
-    <appender-ref ref="traceFile"/>
-  </logger>
-  <logger name="dev" additivity="false">
-    <appender-ref ref="traceFile"/>
+  <logger name="org.dcache.access" additivity="false">
+    <appender-ref ref="access"/>
   </logger>
 
   <!-- Nothing is logged to this logger. Its sole purpose is to list
@@ -126,8 +114,8 @@
   <logger name="dummy" level="OFF">
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
-    <appender-ref ref="traceFile"/>
     <appender-ref ref="events"/>
+    <appender-ref ref="access"/>
   </logger>
 
   <turboFilter class="dmg.util.logback.CellThresholdFilter">
@@ -189,21 +177,14 @@
 
     <threshold>
       <appender>events</appender>
-      <logger>events</logger>
+      <logger>org.dcache.events</logger>
       <level>debug</level>
     </threshold>
 
     <threshold>
-      <appender>traceFile</appender>
-      <logger>logger.dev</logger>
+      <appender>access</appender>
+      <logger>org.dcache.access</logger>
       <level>debug</level>
     </threshold>
-
-    <threshold>
-      <appender>traceFile</appender>
-      <logger>dev</logger>
-      <level>debug</level>
-    </threshold>
-
   </turboFilter>
 </configuration>
