@@ -27,13 +27,6 @@ public class ActiveTransfers extends SortableBasePage {
     private List<SelectableWrapper<ActiveTransfersBean>> _transfers;
 
     /*
-     * set to false when using the Junit FormTester; otherwise, the autorefreshing
-     * form produces incorrect results
-     */
-
-    public static boolean autorefresh = true;
-
-    /*
      * necessary so that submit uses the current list instance
      */
     private boolean submitFormCalled = false;
@@ -63,9 +56,6 @@ public class ActiveTransfers extends SortableBasePage {
                         new PropertyModel(this, "_transfers"));
         panel.setActiveTransfersPage(this);
         activeTransfersForm.add(panel);
-        if (autorefresh) {
-            addAutoRefreshToForm(activeTransfersForm, 1, TimeUnit.MINUTES);
-        }
         add(activeTransfersForm);
     }
 

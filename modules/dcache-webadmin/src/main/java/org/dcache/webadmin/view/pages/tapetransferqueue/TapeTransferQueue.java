@@ -27,7 +27,7 @@ public class TapeTransferQueue extends SortableBasePage {
     private static final Logger _log = LoggerFactory.getLogger(TapeTransferQueue.class);
 
     public TapeTransferQueue() {
-        Form<?> form = getAutoRefreshingForm("tapeTransferQueueForm");
+        Form<?> form = new Form<Void>("tapeTransferQueueForm");
         form.add(new FeedbackPanel("feedback"));
         ListView<RestoreBean> listview =
                 new EvenOddListView<RestoreBean>("TapeTransferQueueListview",
