@@ -121,6 +121,7 @@
                                     <value>${project.version}</value>
                                     <regex>-</regex>
                                     <replacement />
+                                    <failIfNoMatch>false</failIfNoMatch>
                                 </configuration>
                             </execution>
                         </executions>
