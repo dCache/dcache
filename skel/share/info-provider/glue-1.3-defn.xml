@@ -933,7 +933,7 @@
                 classes="GlueTop GlueKey GlueSchemaVersion GlueService">
 
           <!-- Publish only SRM door here -->
-          <allow test="SRM">
+          <allow test="srm">
             <lookup path="d:protocol/d:metric[@name='family']"/>
           </allow>
 
