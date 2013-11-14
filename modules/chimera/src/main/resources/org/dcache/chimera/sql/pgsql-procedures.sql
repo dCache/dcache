@@ -36,7 +36,7 @@ BEGIN
     FOR i IN 1..array_upper(elements,1) LOOP
         SELECT dir.ipnfsid, inode.itype INTO child, itype FROM t_dirs dir, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.iname=elements[i];
         IF itype=40960 THEN
-           SELECT ifiledata INTO link FROM t_inodes_data WHERE ipnfsid=child;
+           SELECT encode(ifiledata,'escape') INTO link FROM t_inodes_data WHERE ipnfsid=child;
            IF link LIKE '/%' THEN
               child := path2inode('000000000000000000000000000000000000',
                                    substring(link from 2));
@@ -98,7 +98,7 @@ BEGIN
         -- If inode is a symbolic link
         IF inode.itype = 40960 THEN
             -- Read the link
-            SELECT ifiledata INTO STRICT link
+            SELECT encode(ifiledata,'escape') INTO STRICT link
                 FROM t_inodes_data WHERE ipnfsid = inode.ipnfsid;
 
             -- If absolute path then resolve from the file system root
@@ -110,8 +110,8 @@ BEGIN
                FOR inode IN SELECT * FROM path2inodes(dir, link) LOOP
                    inodes := array_append(inodes, inode);
                END LOOP;
-            ELSE 
-               -- Call recursively and add inodes to result set; skip 
+            ELSE
+               -- Call recursively and add inodes to result set; skip
                -- first inode as it is the inode of dir
                FOR inode IN SELECT * FROM path2inodes(dir, link) OFFSET 1 LOOP
                    inodes := array_append(inodes, inode);
