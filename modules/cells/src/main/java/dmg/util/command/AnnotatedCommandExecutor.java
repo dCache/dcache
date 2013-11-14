@@ -588,7 +588,9 @@ public class AnnotatedCommandExecutor implements CommandExecutor
             if (!values.isEmpty()) {
                 List<String> fragments = Lists.newArrayList();
                 for (String value: values) {
-                    addAll(fragments, _splitter.split(value));
+                    if (!value.isEmpty()) {
+                        addAll(fragments, _splitter.split(value));
+                    }
                 }
                 return toArray(transform(fragments, _typeConverter),
                         (Class) _field.getType().getComponentType());
