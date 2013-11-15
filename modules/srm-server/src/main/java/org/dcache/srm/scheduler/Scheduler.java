@@ -1038,7 +1038,7 @@ public final class Scheduler implements Runnable
 
 
         LOGGER.debug("state changed for job id {} from {} to {}", job.getId(), oldState, newState);
-        if (oldState == State.RETRYWAIT && newState.isFinalState()) {
+        if (oldState == State.RETRYWAIT && newState.isFinal()) {
             job.cancelRetryTimer();
         }
     }
