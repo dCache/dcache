@@ -32,6 +32,8 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -68,7 +70,7 @@ public class Indexer
     private final SimpleDateFormat directoryNameFormat =
             new SimpleDateFormat("yyyy" + File.separator + "MM");
 
-    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException
+    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException, ParseException
     {
         double fpp = args.getDoubleOption("fpp", 0.01);
 
@@ -87,7 +89,11 @@ public class Indexer
                 }
             } else {
                 for (File file : filesWithPossibleMatch) {
-                    grep(searchTerm, file);
+                    Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
+                    if (matcher.matches()) {
+                        Date date = fileNameFormat.parse(matcher.group(1));
+                        grep(searchTerm, file, DateFormat.getDateInstance().format(date) + ": ");
+                    }
                 }
             }
         } else if (args.hasOption("all")) {
@@ -136,7 +142,7 @@ public class Indexer
         }
     }
 
-    private void grep(final String searchTerm, File file) throws IOException
+    private void grep(final String searchTerm, File file, final String prefix) throws IOException
     {
         CharStreams.readLines(newReaderSupplier(file, Charsets.UTF_8), new LineProcessor<Void>()
         {
@@ -144,7 +150,7 @@ public class Indexer
             public boolean processLine(String line) throws IOException
             {
                 if (line.contains(searchTerm)) {
-                    System.out.println(line);
+                    System.out.append(prefix).println(line);
                 }
                 return true;
             }
@@ -422,8 +428,8 @@ public class Indexer
     }
 
     public static void main(String[] arguments)
-            throws IOException, URISyntaxException, ExecutionException, InterruptedException,
-                   ClassNotFoundException
+            throws URISyntaxException, ExecutionException, InterruptedException,
+                   ClassNotFoundException, ParseException
     {
         LogManager.getLogManager().reset();
         SLF4JBridgeHandler.install();
