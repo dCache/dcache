@@ -31,18 +31,27 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.PipedReader;
+import java.io.PipedWriter;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Reader;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,6 +72,7 @@ public class Indexer
     private static final String BILLING_TEXT_FLAT_DIR = "billing.text.flat-dir";
     private static final String BILLING_TEXT_DIR = "billing.text.dir";
     private static final String BZ2 = "bz2";
+    private static final int PIPE_SIZE = 2048;
 
     /**
      * Almost identical to the file tree traverser from Guava, sorts directory entries
@@ -83,7 +93,6 @@ public class Indexer
         }
     };
 
-
     private final ConfigurationProperties configuration;
     private final boolean isFlat;
     private final File dir;
@@ -93,7 +102,7 @@ public class Indexer
     private final SimpleDateFormat directoryNameFormat =
             new SimpleDateFormat("yyyy" + File.separator + "MM");
 
-    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException, ParseException
+    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException
     {
         double fpp = args.getDoubleOption("fpp", 0.01);
 
@@ -111,13 +120,7 @@ public class Indexer
                     System.out.println(file);
                 }
             } else {
-                for (File file : filesWithPossibleMatch) {
-                    Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
-                    if (matcher.matches()) {
-                        Date date = fileNameFormat.parse(matcher.group(1));
-                        grep(searchTerm, file, DateFormat.getDateInstance().format(date) + ": ");
-                    }
-                }
+                find(searchTerm, filesWithPossibleMatch, System.out);
             }
         } else if (args.hasOption("all")) {
             for (File file : SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isFile())) {
@@ -165,7 +168,45 @@ public class Indexer
         }
     }
 
-    private void grep(final String searchTerm, File file, final String prefix) throws IOException
+    /**
+     * Searches for searchTerm in files and writes any matching lines to out.
+     */
+    private void find(final String searchTerm, FluentIterable<File> files, PrintStream out) throws IOException
+    {
+        int threads = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        try {
+            List<Reader> readers = new ArrayList<>();
+            for (final File file : files) {
+                final Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
+                if (matcher.matches()) {
+                    PipedReader reader = new PipedReader(PIPE_SIZE);
+                    final PipedWriter writer = new PipedWriter(reader);
+                    executor.submit(new Callable<Void>() {
+                        @Override
+                        public Void call() throws ParseException, IOException
+                        {
+                            try {
+                                Date date = fileNameFormat.parse(matcher.group(1));
+                                grep(searchTerm, file, DateFormat.getDateInstance().format(date) + ": ", new PrintWriter(writer));
+                            } finally {
+                                writer.close();
+                            }
+                            return null;
+                        }
+                    });
+                    readers.add(reader);
+                }
+            }
+            for (Reader reader : readers) {
+                CharStreams.copy(reader, out);
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    private void grep(final String searchTerm, File file, final String prefix, final PrintWriter out) throws IOException
     {
         CharStreams.readLines(newReaderSupplier(file, Charsets.UTF_8), new LineProcessor<Void>()
         {
@@ -173,7 +214,7 @@ public class Indexer
             public boolean processLine(String line) throws IOException
             {
                 if (line.contains(searchTerm)) {
-                    System.out.append(prefix).println(line);
+                    out.append(prefix).println(line);
                 }
                 return true;
             }
@@ -452,7 +493,7 @@ public class Indexer
 
     public static void main(String[] arguments)
             throws URISyntaxException, ExecutionException, InterruptedException,
-                   ClassNotFoundException, ParseException
+                   ClassNotFoundException
     {
         LogManager.getLogManager().reset();
         SLF4JBridgeHandler.install();
