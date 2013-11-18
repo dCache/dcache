@@ -83,14 +83,29 @@ public class Rebalancer
         "being updated. It is expected that rebalancing jobs will overshoot\n" +
         "the target slightly. For very small pools on test instances this\n" +
         "effect will be more profound than on large pools. The effect can\n" +
-        "be reduced by reducing the refresh period. The default period is\n" +
-        "30 seconds.\n\n" +
+        "be reduced by specifying a shorter refresh period via the refresh\n" +
+        "option, which accepts an integer number of seconds. The default\n" +
+        "period is 30 seconds.\n\n" +
 
         "The migration jobs created by the rebalancer will not survive a\n" +
         "pool restart. If the lots of files are written, deleted or moved\n" +
         "while the rebalancing job runs, then the pool group may not be\n" +
         "completely balanced when the jobs terminate. Run the rebalancer\n" +
-        "a second time to improve the balance further.";
+        "a second time to improve the balance further.\n\n" +
+
+        "If 'relative' metric is used then files are moved around so that\n" +
+        "pools in the poolgroup have about the same fractional usage (e.g.,\n" +
+        "each pool is 30% full).  If pools have different capacities then\n" +
+        "bigger pools will have more free space.\n\n" +
+
+        "If metric is 'free' then files are moved around so that pools in\n" +
+        "the poolgroup have about the same amount of free space.  If pools\n" +
+        "have different capacities then bigger pools will store a larger\n" +
+        "fraction of the files.\n\n" +
+
+        "By default the 'relative' metric is used.  If all pools in the\n" +
+        "poolgroup have identical capacities then the metric used does not\n" +
+        "matter.";
     public String ac_rebalance_pgroup_$_1(Args args)
         throws CacheException, InterruptedException
     {
