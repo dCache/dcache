@@ -471,11 +471,6 @@
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
-                <artifactId>spring-instrument</artifactId>
-                <version>${version.spring}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
                 <artifactId>spring-tx</artifactId>
                 <version>${version.spring}</version>
             </dependency>
@@ -490,7 +485,6 @@
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjweaver</artifactId>
                 <version>${version.aspectj}</version>
-                <scope>runtime</scope>
             </dependency>
 
             <dependency>
