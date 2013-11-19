@@ -89,7 +89,7 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(getVersionString());
+        sb.append(getVersionString()).append(',');
         sb.append(_addr.getAddress().getHostAddress());
         sb.append(":").append(_addr.getPort());
 
