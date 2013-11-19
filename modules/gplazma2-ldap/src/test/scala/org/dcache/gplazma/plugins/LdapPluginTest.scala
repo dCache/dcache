@@ -4,15 +4,16 @@ import org.scalatest._
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
-import scala.collection.JavaConversions._
-
+import java.util
 import java.util.Properties
+import java.security.Principal
+
+import scala.collection.convert.WrapAsJava.setAsJavaSet
 
 import org.dcache.auth.{GroupNamePrincipal, GidPrincipal, UidPrincipal, UserNamePrincipal}
 import org.dcache.gplazma.NoSuchPrincipalException
-import java.security.Principal
 import org.dcache.auth.attributes.{ReadOnly, HomeDirectory, RootDirectory}
-import java.util
+
 
 /**
  * Tests for the gPlazma LDAP plugin.
@@ -38,14 +39,13 @@ class LdapPluginTest extends FlatSpec with Matchers {
 
   "map(Set[Principal])" should "return matching Uid and Gid Principals for an existent user name" in {
     val principals = new util.HashSet[Principal]()
-    principals add new UserNamePrincipal("karsten")
+    principals add new UserNamePrincipal("testuser")
 
     ldapPlugin.map(principals)
-    principals.size should be (4)
-    principals should contain (new UserNamePrincipal("karsten"))
-    principals should contain (new UidPrincipal("121"))
+    principals.size should be (3)
+    principals should contain (new UserNamePrincipal("testuser"))
+    principals should contain (new UidPrincipal("50999"))
     principals should contain (new GidPrincipal("3752", true))
-    principals should contain (new GidPrincipal("1000", false))
   }
 
   it should "leave the principals set unchanged for a non existent user name" in {
@@ -58,7 +58,7 @@ class LdapPluginTest extends FlatSpec with Matchers {
   }
 
   "map(UserNamePrincipal)" should "return a UidPrincipal for an existing user name" in {
-    ldapPlugin.map(new UserNamePrincipal("karsten")) should be (new UidPrincipal("121"))
+    ldapPlugin.map(new UserNamePrincipal("testuser")) should be (new UidPrincipal("50999"))
   }
 
   it should "throw a NoSuchPrincipalException if a user does not exist" in {
@@ -69,7 +69,12 @@ class LdapPluginTest extends FlatSpec with Matchers {
   }
 
   "reverseMap" should "return a Set containing a UserNamePrincipal for an existing Uid" in {
-    ldapPlugin.reverseMap(new UidPrincipal("121")) should contain (new UserNamePrincipal("karsten"))
+    ldapPlugin.reverseMap(new UidPrincipal("50999")) should contain (new UserNamePrincipal("testuser"))
+  }
+
+  it should "return a serializable Set" in {
+    val set = ldapPlugin.reverseMap(new UidPrincipal("50999"))
+    set.isInstanceOf[java.io.Serializable] should be (true)
   }
 
   it should "return an empty Set for an non existent Uid" in {
@@ -81,16 +86,16 @@ class LdapPluginTest extends FlatSpec with Matchers {
   }
 
   it should "return an empty Set for a non existent Gid" in {
-    ldapPlugin.reverseMap(new GidPrincipal("666", true)) should be ('empty)
+    ldapPlugin.reverseMap(new GidPrincipal("51000", true)) should be ('empty)
   }
 
   "session" should "return the user's home and root directory, and the access rights" in {
-    var attr = new java.util.HashSet[AnyRef]()
-    ldapPlugin.session(Set[Principal](new UserNamePrincipal("karsten")), attr)
+    val attr = new java.util.HashSet[AnyRef]()
+    ldapPlugin.session(setAsJavaSet(Set[Principal](new UserNamePrincipal("testuser"))), attr)
 
     attr should have size 3
     attr should contain (new RootDirectory("/"))
-    attr should contain (new HomeDirectory("/dcache-cloud/karsten"))
+    attr should contain (new HomeDirectory("/dcache-cloud/testuser"))
     attr should contain (new ReadOnly(false))
   }
 

@@ -3,7 +3,7 @@ package org.dcache.gplazma.plugins
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.Wrappers._
 
 import javax.naming.{Context, CommunicationException, NamingEnumeration, NamingException}
 import javax.naming.directory.BasicAttributes
@@ -23,6 +23,7 @@ import org.dcache.auth.attributes.ReadOnly
 import org.dcache.auth.attributes.RootDirectory
 import org.dcache.gplazma.AuthenticationException
 import org.dcache.gplazma.NoSuchPrincipalException
+import scala.collection.convert.WrapAsJava
 
 /**
  * gPlazma plug-in which uses LDAP server to provide requested information.
@@ -114,22 +115,24 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     }
   }
 
+  private implicit def attrToString(attr: javax.naming.directory.Attribute) : String = attr.get.asInstanceOf[String]
+
   def map(principals: java.util.Set[Principal]) {
-    principals.find( p => p.isInstanceOf[UserNamePrincipal] ) match {
+    JSetWrapper(principals).find( p => p.isInstanceOf[UserNamePrincipal] ) match {
       case Some(p) => try {
         val peopleMaps = mapSearchPeopleByName(p).foldLeft(List[Principal]())( (pset, peopleResult) => {
           val userAttr = peopleResult.getAttributes
-          new UidPrincipal(userAttr.get(Ldap.UID_NUMBER_ATTRIBUTE).get.asInstanceOf[String]) ::
-            new GidPrincipal(userAttr.get(Ldap.GID_NUMBER_ATTRIBUTE).get.asInstanceOf[String], true) ::
+          new UidPrincipal(userAttr.get(Ldap.UID_NUMBER_ATTRIBUTE)) ::
+            new GidPrincipal(userAttr.get(Ldap.GID_NUMBER_ATTRIBUTE), true) ::
             pset
         })
-        principals.addAll(peopleMaps)
+        principals.addAll(SeqWrapper(peopleMaps))
 
         val groupMaps = mapSearchGroupByName(p).foldLeft(List[Principal]())( (pset, groupResult) => {
-          new GidPrincipal(groupResult.getAttributes.get(Ldap.GID_NUMBER_ATTRIBUTE).get.asInstanceOf[String], false) ::
+          new GidPrincipal(groupResult.getAttributes.get(Ldap.GID_NUMBER_ATTRIBUTE), false) ::
             pset
         })
-        principals.addAll(groupMaps)
+        principals.addAll(SeqWrapper(groupMaps))
       } catch {
         case e: NamingException => {
           log.debug("Failed to get mapping: {}", e.toString)
@@ -140,14 +143,14 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     }
   }
 
-  private def mapSearchGroupByName(principal: Principal): NamingEnumeration[SearchResult] = {
+  private def mapSearchGroupByName(principal: Principal) = JEnumerationWrapper {
     retryWithNewContextOnException[NamingEnumeration[SearchResult]]( () => {
       ctx.search(groupOU,
         new BasicAttributes(Ldap.MEMBER_UID_ATTRIBUTE, principal.getName))
     })
   }
 
-  private def mapSearchPeopleByName(principal: Principal): NamingEnumeration[SearchResult] = {
+  private def mapSearchPeopleByName(principal: Principal) = JEnumerationWrapper {
     retryWithNewContextOnException[NamingEnumeration[SearchResult]]( () => {
       ctx.search(peopleOU,
         String.format(userFilter, principal.getName),
@@ -161,11 +164,11 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
       principal match {
         case _: UserNamePrincipal =>
           mapSearchPeopleById(name).collectFirst[Principal]( { case searchResult =>
-            new UidPrincipal(searchResult.getAttributes.get(Ldap.UID_NUMBER_ATTRIBUTE).get.asInstanceOf[String])
+            new UidPrincipal(searchResult.getAttributes.get(Ldap.UID_NUMBER_ATTRIBUTE))
           })
         case _: GroupNamePrincipal =>
           mapSearchGroupById(name).collectFirst[Principal]( { case searchResult =>
-            new GidPrincipal(searchResult.getAttributes.get(Ldap.GID_NUMBER_ATTRIBUTE).get.asInstanceOf[String], false)
+            new GidPrincipal(searchResult.getAttributes.get(Ldap.GID_NUMBER_ATTRIBUTE), false)
           })
         case _ => None
       }
@@ -181,7 +184,7 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
   }
 
 
-  private def mapSearchGroupById(name: String): NamingEnumeration[SearchResult] = {
+  private def mapSearchGroupById(name: String) = JEnumerationWrapper {
     retryWithNewContextOnException( () => {
       ctx.search(groupOU,
         String.format("(%s=%s)", Ldap.COMMON_NAME_ATTRIBUTE, name),
@@ -189,7 +192,7 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     })
   }
 
-  private def mapSearchPeopleById(name: String): NamingEnumeration[SearchResult] = {
+  private def mapSearchPeopleById(name: String) = JEnumerationWrapper {
     retryWithNewContextOnException( () => {
       ctx.search(peopleOU,
         String.format("(%s=%s)", Ldap.USER_ID_ATTRIBUTE, name),
@@ -197,20 +200,21 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     })
   }
 
-  def reverseMap(principal: Principal) : java.util.Set[Principal] = (
+  def reverseMap(principal: Principal) = new java.util.HashSet[Principal](
+    WrapAsJava.asJavaCollection((
     try {
       val id: String = principal.getName
       principal match {
         case _: GidPrincipal =>
           reverseMapSearchGroup(id).map((searchResult) => {
             new GroupNamePrincipal(
-              searchResult.getAttributes.get(Ldap.COMMON_NAME_ATTRIBUTE).get.asInstanceOf[String]
+              searchResult.getAttributes.get(Ldap.COMMON_NAME_ATTRIBUTE)
             )
           })
         case _: UidPrincipal =>
           reverseMapSearchUser(id).map((searchResult) => {
               new UserNamePrincipal(
-                searchResult.getAttributes.get(Ldap.USER_ID_ATTRIBUTE).get.asInstanceOf[String]
+                searchResult.getAttributes.get(Ldap.USER_ID_ATTRIBUTE)
               )
             })
         case _ => Nil
@@ -222,16 +226,16 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
         Nil
       }
     }
-  ).toSet[Principal]
+  ).toSet[Principal]))
 
-  private def reverseMapSearchUser(id: String): NamingEnumeration[SearchResult] = {
+  private def reverseMapSearchUser(id: String) = JEnumerationWrapper {
     retryWithNewContextOnException( () => {
       ctx.search(peopleOU,
         new BasicAttributes(Ldap.UID_NUMBER_ATTRIBUTE, id))
     })
   }
 
-  private def reverseMapSearchGroup(id: String): NamingEnumeration[SearchResult] = {
+  private def reverseMapSearchGroup(id: String) = JEnumerationWrapper {
     retryWithNewContextOnException( () => {
       ctx.search(groupOU,
         new BasicAttributes(Ldap.GID_NUMBER_ATTRIBUTE, id))
@@ -239,13 +243,13 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
   }
 
   def session(authorizedPrincipals: java.util.Set[Principal], attrib: java.util.Set[AnyRef]) {
-    val principal = authorizedPrincipals.find(p => p.isInstanceOf[UserNamePrincipal])
+    val principal = JSetWrapper(authorizedPrincipals).find(p => p.isInstanceOf[UserNamePrincipal])
     principal match {
       case Some(p) =>
         try {
           val sResult = sessionSearchHome(p)
           sResult.foreach( searchResult => {
-            attrib.add(new HomeDirectory(searchResult.getAttributes.get(Ldap.HOME_DIR_ATTRIBUTE).get.asInstanceOf[String]))
+            attrib.add(new HomeDirectory(searchResult.getAttributes.get(Ldap.HOME_DIR_ATTRIBUTE)))
             attrib.add(new RootDirectory("/"))
             attrib.add(new ReadOnly(false))
           })
@@ -256,7 +260,7 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     }
   }
 
-  private def sessionSearchHome(principal: Principal): NamingEnumeration[SearchResult] = {
+  private def sessionSearchHome(principal: Principal) = JEnumerationWrapper {
     retryWithNewContextOnException( () => {
       ctx.search(peopleOU,
         String.format(userFilter, principal.getName),
