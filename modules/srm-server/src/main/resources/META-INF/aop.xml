@@ -1,0 +1,12 @@
+<!DOCTYPE aspectj PUBLIC
+        "-//AspectJ//DTD//EN" "http://www.eclipse.org/aspectj/dtd/aspectj.dtd">
+<aspectj>
+  <weaver options="-Xset:weaveJavaxPackages=true">
+    <include within="org.apache.axis.Message"/>
+    <include within="org.dcache.srm.aspects.*"/>
+  </weaver>
+
+  <aspects>
+    <aspect name="org.dcache.srm.aspects.EofExceptionAspect"/>
+  </aspects>
+</aspectj>
