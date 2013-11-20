@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import com.google.common.base.Charsets;
 import org.dcache.chimera.posix.Stat;
 
 public class FsInode_TAG extends FsInode {
@@ -90,8 +91,8 @@ public class FsInode_TAG extends FsInode {
     }
 
     @Override
-    public String toFullString() {
-        return _fs.getFsId() + ":" + type() + ":" + _id + ":" + _tag;
+    public byte[] getIdentifier() {
+        return byteBase(_tag.getBytes(Charsets.UTF_8));
     }
 
 
