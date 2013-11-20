@@ -111,6 +111,8 @@ rm -rf $RPM_BUILD_ROOT
 %docdir /usr/share/doc/dcache
 %config(noreplace) /etc/dcache
 %config(noreplace) /var/lib/dcache
+%config(noreplace) %attr(0644,root,root) /etc/security/limits.d/92-dcache.conf
+
 
 %changelog
 

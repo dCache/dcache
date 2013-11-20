@@ -72,6 +72,7 @@ import dmg.util.Args;
 
 import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.LoginReply;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
@@ -88,6 +89,9 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.RootDirectory;
 
 import static java.util.Arrays.asList;
 import static org.dcache.namespace.FileAttribute.*;
@@ -710,12 +714,17 @@ public class DcacheResourceFactory
      * objects.
      */
     public List<DcacheResource> list(final FsPath path)
-        throws InterruptedException, CacheException
+        throws InterruptedException, CacheException, URISyntaxException
     {
         if (!_isAnonymousListingAllowed && Subjects.isNobody(getSubject())) {
             throw new PermissionDeniedCacheException("Access denied");
         }
 
+        Request request = HttpManager.request();
+        final LoginReply login = (LoginReply) request.getAuthorization().getTag();
+        final FsPath root = getUserRoot(login);
+        final String basePath = new URI(request.getAbsoluteUrl()).getPath();
+        final String requestPath = root.toString() + "/" + basePath;
         final List<DcacheResource> result = new ArrayList<>();
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
@@ -729,12 +738,12 @@ public class DcacheResourceFactory
                 @Override
                 public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
                 {
-                    result.add(getResource(new FsPath(path, entry.getName()),
+                    result.add(getResource(new FsPath(new FsPath(basePath), entry.getName()),
                                            entry.getFileAttributes()));
                 }
             };
 
-        _list.printDirectory(getSubject(), printer, path, null,
+        _list.printDirectory(getSubject(), printer, new FsPath(requestPath), null,
                              Ranges.<Integer>all());
         return result;
     }
@@ -751,10 +760,13 @@ public class DcacheResourceFactory
             throw new PermissionDeniedCacheException("Access denied");
         }
 
-        Request request = HttpManager.request();
-        String requestPath = new URI(request.getAbsoluteUrl()).getPath();
+        final Request request = HttpManager.request();
+        final LoginReply login = (LoginReply)request.getAuthorization().getTag();
+        final FsPath root = getUserRoot(login);
+        final String basePath = new URI(request.getAbsoluteUrl()).getPath();
+        final String requestPath = root.toString()  + "/"+ basePath;
         String[] base =
-            Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
+            Iterables.toArray(PATH_SPLITTER.split(basePath), String.class);
         final ST t = _listingGroup.getInstanceOf("page");
         t.add("path", asList(UrlPathWrapper.forPaths(base)));
         t.add("static", _staticContentPath);
@@ -782,7 +794,7 @@ public class DcacheResourceFactory
                                 attr.getSize());
                     }
                 };
-        _list.printDirectory(getSubject(), printer, path, null,
+        _list.printDirectory(getSubject(), printer, new FsPath(requestPath), null,
                              Ranges.<Integer>all());
 
         t.write(new AutoIndentWriter(out));
@@ -942,7 +954,9 @@ public class DcacheResourceFactory
      */
     private FsPath getFullPath(String path)
     {
-        return new FsPath(_rootPath, new FsPath(path));
+        Request request = HttpManager.request();
+        final LoginReply login = (LoginReply) request.getAuthorization().getTag();
+        return new FsPath(getUserRoot(login), path);
     }
 
     /**
@@ -1335,4 +1349,17 @@ public class DcacheResourceFactory
         }
     }
 
+    private static FsPath getUserRoot(LoginReply login) {
+        FsPath userRoot = new FsPath();
+        FsPath userHome = new FsPath();
+        for (LoginAttribute attribute : login.getLoginAttributes()) {
+            if (attribute instanceof RootDirectory) {
+                userRoot = new FsPath(((RootDirectory) attribute).getRoot());
+            } else if (attribute instanceof HomeDirectory) {
+                userHome = new FsPath(((HomeDirectory) attribute).getHome());
+            }
+        }
+
+        return new FsPath(userRoot, userHome);
+    }
 }
