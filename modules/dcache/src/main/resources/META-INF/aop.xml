@@ -1,7 +1,7 @@
 <!DOCTYPE aspectj PUBLIC
         "-//AspectJ//DTD//EN" "http://www.eclipse.org/aspectj/dtd/aspectj.dtd">
 <aspectj>
-    <weaver options="-XmessageHandlerClass:org.springframework.aop.aspectj.AspectJWeaverMessageHandler">
+    <weaver>
         <include within="org.dcache.pinmanager.*"/>
     </weaver>
 
