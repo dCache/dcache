@@ -75,14 +75,14 @@
   </appender>
 
   <appender name="events" class="ch.qos.logback.core.FileAppender">
-    <file>${dcache.log.dir}/events-${dcache.domain.name}.out</file>
+    <file>${dcache.log.dir}/${dcache.domain.name}.events</file>
     <encoder>
       <pattern>%m%n</pattern>
     </encoder>
   </appender>
 
   <appender name="access"  class="ch.qos.logback.core.FileAppender">
-    <file>${dcache.log.dir}/access-${dcache.domain.name}.log</file>
+    <file>${dcache.log.dir}/${dcache.domain.name}.access</file>
     <encoder>
       <pattern>%m%n</pattern>
     </encoder>

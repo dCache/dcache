@@ -75,9 +75,9 @@
   </appender>
 
   <appender name="events" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${dcache.log.dir}/events-${dcache.domain.name}.log</file>
+    <file>${dcache.log.dir}/${dcache.domain.name}.events</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${dcache.log.dir}/events-${dcache.domain.name}.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>${dcache.log.dir}/${dcache.domain.name}.events.%d{yyyy-MM-dd}</fileNamePattern>
       <maxHistory>0</maxHistory>
     </rollingPolicy>
     <encoder>
@@ -93,9 +93,9 @@
   </appender>
 
   <appender name="access" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${dcache.log.dir}/access-${dcache.domain.name}.log</file>
+    <file>${dcache.log.dir}/${dcache.domain.name}.access</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${dcache.log.dir}/access-${dcache.domain.name}.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+      <fileNamePattern>${dcache.log.dir}/${dcache.domain.name}.access.%d{yyyy-MM-dd}.gz</fileNamePattern>
       <maxHistory>${dcache.log.access.max-history}</maxHistory>
     </rollingPolicy>
     <encoder>
