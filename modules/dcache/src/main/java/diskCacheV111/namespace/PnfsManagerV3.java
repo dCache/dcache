@@ -43,7 +43,6 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
@@ -118,7 +117,6 @@ public class PnfsManagerV3
         PnfsGetCacheLocationsMessage.class,
         PnfsGetStorageInfoMessage.class,
         PnfsMapPathMessage.class,
-        PnfsGetFileMetaDataMessage.class,
         PnfsGetParentMessage.class,
         PnfsCreateEntryMessage.class,
         PnfsCreateDirectoryMessage.class,
@@ -174,7 +172,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsCreateEntryMessage.class);
         _gauges.addGauge(PnfsDeleteEntryMessage.class);
         _gauges.addGauge(PnfsGetStorageInfoMessage.class);
-        _gauges.addGauge(PnfsGetFileMetaDataMessage.class);
         _gauges.addGauge(PnfsSetFileMetaDataMessage.class);
         _gauges.addGauge(PnfsMapPathMessage.class);
         _gauges.addGauge(PnfsRenameMessage.class);

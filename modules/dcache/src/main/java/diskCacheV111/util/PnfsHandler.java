@@ -338,23 +338,6 @@ public class PnfsHandler
 
    }
 
-   public PnfsGetStorageInfoMessage getStorageInfoByPath( String pnfsPath )
-          throws CacheException                {
-      return getStorageInfoByPath(pnfsPath, false) ;
-
-   }
-
-   public PnfsGetStorageInfoMessage getStorageInfoByPath( String pnfsPath ,
-       boolean requestChecksum)
-          throws CacheException                {
-
-      PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage() ;
-      sInfo.setPnfsPath( pnfsPath ) ;
-      sInfo.setChecksumsRequested(requestChecksum);
-      return pnfsRequest( sInfo ) ;
-
-   }
-
     public PnfsId getParentOf(PnfsId pnfsId)
         throws CacheException
     {
