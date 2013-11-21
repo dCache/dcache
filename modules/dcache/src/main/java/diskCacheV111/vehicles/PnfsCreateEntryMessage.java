@@ -1,12 +1,11 @@
-// $Id: PnfsCreateEntryMessage.java,v 1.4 2004-11-05 12:07:19 tigran Exp $
-
 package diskCacheV111.vehicles;
 
+import java.util.Collections;
 import java.util.Set;
 
-import diskCacheV111.namespace.NameSpaceProvider;
-
 import org.dcache.namespace.FileAttribute;
+
+import static diskCacheV111.namespace.NameSpaceProvider.DEFAULT;
 
 public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
 
@@ -17,21 +16,17 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
 
     private static final long serialVersionUID = -8197311585737333341L;
 
-    public PnfsCreateEntryMessage(String path){
-        _path = path;
-        _uid = NameSpaceProvider.DEFAULT;
-        _gid = NameSpaceProvider.DEFAULT;
-        _mode = NameSpaceProvider.DEFAULT;
-        setPnfsPath(path);
-        setReplyRequired(true);
+    public PnfsCreateEntryMessage(String path) {
+        this(path, DEFAULT, DEFAULT, DEFAULT);
     }
-    public PnfsCreateEntryMessage(String path, int uid , int gid , int mode ){
-        _path = path;
-        _uid  = uid ;
-        _gid  = gid ;
-        _mode = mode ;
-        setPnfsPath(path);
-        setReplyRequired(true);
+
+    public PnfsCreateEntryMessage(String path, Set<FileAttribute> attr)
+    {
+        this(path, DEFAULT, DEFAULT, DEFAULT, attr);
+    }
+
+    public PnfsCreateEntryMessage(String path, int uid, int gid, int mode) {
+        this(path, uid, gid, mode, Collections.<FileAttribute>emptySet());
     }
 
     public PnfsCreateEntryMessage(String path,

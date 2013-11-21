@@ -87,13 +87,11 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 
 import org.dcache.acl.enums.AccessType;
-import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
@@ -102,19 +100,14 @@ import org.dcache.namespace.PermissionHandler;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static org.dcache.namespace.FileType.LINK;
 import static org.dcache.namespace.FileType.REGULAR;
 
-
-/**
- *
- * @author  timur
- */
-
 public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 {
-    private final static Logger _log = LoggerFactory.getLogger(PutCompanion.class);
+    private static final Logger _log = LoggerFactory.getLogger(PutCompanion.class);
 
     public  static final long PNFS_TIMEOUT =  TimeUnit.MINUTES.toMillis(3);
 
@@ -134,19 +127,17 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
     private volatile State state=State.INITIAL_STATE;
 
-    private CellStub pnfsStub;
-    private PrepareToPutCallbacks callbacks;
-    private String path;
-    private boolean recursive_directory_creation;
-    private List<String> pathItems;
+    private final CellStub pnfsStub;
+    private final PrepareToPutCallbacks callbacks;
+    private final String path;
+    private final boolean recursive_directory_creation;
+    private final List<String> pathItems;
     private int current_dir_depth = -1;
-    private Subject subject;
-    private boolean overwrite;
-    private String fileId;
-    private FileMetaData fileFMD;
-    private long creationTime = System.currentTimeMillis();
+    private final Subject subject;
+    private final boolean overwrite;
+    private final long creationTime = System.currentTimeMillis();
     private long lastOperationTime = creationTime;
-    private PermissionHandler permissionHandler;
+    private final PermissionHandler permissionHandler;
 
     private PutCompanion(Subject subject,
                          PermissionHandler permissionHandler,
@@ -163,16 +154,14 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         this.recursive_directory_creation = recursive_directory_creation;
         this.overwrite = overwrite;
         pathItems = (new FsPath(path)).getPathItemsList();
-        _log.debug(" constructor path = "+path+" overwrite="+overwrite);
     }
 
     @Override
     public void success(PnfsMessage message) {
         if( message instanceof PnfsCreateDirectoryMessage) {
-            PnfsCreateDirectoryMessage response = (PnfsCreateDirectoryMessage)message;
             if( state == State.WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
                 state = State.RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
-                directoryInfoArrived(response);
+                directoryExists((PnfsCreateDirectoryMessage) message);
             }
             else {
                 _log.warn(" {}  : unexpected PnfsCreateDirectoryMessage : {} , Ignoring",
@@ -181,10 +170,9 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             }
         }
         else if (message instanceof PnfsMapPathMessage) {
-            PnfsMapPathMessage response = (PnfsMapPathMessage) message;
             if (state == State.WAITING_FOR_FILE_INFO_MESSAGE) {
                 state = State.RECEIVED_FILE_INFO_MESSAGE;
-                fileExists(response);
+                fileExists((PnfsMapPathMessage) message);
             }
             else {
                 _log.warn(" {}  : unexpected PnfsMapPathMessage : {} , Ignoring",
@@ -192,28 +180,13 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                           message);
             }
         }
-        else if (message instanceof PnfsGetStorageInfoMessage) {
-            PnfsGetStorageInfoMessage response =
-                (PnfsGetStorageInfoMessage)message;
+        else if (message instanceof PnfsGetFileAttributes) {
             if (state == State.WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
                 state = State.RECEIVED_DIRECTORY_INFO_MESSAGE;
-                directoryInfoArrived(response);
+                directoryExists((PnfsGetFileAttributes) message);
             }
             else {
                 _log.warn(" {}  : unexpected PnfsGetStorageInfoMessage : {} , Ignoring",
-                          this.toString(),
-                          message);
-            }
-        }
-        else if( message instanceof PnfsGetFileMetaDataMessage ) {
-            PnfsGetFileMetaDataMessage response =
-                (PnfsGetFileMetaDataMessage)message;
-            if(state == State.WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
-                state = State.RECEIVED_DIRECTORY_INFO_MESSAGE;
-                directoryInfoArrived(response);
-            }
-            else  {
-                _log.warn(" {}  : unexpected PnfsGetFileMetaDataMessage : {} , Ignoring",
                           this.toString(),
                           message);
             }
@@ -304,7 +277,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     }
 
     public void timeout() {
-        _log.error(this.toString()+" PnfsManager request Timed Out");
+        _log.error(this.toString() + " PnfsManager request Timed Out");
         unregisterAndFailCreator("PnfsManager request Timed Out");
         callbacks.Timeout();
     }
@@ -330,7 +303,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         current_dir_depth = pathItems.size();
     }
 
-    public void directoryInfoArrived(PnfsGetFileMetaDataMessage metadata_msg) {
+    public void directoryExists(PnfsGetFileAttributes metadata_msg) {
         try{
             unregisterCreator(metadata_msg);
             FileAttributes attributes = metadata_msg.getFileAttributes();
@@ -342,24 +315,12 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                 callbacks.InvalidPathError(error);
                 return;
             }
-            FileMetaData srm_dirFmd = new DcacheFileMetaData(attributes);
             if((pathItems.size() -1 ) >current_dir_depth) {
-                AccessType canCreateSubDir =
-                        permissionHandler.canCreateSubDir(subject,
-                        attributes);
-                if(canCreateSubDir == AccessType.ACCESS_ALLOWED) {
-                    createNextDirectory(srm_dirFmd);
-                }
-                else {
-                    String error = "path does not exist and user has no " +
-                            "permissions to create it";
-                    _log.warn(error);
-                    unregisterAndFailCreator(error);
-                    callbacks.InvalidPathError(error);
-                }
+                createNextDirectory();
             }
             else {
-                 AccessType canCreateFile =
+                FileMetaData srm_dirFmd = new DcacheFileMetaData(attributes);
+                AccessType canCreateFile =
                           permissionHandler.canCreateFile(subject,
                           attributes);
                 if(canCreateFile != AccessType.ACCESS_ALLOWED ) {
@@ -371,10 +332,11 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
                 }
 
-                callbacks.StorageInfoArrived(fileId,
-                                             fileFMD,
-                                             srm_dirFmd.fileId,
-                                             srm_dirFmd);
+                callbacks.StorageInfoArrived(
+                        null,
+                        null,
+                        srm_dirFmd.fileId,
+                        srm_dirFmd);
             }
         }
         catch(RuntimeException re) {
@@ -387,29 +349,17 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 	This code was added to perform the automatic creation of the directories
 	the permissions and ownership is inherited from the parent path
      */
-    private void createNextDirectory(FileMetaData parentFmd) {
+    private void createNextDirectory() {
         current_dir_depth++;
         String newDirPath = getCurrentDirPath();
 
-        int uid = (int) Subjects.getUid(subject);
-        int gid = (int) Subjects.getPrimaryGid(subject);
-        int perm = 0755;
-
-        if ( parentFmd != null ) {
-            uid = Integer.parseInt(parentFmd.owner);
-            gid = Integer.parseInt(parentFmd.group);
-            perm = parentFmd.permMode;
-        }
-
-        _log.info("attempting to create "+newDirPath+" with uid="+uid+" gid="+gid);
+        _log.info("creating directory {}", newDirPath);
 
         PnfsGetStorageInfoMessage dirMsg
-        = new PnfsCreateDirectoryMessage(newDirPath,uid,gid,perm,
-                permissionHandler.getRequiredAttributes()) ;
-        state = State.WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE;
-
+                = new PnfsCreateDirectoryMessage(newDirPath, permissionHandler.getRequiredAttributes()) ;
         dirMsg.setReplyRequired(true);
-
+        dirMsg.setSubject(subject);
+        state = State.WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE;
 
         pnfsStub.send(dirMsg,PnfsMessage.class,
                 new ThreadManagerMessageCallback<>(this) );
@@ -451,29 +401,20 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             lastOperationTime = System.currentTimeMillis();
            return;
         }
-        PnfsGetFileMetaDataMessage metadataMsg;
-        if(current_dir_depth == (pathItems.size() -1)) {
-            metadataMsg =
-            new PnfsGetStorageInfoMessage(
-                    permissionHandler.getRequiredAttributes()) ;
-
-        } else {
-
-            metadataMsg =
-            new PnfsGetFileMetaDataMessage(
-                    permissionHandler.getRequiredAttributes()) ;
-        }
+        PnfsGetStorageInfoMessage metadataMsg =
+                new PnfsGetStorageInfoMessage(
+                        permissionHandler.getRequiredAttributes()) ;
         metadataMsg.setPnfsPath( directory ) ;
         state = State.WAITING_FOR_DIRECTORY_INFO_MESSAGE;
         pnfsStub.send(metadataMsg, PnfsMessage.class,
-                new ThreadManagerMessageCallback(this) );
+                new ThreadManagerMessageCallback<>(this) );
         lastOperationTime= System.currentTimeMillis();
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        toString(sb,false);
+        toString(sb, false);
         return sb.toString();
     }
 
@@ -634,7 +575,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
 
     private static void unregisterCreator(String pnfsPath,PutCompanion thisCreator,
-    PnfsGetFileMetaDataMessage message) {
+                                          PnfsGetFileAttributes message) {
         Collection<PutCompanion> removed;
 
         synchronized( directoryCreators) {
@@ -653,14 +594,14 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         for (PutCompanion waitingcompanion: removed) {
             _log.debug("  unregisterCreator("+pnfsPath+
                        ","+thisCreator+") notifying "+waitingcompanion);
-            waitingcompanion.directoryInfoArrived(message);
+            waitingcompanion.directoryExists(message);
         }
         _log.debug(" unregisterCreator("+
                    pnfsPath+","+thisCreator+") returning");
 
     }
 
-    private void unregisterCreator( PnfsGetFileMetaDataMessage message) {
+    private void unregisterCreator(PnfsGetFileAttributes message) {
         unregisterCreator(this.getCurrentDirPath(), this, message);
     }
 
