@@ -1431,9 +1431,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
-                FileMetaData meta = new FileMetaData(_fileAttributes);
-                meta.setMode(_permission);
-                _pnfs.pnfsSetFileMetaData(_fileAttributes.getPnfsId(), meta);
+                FileAttributes attributes = new FileAttributes();
+                attributes.setMode(_permission);
+                _pnfs.setFileAttributes(_fileAttributes.getPnfsId(), attributes);
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
                 sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
@@ -1476,18 +1476,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public void fileAttributesAvailable(){
 
-            FileMetaData meta = new FileMetaData(_fileAttributes);
-
             try {
+                FileAttributes attributes = new FileAttributes();
                 if (_owner >= 0) {
-                    meta.setUid(_owner);
+                    attributes.setOwner(_owner);
                 }
 
                 if (_group >= 0) {
-                    meta.setGid(_group);
+                    attributes.setGroup(_group);
                 }
 
-                _pnfs.pnfsSetFileMetaData(_fileAttributes.getPnfsId(), meta);
+                _pnfs.setFileAttributes(_fileAttributes.getPnfsId(), attributes);
 
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
@@ -1526,15 +1525,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public void fileAttributesAvailable(){
 
-            FileMetaData meta = new FileMetaData(_fileAttributes);
-
             try {
                 if (_group >= 0) {
-                    meta.setGid(_group);
+                    FileAttributes attributes = new FileAttributes();
+                    attributes.setGroup(_group);
+                    _pnfs.setFileAttributes(_fileAttributes.getPnfsId(), attributes);
                 }
-
-                _pnfs.pnfsSetFileMetaData(_fileAttributes.getPnfsId(), meta);
-
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
                 sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");

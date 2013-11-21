@@ -26,7 +26,6 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
-import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 
 import dmg.cells.nucleus.CellEndpoint;
@@ -300,12 +299,6 @@ public class PnfsHandler
        return pnfsRequest(new PnfsCreateEntryMessage( path )) ;
 
    }
-
-    public void pnfsSetFileMetaData(PnfsId pnfsId, FileMetaData meta)
-        throws CacheException
-    {
-        pnfsRequest(new PnfsSetFileMetaDataMessage(pnfsId, meta));
-    }
 
     public void renameEntry(PnfsId pnfsId, String newName)
         throws CacheException

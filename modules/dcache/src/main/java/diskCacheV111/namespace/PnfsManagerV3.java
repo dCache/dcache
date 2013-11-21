@@ -49,7 +49,6 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
-import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
@@ -172,7 +171,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsCreateEntryMessage.class);
         _gauges.addGauge(PnfsDeleteEntryMessage.class);
         _gauges.addGauge(PnfsGetStorageInfoMessage.class);
-        _gauges.addGauge(PnfsSetFileMetaDataMessage.class);
         _gauges.addGauge(PnfsMapPathMessage.class);
         _gauges.addGauge(PnfsRenameMessage.class);
         _gauges.addGauge(PnfsFlagMessage.class);
@@ -1077,26 +1075,6 @@ public class PnfsManagerV3
         }
     }
 
-    public void setFileMetaData(PnfsSetFileMetaDataMessage message)
-    {
-        try {
-            PnfsId pnfsId = populatePnfsId(message);
-            FileMetaData meta = message.getMetaData();
-            _log.info("setFileMetaData=" + meta + " for " + pnfsId);
-
-            checkMask(message);
-
-            _nameSpaceProvider.setFileAttributes(message.getSubject(), pnfsId,
-                                                 meta.toFileAttributes());
-        } catch (CacheException e) {
-            _log.warn("Failed to set meta data: " + e);
-            message.setFailed(e.getRc(), e.getMessage());
-        } catch (RuntimeException e) {
-            _log.warn("Failed to set meta data", e);
-            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-        }
-    }
-
     /**
      * Returns true if and only if pnfsid is of one of the given
      * types.
@@ -1591,9 +1569,6 @@ public class PnfsManagerV3
         }
         else if (pnfsMessage instanceof PnfsDeleteEntryMessage){
             deleteEntry((PnfsDeleteEntryMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsSetFileMetaDataMessage){
-            setFileMetaData((PnfsSetFileMetaDataMessage)pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsMapPathMessage){
             mapPath((PnfsMapPathMessage)pnfsMessage);

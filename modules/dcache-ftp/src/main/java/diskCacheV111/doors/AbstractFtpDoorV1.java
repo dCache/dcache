@@ -118,14 +118,12 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.ProxyAdapter;
 import diskCacheV111.util.SocketAdapter;
 import diskCacheV111.util.TimeoutCacheException;
@@ -2346,28 +2344,17 @@ public abstract class AbstractFtpDoorV1
             // Assume octal regardless of string
             int newperms = Integer.parseInt(permstring, 8);
 
-            // Get meta-data for this file/directory
             attributes =
-                _pnfs.getFileAttributes(absolutePath(path).toString(),
-                                        EnumSet.of(PNFSID, TYPE,
-                                                   OWNER, OWNER_GROUP));
+                _pnfs.getFileAttributes(absolutePath(path).toString(), EnumSet.of(PNFSID, TYPE));
 
-            // Extract fields of interest
-            PnfsId       myPnfsId   = attributes.getPnfsId();
-            boolean      isADir     = (attributes.getFileType() == FileType.DIR);
-            boolean      isASymLink = (attributes.getFileType() == FileType.LINK);
-            int          myUid      = attributes.getOwner();
-            int          myGid      = attributes.getGroup();
-
-            // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
-            if (isASymLink) {
+            if (attributes.getFileType() == FileType.LINK) {
                 reply("502 chmod of symbolic links is not yet supported.");
                 return;
             }
 
-            FileMetaData newMetaData =
-                new FileMetaData(isADir,myUid,myGid,newperms);
-            _pnfs.pnfsSetFileMetaData(myPnfsId, newMetaData);
+            FileAttributes newAttributes = new FileAttributes();
+            newAttributes.setMode(newperms);
+            _pnfs.setFileAttributes(attributes.getPnfsId(), newAttributes);
 
             reply("250 OK");
         } catch (NumberFormatException ex) {
