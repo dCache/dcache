@@ -32,8 +32,8 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
@@ -244,14 +244,13 @@ public class TransferManagerHandler implements CellMessageAnswerable
 				log.error(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
 				     " : "+storage_info_msg+" ; Ignoring");
 			}
-			else     if( message instanceof PnfsGetFileMetaDataMessage) {
-				PnfsGetFileMetaDataMessage storage_metadata =
-					(PnfsGetFileMetaDataMessage)message;
+			else     if( message instanceof PnfsMapPathMessage) {
+				PnfsMapPathMessage mapMessage = (PnfsMapPathMessage) message;
                                 if ( state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE ) {
-					if (storage_metadata.getReturnCode() != 0) {
-						log.error("We were about to delete entry that does not exist : "+storage_metadata.toString()+
-						     " PnfsGetFileMetaDataMessage return code="+storage_metadata.getReturnCode()+
-						     " reason : "+storage_metadata.getErrorObject());
+					if (mapMessage.getReturnCode() != 0) {
+						log.error("We were about to delete entry that does not exist : "+mapMessage.toString()+
+						     " PnfsMapPathMessage return code="+mapMessage.getReturnCode()+
+						     " reason : "+mapMessage.getErrorObject());
 						sendErrorReply();
 						return;
 					}
@@ -263,8 +262,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
 
 				}
 				else {
-					log.error(this.toString()+" got unexpected PnfsGetFileMetaDataMessage "+
-					     " : "+storage_metadata+" ; Ignoring");
+					log.error(this.toString()+" got unexpected PnfsMapPathMessage "+
+					     " : "+mapMessage+" ; Ignoring");
 				}
 			}
 			else if(message instanceof PoolMgrSelectPoolMsg) {
@@ -525,14 +524,12 @@ public class TransferManagerHandler implements CellMessageAnswerable
                         }
 		}
 		else {
-			PnfsGetFileMetaDataMessage sInfo;
-			sInfo = new PnfsGetFileMetaDataMessage() ;
-			sInfo.setPnfsPath(pnfsPath);
+			PnfsMapPathMessage message = new PnfsMapPathMessage(pnfsPath);
 			setState(WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE);
 			try {
 				manager.sendMessage(
 					new CellMessage(new CellPath(manager.getPnfsManagerName()),
-							sInfo ),
+							message ),
 					true ,
 					true,
 					this,
