@@ -11,7 +11,6 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.SIZE;
 
 
 public class Pool2PoolTransferMsg extends PoolMessage {
@@ -33,7 +32,7 @@ public class Pool2PoolTransferMsg extends PoolMessage {
         super( sourcePoolName ) ;
 
         checkNotNull(fileAttributes);
-        checkArgument(fileAttributes.isDefined(EnumSet.of(PNFSID, SIZE)));
+        checkArgument(fileAttributes.isDefined(EnumSet.of(PNFSID)));
 
         _fileAttributes = fileAttributes;
         _destinationPoolName = destinationPoolName ;
