@@ -87,7 +87,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 
@@ -95,6 +94,7 @@ import org.dcache.acl.enums.AccessType;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.srm.FileMetaData;
@@ -138,6 +138,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
     private final long creationTime = System.currentTimeMillis();
     private long lastOperationTime = creationTime;
     private final PermissionHandler permissionHandler;
+    private final EnumSet<FileAttribute> attributesToFetch;
 
     private PutCompanion(Subject subject,
                          PermissionHandler permissionHandler,
@@ -153,6 +154,11 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
         this.callbacks = callbacks;
         this.recursive_directory_creation = recursive_directory_creation;
         this.overwrite = overwrite;
+
+        attributesToFetch = EnumSet.noneOf(FileAttribute.class);
+        attributesToFetch.addAll(permissionHandler.getRequiredAttributes());
+        attributesToFetch.addAll(DcacheFileMetaData.getKnownAttributes());
+
         pathItems = (new FsPath(path)).getPathItemsList();
     }
 
@@ -355,9 +361,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
         _log.info("creating directory {}", newDirPath);
 
-        PnfsGetStorageInfoMessage dirMsg
-                = new PnfsCreateDirectoryMessage(newDirPath, permissionHandler.getRequiredAttributes()) ;
-        dirMsg.setReplyRequired(true);
+        PnfsGetFileAttributes dirMsg = new PnfsCreateDirectoryMessage(newDirPath, attributesToFetch);
         dirMsg.setSubject(subject);
         state = State.WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE;
 
@@ -401,10 +405,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
             lastOperationTime = System.currentTimeMillis();
            return;
         }
-        PnfsGetStorageInfoMessage metadataMsg =
-                new PnfsGetStorageInfoMessage(
-                        permissionHandler.getRequiredAttributes()) ;
-        metadataMsg.setPnfsPath( directory ) ;
+        PnfsGetFileAttributes metadataMsg = new PnfsGetFileAttributes(directory, attributesToFetch);
         state = State.WAITING_FOR_DIRECTORY_INFO_MESSAGE;
         pnfsStub.send(metadataMsg, PnfsMessage.class,
                 new ThreadManagerMessageCallback<>(this) );

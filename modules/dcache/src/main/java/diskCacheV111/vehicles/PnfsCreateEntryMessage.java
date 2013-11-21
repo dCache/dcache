@@ -1,14 +1,19 @@
 package diskCacheV111.vehicles;
 
+import com.google.common.collect.Sets;
+
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static diskCacheV111.namespace.NameSpaceProvider.DEFAULT;
+import static org.dcache.namespace.FileAttribute.*;
 
-public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
-
+public class PnfsCreateEntryMessage extends PnfsGetFileAttributes
+{
     private final String _path;
     private final int _uid;
     private final int _gid;
@@ -30,17 +35,18 @@ public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
     }
 
     public PnfsCreateEntryMessage(String path,
-            int uid ,
-            int gid ,
+            int uid,
+            int gid,
             int mode,
-            Set<FileAttribute> attr){
-        super(attr);
+            Set<FileAttribute> attr) {
+        super(path, EnumSet.copyOf(Sets.union(attr,
+                EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
+                        CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME,
+                        PNFSID, STORAGEINFO, ACCESS_LATENCY, RETENTION_POLICY))));
         _path = path;
         _uid  = uid ;
         _gid  = gid ;
         _mode = mode ;
-        setPnfsPath(path);
-        setReplyRequired(true);
     }
 
 

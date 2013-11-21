@@ -80,6 +80,9 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getFirst;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 public class HsmStorageHandler2
     extends AbstractCellComponent implements CellCommandListener
@@ -1093,7 +1096,7 @@ public class HsmStorageHandler2
                 @Override
                 public void run() {
                     try {
-                        FileAttributes attributes = _pnfs.getStorageInfoByPnfsId(pnfsId).getFileAttributes();
+                        FileAttributes attributes = _pnfs.getFileAttributes(pnfsId, EnumSet.of(PNFSID, SIZE, STORAGEINFO));
                         fetch(attributes, block ? cfa : null);
                     } catch (CacheException e) {
                         cfa.cacheFileAvailable(pnfsId, e);

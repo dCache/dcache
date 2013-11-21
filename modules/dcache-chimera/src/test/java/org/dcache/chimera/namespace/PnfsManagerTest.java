@@ -2,6 +2,11 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.io.Resources;
 import junit.framework.JUnit4TestAdapter;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -14,12 +19,7 @@ import java.sql.DriverManager;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Properties;
-
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.resource.ClassLoaderResourceAccessor;
+import java.util.Set;
 
 import diskCacheV111.namespace.PnfsManagerV3;
 import diskCacheV111.util.AccessLatency;
@@ -32,7 +32,6 @@ import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -48,6 +47,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
+import static org.dcache.namespace.FileAttribute.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
@@ -55,6 +55,11 @@ public class PnfsManagerTest
 {
     private final static URL DB_TEST_PROPERTIES
             = Resources.getResource("org/dcache/chimera/chimera-test.properties");
+
+    private static final Set<FileAttribute> SOME_ATTRIBUTES =
+            EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
+                    CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME,
+                    PNFSID, STORAGEINFO, ACCESS_LATENCY, RETENTION_POLICY);
 
     private static final String OSM_URI_STEM = "osm://example-osm-instance/";
 
@@ -140,7 +145,7 @@ public class PnfsManagerTest
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
         assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
-        assertNotNull("failed to get StrageInfo", pnfsCreateEntryMessage.getStorageInfo());
+        assertNotNull("failed to get StrageInfo", pnfsCreateEntryMessage.getFileAttributes());
 
     }
 
@@ -249,12 +254,12 @@ public class PnfsManagerTest
 
 
     @Test
-    public void testGetStoreInfoNonExist() {
+    public void testGetFileAttributesNonExist() {
 
-        PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage = new PnfsGetStorageInfoMessage(new PnfsId("000000000000000000000000000000000001"));
-        _pnfsManager.getFileAttributes(pnfsGetStorageInfoMessage);
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId("000000000000000000000000000000000001"), EnumSet.noneOf(FileAttribute.class));
+        _pnfsManager.getFileAttributes(message);
 
-        assertTrue("get storageInfo of non existing file should return FILE_NOT_FOUND", pnfsGetStorageInfoMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
+        assertTrue("get storageInfo of non existing file should return FILE_NOT_FOUND", message.getReturnCode() == CacheException.FILE_NOT_FOUND );
 
     }
 
@@ -273,7 +278,7 @@ public class PnfsManagerTest
         PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/writeTokenTestFile");
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
-        StorageInfo storageInfo = pnfsCreateEntryMessage.getStorageInfo();
+        StorageInfo storageInfo = pnfsCreateEntryMessage.getFileAttributes().getStorageInfo();
 
         assertEquals("Invalid entry in storageInfo map", writeToken, storageInfo.getMap().get("writeToken") );
 
@@ -344,8 +349,8 @@ public class PnfsManagerTest
     public void testGetStorageInfoNoTags() throws ChimeraFsException {
 
         FsInode rootInode = _fs.path2inode("/pnfs");
-        PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage = new PnfsGetStorageInfoMessage(new PnfsId(rootInode.toString()));
-        _pnfsManager.getFileAttributes(pnfsGetStorageInfoMessage);
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(rootInode.toString()), SOME_ATTRIBUTES);
+        _pnfsManager.getFileAttributes(message);
 
         // I don't know yet what is expected reply, but not NPE !
     }
@@ -412,7 +417,7 @@ public class PnfsManagerTest
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
         assertThat("Creating entry failed", pnfsCreateEntryMessage.getReturnCode(), is(0));
 
-        StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
+        StorageInfo si = pnfsCreateEntryMessage.getFileAttributes().getStorageInfo();
         si.addLocation(new URI(OSM_URI_STEM + "?store=tape"));
         si.isSetAddLocation(true);
 
@@ -426,11 +431,11 @@ public class PnfsManagerTest
         _pnfsManager.setFileAttributes(setFileAttributesMessage);
         assertThat("Setting storage info failed", setFileAttributesMessage.getReturnCode(), is(0));
 
-        PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage =
-            new PnfsGetStorageInfoMessage(pnfsCreateEntryMessage.getPnfsId());
-        _pnfsManager.getFileAttributes(pnfsGetStorageInfoMessage);
+        PnfsGetFileAttributes message =
+            new PnfsGetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), SOME_ATTRIBUTES);
+        _pnfsManager.getFileAttributes(message);
 
-        assertEquals("failed to get storageInfo for flushed files", 0,pnfsGetStorageInfoMessage.getReturnCode() );
+        assertEquals("failed to get storageInfo for flushed files", 0, message.getReturnCode());
 
     }
 
@@ -440,7 +445,7 @@ public class PnfsManagerTest
         PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFileDup");
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
-        StorageInfo si = pnfsCreateEntryMessage.getStorageInfo();
+        StorageInfo si = pnfsCreateEntryMessage.getFileAttributes().getStorageInfo();
 
         si.addLocation(new URI(OSM_URI_STEM + "?store=tape1"));
         si.isSetAddLocation(true);
@@ -492,11 +497,12 @@ public class PnfsManagerTest
 
         FsInode dir = _fs.mkdir("/notags");
         FsInode inode = _fs.createFile(dir, "afile");
-        PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage =
-            new PnfsGetStorageInfoMessage( new PnfsId(inode.toString()));
-        _pnfsManager.getFileAttributes(pnfsGetStorageInfoMessage);
+        PnfsGetFileAttributes message =
+            new PnfsGetFileAttributes(new PnfsId(inode.toString()), SOME_ATTRIBUTES);
+        _pnfsManager.getFileAttributes(message);
 
-        assertEquals("failed to get storageInfo for a directory without tags", 0,pnfsGetStorageInfoMessage.getReturnCode() );
+        assertEquals("failed to get storageInfo for a directory without tags", 0, message
+                .getReturnCode());
 
     }
 

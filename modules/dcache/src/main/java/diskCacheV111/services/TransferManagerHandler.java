@@ -32,7 +32,6 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -61,6 +60,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 public class TransferManagerHandler implements CellMessageAnswerable
 {
@@ -191,8 +191,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
                         EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
                         attributes.addAll(permissionHandler.getRequiredAttributes());
                         attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-                        message = new PnfsGetStorageInfoMessage(attributes);
-                        message.setPnfsPath(pnfsPath) ;
+                        message = new PnfsGetFileAttributes(pnfsPath, attributes);
                         message.setSubject(transferRequest.getSubject());
                         message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
                         setState(WAITING_FOR_PNFS_INFO_STATE);
@@ -233,16 +232,16 @@ public class TransferManagerHandler implements CellMessageAnswerable
 				log.error(this.toString()+" got unexpected PnfsCreateEntryMessage "+
 				     " : "+create_msg+" ; Ignoring");
 			}
-			else     if( message instanceof PnfsGetStorageInfoMessage) {
-				PnfsGetStorageInfoMessage storage_info_msg =
-					(PnfsGetStorageInfoMessage)message;
+			else     if( message instanceof PnfsGetFileAttributes) {
+				PnfsGetFileAttributes attributesMessage =
+					(PnfsGetFileAttributes) message;
 				if( state == WAITING_FOR_PNFS_INFO_STATE ) {
 					setState(RECEIVED_PNFS_INFO_STATE);
-					storageInfoArrived(storage_info_msg);
+					storageInfoArrived(attributesMessage);
 					return;
 				}
 				log.error(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
-				     " : "+storage_info_msg+" ; Ignoring");
+				     " : "+attributesMessage+" ; Ignoring");
 			}
 			else     if( message instanceof PnfsMapPathMessage) {
 				PnfsMapPathMessage mapMessage = (PnfsMapPathMessage) message;
@@ -342,26 +341,26 @@ public class TransferManagerHandler implements CellMessageAnswerable
 
 /**      */
 
-	public void storageInfoArrived(PnfsGetStorageInfoMessage storage_info_msg)
+	public void storageInfoArrived(PnfsGetFileAttributes msg)
         {
-                if (storage_info_msg.getReturnCode() != 0) {
-                        sendErrorReply(storage_info_msg.getReturnCode(),
-                                       storage_info_msg.getErrorObject());
+                if (msg.getReturnCode() != 0) {
+                        sendErrorReply(msg.getReturnCode(),
+                                msg.getErrorObject());
                         return;
 		}
 		if(!store && tlog != null) {
-			tlog.middle(storage_info_msg.getFileAttributes().getSize());
+			tlog.middle(msg.getFileAttributes().getSize());
 		}
 		//
 		// Added by litvinse@fnal.gov
 		//
-		pnfsId        = storage_info_msg.getPnfsId();
+		pnfsId        = msg.getPnfsId();
 		info.setPnfsId(pnfsId);
 		pnfsIdString  = pnfsId.toString();
 		manager.persist(this);
 		if ( store ) {
 			synchronized(manager.justRequestedIDs) {
-				if (manager.justRequestedIDs.contains(storage_info_msg.getPnfsId())) {
+				if (manager.justRequestedIDs.contains(msg.getPnfsId())) {
 					sendErrorReply(6, new
 						       CacheException( "pnfs pnfsid: "+pnfsId.toString()+" file "+pnfsPath+"  is already there"));
 					return;
@@ -375,7 +374,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 
                 if(fileAttributes == null) {
                     fileAttributes =
-                            storage_info_msg.getFileAttributes();
+                            msg.getFileAttributes();
                 }
 
 		log.debug("storageInfoArrived(uid={} gid={} pnfsid={} fileAttributes={}", info.getUid(), info.getGid(),

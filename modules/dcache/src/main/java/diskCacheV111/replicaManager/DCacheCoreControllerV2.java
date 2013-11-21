@@ -39,7 +39,6 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
@@ -60,6 +59,7 @@ import dmg.util.CommandSyntaxException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 /**
   *  Basic cell for performing central monitoring and
@@ -1518,7 +1518,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                   InterruptedException
      {
 
-       PnfsGetStorageInfoMessage msg = new PnfsGetStorageInfoMessage(pnfsId) ;
+       PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsId, Pool2PoolTransferMsg.NEEDED_ATTRIBUTES);
 
        CellMessage cellMessage = new CellMessage( new CellPath( "PnfsManager" ) , msg ) ;
        CellMessage answer;
@@ -1534,7 +1534,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                    "PnfsGetStorageInfoMessage");
        }
 
-       msg = (PnfsGetStorageInfoMessage) answer.getMessageObject() ;
+       msg = (PnfsGetFileAttributes) answer.getMessageObject() ;
 
        if( msg.getReturnCode() != 0 ) {
          _log.debug("getFileAttributes() PnfsGetStorageInfoMessage answer error: err="

@@ -44,7 +44,6 @@ import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
@@ -116,7 +115,6 @@ public class PnfsManagerV3
      */
     private final Class<?>[] DISCARD_EARLY = {
         PnfsGetCacheLocationsMessage.class,
-        PnfsGetStorageInfoMessage.class,
         PnfsMapPathMessage.class,
         PnfsGetParentMessage.class,
         PnfsCreateEntryMessage.class,
@@ -172,7 +170,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsCreateDirectoryMessage.class);
         _gauges.addGauge(PnfsCreateEntryMessage.class);
         _gauges.addGauge(PnfsDeleteEntryMessage.class);
-        _gauges.addGauge(PnfsGetStorageInfoMessage.class);
         _gauges.addGauge(PnfsMapPathMessage.class);
         _gauges.addGauge(PnfsRenameMessage.class);
         _gauges.addGauge(PnfsFlagMessage.class);

@@ -33,13 +33,13 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -64,8 +64,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 class Companion
 {
-    private static final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES = EnumSet.of(
-            FileAttribute.PNFSID, FileAttribute.STORAGEINFO, FileAttribute.CHECKSUM, FileAttribute.SIZE);
     private final static Logger _log = LoggerFactory.getLogger(Companion.class);
 
     private final static long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
@@ -382,13 +380,13 @@ class Companion
     /** Returns true iff all required attributes are available. */
     synchronized boolean hasRequiredAttributes()
     {
-        return _fileAttributes.isDefined(REQUIRED_ATTRIBUTES);
+        return _fileAttributes.isDefined(Pool2PoolTransferMsg.NEEDED_ATTRIBUTES);
     }
 
     /** Asynchronously retrieves the file attributes. */
     synchronized void fetchFileAttributes()
     {
-        _pnfs.send(new PnfsGetFileAttributes(getPnfsId(), REQUIRED_ATTRIBUTES),
+        _pnfs.send(new PnfsGetFileAttributes(getPnfsId(), Pool2PoolTransferMsg.NEEDED_ATTRIBUTES),
                    PnfsGetFileAttributes.class,
                    new Callback<PnfsGetFileAttributes>()
                    {

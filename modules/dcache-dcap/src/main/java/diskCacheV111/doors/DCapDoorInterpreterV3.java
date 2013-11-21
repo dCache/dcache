@@ -2082,11 +2082,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             _pnfs.deletePnfsEntry( path );
                             _message = _pnfs.createPnfsEntry(path , getUid(), getGid(), getMode(NameSpaceProvider.DEFAULT));
                             _fileAttributes = _message.getFileAttributes();
-                        }else{
-                            _message = _pnfs.getStorageInfoByPnfsId(_fileAttributes.getPnfsId()) ;
-                            _fileAttributes = _message.getFileAttributes();
                         }
-
                     }catch(CacheException ce ) {
                         _log.error(ce.toString());
                         sendReply( "fileAttributesAvailable", 1,

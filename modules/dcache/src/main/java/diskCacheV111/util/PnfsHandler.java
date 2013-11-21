@@ -21,7 +21,6 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
@@ -276,9 +275,10 @@ public class PnfsHandler
         }
 
         /* In case of incomplete create, delete the directory right
-         * away.
+         * away. FIXME: PnfsManagerV3 has the exact opposite comment,
+         * saying that lack of attributes is a non-error.
          */
-        if (message.getStorageInfo() == null) {
+        if (message.getFileAttributes() == null) {
             try {
                 deletePnfsEntry(message.getPnfsId(), path.toString());
             } catch (FileNotFoundCacheException e) {
@@ -322,12 +322,6 @@ public class PnfsHandler
           throws CacheException                {
 
        return pnfsRequest( new PnfsCreateEntryMessage( path , uid , gid , mode ) ) ;
-
-   }
-
-   public PnfsGetStorageInfoMessage getStorageInfoByPnfsId( PnfsId pnfsId )
-          throws CacheException                {
-      return  pnfsRequest(new PnfsGetStorageInfoMessage( pnfsId )) ;
 
    }
 

@@ -12,13 +12,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import diskCacheV111.util.HTMLWriter;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -36,8 +36,10 @@ import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.Partition;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
         CellInfoProvider
@@ -308,13 +310,13 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private FileAttributes getFileAttributesByPnfsId(String pnfsId)
     {
         try {
-            PnfsGetStorageInfoMessage pnfsMsg = new PnfsGetStorageInfoMessage(new PnfsId(pnfsId));
+            PnfsGetFileAttributes pnfsMsg = new PnfsGetFileAttributes(new PnfsId(pnfsId), EnumSet.of(FileAttribute.SIZE, FileAttribute.STORAGEINFO));
             CellMessage msg = new CellMessage(new CellPath("PnfsManager"), pnfsMsg);
             msg = _endpoint.sendAndWait(msg, TIMEOUT);
             if (msg == null) {
                 return null;
             }
-            pnfsMsg = (PnfsGetStorageInfoMessage)msg.getMessageObject();
+            pnfsMsg = (PnfsGetFileAttributes) msg.getMessageObject();
             return pnfsMsg.getFileAttributes();
 
         } catch (Exception e) {
