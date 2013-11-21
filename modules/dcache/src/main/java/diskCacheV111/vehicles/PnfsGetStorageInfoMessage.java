@@ -1,8 +1,8 @@
 package diskCacheV111.vehicles;
 
+import java.util.EnumSet;
 import java.util.Set;
 
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
@@ -28,12 +28,9 @@ public class PnfsGetStorageInfoMessage extends PnfsGetFileAttributes
 
     public PnfsGetStorageInfoMessage(PnfsId pnfsId)
     {
-        super(pnfsId, FileMetaData.getKnownFileAttributes());
-        _attributes.add(PNFSID);
-        _attributes.add(STORAGEINFO);
-        _attributes.add(ACCESS_LATENCY);
-        _attributes.add(RETENTION_POLICY);
-        _attributes.add(SIZE);
+        super(pnfsId, EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
+                CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME,
+                PNFSID, STORAGEINFO, ACCESS_LATENCY, RETENTION_POLICY));
         setReplyRequired(true);
     }
 

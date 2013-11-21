@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
@@ -121,59 +120,6 @@ public class ChimeraNameSpaceProvider
     public void setAtimeGap(long gap) {
         _atimeGap = TimeUnit.SECONDS.toMillis(gap);
     }
-
-    private static Stat fileMetadata2Stat(FileMetaData metaData, boolean isDir) {
-
-		Stat stat = new Stat();
-
-		int mode = 0;
-
-		// user
-		if (metaData.getUserPermissions().canRead()) {
-			mode |= 0400;
-		}
-		if (metaData.getUserPermissions().canWrite()) {
-			mode |= 0200;
-		}
-		if (metaData.getUserPermissions().canExecute()) {
-			mode |= 0100;
-		}
-
-		// group
-		if (metaData.getGroupPermissions().canRead()) {
-			mode |= 0040;
-		}
-		if (metaData.getGroupPermissions().canWrite()) {
-			mode |= 0020;
-		}
-		if (metaData.getGroupPermissions().canExecute()) {
-			mode |= 0010;
-		}
-
-		// world
-		if (metaData.getWorldPermissions().canRead()) {
-			mode |= 0004;
-		}
-		if (metaData.getWorldPermissions().canWrite()) {
-			mode |= 0002;
-		}
-		if (metaData.getWorldPermissions().canExecute()) {
-			mode |= 0001;
-		}
-
-		if (isDir) {
-			mode |= UnixPermission.S_IFDIR;
-		} else {
-			mode |= UnixPermission.S_IFREG;
-		}
-
-		setModeOf(stat, mode);
-		stat.setUid(metaData.getUid());
-		stat.setGid(metaData.getGid());
-		stat.setSize(metaData.getFileSize());
-
-		return stat;
-	}
 
     private FsInode pathToInode(Subject subject, String path)
         throws IOException, ChimeraFsException, CacheException

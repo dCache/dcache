@@ -12,6 +12,7 @@ import javax.security.auth.Subject;
 import java.io.File;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -25,7 +26,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
@@ -66,6 +66,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.chimera.UnixPermission;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.namespace.FileAttribute;
@@ -84,6 +85,7 @@ import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static org.dcache.acl.enums.AccessType.*;
 import static org.dcache.auth.Subjects.ROOT;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsManagerV3
     extends AbstractCellComponent
@@ -539,12 +541,37 @@ public class PnfsManagerV3
                 }
             }
 
-            FileMetaData info =
-                new FileMetaData(_nameSpaceProvider.getFileAttributes(ROOT,  pnfsId, FileMetaData.getKnownFileAttributes()));
+            FileAttributes fileAttributes = _nameSpaceProvider
+                    .getFileAttributes(ROOT, pnfsId, EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE,
+                            CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME));
+
+            SimpleDateFormat formatter = new SimpleDateFormat("MM.dd-HH:mm:ss");
+            StringBuilder info = new StringBuilder();
+            switch (fileAttributes.getFileType()) {
+            case DIR:
+                info.append("d");
+                break;
+            case LINK:
+                info.append("l");
+                break;
+            case REGULAR:
+                info.append("-");
+                break;
+            default:
+                info.append("x");
+                break;
+            }
+            info.append(new UnixPermission(fileAttributes.getMode()).toString().substring(1));
+            info.append(";").append(fileAttributes.getOwner());
+            info.append(";").append(fileAttributes.getGroup());
+            info.append("[c=").append(formatter.format(fileAttributes.getCreationTime()));
+            info.append(";m=").append(formatter.format(fileAttributes.getModificationTime()));
+            info.append(";a=").append(formatter.format(fileAttributes.getAccessTime())).append("]");
+
             if(v){
-                sb.append("    Meta Data : ").append(info ).append("\n") ;
+                sb.append("    Meta Data : ").append(info).append("\n") ;
             }else{
-                sb.append(info.toString()).append("\n");
+                sb.append(info).append("\n");
             }
         }catch(Exception ee ){
             sb.append("matadataof failed : ").append(ee.getMessage());

@@ -68,13 +68,6 @@
           <honor-transient>true</honor-transient>
         </include>
         <include>
-          <class-expression>diskCacheV111.util.FileMetaData</class-expression>
-          <honor-transient>true</honor-transient>
-        </include>
-         <include>
-           <class-expression>diskCacheV111.util.FileMetaData$Permissions</class-expression>
-         </include>
-        <include>
           <class-expression>diskCacheV111.srm.dcache.DcacheFileMetaData</class-expression>
           <honor-transient>true</honor-transient>
         </include>
