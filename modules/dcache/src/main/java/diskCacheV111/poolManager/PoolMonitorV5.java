@@ -35,6 +35,7 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellMessage;
 
@@ -148,7 +149,7 @@ public class PoolMonitorV5
             return _selectionUnit.match(direction,
                                         hostName,
                                         protocol,
-                                        _fileAttributes.getStorageInfo(),
+                                        StorageInfos.extractFrom(_fileAttributes),
                                         _linkGroup);
         }
 
@@ -182,7 +183,7 @@ public class PoolMonitorV5
             if (levels.length == 0) {
                 throw new CacheException(19,
                                          "No write pools configured for <" +
-                                         _fileAttributes.getStorageInfo() +
+                                                 StorageInfos.extractFrom(_fileAttributes) +
                                          "> in the linkGroup " +
                                          (_linkGroup == null ? "[none]" : _linkGroup));
             }
@@ -198,7 +199,7 @@ public class PoolMonitorV5
             }
 
             throw new CacheException(20,
-                                     "No write pool available for <" +  _fileAttributes.getStorageInfo() +
+                                     "No write pool available for <" +  StorageInfos.extractFrom(_fileAttributes) +
                                      "> in the linkGroup " +
                                      (_linkGroup == null ? "[none]" : _linkGroup));
         }
@@ -516,7 +517,7 @@ public class PoolMonitorV5
             return FileLocality.NONE;
         }
 
-        StorageInfo storageInfo = attributes.getStorageInfo();
+        StorageInfo storageInfo = StorageInfos.extractFrom(attributes);
         PoolPreferenceLevel[] levels =
             _selectionUnit.match(DirectionType.READ,
                                  hostName,

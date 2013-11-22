@@ -16,7 +16,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellEndpoint;
 
@@ -49,9 +49,10 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         throws CacheException, IOException, InterruptedException
     {
         PnfsId pnfsId = fileAttributes.getPnfsId();
-        StorageInfo storage = fileAttributes.getStorageInfo();
-        _log.info("Active HTTP: Protocol={}, StorageInfo={}, PnfsId={}, Access={}",
-                protocol, storage, pnfsId, access);
+        if (_log.isInfoEnabled()) {
+            _log.info("Active HTTP: Protocol={}, StorageInfo={}, PnfsId={}, Access={}",
+                    protocol, StorageInfos.extractFrom(fileAttributes), pnfsId, access);
+        }
         if (!(protocol instanceof RemoteHttpDataTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteHttpDataTransferProtocolInfo");
         }

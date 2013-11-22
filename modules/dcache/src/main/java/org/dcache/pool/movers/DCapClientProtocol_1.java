@@ -23,6 +23,7 @@ import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
 import diskCacheV111.vehicles.DCapClientProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -74,7 +75,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
         throws Exception
     {
         PnfsId pnfsId = fileAttributes.getPnfsId();
-        StorageInfo storage = fileAttributes.getStorageInfo();
+        StorageInfo storage = StorageInfos.extractFrom(fileAttributes);
         say("runIO()\n\tprotocol="+
             protocol+",\n\tStorageInfo="+storage+",\n\tPnfsId="+pnfsId+
             ",\n\taccess ="+access);
