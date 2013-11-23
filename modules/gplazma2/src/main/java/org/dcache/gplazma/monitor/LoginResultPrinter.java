@@ -2,9 +2,15 @@ package org.dcache.gplazma.monitor;
 
 import java.util.Collection;
 import org.slf4j.Logger;
-import java.io.InputStream;
-import java.io.IOException;
+import org.slf4j.LoggerFactory;
+import sun.security.rsa.RSAPublicKeyImpl;
+
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.Principal;
+import java.security.PublicKey;
+import java.security.cert.CertPath;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -240,6 +246,7 @@ public class LoginResultPrinter
         }
         sb.append("  +--Validity: ").append(validityStatementFor(certificate)).append('\n');
         sb.append("  +--Algorithm: ").append(nameForOid(certificate.getSigAlgOID())).append('\n');
+        sb.append("  +--Public key: ").append(describePublicKey(certificate.getPublicKey())).append('\n');
 
         String sanInfo = subjectAlternateNameInfoFor(certificate);
         if(!sanInfo.isEmpty()) {
@@ -280,6 +287,23 @@ public class LoginResultPrinter
 
         if(!extendedKeyUsage.isEmpty()) {
             sb.append("  +--Key usage: ").append(extendedKeyUsage).append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    private static String describePublicKey(PublicKey key)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(key.getAlgorithm());
+
+        if (key instanceof RSAPublicKeyImpl) {
+            int bits = (((RSAPublicKeyImpl)key).getModulus().bitLength() + 7) & ~7;
+            sb.append(' ').append(bits).append(" bits");
+        } else {
+            sb.append(" (unknown ").append(key.getClass().getCanonicalName()).
+                    append(")");
         }
 
         return sb.toString();
