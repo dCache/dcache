@@ -90,6 +90,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
@@ -174,11 +175,12 @@ public class RemoteGsiftpTransferProtocol_1
                CredentialException, GSSException
     {
         _pnfsId = fileAttributes.getPnfsId();
-        StorageInfo storage = fileAttributes.getStorageInfo();
-        _log.debug("runIO()\n\tprotocol="
-            + protocol + ",\n\tStorageInfo=" + storage + ",\n\tPnfsId="
-            + _pnfsId + ",\n\taccess ="
-            + access );
+        if (_log.isDebugEnabled()) {
+            _log.debug("runIO()\n\tprotocol="
+                    + protocol + ",\n\tStorageInfo=" + StorageInfos.extractFrom(fileAttributes) + ",\n\tPnfsId="
+                    + _pnfsId + ",\n\taccess ="
+                    + access );
+        }
         if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
         }
@@ -203,11 +205,11 @@ public class RemoteGsiftpTransferProtocol_1
 
         if ( access == IoMode.WRITE) {
             gridFTPRead(remoteGsiftpProtocolInfo,
-                        storage,
+                    fileAttributes.getStorageInfo(),
                         allocator);
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo,
-                         storage);
+                    fileAttributes.getStorageInfo());
         }
         _log.debug(" runIO() done");
     }

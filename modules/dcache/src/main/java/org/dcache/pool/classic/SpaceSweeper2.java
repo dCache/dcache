@@ -16,6 +16,7 @@ import java.util.Set;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.util.Args;
 import dmg.util.Formats;
@@ -258,7 +259,7 @@ public class SpaceSweeper2
                     if (s) {
                         FileAttributes attributes = entry.getFileAttributes();
                         if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
-                            sb.append("\n    ").append(attributes.getStorageInfo());
+                            sb.append("\n    ").append(StorageInfos.extractFrom(attributes));
                         }
                     }
                     sb.append("\n");
