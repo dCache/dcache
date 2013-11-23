@@ -731,7 +731,7 @@
         <dependency>
             <groupId>org.dcache.chimera</groupId>
             <artifactId>jpnfs</artifactId>
-            <version>0.5.9</version>
+            <version>0.5.10</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.chimera</groupId>
