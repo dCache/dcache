@@ -40,7 +40,7 @@ public class Pool2PoolTransferMsg extends PoolMessage {
         super( sourcePoolName ) ;
 
         checkNotNull(fileAttributes);
-        checkArgument(fileAttributes.isDefined(EnumSet.of(PNFSID, SIZE)));
+        checkArgument(fileAttributes.isDefined(EnumSet.of(PNFSID)));
 
         _fileAttributes = fileAttributes;
         _pnfsId      = fileAttributes.getPnfsId();
