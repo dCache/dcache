@@ -75,7 +75,7 @@ public class JMSTunnel
     extends AbstractCell
     implements CellTunnel, ExceptionListener
 {
-    private final static Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(JMSTunnel.class);
 
     public final static long CNS_TIMEOUT = 20000;
@@ -151,7 +151,7 @@ public class JMSTunnel
     @Override
     public void onException(JMSException exception)
     {
-        _log.error("Fatal failure in JMS connection: {}", exception);
+        LOGGER.error("Fatal failure in JMS connection: {}", exception);
         getNucleus().kill("System");
     }
 
@@ -172,8 +172,8 @@ public class JMSTunnel
                 _cns.unregister();
             }
         } catch (JMSException e) {
-            _log.warn("Failed to unregister from cell name service: {}",
-                      e.getMessage());
+            LOGGER.warn("Failed to unregister from cell name service: {}",
+                    e.getMessage());
         }
 
         try {
@@ -181,8 +181,8 @@ public class JMSTunnel
                 _connection.close();
             }
         } catch (JMSException e) {
-            _log.warn("Failed to close JMS connection: {}",
-                      e.getMessage());
+            LOGGER.warn("Failed to close JMS connection: {}",
+                    e.getMessage());
         }
     }
 
@@ -217,7 +217,7 @@ public class JMSTunnel
             pw.append(" Provider name: ").println(data.getJMSProviderName());
             pw.append(" Provider version: ").println(data.getProviderVersion());
         } catch (JMSException e) {
-            _log.error("Failed to query JMS meta data: {}", e.getMessage());
+            LOGGER.error("Failed to query JMS meta data: {}", e.getMessage());
             pw.println(" Information unavailable");
         }
     }
@@ -238,7 +238,7 @@ public class JMSTunnel
     {
         try {
             if (!(msg instanceof CellExceptionMessage)) {
-                _log.info("Cannot deliver {}", msg);
+                LOGGER.info("Cannot deliver {}", msg);
 
                 CellPath retAddr = msg.getSourcePath().revert();
                 CellExceptionMessage ret = new CellExceptionMessage(retAddr, e);
@@ -246,7 +246,7 @@ public class JMSTunnel
                 sendMessage(ret);
             }
         } catch (NoRouteToCellException f) {
-            _log.warn("Unable to deliver message and unable to return it to sender: {}", msg);
+            LOGGER.warn("Unable to deliver message and unable to return it to sender: {}", msg);
         }
     }
 
@@ -265,7 +265,7 @@ public class JMSTunnel
 
         String[] info = (String[]) obj;
         if (info.length > 0){
-            _log.info("Routing info arrived for domain: {}", info[0]);
+            LOGGER.info("Routing info arrived for domain: {}", info[0]);
 
             String domain = info[0];
             Set<String> newCells =
@@ -287,7 +287,7 @@ public class JMSTunnel
             try {
                 _sender.send(envelope);
             } catch (JMSException e) {
-                _log.error("Failed to send message: {}", e.getMessage());
+                LOGGER.error("Failed to send message: {}", e.getMessage());
                 returnToSender(envelope,
                                new NoRouteToCellException(envelope.getUOID(),
                                                           envelope.getDestinationPath(),
@@ -326,11 +326,11 @@ public class JMSTunnel
             if (!_localExports.contains(cell) && !oldCells.remove(cell)) {
                 // entry not found, so make it
                 if (!cell.startsWith("@")) {
-                    _log.info("Adding: {}", cell);
+                    LOGGER.info("Adding: {}", cell);
                     try {
                         _nucleus.routeAdd(createWellKnownRoute(cell, domain));
                     } catch (IllegalArgumentException e) {
-                        _log.error("Could not add wellknown route: {}", e.toString());
+                        LOGGER.error("Could not add wellknown route: {}", e.toString());
                     }
                 }
             }
@@ -339,12 +339,12 @@ public class JMSTunnel
         // all new routes added now, need to remove the rest
         for (String cell: oldCells) {
             if (!cell.startsWith("@")) {
-                _log.info("Removing: {}", cell);
+                LOGGER.info("Removing: {}", cell);
                 try {
                     _nucleus.routeDelete(createWellKnownRoute(cell, domain));
                 } catch (IllegalArgumentException e) {
-                    _log.warn("Could not delete wellknown route: {}",
-                              e.getMessage());
+                    LOGGER.warn("Could not delete wellknown route: {}",
+                            e.getMessage());
                 }
             }
         }
@@ -384,7 +384,7 @@ public class JMSTunnel
                 _receiver.addConsumer(cr.getDomainName());
             }
         } catch (JMSException e) {
-            _log.error("Failed to create JMS consumer: {}", e.getMessage());
+            LOGGER.error("Failed to create JMS consumer: {}", e.getMessage());
         }
     }
 
@@ -405,7 +405,7 @@ public class JMSTunnel
                 _receiver.removeConsumer(domain);
             }
         } catch (JMSException e) {
-            _log.error("Failed to remove JMS consumer: {}", e.getMessage());
+            LOGGER.error("Failed to remove JMS consumer: {}", e.getMessage());
         }
     }
 
@@ -544,8 +544,8 @@ public class JMSTunnel
                             send(envelope);
                             continue;
                         } catch (JMSException e) {
-                            _log.error("Failed to send message: {}",
-                                       e.getMessage());
+                            LOGGER.error("Failed to send message: {}",
+                                    e.getMessage());
                         }
                         returnToSender(envelope,
                                        new NoRouteToCellException(envelope.getUOID(),
@@ -582,11 +582,11 @@ public class JMSTunnel
                 String domain = textMessage.getText();
                 addToCache(cell, domain);
             } catch (ClassCastException e) {
-                _log.error("Received unexpected reply to CNS request: {}",
-                           message);
+                LOGGER.error("Received unexpected reply to CNS request: {}",
+                        message);
             } catch (JMSException e) {
-                _log.error("Error while resolving well known cell: {}",
-                           e.getMessage());
+                LOGGER.error("Error while resolving well known cell: {}",
+                        e.getMessage());
             }
         }
 
@@ -640,7 +640,7 @@ public class JMSTunnel
                                                               envelope.getDestinationPath(),
                                                               "Failed to resolve well known cell"));
                 } catch (RuntimeException e) {
-                    _logger.error("Message timeout failed", e);
+                    LOGGER.error("Message timeout failed", e);
 
                 }
             }
@@ -707,10 +707,10 @@ public class JMSTunnel
                     returnToSender(envelope, e);
                 }
             } catch (ClassCastException e) {
-                _log.warn("Dropping unknown message: {}", message);
+                LOGGER.warn("Dropping unknown message: {}", message);
             } catch (JMSException e) {
-                _log.error("Failed to retrieve object from JMS message: {}",
-                           e.getMessage());
+                LOGGER.error("Failed to retrieve object from JMS message: {}",
+                        e.getMessage());
             }
         }
 
@@ -795,7 +795,7 @@ public class JMSTunnel
             try {
                 register();
             } catch (RuntimeException e) {
-                _logger.error("Failed to register with cell name service", e);
+                LOGGER.error("Failed to register with cell name service", e);
             }
         }
 
@@ -811,8 +811,8 @@ public class JMSTunnel
                 }
                 _producer.send(msg);
             } catch (JMSException e) {
-                _logger.error("Failed to register with cell name service: {}",
-                              e.getMessage());
+                LOGGER.error("Failed to register with cell name service: {}",
+                        e.getMessage());
             }
         }
 

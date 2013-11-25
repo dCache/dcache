@@ -6,6 +6,8 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -23,6 +25,8 @@ import static com.google.common.collect.Iterables.getFirst;
 
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GssFtpDoorV1.class);
+
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
         ":globus-mapping:";
 
@@ -65,7 +69,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     @Override
     public void ac_auth(String arg) {
-        info("GssFtpDoorV1::secure_reply: going to authorize using " + _gssFlavor);
+        LOGGER.info("GssFtpDoorV1::secure_reply: going to authorize using {}", _gssFlavor);
         if ( !arg.equals("GSSAPI") ) {
             reply("504 Authenticating method not supported");
             return;
@@ -78,7 +82,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         try {
             _serviceContext = getServiceContext();
         } catch( Exception e ) {
-            error(e.toString());
+            LOGGER.error(e.toString());
             reply("500 Error: " + e.toString());
             return;
         }
@@ -119,13 +123,13 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         } catch (GSSException e) {
             CertPathValidatorException cpve =
                     getFirst(filter(Throwables.getCausalChain(e), CertPathValidatorException.class), null);
-            if (cpve != null && cpve.getCertPath() != null && _logger.isDebugEnabled()) {
-                _logger.error("Authentication failed: {} in #{} of {}",
+            if (cpve != null && cpve.getCertPath() != null && LOGGER.isDebugEnabled()) {
+                LOGGER.error("Authentication failed: {} in #{} of {}",
                         e.getMessage(), cpve.getIndex() + 1, cpve.getCertPath());
             } else {
-                _logger.error("Authentication failed: {}", e.getMessage());
+                LOGGER.error("Authentication failed: {}", e.getMessage());
             }
-	    _logger.trace("Authentication failed", e);
+	    LOGGER.trace("Authentication failed", e);
             reply("535 Authentication failed: " + e.getMessage());
             return;
         } finally {
@@ -144,8 +148,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
                 reply("335 ADAT=");
             }
             else {
-                info("GssFtpDoorV1::ac_adat: security context established " +
-                     "with " + _gssIdentity);
+                LOGGER.info("GssFtpDoorV1::ac_adat: security context established " +
+                        "with {}", _gssIdentity);
                 reply("235 OK");
             }
         }
@@ -171,8 +175,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             data = _serviceContext.unwrap(data, 0, data.length, prop);
         } catch( GSSException e ) {
             reply("500 Can not decrypt command: " + e);
-            error("GssFtpDoorV1::secure_command: got GSSException: " +
-                   e.getMessage());
+            LOGGER.error("GssFtpDoorV1::secure_command: got GSSException: {}",
+                    e.getMessage());
             return;
         }
 

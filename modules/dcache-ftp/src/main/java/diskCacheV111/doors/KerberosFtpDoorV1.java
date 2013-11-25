@@ -15,6 +15,8 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -43,6 +45,8 @@ import org.dcache.auth.Subjects;
  */
 public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(KerberosFtpDoorV1.class);
+
     private String _myPrincipalStr;
     private String[] _kdcList;
 
@@ -63,8 +67,8 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
             String problem = "KerberosFTPDoorV1: -svc-principal not specified";
             throw new IllegalArgumentException(problem);
         }
-        info("KerberosFTPDoorV1: initializing kerberos ftp door service. " +
-             "Principal is '" + _myPrincipalStr + "'");
+        LOGGER.info("KerberosFTPDoorV1: initializing kerberos ftp door service. " +
+                "Principal is '{}'", _myPrincipalStr);
         _gssFlavor = "k5";
         String kdclist;
         if( ( kdclist = args.getOpt("kdc-list") ) != null ) {
@@ -73,7 +77,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
             _kdcList = new String[n];
             for( int i = 0; i < n; i++ ) {
                 _kdcList[i] = tokens.nextToken();
-                info("KerberosFTPDoorV1: kdc[" + i + "] = " + _kdcList[i]);
+                LOGGER.info("KerberosFTPDoorV1: kdc[{}] = {}", i, _kdcList[i]);
             }
         }
         ftpDoorName="Kerberos FTP";
@@ -89,8 +93,8 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
                            _engine.getInetAddress());
             }
             catch (Exception e) {
-                error("KerberosFTPDoorV1::startTlog: couldn't start tLog. " +
-                      "Ignoring exception: " + e.getMessage());
+                LOGGER.error("KerberosFTPDoorV1::startTlog: couldn't start tLog. " +
+                        "Ignoring exception: {}", e.getMessage());
             }
         }
     }
@@ -102,23 +106,22 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         int nretry = 10;
         GSSException error = null;
         Properties sysp = System.getProperties();
-        GSSCredential MyCredential = null;
+        GSSCredential myCredential = null;
 
         GSSManager _GManager = GSSManager.getInstance();
         debug("KerberosFTPDoorV1::getServiceContext: calling " +
              "_GManager.createName(\"" + _myPrincipalStr + "\", null)");
-        GSSName MyPrincipal = _GManager.createName(_myPrincipalStr, null);
-        info("KerberosFTPDoorV1::getServiceContext: principal=\"" +
-             MyPrincipal + "\"");
+        GSSName myPrincipal = _GManager.createName(_myPrincipalStr, null);
+        LOGGER.info("KerberosFTPDoorV1::getServiceContext: principal=\"{}\"", myPrincipal);
 
-        while( MyCredential == null && nretry-- > 0 ) {
+        while( myCredential == null && nretry-- > 0 ) {
             if( _kdcList != null && _kdcList.length > 0 ) {
                 String kdc = _kdcList[nretry % _kdcList.length];
                 sysp.put("java.security.krb5.kdc", kdc);
             }
 
             try {
-                MyCredential = _GManager.createCredential(MyPrincipal,
+                myCredential = _GManager.createCredential(myPrincipal,
                 GSSCredential.DEFAULT_LIFETIME,
                 krb5Mechanism,
                 GSSCredential.ACCEPT_ONLY);
@@ -129,12 +132,11 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
                 error = e;
             }
         }
-        if( MyCredential == null ) {
+        if( myCredential == null ) {
             throw error;
         }
-        info("KerberosFTPDoorV1::getServiceContext: credential=\"" +
-             MyCredential + "\"");
-        GSSContext context = _GManager.createContext(MyCredential);
+        LOGGER.info("KerberosFTPDoorV1::getServiceContext: credential=\"{}\"", myCredential);
+        GSSContext context = _GManager.createContext(myCredential);
 
         try {
             ChannelBinding cb = new ChannelBinding(_engine.getInetAddress(),
@@ -145,7 +147,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         catch( UnknownHostException e ) {
             String errmsg = "KerberosFTPDoorV1::getServiceContext: can't " +
                             "bind channel to localhost:" + e.getMessage();
-            error(errmsg);
+            LOGGER.error(errmsg);
             throw new GSSException(GSSException.NO_CRED, 0, errmsg);
         }
 
@@ -174,10 +176,10 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
             login(subject);
             reply("200 User " + arg + " logged in");
         } catch (PermissionDeniedCacheException e) {
-            warn("Login denied for " + subject);
+            LOGGER.warn("Login denied for {}", subject);
             println("530 Login incorrect");
         } catch (CacheException e) {
-            error("Login failed for " + subject + ": " + e);
+            LOGGER.error("Login failed for {}: {}", subject, e.getMessage());
             println("530 Login failed: " + e.getMessage());
         }
     }

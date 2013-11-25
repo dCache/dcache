@@ -17,6 +17,8 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
@@ -45,6 +47,8 @@ import static java.util.Arrays.asList;
  */
 public class GsiFtpDoorV1 extends GssFtpDoorV1
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GsiFtpDoorV1.class);
+
     @Option(
         name="service-key",
         required=true
@@ -101,8 +105,8 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
                            _engine.getInetAddress());
             }
             catch (Exception e) {
-                error("GsiFtpDoor: couldn't start tLog. " +
-                      "Ignoring exception: " + e.getMessage());
+                LOGGER.error("GsiFtpDoor: couldn't start tLog. " +
+                        "Ignoring exception: {}", e.getMessage());
             }
         }
     }
@@ -117,7 +121,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         catch (CredentialException gce) {
             String errmsg = "GsiFtpDoor: couldn't load " +
                             "host globus credentials: " + gce.toString();
-            error(errmsg);
+            LOGGER.error(errmsg);
             throw new GSSException(GSSException.NO_CRED, 0, errmsg);
         }
         catch(IOException ioe) {
@@ -174,13 +178,13 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
 
             reply("200 User " + arg + " logged in");
         } catch (GSSException | CertificateException e) {
-            error("Failed to extract X509 chain: " + e);
+            LOGGER.error("Failed to extract X509 chain: {}", e.toString());
             println("530 Login failed: " + e.getMessage());
         } catch (PermissionDeniedCacheException e) {
-            warn("Login denied for " + subject + ": " + e);
+            LOGGER.warn("Login denied for {}: {}", subject, e.getMessage());
             println("530 Login incorrect");
         } catch (CacheException e) {
-            error("Login failed for " + subject + ": " + e);
+            LOGGER.error("Login failed for {}: {}", subject, e.getMessage());
             println("530 Login failed: " + e.getMessage());
         }
     }

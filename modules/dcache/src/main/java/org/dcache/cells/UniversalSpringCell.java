@@ -100,10 +100,9 @@ public class UniversalSpringCell
     implements BeanPostProcessor,
                EnvironmentAware
 {
-    private final static long WAIT_FOR_FILE_SLEEP = 30000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(UniversalSpringCell.class);
 
-    private final static Logger _log = LoggerFactory
-            .getLogger(UniversalSpringCell.class);
+    private static final long WAIT_FOR_FILE_SLEEP = 30000;
 
     /**
      * Environment map this cell was instantiated in.
@@ -186,8 +185,8 @@ public class UniversalSpringCell
         checkArgument(args.argc() > 0, "Configuration location missing");
 
         _setupController = args.getOpt("setupController");
-        info("Setup controller set to "
-             + (_setupController == null ? "none" : _setupController));
+        LOGGER.info("Setup controller set to "
+                + (_setupController == null ? "none" : _setupController));
         _setupFile =
             (!args.hasOption("setupFile"))
             ? null
@@ -318,7 +317,7 @@ public class UniversalSpringCell
 
             File missing;
             while ((missing = firstMissing(files)) != null) {
-                warn(String.format("File missing: %s; sleeping %d seconds", missing, WAIT_FOR_FILE_SLEEP / 1000));
+                LOGGER.warn("File missing: {}; sleeping {} seconds", missing, WAIT_FOR_FILE_SLEEP / 1000);
                 Thread.sleep(WAIT_FOR_FILE_SLEEP);
             }
         }
@@ -403,7 +402,7 @@ public class UniversalSpringCell
                 provider.getInfo(pw);
                 pw.println();
             } catch (NoSuchBeanDefinitionException e) {
-                error("Failed to query bean definition for " + name);
+                LOGGER.error("Failed to query bean definition for {}", name);
             }
         }
     }
@@ -870,7 +869,7 @@ public class UniversalSpringCell
                         try {
                             values.put(property, bean.getPropertyValue(property));
                         } catch (InvalidPropertyException | PropertyAccessException e) {
-                            _log.debug("Failed to read {} of object of class {}: {}",
+                            LOGGER.debug("Failed to read {} of object of class {}: {}",
                                     property, o.getClass(), e.getMessage());
                         }
                     }

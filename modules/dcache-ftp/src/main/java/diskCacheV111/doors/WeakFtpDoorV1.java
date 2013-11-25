@@ -38,6 +38,9 @@
 
 package diskCacheV111.doors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.security.auth.Subject;
 
 import java.util.concurrent.ExecutionException;
@@ -57,6 +60,8 @@ import org.dcache.auth.Subjects;
  * @author  timur
  */
 public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(WeakFtpDoorV1.class);
 
     /** Creates a new instance of WeakFtpDoorV1
      * @throws ExecutionException
@@ -114,10 +119,10 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
         try {
             login(subject);
         } catch (PermissionDeniedCacheException e) {
-            warn("Login denied for " + subject);
+            LOGGER.warn("Login denied for {}", subject);
             println("530 Login incorrect");
         } catch (CacheException e) {
-            error("Login failed for " + subject + ": " + e);
+            LOGGER.error("Login failed for {}: {}", subject, e);
             println("530 Login failed: " + e.getMessage());
         }
 
@@ -134,8 +139,8 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
                            _engine.getInetAddress());
             }
             catch (Exception e) {
-                error("WeakFtpDoor: couldn't start tLog. " +
-                      "Ignoring exception: " + e.getMessage());
+                LOGGER.error("WeakFtpDoor: couldn't start tLog. " +
+                        "Ignoring exception: {}", e.getMessage());
             }
         }
     }
