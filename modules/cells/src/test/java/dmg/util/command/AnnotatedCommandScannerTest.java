@@ -651,4 +651,41 @@ public class AnnotatedCommandScannerTest
 
         _scanner.scan(new SUT());
     }
+
+    @Test
+    public void shouldUseCommandOfSubClassWhenInjectingCommandLine() throws Exception
+    {
+        class SUT
+        {
+            @Command(name = "base")
+            class BaseCommand implements Callable<String>
+            {
+                @CommandLine
+                public String line;
+
+                @Override
+                public String call() throws Exception
+                {
+                    assertThat(line, is("base"));
+                    return null;
+                }
+            }
+
+            @Command(name = "test")
+            class TestCommand extends BaseCommand
+            {
+                @Override
+                public String call() throws Exception
+                {
+                    assertThat(line, is("test"));
+                    return null;
+                }
+            }
+        }
+
+        Map<List<String>,? extends CommandExecutor> commands =
+                _scanner.scan(new SUT());
+        commands.get(asList("base")).execute(new Args(""), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
+    }
 }
