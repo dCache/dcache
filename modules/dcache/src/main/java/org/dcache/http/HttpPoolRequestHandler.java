@@ -50,6 +50,7 @@ import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Arrays.asList;
+import static org.dcache.util.Checksums.TO_RFC3230;
 import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.StringMarkup.quotedString;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -673,12 +674,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private static String buildDigest(MoverChannel<HttpProtocolInfo> file)
     {
         FileAttributes attributes = file.getFileAttributes();
-
-        if(attributes.isDefined(FileAttribute.CHECKSUM)) {
-            Set<Checksum> checksums = attributes.getChecksums();
-            return Checksums.rfc3230Encoded(checksums);
-        } else {
-            return "";
-        }
+        return attributes.getChecksumsIfPresent().transform(TO_RFC3230).or("");
     }
 }

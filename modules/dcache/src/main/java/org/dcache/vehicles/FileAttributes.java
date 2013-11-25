@@ -1,6 +1,8 @@
 package org.dcache.vehicles;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Objects.ToStringHelper;
+import com.google.common.base.Optional;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -184,6 +186,10 @@ public class FileAttributes implements Serializable {
         return _accessLatency;
     }
 
+    public Optional<AccessLatency> getAccessLatencyIfPresent() {
+        return toOptional(ACCESS_LATENCY, _accessLatency);
+    }
+
     public long getAccessTime()
     {
         guard(ACCESS_TIME);
@@ -199,6 +205,10 @@ public class FileAttributes implements Serializable {
     public Set<Checksum> getChecksums() {
         guard(CHECKSUM);
         return _checksums;
+    }
+
+    public Optional<Set<Checksum>> getChecksumsIfPresent() {
+        return toOptional(CHECKSUM, _checksums);
     }
 
     /**
@@ -264,6 +274,10 @@ public class FileAttributes implements Serializable {
     public RetentionPolicy getRetentionPolicy() {
         guard(RETENTION_POLICY);
         return _retentionPolicy;
+    }
+
+    public Optional<RetentionPolicy> getRetentionPolicyIfPresent() {
+        return toOptional(RETENTION_POLICY, _retentionPolicy);
     }
 
     public long getSize() {
@@ -406,5 +420,11 @@ public class FileAttributes implements Serializable {
                 .add("storageInfo", _storageInfo)
                 .omitNullValues()
                 .toString();
+    }
+
+    private <T> Optional<T> toOptional(FileAttribute attribute, T value)
+    {
+        return isDefined(attribute) ? Optional.of(value) :
+                (Optional<T>)Optional.absent();
     }
 }

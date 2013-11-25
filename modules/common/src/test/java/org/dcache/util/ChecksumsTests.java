@@ -257,7 +257,7 @@ public class ChecksumsTests
 
     private void whenGeneratingRfc3230ForSetOfChecksums()
     {
-        _rfc3230 = Checksums.rfc3230Encoded(_checksums);
+        _rfc3230 = Checksums.TO_RFC3230.apply(_checksums);
     }
 
     private ChecksumBuilder checksum()

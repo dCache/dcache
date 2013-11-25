@@ -2,7 +2,9 @@ package org.dcache.util;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps.EntryTransformer;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -68,12 +70,9 @@ public class Checksums
 
     /**
      * This Function maps an instance of Checksum to the corresponding
-     * fragment of an RFC 3230 response.  For further details, see:
-     *
-     *     http://tools.ietf.org/html/rfc3230
-     *     http://www.iana.org/assignments/http-dig-alg/http-dig-alg.xml
+     * fragment of an RFC 3230 response.
      */
-    private static final Function<Checksum,String> FOR_RFC3230 =
+    private static final Function<Checksum,String> TO_RFC3230_FRAGMENT =
             new Function<Checksum,String>() {
         @Override
         public String apply(Checksum f)
@@ -93,17 +92,23 @@ public class Checksums
         }
     };
 
-
     /**
-     * Encode the supplied checksum values as a comma-separated list as
-     * per RFC-3230.  The resulting string may be used as the value part of
-     * a Digest HTTP header in the response to a GET or HEAD request.
+     * This Function maps a collection of Checksum objects to the corresponding
+     * RFC 3230 string.  For further details, see:
+     *
+     *     http://tools.ietf.org/html/rfc3230
+     *     http://www.iana.org/assignments/http-dig-alg/http-dig-alg.xml
      */
-    public static String rfc3230Encoded(Collection<Checksum> checksums)
-    {
-        Iterable<String> rfc3230Parts = transform(checksums, FOR_RFC3230);
-        return Joiner.on(',').skipNulls().join(rfc3230Parts);
-    }
+    public static final Function<Collection<Checksum>,String> TO_RFC3230 =
+            new Function<Collection<Checksum>,String>() {
+        @Override
+        public String apply(Collection<Checksum> checksums)
+        {
+            Iterable<String> parts = transform(checksums, TO_RFC3230_FRAGMENT);
+            return Joiner.on(',').skipNulls().join(parts);
+        }
+    };
+
 
     /**
      * Parse the RFC-3230 Digest response header value.  If there is no

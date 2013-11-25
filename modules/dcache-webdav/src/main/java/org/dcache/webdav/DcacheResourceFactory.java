@@ -12,6 +12,7 @@ import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
 import io.milton.resource.Resource;
+import io.milton.servlet.ServletRequest;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
@@ -108,6 +109,11 @@ public class DcacheResourceFactory
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
         EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
                    MODE, OWNER, OWNER_GROUP);
+
+    // Additional attributes needed for PROPFIND requests; e.g., to supply
+    // values for properties.
+    private static final Set<FileAttribute> PROPFIND_ATTRIBUTES =
+        EnumSet.of(CHECKSUM, ACCESS_LATENCY, RETENTION_POLICY);
 
     private static final String PROTOCOL_INFO_NAME = "Http";
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
@@ -541,10 +547,7 @@ public class DcacheResourceFactory
                 try {
                     PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
                     Set<FileAttribute> requestedAttributes =
-                            EnumSet.copyOf(REQUIRED_ATTRIBUTES);
-                    if (isDigestRequested()) {
-                        requestedAttributes.add(CHECKSUM);
-                    }
+                            buildRequestedAttributes();
                     FileAttributes attributes =
                         pnfs.getFileAttributes(path.toString(), requestedAttributes);
                     return getResource(path, attributes);
@@ -749,7 +752,7 @@ public class DcacheResourceFactory
                 @Override
                 public Set<FileAttribute> getRequiredAttributes()
                 {
-                    return REQUIRED_ATTRIBUTES;
+                    return buildRequestedAttributes();
                 }
 
                 @Override
@@ -1067,12 +1070,43 @@ public class DcacheResourceFactory
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
     }
 
+    private Set<FileAttribute> buildRequestedAttributes()
+    {
+        Set<FileAttribute> attributes = EnumSet.copyOf(REQUIRED_ATTRIBUTES);
+
+        if (isDigestRequested()) {
+            attributes.add(CHECKSUM);
+        }
+
+        if (isPropfindRequest()) {
+            // FIXME: Unfortunately, Milton parses the request body after
+            // requesting the Resource, so we cannot know which additional
+            // attributes are being requested; therefore, we must request all
+            // of them.
+            attributes.addAll(PROPFIND_ATTRIBUTES);
+        }
+
+        return attributes;
+    }
+
     private static boolean isDigestRequested()
     {
-        // TODO: parse the Want-Digest to see if the requested digest(s) are
-        //       supported.  If not then we can omit fetching the checksum
-        //       values.
-        return HttpManager.request().getHeaders().containsKey("Want-Digest");
+        switch (HttpManager.request().getMethod()) {
+        case HEAD:
+        case GET:
+            // TODO: parse the Want-Digest to see if the requested digest(s) are
+            //       supported.  If not then we can omit fetching the checksum
+            //       values.
+            return HttpManager.request().getHeaders().containsKey("Want-Digest");
+        default:
+            return false;
+        }
+    }
+
+
+    private boolean isPropfindRequest()
+    {
+        return HttpManager.request().getMethod() == Request.Method.PROPFIND;
     }
 
 
