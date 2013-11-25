@@ -28,6 +28,7 @@ import dmg.util.Args;
 
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
@@ -203,7 +204,7 @@ public class PerformanceTest extends Thread
             FileAttributes fileAttributes;
             switch (aOp) {
                 case CREATE_ENTRY:
-                    provider.createEntry(Subjects.ROOT, path, UID, GID, PERMISSION, false);
+                    provider.createEntry(Subjects.ROOT, path, UID, GID, PERMISSION, FileType.REGULAR);
                     break;
                 case PATH_TO_PNFS_ID:
                     getPnfsid(path);

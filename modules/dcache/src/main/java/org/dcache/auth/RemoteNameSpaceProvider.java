@@ -26,6 +26,7 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
 import static diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation.REMOVE;
+import org.dcache.namespace.FileType;
 
 /**
  * The RemoteNameSpaceProvider uses the PnfsManager client stub to provide
@@ -52,16 +53,19 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
 
     @Override
     public PnfsId createEntry(Subject subject, String path, int uid, int gid,
-            int mode, boolean isDirectory) throws CacheException
+            int mode, FileType type) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
 
         PnfsCreateEntryMessage returnMsg;
 
-        if(isDirectory) {
+        if(type == FileType.DIR) {
             returnMsg = pnfs.createPnfsDirectory(path, uid, gid, mode);
-        } else {
+        } else if (type == FileType.REGULAR) {
             returnMsg = pnfs.createPnfsEntry(path, uid, gid, mode);
+        } else {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    "Unsupported object type: " + type);
         }
 
         return returnMsg.getPnfsId();

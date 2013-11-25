@@ -213,7 +213,7 @@ public class ChimeraNameSpaceProvider
 
     @Override
     public PnfsId createEntry(Subject subject, String path,
-                              int uid, int gid, int mode, boolean isDir)
+                              int uid, int gid, int mode, FileType type)
         throws CacheException
     {
         FsInode inode;
@@ -229,7 +229,7 @@ public class ChimeraNameSpaceProvider
             if (!Subjects.isRoot(subject)) {
                 FileAttributes attributes =
                     getFileAttributesForPermissionHandler(parent);
-                if (isDir) {
+                if (type == FileType.DIR) {
                     if (_permissionHandler.canCreateSubDir(subject, attributes) != ACCESS_ALLOWED) {
                         throw new PermissionDeniedCacheException("Access denied: " + path);
                     }
@@ -258,17 +258,20 @@ public class ChimeraNameSpaceProvider
 
             if (mode == DEFAULT) {
                 mode = parent.statCache().getMode();
-                if (isDir) {
+                if (type == FileType.DIR) {
                     mode &= UMASK_DIR;
                 } else {
                     mode &= UMASK_FILE;
                 }
             }
 
-            if( isDir ) {
+            if( type == FileType.DIR ) {
                 inode = _fs.mkdir(parent, newEntryFile.getName(), uid, gid, mode);
-            }else{
+            }else if (type == FileType.REGULAR) {
                 inode = _fs.createFile(parent, newEntryFile.getName(), uid, gid, mode);
+            } else {
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                        "Unsupported object type: " + type);
             }
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);

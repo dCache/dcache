@@ -11,6 +11,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
@@ -52,18 +53,18 @@ public interface NameSpaceProvider
     public static final int SI_APPEND = 2;
 
     /**
-     * Create file or directory for given path.
+     * Create file system object for given path and type.
      *
      * @param subject Subject of user who invoked this method.
      * @param path full path of new object
      * @param uid uid of new entry or -1 for default
      * @param gid gid of new entry or -1 for default
      * @param mode mode of new entry or -1 for default
-     * @param isDirectory create a directory if true
+     * @param type of object to create
      * @return PnfsId of newly created object
      * @throws CacheException
      */
-    PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, boolean isDirectory) throws CacheException;
+    PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, FileType type) throws CacheException;
 
     /**
      * remove file or directory associated with given pnfsid
