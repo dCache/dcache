@@ -65,7 +65,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         _parent = parent;
         _command = command;
         _constructor = constructor;
-        _handlers = createFieldHandlers(_constructor.getDeclaringClass());
+        _handlers = createFieldHandlers(command, _constructor.getDeclaringClass());
     }
 
     @Override
@@ -219,19 +219,19 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         }
     }
 
-    private static Handler createFieldHandler(Field field, CommandLine commandLine)
+    private static Handler createFieldHandler(Command command, Field field, CommandLine commandLine)
     {
         Class<?> type = field.getType();
         if (type.isAssignableFrom(Args.class)) {
             return new ArgsHandler(field);
         } else if (type.isAssignableFrom(String.class)) {
-            return new CommandLineHandler(field);
+            return new CommandLineHandler(command, field);
         } else {
             throw new IllegalArgumentException("CommandLine annotation is only applicable to Args and String fields");
         }
     }
 
-    private static List<Handler> createFieldHandlers(Class<? extends Callable<?>> clazz)
+    private static List<Handler> createFieldHandlers(Command command, Class<? extends Callable<?>> clazz)
     {
         Set<String> names = new HashSet<>();
 
@@ -251,7 +251,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
 
                 CommandLine commandLine = field.getAnnotation(CommandLine.class);
                 if (commandLine != null) {
-                    handlers.add(createFieldHandler(field, commandLine));
+                    handlers.add(createFieldHandler(command, field, commandLine));
                 }
             }
         }
@@ -631,16 +631,16 @@ public class AnnotatedCommandExecutor implements CommandExecutor
     {
         private final String command;
 
-        private CommandLineHandler(Field field)
+        private CommandLineHandler(Command command, Field field)
         {
             super(field);
-            command = field.getDeclaringClass().getAnnotation(Command.class).name();
+            this.command = command.name();
         }
 
         @Override
         protected Object getValue(Args args)
         {
-            return command + " " + args;
+            return (args.optc() == 0 && args.argc() == 0) ? command : (command + " " + args);
         }
 
         @Override
