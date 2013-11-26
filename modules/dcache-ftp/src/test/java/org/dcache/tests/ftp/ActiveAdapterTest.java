@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import diskCacheV111.util.ActiveAdapter;
+import org.dcache.ftp.proxy.ActiveAdapter;
 
 import org.dcache.util.PortRange;
 
