@@ -75,8 +75,11 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     public PnfsId createSymLink(Subject subject, String path, String dest,
             int uid, int gid) throws CacheException
     {
-        throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    "Link creation not supported");
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
+
+        PnfsCreateEntryMessage returnMsg = pnfs.createSymLink(path, dest, uid, gid);
+
+        return returnMsg.getPnfsId();
     }
 
     @Override

@@ -81,6 +81,7 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 
 import static org.dcache.acl.enums.AccessType.*;
 import static org.dcache.auth.Subjects.ROOT;
@@ -180,6 +181,7 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsGetFileAttributes.class);
         _gauges.addGauge(PnfsListDirectoryMessage.class);
         _gauges.addGauge(PnfsRemoveChecksumMessage.class);
+        _gauges.addGauge(PnfsCreateSymLinkMessage.class);
     }
 
     public PnfsManagerV3()
@@ -990,6 +992,33 @@ public class PnfsManagerV3
 
     }
 
+    public void createLink(PnfsCreateSymLinkMessage pnfsMessage) {
+        PnfsId pnfsId;
+        _log.info("create symlink {} to {}", pnfsMessage.getPath(), pnfsMessage.getDestination() );
+        try {
+            File file = new File(pnfsMessage.getPath());
+            checkMask(pnfsMessage.getSubject(), file.getParent(),
+                    pnfsMessage.getAccessMask());
+
+            pnfsId = _nameSpaceProvider.createSymLink(pnfsMessage.getSubject(),
+                    pnfsMessage.getPath(),
+                    pnfsMessage.getDestination(),
+                    pnfsMessage.getUid(),
+                    pnfsMessage.getGid());
+
+            pnfsMessage.setPnfsId(pnfsId);
+            pnfsMessage.setSucceeded();
+
+        } catch (CacheException e) {
+            pnfsMessage.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            _log.error("Failed to create a symlink " +
+                    pnfsMessage.getPath() + " to " + pnfsMessage.getDestination(), e);
+            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
+
+    }
+
     public void createDirectory(PnfsCreateDirectoryMessage pnfsMessage){
         PnfsId pnfsId;
         _log.info("create directory "+pnfsMessage.getPath());
@@ -1584,6 +1613,9 @@ public class PnfsManagerV3
         }
         else if (pnfsMessage instanceof PnfsGetCacheLocationsMessage){
             getCacheLocations((PnfsGetCacheLocationsMessage)pnfsMessage);
+        }
+        else if (pnfsMessage instanceof PnfsCreateSymLinkMessage) {
+            createLink((PnfsCreateSymLinkMessage) pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsCreateDirectoryMessage){
             createDirectory((PnfsCreateDirectoryMessage)pnfsMessage);
