@@ -3,7 +3,7 @@ package org.dcache.services.topology;
 import dmg.cells.network.CellDomainNode;
 import dmg.util.Args;
 
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 
 public class CellsTopologyInterpreter
     implements CellCommandListener

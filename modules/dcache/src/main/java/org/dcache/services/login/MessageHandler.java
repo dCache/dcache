@@ -18,7 +18,7 @@ import dmg.cells.nucleus.CellMessage;
 
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 
 public class MessageHandler
     implements CellMessageReceiver

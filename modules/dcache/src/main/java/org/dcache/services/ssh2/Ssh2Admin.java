@@ -35,8 +35,8 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UnionLoginStrategy;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellLifeCycleAware;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
 
 import static org.dcache.util.Files.checkFile;
 

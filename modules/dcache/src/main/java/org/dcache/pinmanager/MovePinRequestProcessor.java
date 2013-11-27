@@ -21,7 +21,7 @@ import diskCacheV111.vehicles.PoolSetStickyMessage;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.Subjects;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.pool.repository.StickyRecord;

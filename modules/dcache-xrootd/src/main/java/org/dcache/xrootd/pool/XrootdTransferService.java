@@ -42,7 +42,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.AbstractCellComponent;
+import dmg.cells.nucleus.AbstractCellComponent;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;

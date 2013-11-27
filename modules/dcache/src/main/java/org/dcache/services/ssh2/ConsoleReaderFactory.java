@@ -8,7 +8,7 @@ import java.io.File;
 
 import dmg.cells.nucleus.CellEndpoint;
 
-import org.dcache.cells.CellMessageSender;
+import dmg.cells.nucleus.CellMessageSender;
 
 public class ConsoleReaderFactory implements Factory<Command>, CellMessageSender
 {

@@ -23,7 +23,7 @@ import dmg.util.Formats;
 import dmg.util.Replaceable;
 
 import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.GPlazma;
 import org.dcache.gplazma.NoSuchPrincipalException;

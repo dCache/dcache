@@ -12,7 +12,7 @@ import java.util.concurrent.Future;
 
 import dmg.cells.nucleus.Reply;
 
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.MessageReply;
 import org.dcache.missingfiles.plugins.Plugin;
 import org.dcache.missingfiles.plugins.PluginChain;

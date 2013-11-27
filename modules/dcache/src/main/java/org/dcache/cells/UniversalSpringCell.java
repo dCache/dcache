@@ -58,10 +58,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import diskCacheV111.util.CacheException;
 
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -951,17 +956,6 @@ public class UniversalSpringCell
     }
 
     /**
-     * Registers a thread factory aware bean. Thread factory aware
-     * bean provide hooks for registering thread factories. This
-     * method registers the Cell nulceus thread factory on the bean.
-     */
-    public void addThreadFactoryAwareBean(ThreadFactoryAware bean)
-    {
-        bean.setThreadFactory(getNucleus());
-    }
-
-
-    /**
      * Part of the BeanPostProcessor implementation. Recognizes beans
      * implementing CellCommandListener, CellInfoProvider,
      * CellCommunicationAware, CellSetupProvider and
@@ -994,10 +988,6 @@ public class UniversalSpringCell
 
         if (bean instanceof CellLifeCycleAware) {
             addLifeCycleAwareBean((CellLifeCycleAware) bean);
-        }
-
-        if (bean instanceof ThreadFactoryAware) {
-            addThreadFactoryAwareBean((ThreadFactoryAware) bean);
         }
 
         if (bean instanceof EnvironmentAware) {

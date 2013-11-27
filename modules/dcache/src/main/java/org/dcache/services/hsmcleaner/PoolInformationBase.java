@@ -10,7 +10,7 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 import dmg.util.Args;
 
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 
 /**
  * Maintains an index of available pools.

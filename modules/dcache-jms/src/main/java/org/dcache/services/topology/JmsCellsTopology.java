@@ -17,7 +17,7 @@ import java.util.concurrent.Executor;
 import dmg.cells.network.CellDomainNode;
 import dmg.util.Args;
 
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.cells.CellNameService;
 import org.dcache.cells.CellNameServiceRegistry;
 

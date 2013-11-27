@@ -5,7 +5,7 @@ import java.util.Collection;
 import dmg.cells.network.CellDomainNode;
 import dmg.util.Args;
 
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 
 /**
  * CellsTopology for dCache installation with classic (non-JMS) cells

@@ -9,7 +9,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.pinmanager.model.Pin;
 
 /**

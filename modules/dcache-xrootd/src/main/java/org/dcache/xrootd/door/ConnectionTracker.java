@@ -15,7 +15,7 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.Args;
 
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 
 import static org.jboss.netty.channel.Channels.close;
 

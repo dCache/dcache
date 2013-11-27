@@ -1,4 +1,4 @@
-package org.dcache.cells;
+package dmg.cells.nucleus;
 
 
 /**

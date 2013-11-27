@@ -12,8 +12,8 @@ import diskCacheV111.vehicles.JobInfo;
 
 import dmg.util.Args;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 
 class SchedulerEntry
 {

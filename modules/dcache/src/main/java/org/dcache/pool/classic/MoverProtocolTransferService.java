@@ -26,8 +26,8 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;

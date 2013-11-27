@@ -23,7 +23,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CollectionFactory;
 
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Glob;

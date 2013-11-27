@@ -35,7 +35,7 @@ import diskCacheV111.vehicles.MoverInfoMessage;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.AbstractCellComponent;
+import dmg.cells.nucleus.AbstractCellComponent;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;

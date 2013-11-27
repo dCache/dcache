@@ -41,8 +41,8 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;

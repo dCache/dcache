@@ -16,7 +16,7 @@ import dmg.util.Args;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACEParser;
 import org.dcache.auth.Subjects;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 

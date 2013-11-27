@@ -1,10 +1,9 @@
-package org.dcache.util;
+package dmg.cells.services.login;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -15,18 +14,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.util.Args;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.AbstractCellComponent;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import org.dcache.util.NetworkUtils;
+
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * Utility class to periodically register a door in a login broker.

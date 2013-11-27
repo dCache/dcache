@@ -76,9 +76,9 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;

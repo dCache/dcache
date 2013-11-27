@@ -36,8 +36,8 @@ import dmg.util.Args;
 import dmg.util.Formats;
 import dmg.util.Replaceable;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Slf4jSTErrorListener;
 

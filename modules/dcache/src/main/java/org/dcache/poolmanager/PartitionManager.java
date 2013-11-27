@@ -15,8 +15,8 @@ import java.util.Set;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellSetupProvider;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 
 import static com.google.common.base.Predicates.*;
 import static com.google.common.collect.Iterables.find;

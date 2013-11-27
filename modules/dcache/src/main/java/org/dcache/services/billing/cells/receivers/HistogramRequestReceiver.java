@@ -120,7 +120,7 @@ package org.dcache.services.billing.cells.receivers;
 
 import java.lang.reflect.Method;
 
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.services.billing.histograms.data.ITimeFrameHistogramDataService;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData;
 import org.dcache.vehicles.billing.HistogramRequestMessage;

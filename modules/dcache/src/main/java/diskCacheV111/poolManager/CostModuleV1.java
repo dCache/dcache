@@ -40,10 +40,10 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.util.Args;
 
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.cells.CellMessageDispatcher;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellSetupProvider;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellSetupProvider;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.vehicles.FileAttributes;

@@ -30,7 +30,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.namespace.FileAttribute;

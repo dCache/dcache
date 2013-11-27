@@ -31,8 +31,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellSetupProvider;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 import org.dcache.util.Glob;
 
 public class PoolSelectionUnitV2

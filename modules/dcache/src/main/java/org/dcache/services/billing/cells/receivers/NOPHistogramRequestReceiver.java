@@ -120,7 +120,7 @@ package org.dcache.services.billing.cells.receivers;
 
 import diskCacheV111.util.ServiceUnavailableException;
 
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.vehicles.billing.HistogramRequestMessage;
 
 /**

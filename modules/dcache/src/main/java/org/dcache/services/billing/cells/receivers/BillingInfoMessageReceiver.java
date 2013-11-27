@@ -74,8 +74,8 @@ import diskCacheV111.vehicles.StorageInfoMessage;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;

@@ -21,7 +21,7 @@ import diskCacheV111.vehicles.StorageInfos;
 import dmg.util.Args;
 import dmg.util.Formats;
 
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;

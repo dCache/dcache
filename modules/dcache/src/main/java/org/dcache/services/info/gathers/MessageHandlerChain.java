@@ -20,7 +20,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.cells.nucleus.UOID;
 
-import org.dcache.cells.CellMessageSender;
+import dmg.cells.nucleus.CellMessageSender;
 
 
 /**

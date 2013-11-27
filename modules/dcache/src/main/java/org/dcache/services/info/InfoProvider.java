@@ -14,8 +14,8 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.Args;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.services.info.base.BadStatePathException;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateObservatory;

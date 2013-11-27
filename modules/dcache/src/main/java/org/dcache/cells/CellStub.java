@@ -13,6 +13,7 @@ import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 

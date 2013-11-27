@@ -14,7 +14,7 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 
 public class LoginCLI
     implements CellCommandListener

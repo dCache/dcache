@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
 
 import org.dcache.util.ReflectionUtils;
 

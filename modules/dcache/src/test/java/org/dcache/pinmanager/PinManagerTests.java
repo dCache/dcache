@@ -50,7 +50,7 @@ import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 
 import org.dcache.cells.CellMessageDispatcher;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.poolmanager.PoolInfo;

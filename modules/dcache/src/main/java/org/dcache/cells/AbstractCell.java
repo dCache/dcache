@@ -24,6 +24,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.cells.nucleus.UOID;

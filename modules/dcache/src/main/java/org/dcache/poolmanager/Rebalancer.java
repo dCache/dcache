@@ -16,7 +16,7 @@ import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationJobCancelMessage;
 

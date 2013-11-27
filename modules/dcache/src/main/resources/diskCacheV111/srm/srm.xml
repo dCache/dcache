@@ -127,7 +127,7 @@
     <constructor-arg ref="pnfs"/>
   </bean>
 
-  <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
+  <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler"
         init-method="start"
         destroy-method="stop">
     <description>Registers the door with a LoginBroker</description>

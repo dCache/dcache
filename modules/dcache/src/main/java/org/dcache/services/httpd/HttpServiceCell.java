@@ -33,9 +33,9 @@ import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Args;
 import dmg.util.CommandInterpreter;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
-import org.dcache.cells.CellMessageSender;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.services.httpd.handlers.HandlerDelegator;
 import org.dcache.services.httpd.util.AliasEntry;
 import org.dcache.util.Crypto;

@@ -11,7 +11,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.CellMessageDispatcher;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageReceiver;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

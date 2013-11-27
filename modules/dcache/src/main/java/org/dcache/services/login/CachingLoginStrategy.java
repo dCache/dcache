@@ -17,7 +17,7 @@ import dmg.util.Args;
 
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 
 /**
  * Caching implementation of {@link LoginStrategy}.

@@ -27,8 +27,8 @@ import diskCacheV111.util.UnitInteger;
 
 import dmg.util.Args;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;

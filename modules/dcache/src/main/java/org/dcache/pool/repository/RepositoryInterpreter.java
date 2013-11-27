@@ -17,7 +17,7 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.util.Args;
 import dmg.util.Formats;
 
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.CellCommandListener;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

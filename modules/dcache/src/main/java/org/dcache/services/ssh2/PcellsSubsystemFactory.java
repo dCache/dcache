@@ -5,7 +5,7 @@ import org.apache.sshd.server.Command;
 
 import dmg.cells.nucleus.CellEndpoint;
 
-import org.dcache.cells.CellMessageSender;
+import dmg.cells.nucleus.CellMessageSender;
 
 public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessageSender
 {

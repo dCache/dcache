@@ -25,8 +25,8 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.EntryState;

@@ -28,8 +28,8 @@ import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.util.Args;
 
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellLifeCycleAware;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;

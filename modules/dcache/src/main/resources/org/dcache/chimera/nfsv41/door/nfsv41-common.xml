@@ -115,7 +115,7 @@
         <property name="fallBackToNumeric" value="${nfs.idmap.legacy}" />
     </bean>
 
-    <bean id="lb" class="org.dcache.util.LoginBrokerHandler">
+    <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler">
         <description>Notifies LoginBroker </description>
         <property name="executor" ref="scheduled-thread-pool"/>
         <property name="updateTime" value="${nfs.service.loginbroker.update-period}"/>

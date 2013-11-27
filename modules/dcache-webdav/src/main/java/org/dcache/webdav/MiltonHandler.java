@@ -19,7 +19,7 @@ import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 
-import org.dcache.cells.CellMessageSender;
+import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.util.Transfer;
 
 /**

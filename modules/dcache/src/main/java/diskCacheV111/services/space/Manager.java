@@ -103,9 +103,9 @@ import dmg.util.Args;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellMessageReceiver;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.JdbcConnectionPool;

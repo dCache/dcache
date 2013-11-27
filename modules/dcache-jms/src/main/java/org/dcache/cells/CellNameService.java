@@ -15,6 +15,8 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+
 /**
  * A central lookup service for well known cell names.
  *

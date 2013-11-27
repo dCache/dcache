@@ -30,8 +30,8 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;

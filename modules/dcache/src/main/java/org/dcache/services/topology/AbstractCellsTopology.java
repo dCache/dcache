@@ -16,7 +16,7 @@ import dmg.cells.network.CellDomainNode;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellTunnelInfo;
 
-import org.dcache.cells.AbstractCellComponent;
+import dmg.cells.nucleus.AbstractCellComponent;
 import org.dcache.cells.CellStub;
 
 /**

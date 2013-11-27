@@ -32,7 +32,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.acl.enums.AccessMask;
-import org.dcache.cells.CellMessageSender;
+import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;

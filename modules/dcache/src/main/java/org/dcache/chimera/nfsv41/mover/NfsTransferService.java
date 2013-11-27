@@ -20,8 +20,8 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.nfs.v4.NFS4Client;
