@@ -268,25 +268,25 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
         throws InterruptedException, ExecutionException
     {
         try {
-            parseOptions();
-
-            _monitor = new MessageProcessingMonitor();
-            _monitor.setCellEndpoint(this);
-            _monitor.setEnabled(_isMonitoringEnabled);
-
-            if (_cellClass != null) {
-                getNucleus().setCellClass(_cellClass);
-            }
-
-            addMessageListener(this);
-            addCommandListener(_monitor);
-
             /* Execute initialisation in a different thread allocated
              * from the correct thread group.
              */
-            FutureTask<Object> task = new FutureTask<>(new Callable<Object>() {
+            FutureTask<Void> task = new FutureTask<>(new Callable<Void>() {
                     @Override
-                    public Object call() throws Exception {
+                    public Void call() throws Exception {
+                        parseOptions();
+
+                        _monitor = new MessageProcessingMonitor();
+                        _monitor.setCellEndpoint(AbstractCell.this);
+                        _monitor.setEnabled(_isMonitoringEnabled);
+
+                        if (_cellClass != null) {
+                            getNucleus().setCellClass(_cellClass);
+                        }
+
+                        addMessageListener(AbstractCell.this);
+                        addCommandListener(_monitor);
+
                         AbstractCell.this.executeInit();
                         return null;
                     }

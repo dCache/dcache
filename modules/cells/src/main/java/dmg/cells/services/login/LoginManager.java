@@ -224,9 +224,9 @@ public class LoginManager
             _listenThread = new ListenThread(listenPort);
             LOGGER.info("Listening on port {}", _listenThread.getListenPort());
 
-            _nucleus.newThread(_listenThread, "listen").start();
-            _nucleus.newThread(new LocationThread(), "Location").start();
-            _nucleus.newThread(_keepAlive, "KeepAlive").start();
+            _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
+            _nucleus.newThread(new LocationThread(), getCellName() + "-location").start();
+            _nucleus.newThread(_keepAlive, getCellName() + "-keepalive").start();
         } catch (IllegalArgumentException e) {
             start();
             kill();

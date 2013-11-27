@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import javax.annotation.Nonnull;
+
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -22,6 +24,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholds;
@@ -46,7 +49,8 @@ public class CellNucleus implements ThreadFactory
     private static CellGlue __cellGlue;
     private final  String    _cellName;
     private final  String    _cellType;
-    private        ThreadGroup _threads;
+    private final  ThreadGroup _threads;
+    private final  AtomicInteger _threadCounter = new AtomicInteger();
     private final  Cell      _cell;
     private final  Date      _creationTime   = new Date();
 
@@ -131,17 +135,7 @@ public class CellNucleus implements ThreadFactory
                         : parentNucleus.getLoggingThresholds();
         setLoggingThresholds(new FilterThresholds(parentThresholds));
 
-        //
-        // for the use in restricted sandboxes
-        //
-        try {
-
-            _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(),
-                                       _cellName+"-threads");
-
-        } catch(SecurityException se) {
-            _threads = null;
-        }
+        _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(), _cellName + "-threads");
 
         _callbackExecutor =
                 new ThreadPoolExecutor(1, 1,
@@ -677,13 +671,14 @@ public class CellNucleus implements ThreadFactory
         };
     }
 
-    @Override
-    public Thread newThread(Runnable target)
+    @Override @Nonnull
+    public Thread newThread(@Nonnull Runnable target)
     {
-        return new Thread(_threads, wrapLoggingContext(target));
+        return newThread(target, getCellName() + "-" + _threadCounter.getAndIncrement());
     }
 
-    public Thread newThread(Runnable target, String name)
+    @Nonnull
+    public Thread newThread(@Nonnull Runnable target, @Nonnull String name)
     {
         return new Thread(_threads, wrapLoggingContext(target), name);
     }
