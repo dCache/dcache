@@ -327,6 +327,28 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.createLink(base, "aLink", "/junit");
     }
 
+    @Test
+    public void testRemoveLinkToSomewhare() throws Exception {
+
+        FsInode linkBase = _rootInode.mkdir("links");
+
+        _fs.createLink(linkBase, "file123", 0, 0, 0644, "/files/file123".getBytes(Charsets.UTF_8));
+        _fs.remove("/links/file123");
+    }
+
+    @Test
+    public void testRemoveLinkToFile() throws Exception {
+
+        FsInode fileBase = _rootInode.mkdir("files");
+        FsInode linkBase = _rootInode.mkdir("links");
+        FsInode fileInode = fileBase.create("file123", 0, 0, 0644);
+
+        _fs.createLink(linkBase, "file123", 0, 0, 0644, "/files/file123".getBytes(Charsets.UTF_8));
+        _fs.remove("/links/file123");
+
+        assertTrue("original file is gone!", fileInode.exists());
+    }
+
     @Ignore("broken test, normal filesystems do not allow directory hard-links. Why does chimera?")
     @Test
     public void testDirHardLink() throws Exception {
