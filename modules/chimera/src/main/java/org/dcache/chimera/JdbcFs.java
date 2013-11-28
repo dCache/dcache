@@ -606,13 +606,14 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public boolean remove(String path) throws ChimeraFsException {
 
-        FsInode inode = path2inode(path);
-        FsInode parent = this.getParentOf(inode);
-        if (parent == null) {
-            return false;
+        File filePath = new File(path);
+
+        String parentPath = filePath.getParent();
+        if (parentPath == null) {
+            throw new ChimeraFsException("Cannot delete file system root.");
         }
 
-        File filePath = new File(path);
+        FsInode parent = path2inode(parentPath);
         String name = filePath.getName();
 
         return this.remove(parent, name);
