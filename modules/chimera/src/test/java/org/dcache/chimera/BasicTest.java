@@ -12,6 +12,7 @@ import static org.junit.Assert.*;
 
 import org.dcache.chimera.posix.Stat;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import org.dcache.acl.ACE;
@@ -283,6 +284,28 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean removed = _fs.remove(base, "aLink");
         assertTrue("failed to remove symbolic link", removed);
 
+    }
+
+    @Test
+    public void testRemoveLinkToSomewhare() throws Exception {
+
+        FsInode linkBase = _rootInode.mkdir("links");
+
+        _fs.createLink(linkBase, "file123", 0, 0, 0644, "/files/file123".getBytes(Charsets.UTF_8));
+        _fs.remove("/links/file123");
+    }
+
+    @Test
+    public void testRemoveLinkToFile() throws Exception {
+
+        FsInode fileBase = _rootInode.mkdir("files");
+        FsInode linkBase = _rootInode.mkdir("links");
+        FsInode fileInode = fileBase.create("file123", 0, 0, 0644);
+
+        _fs.createLink(linkBase, "file123", 0, 0, 0644, "/files/file123".getBytes(Charsets.UTF_8));
+        _fs.remove("/links/file123");
+
+        assertTrue("original file is gone!", fileInode.exists());
     }
 
     @Ignore("broken test, normal filesystems do not allow directory hard-links. Why does chimera?")
