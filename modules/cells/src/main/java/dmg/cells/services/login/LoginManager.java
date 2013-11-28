@@ -22,15 +22,17 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -88,6 +90,7 @@ public class LoginManager
     private final Constructor<?> _loginConstructor;
     private final Constructor<?> _authConstructor;
     private final ExecutorService _executor;
+    private final ScheduledExecutorService _scheduledExecutor;
     private final ConcurrentMap<String, Object> _children = new ConcurrentHashMap<>();
     private final CellPath _authenticator;
     private final KeepAliveThread _keepAlive;
@@ -192,9 +195,30 @@ public class LoginManager
                 } catch (NumberFormatException ee) {/* bad values ignored */}
             }
 
+            _listenThread = new ListenThread(listenPort);
+            LOGGER.info("Listening on port {}", _listenThread.getListenPort());
+
+            _scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+
             String loginBroker = _args.getOpt("loginBroker");
             if (loginBroker != null) {
-                _loginBrokerHandler = new LoginBrokerHandler(Splitter.on(",").omitEmptyStrings().split(loginBroker));
+                Iterable<String> loginBrokers = Splitter.on(",").omitEmptyStrings().split(loginBroker);
+                _loginBrokerHandler = new LoginBrokerHandler();
+                _loginBrokerHandler.beforeSetup();
+                _loginBrokerHandler.setExecutor(_scheduledExecutor);
+                _loginBrokerHandler.setAddresses(_listenThread.getInetAddress());
+                _loginBrokerHandler.setLoginBrokers(Iterables.toArray(loginBrokers, String.class));
+                _loginBrokerHandler.setCellEndpoint(this);
+                _loginBrokerHandler.setPort(_listenThread.getListenPort());
+                _loginBrokerHandler.setProtocolEngine(_loginClass.getName());
+                _loginBrokerHandler.setProtocolFamily(_args.getOption("protocolFamily", _protocol));
+                _loginBrokerHandler.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
+                _loginBrokerHandler.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
+                _loginBrokerHandler.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
+                _loginBrokerHandler.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
+                _loginBrokerHandler.afterSetup();
+                _loginBrokerHandler.start();
+                _loginBrokerHandler.afterStart();
                 addCommandListener(_loginBrokerHandler);
 
                 if (_maxLogin < 0) {
@@ -220,9 +244,6 @@ public class LoginManager
             _locationManager = args.getOpt("lm");
 
             _executor = Executors.newCachedThreadPool(_nucleus);
-
-            _listenThread = new ListenThread(listenPort);
-            LOGGER.info("Listening on port {}", _listenThread.getListenPort());
 
             _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
             _nucleus.newThread(new LocationThread(), getCellName() + "-location").start();
@@ -290,159 +311,19 @@ public class LoginManager
         return _version;
     }
 
-    public class LoginBrokerHandler implements Runnable
+    public static final String hh_get_children = "[-binary]";
+    public Object ac_get_children(Args args)
     {
-        private static final long EAGER_UPDATE_TIME = 1000;
-
-        private final String[] _loginBrokers;
-        private final String _protocolFamily;
-        private final String _protocolVersion;
-        private final double _brokerUpdateOffset;
-        private final LoginBrokerInfo _info;
-        private final Thread _thread;
-
-        private long _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
-        private long _brokerUpdateTime;
-        private double _currentLoad;
-
-        private LoginBrokerHandler(Iterable<String> loginBrokers)
-        {
-            _loginBrokers = Iterables.toArray(loginBrokers, String.class);
-            _protocolFamily = _args.getOption("protocolFamily", _protocol);
-            _protocolVersion = _args.getOption("protocolVersion", "1.0");
-            _brokerUpdateTime = TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit"))
-                    .toMillis(_args.getLongOption("brokerUpdateTime"));
-            _brokerUpdateOffset = _args.getDoubleOption("brokerUpdateOffset");
-
-            _info = new LoginBrokerInfo(
-                    _nucleus.getCellName(),
-                    _nucleus.getCellDomainName(),
-                    _protocolFamily,
-                    _protocolVersion,
-                    _loginClass.getName());
-
-            _info.setUpdateTime(_brokerUpdateTime);
-            _thread = _nucleus.newThread(this, "loginBrokerHandler");
-        }
-
-        public void start()
-        {
-            _thread.start();
-        }
-
-        public void stop()
-        {
-            _thread.interrupt();
-        }
-
-        @Override
-        public synchronized void run()
-        {
-            try {
-                while (!Thread.interrupted()) {
-                    try {
-                        runUpdate();
-                    } catch (RuntimeException e) {
-                        LOGGER.warn("Potential bug detected", e);
-                    }
-                    wait(_currentBrokerUpdateTime);
-                }
-            } catch (InterruptedException e) {
-                LOGGER.debug("Login broker thread terminated due to {}", e);
+        boolean binary = args.hasOption("binary");
+        if (binary) {
+            String[] list = _children.keySet().toArray(new String[_children.size()]);
+            return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (String child : _children.keySet()) {
+                sb.append(child).append("\n");
             }
-        }
-
-        public static final String hh_get_children = "[-binary]";
-        public Object ac_get_children(Args args)
-        {
-            boolean binary = args.hasOption("binary");
-            if (binary) {
-                String[] list = _children.keySet().toArray(new String[_children.size()]);
-                return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
-            } else {
-                StringBuilder sb = new StringBuilder();
-                for (String child : _children.keySet()) {
-                        sb.append(child).append("\n");
-                }
-                return sb.toString();
-            }
-        }
-
-        public static final String hh_lb_set_update = "<updateTime/sec>";
-        public synchronized String ac_lb_set_update_$_1(Args args)
-        {
-            long update = Long.parseLong(args.argv(0)) * 1000;
-            checkArgument(update >= 2000, "Update time out of range");
-
-            _brokerUpdateTime = update;
-            _info.setUpdateTime(update);
-            notifyAll();
-
-            return "";
-        }
-
-        private synchronized void runUpdate()
-        {
-            InetAddress[] addresses = _listenThread.getInetAddress();
-
-            if ((addresses == null) || (addresses.length == 0)) {
-                return;
-            }
-
-            String[] hosts = new String[addresses.length];
-
-            /**
-             *  Add addresses ensuring preferred ordering: external addresses are before any
-             *  internal interface addresses.
-             */
-            int nextExternalIfIndex = 0;
-            int nextInternalIfIndex = addresses.length - 1;
-
-            for (InetAddress addr : addresses) {
-                if (!addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
-                        !addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
-                    hosts[nextExternalIfIndex++] = addr.getHostName();
-                } else {
-                    hosts[nextInternalIfIndex--] = addr.getHostName();
-                }
-            }
-
-            _info.setHosts(hosts);
-            _info.setPort(_listenThread.getListenPort());
-            _info.setLoad(_currentLoad);
-
-            _currentBrokerUpdateTime = _brokerUpdateTime;
-            for (String loginBroker : _loginBrokers) {
-                try {
-                    sendMessage(new CellMessage(new CellPath(loginBroker), _info));
-                } catch (NoRouteToCellException ee) {
-                    LOGGER.info("Failed to register with LoginBroker: {}",
-                            ee.getMessage());
-                    _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
-                }
-            }
-        }
-
-        public void getInfo(PrintWriter pw)
-        {
-            if (_loginBrokers == null) {
-                pw.println("    Login Broker : DISABLED");
-                return;
-            }
-            pw.println("    LoginBroker      : " + Arrays.toString(_loginBrokers));
-            pw.println("    Protocol Family  : " + _protocolFamily);
-            pw.println("    Protocol Version : " + _protocolVersion);
-            pw.println("    Update Time      : " + (_brokerUpdateTime / 1000) + " seconds");
-            pw.println("    Update Offset    : " +
-                    ((int) (_brokerUpdateOffset * 100.)) + " %");
-        }
-
-        private synchronized void loadChanged(int children, int maxChildren)
-        {
-            _currentLoad = (double) children / (double) maxChildren;
-            if (Math.abs(_info.getLoad() - _currentLoad) > _brokerUpdateOffset) {
-                notifyAll();
-            }
+            return sb.toString();
         }
     }
 
@@ -662,6 +543,12 @@ public class LoginManager
         if (_listenThread != null) {
             _listenThread.shutdown();
         }
+        if (_loginBrokerHandler != null) {
+            _loginBrokerHandler.beforeStop();
+            _loginBrokerHandler.stop();
+        }
+        _scheduledExecutor.shutdown();
+        _executor.shutdown();
         LOGGER.info("Bye Bye");
     }
 
@@ -791,24 +678,15 @@ public class LoginManager
             return _listenPort;
         }
 
-        public InetAddress[] getInetAddress()
+        public List<InetAddress> getInetAddress()
         {
-            InetAddress[] addresses = null;
-            if (_isDedicated) {
-                if (_serverSocket != null) {
-                    addresses = new InetAddress[1];
-                    addresses[0] = _serverSocket.getInetAddress();
-                }
-            } else {
-//            put all local Ip addresses, except loopback
+            if (!_isDedicated) {
+                // put all local Ip addresses, except loopback
+                List<InetAddress> addresses = new ArrayList<>();
                 try {
                     Enumeration<NetworkInterface> ifList = NetworkInterface.getNetworkInterfaces();
-
-                    Vector<InetAddress> v = new Vector<>();
                     while (ifList.hasMoreElements()) {
-
                         NetworkInterface ne = ifList.nextElement();
-
                         Enumeration<InetAddress> ipList = ne.getInetAddresses();
                         while (ipList.hasMoreElements()) {
                             InetAddress ia = ipList.nextElement();
@@ -817,16 +695,18 @@ public class LoginManager
                                 continue;
                             }
                             if (!ia.isLoopbackAddress()) {
-                                v.add(ia);
+                                addresses.add(ia);
                             }
                         }
                     }
-                    addresses = v.toArray(new InetAddress[v.size()]);
-                } catch (SocketException se_ignored) {
+                } catch (SocketException ignored) {
                 }
+                return addresses;
+            } else if (_serverSocket != null) {
+                return Collections.singletonList(_serverSocket.getInetAddress());
+            } else {
+                return Collections.emptyList();
             }
-
-            return addresses;
         }
 
         @Override
@@ -1084,7 +964,7 @@ public class LoginManager
         int children = _children.size();
         LOGGER.info("New child count : {}", children);
         if (_loginBrokerHandler != null) {
-            _loginBrokerHandler.loadChanged(children, _maxLogin);
+            _loginBrokerHandler.setLoad(children, _maxLogin);
         }
     }
 
