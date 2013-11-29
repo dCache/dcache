@@ -68,7 +68,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    public void ac_auth(String arg) {
+    public void ftp_auth(String arg) {
         LOGGER.info("GssFtpDoorV1::secure_reply: going to authorize using {}", _gssFlavor);
         if ( !arg.equals("GSSAPI") ) {
             reply("504 Authenticating method not supported");
@@ -90,7 +90,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    public void ac_adat(String arg) {
+    public void ftp_adat(String arg) {
         if ( arg == null || arg.length() <= 0 ) {
             reply("501 ADAT must have data");
             return;
@@ -112,11 +112,11 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         try {
             enableInterrupt();
             //_serviceContext.setChannelBinding(cb);
-            //debug("GssFtpDoorV1::ac_adat: CB set");
+            //debug("GssFtpDoorV1::ftp_adat: CB set");
             token = _serviceContext.acceptSecContext(token, 0, token.length);
-            //debug("GssFtpDoorV1::ac_adat: Token created");
+            //debug("GssFtpDoorV1::ftp_adat: Token created");
             _gssIdentity = _serviceContext.getSrcName();
-            //debug("GssFtpDoorV1::ac_adat: User principal: " + UserPrincipal);
+            //debug("GssFtpDoorV1::ftp_adat: User principal: " + UserPrincipal);
         } catch (InterruptedException e) {
             reply("421 Service unavailable");
             return;
@@ -148,7 +148,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
                 reply("335 ADAT=");
             }
             else {
-                LOGGER.info("GssFtpDoorV1::ac_adat: security context established " +
+                LOGGER.info("GssFtpDoorV1::ftp_adat: security context established " +
                         "with {}", _gssIdentity);
                 reply("235 OK");
             }
@@ -213,8 +213,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // since nothing is actually done for this command.
     // Example = ubftp client
     @Override
-    public void ac_pass(String arg) {
-        debug("GssFtpDoorV1::ac_pass: PASS is a no-op with " +
+    public void ftp_pass(String arg) {
+        debug("GssFtpDoorV1::ftp_pass: PASS is a no-op with " +
                 "GSSAPI authentication.");
         if (_subject != null) {
             reply(ok("PASS"));

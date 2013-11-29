@@ -142,7 +142,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     }
 
     @Override
-    public void ac_user(String arg)
+    public void ftp_user(String arg)
     {
         if (arg.equals("")) {
             reply(err("USER",arg));

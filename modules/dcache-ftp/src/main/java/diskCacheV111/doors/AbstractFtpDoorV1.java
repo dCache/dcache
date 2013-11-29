@@ -1141,8 +1141,8 @@ public abstract class AbstractFtpDoorV1
     {
         for (Method method : getClass().getMethods()) {
             String name = method.getName();
-            if (name.regionMatches(false, 0, "ac_", 0, 3)){
-                _methodDict.put(name.substring(3), method);
+            if (name.startsWith("ftp_")){
+                _methodDict.put(name.substring(4), method);
             }
         }
     }
@@ -1333,7 +1333,7 @@ public abstract class AbstractFtpDoorV1
 
         cmd = cmd.toLowerCase();
 
-        // most of the ic is handled in the ac_ functions but a few
+        // most of the ic is handled in the ftp_ functions but a few
         // commands need special handling
         if (cmd.equals("mic" ) || cmd.equals("conf") || cmd.equals("enc") ||
             cmd.equals("adat") || cmd.equals("pass")) {
@@ -1676,7 +1676,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_feat(String arg)
+    public void ftp_feat(String arg)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("211-OK\r\n");
@@ -1783,7 +1783,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_opts(String arg)
+    public void ftp_opts(String arg)
     {
         String[] st = arg.split("\\s+");
         if (st.length == 2 && st[0].equalsIgnoreCase("RETR")) {
@@ -1801,7 +1801,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_dele(String arg)
+    public void ftp_dele(String arg)
         throws FTPCommandException
     {
         /**
@@ -1837,24 +1837,24 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public abstract void ac_auth(String arg);
+    public abstract void ftp_auth(String arg);
 
 
-    public abstract void ac_adat(String arg);
+    public abstract void ftp_adat(String arg);
 
-    public void ac_mic(String arg)
+    public void ftp_mic(String arg)
         throws CommandExitException
     {
         secure_command(arg, "mic");
     }
 
-    public void ac_enc(String arg)
+    public void ftp_enc(String arg)
         throws CommandExitException
     {
         secure_command(arg, "enc");
     }
 
-    public void ac_conf(String arg)
+    public void ftp_conf(String arg)
         throws CommandExitException
     {
         secure_command(arg, "conf");
@@ -1865,27 +1865,27 @@ public abstract class AbstractFtpDoorV1
 
 
 
-    public void ac_ccc(String arg)
+    public void ftp_ccc(String arg)
     {
         // We should never received this, only through MIC, ENC or CONF,
         // in which case it will be intercepted by secure_command()
         reply("533 CCC must be protected");
     }
 
-    public abstract void ac_user(String arg);
+    public abstract void ftp_user(String arg);
 
 
-    public abstract void ac_pass(String arg);
+    public abstract void ftp_pass(String arg);
 
 
 
 
-    public void ac_pbsz(String arg)
+    public void ftp_pbsz(String arg)
     {
         reply("200 OK");
     }
 
-    public void ac_prot(String arg)
+    public void ftp_prot(String arg)
     {
         if (!arg.equals("C")) {
             reply("534 Will accept only Clear protection level");
@@ -1908,7 +1908,7 @@ public abstract class AbstractFtpDoorV1
     }
 
 
-    public void ac_rmd(String arg)
+    public void ftp_rmd(String arg)
         throws FTPCommandException
     {
         /**
@@ -1947,7 +1947,7 @@ public abstract class AbstractFtpDoorV1
     }
 
 
-    public void ac_mkd(String arg)
+    public void ftp_mkd(String arg)
         throws FTPCommandException
     {
         /**
@@ -2012,22 +2012,22 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_help(String arg)
+    public void ftp_help(String arg)
     {
         reply("214 No help available");
     }
 
-    public void ac_syst(String arg)
+    public void ftp_syst(String arg)
     {
         reply("215 UNIX Type: L8 Version: FTPDoor");
     }
 
-    public void ac_type(String arg)
+    public void ftp_type(String arg)
     {
         reply("200 Type set to I");
     }
 
-    public void ac_noop(String arg)
+    public void ftp_noop(String arg)
     {
         reply(ok("NOOP"));
     }
@@ -2035,7 +2035,7 @@ public abstract class AbstractFtpDoorV1
     private static final Pattern ALLO_PATTERN =
         Pattern.compile("(\\d+)( R \\d+)?");
 
-    public void ac_allo(String arg)
+    public void ftp_allo(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2059,7 +2059,7 @@ public abstract class AbstractFtpDoorV1
         reply(ok("ALLO"));
     }
 
-    public void ac_pwd(String arg)
+    public void ftp_pwd(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2071,7 +2071,7 @@ public abstract class AbstractFtpDoorV1
         reply("257 \"" + _cwd + "\" is current directory");
     }
 
-    public void ac_cwd(String arg)
+    public void ftp_cwd(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2091,10 +2091,10 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_cdup(String arg)
+    public void ftp_cdup(String arg)
         throws FTPCommandException
     {
-        ac_cwd("..");
+        ftp_cwd("..");
     }
 
     private InetSocketAddress getAddressOf(String[] s)
@@ -2137,7 +2137,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_port(String arg)
+    public void ftp_port(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2153,7 +2153,7 @@ public abstract class AbstractFtpDoorV1
         reply(ok("PORT"));
     }
 
-    public void ac_pasv(String arg)
+    public void ftp_pasv(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2180,7 +2180,7 @@ public abstract class AbstractFtpDoorV1
               port % 256 + ")");
     }
 
-    public void ac_mode(String arg)
+    public void ftp_mode(String arg)
     {
         if (arg.equalsIgnoreCase("S")) {
             _xferMode = "S";
@@ -2196,7 +2196,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_site(String arg)
+    public void ftp_site(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2213,7 +2213,7 @@ public abstract class AbstractFtpDoorV1
                 reply("500 command must be in the form 'SITE BUFSIZE <number>'");
                 return;
             }
-            ac_sbuf(args[1]);
+            ftp_sbuf(args[1]);
         } else if ( args[0].equalsIgnoreCase("CHKSUM")) {
             if (args.length != 2) {
                 reply("500 command must be in the form 'SITE CHKSUM <value>'");
@@ -2231,7 +2231,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_cksm(String arg)
+    public void ftp_cksm(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2300,7 +2300,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_scks(String arg)
+    public void ftp_scks(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2366,7 +2366,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_sbuf(String arg)
+    public void ftp_sbuf(String arg)
     {
         if (arg.equals("")) {
             reply("500 must supply a buffer size");
@@ -2390,7 +2390,7 @@ public abstract class AbstractFtpDoorV1
         reply("200 bufsize set to " + arg);
     }
 
-    public void ac_eret(String arg)
+    public void ftp_eret(String arg)
     {
         String[] st = arg.split("\\s+");
         if (st.length < 2) {
@@ -2415,7 +2415,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_esto(String arg)
+    public void ftp_esto(String arg)
     {
         String[] st = arg.split("\\s+");
         if (st.length < 2) {
@@ -2445,9 +2445,9 @@ public abstract class AbstractFtpDoorV1
     // this is the implementation for the ESTO with mode "a"
     // "a" is ajusted store mode
     // other modes identified by string "MODE" can be implemented by adding
-    // void method ac_esto_"MODE"(String arg)
+    // void method ftp_esto_"MODE"(String arg)
     //
-    public void ac_esto_a(String arg)
+    public void ftp_esto_a(String arg)
         throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
@@ -2477,16 +2477,16 @@ public abstract class AbstractFtpDoorV1
             return;
         }
         LOGGER.info("Performing esto in \"a\" mode with offset = {}", offset);
-        ac_stor(filename);
+        ftp_stor(filename);
     }
 
     //
     // this is the implementation for the ERET with mode "p"
     // "p" is partiall retrieve mode
     // other modes identified by string "MODE" can be implemented by adding
-    // void method ac_eret_"MODE"(String arg)
+    // void method ftp_eret_"MODE"(String arg)
     //
-    public void ac_eret_p(String arg)
+    public void ftp_eret_p(String arg)
         throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
@@ -2520,10 +2520,10 @@ public abstract class AbstractFtpDoorV1
         }
         LOGGER.info("Performing eret in \"p\" mode with offset = {} size = {}",
                 offset, size);
-        ac_retr(filename);
+        ftp_retr(filename);
     }
 
-    public void ac_retr(String arg)
+    public void ftp_retr(String arg)
         throws FTPCommandException
     {
         try {
@@ -2660,7 +2660,7 @@ public abstract class AbstractFtpDoorV1
 
     public abstract void startTlog(FTPTransactionLog log, String path, String action);
 
-    public void ac_stor(String arg)
+    public void ftp_stor(String arg)
         throws FTPCommandException
     {
         if (_clientDataAddress == null) {
@@ -2768,7 +2768,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_size(String arg)
+    public void ftp_size(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2794,7 +2794,7 @@ public abstract class AbstractFtpDoorV1
         reply("213 " + filelength);
     }
 
-    public void ac_mdtm(String arg)
+    public void ftp_mdtm(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2861,7 +2861,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_list(String arg)
+    public void ftp_list(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2942,7 +2942,7 @@ public abstract class AbstractFtpDoorV1
     private static final Pattern GLOB_PATTERN =
         Pattern.compile("[*?]");
 
-    public void ac_nlst(String arg)
+    public void ftp_nlst(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -3017,7 +3017,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_mlst(String arg)
+    public void ftp_mlst(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -3048,7 +3048,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_mlsd(String arg)
+    public void ftp_mlsd(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -3109,7 +3109,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_rnfr(String arg) throws FTPCommandException {
+    public void ftp_rnfr(String arg) throws FTPCommandException {
 
         checkLoggedIn();
 
@@ -3138,7 +3138,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ac_rnto(String arg) throws FTPCommandException {
+    public void ftp_rnto(String arg) throws FTPCommandException {
 
         checkLoggedIn();
 
@@ -3171,7 +3171,7 @@ public abstract class AbstractFtpDoorV1
     // DCAU: data channel authtication
     // currentrly ( 07.04.2008 ) it's not supported
     //----------------------------------------------
-    public void ac_dcau(String arg)
+    public void ftp_dcau(String arg)
     {
         if(arg.equalsIgnoreCase("N")) {
             reply("200 data channel authtication switched off");
@@ -3186,7 +3186,7 @@ public abstract class AbstractFtpDoorV1
     //      The delayed QUIT has not been directly implemented yet, instead...
     // Equivalent: let the data channel and pnfs entry clean-up code take care of clean-up.
     // ---------------------------------------------
-    public void ac_quit(String arg)
+    public void ftp_quit(String arg)
         throws CommandExitException
     {
         reply("221 Goodbye");
@@ -3217,15 +3217,15 @@ public abstract class AbstractFtpDoorV1
     // --------------------------------------------
     // BYE: synonym for QUIT
     // ---------------------------------------------
-    public void ac_bye( String arg ) throws CommandExitException
+    public void ftp_bye( String arg ) throws CommandExitException
     {
-        ac_quit(arg);
+        ftp_quit(arg);
     }
 
     // --------------------------------------------
     // ABOR: close data channels, but leave command channel open
     // ---------------------------------------------
-    public void ac_abor(String arg)
+    public void ftp_abor(String arg)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -3683,7 +3683,7 @@ public abstract class AbstractFtpDoorV1
      *
      * @param arg the argument string of the GET command.
      */
-    public void ac_get(String arg)
+    public void ftp_get(String arg)
     {
         try {
             boolean reply127 = false;
@@ -3733,7 +3733,7 @@ public abstract class AbstractFtpDoorV1
      *
      * @param arg the argument string of the PUT command.
      */
-    public void ac_put(String arg)
+    public void ftp_put(String arg)
     {
         boolean reply127 = false;
         try {

@@ -84,12 +84,12 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     }
 
     @Override
-    public void ac_auth(String arg) {
+    public void ftp_auth(String arg) {
         reply("500 Not Supported");
     }
 
     @Override
-    public void ac_adat(String arg) {
+    public void ftp_adat(String arg) {
         reply("500 Not Supported");
     }
 
@@ -100,7 +100,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     private String _user;
 
     @Override
-    public void ac_user(String arg)
+    public void ftp_user(String arg)
     {
         if (arg.equals("")){
             println(err("USER",arg));
@@ -112,7 +112,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     }
 
     @Override
-    public void ac_pass(String arg)
+    public void ftp_pass(String arg)
     {
         Subject subject = new Subject();
         subject.getPrivateCredentials().add(new PasswordCredential(_user, arg));
