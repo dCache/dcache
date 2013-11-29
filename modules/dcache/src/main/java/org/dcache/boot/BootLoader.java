@@ -116,6 +116,12 @@ public class BootLoader
                     }
                 }
             }
+        } else {
+            /* To detect if path is created later, we consider the parent a source
+             * directory. Touching that directory will cause the configuration cache
+             * to be invalidated.
+             */
+            _sourceDirectories.add(path.getParentFile());
         }
         return config;
     }
