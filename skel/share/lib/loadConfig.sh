@@ -84,7 +84,7 @@ isCacheValidForFiles()
 {
     local f
     for f in "$@"; do
-        test "$f" -ot "$DCACHE_CACHED_CONFIG" || return
+        test -f "$f" && test "$f" -ot "$DCACHE_CACHED_CONFIG" || return
     done
 }
 
@@ -92,7 +92,7 @@ isCacheValidForDirs()
 {
     local d
     for d in "$@"; do
-	test ! -e "$d" || test "$d" -ot "$DCACHE_CACHED_CONFIG" || return
+        test ! -e "$d" || test "$d" -ot "$DCACHE_CACHED_CONFIG" || return
     done
 }
 
@@ -116,8 +116,9 @@ fi
 
 if [ -s $DCACHE_CACHED_CONFIG ]; then
     . $DCACHE_CACHED_CONFIG
-   if ! eval isCacheValidForFiles $(getProperty dcache.config.files) /etc/hostname ||
-      ! eval isCacheValidForDirs $(getProperty dcache.config.dirs); then
+   if ! eval isCacheValidForFiles $(getProperty dcache.config.files) ||
+      ! eval isCacheValidForDirs $(getProperty dcache.config.dirs) ||
+      [ "$(getProperty host.name)" != "$(hostname -s)" ]; then
        loadConfig
    fi
 else
