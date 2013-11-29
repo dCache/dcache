@@ -275,7 +275,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
             FutureTask<Void> task = new FutureTask<>(new Callable<Void>() {
                     @Override
                     public Void call() throws Exception {
-                        parseOptions();
+                        parseOptions(AbstractCell.this);
 
                         _monitor = new MessageProcessingMonitor();
                         _monitor.setCellEndpoint(AbstractCell.this);
@@ -435,6 +435,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
      * <li>java.lang.String
      * <li>java.math.BigDecimal
      * <li>java.math.BigInteger
+     * <li>java.lang.Class
      * </ul>
      *
      * @param object Instance to convert.
@@ -541,6 +542,12 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
                 }
             } else if (Enum.class.isAssignableFrom(type)) {
                 result = type.cast(Enum.valueOf(type.asSubclass(Enum.class), so));
+            } else if (Class.class.isAssignableFrom(type)) {
+                try {
+                    result = type.cast(Class.forName(so));
+                } catch (ClassNotFoundException e) {
+                    result = type.cast(object);
+                }
             } else {
                 try {
                     Constructor<T> constructor =
@@ -609,9 +616,9 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
      *
      * Values are logger at the INFO level.
      */
-    protected void parseOptions()
+    protected void parseOptions(Object obj)
     {
-        for (Class<?> c = getClass(); c != null; c = c.getSuperclass()) {
+        for (Class<?> c = obj.getClass(); c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
                 try {
@@ -625,12 +632,12 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
                         if (s != null && s.length() > 0) {
                             try {
                                 value = toType(s, field.getType());
-                                field.set(this, value);
+                                field.set(obj, value);
                             } catch (ClassCastException e) {
                                 throw new IllegalArgumentException("Cannot convert '" + s + "' to " + field.getType(), e);
                             }
                         } else {
-                            value = field.get(this);
+                            value = field.get(obj);
                         }
 
                         if (option.log()) {

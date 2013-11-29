@@ -75,13 +75,12 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -96,16 +95,10 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -137,13 +130,18 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandExitException;
-import dmg.util.StreamEngine;
 
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.LoginReply;
@@ -154,7 +152,6 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.Option;
 import org.dcache.namespace.ACLPermissionHandler;
@@ -166,16 +163,15 @@ import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Glob;
 import org.dcache.util.PortRange;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
-import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsListDirectoryMessage;
 
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -225,7 +221,8 @@ class FTPCommandException extends Exception
 }
 
 public abstract class AbstractFtpDoorV1
-    extends AbstractCell implements Runnable
+        extends AbstractInterruptibleLineBasedInterpreter
+        implements CellMessageReceiver, CellCommandListener, CellInfoProvider, CellMessageSender
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
@@ -233,6 +230,7 @@ public abstract class AbstractFtpDoorV1
     protected InetSocketAddress _localAddress;
     protected InetSocketAddress _remoteAddress;
     protected CellAddressCore _cellAddress;
+    protected CellEndpoint _cellEndpoint;
 
     /**
      * Enumeration type for representing the connection mode.
@@ -342,13 +340,6 @@ public abstract class AbstractFtpDoorV1
     }
 
     /**
-     * FTP door instances are created by the LoginManager. This is the
-     * stream engine passed to us from the LoginManager upon
-     * instantiation.
-     */
-    protected StreamEngine _engine;
-
-    /**
      * Writer for control channel.
      */
     protected PrintWriter _out;
@@ -361,7 +352,7 @@ public abstract class AbstractFtpDoorV1
     /**
      * Used for directory listing.
      */
-    protected DirectoryListSource _listSource;
+    protected ListDirectoryHandler _listSource;
 
     /**
      * User's Origin
@@ -589,24 +580,9 @@ public abstract class AbstractFtpDoorV1
     protected PortRange _passiveModePortRange;
     protected ServerSocketChannel _passiveModeServerSocket;
 
-    private final CommandQueue        _commandQueue =
-        new CommandQueue();
-    private final CountDownLatch      _shutdownGate =
-        new CountDownLatch(1);
     private final Map<String,Method>  _methodDict =
-        new HashMap();
+        new HashMap<>();
 
-    /**
-     * Shared executor for processing FTP commands.
-     *
-     * FIXME: This will be created within the thread group creating
-     * the first FTP door. This will usually be the login manager and
-     * works fine, but it isn't clean.
-     */
-    private final static ExecutorService _executor =
-        Executors.newCachedThreadPool();
-
-    private   Thread         _workerThread;
     protected int            _commandCounter;
     protected String         _lastCommand    = "<init>";
 
@@ -1145,54 +1121,52 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
     {
-        super(name, args);
-
-        try {
-            _engine = engine;
-            doInit();
-            _workerThread.start();
-        } catch (InterruptedException | ExecutionException e) {
-            reply("421 " + ftpDoorName + " door not ready");
-            _shutdownGate.countDown();
-        }
+        _cellEndpoint = endpoint;
+        CellInfo cellInfo = _cellEndpoint.getCellInfo();
+        _cellAddress = new CellAddressCore(cellInfo.getCellName(), cellInfo.getDomainName());
     }
 
     @Override
-    protected void init()
-        throws Exception
+    public void setWriter(Writer writer)
     {
-        super.init();
+        _out = new PrintWriter(writer);
+    }
 
-        Transfer.initSession();
+    @Override
+    public void setRemoteAddress(InetSocketAddress remoteAddress)
+    {
+        _remoteAddress = remoteAddress;
+    }
 
-        _cellAddress = new CellAddressCore(getCellName(), getCellDomainName());
-        _localAddress = (InetSocketAddress) _engine.getSocket().getLocalSocketAddress();
-        _remoteAddress = (InetSocketAddress) _engine.getSocket().getRemoteSocketAddress();
+    @Override
+    public void setLocalAddress(InetSocketAddress localAddress)
+    {
+        _localAddress = localAddress;
+    }
 
-        _out      = new PrintWriter(_engine.getWriter());
-
+    @Override
+    public void init()
+    {
         _clientDataAddress =
             new InetSocketAddress(_remoteAddress.getAddress(), DEFAULT_DATA_PORT);
 
-        LOGGER.debug("Client host: {}",
-                _clientDataAddress.getAddress().getHostAddress());
-
         if (_local_host == null) {
-            _local_host = _engine.getLocalAddress().getHostAddress();
+            _local_host = _localAddress.getAddress().getHostAddress();
         }
 
         _billingStub =
-                new CellStub(this, new CellPath(_billing));
+                new CellStub(_cellEndpoint, new CellPath(_billing));
         _poolManagerStub =
-                new CellStub(this, new CellPath(_poolManager),
+                new CellStub(_cellEndpoint, new CellPath(_poolManager),
                         _poolManagerTimeout, _poolManagerTimeoutUnit);
         _poolStub =
-                new CellStub(this, null, _poolTimeout, _poolTimeoutUnit);
+                new CellStub(_cellEndpoint, null, _poolTimeout, _poolTimeoutUnit);
 
         _gPlazmaStub =
-                new CellStub(this, new CellPath(_gPlazma), 30000);
+                new CellStub(_cellEndpoint, new CellPath(_gPlazma), 30000);
 
         _loginStrategy = new RemoteLoginStrategy(_gPlazmaStub);
 
@@ -1220,9 +1194,7 @@ public abstract class AbstractFtpDoorV1
 
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
 
-        useInterpreter(true);
-
-        _workerThread = new Thread(this);
+        reply("220 " + ftpDoorName + " door ready");
     }
 
     /**
@@ -1258,11 +1230,9 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        _pnfs = new PnfsHandler(new CellStub(this, new CellPath(_pnfsManager), _pnfsTimeout, _pnfsTimeoutUnit));
+        _pnfs = new PnfsHandler(new CellStub(_cellEndpoint, new CellPath(_pnfsManager), _pnfsTimeout, _pnfsTimeoutUnit));
         _pnfs.setSubject(_subject);
-        ListDirectoryHandler listSource = new ListDirectoryHandler(_pnfs);
-        addMessageListener(listSource);
-        _listSource = listSource;
+        _listSource = new ListDirectoryHandler(_pnfs);
     }
 
     public static final String hh_get_door_info = "[-binary]";
@@ -1367,19 +1337,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private synchronized void shutdownInputStream()
-    {
-        try {
-            Socket socket = _engine.getSocket();
-            if (!socket.isClosed() && !socket.isInputShutdown()) {
-                socket.shutdownInput();
-            }
-        } catch (IOException e) {
-            LOGGER.info("Failed to shut down input stream of the " +
-                    "control channel: {}", e.getMessage());
-        }
-    }
-
     private synchronized void closePassiveModeServerSocket()
     {
         if (_passiveModeServerSocket != null) {
@@ -1394,129 +1351,19 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    /**
-     * Main loop for FTP command processing.
-     *
-     * Commands are read from the socket and submitted to the command
-     * queue for execution. Upon termination, most of the shutdown
-     * logic is in this method, including:
-     *
-     * - Emergency shutdown of performance marker engine
-     * - Shut down of passive mode server socket
-     * - Abort and cleanup after failed transfers
-     * - Cell shutdown initiation
-     *
-     * Notice that socket and thus input and output streams are not
-     * closed here. See cleanUp() for details on this.
-     */
     @Override
-    public void run()
+    public synchronized void shutdown()
     {
-        try {
-            try {
-                /* Notice that we do not close the input stream, as
-                 * doing so would close the socket as well. We don't
-                 * want to do that until cleanUp() is called.
-                 *
-                 * REVISIT: I hope that the StreamEngine does not
-                 * maintain any ressources that do not get
-                 * automatically freed when the socket is closed.
-                 */
-                BufferedReader in =
-                    new BufferedReader(new InputStreamReader(_engine.getInputStream(), "UTF-8"));
+        super.shutdown();
 
-                reply("220 " + ftpDoorName + " door ready");
-
-                String s = in.readLine();
-                while (s != null) {
-                    _commandQueue.add(s);
-                    s = in.readLine();
-                }
-            } catch (IOException e) {
-                LOGGER.error("Got error reading data: {}", e.getMessage());
-            } finally {
-                /* This will block until command processing has
-                 * finished.
-                 */
-                try {
-                    _commandQueue.stop();
-                } catch (InterruptedException e) {
-                    LOGGER.error("Failed to shut down command processing: {}",
-                            e.getMessage());
-                }
-
-                /* In case of failure, we may have a transfer hanging
-                 * around.
-                 */
-                FtpTransfer transfer = _transfer;
-                if (transfer != null) {
-                    transfer.abort(451, "Aborting transfer due to session termination");
-                }
-
-                closePassiveModeServerSocket();
-
-                LOGGER.debug("End of stream encountered");
-            }
-        } finally {
-            /* cleanUp() waits for us to open the gate.
-             */
-            _shutdownGate.countDown();
-
-            /* Killing the cell will cause cleanUp() to be
-             * called (although from a different thread).
-             */
-            kill();
-        }
-    }
-
-    /**
-     * Called by the cell infrastructure when the cell has been killed.
-     *
-     * If the FTP session is still running, a shutdown of it will be
-     * initiated. The method blocks until the FTP session has shut
-     * down.
-     *
-     * The socket will be closed by this method. It is quite important
-     * that this does not happen earlier, as several threads use the
-     * output stream. This is the only place where we can be 100%
-     * certain, that all the other threads are done with their job.
-     */
-    @Override
-    public void cleanUp()
-    {
-        /* Closing the input stream will cause the FTP command
-         * procesing thread to shut down. In case the shutdown was
-         * initiated by the FTP client, this will already have
-         * happened at this point. However if the cell is shut down
-         * explicitly, then we have to shutdown the input stream here.
+        /* In case of failure, we may have a transfer hanging around.
          */
-        shutdownInputStream();
-
-        /* The FTP command processing thread will open the gate after
-         * shutdown.
-         */
-        try {
-            _shutdownGate.await();
-        } catch (InterruptedException e) {
-            /* This should really not happen as nobody is supposed to
-             * interrupt the cell thread, but if it does happen then
-             * we better log it.
-             */
-            LOGGER.error("Got interrupted exception shutting down input stream");
+        FtpTransfer transfer = _transfer;
+        if (transfer != null) {
+            transfer.abort(451, "Aborting transfer due to session termination");
         }
 
-        try {
-            /* Closing the socket will also close the input and output
-             * streams of the socket. This in turn will cause the
-             * command poller thread to shut down.
-             */
-            _engine.getSocket().close();
-        } catch (IOException e) {
-            LOGGER.error("Got I/O exception closing socket: {}",
-                    e.getMessage());
-        }
-
-        super.cleanUp();
+        closePassiveModeServerSocket();
     }
 
     public void println(String str)
@@ -1528,17 +1375,15 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Override
     public void execute(String command)
+            throws CommandExitException
     {
-        try {
-            if (command.equals("")) {
-                reply(err("",""));
-            } else {
-                _commandCounter++;
-                ftpcommand(command);
-            }
-        } catch (CommandExitException e) {
-            shutdownInputStream();
+        if (command.equals("")) {
+            reply(err("",""));
+        } else {
+            _commandCounter++;
+            ftpcommand(command);
         }
     }
 
@@ -1563,7 +1408,6 @@ public abstract class AbstractFtpDoorV1
     public void getInfo(PrintWriter pw)
     {
         String user = getUser();
-        pw.println( "            FTPDoor");
         if (user != null) {
             pw.println( "         User  : " + user);
         }
@@ -1573,6 +1417,12 @@ public abstract class AbstractFtpDoorV1
         pw.println( " Command Count : " + _commandCounter);
         pw.println( "     I/O Queue : " + _ioQueueName);
         pw.println(ac_get_door_info(new Args("")));
+    }
+
+    @Override
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
     public void messageArrived(CellMessage envelope,
@@ -1592,6 +1442,14 @@ public abstract class AbstractFtpDoorV1
         FtpTransfer transfer = _transfer;
         if (transfer != null) {
             transfer.finished(message);
+        }
+    }
+
+    public void messageArrived(PnfsListDirectoryMessage message)
+    {
+        ListDirectoryHandler listSource = _listSource;
+        if (listSource != null) {
+            listSource.messageArrived(message);
         }
     }
 
@@ -3246,29 +3104,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    /**
-     * Allow command processing to be interrupted when the control
-     * channel is closed. Should be called from the command processing
-     * thread.
-     *
-     * @throw InterruptedException if command processing was already
-     * interrupted.
-     */
-    protected void enableInterrupt()
-        throws InterruptedException
-    {
-        _commandQueue.enableInterrupt();
-    }
-
-    /**
-     * Disallow command procesing to be interupted when the control
-     * channel is closed.
-     */
-    protected void disableInterrupt()
-    {
-        _commandQueue.disableInterrupt();
-    }
-
     private class PerfMarkerTask
         extends TimerTask implements CellMessageAnswerable
     {
@@ -3353,7 +3188,7 @@ public abstract class AbstractFtpDoorV1
                 CellMessage msg =
                         new CellMessage(new CellPath(_pool),
                                 "mover ls -binary " + _moverId);
-                sendMessage(msg, this, _timeout);
+                _cellEndpoint.sendMessage(msg, this, _timeout);
             }
         }
 
@@ -3413,131 +3248,6 @@ public abstract class AbstractFtpDoorV1
                 LOGGER.error("Performance marker engine: {}",
                         msg.getClass().getName());
             }
-        }
-    }
-
-    /**
-     * Support class to implement FTP command processing on shared
-     * worker threads. Commands on the same queue are executed
-     * sequentially.
-     */
-    class CommandQueue
-    {
-        /** Queue of FTP commands to execute.
-         */
-        private final Queue<String> _commands = new LinkedList<>();
-
-        /**
-         * The thread to interrupt when the command poller is
-         * closed. May be null if interrupts are disabled.
-         */
-        private Thread _thread;
-
-        /**
-         * True iff the command queue has been stopped.
-         */
-        private boolean _stopped;
-
-        /**
-         * True iff the command processing task is in the
-         * ExecutorService queue or is currently running.
-         */
-        private boolean _running;
-
-        /**
-         * Adds a command to the command queue.
-         */
-        synchronized public void add(String command)
-        {
-            if (!_stopped) {
-                _commands.add(command);
-                if (!_running) {
-                    final CDC cdc = new CDC();
-                    _running = true;
-                    _executor.submit(new FireAndForgetTask(new Runnable() {
-                            @Override
-                            public void run() {
-                                try (CDC ignored = cdc.restore()) {
-                                    String command = getOrDone();
-                                    while (command != null) {
-                                        try {
-                                            execute(command);
-                                        } catch (RuntimeException e) {
-                                            LOGGER.error("Bug detected", e);
-                                        }
-                                        command = getOrDone();
-                                    }
-                                }
-                            }
-                        }));
-                }
-            }
-        }
-
-        /**
-         * Returns the next command.
-         *
-         * Returns null and signals that the command processing loop
-         * was left if the CommandQueue was stopped or the queue is
-         * empty.
-         */
-        synchronized private String getOrDone()
-        {
-            if (_stopped || _commands.isEmpty()) {
-                _running = false;
-                notifyAll();
-                return null;
-            } else {
-                return _commands.remove();
-            }
-        }
-
-        /**
-         * Stops the command queue. After a call to this method,
-         * get() will return null. If interrupts are currently
-         * enabled, the target thread is interrupted.
-         *
-         * Does nothing if the command queue is already stopped.
-         */
-        synchronized public void stop()
-            throws InterruptedException
-        {
-            if (!_stopped) {
-                _stopped = true;
-
-                if (_thread != null) {
-                    _thread.interrupt();
-                }
-
-                if (_running) {
-                    wait();
-                }
-            }
-        }
-
-        /**
-         * Enables interrupt upon stop. Until the next call of
-         * disableInterrupt(), a call to <code>stop</code> will cause
-         * the calling thread to be interrupted.
-         *
-         * @throws InterruptedException if command poller is already
-         * closed
-         */
-        synchronized void enableInterrupt()
-            throws InterruptedException
-        {
-            if (_stopped) {
-                throw new InterruptedException();
-            }
-            _thread = Thread.currentThread();
-        }
-
-        /**
-         * Disables interrupt upon stop.
-         */
-        synchronized void disableInterrupt()
-        {
-            _thread = null;
         }
     }
 

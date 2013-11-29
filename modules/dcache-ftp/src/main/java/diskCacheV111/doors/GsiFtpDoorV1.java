@@ -24,9 +24,6 @@ import java.security.cert.X509Certificate;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import dmg.util.Args;
-import dmg.util.StreamEngine;
-
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.Option;
@@ -71,22 +68,13 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
 
     private String _user;
 
-    /** Creates a new instance of GsiFtpDoorV1 */
-    public GsiFtpDoorV1(String name, StreamEngine engine, Args args)
-    {
-        super(name,engine,args);
-    }
-
     @Override
-    protected void init()
-        throws Exception
+    public void init()
     {
-        super.init();
-        cf = CertificateFactories.newX509CertificateFactory();
-
         _gssFlavor = "gsi";
-
         ftpDoorName="GSI FTP";
+        cf = CertificateFactories.newX509CertificateFactory();
+        super.init();
     }
 
     @Override

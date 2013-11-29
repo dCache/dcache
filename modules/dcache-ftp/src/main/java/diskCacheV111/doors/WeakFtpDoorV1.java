@@ -5,14 +5,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
-import java.util.concurrent.ExecutionException;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import dmg.util.Args;
 import dmg.util.CommandExitException;
-import dmg.util.StreamEngine;
 
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
@@ -25,20 +21,11 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WeakFtpDoorV1.class);
 
-    /** Creates a new instance of WeakFtpDoorV1
-     * @throws ExecutionException
-     * @throws InterruptedException */
-    public WeakFtpDoorV1(String name, StreamEngine engine, Args args)
-    {
-        super(name,engine,args);
-    }
-
     @Override
-    protected void init()
-        throws Exception
+    public void init()
     {
-        super.init();
         ftpDoorName = "Weak FTP";
+        super.init();
     }
 
     @Override

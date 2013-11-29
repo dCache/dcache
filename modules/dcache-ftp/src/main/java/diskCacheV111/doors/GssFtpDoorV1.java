@@ -16,9 +16,7 @@ import java.security.cert.CertPathValidatorException;
 
 import diskCacheV111.util.Base64;
 
-import dmg.util.Args;
 import dmg.util.CommandExitException;
-import dmg.util.StreamEngine;
 
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
@@ -39,18 +37,11 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // GSS GSI context and others
     protected GSSContext _serviceContext;
 
-    /** Creates a new instance of GsiFtpDoorV1 */
-    public GssFtpDoorV1(String name, StreamEngine engine, Args args)
-    {
-        super(name,engine,args);
-    }
-
     @Override
-    protected void init()
-        throws Exception
+    public void init()
     {
-        super.init();
         _gssFlavor = "unknown";
+        super.init();
     }
 
     @Override

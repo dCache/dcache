@@ -20,16 +20,9 @@ import java.util.Properties;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import dmg.util.Args;
-import dmg.util.StreamEngine;
-import dmg.util.command.Option;
-
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
-
-//java net
-//cells
-//jgss
+import org.dcache.cells.Option;
 
 /**
  *
@@ -49,22 +42,16 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
 
     private String[] _kdcList;
 
-    /** Creates a new instance of KerberosFtpDoorV1 */
-    public KerberosFtpDoorV1(String name, StreamEngine engine, Args args)
-    {
-        super(name,engine,args);
-    }
 
     @Override
-    protected void init()
-        throws Exception
+    public void init()
     {
-        super.init();
         _gssFlavor = "k5";
         ftpDoorName = "Kerberos FTP";
         if (_kdcListOption != null) {
             _kdcList = _kdcListOption.split(",");
         }
+        super.init();
     }
 
     @Override
