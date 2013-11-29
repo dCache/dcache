@@ -349,12 +349,9 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	}
     }
 
-    public SocketAdapter(AbstractCell door,
-                         ServerSocketChannel clientListenerChannel)
+    public SocketAdapter(ServerSocketChannel clientListenerChannel)
 	throws IOException
     {
-        _door = door;
-
         _clientListenerChannel = clientListenerChannel;
         _poolListenerChannel = ServerSocketChannel.open();
 	_poolListenerChannel.socket().bind(null);

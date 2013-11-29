@@ -102,7 +102,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
         byte[] token = Base64.base64ToByteArray(arg);
         try {
-            ChannelBinding cb = new ChannelBinding(_engine.getInetAddress(),
+            ChannelBinding cb = new ChannelBinding(_remoteAddress.getAddress(),
             InetAddress.getLocalHost(), null);
         } catch( UnknownHostException e ) {
             reply("500 Can not determine address of local host: " + e);
@@ -214,7 +214,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // Example = ubftp client
     @Override
     public void ftp_pass(String arg) {
-        debug("GssFtpDoorV1::ftp_pass: PASS is a no-op with " +
+        LOGGER.debug("GssFtpDoorV1::ftp_pass: PASS is a no-op with " +
                 "GSSAPI authentication.");
         if (_subject != null) {
             reply(ok("PASS"));

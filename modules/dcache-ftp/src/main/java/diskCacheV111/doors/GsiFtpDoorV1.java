@@ -1,9 +1,3 @@
-/*
- * GsiFtpDoorV1.java
- *
- * Created on May 6, 2003, 3:06 PM
- */
-
 package diskCacheV111.doors;
 
 import org.globus.gsi.CredentialException;
@@ -101,8 +95,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
             try {
                 String user =
                     _user + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "gsiftp", action, path,
-                           _engine.getInetAddress());
+                tlog.begin(user, "gsiftp", action, path, _remoteAddress.getAddress());
             }
             catch (Exception e) {
                 LOGGER.error("GsiFtpDoor: couldn't start tLog. " +

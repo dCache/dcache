@@ -1,41 +1,3 @@
-// $Id: WeakFtpDoorV1.java,v 1.11 2007-10-29 13:29:24 behrmann Exp $
-// $Log: not supported by cvs2svn $
-// Revision 1.10  2007/10/25 20:02:42  behrmann
-// Made all fields conform to normal dCache naming policy.
-//
-// Revision 1.9  2005/05/19 05:55:43  timur
-// added support for monitoring door state via dcache pages
-//
-// Revision 1.8  2004/09/09 20:27:37  timur
-// made ftp transaction logging optional
-//
-// Revision 1.7  2004/09/09 18:39:40  timur
-// added the uid,gid to the user names in FTP logs
-//
-// Revision 1.6  2004/09/08 21:25:43  timur
-// remote gsiftp transfer manager will now use ftp logger too, fixed ftp door logging problem
-//
-// Revision 1.5  2004/08/19 18:22:28  timur
-// gridftp door gives pool a host name instead of address, reformated code
-//
-// Revision 1.4  2003/09/25 16:52:05  cvs
-// use globus java cog kit gsi gss library instead of gsint
-//
-// Revision 1.3  2003/05/12 19:26:19  cvs
-// create worker threads from sublclasses
-//
-// Revision 1.2  2003/05/07 17:44:24  cvs
-// new ftp doors are ready
-//
-// Revision 1.1  2003/05/06 22:10:48  cvs
-// new ftp door classes structure
-//
-/*
- * WeakFtpDoorV1.java
- *
- * Created on May 6, 2003, 3:07 PM
- */
-
 package diskCacheV111.doors;
 
 import org.slf4j.Logger;
@@ -135,8 +97,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
             try {
                 String user =
                     Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "weakftp", action, path,
-                           _engine.getInetAddress());
+                tlog.begin(user, "weakftp", action, path, _remoteAddress.getAddress());
             }
             catch (Exception e) {
                 LOGGER.error("WeakFtpDoor: couldn't start tLog. " +

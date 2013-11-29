@@ -1,5 +1,3 @@
-// $Id: AbstractFtpDoorV1.java,v 1.137 2007-10-29 13:29:24 behrmann Exp $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -70,6 +68,7 @@ package diskCacheV111.doors;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Range;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +92,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -102,6 +100,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -225,14 +224,15 @@ class FTPCommandException extends Exception
     }
 }
 
-/**
- * @author Charles G Waldman, Patrick, rich wellner, igor mandrichenko
- * @version 0.0, 15 Sep 1999
- */
 public abstract class AbstractFtpDoorV1
     extends AbstractCell implements Runnable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
+    private static final Timer TIMER = new Timer("Performance marker timer", true);
+
+    protected InetSocketAddress _localAddress;
+    protected InetSocketAddress _remoteAddress;
+    protected CellAddressCore _cellAddress;
 
     /**
      * Enumeration type for representing the connection mode.
@@ -550,7 +550,7 @@ public abstract class AbstractFtpDoorV1
     @Option(
         name = "io-queue"
     )
-    private String _ioQueueName;
+    protected String _ioQueueName;
 
     @Option(
         name = "maxStreamsPerClient",
@@ -657,10 +657,9 @@ public abstract class AbstractFtpDoorV1
     protected long _allo;
 
     /** List of selected RFC 3659 facts. */
-    protected Set<Fact> _currentFacts =
-        new HashSet(Arrays.asList(new Fact[] {
-                    Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE, Fact.PERM,
-                    Fact.OWNER, Fact.GROUP, Fact.MODE }));
+    protected Set<Fact> _currentFacts = Sets.newHashSet(
+            Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE, Fact.PERM,
+            Fact.OWNER, Fact.GROUP, Fact.MODE );
 
     /**
      * Encapsulation of an FTP transfer.
@@ -715,9 +714,9 @@ public abstract class AbstractFtpDoorV1
             super(AbstractFtpDoorV1.this._pnfs,
                   AbstractFtpDoorV1.this._subject, path);
 
-            setDomainName(AbstractFtpDoorV1.this.getCellDomainName());
-            setCellName(AbstractFtpDoorV1.this.getCellName());
-            setClientAddress((InetSocketAddress) _engine.getSocket().getRemoteSocketAddress());
+            setDomainName(_cellAddress.getCellDomainName());
+            setCellName(_cellAddress.getCellName());
+            setClientAddress(_remoteAddress);
             setCheckStagePermission(_checkStagePermission);
             setOverwriteAllowed(_overwrite);
             setPoolManagerStub(_poolManagerStub);
@@ -755,8 +754,7 @@ public abstract class AbstractFtpDoorV1
             switch (_mode) {
             case PASSIVE:
                 _adapter =
-                    new SocketAdapter(AbstractFtpDoorV1.this,
-                                      _passiveModeServerSocket);
+                    new SocketAdapter(_passiveModeServerSocket);
                 break;
 
             case ACTIVE:
@@ -863,7 +861,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             protocolInfo.setDoorCellName(getCellName());
-            protocolInfo.setDoorCellDomainName(getCellDomainName());
+            protocolInfo.setDoorCellDomainName(getDomainName());
             protocolInfo.setClientAddress(_client.getAddress().getHostAddress());
             protocolInfo.setPassive(usePassivePool);
             protocolInfo.setMode(_xferMode);
@@ -917,7 +915,7 @@ public abstract class AbstractFtpDoorV1
                 long timeout = period / 2;
                 _perfMarkerTask =
                     new PerfMarkerTask(getPoolAddress(), getMoverId(), timeout);
-                _timer.schedule(_perfMarkerTask, period, period);
+                TIMER.schedule(_perfMarkerTask, period, period);
             }
         }
 
@@ -980,7 +978,7 @@ public abstract class AbstractFtpDoorV1
                     _adapter.close();
                     _adapter = null;
                 } else if (_reply127) {
-                    reply127PORT(new InetSocketAddress(_engine.getLocalAddress(),
+                    reply127PORT(new InetSocketAddress(_localAddress.getAddress(),
                                                        _adapter.getClientListenerPort()));
                 }
                 startTransfer();
@@ -1169,10 +1167,14 @@ public abstract class AbstractFtpDoorV1
 
         Transfer.initSession();
 
+        _cellAddress = new CellAddressCore(getCellName(), getCellDomainName());
+        _localAddress = (InetSocketAddress) _engine.getSocket().getLocalSocketAddress();
+        _remoteAddress = (InetSocketAddress) _engine.getSocket().getRemoteSocketAddress();
+
         _out      = new PrintWriter(_engine.getWriter());
 
         _clientDataAddress =
-            new InetSocketAddress(_engine.getInetAddress(), DEFAULT_DATA_PORT);
+            new InetSocketAddress(_remoteAddress.getAddress(), DEFAULT_DATA_PORT);
 
         LOGGER.debug("Client host: {}",
                 _clientDataAddress.getAddress().getHostAddress());
@@ -1207,8 +1209,7 @@ public abstract class AbstractFtpDoorV1
          */
         _parallel = _defaultStreamsPerClient;
 
-	_origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
-                             _engine.getInetAddress());
+	_origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, _remoteAddress.getAddress());
 
         _readRetryPolicy =
             new TransferRetryPolicy(_maxRetries, _retryWait * 1000,
@@ -1216,9 +1217,6 @@ public abstract class AbstractFtpDoorV1
         _writeRetryPolicy =
             new TransferRetryPolicy(MAX_RETRIES_WRITE, 0,
                                     Long.MAX_VALUE, _poolTimeoutUnit.toMillis(_poolTimeout));
-
-        adminCommandListener = new AdminCommandListener();
-        addCommandListener(adminCommandListener);
 
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
 
@@ -1267,52 +1265,31 @@ public abstract class AbstractFtpDoorV1
         _listSource = listSource;
     }
 
-    protected AdminCommandListener adminCommandListener;
-    public class AdminCommandListener
+    public static final String hh_get_door_info = "[-binary]";
+    public Object ac_get_door_info(Args args)
     {
-        public static final String hh_get_door_info = "[-binary]";
-        public Object ac_get_door_info(Args args)
-        {
-            IoDoorInfo doorInfo = new IoDoorInfo(getCellName(),
-                                                 getCellDomainName());
-            long[] uids = (_subject != null) ? Subjects.getUids(_subject) : new long[0];
-            doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
-            doorInfo.setProcess("0");
-            FtpTransfer transfer = _transfer;
-            if (transfer != null) {
-                IoDoorEntry[] entries = { transfer.getIoDoorEntry() };
-                doorInfo.setIoDoorEntries(entries);
-                doorInfo.setProtocol("GFtp",
-                                     String.valueOf(transfer.getVersion()));
-            } else {
-                IoDoorEntry[] entries = {};
-                doorInfo.setIoDoorEntries(entries);
-                doorInfo.setProtocol("GFtp", "1");
-            }
+        IoDoorInfo doorInfo = new IoDoorInfo(_cellAddress.getCellName(), _cellAddress.getCellDomainName());
+        long[] uids = (_subject != null) ? Subjects.getUids(_subject) : new long[0];
+        doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
+        doorInfo.setProcess("0");
+        FtpTransfer transfer = _transfer;
+        if (transfer != null) {
+            IoDoorEntry[] entries = { transfer.getIoDoorEntry() };
+            doorInfo.setIoDoorEntries(entries);
+            doorInfo.setProtocol("GFtp",
+                    String.valueOf(transfer.getVersion()));
+        } else {
+            IoDoorEntry[] entries = {};
+            doorInfo.setIoDoorEntries(entries);
+            doorInfo.setProtocol("GFtp", "1");
+        }
 
-            if (args.hasOption("binary")) {
-                return doorInfo;
-            } else {
-                return doorInfo.toString();
-            }
+        if (args.hasOption("binary")) {
+            return doorInfo;
+        } else {
+            return doorInfo.toString();
         }
     }
-
-    private int spawn(String cmd, int errexit)
-    {
-        try {
-            Process p = Runtime.getRuntime().exec(cmd);
-            p.waitFor();
-            int returnCode = p.exitValue();
-            p.destroy();
-            return returnCode;
-        } catch (IOException e) {
-            return errexit;
-        } catch (InterruptedException e) {
-            return errexit;
-        }
-    }
-
 
     public void ftpcommand(String cmdline)
         throws CommandExitException
@@ -1595,10 +1572,10 @@ public abstract class AbstractFtpDoorV1
         pw.println( " Last Command  : " + _lastCommand);
         pw.println( " Command Count : " + _commandCounter);
         pw.println( "     I/O Queue : " + _ioQueueName);
-        pw.println(adminCommandListener.ac_get_door_info(new Args("")));
+        pw.println(ac_get_door_info(new Args("")));
     }
 
-     public void messageArrived(CellMessage envelope,
+    public void messageArrived(CellMessage envelope,
                                 GFtpTransferStartedMessage message)
      {
          LOGGER.debug("Received TransferStarted message");
@@ -1762,7 +1739,7 @@ public abstract class AbstractFtpDoorV1
 
     private void opts_mlst(String facts)
     {
-        Set<Fact> newFacts = new HashSet();
+        Set<Fact> newFacts = new HashSet<>();
         for (String s: facts.split(";")) {
             Fact fact = Fact.find(s);
             if (fact != null) {
@@ -2126,7 +2103,7 @@ public abstract class AbstractFtpDoorV1
                 LOGGER.info("Opening server socket for passive mode");
                 _passiveModeServerSocket = ServerSocketChannel.open();
                 _passiveModePortRange.bind(_passiveModeServerSocket.socket(),
-                                           _engine.getLocalAddress());
+                                           _localAddress.getAddress());
                 _mode = Mode.PASSIVE;
             }
             return (InetSocketAddress) _passiveModeServerSocket.socket().getLocalSocketAddress();
@@ -2609,7 +2586,7 @@ public abstract class AbstractFtpDoorV1
                             version);
         try {
             LOGGER.info("retrieve user={}", getUser());
-            LOGGER.info("retrieve addr={}", _engine.getInetAddress());
+            LOGGER.info("retrieve addr={}", _remoteAddress);
 
             transfer.readNameSpaceEntry();
             transfer.createTransactionLog();
@@ -3773,8 +3750,7 @@ public abstract class AbstractFtpDoorV1
     private void sendRemoveInfoToBilling(FsPath path) {
         try {
             DoorRequestInfoMessage infoRemove =
-                new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
-                                           getNucleus().getCellDomainName(), "remove");
+                new DoorRequestInfoMessage(_cellAddress.toString(), "remove");
             infoRemove.setSubject(_subject);
             infoRemove.setPath(path.toString());
             infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());

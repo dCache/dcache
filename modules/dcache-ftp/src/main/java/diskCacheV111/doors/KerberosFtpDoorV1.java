@@ -1,12 +1,4 @@
-/*
- * KerberosFtpDoorV1.java
- *
- * Created on May 6, 2003, 3:05 PM
- */
-
 package diskCacheV111.doors;
-
-//java util
 
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSContext;
@@ -24,13 +16,13 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
-import java.util.StringTokenizer;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import dmg.util.Args;
 import dmg.util.StreamEngine;
+import dmg.util.command.Option;
 
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
@@ -47,7 +39,14 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KerberosFtpDoorV1.class);
 
+
+    @Option(name = "svc-principal",
+            required = true)
     private String _myPrincipalStr;
+
+    @Option(name = "kdc-list")
+    private String _kdcListOption;
+
     private String[] _kdcList;
 
     /** Creates a new instance of KerberosFtpDoorV1 */
@@ -61,26 +60,11 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         throws Exception
     {
         super.init();
-
-        Args args = getArgs();
-        if( ( _myPrincipalStr = args.getOpt("svc-principal") ) == null ){
-            String problem = "KerberosFTPDoorV1: -svc-principal not specified";
-            throw new IllegalArgumentException(problem);
-        }
-        LOGGER.info("KerberosFTPDoorV1: initializing kerberos ftp door service. " +
-                "Principal is '{}'", _myPrincipalStr);
         _gssFlavor = "k5";
-        String kdclist;
-        if( ( kdclist = args.getOpt("kdc-list") ) != null ) {
-            StringTokenizer tokens = new StringTokenizer(kdclist, ",");
-            int n = tokens.countTokens();
-            _kdcList = new String[n];
-            for( int i = 0; i < n; i++ ) {
-                _kdcList[i] = tokens.nextToken();
-                LOGGER.info("KerberosFTPDoorV1: kdc[{}] = {}", i, _kdcList[i]);
-            }
+        ftpDoorName = "Kerberos FTP";
+        if (_kdcListOption != null) {
+            _kdcList = _kdcListOption.split(",");
         }
-        ftpDoorName="Kerberos FTP";
     }
 
     @Override
@@ -89,8 +73,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
             try {
                 String user =
                     Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "krbftp", action, path,
-                           _engine.getInetAddress());
+                tlog.begin(user, "krbftp", action, path, _remoteAddress.getAddress());
             }
             catch (Exception e) {
                 LOGGER.error("KerberosFTPDoorV1::startTlog: couldn't start tLog. " +
@@ -109,8 +92,8 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         GSSCredential myCredential = null;
 
         GSSManager _GManager = GSSManager.getInstance();
-        debug("KerberosFTPDoorV1::getServiceContext: calling " +
-             "_GManager.createName(\"" + _myPrincipalStr + "\", null)");
+        LOGGER.debug("KerberosFTPDoorV1::getServiceContext: calling " +
+             "_GManager.createName(\"{}\", null)", _myPrincipalStr);
         GSSName myPrincipal = _GManager.createName(_myPrincipalStr, null);
         LOGGER.info("KerberosFTPDoorV1::getServiceContext: principal=\"{}\"", myPrincipal);
 
@@ -127,8 +110,8 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
                 GSSCredential.ACCEPT_ONLY);
             }
             catch( GSSException e ) {
-                debug("KerberosFTPDoorV1::getServiceContext: got exception " +
-                      " while looking up credential: " + e.getMessage());
+                LOGGER.debug("KerberosFTPDoorV1::getServiceContext: got exception " +
+                      " while looking up credential: {}", e.getMessage());
                 error = e;
             }
         }
@@ -139,7 +122,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         GSSContext context = _GManager.createContext(myCredential);
 
         try {
-            ChannelBinding cb = new ChannelBinding(_engine.getInetAddress(),
+            ChannelBinding cb = new ChannelBinding(_remoteAddress.getAddress(),
                                                    InetAddress.getLocalHost(),
                                                    null);
             context.setChannelBinding(cb);
