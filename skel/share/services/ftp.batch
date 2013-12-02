@@ -49,8 +49,7 @@ check ftp.mover.queue
 exec file:${dcache.paths.share}/cells/stage.fragment ftp doors
 
 create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
-  "${ftp.net.port} diskCacheV111.doors.LineBasedDoor \
-   -interpreter=${ftp.implementation} \
+  "${ftp.net.port} ${ftp.implementation} \
    -listen=${ftp.net.listen} \
    -prot=raw \
    -export=${ftp.cell.export} \

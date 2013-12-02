@@ -15,7 +15,6 @@ import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
@@ -27,7 +26,6 @@ import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
 import org.dcache.cells.AbstractCell;
-import org.dcache.cells.Option;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Transfer;
 
@@ -45,17 +43,14 @@ public class LineBasedDoor
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LineBasedDoor.class);
 
-    @Option(name = "interpreter",
-            description = "Protocol interpreter",
-            required = true)
-    protected Class<LineBasedInterpreter> interpreterClass;
+    private final Class<? extends LineBasedInterpreter> interpreterClass;
 
     /**
      * Door instances are created by the LoginManager. This is the
      * stream engine passed to us from the LoginManager upon
      * instantiation.
      */
-    private StreamEngine engine;
+    private final StreamEngine engine;
 
     private LineBasedInterpreter interpreter;
 
@@ -64,22 +59,21 @@ public class LineBasedDoor
 
     /**
      * Shared executor for processing commands.
-     *
-     * FIXME: This will be created within the thread group creating
-     * the first door. This will usually be the login manager and
-     * works fine, but it isn't clean.
      */
-    private static final ExecutorService EXECUTOR =
-        Executors.newCachedThreadPool();
+    private final ExecutorService executor;
 
     private Thread workerThread;
 
-    public LineBasedDoor(String name, StreamEngine engine, Args args)
+    public LineBasedDoor(String cellName, Args args, Class<? extends LineBasedInterpreter> interpreterClass,
+                         StreamEngine engine, ExecutorService executor)
     {
-        super(name, args);
+        super(cellName, args);
+
+        this.interpreterClass = interpreterClass;
+        this.engine = engine;
+        this.executor = executor;
 
         try {
-            this.engine = engine;
             doInit();
             workerThread.start();
         } catch (InterruptedException e) {
@@ -285,7 +279,7 @@ public class LineBasedDoor
                 if (!isRunning) {
                     final CDC cdc = new CDC();
                     isRunning = true;
-                    EXECUTOR.submit(new FireAndForgetTask(new Runnable()
+                    executor.submit(new FireAndForgetTask(new Runnable()
                     {
                         @Override
                         public void run()
