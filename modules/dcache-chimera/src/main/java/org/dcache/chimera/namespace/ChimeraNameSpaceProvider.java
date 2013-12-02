@@ -3,6 +3,7 @@
  */
 package org.dcache.chimera.namespace;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
@@ -65,6 +66,7 @@ import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider
 {
+    private final static int SYMLINK_MODE = 0777;
     private JdbcFs       _fs;
     private ChimeraStorageInfoExtractable _extractor;
 
@@ -158,10 +160,8 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public PnfsId createEntry(Subject subject, String path,
-                              int uid, int gid, int mode, FileType type)
-        throws CacheException
-    {
+    public PnfsId createFile(Subject subject, String path, int uid, int gid, int mode)
+            throws CacheException {
         FsInode inode;
 
         try {
@@ -173,16 +173,10 @@ public class ChimeraNameSpaceProvider
             FsInode parent = pathToInode(subject, parentPath);
 
             if (!Subjects.isRoot(subject)) {
-                FileAttributes attributes =
-                    getFileAttributesForPermissionHandler(parent);
-                if (type == FileType.DIR) {
-                    if (_permissionHandler.canCreateSubDir(subject, attributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " + path);
-                    }
-                } else {
-                    if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " + path);
-                    }
+                FileAttributes attributes
+                        = getFileAttributesForPermissionHandler(parent);
+                if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + path);
                 }
             }
 
@@ -203,22 +197,120 @@ public class ChimeraNameSpaceProvider
             }
 
             if (mode == DEFAULT) {
-                mode = parent.statCache().getMode();
-                if (type == FileType.DIR) {
-                    mode &= UMASK_DIR;
-                } else {
-                    mode &= UMASK_FILE;
+                mode = parent.statCache().getMode() & UMASK_FILE;
+            }
+
+            inode = _fs.createFile(parent, newEntryFile.getName(), uid, gid, mode);
+        } catch (NotDirChimeraException e) {
+            throw new NotDirCacheException("Not a directory: " + path);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file or directory: " + path);
+        } catch (FileExistsChimeraFsException e) {
+            throw new FileExistsCacheException("File exists: " + path);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    e.getMessage());
+        }
+
+        return new PnfsId(inode.toString());
+    }
+
+    @Override
+    public PnfsId createDirectory(Subject subject, String path, int uid, int gid, int mode)
+            throws CacheException {
+        FsInode inode;
+
+        try {
+            File newEntryFile = new File(path);
+            String parentPath = newEntryFile.getParent();
+            if (parentPath == null) {
+                throw new FileExistsCacheException("File exists: " + path);
+            }
+            FsInode parent = pathToInode(subject, parentPath);
+
+            if (!Subjects.isRoot(subject)) {
+                FileAttributes attributes
+                        = getFileAttributesForPermissionHandler(parent);
+                if (_permissionHandler.canCreateSubDir(subject, attributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + path);
                 }
             }
 
-            if( type == FileType.DIR ) {
-                inode = _fs.mkdir(parent, newEntryFile.getName(), uid, gid, mode);
-            }else if (type == FileType.REGULAR) {
-                inode = _fs.createFile(parent, newEntryFile.getName(), uid, gid, mode);
-            } else {
-                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                        "Unsupported object type: " + type);
+            if (uid == DEFAULT) {
+                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
+                    uid = parent.statCache().getUid();
+                } else {
+                    uid = (int) Subjects.getUid(subject);
+                }
             }
+
+            if (gid == DEFAULT) {
+                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
+                    gid = parent.statCache().getGid();
+                } else {
+                    gid = (int) Subjects.getPrimaryGid(subject);
+                }
+            }
+
+            if (mode == DEFAULT) {
+                mode = parent.statCache().getMode() & UMASK_DIR;
+            }
+
+            inode = _fs.mkdir(parent, newEntryFile.getName(), uid, gid, mode);
+        } catch (NotDirChimeraException e) {
+            throw new NotDirCacheException("Not a directory: " + path);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file or directory: " + path);
+        } catch (FileExistsChimeraFsException e) {
+            throw new FileExistsCacheException("File exists: " + path);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    e.getMessage());
+        }
+
+        return new PnfsId(inode.toString());
+    }
+
+    @Override
+    public PnfsId createSymLink(Subject subject, String path, String dest, int uid, int gid)
+        throws CacheException
+    {
+        FsInode inode;
+
+        try {
+            File newEntryFile = new File(path);
+            String parentPath = newEntryFile.getParent();
+            if (parentPath == null) {
+                throw new FileExistsCacheException("File exists: " + path);
+            }
+            FsInode parent = pathToInode(subject, parentPath);
+
+            if (!Subjects.isRoot(subject)) {
+                FileAttributes attributes
+                        = getFileAttributesForPermissionHandler(parent);
+                if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + path);
+                }
+            }
+
+            if (uid == DEFAULT) {
+                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
+                    uid = parent.statCache().getUid();
+                } else {
+                    uid = (int) Subjects.getUid(subject);
+                }
+            }
+
+            if (gid == DEFAULT) {
+                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
+                    gid = parent.statCache().getGid();
+                } else {
+                    gid = (int) Subjects.getPrimaryGid(subject);
+                }
+            }
+
+            inode = _fs.createLink(parent, newEntryFile.getName(), uid, gid,
+                    SYMLINK_MODE, dest.getBytes(Charsets.UTF_8));
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);
         } catch (FileNotFoundHimeraFsException e) {

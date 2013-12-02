@@ -11,7 +11,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
@@ -21,9 +20,21 @@ public class AbstractNameSpaceProvider
     implements NameSpaceProvider
 {
     @Override
-    public PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, FileType type)
+    public PnfsId createFile(Subject subject, String path, int uid, int gid, int mode)
         throws CacheException
     {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PnfsId createDirectory(Subject subject, String path, int uid, int gid, int mode)
+            throws CacheException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PnfsId createSymLink(Subject subject, String path, String dest, int uid, int gid)
+            throws CacheException {
         throw new UnsupportedOperationException();
     }
 

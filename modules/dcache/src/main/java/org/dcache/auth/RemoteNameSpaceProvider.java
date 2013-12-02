@@ -52,23 +52,31 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public PnfsId createEntry(Subject subject, String path, int uid, int gid,
-            int mode, FileType type) throws CacheException
-    {
+    public PnfsId createFile(Subject subject, String path, int uid, int gid, int mode)
+            throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
 
-        PnfsCreateEntryMessage returnMsg;
-
-        if(type == FileType.DIR) {
-            returnMsg = pnfs.createPnfsDirectory(path, uid, gid, mode);
-        } else if (type == FileType.REGULAR) {
-            returnMsg = pnfs.createPnfsEntry(path, uid, gid, mode);
-        } else {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    "Unsupported object type: " + type);
-        }
+        PnfsCreateEntryMessage returnMsg = pnfs.createPnfsEntry(path, uid, gid, mode);
 
         return returnMsg.getPnfsId();
+    }
+
+    @Override
+    public PnfsId createDirectory(Subject subject, String path, int uid, int gid, int mode)
+            throws CacheException {
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
+
+        PnfsCreateEntryMessage returnMsg = pnfs.createPnfsDirectory(path, uid, gid, mode);
+
+        return returnMsg.getPnfsId();
+    }
+
+    @Override
+    public PnfsId createSymLink(Subject subject, String path, String dest,
+            int uid, int gid) throws CacheException
+    {
+        throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                    "Link creation not supported");
     }
 
     @Override

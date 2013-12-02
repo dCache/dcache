@@ -998,10 +998,10 @@ public class PnfsManagerV3
             checkMask(pnfsMessage.getSubject(), file.getParent(),
                       pnfsMessage.getAccessMask());
 
-            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(),
+            pnfsId = _nameSpaceProvider.createDirectory(pnfsMessage.getSubject(),
                     pnfsMessage.getPath(),
                     pnfsMessage.getUid(), pnfsMessage.getGid(),
-                    pnfsMessage.getMode(), FileType.DIR);
+                    pnfsMessage.getMode());
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
@@ -1049,10 +1049,10 @@ public class PnfsManagerV3
             checkMask(pnfsMessage.getSubject(), file.getParent(),
                       pnfsMessage.getAccessMask());
 
-            pnfsId = _nameSpaceProvider.createEntry(pnfsMessage.getSubject(),
+            pnfsId = _nameSpaceProvider.createFile(pnfsMessage.getSubject(),
                     pnfsMessage.getPath(),
                     pnfsMessage.getUid(),pnfsMessage.getGid(),
-                    pnfsMessage.getMode(), FileType.REGULAR);
+                    pnfsMessage.getMode());
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
