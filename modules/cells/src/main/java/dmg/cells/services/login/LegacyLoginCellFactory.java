@@ -1,5 +1,7 @@
 package dmg.cells.services.login;
 
+import com.google.common.util.concurrent.AbstractService;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -11,7 +13,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Reflection based LoginCellFactory for LoginCells with binary constructors.
  */
-public class LegacyLoginCellFactory implements LoginCellFactory
+public class LegacyLoginCellFactory extends AbstractService implements LoginCellFactory
 {
     private final Constructor<? extends Cell> _loginConstructor;
     private final String _cellName;
@@ -40,7 +42,14 @@ public class LegacyLoginCellFactory implements LoginCellFactory
     }
 
     @Override
-    public void shutdown()
+    protected void doStart()
     {
+        notifyStarted();
+    }
+
+    @Override
+    protected void doStop()
+    {
+        notifyStopped();
     }
 }

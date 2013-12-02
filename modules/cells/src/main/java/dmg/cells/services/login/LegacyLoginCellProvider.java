@@ -20,7 +20,11 @@ public class LegacyLoginCellProvider implements LoginCellProvider
     public int getPriority(String name)
     {
         try {
-            Class<? extends Cell> loginClass = Class.forName(name).asSubclass(Cell.class);
+            Class<?> clazz = Class.forName(name);
+            if (!Cell.class.isAssignableFrom(clazz)) {
+                return Integer.MIN_VALUE;
+            }
+            Class<? extends Cell> loginClass = clazz.asSubclass(Cell.class);
             Constructor<? extends Cell> constructor;
             try {
                 constructor = loginClass.getConstructor(LOGIN_CON_WITH_ARGS_SIGNATURE);

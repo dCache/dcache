@@ -81,7 +81,6 @@ public class LoginManager
     private final AtomicInteger _loginFailures = new AtomicInteger();
     private final CellVersion _version;
     private final Constructor<?> _authConstructor;
-    private final ExecutorService _executor;
     private final ScheduledExecutorService _scheduledExecutor;
     private final ConcurrentMap<String, Object> _children = new ConcurrentHashMap<>();
     private final CellPath _authenticator;
@@ -133,21 +132,15 @@ public class LoginManager
                                 " [args givenToLoginClass]");
             }
 
-            _protocol = checkProtocol(_args.getOpt("prot"));
-            LOGGER.info("Using protocol : {}", _protocol);
-
             int listenPort = Integer.parseInt(_args.argv(0));
+            String loginCell = _args.argv(1);
 
             Args childArgs = new Args(argString.replaceFirst("(^|\\s)-export($|\\s)", ""));
             childArgs.shift();
             childArgs.shift();
 
-            _loginCellFactory = new LoginCellFactoryBuilder()
-                    .setName(_args.argv(1))
-                    .setLoginManagerName(getCellName())
-                    .setArgs(childArgs)
-                    .build();
-            _version = new CellVersion(Version.of(_loginCellFactory));
+            _protocol = checkProtocol(_args.getOpt("prot"));
+            LOGGER.info("Using protocol : {}", _protocol);
 
             // get the authentication
             _authenticator = new CellPath(_args.getOption("authenticator", "pam"));
@@ -168,6 +161,28 @@ public class LoginManager
                     _maxLogin = Integer.parseInt(maxLogin);
                 } catch (NumberFormatException ee) {/* bad values ignored */}
             }
+
+            if (_maxLogin < 0) {
+                LOGGER.info("Maximum login feature disabled");
+            } else {
+                _nucleus.addCellEventListener(new LoginEventListener());
+                LOGGER.info("Maximum logins set to: {}", _maxLogin);
+            }
+
+            // keep alive
+            long keepAlive = TimeUnit.SECONDS.toMillis(_args.getLongOption("keepAlive", 0L));
+            LOGGER.info("Keep alive set to {} ms", keepAlive);
+            _keepAlive = new KeepAliveThread(keepAlive);
+
+            // get the location manager
+            _locationManager = _args.getOpt("lm");
+
+            _loginCellFactory = new LoginCellFactoryBuilder()
+                    .setName(loginCell)
+                    .setLoginManagerName(getCellName())
+                    .setArgs(childArgs)
+                    .build();
+            _version = new CellVersion(Version.of(_loginCellFactory));
 
             _listenThread = new ListenThread(listenPort);
             LOGGER.info("Listening on port {}", _listenThread.getListenPort());
@@ -201,23 +216,6 @@ public class LoginManager
             } else {
                 _loginBrokerHandler = null;
             }
-
-            if (_maxLogin < 0) {
-                LOGGER.info("Maximum login feature disabled");
-            } else {
-                _nucleus.addCellEventListener(new LoginEventListener());
-                LOGGER.info("Maximum logins set to: {}", _maxLogin);
-            }
-
-            // keep alive
-            long keepAlive = TimeUnit.SECONDS.toMillis(_args.getLongOption("keepAlive", 0L));
-            LOGGER.info("Keep alive set to {} ms", keepAlive);
-            _keepAlive = new KeepAliveThread(keepAlive);
-
-            // get the location manager
-            _locationManager = _args.getOpt("lm");
-
-            _executor = Executors.newCachedThreadPool(_nucleus);
 
             _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
             _nucleus.newThread(new LocationThread(), getCellName() + "-location").start();
@@ -524,12 +522,6 @@ public class LoginManager
         if (_scheduledExecutor != null) {
             _scheduledExecutor.shutdown();
         }
-        if (_executor != null) {
-            _executor.shutdown();
-        }
-        if (_loginCellFactory != null) {
-            _loginCellFactory.shutdown();
-        }
         LOGGER.info("Bye Bye");
     }
 
@@ -551,20 +543,6 @@ public class LoginManager
             } catch (NumberFormatException ee) { /* bad values ignored */}
 
             openPort();
-        }
-
-        private void startLoginBrokerUpdates()
-        {
-            if (_loginBrokerHandler != null) {
-                _loginBrokerHandler.start();
-            }
-        }
-
-        private void stopLoginBrokerUpdates()
-        {
-            if (_loginBrokerHandler != null) {
-                _loginBrokerHandler.stop();
-            }
         }
 
         private void openPort() throws Exception
@@ -694,9 +672,9 @@ public class LoginManager
         public void run()
         {
             _this = Thread.currentThread();
-
+            ExecutorService executor = Executors.newCachedThreadPool(_nucleus);
             try {
-                startLoginBrokerUpdates();
+                _loginCellFactory.startAsync().awaitRunning();
                 while (true) {
                     Socket socket;
                     try {
@@ -717,9 +695,9 @@ public class LoginManager
                             continue;
                         }
                         LOGGER.info("Connection request from {}", socket.getInetAddress());
-                        _executor.execute(new RunEngineThread(socket));
+                        executor.execute(new RunEngineThread(socket));
                     } catch (InterruptedIOException ioe) {
-                        LOGGER.warn("Listen thread interrupted");
+                        LOGGER.debug("Listen thread interrupted");
                         try {
                             _serverSocket.close();
                         } catch (IOException e) {
@@ -763,12 +741,21 @@ public class LoginManager
                             }
                         }
                     }
-
                 }
             } finally {
-                stopLoginBrokerUpdates();
+                executor.shutdown();
+                try {
+                    executor.awaitTermination(1, TimeUnit.MINUTES);
+                } catch (InterruptedException ignored) {
+                }
+                for (Object child : _children.values()) {
+                    if (child instanceof CellAdapter) {
+                        getNucleus().kill(((CellAdapter) child).getCellName());
+                    }
+                }
+                _loginCellFactory.stopAsync();
+                LOGGER.debug("Listen thread finished");
             }
-            LOGGER.info("Listen thread finished");
         }
 
 
@@ -879,10 +866,8 @@ public class LoginManager
 
                 String userName = Subjects.getDisplayName(engine.getSubject());
                 LOGGER.info("acceptThread ({}): connection created for user {}", t, userName);
-                Object[] args;
 
                 int p = userName.indexOf('@');
-
                 if (p > -1) {
                     userName = p == 0 ? "unknown" : userName.substring(0, p);
                 }

@@ -27,7 +27,7 @@ public interface LoginCellProvider
      * @param args Arguments for the login cell
      * @param parentCellName Name of the parent login manager
      * @return A new LoginCellFactory
-     * @see LoginCellFactory#shutdown
+     * @see LoginCellFactory#stop
      */
     LoginCellFactory createFactory(String name, Args args, String parentCellName)
         throws IllegalArgumentException;

@@ -1,5 +1,7 @@
 package dmg.cells.services.login;
 
+import com.google.common.util.concurrent.Service;
+
 import java.lang.reflect.InvocationTargetException;
 
 import dmg.cells.nucleus.Cell;
@@ -8,7 +10,7 @@ import dmg.util.StreamEngine;
 /**
  * Factory for creating login cells.
  */
-public interface LoginCellFactory
+public interface LoginCellFactory extends Service
 {
     /**
      * Returns an identifier of the type of login cells being created
@@ -27,10 +29,4 @@ public interface LoginCellFactory
      */
     Cell newCell(StreamEngine engine, String userName)
             throws InvocationTargetException;
-
-    /**
-     * Shuts down this factory. This gives the factory a chance to release any
-     * shared resources.
-     */
-    void shutdown();
 }
