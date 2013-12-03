@@ -1,6 +1,7 @@
 package dmg.cells.services.login;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,6 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
@@ -184,9 +184,6 @@ public class LoginManager
                     .build();
             _version = new CellVersion(Version.of(_loginCellFactory));
 
-            _listenThread = new ListenThread(listenPort);
-            LOGGER.info("Listening on port {}", _listenThread.getListenPort());
-
             _scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
             String loginBroker = _args.getOpt("loginBroker");
@@ -195,10 +192,8 @@ public class LoginManager
                 _loginBrokerHandler = new LoginBrokerHandler();
                 _loginBrokerHandler.beforeSetup();
                 _loginBrokerHandler.setExecutor(_scheduledExecutor);
-                _loginBrokerHandler.setAddresses(_listenThread.getInetAddress());
                 _loginBrokerHandler.setLoginBrokers(Iterables.toArray(loginBrokers, String.class));
                 _loginBrokerHandler.setCellEndpoint(this);
-                _loginBrokerHandler.setPort(_listenThread.getListenPort());
                 _loginBrokerHandler.setProtocolEngine(_loginCellFactory.getName());
                 _loginBrokerHandler.setProtocolFamily(_args.getOption("protocolFamily", _protocol));
                 _loginBrokerHandler.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
@@ -216,6 +211,8 @@ public class LoginManager
             } else {
                 _loginBrokerHandler = null;
             }
+
+            _listenThread = new ListenThread(listenPort);
 
             _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
             _nucleus.newThread(new LocationThread(), getCellName() + "-location").start();
@@ -527,44 +524,39 @@ public class LoginManager
 
     private class ListenThread implements Runnable
     {
-        private int _listenPort;
+        private static final int SHUTDOWN_TIMEOUT = 60000;
+
+        private final InetSocketAddress _socketAddress;
+        private final Constructor<?> _ssfConstructor;
+        private final String[] _farctoryArgs;
+        private final long _acceptErrorTimeout;
+        private final boolean _isDedicated;
+
+        private volatile boolean _shutdown;
         private ServerSocket _serverSocket;
-        private boolean _shutdown;
-        private Thread _this;
-        private long _acceptErrorTimeout;
-        private boolean _isDedicated;
 
         private ListenThread(int listenPort) throws Exception
         {
-            _listenPort = listenPort;
-
+            long timeout;
             try {
-                _acceptErrorTimeout = Long.parseLong(_args.getOpt("acceptErrorWait"));
-            } catch (NumberFormatException ee) { /* bad values ignored */}
+                timeout = Long.parseLong(_args.getOpt("acceptErrorWait"));
+            } catch (NumberFormatException e) {
+                /* bad values ignored */
+                timeout = 0;
+            }
+            _acceptErrorTimeout = timeout;
 
-            openPort();
-        }
-
-        private void openPort() throws Exception
-        {
-            String ssf = _args.getOpt("socketfactory");
-            String local = _args.getOpt("listen");
-
-            if (ssf == null) {
-                SocketAddress socketAddress;
-
-                if (local == null || local.equals("any")) {
-                    socketAddress = new InetSocketAddress(_listenPort);
-                } else {
-                    socketAddress = new InetSocketAddress(InetAddress.getByName(local), _listenPort);
-                    _isDedicated = true;
-                }
-
-                _serverSocket = ServerSocketChannel.open().socket();
-                _serverSocket.bind(socketAddress);
-                _listenPort = _serverSocket.getLocalPort();
-
+            String listen = _args.getOpt("listen");
+            if (listen == null || listen.equals("any")) {
+                _socketAddress = new InetSocketAddress(listenPort);
+                _isDedicated = false;
             } else {
+                _socketAddress = new InetSocketAddress(InetAddress.getByName(listen), listenPort);
+                _isDedicated = true;
+            }
+
+            String ssf = _args.getOpt("socketfactory");
+            if (ssf != null) {
                 StringTokenizer st = new StringTokenizer(ssf, ",");
 
                 /*
@@ -574,70 +566,71 @@ public class LoginManager
                 checkArgument(st.countTokens() >= 2, "Invalid Arguments for 'socketfactory'");
 
                 String tunnelFactoryClass = st.nextToken();
+
                 /*
                  * the rest is passed to factory constructor as String[]
                  */
-                String[] farctoryArgs = new String[st.countTokens()];
+                _farctoryArgs = new String[st.countTokens()];
                 for (int i = 0; st.hasMoreTokens(); i++) {
-                    farctoryArgs[i] = st.nextToken();
+                    _farctoryArgs[i] = st.nextToken();
                 }
-
-
-                Class<?>[] constructorArgClassA = {String[].class, Map.class};
-                Class<?>[] constructorArgClassB = {String[].class};
 
                 Class<?> ssfClass = Class.forName(tunnelFactoryClass);
-                Object[] args;
-
-                Constructor<?> ssfConstructor;
+                Constructor<?> constructor;
                 try {
-                    ssfConstructor = ssfClass.getConstructor(constructorArgClassA);
-                    args = new Object[2];
-                    args[0] = farctoryArgs;
-                    Map<String, Object> map = newHashMap(getDomainContext());
-                    map.put("UserValidatable", LoginManager.this);
-                    args[1] = map;
+                    constructor = ssfClass.getConstructor(String[].class, Map.class);
                 } catch (Exception ee) {
-                    ssfConstructor = ssfClass.getConstructor(constructorArgClassB);
-                    args = new Object[1];
-                    args[0] = farctoryArgs;
+                    constructor = ssfClass.getConstructor(String[].class);
                 }
-
-                Object obj;
-                try {
-                    obj = ssfConstructor.newInstance(args);
-                } catch (InvocationTargetException e) {
-                    Throwable t = e.getCause();
-                    if (t instanceof Exception) {
-                        throw (Exception) t;
-                    } else {
-                        throw new Exception(t.getMessage(), t);
-                    }
-                }
-
-                Method meth = ssfClass.getMethod("createServerSocket", new Class[0]);
-                _serverSocket = (ServerSocket) meth.invoke(obj);
-
-                if (local == null || local.equals("any")) {
-                    _serverSocket.bind(new InetSocketAddress(_listenPort));
-                } else {
-                    _serverSocket.bind(new InetSocketAddress(InetAddress.getByName(local), _listenPort));
-                    _isDedicated = true;
-                }
-
-                LOGGER.info("ListenThread : got serverSocket class : {}", _serverSocket.getClass().getName());
+                _ssfConstructor = constructor;
+            } else {
+                _ssfConstructor = null;
+                _farctoryArgs = null;
             }
 
-            LOGGER.debug("Socket BIND local = {}", _serverSocket.getLocalSocketAddress());
-            LOGGER.info("Nio Socket Channel : {}", (_serverSocket.getChannel() != null));
+            openPort();
+        }
+
+        private void openPort() throws Exception
+        {
+            if (_ssfConstructor == null) {
+                _serverSocket = ServerSocketChannel.open().socket();
+            } else {
+                Object obj;
+                try {
+                    if (_ssfConstructor.getParameterTypes().length == 2) {
+                        Map<String, Object> map = newHashMap(getDomainContext());
+                        map.put("UserValidatable", LoginManager.this);
+                        obj = _ssfConstructor.newInstance(_farctoryArgs, map);
+                    } else {
+                        obj = _ssfConstructor.newInstance(new Object[] { _farctoryArgs });
+                    }
+                } catch (InvocationTargetException e) {
+                    Throwables.propagateIfPossible(e.getCause(), Exception.class);
+                    throw new RuntimeException(e);
+                }
+
+                Method meth = obj.getClass().getMethod("createServerSocket");
+                _serverSocket = (ServerSocket) meth.invoke(obj);
+                LOGGER.info("ListenThread : got serverSocket class : {}", _serverSocket.getClass().getName());
+            }
+            _serverSocket.bind(_socketAddress);
+
+            if (_loginBrokerHandler != null) {
+                _loginBrokerHandler.setPort(getListenPort());
+                _loginBrokerHandler.setAddresses(getInetAddresses());
+            }
+
+            LOGGER.info("Listening on {}", _serverSocket.getLocalSocketAddress());
+            LOGGER.trace("Nio Socket Channel : {}", (_serverSocket.getChannel() != null));
         }
 
         public int getListenPort()
         {
-            return _listenPort;
+            return _serverSocket.getLocalPort();
         }
 
-        public List<InetAddress> getInetAddress()
+        public List<InetAddress> getInetAddresses()
         {
             if (!_isDedicated) {
                 // put all local Ip addresses, except loopback
@@ -671,14 +664,12 @@ public class LoginManager
         @Override
         public void run()
         {
-            _this = Thread.currentThread();
             ExecutorService executor = Executors.newCachedThreadPool(_nucleus);
             try {
                 _loginCellFactory.startAsync().awaitRunning();
-                while (true) {
-                    Socket socket;
+                while (!_serverSocket.isClosed()) {
                     try {
-                        socket = _serverSocket.accept();
+                        Socket socket = _serverSocket.accept();
                         socket.setKeepAlive(true);
                         socket.setTcpNoDelay(true);
                         LOGGER.debug("Socket OPEN (ACCEPT) remote = {} local = {}",
@@ -690,119 +681,87 @@ public class LoginManager
                         if ((_maxLogin > -1) && (currentChildCount >= _maxLogin)) {
                             _connectionDeniedCounter.incrementAndGet();
                             LOGGER.warn("Connection denied: Number of allowed logins exceeded ({} > {}).", currentChildCount, _maxLogin);
-                            ShutdownEngine engine = new ShutdownEngine(socket);
-                            engine.start();
-                            continue;
+                            executor.execute(new ShutdownEngine(socket));
+                        } else {
+                            LOGGER.info("Connection request from {}", socket.getInetAddress());
+                            executor.execute(new RunEngineThread(socket));
                         }
-                        LOGGER.info("Connection request from {}", socket.getInetAddress());
-                        executor.execute(new RunEngineThread(socket));
                     } catch (InterruptedIOException ioe) {
                         LOGGER.debug("Listen thread interrupted");
                         try {
                             _serverSocket.close();
-                        } catch (IOException e) {
-                            ioe.addSuppressed(e);
+                        } catch (IOException ignored) {
                         }
-                        break;
                     } catch (IOException ioe) {
-                        if (_serverSocket.isClosed()) {
-                            break;
-                        }
-
-                        LOGGER.warn("Got an IO Exception ( closing server ) : {}", ioe.toString());
-                        try {
-                            _serverSocket.close();
-                        } catch (IOException e) {
-                            ioe.addSuppressed(e);
-                        }
-                        if (_acceptErrorTimeout <= 0L) {
-                            break;
-                        }
-                        LOGGER.warn("Waiting {} msecs", +_acceptErrorTimeout);
-                        try {
-                            Thread.sleep(_acceptErrorTimeout);
-                        } catch (InterruptedException ee) {
-                            LOGGER.warn("Recovery halt interrupted");
-                            break;
-                        }
-                        LOGGER.warn("Resuming listener");
-                        try {
-
-                            openPort();
-
-                        } catch (Exception ee) {
-                            LOGGER.warn("openPort reported : {}", ee.toString());
-                            LOGGER.warn("Waiting {} msecs", _acceptErrorTimeout);
+                        if (!_serverSocket.isClosed()) {
+                            LOGGER.error("I/O error: {}", ioe.toString());
                             try {
-                                Thread.sleep(_acceptErrorTimeout);
-                            } catch (InterruptedException eee) {
-                                LOGGER.warn("Recovery halt interrupted");
-                                break;
+                                _serverSocket.close();
+                            } catch (IOException ignored) {
+                            }
+                            if (_acceptErrorTimeout > 0L) {
+                                synchronized (this) {
+                                    while (!_shutdown && _serverSocket.isClosed()) {
+                                        LOGGER.warn("Sleeping {} ms before reopening server socket", _acceptErrorTimeout);
+                                        wait(_acceptErrorTimeout);
+                                        if (!_shutdown) {
+                                            try {
+                                                openPort();
+                                                LOGGER.warn("Resuming operation");
+                                            } catch (Exception ee) {
+                                                LOGGER.warn("Failed to open socket: {}", ee.toString());
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
+            } catch (InterruptedException ignored) {
             } finally {
-                executor.shutdown();
-                try {
-                    executor.awaitTermination(1, TimeUnit.MINUTES);
-                } catch (InterruptedException ignored) {
-                }
-                for (Object child : _children.values()) {
-                    if (child instanceof CellAdapter) {
-                        getNucleus().kill(((CellAdapter) child).getCellName());
-                    }
-                }
+                // Initiate shutdown of children as early as possible
+                terminateChildren();
+                shutdownAndAwaitTermination(executor);
+                // At this point we know that no new children will be added
+                terminateChildren();
+                awaitTerminationOfChildren();
+                // Now that children should be terminated, we release any shared
+                // resources managed by the factory.
                 _loginCellFactory.stopAsync();
-                LOGGER.debug("Listen thread finished");
+                LOGGER.trace("Listen thread finished");
             }
         }
 
-
-        /**
-         * Class that closes the output half of a TCP socket, drains any pending input and closes the input once drained.
-         * After creation, the {@link #start} method must be called.  The activity occurs on a separate thread, allowing
-         * the start method to be non-blocking.
-         */
-        public class ShutdownEngine extends Thread
+        private void shutdownAndAwaitTermination(ExecutorService executor)
         {
-            private final Socket _socket;
-
-            public ShutdownEngine(Socket socket)
-            {
-                super("Shutdown");
-                _socket = socket;
+            executor.shutdown();
+            try {
+                executor.awaitTermination(SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
+        }
 
-            @Override
-            public void run()
-            {
-                InputStream inputStream;
-                OutputStream outputStream;
-                try {
-                    inputStream = _socket.getInputStream();
-                    outputStream = _socket.getOutputStream();
-                    outputStream.close();
-                    byte[] buffer = new byte[1024];
-                    /*
-                     * eat the outstanding date from socket and close it
-                     */
-                    while (inputStream.read(buffer, 0, buffer.length) > 0) {
-                    }
-                    inputStream.close();
-                } catch (IOException ee) {
-                    LOGGER.warn("Shutdown : {}", ee.getMessage());
-                } finally {
-                    try {
-                        LOGGER.debug("Socket CLOSE (ACCEPT) remote = {} local = {}",
-                                _socket.getRemoteSocketAddress(), _socket.getLocalSocketAddress());
-                        _socket.close();
-                    } catch (IOException e) {
-                        // ignore
+        private void awaitTerminationOfChildren()
+        {
+            try {
+                for (Object child : _children.values()) {
+                    if (child instanceof CellAdapter) {
+                        getNucleus().join(((CellAdapter) child).getCellName());
                     }
                 }
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
 
-                LOGGER.info("Shutdown : done");
+        private void terminateChildren()
+        {
+            for (Object child : _children.values()) {
+                if (child instanceof CellAdapter) {
+                    getNucleus().kill(((CellAdapter) child).getCellName());
+                }
             }
         }
 
@@ -824,18 +783,55 @@ public class LoginManager
                 LOGGER.warn("ServerSocket close: {}", ee.toString());
             }
 
-            if (_serverSocket.getChannel() == null) {
-                LOGGER.info("Using faked connect to shutdown listen port");
+            notifyAll();
+
+            LOGGER.info("Shutdown sequence done");
+        }
+    }
+
+    /**
+     * Class that closes the output half of a TCP socket, drains any pending input and closes the input once drained.
+     * After creation, the {@link #start} method must be called.  The activity occurs on a separate thread, allowing
+     * the start method to be non-blocking.
+     */
+    public static class ShutdownEngine implements Runnable
+    {
+        private final Socket _socket;
+
+        public ShutdownEngine(Socket socket)
+        {
+            _socket = socket;
+        }
+
+        @Override
+        public void run()
+        {
+            InputStream inputStream;
+            OutputStream outputStream;
+            try {
+                inputStream = _socket.getInputStream();
+                outputStream = _socket.getOutputStream();
+                outputStream.close();
+                byte[] buffer = new byte[1024];
+                    /*
+                     * eat the outstanding date from socket and close it
+                     */
+                while (inputStream.read(buffer, 0, buffer.length) > 0) {
+                }
+                inputStream.close();
+            } catch (IOException ee) {
+                LOGGER.warn("Shutdown : {}", ee.getMessage());
+            } finally {
                 try {
-                    new Socket("localhost", _listenPort).close();
+                    LOGGER.debug("Socket CLOSE (ACCEPT) remote = {} local = {}",
+                            _socket.getRemoteSocketAddress(), _socket.getLocalSocketAddress());
+                    _socket.close();
                 } catch (IOException e) {
-                    LOGGER.debug("ServerSocket faked connect: {}", e.getMessage());
+                    // ignore
                 }
             }
 
-            _this.interrupt();
-
-            LOGGER.info("Shutdown sequence done");
+            LOGGER.info("Shutdown : done");
         }
     }
 

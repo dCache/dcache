@@ -591,6 +591,21 @@ public class CellNucleus implements ThreadFactory
     /**
      * Blocks until the given cell is dead.
      *
+     * @throws InterruptedException if another thread interrupted the
+     * current thread before or while the current thread was waiting
+     * for a notification. The interrupted status of the current
+     * thread is cleared when this exception is thrown.
+     * @return True if the cell died, false in case of a timeout.
+     */
+    public boolean join(String cellName)
+        throws InterruptedException
+    {
+        return __cellGlue.join(cellName, 0);
+    }
+
+    /**
+     * Blocks until the given cell is dead.
+     *
      * @param timeout the maximum time to wait in milliseconds.
      * @throws InterruptedException if another thread interrupted the
      * current thread before or while the current thread was waiting
