@@ -66,12 +66,19 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.doors;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Predicate;
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.BufferedOutputStream;
@@ -83,19 +90,26 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -295,6 +309,55 @@ public abstract class AbstractFtpDoorV1
                 }
             }
             return null;
+        }
+    }
+
+
+    /**
+     * Enumeration type for representing RFC 2428 protocol families.
+     *
+     * EPSV and EPRT commands
+     */
+    protected enum Protocol {
+
+        IPV4(Inet4Address.class),
+        IPV6(Inet6Address.class);
+
+        private Class<? extends InetAddress> _class;
+
+        Protocol(Class<? extends InetAddress> addressClass) {
+           _class = addressClass;
+        }
+
+        public static Protocol fromAddress(InetAddress c) {
+            if (c.getClass().equals(Inet4Address.class)) {
+               return IPV4;
+            } else {
+               return IPV6;
+            }
+        }
+
+        /**
+         * find finds the matching enum element for a given protocol code
+         * @param code protocol code as defined in RFC2428: 1 for IPv4, 2 for IPv6
+         * @return Protocol (IPV4 or IPV6)
+         * @throws FTPCommandException if a code other than 1 or 2 is passed as argument
+         */
+        public static Protocol find(String code) throws FTPCommandException {
+            switch (code) {
+                case "1": return IPV4;
+                case "2": return IPV6;
+                default: throw new FTPCommandException(522, "Unknown protocol family '"+code+". "+
+                        "Known protocol families are 1: IPv4 and 2: IPv6, use one of (1,2)");
+            }
+        }
+
+        /**
+         * getAddressClass gets the address class associated with this enum element
+         * @return class type (Inet4Address or Inet6Address)
+         */
+        public Class<? extends InetAddress> getAddressClass() {
+            return _class;
         }
     }
 
@@ -620,6 +683,14 @@ public abstract class AbstractFtpDoorV1
     protected String _gReplyType = "clear";
 
     protected Mode _mode = Mode.ACTIVE;
+
+    protected Protocol _preferredProtocol;
+    /**
+     * if _sessionAllPassive is set to true, all
+     * future transfers in the session will use
+     * passive mode. The flag is set by ftp_epsv.
+     */
+    protected boolean _sessionAllPassive = false;
 
     //These are the number of parallel streams to have
     //when doing mode e transfers
@@ -1157,6 +1228,8 @@ public abstract class AbstractFtpDoorV1
             _local_host = _localAddress.getAddress().getHostAddress();
         }
 
+        _preferredProtocol = Protocol.fromAddress(_clientDataAddress.getAddress());
+
         _billingStub =
                 new CellStub(_cellEndpoint, new CellPath(_billing));
         _poolManagerStub =
@@ -1348,6 +1421,7 @@ public abstract class AbstractFtpDoorV1
                         e.getMessage());
             }
             _passiveModeServerSocket = null;
+            _sessionAllPassive = false;
         }
     }
 
@@ -1946,25 +2020,73 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void setActive(InetSocketAddress address)
+    protected InetSocketAddress getExtendedAddressOf(String arg) throws FTPCommandException
     {
+        try {
+            if (arg.isEmpty()) {
+                throw new FTPCommandException(501, "Syntax error: empty arguments.");
+            }
+            ArrayList<String> splitted = Lists.newArrayList(Splitter.on(arg.charAt(0)).split(arg));
+            if (splitted.size() != 5) {
+                throw new FTPCommandException(501, "Syntax error: Wrong number of arguments in '"+arg+"'.");
+            }
+            Protocol protocol = Protocol.find(splitted.get(1));
+            if (!InetAddresses.isInetAddress(splitted.get(2))) {
+                throw new FTPCommandException(501, "Syntax error: '"+splitted.get(2)+"' is no valid address.");
+            }
+            InetAddress address = InetAddresses.forString(splitted.get(2));
+            if (!protocol.getAddressClass().equals(address.getClass())) {
+                throw new FTPCommandException(501, "Protocol code does not match address: '"+arg+"'.");
+            }
+            int port = Integer.parseInt(splitted.get(3));
+            if (port < 1 || port > 65536) {
+                throw new FTPCommandException(501, "Port number '"+port+"' out of range [1,65536].");
+            }
+            return new InetSocketAddress(address, port);
+
+        } catch (NumberFormatException nfe) {
+            throw new FTPCommandException(501, "Syntax error: no valid port number in '"+arg+"'.");
+        }
+    }
+
+    protected void setActive(InetSocketAddress address) throws FTPCommandException
+    {
+        if (_sessionAllPassive) {
+            throw new FTPCommandException(503, "PORT and EPRT not allowed after EPSV ALL.");
+        }
+
         _mode = Mode.ACTIVE;
         _clientDataAddress = address;
         closePassiveModeServerSocket();
     }
 
-    private InetSocketAddress setPassive()
+    @VisibleForTesting
+    InetSocketAddress setPassive()
         throws FTPCommandException
     {
         try {
             if (_passiveModeServerSocket == null) {
                 LOGGER.info("Opening server socket for passive mode");
+                if (!Protocol.fromAddress(_localAddress.getAddress()).equals(_preferredProtocol)) {
+                    List<InterfaceAddress> addresses = NetworkInterface.getByInetAddress(_localAddress.getAddress()).getInterfaceAddresses();
+                    int port = _localAddress.getPort();
+                    InterfaceAddress newAddress = Iterables.find(addresses, new Predicate<InterfaceAddress>() {
+                        @Override
+                        public boolean apply(@Nullable InterfaceAddress input) {
+                            return Protocol.fromAddress(input.getAddress()).equals(_preferredProtocol);
+                        }
+                    });
+                    _localAddress = new InetSocketAddress((newAddress).getAddress(), port);
+                }
                 _passiveModeServerSocket = ServerSocketChannel.open();
-                _passiveModePortRange.bind(_passiveModeServerSocket.socket(),
-                                           _localAddress.getAddress());
+                _passiveModePortRange.bind(_passiveModeServerSocket.socket(), _localAddress.getAddress());
                 _mode = Mode.PASSIVE;
             }
             return (InetSocketAddress) _passiveModeServerSocket.socket().getLocalSocketAddress();
+        } catch (NoSuchElementException e) {
+            _mode = Mode.ACTIVE;
+            closePassiveModeServerSocket();
+            throw new FTPCommandException(522, "Protocol family not supported");
         } catch (IOException e) {
             _mode = Mode.ACTIVE;
             closePassiveModeServerSocket();
@@ -1992,6 +2114,9 @@ public abstract class AbstractFtpDoorV1
         throws FTPCommandException
     {
         checkLoggedIn();
+        if (_sessionAllPassive) {
+            throw new FTPCommandException(503, "PASV not allowed after EPSV ALL");
+        }
 
         /* If already in passive mode then we close the previous
          * socket and allocate a new one. This is a defensive move to
@@ -2013,6 +2138,49 @@ public abstract class AbstractFtpDoorV1
               host[3] + "," +
               port/256 + "," +
               port % 256 + ")");
+    }
+
+    public void ftp_eprt(String arg)
+            throws FTPCommandException
+    {
+        checkLoggedIn();
+
+        setActive(getExtendedAddressOf(arg));
+
+        reply(ok("EPRT"));
+    }
+
+    public void ftp_epsv(String arg)
+        throws FTPCommandException
+    {
+        checkLoggedIn();
+
+        if  ("ALL".equalsIgnoreCase(arg)) {
+            _sessionAllPassive = true;
+            reply(ok("EPSV ALL"));
+            return;
+        }
+        if (arg.isEmpty()) {
+            /* If already in passive mode then we close the previous
+             * socket and allocate a new one. This is a defensive move to
+             * recover from the server socket having been closed by some
+             * error condition.
+             */
+            closePassiveModeServerSocket();
+            InetSocketAddress address = setPassive();
+            reply("229 Entering Extended Passive Mode (|||"+address.getPort()+"|)");
+        } else {
+            try {
+                _preferredProtocol = Protocol.find(arg);
+                reply(ok("EPSV" +arg));
+            } catch (NumberFormatException nfe) {
+                throw new FTPCommandException(501, "Syntax error: '"+
+                        arg+"' is not a valid argument for EPSV.");
+            } catch (IllegalArgumentException e) {
+                throw new FTPCommandException(522, "Protocol family '"+
+                        arg+"'is not supported, use one of (1,2)");
+            }
+        }
     }
 
     public void ftp_mode(String arg)
