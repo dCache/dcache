@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
@@ -60,8 +63,9 @@ public class CellNucleus implements ThreadFactory
     private final  Map<UOID, CellLock> _waitHash = new HashMap<>();
     private String _cellClass;
 
-    private volatile ThreadPoolExecutor _callbackExecutor;
-    private volatile ThreadPoolExecutor _messageExecutor;
+    private volatile ExecutorService _callbackExecutor;
+    private volatile ExecutorService _messageExecutor;
+    private AtomicInteger _eventQueueSize = new AtomicInteger();
 
     private boolean _isPrivateCallbackExecutor = true;
     private boolean _isPrivateMessageExecutor = true;
@@ -313,7 +317,7 @@ public class CellNucleus implements ThreadFactory
     /**
      * Executor used for message callbacks.
      */
-    public synchronized void setCallbackExecutor(ThreadPoolExecutor executor)
+    public synchronized void setCallbackExecutor(ExecutorService executor)
     {
         if (executor == null) {
             throw new IllegalArgumentException("null is not allowed");
@@ -328,7 +332,7 @@ public class CellNucleus implements ThreadFactory
     /**
      * Executor used for incoming message delivery.
      */
-    public synchronized void setMessageExecutor(ThreadPoolExecutor executor)
+    public synchronized void setMessageExecutor(ExecutorService executor)
     {
         if (executor == null) {
             throw new IllegalArgumentException("null is not allowed");
@@ -686,6 +690,14 @@ public class CellNucleus implements ThreadFactory
         };
     }
 
+    /**
+     * Submits a task for execution on the message thread.
+     */
+    <T> Future<T> invokeOnMessageThread(Callable<T> task)
+    {
+        return _messageExecutor.submit(task);
+    }
+
     @Override @Nonnull
     public Thread newThread(@Nonnull Runnable target)
     {
@@ -725,7 +737,7 @@ public class CellNucleus implements ThreadFactory
 
     int getEventQueueSize()
     {
-        return _messageExecutor.getQueue().size();
+        return _eventQueueSize.get();
     }
 
     void addToEventQueue(MessageEvent ce) {
@@ -965,11 +977,13 @@ public class CellNucleus implements ThreadFactory
         {
             _lock = lock;
             _message = message;
+            _eventQueueSize.incrementAndGet();
         }
 
         @Override
         public void innerRun()
         {
+            _eventQueueSize.decrementAndGet();
             try (CDC ignored = _lock.getCdc().restore()) {
                 CellMessageAnswerable callback =
                         _lock.getCallback();
@@ -1006,12 +1020,14 @@ public class CellNucleus implements ThreadFactory
         {
             _event = event;
             EventLogger.queueBegin(_event);
+            _eventQueueSize.incrementAndGet();
         }
 
         @Override
         public void innerRun()
         {
             EventLogger.queueEnd(_event);
+            _eventQueueSize.decrementAndGet();
 
             if (_event instanceof LastMessageEvent) {
                 LOGGER.trace("messageThread : LastMessageEvent arrived");

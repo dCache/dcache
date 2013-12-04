@@ -12,6 +12,8 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 import dmg.cells.network.PingMessage;
 import dmg.cells.services.RoutingManager;
@@ -419,6 +421,11 @@ public class   CellAdapter
     public Reader getDomainContextReader(String contextName)
         throws FileNotFoundException {
         return _nucleus.getDomainContextReader(contextName);
+    }
+
+    protected <T> Future<T> invokeOnMessageThread(Callable<T> task)
+    {
+        return _nucleus.invokeOnMessageThread(task);
     }
 
     /**

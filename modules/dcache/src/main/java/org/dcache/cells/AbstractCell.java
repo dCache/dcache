@@ -14,7 +14,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
@@ -272,28 +271,27 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
             /* Execute initialisation in a different thread allocated
              * from the correct thread group.
              */
-            FutureTask<Void> task = new FutureTask<>(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        parseOptions(AbstractCell.this);
+            Callable<Void> task = new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    parseOptions(AbstractCell.this);
 
-                        _monitor = new MessageProcessingMonitor();
-                        _monitor.setCellEndpoint(AbstractCell.this);
-                        _monitor.setEnabled(_isMonitoringEnabled);
+                    _monitor = new MessageProcessingMonitor();
+                    _monitor.setCellEndpoint(AbstractCell.this);
+                    _monitor.setEnabled(_isMonitoringEnabled);
 
-                        if (_cellClass != null) {
-                            getNucleus().setCellClass(_cellClass);
-                        }
-
-                        addMessageListener(AbstractCell.this);
-                        addCommandListener(_monitor);
-
-                        AbstractCell.this.executeInit();
-                        return null;
+                    if (_cellClass != null) {
+                        getNucleus().setCellClass(_cellClass);
                     }
-                });
-            getNucleus().newThread(task, "init").start();
-            task.get();
+
+                    addMessageListener(AbstractCell.this);
+                    addCommandListener(_monitor);
+
+                    AbstractCell.this.executeInit();
+                    return null;
+                }
+            };
+            invokeOnMessageThread(task).get();
 
             start();
         } catch (InterruptedException e) {

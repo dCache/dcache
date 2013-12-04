@@ -12,8 +12,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
@@ -60,20 +60,20 @@ public class LineBasedDoor
      */
     private final Executor executor;
 
-    private Thread workerThread;
-
     public LineBasedDoor(String cellName, Args args, Class<? extends LineBasedInterpreter> interpreterClass,
                          StreamEngine engine, ExecutorService executor)
     {
         super(cellName, args);
 
+        getNucleus().setCallbackExecutor(executor);
+        getNucleus().setMessageExecutor(new SequentialExecutor(executor));
         this.interpreterClass = interpreterClass;
         this.engine = engine;
         this.executor = executor;
 
         try {
             doInit();
-            workerThread.start();
+            executor.execute(this);
         } catch (InterruptedException e) {
             shutdownGate.countDown();
         } catch (ExecutionException e) {
@@ -92,8 +92,6 @@ public class LineBasedDoor
 
         LOGGER.debug("Client host: {}",
                 engine.getInetAddress().getHostAddress());
-
-        workerThread = new Thread(this);
 
         interpreter = interpreterClass.newInstance();
         parseOptions(interpreter);
