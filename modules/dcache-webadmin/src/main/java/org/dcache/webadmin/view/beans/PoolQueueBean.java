@@ -1,5 +1,8 @@
 package org.dcache.webadmin.view.beans;
 
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +71,11 @@ public class PoolQueueBean implements Comparable<PoolQueueBean>, Serializable {
 
     @Override
     public int compareTo(PoolQueueBean other) {
-        return (getName().compareTo(other.getName()) +
-                getDomainName().compareTo(other.getDomainName()));
+        return ComparisonChain.start()
+               .compare(getName(), other.getName(),
+                                   Ordering.natural().nullsLast())
+               .compare(getDomainName(), other.getDomainName(),
+                                   Ordering.natural().nullsLast())
+               .result();
     }
 }

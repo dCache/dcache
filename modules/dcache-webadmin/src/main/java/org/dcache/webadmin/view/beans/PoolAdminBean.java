@@ -1,5 +1,8 @@
 package org.dcache.webadmin.view.beans;
 
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +60,9 @@ public class PoolAdminBean implements Comparable<PoolAdminBean>, Serializable {
 
     @Override
     public int compareTo(PoolAdminBean other) {
-        return getGroupName().compareTo(other.getGroupName());
+        return ComparisonChain.start()
+               .compare(getGroupName(), other.getGroupName(),
+                                        Ordering.natural().nullsLast())
+               .result();
     }
 }
