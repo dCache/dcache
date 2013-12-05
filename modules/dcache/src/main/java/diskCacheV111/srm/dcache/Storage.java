@@ -729,7 +729,7 @@ public final class Storage
             sb.append("Get Request Scheduler:\n");
             srm.printGetSchedulerThreadQueue(sb);
             srm.printGetSchedulerPriorityThreadQueue(sb);
-            srm.printCopySchedulerReadyThreadQueue(sb);
+            srm.printGetSchedulerReadyThreadQueue(sb);
             sb.append('\n');
         }
         if(put) {
