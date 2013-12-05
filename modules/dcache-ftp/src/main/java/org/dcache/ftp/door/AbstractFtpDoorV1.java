@@ -1088,9 +1088,9 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 notifyBilling(0, "");
-                reply("226 Transfer complete.");
                 _completed = true;
                 setTransfer(null);
+                reply("226 Transfer complete.");
             } catch (CacheException e) {
                 abort(426, e.getMessage());
             } catch (FTPCommandException e) {
@@ -1128,13 +1128,7 @@ public abstract class AbstractFtpDoorV1
         public synchronized void abort(int replyCode, String replyMsg,
                                        Exception exception)
         {
-            if (_aborted) {
-                return;
-            }
-
-            if (_completed) {
-                LOGGER.error("Cannot abort transfer that already completed: {} {}",
-                        replyCode, replyMsg);
+            if (_aborted || _completed) {
                 return;
             }
 
@@ -1172,9 +1166,9 @@ public abstract class AbstractFtpDoorV1
                 LOGGER.error("Transfer error: {} ({})", msg, exception.getMessage());
                 LOGGER.debug(exception.toString(), exception);
             }
-            reply(msg);
             _aborted = true;
             setTransfer(null);
+            reply(msg);
         }
     }
 
