@@ -1,5 +1,8 @@
 package org.dcache.webadmin.view.beans;
 
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -170,6 +173,9 @@ public class PoolGroupBean implements Comparable<PoolGroupBean>, Serializable {
 
     @Override
     public int compareTo(PoolGroupBean other) {
-        return getName().compareTo(other.getName());
+        return ComparisonChain.start()
+               .compare(getName(), other.getName(),
+                                   Ordering.natural().nullsLast())
+               .result();
     }
 }
