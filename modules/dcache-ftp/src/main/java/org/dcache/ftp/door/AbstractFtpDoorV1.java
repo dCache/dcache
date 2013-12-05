@@ -1315,7 +1315,7 @@ public abstract class AbstractFtpDoorV1
         long[] uids = (_subject != null) ? Subjects.getUids(_subject) : new long[0];
         doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
         doorInfo.setProcess("0");
-        FtpTransfer transfer = _transfer;
+        FtpTransfer transfer = getTransfer();
         if (transfer != null) {
             IoDoorEntry[] entries = { transfer.getIoDoorEntry() };
             doorInfo.setIoDoorEntries(entries);
@@ -1365,14 +1365,12 @@ public abstract class AbstractFtpDoorV1
 
         // If a transfer is in progress, only permit ABORT and a few
         // other commands to be processed
-        synchronized(this) {
-            if (_transfer != null &&
+        if (getTransfer() != null &&
                 !(cmd.equals("abor") || cmd.equals("mic")
-                  || cmd.equals("conf") || cmd.equals("enc")
-                  || cmd.equals("quit") || cmd.equals("bye"))) {
-                reply("503 Transfer in progress", false);
-                return;
-            }
+                        || cmd.equals("conf") || cmd.equals("enc")
+                        || cmd.equals("quit") || cmd.equals("bye"))) {
+            reply("503 Transfer in progress", false);
+            return;
         }
 
         if (!_methodDict.containsKey(cmd)) {
@@ -1426,13 +1424,13 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Override
-    public synchronized void shutdown()
+    public void shutdown()
     {
         super.shutdown();
 
         /* In case of failure, we may have a transfer hanging around.
          */
-        FtpTransfer transfer = _transfer;
+        FtpTransfer transfer = getTransfer();
         if (transfer != null) {
             transfer.abort(451, "Aborting transfer due to session termination");
         }
@@ -1503,7 +1501,7 @@ public abstract class AbstractFtpDoorV1
                                 GFtpTransferStartedMessage message)
      {
          LOGGER.debug("Received TransferStarted message");
-         FtpTransfer transfer = _transfer;
+         FtpTransfer transfer = getTransfer();
          if (transfer != null) {
              transfer.transferStarted(envelope, message);
          }
@@ -1513,7 +1511,7 @@ public abstract class AbstractFtpDoorV1
     {
         LOGGER.debug("Received TransferFinished message [rc={}]",
                 message.getReturnCode());
-        FtpTransfer transfer = _transfer;
+        FtpTransfer transfer = getTransfer();
         if (transfer != null) {
             transfer.finished(message);
         }
@@ -2543,11 +2541,15 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    protected synchronized Transfer setTransfer(FtpTransfer transfer)
+    protected synchronized FtpTransfer getTransfer()
+    {
+        return _transfer;
+    }
+
+    protected synchronized void setTransfer(FtpTransfer transfer)
     {
         _transfer = transfer;
         notifyAll();
-        return transfer;
     }
 
     protected synchronized void joinTransfer()
@@ -3233,7 +3235,7 @@ public abstract class AbstractFtpDoorV1
     {
         checkLoggedIn();
 
-        FtpTransfer transfer = _transfer;
+        FtpTransfer transfer = getTransfer();
         if (transfer != null) {
             transfer.abort(426, "Transfer aborted");
         }
