@@ -1,5 +1,8 @@
 package org.dcache.webadmin.view.beans;
 
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -195,7 +198,10 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
 
     @Override
     public int compareTo(PoolSpaceBean other) {
-        return this.getName().compareTo(other.getName());
+        return ComparisonChain.start()
+               .compare(getName(), other.getName(),
+                                   Ordering.natural().nullsLast())
+               .result();
     }
 
     @Override
