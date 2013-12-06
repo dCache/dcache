@@ -199,6 +199,18 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _rootInode.remove("testCreateFile");
     }
 
+    @Test(expected = FileNotFoundHimeraFsException.class)
+    public void testDeleteNonExistingDir() throws Exception {
+        FsInode missingDir = new FsInode(_fs);
+        _fs.remove(missingDir, "aFile");
+    }
+
+    @Test(expected = FileNotFoundHimeraFsException.class)
+    public void testCreateInNonExistingDir() throws Exception {
+        FsInode missingDir = new FsInode(_fs);
+        _fs.createFile(missingDir, "aFile");
+    }
+
     @Test
     public void testDeleteInFile() throws Exception {
 

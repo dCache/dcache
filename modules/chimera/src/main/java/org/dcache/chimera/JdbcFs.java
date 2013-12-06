@@ -403,24 +403,22 @@ public class JdbcFs implements FileSystemProvider {
 
                 checkNameLength(name);
 
-                if (!parent.exists()) {
+                dbConnection.setAutoCommit(false);
+                Stat parentStat = _sqlDriver.stat(dbConnection, parent);
+                if (parentStat == null) {
                     throw new FileNotFoundHimeraFsException("parent=" + parent.toString());
                 }
 
-                if (parent.isDirectory()) {
-                    // read/write only
-                    dbConnection.setAutoCommit(false);
-
-                    if ((parent.statCache().getMode() & UnixPermission.S_ISGID) != 0) {
-                        group = parent.statCache().getGid();
-                    }
-
-                    inode = _sqlDriver.createFile(dbConnection, parent, name, owner, group, mode, type);
-                    dbConnection.commit();
-
-                } else {
+                if ((parentStat.getMode() & UnixPermission.S_IFDIR) != UnixPermission.S_IFDIR) {
                     throw new NotDirChimeraException(parent);
                 }
+
+                if ((parentStat.getMode() & UnixPermission.S_ISGID) != 0) {
+                    group = parent.statCache().getGid();
+                }
+
+                inode = _sqlDriver.createFile(dbConnection, parent, name, owner, group, mode, type);
+                dbConnection.commit();
 
             } catch (SQLException se) {
 
@@ -642,14 +640,6 @@ public class JdbcFs implements FileSystemProvider {
         }
 
         try {
-
-            FsInode inode = this.inodeOf(parent, name);
-
-            if (inode.type() != FsInodeType.INODE) {
-                // now allowed
-                throw new FileNotFoundHimeraFsException("Not a file.");
-            }
-
             // read/write only
             dbConnection.setAutoCommit(false);
 

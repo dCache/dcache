@@ -257,6 +257,9 @@ class FsSqlDriver {
     void remove(Connection dbConnection, FsInode parent, String name) throws ChimeraFsException, SQLException {
 
         FsInode inode = inodeOf(dbConnection, parent, name);
+        if (inode == null || inode.type() != FsInodeType.INODE) {
+            throw new FileNotFoundHimeraFsException("Not a file.");
+        }
 
         if (inode.isDirectory()) {
             removeDir(dbConnection, parent, inode, name);
