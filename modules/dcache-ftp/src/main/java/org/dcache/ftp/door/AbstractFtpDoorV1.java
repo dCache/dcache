@@ -175,11 +175,11 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.services.login.RemoteLoginStrategy;
+import org.dcache.util.AsynchronousRedirectedTransfer;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.PortRange;
-import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -208,6 +208,18 @@ class FTPCommandException extends Exception
     public FTPCommandException(int code, String reply)
     {
         this(code, reply, reply);
+    }
+
+    /**
+     * Constructs a command exception with the given ftp reply code and
+     * message. The message will be used for both the public FTP reply
+     * string and for the exception message.
+     */
+    public FTPCommandException(int code, String reply, Exception cause)
+    {
+        super(reply, cause);
+        _code = code;
+        _reply = reply;
     }
 
     /**
@@ -636,8 +648,6 @@ public abstract class AbstractFtpDoorV1
     )
     protected TimeUnit _performanceMarkerPeriodUnit;
 
-    protected final int _sleepAfterMoverKill = 1; // seconds
-
     protected final int _spaceManagerTimeout = 5 * 60;
 
     protected PortRange _passiveModePortRange;
@@ -711,7 +721,7 @@ public abstract class AbstractFtpDoorV1
     /**
      * Encapsulation of an FTP transfer.
      */
-    protected class FtpTransfer extends Transfer
+    protected class FtpTransfer extends AsynchronousRedirectedTransfer<GFtpTransferStartedMessage>
     {
         private final Mode _mode;
         private final String _xferMode;
@@ -736,16 +746,6 @@ public abstract class AbstractFtpDoorV1
          * be null.
          */
         protected PerfMarkerTask _perfMarkerTask;
-
-        /**
-         * True if the transfer was aborted.
-         */
-        protected boolean _aborted;
-
-        /**
-         * True if the transfer completed successfully.
-         */
-        protected boolean _completed;
 
         public FtpTransfer(FsPath path,
                            long offset,
@@ -946,26 +946,6 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        protected synchronized void startTransfer()
-        {
-            if (_adapter != null) {
-                _adapter.start();
-            }
-
-            setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
-                      (isWrite() ? "Receiving" : "Sending"));
-
-            reply("150 Opening BINARY data connection for " + _path, false);
-
-            if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
-                long period = _performanceMarkerPeriodUnit.toMillis(_performanceMarkerPeriod);
-                long timeout = period / 2;
-                _perfMarkerTask =
-                    new PerfMarkerTask(getPoolAddress(), getMoverId(), timeout);
-                TIMER.schedule(_perfMarkerTask, period, period);
-            }
-        }
-
         @Override
         public synchronized void startMover(String queue, long timeout)
             throws CacheException, InterruptedException
@@ -973,103 +953,110 @@ public abstract class AbstractFtpDoorV1
             super.startMover(queue, timeout);
             setStatus("Mover " + getPool() + "/" + getMoverId());
             if (_version == 1) {
-                startTransfer();
+                redirect(null);
             }
         }
 
-        public synchronized void transferStarted(CellMessage envelope,
-                                                 GFtpTransferStartedMessage message)
+        public void abort(int replyCode, String msg)
+        {
+            doAbort(new FTPCommandException(replyCode, msg));
+        }
+
+        public void abort(int replyCode, String msg, Exception exception)
+        {
+            doAbort(new FTPCommandException(replyCode, msg, exception));
+        }
+
+        @Override
+        protected void onQueued()
+        {
+            setStatus("Mover " + getPool() + "/" + getMoverId());
+        }
+
+        @Override
+        protected synchronized void onRedirect(GFtpTransferStartedMessage redirect)
         {
             try {
-                if (_aborted || _completed) {
-                    return;
+                if (redirect != null) {
+                    if (_version != 2) {
+                        LOGGER.error("Received unexpected GFtpTransferStartedMessage for {}", redirect.getPnfsId());
+                        return;
+                    }
+
+                    if (!redirect.getPnfsId().equals(getPnfsId().getId())) {
+                        LOGGER.error("GFtpTransferStartedMessage has wrong ID, expected {} but got {}", getPnfsId(), redirect.getPnfsId());
+                        throw new FTPCommandException(451, "Transient internal failure");
+                    }
+
+                    if (redirect.getPassive() && !_reply127) {
+                        LOGGER.error("Pool unexpectedly volunteered to be passive");
+                        throw new FTPCommandException(451, "Transient internal failure");
+                    }
+
+                    /* If passive X mode was requested, but the pool rejected
+                     * it, then we have to fail for now. REVISIT: We should
+                     * use the other adapter in this case.
+                     */
+                    if (_mode == Mode.PASSIVE && !redirect.getPassive() && _xferMode.equals("X")) {
+                        throw new FTPCommandException(504, "Cannot use passive X mode");
+                    }
+
+                    /* Determine the 127 response address to send back to the
+                     * client. When the pool is passive, this is the address of
+                     * the pool (and in this case we no longer need the
+                     * adapter). Otherwise this is the address of the adapter.
+                     */
+                    if (redirect.getPassive()) {
+                        assert _reply127;
+                        assert _adapter != null;
+
+                        reply127PORT(redirect.getPoolAddress());
+
+                        LOGGER.info("Closing adapter");
+                        _adapter.close();
+                        _adapter = null;
+                    } else if (_reply127) {
+                        reply127PORT(new InetSocketAddress(_localAddress.getAddress(),
+                                _adapter.getClientListenerPort()));
+                    }
                 }
 
-                if (_version != 2) {
-                    LOGGER.error("Received unexpected GFtpTransferStartedMessage for {} from {}", message
-                            .getPnfsId(), envelope.getSourcePath());
-                    return;
+                if (_adapter != null) {
+                    _adapter.start();
                 }
 
-                if (!message.getPnfsId().equals(getPnfsId().getId())) {
-                    LOGGER.error("GFtpTransferStartedMessage has wrong ID, expected {} but got {}", getPnfsId(), message
-                            .getPnfsId());
-                    throw new FTPCommandException(451, "Transient internal failure");
+                setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
+                          (isWrite() ? "Receiving" : "Sending"));
+
+                reply("150 Opening BINARY data connection for " + _path, false);
+
+                if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
+                    long period = _performanceMarkerPeriodUnit.toMillis(_performanceMarkerPeriod);
+                    long timeout = period / 2;
+                    _perfMarkerTask =
+                        new PerfMarkerTask(getPoolAddress(), getMoverId(), timeout);
+                    TIMER.schedule(_perfMarkerTask, period, period);
                 }
-
-                if (message.getPassive() && !_reply127) {
-                    LOGGER.error("Pool {} unexpectedly volunteered to be passive", envelope.getSourcePath());
-                    throw new FTPCommandException(451, "Transient internal failure");
-                }
-
-                /* If passive X mode was requested, but the pool rejected
-                 * it, then we have to fail for now. REVISIT: We should
-                 * use the other adapter in this case.
-                 */
-                if (_mode == Mode.PASSIVE && !message.getPassive() && _xferMode.equals("X")) {
-                    throw new FTPCommandException(504, "Cannot use passive X mode");
-                }
-
-                /* Determine the 127 response address to send back to the
-                 * client. When the pool is passive, this is the address of
-                 * the pool (and in this case we no longer need the
-                 * adapter). Otherwise this is the address of the adapter.
-                 */
-                if (message.getPassive()) {
-                    assert _reply127;
-                    assert _adapter != null;
-
-                    reply127PORT(message.getPoolAddress());
-
-                    LOGGER.info("Closing adapter");
-                    _adapter.close();
-                    _adapter = null;
-                } else if (_reply127) {
-                    reply127PORT(new InetSocketAddress(_localAddress.getAddress(),
-                                                       _adapter.getClientListenerPort()));
-                }
-                startTransfer();
             } catch (FTPCommandException e) {
                 abort(e.getCode(), e.getReply());
             } catch (RuntimeException e) {
-                abort(426, "Transient internal error", e);
+                abort(451, "Transient internal error", e);
             }
         }
 
         @Override
-        public void finished(CacheException error)
-        {
-            super.finished(error);
-            transferCompleted(error);
-        }
-
-        protected synchronized void transferCompleted(CacheException error)
+        protected synchronized void onFinish()
         {
             try {
-                /* It may happen the transfer has been aborted
-                 * already. This is not a failure.
-                 */
-                if (_aborted) {
-                    return;
-                }
-
-                if (_completed) {
-                    throw new RuntimeException("DoorTransferFinished message received more than once");
-                }
-
-                if (error != null) {
-                    throw error;
-                }
-
                 /* Wait for adapter to shut down.
                  */
                 if (_adapter != null) {
                     LOGGER.info("Waiting for adapter to finish.");
                     _adapter.join(300000); // 5 minutes
                     if (_adapter.isAlive()) {
-                        throw new FTPCommandException(426, "FTP proxy did not shut down");
+                        throw new FTPCommandException(451, "FTP proxy did not shut down");
                     } else if (_adapter.hasError()) {
-                        throw new FTPCommandException(426, "FTP proxy failed: " + _adapter.getError());
+                        throw new FTPCommandException(451, "FTP proxy failed: " + _adapter.getError());
                     }
 
                     LOGGER.debug("Closing adapter");
@@ -1088,23 +1075,15 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 notifyBilling(0, "");
-                _completed = true;
                 setTransfer(null);
                 reply("226 Transfer complete.");
-            } catch (CacheException e) {
-                abort(426, e.getMessage());
             } catch (FTPCommandException e) {
                 abort(e.getCode(), e.getReply());
             } catch (InterruptedException e) {
-                abort(426, "FTP proxy was interrupted", e);
+                abort(451, "FTP proxy was interrupted", e);
             } catch (RuntimeException e) {
-                abort(426, "Transient internal error", e);
+                abort(451, "Transient internal error", e);
             }
-        }
-
-        public void abort(int replyCode, String msg)
-        {
-            abort(replyCode, msg, null);
         }
 
         /**
@@ -1120,18 +1099,10 @@ public abstract class AbstractFtpDoorV1
          * not expect to appear in normal use (potential
          * bugs). Communication errors and the like should not be
          * logged with an exception.
-         *
-         * @param replyCode reply code to send the the client
-         * @param replyMsg error message to send back to the client
-         * @param exception exception to log or null
          */
-        public synchronized void abort(int replyCode, String replyMsg,
-                                       Exception exception)
+        @Override
+        protected synchronized void onFailure(Exception exception)
         {
-            if (_aborted || _completed) {
-                return;
-            }
-
             if (_perfMarkerTask != null) {
                 _perfMarkerTask.stop();
             }
@@ -1140,8 +1111,6 @@ public abstract class AbstractFtpDoorV1
                 _adapter.close();
                 _adapter = null;
             }
-
-            killMover(_sleepAfterMoverKill * 1000);
 
             if (isWrite()) {
                 if (_removeFileOnIncompleteTransfer) {
@@ -1154,19 +1123,26 @@ public abstract class AbstractFtpDoorV1
 
             /* Report errors.
              */
+            int replyCode;
+            String replyMsg;
+            if (exception instanceof FTPCommandException) {
+                replyCode = ((FTPCommandException) exception).getCode();
+                replyMsg = ((FTPCommandException) exception).getReply();
+            } else {
+                replyCode = 451;
+                replyMsg = exception.getMessage();
+            }
+
             String msg = String.valueOf(replyCode) + " " + replyMsg;
             notifyBilling(replyCode, replyMsg);
             if (_tLog != null) {
                 _tLog.error(msg);
                 _tLog = null;
             }
-            if (exception == null) {
-                LOGGER.error("Transfer error: {}", msg);
-            } else {
-                LOGGER.error("Transfer error: {} ({})", msg, exception.getMessage());
+            LOGGER.error("Transfer error: {}", msg);
+            if (!(exception instanceof FTPCommandException)) {
                 LOGGER.debug(exception.toString(), exception);
             }
-            _aborted = true;
             setTransfer(null);
             reply(msg);
         }
@@ -1497,7 +1473,7 @@ public abstract class AbstractFtpDoorV1
          LOGGER.debug("Received TransferStarted message");
          FtpTransfer transfer = getTransfer();
          if (transfer != null) {
-             transfer.transferStarted(envelope, message);
+             transfer.redirect(message);
          }
      }
 

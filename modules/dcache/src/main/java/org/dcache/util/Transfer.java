@@ -64,7 +64,7 @@ import static org.dcache.util.MathUtils.subWithInfinity;
  */
 public class Transfer implements Comparable<Transfer>
 {
-    private static final Logger _log = LoggerFactory.getLogger(Transfer.class);
+    protected static final Logger _log = LoggerFactory.getLogger(Transfer.class);
 
     private static final TimebasedCounter _sessionCounter =
         new TimebasedCounter();
