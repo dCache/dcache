@@ -67,6 +67,9 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.util.concurrent.AbstractService;
+import com.google.common.util.concurrent.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +92,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public final class Scheduler implements Runnable
+public final class Scheduler
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(Scheduler.class);
@@ -153,8 +156,6 @@ public final class Scheduler implements Runnable
     private final String id;
     private volatile boolean running;
 
-    private final Thread thread;
-
     // private Object waitingGuard = new Object();
     // private int waitingJobNum;
     // this will not prevent jobs from getting into the waiting state but will
@@ -177,6 +178,8 @@ public final class Scheduler implements Runnable
 
     private JobPriorityPolicyInterface jobAppraiser;
     private String priorityPolicyPlugin;
+
+    private final WorkSupplyService workSupplyService;
 
     public static Scheduler getScheduler(String id)
     {
@@ -203,7 +206,7 @@ public final class Scheduler implements Runnable
         jobAppraiser = new DefaultJobAppraiser();
         priorityPolicyPlugin = jobAppraiser.getClass().getSimpleName();
 
-        thread = new Thread(this, "Scheduler-" + id);
+        workSupplyService = new WorkSupplyService();
         retryTimer = new Timer();
         pooledExecutor = new ThreadPoolExecutor(30, 30, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1));
 
@@ -214,16 +217,15 @@ public final class Scheduler implements Runnable
     {
         checkState(!running, "Scheduler is running.");
         running = true;
-        thread.start();
+        workSupplyService.startAsync().awaitRunning();
     }
 
     public synchronized void stop()
     {
         running = false;
-        notified = true;
+        workSupplyService.stopAsync().awaitTerminated();
         retryTimer.cancel();
         pooledExecutor.shutdownNow();
-        notify();
     }
 
 
@@ -470,181 +472,6 @@ public final class Scheduler implements Runnable
         return retryWaitJobsNum.getTotal();
     }
 
-    // this is supposed to be the only place that removes the jobs from
-    private void updatePriorityThreadQueue()
-            throws SRMInvalidRequestException,
-                   InterruptedException
-    {
-        while (true) {
-            Job job = null;
-            if (useFairness) {
-                //logger.debug("updatePriorityThreadQueue(), using ValueCalculator to find next job");
-                ModifiableQueue.ValueCalculator calc =
-                        new ModifiableQueue.ValueCalculator()
-                        {
-                            private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
-                            private final int maxRunningByOwner = getMaxRunningByOwner();
-
-                            @Override
-                            public int calculateValue(
-                                    int queueLength,
-                                    int queuePosition,
-                                    Job job)
-                            {
-                                int numOfRunningBySameCreator =
-                                        getRunningStateByCreator(job) +
-                                                getRunningWithoutThreadStateByCreator(job);
-
-                                int value = jobAppraiser.evaluateJobPriority(
-                                        queueLength, queuePosition,
-                                        numOfRunningBySameCreator,
-                                        maxRunningByOwner,
-                                        job);
-                                if (job instanceof FileRequest) {
-                                    LOGGER.trace("UPDATEPRIORITYTHREADQUEUE ca {}",
-                                            ((FileRequest<?>) job).getCredential());
-                                }
-                                return value;
-                            }
-                        };
-                job = priorityThreadQueue.getGreatestValueObject(calc);
-            }
-            if (job == null) {
-                //logger.debug("updatePriorityThreadQueue(), job is null, trying priorityThreadQueue.peek();");
-                job = priorityThreadQueue.peek();
-            }
-
-            if (job == null) {
-                //logger.debug("updatePriorityThreadQueue no jobs were found, breaking the update loop");
-                break;
-            }
-
-            //we consider running and runningWithoutThreadStateJobsNum as occupying slots in the
-            // thread pool, even if the runningWithoutThreadState jobs are not actually running,
-            // but waiting for the notifications
-            if (getTotalRunningThreads() + getTotalRunningWithoutThreadState() > getThreadPoolSize()) {
-                break;
-            }
-
-            LOGGER.trace("updatePriorityThreadQueue(), found job id {}", job.getId());
-
-            if (job.getState() != State.PRIORITYTQUEUED) {
-                // someone has canceled the job or
-                // its lifetime has expired
-                LOGGER.error("updatePriorityThreadQueue() : found a job in priority thread queue with a state different from PRIORITYTQUEUED, job id={} state={}",
-                        job.getId(), job.getState());
-                priorityThreadQueue.remove(job);
-                continue;
-            }
-            try {
-                LOGGER.trace("updatePriorityThreadQueue ()  executing job id={}", job.getId());
-                JobWrapper wrapper = new JobWrapper(job);
-                pooledExecutor.execute(wrapper);
-                LOGGER.trace("updatePriorityThreadQueue() waiting startup");
-                wrapper.waitStartup();
-                LOGGER.trace("updatePriorityThreadQueue() job started");
-                /** let the stateChanged() always remove the jobs from the queue
-                 */
-                // the job is running in a separate thread by this time
-                // when  ThreadPoolExecutor can not accept new Job,
-                // RejectedExecutionException will be thrown
-            } catch (RejectedExecutionException ree) {
-                LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time: RejectedExecutionException", job.getId());
-                break;
-            } catch (RuntimeException re) {
-                LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time", job.getId());
-                break;
-            }
-        }
-    }
-
-    // this is supposed to be the only place that removes the jobs from
-    private void updateThreadQueue()
-            throws SRMInvalidRequestException,
-                   InterruptedException
-    {
-
-        while (true) {
-            Job job = null;
-            if (isFair()) {
-                //logger.debug("updateThreadQueue(), using ValueCalculator to find next job");
-                ModifiableQueue.ValueCalculator calc =
-                        new ModifiableQueue.ValueCalculator()
-                        {
-                            private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
-                            private final int maxRunningByOwner = getMaxRunningByOwner();
-
-                            @Override
-                            public int calculateValue(
-                                    int queueLength,
-                                    int queuePosition,
-                                    Job job)
-                            {
-
-                                int numOfRunningBySameCreator =
-                                        getRunningStateByCreator(job) +
-                                                getRunningWithoutThreadStateByCreator(job);
-                                int value = jobAppraiser.evaluateJobPriority(
-                                        queueLength, queuePosition,
-                                        numOfRunningBySameCreator,
-                                        maxRunningByOwner,
-                                        job);
-                                //logger.debug("updateThreadQueue calculateValue return value="+value+" for "+o);
-                                return value;
-                            }
-                        };
-                job = threadQueue.getGreatestValueObject(calc);
-            }
-
-            if (job == null) {
-                //logger.debug("updateThreadQueue(), job is null, trying threadQueue.peek();");
-                job = threadQueue.peek();
-            }
-
-            if (job == null) {
-                //logger.debug("updateThreadQueue no jobs were found, breaking the update loop");
-                break;
-            }
-            //we consider running and runningWithoutThreadStateJobsNum as occupying slots in the
-            // thread pool, even if the runningWithoutThreadState jobs are not actually running,
-            // but waiting for the notifications
-            if (getTotalRunningThreads() + getTotalRunningWithoutThreadState() > getThreadPoolSize()) {
-                break;
-            }
-            LOGGER.trace("updateThreadQueue(), found job id {}", job.getId());
-
-            State state = job.getState();
-            if (state != State.TQUEUED) {
-                // someone has canceled the job or
-                // its lifetime has expired
-                LOGGER.error("updateThreadQueue() : found a job in thread queue with a state different from TQUEUED, job id={} state={}",
-                        job.getId(), job.getState());
-                threadQueue.remove(job);
-                continue;
-            }
-
-            try {
-                LOGGER.trace("updateThreadQueue() executing job id={}", job.getId());
-                JobWrapper wrapper = new JobWrapper(job);
-                pooledExecutor.execute(wrapper);
-                LOGGER.trace("updateThreadQueue() waiting startup");
-                wrapper.waitStartup();
-                LOGGER.trace("updateThreadQueue() job started");
-                    /*
-                     * let the stateChanged() always remove the jobs from the queue
-                     */
-                // when  ThreadPoolExecutor can not accept new Job,
-                // RejectedExecutionException will be thrown
-            } catch (RejectedExecutionException ree) {
-                LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time: RejectedExecutionException", job.getId());
-                break;
-            } catch (RuntimeException ie) {
-                LOGGER.error("updateThreadQueue() cannot execute job id={} at this time", job.getId());
-                break;
-            }
-
-        }
-    }
 
     public void tryToReadyJob(Job job)
     {
@@ -715,13 +542,10 @@ public final class Scheduler implements Runnable
         }
     }
 
-    private boolean notified;
-
-
     private boolean threadQueue(Job job)
     {
         if (threadQueue.offer(job)) {
-            jobAddedToQueue();
+            workSupplyService.distributeWork();
             return true;
         }
         return false;
@@ -730,7 +554,7 @@ public final class Scheduler implements Runnable
     private boolean priorityQueue(Job job)
     {
         if (priorityThreadQueue.offer(job)) {
-            jobAddedToQueue();
+            workSupplyService.distributeWork();
             return true;
         }
         return false;
@@ -739,54 +563,246 @@ public final class Scheduler implements Runnable
     private boolean readyQueue(Job job)
     {
         if (readyQueue.offer(job)) {
-            jobAddedToQueue();
+            workSupplyService.distributeWork();
             return true;
         }
         return false;
     }
 
-    private synchronized void jobAddedToQueue()
+    /**
+     * This class is responsible for keeping the PoolExecutors busy with jobs
+     * taken from the priority- and non-priority queues.
+     */
+    private class WorkSupplyService extends AbstractExecutionThreadService
     {
-        notified = true;
-        notifyAll();
-    }
+        private boolean hasBeenNotified;
 
-    @Override
-    public void run()
-    {
-        try {
-            while (running) {
-                try {
-                    //logger.debug("Scheduler(id="+getId()+").run() updating Priority Thread queue...");
-                    updatePriorityThreadQueue();
-                    //logger.debug("Scheduler(id="+getId()+").run() updating Thread queue...");
-                    updateThreadQueue();
-                    // logger.debug("Scheduler(id="+getId()+").run() updating Ready queue...");
-                    // Do not update ready queue, let users ask for statuses
-                    // which will lead to the updates
-                    // updateReadyQueue();
-                    // logger.debug("Scheduler(id="+getId()+").run() done updating queues");
+        @Override
+        public void run()
+        {
+            try {
+                while (isRunning()) {
+                    try {
+                        //logger.debug("Scheduler(id="+getId()+").run() updating Priority Thread queue...");
+                        updatePriorityThreadQueue();
+                        //logger.debug("Scheduler(id="+getId()+").run() updating Thread queue...");
+                        updateThreadQueue();
+                        // logger.debug("Scheduler(id="+getId()+").run() updating Ready queue...");
+                        // Do not update ready queue, let users ask for statuses
+                        // which will lead to the updates
+                        // updateReadyQueue();
+                        // logger.debug("Scheduler(id="+getId()+").run() done updating queues");
 
-                    synchronized (this) {
-                        if (!notified) {
-                            //logger.debug("Scheduler(id="+getId()+").run() waiting for events...");
-                            wait(queuesUpdateMaxWait);
+                        synchronized (this) {
+                            if (!hasBeenNotified) {
+                                //logger.debug("Scheduler(id="+getId()+").run() waiting for events...");
+                                wait(queuesUpdateMaxWait);
+                            }
+                            hasBeenNotified = false;
                         }
-                        notified = false;
+                    } catch (SRMInvalidRequestException e) {
+                        LOGGER.error("Sheduler(id={}) detected an SRM error: {}", getId(), e.toString());
+                    } catch (RuntimeException e) {
+                        LOGGER.error("Sheduler(id=" + getId() + ") detected a bug", e);
                     }
-                } catch (SRMInvalidRequestException e) {
-                    LOGGER.error("Sheduler(id={}) detected an SRM error: {}", getId(), e.toString());
-                } catch (RuntimeException e) {
-                    LOGGER.error("Sheduler(id=" + getId() + ") detected a bug", e);
+                }
+            } catch (InterruptedException e) {
+                LOGGER.error("Sheduler(id=" + getId() +
+                        ") terminating update thread, since it caught an InterruptedException",
+                        e);
+            }
+            //we are interrupted,
+            //terminating thread
+        }
+
+        @Override
+        public void triggerShutdown()
+        {
+            distributeWork();
+        }
+
+        public synchronized void distributeWork()
+        {
+            hasBeenNotified = true;
+            notify();
+        }
+
+        @Override
+        public String serviceName()
+        {
+            return "Scheduler-" + id;
+        }
+
+        private void updatePriorityThreadQueue() throws SRMInvalidRequestException,
+                InterruptedException
+        {
+            while (true) {
+                Job job = null;
+                if (useFairness) {
+                    //logger.debug("updatePriorityThreadQueue(), using ValueCalculator to find next job");
+                    ModifiableQueue.ValueCalculator calc =
+                            new ModifiableQueue.ValueCalculator()
+                            {
+                                private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
+                                private final int maxRunningByOwner = getMaxRunningByOwner();
+
+                                @Override
+                                public int calculateValue(
+                                        int queueLength,
+                                        int queuePosition,
+                                        Job job)
+                                {
+                                    int numOfRunningBySameCreator =
+                                            getRunningStateByCreator(job) +
+                                                    getRunningWithoutThreadStateByCreator(job);
+
+                                    int value = jobAppraiser.evaluateJobPriority(
+                                            queueLength, queuePosition,
+                                            numOfRunningBySameCreator,
+                                            maxRunningByOwner,
+                                            job);
+                                    if (job instanceof FileRequest) {
+                                        LOGGER.trace("UPDATEPRIORITYTHREADQUEUE ca {}",
+                                                ((FileRequest<?>) job).getCredential());
+                                    }
+                                    return value;
+                                }
+                            };
+                    job = priorityThreadQueue.getGreatestValueObject(calc);
+                }
+                if (job == null) {
+                    //logger.debug("updatePriorityThreadQueue(), job is null, trying priorityThreadQueue.peek();");
+                    job = priorityThreadQueue.peek();
+                }
+
+                if (job == null) {
+                    //logger.debug("updatePriorityThreadQueue no jobs were found, breaking the update loop");
+                    break;
+                }
+
+                //we consider running and runningWithoutThreadStateJobsNum as occupying slots in the
+                // thread pool, even if the runningWithoutThreadState jobs are not actually running,
+                // but waiting for the notifications
+                if (getTotalRunningThreads() + getTotalRunningWithoutThreadState() > getThreadPoolSize()) {
+                    break;
+                }
+
+                LOGGER.trace("updatePriorityThreadQueue(), found job id {}", job.getId());
+
+                if (job.getState() != org.dcache.srm.scheduler.State.PRIORITYTQUEUED) {
+                    // someone has canceled the job or
+                    // its lifetime has expired
+                    LOGGER.error("updatePriorityThreadQueue() : found a job in priority thread queue with a state different from PRIORITYTQUEUED, job id={} state={}",
+                            job.getId(), job.getState());
+                    priorityThreadQueue.remove(job);
+                    continue;
+                }
+                try {
+                    LOGGER.trace("updatePriorityThreadQueue ()  executing job id={}", job.getId());
+                    JobWrapper wrapper = new JobWrapper(job);
+                    pooledExecutor.execute(wrapper);
+                    LOGGER.trace("updatePriorityThreadQueue() waiting startup");
+                    wrapper.waitStartup();
+                    LOGGER.trace("updatePriorityThreadQueue() job started");
+                    /** let the stateChanged() always remove the jobs from the queue
+                     */
+                    // the job is running in a separate thread by this time
+                    // when  ThreadPoolExecutor can not accept new Job,
+                    // RejectedExecutionException will be thrown
+                } catch (RejectedExecutionException ree) {
+                    LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time: RejectedExecutionException", job.getId());
+                    break;
+                } catch (RuntimeException re) {
+                    LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time", job.getId());
+                    break;
                 }
             }
-        } catch (InterruptedException e) {
-            LOGGER.error("Sheduler(id=" + getId() +
-                    ") terminating update thread, since it caught an InterruptedException",
-                    e);
         }
-        //we are interrupted,
-        //terminating thread
+
+        private void updateThreadQueue() throws SRMInvalidRequestException,
+                InterruptedException
+        {
+            while (true) {
+                Job job = null;
+                if (isFair()) {
+                    //logger.debug("updateThreadQueue(), using ValueCalculator to find next job");
+                    ModifiableQueue.ValueCalculator calc =
+                            new ModifiableQueue.ValueCalculator()
+                            {
+                                private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
+                                private final int maxRunningByOwner = getMaxRunningByOwner();
+
+                                @Override
+                                public int calculateValue(
+                                        int queueLength,
+                                        int queuePosition,
+                                        Job job)
+                                {
+
+                                    int numOfRunningBySameCreator =
+                                            getRunningStateByCreator(job) +
+                                                    getRunningWithoutThreadStateByCreator(job);
+                                    int value = jobAppraiser.evaluateJobPriority(
+                                            queueLength, queuePosition,
+                                            numOfRunningBySameCreator,
+                                            maxRunningByOwner,
+                                            job);
+                                    //logger.debug("updateThreadQueue calculateValue return value="+value+" for "+o);
+                                    return value;
+                                }
+                            };
+                    job = threadQueue.getGreatestValueObject(calc);
+                }
+
+                if (job == null) {
+                    //logger.debug("updateThreadQueue(), job is null, trying threadQueue.peek();");
+                    job = threadQueue.peek();
+                }
+
+                if (job == null) {
+                    //logger.debug("updateThreadQueue no jobs were found, breaking the update loop");
+                    break;
+                }
+                //we consider running and runningWithoutThreadStateJobsNum as occupying slots in the
+                // thread pool, even if the runningWithoutThreadState jobs are not actually running,
+                // but waiting for the notifications
+                if (getTotalRunningThreads() + getTotalRunningWithoutThreadState() > getThreadPoolSize()) {
+                    break;
+                }
+                LOGGER.trace("updateThreadQueue(), found job id {}", job.getId());
+
+                org.dcache.srm.scheduler.State state = job.getState();
+                if (state != org.dcache.srm.scheduler.State.TQUEUED) {
+                    // someone has canceled the job or
+                    // its lifetime has expired
+                    LOGGER.error("updateThreadQueue() : found a job in thread queue with a state different from TQUEUED, job id={} state={}",
+                            job.getId(), job.getState());
+                    threadQueue.remove(job);
+                    continue;
+                }
+
+                try {
+                    LOGGER.trace("updateThreadQueue() executing job id={}", job.getId());
+                    JobWrapper wrapper = new JobWrapper(job);
+                    pooledExecutor.execute(wrapper);
+                    LOGGER.trace("updateThreadQueue() waiting startup");
+                    wrapper.waitStartup();
+                    LOGGER.trace("updateThreadQueue() job started");
+                        /*
+                         * let the stateChanged() always remove the jobs from the queue
+                         */
+                    // when  ThreadPoolExecutor can not accept new Job,
+                    // RejectedExecutionException will be thrown
+                } catch (RejectedExecutionException ree) {
+                    LOGGER.debug("updatePriorityThreadQueue() cannot execute job id={} at this time: RejectedExecutionException", job.getId());
+                    break;
+                } catch (RuntimeException ie) {
+                    LOGGER.error("updateThreadQueue() cannot execute job id={} at this time", job.getId());
+                    break;
+                }
+
+            }
+        }
     }
 
     private class JobWrapper implements Runnable
@@ -919,12 +935,7 @@ public final class Scheduler implements Runnable
                 } finally {
                     started();
                     decreaseNumberOfRunningThreads(job);
-                    //need to notify the Scheduler that one more thread is becoming available
-
-                    synchronized (Scheduler.this) {
-                        Scheduler.this.notifyAll();
-                        notified = true;
-                    }
+                    workSupplyService.distributeWork();
                 }
             }
         }
