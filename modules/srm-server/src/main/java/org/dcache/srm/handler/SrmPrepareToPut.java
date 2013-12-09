@@ -51,6 +51,7 @@ public class SrmPrepareToPut
     private final RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
+    private final SRM srm;
 
     public SrmPrepareToPut(SRMUser user,
                            RequestCredential credential,
@@ -65,6 +66,7 @@ public class SrmPrepareToPut
         this.storage = checkNotNull(storage);
         this.configuration = checkNotNull(srm.getConfiguration());
         this.clientHost = clientHost;
+        this.srm = checkNotNull(srm);
     }
 
     public SrmPrepareToPutResponse getResponse()
@@ -172,7 +174,7 @@ public class SrmPrepareToPut
                 r.setOverwriteMode(overwriteMode);
             }
 
-            r.schedule();
+            srm.schedule(r);
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status

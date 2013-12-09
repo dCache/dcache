@@ -36,6 +36,7 @@ public class SrmBringOnline
     private final SrmBringOnlineRequest request;
     private SrmBringOnlineResponse response;
     private final SRMUser user;
+    private final SRM srm;
     private final RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
@@ -47,6 +48,7 @@ public class SrmBringOnline
                           SRM srm,
                           String clientHost)
     {
+        this.srm = checkNotNull(srm);
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
         this.clientHost = clientHost;
@@ -99,7 +101,7 @@ public class SrmBringOnline
                     LOGGER.warn("Ignoring non-integer priority: {}", priority);
                 }
             }
-            r.schedule();
+            srm.schedule(r);
             return r.getSrmBringOnlineResponse(configuration.getBringOnlineSwitchToAsynchronousModeDelay());
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);

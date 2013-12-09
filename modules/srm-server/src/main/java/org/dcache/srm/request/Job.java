@@ -1045,18 +1045,23 @@ public abstract class Job  {
         return current;
     }
 
+    public Class<? extends Job> getSchedulerType()
+    {
+        return getClass();
+    }
+
     /**
      * This is the initial call to schedule the job for execution
      */
-    public void schedule() throws InterruptedException,IllegalStateTransition
+    public void scheduleWith(Scheduler scheduler) throws InterruptedException,
+            IllegalStateTransition
     {
         wlock();
         try{
             if(!State.PENDING.equals(state)) {
                 throw new IllegalStateException("State is not pending");
             }
-            Scheduler scheduler = SchedulerFactory.getSchedulerFactory().getScheduler(this);
-            this.setScheduler(scheduler.getId(), 0);
+            setScheduler(scheduler.getId(), 0);
             scheduler.schedule(this);
         } finally {
             wunlock();

@@ -1347,5 +1347,10 @@ public final class Scheduler
     {
         return priorityPolicyPlugin;
     }
+
+    public Class<? extends Job> getType()
+    {
+        return threadQueue.getType();
+    }
 }
 

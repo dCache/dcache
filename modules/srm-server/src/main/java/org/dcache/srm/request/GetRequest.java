@@ -91,6 +91,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
+import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
 import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
@@ -202,15 +203,22 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     @Override
-    public void schedule() throws InterruptedException,
-    IllegalStateTransition {
+    public Class<? extends Job> getSchedulerType()
+    {
+        return GetFileRequest.class;
+    }
 
+    @Override
+    public void scheduleWith(Scheduler scheduler) throws InterruptedException,
+            IllegalStateTransition
+    {
         // save this request in request storage unconditionally
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
         saveJob(true);
+
         for (GetFileRequest request : getFileRequests()) {
-            request.schedule();
+            request.scheduleWith(scheduler);
         }
     }
 

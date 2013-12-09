@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -35,6 +36,7 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.NoopJobStorage;
 import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.SharedMemoryCacheJobStorage;
 import org.dcache.srm.scheduler.State;
@@ -53,6 +55,8 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
     private final Map<Class<? extends Job>, JobStorage<?>> unmodifiableJobStorageMap =
             Collections.unmodifiableMap(jobStorageMap);
     private final ExecutorService executor;
+    private SchedulerContainer container;
+
 
     private <J extends Job> void add(Configuration.DatabaseParameters config,
                      Class<J> entityClass,
@@ -130,21 +134,20 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
         }
     }
 
+    public void setSchedulerContainer(SchedulerContainer container)
+    {
+        this.container = container;
+    }
+
     public void init() throws IllegalStateTransition, InterruptedException, DataAccessException
     {
         for (JobStorage<?> jobStorage : jobStorageMap.values()) {
             jobStorage.init();
         }
 
-        SchedulerFactory schedulerFactory = SchedulerFactory.getSchedulerFactory();
-        for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry: jobStorageMap.entrySet()) {
-            try {
-                Scheduler scheduler = schedulerFactory.getScheduler(entry.getKey());
-                for (Job job: entry.getValue().getJobs(null, State.PENDING)) {
-                    scheduler.schedule(job);
-                }
-            } catch (UnsupportedOperationException ignored) {
-            }
+        for (JobStorage<?> storage: jobStorageMap.values()) {
+            Set<? extends Job> jobs = storage.getJobs(null, State.PENDING);
+            container.schedule(jobs);
         }
     }
 
