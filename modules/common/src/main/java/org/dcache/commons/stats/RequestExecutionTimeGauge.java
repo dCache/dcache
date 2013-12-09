@@ -71,7 +71,7 @@ public interface RequestExecutionTimeGauge {
     /**
      * @return the updateNum
      */
-    int getUpdateNum();
+    long getUpdateNum();
 
     /**
      *
