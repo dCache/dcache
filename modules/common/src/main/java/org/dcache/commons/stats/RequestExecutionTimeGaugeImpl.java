@@ -113,25 +113,15 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
                     nextExecTime);
             return;
         }
-        // long term averages calculations
-         if( updateNum==0 ) {
-             averageExecutionTime = nextExecTime;
-             minExecutionTime = nextExecTime;
-             maxExecutionTime = nextExecTime;
-             executionTimeRMSS=nextExecTime*nextExecTime;
 
-         } else {
+        averageExecutionTime
+                = (averageExecutionTime * updateNum + nextExecTime) / (updateNum + 1);
+        minExecutionTime = Math.min(getMinExecutionTime(), nextExecTime);
+        maxExecutionTime = Math.max(getMaxExecutionTime(), nextExecTime);
+        executionTimeRMSS
+                = (executionTimeRMSS * updateNum + nextExecTime * nextExecTime)
+                / (updateNum + 1);
 
-            averageExecutionTime =
-                (averageExecutionTime*updateNum +nextExecTime) /(updateNum+1);
-             minExecutionTime = getMinExecutionTime() <nextExecTime?
-                 getMinExecutionTime():nextExecTime;
-             maxExecutionTime = getMaxExecutionTime()>nextExecTime?
-                 getMaxExecutionTime():nextExecTime;
-             executionTimeRMSS=
-                     (executionTimeRMSS*updateNum+nextExecTime*nextExecTime)/
-                     (updateNum+1);
-         }
         updateNum++;
 
         // period averages caclucations
