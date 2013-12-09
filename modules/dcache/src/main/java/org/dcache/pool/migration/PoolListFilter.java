@@ -51,7 +51,7 @@ public class PoolListFilter implements RefreshablePoolList
     @Override
     public boolean isValid()
     {
-        return _sourceList.isValid() && _poolList.isValid();
+        return _sourceList.isValid() && !_sourceList.getPools().isEmpty() && _poolList.isValid();
     }
 
     @Override
@@ -67,13 +67,17 @@ public class PoolListFilter implements RefreshablePoolList
         if (!isValid()) {
             return EMPTY_LIST;
         }
+        PoolManagerPoolInformation source = getSource();
+        if (source == null) {
+            return EMPTY_LIST;
+        }
 
         ImmutableList<PoolManagerPoolInformation> list = _poolList.getPools();
         if (!list.equals(_cachedList)) {
             ImmutableList.Builder<PoolManagerPoolInformation> filteredList =
                 ImmutableList.builder();
             for (PoolManagerPoolInformation pool: list) {
-                if (!isExcluded(pool) && isIncluded(pool)) {
+                if (!isExcluded(source, pool) && isIncluded(source, pool)) {
                     filteredList.add(pool);
                 }
             }
@@ -93,37 +97,41 @@ public class PoolListFilter implements RefreshablePoolList
         return false;
     }
 
-    private boolean isExcluded(PoolManagerPoolInformation pool)
+    private boolean isExcluded(PoolManagerPoolInformation source, PoolManagerPoolInformation pool)
     {
         if (matchesAny(_exclude, pool.getName())) {
             return true;
         }
-        return evaluate(_excludeWhen, pool);
+        return evaluate(_excludeWhen, source, pool);
     }
 
-    private boolean isIncluded(PoolManagerPoolInformation pool)
+    private boolean isIncluded(PoolManagerPoolInformation source, PoolManagerPoolInformation pool)
     {
         if (!_include.isEmpty()) {
             return matchesAny(_include, pool.getName());
         }
-        return evaluate(_includeWhen, pool);
+        return evaluate(_includeWhen, source, pool);
     }
 
     private PoolManagerPoolInformation getSource()
     {
         List<PoolManagerPoolInformation> list = _sourceList.getPools();
-        if (list.size() != 1) {
+        if (list.isEmpty()) {
+            return null;
+        }
+        if (list.size() > 1) {
             throw new IllegalStateException("Unexpected source pool list: Exactly one item was expected, but it contained " + list.size());
         }
         return list.get(0);
     }
 
     private boolean evaluate(Expression expression,
+                             PoolManagerPoolInformation source,
                              PoolManagerPoolInformation pool)
     {
         SymbolTable symbols = new SymbolTable();
         symbols.put(MigrationModule.CONSTANT_TARGET, pool);
-        symbols.put(MigrationModule.CONSTANT_SOURCE, getSource());
+        symbols.put(MigrationModule.CONSTANT_SOURCE, source);
         return expression.evaluateBoolean(symbols);
     }
 
