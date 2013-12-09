@@ -85,6 +85,8 @@ public class SecurityFilter implements Filter
         Subject subject = new Subject();
 
         if (!isAllowedMethod(request.getMethod())) {
+            _log.debug("Failing {} from {} as door is read-only",
+                    request.getMethod(), request.getRemoteAddr());
             manager.getResponseHandler().respondMethodNotAllowed(new EmptyResource(request), response, request);
             return;
         }
@@ -100,7 +102,8 @@ public class SecurityFilter implements Filter
             subject = login.getSubject();
 
             if (!isAuthorizedMethod(request.getMethod(), login)) {
-                throw new PermissionDeniedCacheException("Permission denied");
+                throw new PermissionDeniedCacheException("Permission denied: " +
+                        "read-only user");
             }
 
             checkRootPath(request, login);
@@ -164,7 +167,8 @@ public class SecurityFilter implements Filter
         FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
         if (!fullPath.startsWith(userRoot)) {
             if (!path.equals("/")) {
-                throw new PermissionDeniedCacheException("Permission denied");
+                throw new PermissionDeniedCacheException("Permission denied: " +
+                        "path outside user's root");
             }
 
             try {
