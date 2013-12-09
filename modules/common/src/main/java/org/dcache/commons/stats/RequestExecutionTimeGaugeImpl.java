@@ -18,13 +18,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * this class stores an average of the execution time of the request
  * if the num is the num of updates that took place before this update
- * then the next average  is caclulated using the formula:
+ * then the next average  is calculated using the formula:
  *         newaverage =
  *          (previousaverage*num +nextmeasurment) /(num+1);
  * there is a utility method to read an average(mean), max, mean, RMS, standard deviation
  * and error on mean.
  * Separate average is kept for feeding into the rrd database.
- * This average is reset to the value of the last measurment
+ * This average is reset to the value of the last measurement
  * when it is read and the new average is calculated when new updates come
  *
  * @author timur
@@ -42,7 +42,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     private long averageExecutionTime=0;
     /**
-     * Mininum
+     * Minimum
      */
     private long minExecutionTime=0;
     /**
@@ -58,7 +58,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     /**
      * number of updates
      */
-    private int  updateNum=0;
+    private long  updateNum=0;
     /**
      * last value fed to the gauge
      */
@@ -245,7 +245,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      * @return the updateNum
      */
     @Override
-    public synchronized int getUpdateNum() {
+    public synchronized long getUpdateNum() {
         return updateNum;
     }
 
