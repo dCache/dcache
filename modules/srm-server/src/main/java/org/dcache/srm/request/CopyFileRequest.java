@@ -1123,8 +1123,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
             if(!state.isFinal() && scheduler != null) {
                 try {
                     scheduler.schedule(copyFileRequest);
-                }
-                catch(InterruptedException | IllegalStateTransition ie) {
+                } catch (IllegalStateTransition ie) {
                     logger.error(ie.toString());
                 }
             }

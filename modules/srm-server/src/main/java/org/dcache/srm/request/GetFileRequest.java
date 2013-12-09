@@ -681,8 +681,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 } finally {
                     fr.wunlock();
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
             } catch (IllegalStateTransition e) {
@@ -717,8 +715,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                     scheduler.schedule(fr);
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             } catch (IllegalStateTransition e) {
                 logger.error(e.getMessage());
             } catch (SRMInvalidRequestException e) {

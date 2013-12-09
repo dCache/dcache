@@ -68,8 +68,6 @@ package org.dcache.srm.scheduler;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import com.google.common.util.concurrent.AbstractService;
-import com.google.common.util.concurrent.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -237,7 +235,6 @@ public final class Scheduler
 
     public void schedule(Job job)
             throws IllegalStateException,
-                   InterruptedException,
                    IllegalStateTransition
     {
         checkState(running, "scheduler is not running");
@@ -1351,6 +1348,11 @@ public final class Scheduler
     public synchronized String getPriorityPolicyPlugin()
     {
         return priorityPolicyPlugin;
+    }
+
+    public Class<? extends Job> getType()
+    {
+        return threadQueue.getType();
     }
 }
 

@@ -510,12 +510,152 @@
     <property name="dataSource" ref="data-source"/>
   </bean>
 
+  <bean id="get-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+	init-method="start" destroy-method="stop">
+      <description>Scheduler for GET operations</description>
+
+      <constructor-arg value="get_${srm.cell.name}"/>
+      <constructor-arg value="org.dcache.srm.request.GetFileRequest"/>
+
+      <property name="maxThreadQueueSize" value="${srm.request.get.thread-queue-size}"/>
+      <property name="threadPoolSize" value="${srm.request.get.threads}"/>
+      <property name="maxWaitingJobNum" value="${srm.request.get.max-waiting-requests}"/>
+      <property name="maxReadyQueueSize" value="${srm.request.get.ready-queue-size}"/>
+      <property name="maxReadyJobs" value="${srm.request.get.max-ready-requests}"/>
+      <property name="maxNumberOfRetries" value="${srm.request.get.retries}"/>
+      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.request.get.retry-timeout},
+                     '${srm.request.get.retry-timeout.unit}')}" />
+      <property name="maxRunningByOwner" value="${srm.request.get.max-by-same-user}"/>
+      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
+  </bean>
+
+
+  <bean id="ls-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+	init-method="start" destroy-method="stop">
+      <description>Scheduler for LS operations</description>
+
+      <constructor-arg value="ls_${srm.cell.name}"/>
+      <constructor-arg value="org.dcache.srm.request.LsFileRequest"/>
+
+      <property name="maxThreadQueueSize" value="${srm.request.ls.thread-queue-size}"/>
+      <property name="threadPoolSize" value="${srm.request.ls.threads}"/>
+      <property name="maxWaitingJobNum" value="${srm.request.ls.max-waiting-requests}"/>
+      <property name="maxReadyQueueSize" value="${srm.request.ls.ready-queue-size}"/>
+      <property name="maxReadyJobs" value="${srm.request.ls.max-ready-requests}"/>
+      <property name="maxNumberOfRetries" value="${srm.request.ls.retries}"/>
+      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.request.ls.retry-timeout},
+                     '${srm.request.ls.retry-timeout.unit}')}" />
+      <property name="maxRunningByOwner" value="${srm.request.ls.max-by-same-user}"/>
+      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
+  </bean>
+
+
+  <bean id="bringonline-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+	init-method="start" destroy-method="stop">
+      <description>Scheduler for BRING-ONLINE operations</description>
+
+      <constructor-arg value="bring_online_${srm.cell.name}"/>
+      <constructor-arg value="org.dcache.srm.request.BringOnlineFileRequest"/>
+
+      <property name="maxThreadQueueSize" value="${srm.request.bring-online.thread-queue-size}"/>
+      <property name="threadPoolSize" value="${srm.request.bring-online.threads}"/>
+      <property name="maxWaitingJobNum" value="${srm.request.bring-online.max-waiting-requests}"/>
+      <property name="maxReadyQueueSize" value="${srm.request.bring-online.ready-queue-size}"/>
+      <property name="maxReadyJobs" value="${srm.request.bring-online.max-ready-requests}"/>
+      <property name="maxNumberOfRetries" value="${srm.request.bring-online.retries}"/>
+      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.request.bring-online.retry-timeout},
+                     '${srm.request.bring-online.retry-timeout.unit}')}" />
+      <property name="maxRunningByOwner" value="${srm.request.bring-online.max-by-same-user}"/>
+      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
+  </bean>
+
+
+  <bean id="put-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+	init-method="start" destroy-method="stop">
+      <description>Scheduler for PUT operations</description>
+
+      <constructor-arg value="put_${srm.cell.name}"/>
+      <constructor-arg value="org.dcache.srm.request.PutFileRequest"/>
+
+      <property name="maxThreadQueueSize" value="${srm.request.put.thread-queue-size}"/>
+      <property name="threadPoolSize" value="${srm.request.put.threads}"/>
+      <property name="maxWaitingJobNum" value="${srm.request.put.max-waiting-requests}"/>
+      <property name="maxReadyQueueSize" value="${srm.request.put.ready-queue-size}"/>
+      <property name="maxReadyJobs" value="${srm.request.put.max-ready-requests}"/>
+      <property name="maxNumberOfRetries" value="${srm.request.put.retries}"/>
+      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.request.put.retry-timeout},
+                     '${srm.request.put.retry-timeout.unit}')}" />
+      <property name="maxRunningByOwner" value="${srm.request.put.max-by-same-user}"/>
+      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
+  </bean>
+
+  <bean id="copy-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+	init-method="start" destroy-method="stop">
+      <description>Scheduler for COPY operations</description>
+
+      <constructor-arg value="copy_${srm.cell.name}"/>
+      <constructor-arg value="org.dcache.srm.request.Job"/>
+
+      <property name="maxThreadQueueSize" value="${srm.request.copy.thread-queue-size}"/>
+      <property name="threadPoolSize" value="${srm.request.copy.threads}"/>
+      <property name="maxWaitingJobNum" value="${srm.request.copy.max-waiting-requests}"/>
+      <property name="maxNumberOfRetries" value="${srm.request.copy.retries}"/>
+      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.request.copy.retry-timeout},
+                     '${srm.request.copy.retry-timeout.unit}')}" />
+      <property name="maxRunningByOwner" value="${srm.request.copy.max-by-same-user}"/>
+      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
+  </bean>
+
+  <bean id="reserve-space-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+	init-method="start" destroy-method="stop">
+      <description>Scheduler for RESERVE-SPACE operations</description>
+
+      <constructor-arg value="reserve_space_${srm.cell.name}"/>
+      <constructor-arg value="org.dcache.srm.request.ReserveSpaceRequest"/>
+
+      <property name="maxThreadQueueSize" value="${srm.request.reserve-space.thread-queue-size}"/>
+      <property name="threadPoolSize" value="${srm.request.reserve-space.threads}"/>
+      <property name="maxWaitingJobNum" value="${srm.request.reserve-space.max-waiting-requests}"/>
+      <property name="maxReadyQueueSize" value="${srm.request.reserve-space.ready-queue-size}"/>
+      <property name="maxReadyJobs" value="${srm.request.reserve-space.max-ready-requests}"/>
+      <property name="maxNumberOfRetries" value="${srm.request.reserve-space.retries}"/>
+      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srm.request.reserve-space.retry-timeout},
+                     '${srm.request.reserve-space.retry-timeout.unit}')}" />
+      <property name="maxRunningByOwner" value="${srm.request.reserve-space.max-by-same-user}"/>
+      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
+  </bean>
+
+
+  <bean id="schedulers" class="org.dcache.srm.scheduler.SchedulerContainer">
+      <description>Collection of schedulers</description>
+
+      <property name="schedulers">
+	  <list>
+	      <ref bean="get-scheduler"/>
+	      <ref bean="ls-scheduler"/>
+	      <ref bean="put-scheduler"/>
+	      <ref bean="bringonline-scheduler"/>
+	      <ref bean="reserve-space-scheduler"/>
+	      <!-- COPY scheduler must be last in list as it has type Job.class -->
+	      <ref bean="copy-scheduler"/>
+	  </list>
+      </property>
+  </bean>
+
+
   <bean id="srm" class="org.dcache.srm.SRM" factory-method="getSRM"
-        destroy-method="stop" depends-on="config">
+	init-method="start" depends-on="config">
     <description>SRM engine</description>
 
     <constructor-arg ref="config"/>
-    <constructor-arg value="${srm.cell.name}"/>
+
+    <property name="schedulers" ref="schedulers"/>
   </bean>
 
 

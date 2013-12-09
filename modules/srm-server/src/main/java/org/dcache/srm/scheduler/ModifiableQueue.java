@@ -343,4 +343,8 @@ public class ModifiableQueue  {
 
     }
 
+    public Class<? extends Job> getType()
+    {
+        return type;
+    }
 }

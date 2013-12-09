@@ -34,6 +34,7 @@ public class SrmLs
     private SrmLsResponse response;
     private final RequestCredential credential;
     private final SRMUser user;
+    private final SRM srm;
     private final String clientHost;
     private final int max_results_num;
 
@@ -51,6 +52,7 @@ public class SrmLs
         this.credential = checkNotNull(credential);
         this.clientHost = clientHost;
         this.configuration = srm.getConfiguration();
+        this.srm = checkNotNull(srm);
     }
 
     public SrmLsResponse getResponse()
@@ -89,7 +91,7 @@ public class SrmLs
                 longFormat,
                 max_results_num);
         try (JDC ignored = r.applyJdc()) {
-            r.schedule();
+            srm.schedule(r);
             return r.getSrmLsResponse(configuration.getLsSwitchToAsynchronousModeDelay());
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);

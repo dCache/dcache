@@ -106,9 +106,13 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
- *
- * @author  timur
- * @version
+ * A BringOnlineFileRequest object represents the users desire that the system
+ * provide some level of guarantee of low-latency when initiating subsequent
+ * transfer requests against a particular file; i.e., that the file is brought
+ * into an "online state".  A BringOnlineRequest object is an aggregation of
+ * one or more BringOnlineFileRequest objects, representing the ability (in the
+ * SRM protocol) for the user to request multiple files be brought into a
+ * low-latency state with a single request.
  */
 public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest> {
     private final static Logger logger =
@@ -372,6 +376,22 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
         logger.info("PinId is "+getPinId()+" returning, scheduler should change" +
             " state to \"Ready\"");
+    }
+
+
+    @Override
+    public void onSrmRestart(Scheduler scheduler)
+    {
+        try {
+            if (getRemainingLifetime() > 0) {
+                scheduler.schedule(this);
+            } else {
+                super.onSrmRestart(scheduler);
+            }
+        } catch (IllegalStateException | IllegalStateTransition e) {
+            logger.error("Failed to restore BringOnlineFileRequest {}: {}",
+                    getId(), e.getMessage());
+        }
     }
 
     public void askFileId() throws NonFatalJobFailure, FatalJobFailure {
@@ -677,8 +697,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 }
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
-            } catch (InterruptedException e) {
-                logger.error(e.toString());
             } catch (IllegalStateTransition e) {
                 logger.error(e.getMessage());
             } catch (SRMException e) {

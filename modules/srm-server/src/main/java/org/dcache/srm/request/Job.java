@@ -105,7 +105,6 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.JDC;
 
@@ -1026,18 +1025,25 @@ public abstract class Job  {
         return current;
     }
 
+    public Class<? extends Job> getSchedulerType()
+    {
+        return getClass();
+    }
+
     /**
      * This is the initial call to schedule the job for execution
      */
-    public void schedule() throws InterruptedException,IllegalStateTransition
+    public void scheduleWith(Scheduler scheduler) throws InterruptedException,
+            IllegalStateTransition
     {
         wlock();
         try{
             if(!State.PENDING.equals(state)) {
-                throw new IllegalStateException("State is not pending");
+                throw new IllegalStateException("Job " +
+                        getClass().getSimpleName() + " [" + this.getId() +
+                        "] has state " + state + "(not PENDING)");
             }
-            Scheduler scheduler = SchedulerFactory.getSchedulerFactory().getScheduler(this);
-            this.setScheduler(scheduler.getId(), 0);
+            setScheduler(scheduler.getId(), 0);
             scheduler.schedule(this);
         } finally {
             wunlock();
@@ -1128,4 +1134,26 @@ public abstract class Job  {
     }
 
     public abstract void toString(StringBuilder sb, boolean longformat);
+
+
+    /**
+     * Method called when the SRM is started and a job has been restored from
+     * some JobStorage (such as a DatabaseJobStorage) and the job is in a
+     * non-final state.
+     */
+    public void onSrmRestart(Scheduler scheduler)
+    {
+        wlock();
+        try {
+            if (state == State.PENDING && getRemainingLifetime() > 0) {
+                scheduler.schedule(this);
+            } else {
+                setState(State.FAILED, "Aborted due to SRM service restart");
+            }
+        } catch (IllegalStateTransition e) {
+            logger.error("Failed to restore job: " + e.getMessage());
+        } finally {
+            wunlock();
+        }
+    }
 }
