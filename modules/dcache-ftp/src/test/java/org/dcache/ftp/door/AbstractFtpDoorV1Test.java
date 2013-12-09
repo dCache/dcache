@@ -120,7 +120,7 @@ public class AbstractFtpDoorV1Test {
     public void whenRnfrIsCalledForNonExistingFilenameReplyFileNotFound550()
             throws FTPCommandException, CacheException {
         doCallRealMethod().when(door).ftp_rnfr(anyString());
-        when(pnfs.getPnfsIdByPath("/pathRoot/cwd/"+INVALID_FILE)).thenThrow(CacheException.class);
+        when(pnfs.getPnfsIdByPath("/pathRoot/cwd/"+INVALID_FILE)).thenThrow(FileNotFoundCacheException.class);
 
         thrown.expectCode(550);
         door.ftp_rnfr(INVALID_FILE);

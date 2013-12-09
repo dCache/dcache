@@ -101,16 +101,12 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
 
         try {
-            enableInterrupt();
             //_serviceContext.setChannelBinding(cb);
             //debug("GssFtpDoorV1::ftp_adat: CB set");
             token = _serviceContext.acceptSecContext(token, 0, token.length);
             //debug("GssFtpDoorV1::ftp_adat: Token created");
             _gssIdentity = _serviceContext.getSrcName();
             //debug("GssFtpDoorV1::ftp_adat: User principal: " + UserPrincipal);
-        } catch (InterruptedException e) {
-            reply("421 Service unavailable");
-            return;
         } catch (GSSException e) {
             CertPathValidatorException cpve =
                     getFirst(filter(Throwables.getCausalChain(e), CertPathValidatorException.class), null);
@@ -123,8 +119,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 	    LOGGER.trace("Authentication failed", e);
             reply("535 Authentication failed: " + e.getMessage());
             return;
-        } finally {
-            disableInterrupt();
         }
         if (token != null) {
             if (!_serviceContext.isEstablished()) {

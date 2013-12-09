@@ -10,11 +10,10 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
@@ -26,7 +25,7 @@ import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
 import org.dcache.cells.AbstractCell;
-import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.SequentialExecutor;
 import org.dcache.util.Transfer;
 
 /**
@@ -54,13 +53,12 @@ public class LineBasedDoor
 
     private LineBasedInterpreter interpreter;
 
-    private final CommandQueue commandQueue = new CommandQueue();
     private final CountDownLatch shutdownGate = new CountDownLatch(1);
 
     /**
-     * Shared executor for processing commands.
+     * Executor for processing commands.
      */
-    private final ExecutorService executor;
+    private final Executor executor;
 
     private Thread workerThread;
 
@@ -146,6 +144,7 @@ public class LineBasedDoor
     public void run()
     {
         try {
+            SequentialExecutor executor = new SequentialExecutor(this.executor);
             try {
                 /* Notice that we do not close the input stream, as
                  * doing so would close the socket as well. We don't
@@ -160,17 +159,16 @@ public class LineBasedDoor
 
                 String s = in.readLine();
                 while (s != null) {
-                    commandQueue.add(s);
+                    executor.execute(new Command(s));
                     s = in.readLine();
                 }
             } catch (IOException e) {
                 LOGGER.error("Got error reading data: {}", e.getMessage());
             } finally {
-                /* This will block until command processing has
-                 * finished.
-                 */
                 try {
-                    commandQueue.stop();
+                    executor.shutdownNow();
+                    interpreter.shutdown();
+                    executor.awaitTermination();
                 } catch (InterruptedException e) {
                     LOGGER.error("Failed to shut down command processing: {}",
                             e.getMessage());
@@ -247,105 +245,6 @@ public class LineBasedDoor
         }
     }
 
-    /**
-     * Support class to implement FTP command processing on shared
-     * worker threads. Commands on the same queue are executed
-     * sequentially.
-     */
-    class CommandQueue
-    {
-        /** Queue of FTP commands to execute.
-         */
-        private final Queue<String> _commands = new LinkedList<>();
-
-        /**
-         * True iff the command queue has been stopped.
-         */
-        private boolean isStopped;
-
-        /**
-         * True iff the command processing task is in the
-         * ExecutorService queue or is currently running.
-         */
-        private boolean isRunning;
-
-        /**
-         * Adds a command to the command queue.
-         */
-        public synchronized void add(String command)
-        {
-            if (!isStopped) {
-                _commands.add(command);
-                if (!isRunning) {
-                    final CDC cdc = new CDC();
-                    isRunning = true;
-                    executor.submit(new FireAndForgetTask(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            try (CDC ignored = cdc.restore()) {
-                                String command = getOrDone();
-                                while (command != null) {
-                                    try {
-                                        interpreter.execute(command);
-                                    } catch (CommandExitException e) {
-                                        shutdownInputStream();
-                                    } catch (RuntimeException e) {
-                                        LOGGER.error("Bug detected", e);
-                                    }
-                                    command = getOrDone();
-                                }
-                            }
-                        }
-                    }));
-                }
-            }
-        }
-
-        /**
-         * Returns the next command.
-         *
-         * Returns null and signals that the command processing loop
-         * was left if the CommandQueue was stopped or the queue is
-         * empty.
-         */
-        private synchronized String getOrDone()
-        {
-            if (isStopped || _commands.isEmpty()) {
-                isRunning = false;
-                notifyAll();
-                return null;
-            } else {
-                return _commands.remove();
-            }
-        }
-
-        /**
-         * Stops the command queue.
-         *
-         * The interpreter is shut down and the method blocks until command
-         * processing has ceased.
-         *
-         * After a call to this method, {@code getOrDone} returns null.
-         *
-         * Does nothing if the command queue is already stopped.
-         */
-        public synchronized void stop()
-            throws InterruptedException
-        {
-            if (!isStopped) {
-                isStopped = true;
-
-                interpreter.shutdown();
-
-                while (isRunning) {
-                    wait();
-                }
-            }
-        }
-    }
-
     public interface LineBasedInterpreter
     {
         void setWriter(Writer out);
@@ -354,5 +253,31 @@ public class LineBasedDoor
         void shutdown();
         void setRemoteAddress(InetSocketAddress remoteAddress);
         void setLocalAddress(InetSocketAddress localAddress);
+    }
+
+    private class Command implements Runnable
+    {
+        private final CDC cdc;
+        private final String command;
+
+        public Command(String command)
+        {
+            this.cdc = new CDC();
+            this.command = command;
+        }
+
+        @Override
+        public void run()
+        {
+            try (CDC ignored = cdc.restore()) {
+                try {
+                    interpreter.execute(command);
+                } catch (CommandExitException e) {
+                    shutdownInputStream();
+                } catch (RuntimeException e) {
+                    LOGGER.error("Bug detected", e);
+                }
+            }
+        }
     }
 }

@@ -117,7 +117,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import diskCacheV111.doors.AbstractInterruptibleLineBasedInterpreter;
 import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
@@ -187,6 +186,7 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 
+import static diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -247,8 +247,7 @@ class FTPCommandException extends Exception
 }
 
 public abstract class AbstractFtpDoorV1
-        extends AbstractInterruptibleLineBasedInterpreter
-        implements CellMessageReceiver, CellCommandListener, CellInfoProvider, CellMessageSender
+        implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener, CellInfoProvider, CellMessageSender
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
@@ -1396,8 +1395,6 @@ public abstract class AbstractFtpDoorV1
     @Override
     public void shutdown()
     {
-        super.shutdown();
-
         /* In case of failure, we may have a transfer hanging around.
          */
         FtpTransfer transfer = getTransfer();
@@ -2595,13 +2592,8 @@ public abstract class AbstractFtpDoorV1
              * manager updates its state, we will retry failed
              * transfer a few times.
              */
-            enableInterrupt();
-            try {
-                transfer.createAdapter();
-                transfer.selectPoolAndStartMover(_ioQueueName, _readRetryPolicy);
-            } finally {
-                disableInterrupt();
-            }
+            transfer.createAdapter();
+            transfer.selectPoolAndStartMover(_ioQueueName, _readRetryPolicy);
         } catch (PermissionDeniedCacheException e) {
             transfer.abort(550, "Permission denied");
         } catch (CacheException e) {
@@ -2702,13 +2694,8 @@ public abstract class AbstractFtpDoorV1
             transfer.createTransactionLog();
             transfer.setChecksum(_checkSum);
 
-            enableInterrupt();
-            try {
-                transfer.createAdapter();
-                transfer.selectPoolAndStartMover(_ioQueueName, _writeRetryPolicy);
-            } finally {
-                disableInterrupt();
-            }
+            transfer.createAdapter();
+            transfer.selectPoolAndStartMover(_ioQueueName, _writeRetryPolicy);
         } catch (InterruptedException e) {
             transfer.abort(451, "Operation cancelled");
         } catch (IOException e) {
@@ -2853,7 +2840,6 @@ public abstract class AbstractFtpDoorV1
         FsPath path = absolutePath(arg);
 
         try {
-            enableInterrupt();
             reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
@@ -2908,8 +2894,6 @@ public abstract class AbstractFtpDoorV1
         } catch (CacheException | IOException e){
             reply("451 Local error in processing");
             LOGGER.warn("Error in LIST: {}", e.getMessage());
-        } finally {
-            disableInterrupt();
         }
     }
 
@@ -2927,8 +2911,6 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            enableInterrupt();
-
             FsPath path = absolutePath(arg);
 
             /* RFC 3659 seems to imply that we have to report on
@@ -2987,8 +2969,6 @@ public abstract class AbstractFtpDoorV1
         } catch (CacheException | IOException e) {
             reply("451 Local error in processing");
             LOGGER.warn("Error in NLST: {}", e.getMessage());
-        } finally {
-            disableInterrupt();
         }
     }
 
@@ -3029,8 +3009,6 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn();
 
         try {
-            enableInterrupt();
-
             FsPath path;
             if (arg.length() == 0) {
                 path = absolutePath(".");
@@ -3079,17 +3057,13 @@ public abstract class AbstractFtpDoorV1
         } catch (CacheException | IOException e) {
             reply("451 Local error in processing");
             LOGGER.warn("Error in MLSD: {}", e.getMessage());
-        } finally {
-            disableInterrupt();
         }
     }
 
     public void ftp_rnfr(String arg) throws FTPCommandException {
-
         checkLoggedIn();
 
         try {
-            enableInterrupt();
             _filepath = null;
 
             if (Strings.isNullOrEmpty(arg)) {
@@ -3101,24 +3075,17 @@ public abstract class AbstractFtpDoorV1
             _filepath = path;
 
             reply("350 File exists, ready for destination name RNTO");
-        }
-        catch (InterruptedException e) {
-            throw new FTPCommandException(451,"Operation cancelled");
-        }
-        catch (CacheException e) {
+        } catch (FileNotFoundCacheException e) {
             throw new FTPCommandException(550, "File not found");
-        }
-        finally {
-            disableInterrupt();
+        } catch (CacheException e) {
+            throw new FTPCommandException(451, "Transient error: " + e.getMessage());
         }
     }
 
     public void ftp_rnto(String arg) throws FTPCommandException {
-
         checkLoggedIn();
 
         try {
-            enableInterrupt();
             if (_filepath == null) {
                 throw new FTPCommandException(503, "RNTO must be preceeded by RNFR");
             }
@@ -3130,16 +3097,12 @@ public abstract class AbstractFtpDoorV1
             _pnfs.renameEntry(_filepath.toString(), newName.toString(), true);
 
             reply("250 File renamed");
-        }
-        catch (InterruptedException e) {
-            throw new FTPCommandException(451, "Operation cancelled");
-        }
-        catch (CacheException e) {
+        } catch (PermissionDeniedCacheException e) {
             throw new FTPCommandException(550, "Permission denied");
-        }
-        finally {
+        } catch (CacheException e) {
+            throw new FTPCommandException(451, "Transient error: " + e.getMessage());
+        } finally {
             _filepath = null;
-            disableInterrupt();
         }
     }
     //----------------------------------------------
@@ -3178,12 +3141,9 @@ public abstract class AbstractFtpDoorV1
          * transfers have completed.
          */
         try {
-            enableInterrupt();
             joinTransfer();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } finally {
-            disableInterrupt();
         }
 
         throw new CommandExitException("", 0);
