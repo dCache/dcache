@@ -302,10 +302,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 deviceid4 oldId = device.getDeviceId();
                 _deviceMap.remove(oldId);
             }
-            /*
-             * TODO: the PoolPassiveIoFileMessage have to be adopted to send
-             * list of all interfaces
-             */
+
             deviceid4 deviceid = deviceidOf(id);
             device = new PoolDS(deviceid, _stripingPattern, poolAddress);
 
