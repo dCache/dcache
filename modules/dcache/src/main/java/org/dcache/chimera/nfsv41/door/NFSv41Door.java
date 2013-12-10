@@ -178,6 +178,12 @@ public class NFSv41Door extends AbstractCellComponent implements
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
                                 NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
 
+    /**
+     * Data striping pattern for a file.
+     */
+    private final StripingPattern<InetSocketAddress[]> _stripingPattern =
+            new RoundRobinStripingPattern<>();
+
     public void setEnableRpcsecGss(boolean enable) {
         _enableRpcsecGss = enable;
     }
@@ -301,7 +307,7 @@ public class NFSv41Door extends AbstractCellComponent implements
              * list of all interfaces
              */
             deviceid4 deviceid = deviceidOf(id);
-            device = new PoolDS(deviceid, poolAddress);
+            device = new PoolDS(deviceid, _stripingPattern, poolAddress);
 
             _poolNameToIpMap.put(poolName, device);
             _deviceMap.put(deviceid, device);
@@ -576,10 +582,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final InetSocketAddress[] _socketAddress;
         private final device_addr4 _deviceAddr;
 
-        public PoolDS(deviceid4 deviceId, InetSocketAddress[] ip) {
+        public PoolDS(deviceid4 deviceId, StripingPattern<InetSocketAddress[]> stripingPattern,
+                InetSocketAddress[] ip) {
             _deviceId = deviceId;
             _socketAddress = ip;
-            _deviceAddr = deviceAddrOf(new RoundRobinStripingPattern<InetSocketAddress[]>(), ip);
+            _deviceAddr = deviceAddrOf(stripingPattern, ip);
         }
 
         public deviceid4 getDeviceId() {
