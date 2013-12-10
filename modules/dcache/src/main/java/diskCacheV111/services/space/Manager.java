@@ -96,16 +96,16 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.JdbcConnectionPool;
@@ -3363,7 +3363,7 @@ public final class Manager
                                 cancelUseSpace((CancelUse)message);
                         }
                         else if(message instanceof PoolMgrSelectWritePoolMsg) {
-                                selectPool(envelope, (PoolMgrSelectWritePoolMsg) message, false);
+                                selectPoolOnRequest(envelope, (PoolMgrSelectWritePoolMsg) message);
                                 replyRequired = false;
                         }
                         else if(message instanceof GetSpaceMetaData){
@@ -3444,7 +3444,7 @@ public final class Manager
                         envelope.getDestinationPath());
                 try {
                         if( message instanceof PoolMgrSelectWritePoolMsg) {
-                                selectPool(envelope, (PoolMgrSelectWritePoolMsg) message, true);
+                                selectPoolOnReply(envelope, (PoolMgrSelectWritePoolMsg) message);
                         }
                         else if(message instanceof PoolAcceptFileMessage ) {
                                 Preconditions.checkArgument(message.isReply());
@@ -4512,167 +4512,163 @@ public final class Manager
                 }
         }
 
-        public void selectPool(CellMessage envelope,
-                               PoolMgrSelectWritePoolMsg selectWritePool,
-                               boolean isReply)
+        public void selectPoolOnRequest(CellMessage envelope, PoolMgrSelectWritePoolMsg selectWritePool)
                 throws Exception {
-                logger.trace("selectPool({})", selectWritePool);
+                logger.trace("selectPoolOnRequest({})", selectWritePool);
                 String pnfsPath = selectWritePool.getPnfsPath();
                 PnfsId pnfsId   = selectWritePool.getPnfsId();
                 if (pnfsPath == null) {
-                        if(!isReply) {
-                                forwardToPoolManager(envelope);
-                        }
+                        forwardToPoolManager(envelope);
                         return;
                 }
                 File file = null;
                 FileAttributes fileAttributes = selectWritePool.getFileAttributes();
-                if (!isReply) {
+
+                try {
+                        logger.trace("selectPoolOnRequest: getFiles({})", pnfsPath);
+                        Set<File> files = getFiles(pnfsPath);
+                        for (File f: files) {
+                                if (f.getPnfsId()==null) {
+                                        file=f;
+                                        break;
+                                }
+                        }
+                }
+                catch (Exception e) {
                         /*
-                         * message on the way to PoolManager
+                         * this is expected for implicit space reservations
+                         */
+                        logger.trace("failed to find file: {}", e.getMessage());
+                }
+                if(file==null) {
+                        /*
+                         * we are here in case of implicit space reservations
                          *
                          */
-                        try {
-                                logger.trace("selectPool: getFiles({})", pnfsPath);
-                                Set<File> files = getFiles(pnfsPath);
-                                for (File f: files) {
-                                        if (f.getPnfsId()==null) {
-                                                file=f;
-                                                break;
-                                        }
-                                }
-                        }
-                        catch (Exception e) {
-                                /*
-                                 * this is expected for implicit space reservations
-                                 */
-                                logger.trace("failed to find file: {}", e.getMessage());
-                        }
-                        if(file==null) {
-                                /*
-                                 * we are here in case of implicit space reservations
-                                 *
-                                 */
-                                AccessLatency al = fileAttributes.getAccessLatency();
-                                RetentionPolicy rp = fileAttributes.getRetentionPolicy();
-                                String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
-                                ProtocolInfo protocolInfo = selectWritePool.getProtocolInfo();
-                                Subject subject = selectWritePool.getSubject();
+                        AccessLatency al = fileAttributes.getAccessLatency();
+                        RetentionPolicy rp = fileAttributes.getRetentionPolicy();
+                        String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
+                        ProtocolInfo protocolInfo = selectWritePool.getProtocolInfo();
+                        Subject subject = selectWritePool.getSubject();
 
-                                if (defaultSpaceToken==null) {
-                                        boolean hasIdentity =
-                                            !Subjects.getFqans(subject).isEmpty() || Subjects.getUserName(subject) != null;
-                                        if(reserveSpaceForNonSRMTransfers && hasIdentity) {
-                                                logger.trace("selectPool: file is " +
-                                                             "not found, no prior " +
-                                                             "reservations for this file, " +
-                                                             "calling reserveAndUseSpace()");
+                        if (defaultSpaceToken==null) {
+                                boolean hasIdentity =
+                                    !Subjects.getFqans(subject).isEmpty() || Subjects.getUserName(subject) != null;
+                                if(reserveSpaceForNonSRMTransfers && hasIdentity) {
+                                        logger.trace("selectPoolOnRequest: file is " +
+                                                     "not found, no prior " +
+                                                     "reservations for this file, " +
+                                                     "calling reserveAndUseSpace()");
 
-                                                file = reserveAndUseSpace(pnfsPath,
-                                                                          pnfsId,
-                                                                          selectWritePool.getPreallocated(),
-                                                                          al,
-                                                                          rp,
-                                                                          subject,
-                                                                          protocolInfo,
-                                                                          fileAttributes);
-                                                logger.trace("selectPool: file is " +
-                                                             "not found, reserveAndUseSpace() " +
-                                                             "returned {}", file);
-                                        }
-                                        else {
-                                                logger.trace("selectPool: file is " +
-                                                             "not found, no prior " +
-                                                             "reservations for this file " +
-                                                             "reserveSpaceForNonSRMTransfers={} " +
-                                                             "subject={}",
-                                                             reserveSpaceForNonSRMTransfers,
-                                                             subject.getPrincipals());
-                                                forwardToPoolManager(envelope);
-                                                return;
-                                        }
+                                        file = reserveAndUseSpace(pnfsPath,
+                                                                  pnfsId,
+                                                                  selectWritePool.getPreallocated(),
+                                                                  al,
+                                                                  rp,
+                                                                  subject,
+                                                                  protocolInfo,
+                                                                  fileAttributes);
+                                        logger.trace("selectPoolOnRequest: file is " +
+                                                     "not found, reserveAndUseSpace() " +
+                                                     "returned {}", file);
                                 }
                                 else {
-                                        logger.trace("selectPool: file is not " +
-                                                     "found, found default space " +
-                                                     "token, calling useSpace()");
-                                        long lifetime    = 1000*60*60;
-                                        long spaceToken = Long.parseLong(defaultSpaceToken);
-                                        long fileId     = useSpace(spaceToken,
-                                                                   subject,
-                                                                   selectWritePool.getPreallocated(),
-                                                                   lifetime,
-                                                                   pnfsPath,
-                                                                   pnfsId);
-                                        file = getFile(fileId);
+                                        logger.trace("selectPoolOnRequest: file is " +
+                                                     "not found, no prior " +
+                                                     "reservations for this file " +
+                                                     "reserveSpaceForNonSRMTransfers={} " +
+                                                     "subject={}",
+                                                     reserveSpaceForNonSRMTransfers,
+                                                     subject.getPrincipals());
+                                        forwardToPoolManager(envelope);
+                                        return;
                                 }
                         }
                         else {
-                                /*
-                                 * This takes care of records created by SRM before
-                                 * transfer has started
-                                 */
-                                updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
+                                logger.trace("selectPoolOnRequest: file is not " +
+                                             "found, found default space " +
+                                             "token, calling useSpace()");
+                                long lifetime    = 1000*60*60;
+                                long spaceToken = Long.parseLong(defaultSpaceToken);
+                                long fileId     = useSpace(spaceToken,
+                                                           subject,
+                                                           selectWritePool.getPreallocated(),
+                                                           lifetime,
+                                                           pnfsPath,
+                                                           pnfsId);
+                                file = getFile(fileId);
                         }
-                        long spaceId     = file.getSpaceId();
-                        Space space      = getSpace(spaceId);
-                        long linkGroupid = space.getLinkGroupId();
-                        LinkGroup linkGroup  = getLinkGroup(linkGroupid);
-                        String linkGroupName = linkGroup.getName();
-                        selectWritePool.setLinkGroup(linkGroupName);
-                        StorageInfo storageInfo = selectWritePool.getStorageInfo();
-                        storageInfo.setKey("SpaceToken",Long.toString(spaceId));
-                        fileAttributes.setAccessLatency(space.getAccessLatency());
-                        fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
-
-                        if (fileAttributes.getSize() == 0 && file.getSizeInBytes() > 1) {
-                                fileAttributes.setSize(file.getSizeInBytes());
-                        }
-                        if (space.getDescription()!=null) {
-                                storageInfo.setKey("SpaceTokenDescription",space.getDescription());
-                        }
-                        logger.trace("selectPool: found linkGroup = {}, " +
-                                     "forwarding message", linkGroupName);
-                        forwardToPoolManager(envelope);
                 }
                 else {
                         /*
-                         * received reply from PoolManager
-                         *
+                         * This takes care of records created by SRM before
+                         * transfer has started
                          */
-                        if (selectWritePool.getReturnCode()!=0) {
+                        updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
+                }
+                long spaceId     = file.getSpaceId();
+                Space space      = getSpace(spaceId);
+                long linkGroupid = space.getLinkGroupId();
+                LinkGroup linkGroup  = getLinkGroup(linkGroupid);
+                String linkGroupName = linkGroup.getName();
+                selectWritePool.setLinkGroup(linkGroupName);
+                StorageInfo storageInfo = selectWritePool.getStorageInfo();
+                storageInfo.setKey("SpaceToken",Long.toString(spaceId));
+                fileAttributes.setAccessLatency(space.getAccessLatency());
+                fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
+
+                if (fileAttributes.getSize() == 0 && file.getSizeInBytes() > 1) {
+                        fileAttributes.setSize(file.getSizeInBytes());
+                }
+                if (space.getDescription()!=null) {
+                        storageInfo.setKey("SpaceTokenDescription",space.getDescription());
+                }
+                logger.trace("selectPoolOnRequest: found linkGroup = {}, " +
+                             "forwarding message", linkGroupName);
+                forwardToPoolManager(envelope);
+        }
+
+        public void selectPoolOnReply(CellMessage envelope,
+                                      PoolMgrSelectWritePoolMsg selectWritePool)
+                throws Exception {
+                logger.trace("selectPoolOnReply({})", selectWritePool);
+                String pnfsPath = selectWritePool.getPnfsPath();
+                PnfsId pnfsId   = selectWritePool.getPnfsId();
+                if (pnfsPath == null || selectWritePool.getReturnCode() == 0) {
+                        return;
+                }
+
+                File file;
+                try {
+                        file = getFile(pnfsId);
+                } catch(SQLException ignored) {
+                        logger.trace(ignored.getMessage());
+                        return;
+                }
+                Connection connection = null;
+                try {
+                        connection = connection_pool.getConnection();
+                        connection.setAutoCommit(false);
+                        removePnfsIdOfFileInSpace(connection,file.getId(),null);
+                        connection.commit();
+                        connection_pool.returnConnection(connection);
+                        connection = null;
+                }
+                catch(SQLException sqle) {
+                        logger.error("Failed to nullify pnfsid of file {}: {}",
+                                     file, sqle.getMessage());
+                        if (connection!=null) {
                                 try {
-                                        file = getFile(pnfsId);
-                                } catch(SQLException ignored) {
-                                        logger.trace(ignored.getMessage());
-                                        return;
+                                        connection.rollback();
                                 }
-                                Connection connection = null;
-                                try {
-                                        connection = connection_pool.getConnection();
-                                        connection.setAutoCommit(false);
-                                        removePnfsIdOfFileInSpace(connection,file.getId(),null);
-                                        connection.commit();
-                                        connection_pool.returnConnection(connection);
-                                        connection = null;
-                                }
-                                catch(SQLException sqle) {
-                                        logger.error("Failed to nullify pnfsid of file {}: {}",
-                                                     file, sqle.getMessage());
-                                        if (connection!=null) {
-                                                try {
-                                                        connection.rollback();
-                                                }
-                                                catch (SQLException e) {}
-                                                connection_pool.returnFailedConnection(connection);
-                                                connection = null;
-                                        }
-                                }
-                                finally {
-                                        if(connection != null) {
-                                                connection_pool.returnConnection(connection);
-                                        }
-                                }
+                                catch (SQLException e) {}
+                                connection_pool.returnFailedConnection(connection);
+                                connection = null;
+                        }
+                }
+                finally {
+                        if(connection != null) {
+                                connection_pool.returnConnection(connection);
                         }
                 }
         }
