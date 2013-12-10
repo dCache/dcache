@@ -359,6 +359,12 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         getTURLs();
     }
 
+    @Override
+    public Class<? extends Job> getSchedulerType()
+    {
+        return Job.class;
+    }
+
     private void identify() throws IOException, SRMException {
         wlock();
         try {

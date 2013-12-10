@@ -89,8 +89,8 @@ public class SchedulerContainer
         }
 
         if (suggestion == null) {
-            throw new UnsupportedOperationException("Scheduler for class " +
-                    type + " is not supported");
+            throw new UnsupportedOperationException("Scheduler for " + type +
+                    " is not supported");
         }
 
         return suggestion;
