@@ -45,7 +45,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
-import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -65,7 +64,6 @@ import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.Utils;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 
 import static com.google.common.collect.Iterables.transform;
 
@@ -671,84 +669,6 @@ public class PoolManagerV5
            return false ;
        }
 
-    }
-
-    public DelayedReply messageArrived(PoolManagerSelectLinkGroupForWriteMessage message)
-    {
-        return new LinkGroupSelectionTask(message);
-    }
-
-    /**
-     * Task for processing link group selection messages.
-     */
-    public class LinkGroupSelectionTask
-        extends DelayedReply
-        implements Runnable
-    {
-        private final PoolManagerSelectLinkGroupForWriteMessage _message;
-        private final CDC _cdc;
-
-        public LinkGroupSelectionTask(PoolManagerSelectLinkGroupForWriteMessage message)
-        {
-            _message = message;
-            _cdc = new CDC();
-            new Thread(this, "LinkGroupSelectionTask").start();
-        }
-
-        @Override
-        public void run()
-        {
-            long started = System.currentTimeMillis();
-            try (CDC ignored = _cdc.restore()) {
-                _log.info("Select link group handler started");
-
-                _message.setLinkGroups(selectLinkGroups());
-                _message.setSucceeded();
-
-                _log.info("Select link group handler finished after {} ms",
-                        (System.currentTimeMillis() - started));
-            } catch (Exception e) {
-                _message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.getMessage());
-            } finally {
-                reply(_message);
-            }
-        }
-
-        protected List<String> selectLinkGroups()
-        {
-            FileAttributes fileAttributes = _message.getFileAttributes();
-            ProtocolInfo protocolInfo = _message.getProtocolInfo();
-            String protocol =
-                protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
-            String hostName =
-                (protocolInfo instanceof IpProtocolInfo)
-                ? ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress().getHostAddress()
-                : null;
-
-            Collection<String> linkGroups = _message.getLinkGroups();
-            if (linkGroups == null) {
-                linkGroups =
-                    Utils.linkGroupInfos(_selectionUnit, _costModule).keySet();
-            }
-
-            List<String> outputLinkGroups =
-                new ArrayList<>(linkGroups.size());
-
-            for (String linkGroup: linkGroups) {
-                PoolPreferenceLevel [] level =
-                    _selectionUnit.match(DirectionType.WRITE,
-                                         hostName,
-                                         protocol,
-                                         fileAttributes.getStorageInfo(),
-                                         linkGroup);
-                if (level.length > 0) {
-                    outputLinkGroups.add(linkGroup);
-                }
-            }
-
-            return outputLinkGroups;
-        }
     }
 
     public PoolManagerGetPoolMonitor

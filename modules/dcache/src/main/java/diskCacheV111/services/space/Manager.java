@@ -47,6 +47,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
@@ -58,6 +59,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import diskCacheV111.poolManager.PoolPreferenceLevel;
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.services.space.message.CancelUse;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
@@ -81,9 +84,9 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.ThreadManager;
-import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -108,9 +111,10 @@ import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.Utils;
 import org.dcache.util.JdbcConnectionPool;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 
 /**
  *   <pre> Space Manager dCache service provides ability
@@ -164,7 +168,7 @@ public final class Manager
         private static IoPackage<File> fileIO = new FileIO();
         private static IoPackage<Space> spaceReservationIO = new SpaceReservationIO();
         private static IoPackage<LinkGroup> linkGroupIO = new LinkGroupIO();
-
+        private PoolMonitor poolMonitor;
 
         @Required
         public void setPoolManagerStub(CellStub poolManagerStub)
@@ -182,6 +186,11 @@ public final class Manager
         public void setPnfsHandler(PnfsHandler pnfs)
         {
                 this.pnfs = pnfs;
+        }
+
+        public void setPoolMonitor(PoolMonitor poolMonitor)
+        {
+                this.poolMonitor = poolMonitor;
         }
 
         @Required
@@ -4316,34 +4325,10 @@ public final class Manager
                     protocolInfo != null &&
                     fileAttributes != null) {
                         try {
-                                PoolManagerSelectLinkGroupForWriteMessage msg=
-                                        new PoolManagerSelectLinkGroupForWriteMessage(pnfsId,
-                                                                                      fileAttributes,
-                                                                                      protocolInfo,
-                                                                                      sizeInBytes);
-                                msg.setLinkGroups(linkGroupNames);
-                                logger.trace("Sending PoolManagerSelectLinkGroupForWriteMessage");
-                                msg=poolManagerStub.sendAndWait(msg);
-                                linkGroupNames=msg.getLinkGroups();
-                                logger.trace("received PoolManagerSelectLink" +
-                                        "GroupForWriteMessage reply, number " +
-                                        "of LinkGroups={}", linkGroupNames.size());
+                                linkGroupNames = selectLinkGroupForWrite(protocolInfo, fileAttributes, linkGroupNames);
                                 if(linkGroupNames.isEmpty()) {
                                         throw new SpaceAuthorizationException("PoolManagerSelectLinkGroupForWriteMessage: Failed to find LinkGroup where user is authorized to reserve space.");
                                 }
-                        }
-                        catch (TimeoutCacheException e) {
-                                throw new SpaceException(
-                                        "PoolManagerSelectLinkGroupForWriteMessage: request timed out ",
-                                        e);
-                        }
-                        catch (CacheException e) {
-                                throw new SpaceException("Internal error : PoolManagerSelectLinkGroupForWriteMessage  exception ",
-                                                         e);
-                        }
-                        catch (InterruptedException e) {
-                                throw new SpaceException("Request was interrupted",
-                                                       e);
                         }
                         catch (SpaceAuthorizationException e)  {
                                 logger.warn("authorization problem: {}",
@@ -4373,6 +4358,30 @@ public final class Manager
                                                policy,
                                                lifetime,
                                                description);
+        }
+
+        private List<String> selectLinkGroupForWrite(ProtocolInfo protocolInfo, FileAttributes fileAttributes,
+                                                     Collection<String> linkGroups)
+        {
+                String protocol = protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
+                String hostName =
+                        (protocolInfo instanceof IpProtocolInfo)
+                                ? ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress().getHostAddress()
+                                : null;
+
+                List<String> outputLinkGroups = new ArrayList<>(linkGroups.size());
+                for (String linkGroup: linkGroups) {
+                    PoolPreferenceLevel[] level =
+                            poolMonitor.getPoolSelectionUnit().match(PoolSelectionUnit.DirectionType.WRITE,
+                                    hostName,
+                                    protocol,
+                                    fileAttributes.getStorageInfo(),
+                                    linkGroup);
+                    if (level.length > 0) {
+                        outputLinkGroups.add(linkGroup);
+                    }
+                }
+                return outputLinkGroups;
         }
 
         private long reserveSpaceInLinkGroup(long linkGroupId,
