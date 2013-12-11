@@ -426,7 +426,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       list = resortFileList( list , -1 ) ;
 
-      long [] counter      = new long[12] ;
+      long [] counter      = null ;
       long [] total        = new long[12] ;
       long [] lastInMonth  = new long[12] ;
 
@@ -451,6 +451,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                   st.nextToken() ;
                   String key =  _dayOfCalendar.format( new Date( Long.parseLong( st.nextToken() ) ) ) ;
+                  counter = new long[12] ;
                   for( int  j = 0 ; j < counter.length ; j++ ){
                       counter[j] = Long.parseLong(st.nextToken()) ;
                   }
@@ -475,8 +476,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           pw.close() ;
       }
 
-      total[YESTERDAY]   = counter[YESTERDAY] ;
-      total[YESTERDAY+1] = counter[YESTERDAY+1] ;
+      if (counter != null) {
+          total[YESTERDAY]   = counter[YESTERDAY] ;
+          total[YESTERDAY+1] = counter[YESTERDAY+1] ;
+      }
       total[TODAY]       = lastInMonth[TODAY] ;
       total[TODAY+1]     = lastInMonth[TODAY+1] ;
 
@@ -488,7 +491,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       list = resortFileList( list , -1  ) ;
 
-      long [] counter      = new long[12] ;
+      long [] counter      = null ;
       long [] total        = new long[12] ;
       long [] lastInMonth  = new long[12] ;
 
@@ -512,6 +515,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                   st.nextToken() ;
                   String key =  _monthOfCalendar.format( new Date( Long.parseLong( st.nextToken() ) ) ) ;
+                  counter = new long[12] ;
                   for( int  j = 0 ; j < counter.length ; j++ ){
                       counter[j] = Long.parseLong(st.nextToken()) ;
                   }
@@ -535,8 +539,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            pw.close() ;
       }
 
-      total[YESTERDAY]   = counter[YESTERDAY] ;
-      total[YESTERDAY+1] = counter[YESTERDAY+1] ;
+      if (counter != null) {
+          total[YESTERDAY]   = counter[YESTERDAY] ;
+          total[YESTERDAY+1] = counter[YESTERDAY+1] ;
+      }
       total[TODAY]       = lastInMonth[TODAY] ;
       total[TODAY+1]     = lastInMonth[TODAY+1] ;
 
@@ -548,7 +554,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       list = resortFileList( list , -1  ) ;
 
-      long [] counter     = new long[12] ;
+      long [] counter     = null ;
       long [] total       = new long[12] ;
       long [] lastInYear  = new long[12] ;
 
@@ -572,6 +578,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                   st.nextToken() ;
                   String key =  _yearOfCalendar.format( new Date( Long.parseLong( st.nextToken() ) ) ) ;
+                  counter = new long[12] ;
                   for( int  j = 0 ; j < counter.length ; j++ ){
                       counter[j] = Long.parseLong(st.nextToken()) ;
                   }
@@ -595,8 +602,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            pw.close() ;
       }
 
-      total[YESTERDAY]   = counter[YESTERDAY] ;
-      total[YESTERDAY+1] = counter[YESTERDAY+1] ;
+      if (counter != null) {
+          total[YESTERDAY]   = counter[YESTERDAY] ;
+          total[YESTERDAY+1] = counter[YESTERDAY+1] ;
+      }
       total[TODAY]       = lastInYear[TODAY] ;
       total[TODAY+1]     = lastInYear[TODAY+1] ;
 
