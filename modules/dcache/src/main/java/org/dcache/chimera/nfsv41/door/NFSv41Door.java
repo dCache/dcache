@@ -4,6 +4,7 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.glassfish.grizzly.Buffer;
 import org.slf4j.Logger;
@@ -18,7 +19,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -104,11 +104,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
 
-    /** dCache-friendly NFS device id to pool name mapping */
-    private final Map<String, PoolDS> _poolNameToIpMap = new HashMap<>();
-
-    /** All known devices */
-    private final Map<deviceid4, PoolDS> _deviceMap = new HashMap<>();
+    /**
+     * A mapping between pool name, nfs device id and pool's ip addresses.
+     */
+    private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap();
 
     /** next device id, 0 reserved for MDS */
     private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
@@ -289,26 +288,17 @@ public class NFSv41Door extends AbstractCellComponent implements
         _log.debug("NFS mover ready: {}", poolName);
 
         InetSocketAddress[] poolAddress = message.socketAddresses();
-        PoolDS device = _poolNameToIpMap.get(poolName);
+        PoolDS device = _poolDeviceMap.getByPoolName(poolName);
 
         if (device == null || !Arrays.equals(device.getInetSocketAddress(), poolAddress)) {
             /* pool is unknown yet or has been restarted so create new device and device-id */
-            int id = this.nextDeviceID();
+            final int id = this.nextDeviceID();
+            final deviceid4 deviceid = deviceidOf(id);
+            final PoolDS newDevice = new PoolDS(deviceid, _stripingPattern, poolAddress);
 
-            if (device != null) {
-                /*
-                 * clean stale entry
-                 */
-                deviceid4 oldId = device.getDeviceId();
-                _deviceMap.remove(oldId);
-            }
-
-            deviceid4 deviceid = deviceidOf(id);
-            device = new PoolDS(deviceid, _stripingPattern, poolAddress);
-
-            _poolNameToIpMap.put(poolName, device);
-            _deviceMap.put(deviceid, device);
-            _log.debug("new mapping: {}", device);
+            _log.debug("new mapping: {}", newDevice);
+            _poolDeviceMap.add(poolName, newDevice);
+            device = newDevice;
         }
 
         stateid4 stateid = message.challange();
@@ -357,7 +347,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     new InetSocketAddress[] { context.getRpcCall().getTransport().getLocalSocketAddress() } );
         }
 
-        PoolDS ds = _deviceMap.get(deviceId);
+        PoolDS ds = _poolDeviceMap.getByDeviceId(deviceId);
         if( ds == null) {
             return null;
         }
@@ -460,11 +450,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Override
     public List<deviceid4> getDeviceList(CompoundContext context) {
-        List<deviceid4> knownDevices = new ArrayList<>();
-
-        knownDevices.addAll(_deviceMap.keySet());
-
-        return knownDevices;
+        return Lists.newArrayList(_poolDeviceMap.getDeviceIds());
     }
 
 
@@ -511,7 +497,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         if (_nfs4 != null) {
             pw.printf("  IO queue: %s\n", _ioQueue);
             pw.println("  Known pools (DS):\n");
-            for (Map.Entry<String, PoolDS> ioDevice : _poolNameToIpMap.entrySet()) {
+            for (Map.Entry<String, PoolDS> ioDevice : _poolDeviceMap.getEntries()) {
                 pw.println(String.format("    %s : [%s]", ioDevice.getKey(), ioDevice.getValue()));
             }
 
@@ -573,7 +559,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         return new deviceid4(deviceidBytes);
     }
 
-    private static class PoolDS {
+    static class PoolDS {
 
         private final deviceid4 _deviceId;
         private final InetSocketAddress[] _socketAddress;
