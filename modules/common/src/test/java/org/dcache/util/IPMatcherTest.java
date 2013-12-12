@@ -23,11 +23,11 @@ public class IPMatcherTest {
     @Test
     public void testHostWildcartByIp() throws UnknownHostException {
         IPMatcher.networkReality = mock(NetworkReality.class);
-        InetAddress nairi = InetAddress.getByName("192.0.2.1");
-        when(IPMatcher.networkReality.getHostNameFor(nairi)).
-                thenReturn("nairi.desy.de");
+        InetAddress testAddr = InetAddress.getByName("192.0.2.1");
+        when(IPMatcher.networkReality.getHostNameFor(testAddr)).
+                thenReturn("www.desy.de");
 
-        boolean match = IPMatcher.match("*.desy.de", nairi);
+        boolean match = IPMatcher.match("*.desy.de", testAddr);
         assertTrue("failed to match host by domain", match);
     }
 
@@ -212,9 +212,9 @@ public class IPMatcherTest {
     @Test
     public void testMatchHostname() throws UnknownHostException
     {
-        assertTrue(IPMatcher.matchHostname("nairi.desy.de", InetAddress.getByName("nairi.desy.de"), 24));
+        assertTrue(IPMatcher.matchHostname("desy.de", InetAddress.getByName("desy.de"), 24));
 
-        assertFalse(IPMatcher.matchHostname("nairi.desy.de", InetAddress.getByName("cern.ch"), 24));
+        assertFalse(IPMatcher.matchHostname("desy.de", InetAddress.getByName("cern.ch"), 24));
     }
 
     @Test
