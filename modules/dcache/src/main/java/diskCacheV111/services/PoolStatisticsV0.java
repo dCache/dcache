@@ -459,7 +459,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    }
    private void updateHtmlMonth( Calendar calendar ) throws IOException {
       File    dir  = getHtmlPath(calendar).getParentFile() ;
-
+      dir.mkdirs();
       File [] list = dir.listFiles( new MonthFileFilter() ) ;
 
       list = resortFileList( list , -1 ) ;
@@ -527,6 +527,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    }
    private void updateHtmlYear( Calendar calendar ) throws IOException {
       File    dir  = getHtmlPath(calendar).getParentFile().getParentFile() ;
+      dir.mkdirs();
       File [] list = dir.listFiles( new MonthFileFilter() ) ;
 
       list = resortFileList( list , -1  ) ;
@@ -593,6 +594,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    }
    private void updateHtmlTop(  ) throws IOException {
       File    dir  = _htmlBase ;
+      dir.mkdirs();
       File [] list = dir.listFiles( new YearFileFilter() ) ;
 
       list = resortFileList( list , -1  ) ;
