@@ -3,8 +3,13 @@ package dmg.cells.nucleus;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.net.SocketAppender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.ConsoleAppender;
+import ch.qos.logback.core.FileAppender;
+import ch.qos.logback.core.encoder.Encoder;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -15,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import dmg.util.Args;
+import dmg.util.PinboardAppender;
 
 public class LogbackShell
 {
@@ -182,5 +188,80 @@ public class LogbackShell
         logger.detachAppender(appender);
 
         return name + " detached from " + appender;
+    }
+
+    public final static String hh_log_get_pattern =
+            "<logger> <appender>";
+    public final static String fh_log_get_pattern =
+            "Get encoder pattern for <logger> <appender>.";
+    public String ac_log_get_pattern_$_2(Args args)
+    {
+        String loggerName = args.argv(0);
+        String appenderName = args.argv(1);
+
+        Logger logger = getLogger(loggerName);
+        if (logger == null) {
+            throw new IllegalArgumentException("Logger not found: " + loggerName);
+        }
+
+        Appender appender = logger.getAppender(appenderName);
+        if (appender == null) {
+            throw new IllegalArgumentException("Appender not found: " + appender);
+        }
+
+        Encoder encoder;
+        if (appender instanceof ConsoleAppender) {
+            encoder = ((ConsoleAppender)appender).getEncoder();
+        } else
+        if (appender instanceof FileAppender) {
+            encoder = ((FileAppender)appender).getEncoder();
+        } else {
+            throw new IllegalArgumentException("Appender " + appenderName + " does not support encoders.");
+        }
+        PatternLayoutEncoder patternLayoutEncoder;
+        if (encoder instanceof PatternLayoutEncoder) {
+            patternLayoutEncoder = (PatternLayoutEncoder)encoder;
+        } else {
+            throw new IllegalArgumentException("Appender " + appenderName + " does not provide a pattern encoder.");
+        }
+
+        return "pattern of appender " + appenderName + " is " + patternLayoutEncoder.getPattern();
+    }
+
+    public final static String hh_log_set_pattern =
+        "<logger> <appender> <pattern>";
+    public final static String fh_log_set_pattern =
+        "Set encoder pattern to <pattern> for <logger> <appender>.";
+    public String ac_log_set_pattern_$_3(Args args)
+    {
+        String loggerName = args.argv(0);
+        String appenderName = args.argv(1);
+        String pattern = args.argv(2);
+
+        Logger logger = getLogger(loggerName);
+        if (logger == null) {
+            throw new IllegalArgumentException("Logger not found: " + loggerName);
+        }
+
+        Appender appender = logger.getAppender(appenderName);
+        if (appender == null) {
+            throw new IllegalArgumentException("Appender not found: " + appender);
+        }
+
+        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+        encoder.setContext(_context);
+        encoder.setPattern(pattern);
+        encoder.start();
+
+        if (appender instanceof ConsoleAppender) {
+            ((ConsoleAppender)appender).setEncoder(encoder);
+        } else
+        if (appender instanceof FileAppender) {
+            ((FileAppender)appender).setEncoder(encoder);
+        } else {
+            throw new IllegalArgumentException("Appender " + appenderName + " does not support encoders");
+        }
+
+        return "pattern of appender " + loggerName + "." + appenderName + " set to " + encoder.getPattern();
     }
 }
