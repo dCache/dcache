@@ -83,6 +83,7 @@ import org.dcache.alarms.dao.LogEntry;
  * @author arossi
  */
 public class AlarmJDOUtils {
+    private static final int MAXIMUM_QUERY_RESULTS = 10000;
 
     public static class AlarmDAOFilter {
         private String filter;
@@ -143,17 +144,24 @@ public class AlarmJDOUtils {
         Integer to;
         Query query = pm.newQuery(LogEntry.class);
 
+        /*
+         * 2013/12/11 -- added a range limit guard.  This can be hard-coded
+         * as effectively the capacity to hold more than 10000 entries in
+         * memory should not be required.  One can always adjust the numbers or
+         * refine the query.
+         */
         if (filter != null) {
             expression = filter.filter;
             parameters = filter.parameters;
             filter.normalizeRange();
-            from = filter.rangeStart;
-            to = filter.rangeEnd;
+            from = filter.rangeStart == null ? 0
+                            : filter.rangeStart;
+            int limit = from + MAXIMUM_QUERY_RESULTS;
+            to   = filter.rangeEnd   == null ? limit
+                            : Math.min(filter.rangeEnd, limit);
             query.setFilter(expression);
             query.declareParameters(parameters);
-            if (from != null) {
-                query.setRange(from, to);
-            }
+            query.setRange(from, to);
         } else {
             expression = null;
             parameters = null;
