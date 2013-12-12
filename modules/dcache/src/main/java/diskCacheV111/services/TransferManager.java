@@ -45,8 +45,8 @@ import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 
 /**
- * Base class for services that transfer files on behalf of SRM. Used
- * to implement server-side srmCopy.
+ * Base class for services that transfer files on behalf of SRM. Used to
+ * implement server-side srmCopy.
  */
 public abstract class TransferManager extends AbstractCell
 {
@@ -83,7 +83,9 @@ public abstract class TransferManager extends AbstractCell
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
     private String _poolProxy;
 
-    /** Creates a new instance of Class */
+    /**
+     * Creates a new instance of Class
+     */
     public TransferManager(String cellName, String args)
             throws InterruptedException, ExecutionException
     {
@@ -345,6 +347,7 @@ public abstract class TransferManager extends AbstractCell
         }
         return "OK";
     }
+
     public final static String hh_set_tlog = "<direcory for ftp logs or \"null\" for none>";
 
     public String ac_set_tlog_$_1(Args args)
@@ -356,6 +359,7 @@ public abstract class TransferManager extends AbstractCell
         }
         return "remote ftp transactions will be logged to " + _tLogRoot;
     }
+
     public final static String hh_set_max_transfers = "<#max transfers>";
 
     public String ac_set_max_transfers_$_1(Args args)
@@ -367,6 +371,7 @@ public abstract class TransferManager extends AbstractCell
         setMaxTransfers(max);
         return "set maximum number of active transfers to " + max;
     }
+
     public final static String hh_set_pool_timeout = "<#seconds>";
 
     public String ac_set_pool_timeout_$_1(Args args)
@@ -378,6 +383,7 @@ public abstract class TransferManager extends AbstractCell
         _poolTimeout = timeout;
         return "set pool timeout to " + timeout + " seconds";
     }
+
     public final static String hh_set_pool_manager_timeout = "<#seconds>";
 
     public String ac_set_pool_manager_timeout_$_1(Args args)
@@ -389,6 +395,7 @@ public abstract class TransferManager extends AbstractCell
         _poolManagerTimeout = timeout;
         return "set pool manager timeout to " + timeout + " seconds";
     }
+
     public final static String hh_set_pnfs_manager_timeout = "<#seconds>";
 
     public String ac_set_pnfs_manager_timeout_$_1(Args args)
@@ -400,6 +407,7 @@ public abstract class TransferManager extends AbstractCell
         _pnfsManagerTimeout = timeout;
         return "set pnfs manager timeout to " + timeout + " seconds";
     }
+
     public final static String hh_ls = "[-l] [<#transferId>]";
 
     public String ac_ls_$_0_1(Args args)
@@ -424,6 +432,7 @@ public abstract class TransferManager extends AbstractCell
         }
         return sb.toString();
     }
+
     public final static String hh_kill = " id";
 
     public String ac_kill_$_1(Args args)
@@ -434,12 +443,12 @@ public abstract class TransferManager extends AbstractCell
             return "ID not found : " + id;
         }
         handler.cancel(null);
-        return "this will kill the running mover or the mover queued on the pool!!!\n" +
-                "killing the Transfer:\n" + handler.toString(true);
+        return "this will kill the running mover or the mover queued on the pool!!!\n"
+                + "killing the Transfer:\n" + handler.toString(true);
     }
 
-    public final static String hh_killall = " [-p pool] pattern [pool] \n" +
-            " for example killall .* ketchup will kill all transfers with movers on the ketchup pool";
+    public final static String hh_killall = " [-p pool] pattern [pool] \n"
+            + " for example killall .* ketchup will kill all transfers with movers on the ketchup pool";
 
     public String ac_killall_$_1_2(Args args)
     {
@@ -480,6 +489,7 @@ public abstract class TransferManager extends AbstractCell
             return e.toString();
         }
     }
+
     public final static String hh_set_io_queue = "<io-queue name >";
 
     public String ac_set_io_queue_$_1(Args args)
@@ -577,8 +587,7 @@ public abstract class TransferManager extends AbstractCell
         return nextMessageID;
     }
 
-    protected abstract IpProtocolInfo getProtocolInfo(TransferManagerMessage transferRequest)
-            ;
+    protected abstract IpProtocolInfo getProtocolInfo(TransferManagerMessage transferRequest);
 
     protected TransferManagerHandler getHandler(long handlerId)
     {
@@ -737,7 +746,8 @@ public abstract class TransferManager extends AbstractCell
         return _pm;
     }
 
-    public static void rollbackIfActive(Transaction tx) {
+    public static void rollbackIfActive(Transaction tx)
+    {
         if (tx != null && tx.isActive()) {
             tx.rollback();
         }
@@ -763,7 +773,8 @@ public abstract class TransferManager extends AbstractCell
         return _maxNumberOfDeleteRetries;
     }
 
-    public void persist(Object o) {
+    public void persist(Object o)
+    {
         // pm is not final, so better make a final local copy
         // before we synchronize on it and use it
         final PersistenceManager persistanceManager = _pm;
