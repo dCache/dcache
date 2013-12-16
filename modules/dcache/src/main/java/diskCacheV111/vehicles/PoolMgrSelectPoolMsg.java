@@ -2,11 +2,15 @@
 
 package diskCacheV111.vehicles ;
 
+import javax.annotation.Nonnull;
+
 import java.util.EnumSet;
 
 import diskCacheV111.poolManager.RequestContainerV5;
 
 import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
@@ -31,8 +35,8 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
                                 EnumSet<RequestContainerV5.RequestState> allowedStates)
     {
         super(fileAttributes);
-        _protocolInfo = protocolInfo;
-        _allowedStates = allowedStates;
+        _protocolInfo = checkNotNull(protocolInfo);
+        _allowedStates = checkNotNull(allowedStates);
     }
 
     public void setSkipCostUpdate(boolean value)
@@ -45,8 +49,9 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
         return _skipCostUpdate;
     }
 
+    @Nonnull
     public ProtocolInfo getProtocolInfo(){ return _protocolInfo; }
-    public void setProtocolInfo( ProtocolInfo protocolInfo ){ _protocolInfo = protocolInfo ; }
+    public void setProtocolInfo( ProtocolInfo protocolInfo ){ _protocolInfo = checkNotNull(protocolInfo); }
     public void setIoQueueName( String ioQueueName ){ _ioQueueName = ioQueueName ; }
     public String getIoQueueName(){ return _ioQueueName ; }
 
@@ -66,6 +71,7 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
         return _linkGroup;
     }
 
+    @Nonnull
     public EnumSet<RequestContainerV5.RequestState> getAllowedStates() {
         return _allowedStates;
     }

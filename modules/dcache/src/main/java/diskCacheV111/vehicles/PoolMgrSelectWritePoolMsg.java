@@ -2,8 +2,6 @@ package diskCacheV111.vehicles;
 
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Requests pool manager to provide a pool to which a file with the
  * given properties can be written.
@@ -33,8 +31,6 @@ public class PoolMgrSelectWritePoolMsg extends PoolMgrSelectPoolMsg
                                      long preallocated)
     {
 	super(fileAttributes, protocolInfo);
-        checkNotNull(fileAttributes);
-        checkNotNull(protocolInfo);
         _preallocated = preallocated;
     }
 

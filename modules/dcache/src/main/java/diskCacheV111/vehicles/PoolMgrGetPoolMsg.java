@@ -2,6 +2,8 @@
 
 package diskCacheV111.vehicles;
 
+import javax.annotation.Nonnull;
+
 import java.util.Collection;
 import java.util.EnumSet;
 
@@ -32,16 +34,19 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
 	setReplyRequired(true);
     }
 
+    @Nonnull
     public FileAttributes getFileAttributes()
     {
 	return _fileAttributes;
     }
 
+    @Nonnull
     public StorageInfo getStorageInfo()
     {
 	return _fileAttributes.getStorageInfo();
     }
 
+    @Nonnull
     public PnfsId getPnfsId()
     {
 	return _fileAttributes.getPnfsId();

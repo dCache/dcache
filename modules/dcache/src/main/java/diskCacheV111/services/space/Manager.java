@@ -4402,13 +4402,6 @@ public final class Manager
         {
             Set<LinkGroup> linkGroups =
                     findLinkGroupIds(size, fileAttributes.getAccessLatency(), fileAttributes.getRetentionPolicy());
-            if(linkGroups.isEmpty()) {
-                logger.warn("failed to find matching linkgroup");
-                throw new NoFreeSpaceException(" no space available");
-            }
-            //
-            // filter out groups we are not authorized to use
-            //
             List<String> linkGroupNames = new ArrayList<>();
             for (LinkGroup linkGroup : linkGroups) {
                 try {
@@ -4418,36 +4411,16 @@ public final class Manager
                 catch (SpaceAuthorizationException e) {
                 }
             }
-            if(linkGroupNames.isEmpty()) {
-                logger.warn("failed to find linkgroup where user is " +
-                        "authorized to reserve space.");
-                throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
-            }
+            linkGroupNames = selectLinkGroupForWrite(protocolInfo, fileAttributes, linkGroupNames);
             logger.trace("Found {} linkgroups protocolInfo={}, fileAttributes={}",
                     linkGroups.size(), protocolInfo, fileAttributes);
-            if (linkGroupNames.size()>1 &&
-                    protocolInfo != null &&
-                    fileAttributes != null) {
-                try {
-                    linkGroupNames = selectLinkGroupForWrite(protocolInfo, fileAttributes, linkGroupNames);
-                    if(linkGroupNames.isEmpty()) {
-                        throw new SpaceAuthorizationException("PoolManagerSelectLinkGroupForWriteMessage: Failed to find LinkGroup where user is authorized to reserve space.");
-                    }
-                }
-                catch (SpaceAuthorizationException e)  {
-                    logger.warn("authorization problem: {}",
-                            e.getMessage());
-                    throw e;
-                }
-                catch(Exception e) {
-                    throw new SpaceException("Internal error : Failed to get list of link group ids from Pool Manager "+e.getMessage());
-                }
 
-            }
-            String linkGroupName = linkGroupNames.get(0);
-            for (LinkGroup lg : linkGroups) {
-                if (lg.getName().equals(linkGroupName) ) {
-                    return lg;
+            if (!linkGroupNames.isEmpty()) {
+                String linkGroupName = linkGroupNames.get(0);
+                for (LinkGroup lg : linkGroups) {
+                    if (lg.getName().equals(linkGroupName) ) {
+                        return lg;
+                    }
                 }
             }
             return null;
@@ -4692,10 +4665,15 @@ public final class Manager
                 LinkGroup linkGroup =
                         selectLinkGroupForWrite(subject, selectWritePool
                                 .getProtocolInfo(), fileAttributes, selectWritePool.getPreallocated());
-                String linkGroupName = linkGroup.getName();
-                selectWritePool.setLinkGroup(linkGroupName);
-                logger.trace("selectPoolOnRequest: found linkGroup = {}, " +
-                        "forwarding message", linkGroupName);
+                if (linkGroup != null) {
+                    String linkGroupName = linkGroup.getName();
+                    selectWritePool.setLinkGroup(linkGroupName);
+                    logger.trace("selectPoolOnRequest: found linkGroup = {}, " +
+                            "forwarding message", linkGroupName);
+                } else {
+                    logger.trace("selectPoolOnRequest: did not find linkGroup that can " +
+                            "hold this file, processing file without space reservation.");
+                }
             } else {
                 logger.trace("selectPoolOnRequest: file is " +
                         "not found, no prior " +
