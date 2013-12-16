@@ -94,7 +94,7 @@
 		     '${spacemanager.expire-space-reservation.period.unit}')}" />
     <property name="defaultRetentionPolicy" value="#{T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${spacemanager.default-retention-policy}')}" />
     <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
-    <property name="reserveSpaceForNonSRMTransfers" value="${spacemanager.enable.reserve-space-for-non-srm-tranfers}" />
+    <property name="reserveSpaceForNonSRMTransfers" value="${spacemanager.enable.reserve-space-for-non-srm-transfers}" />
     <property name="deleteStoredFileRecord" value="false" />
     <property name="cleanupExpiredSpaceFiles" value="true" />
     <property name="returnFlushedSpaceToReservation" value="true" />
