@@ -4441,7 +4441,7 @@ public final class Manager
                             poolMonitor.getPoolSelectionUnit().match(PoolSelectionUnit.DirectionType.WRITE,
                                     hostName,
                                     protocol,
-                                    fileAttributes.getStorageInfo(),
+                                    fileAttributes,
                                     linkGroup);
                     if (level.length > 0) {
                         outputLinkGroups.add(linkGroup);

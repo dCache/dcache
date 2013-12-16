@@ -34,7 +34,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellMessage;
@@ -149,7 +148,7 @@ public class PoolMonitorV5
             return _selectionUnit.match(direction,
                                         hostName,
                                         protocol,
-                                        StorageInfos.extractFrom(_fileAttributes),
+                                        _fileAttributes,
                                         _linkGroup);
         }
 
@@ -517,24 +516,23 @@ public class PoolMonitorV5
             return FileLocality.NONE;
         }
 
-        StorageInfo storageInfo = StorageInfos.extractFrom(attributes);
         PoolPreferenceLevel[] levels =
             _selectionUnit.match(DirectionType.READ,
                                  hostName,
                                  "*/*",
-                                 storageInfo,
+                                 attributes,
                                  null);
 
         Collection<String> locations = attributes.getLocations();
         for (PoolPreferenceLevel level: levels) {
             if (!Collections.disjoint(level.getPoolList(), locations)) {
-                return (storageInfo.isStored()
+                return (attributes.getStorageInfo().isStored()
                         ? FileLocality.ONLINE_AND_NEARLINE
                         : FileLocality.ONLINE);
             }
         }
 
-        if (storageInfo.isStored()) {
+        if (attributes.getStorageInfo().isStored()) {
             return FileLocality.NEARLINE;
         }
 

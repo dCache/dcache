@@ -7,9 +7,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
+
+import org.dcache.vehicles.FileAttributes;
 
 public interface PoolSelectionUnit  {
 
@@ -184,7 +185,7 @@ public interface PoolSelectionUnit  {
    public SelectionLink getLinkByName( String linkName ) throws NoSuchElementException ;
    public PoolPreferenceLevel []
             match( DirectionType type, String net , String protocol,
-                   StorageInfo info, String linkGroup ) ;
+                   FileAttributes fileAttributes, String linkGroup ) ;
    public String [] getActivePools() ;
    public String [] getDefinedPools( boolean enabledOnly ) ;
    public String    getVersion() ;

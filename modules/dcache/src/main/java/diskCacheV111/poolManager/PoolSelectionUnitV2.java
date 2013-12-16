@@ -28,12 +28,13 @@ import java.util.regex.Pattern;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellSetupProvider;
 import org.dcache.util.Glob;
+import org.dcache.vehicles.FileAttributes;
 
 public class PoolSelectionUnitV2
     implements Serializable,
@@ -443,20 +444,20 @@ public class PoolSelectionUnitV2
         return linkMap;
     }
 
-    /**
-     * @Guarded by _psuReadLock
-     */
     @Override
     public PoolPreferenceLevel[] match(DirectionType type,  String netUnitName, String protocolUnitName,
-            StorageInfo storageInfo, String linkGroupName) {
+            FileAttributes fileAttributes, String linkGroupName) {
 
+        StorageInfo storageInfo = fileAttributes.getStorageInfo();
         String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
         String dCacheUnitName = storageInfo.getCacheClass();
 
-        _log.debug("running match: type={} store={} dCacheUnit={} net={} protocol={} SI={} linkGoup={}", type,
-                   storeUnitName, dCacheUnitName, netUnitName, protocolUnitName, storageInfo, linkGroupName);
-
         Map<String, String> variableMap = storageInfo.getMap();
+
+        _log.debug("running match: type={} store={} dCacheUnit={} net={} protocol={} keys={} locations={} linkGroup={}",
+                type, storeUnitName, dCacheUnitName, netUnitName, protocolUnitName,
+                variableMap, storageInfo.locations(), linkGroupName);
+
 
         PoolPreferenceLevel[] result = null;
         _psuReadLock.lock();
@@ -907,12 +908,13 @@ public class PoolSelectionUnitV2
 
         try {
             long start = System.currentTimeMillis();
-            StorageInfo si = GenericStorageInfo.valueOf(args.argv(1), args.argv(2));
+            FileAttributes fileAttributes = new FileAttributes();
+            fileAttributes.setStorageInfo(GenericStorageInfo.valueOf(args.argv(1), args.argv(2)));
 
             PoolPreferenceLevel[] list = match(args.argv(0).equals("*") ? DirectionType.ANY
                     : DirectionType.valueOf(args.argv(0).toUpperCase()),
                     args.argv(3).equals("*") ? null : args.argv(3), args
-                            .argv(4).equals("*") ? null : args.argv(4), si,
+                            .argv(4).equals("*") ? null : args.argv(4), fileAttributes,
                     args.getOpt("linkGroup"));
             start = System.currentTimeMillis() - start;
 
@@ -1525,12 +1527,12 @@ public class PoolSelectionUnitV2
 
     public Object ac_psux_match_$_5(Args args)
     {
-
-        StorageInfo si = GenericStorageInfo.valueOf(args.argv(1), args.argv(2));
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf(args.argv(1), args.argv(2)));
 
         PoolPreferenceLevel[] list = match(DirectionType.valueOf(args.argv(0).toUpperCase()),
                 args.argv(3).equals("*") ? null : args.argv(3),
-                args.argv(4).equals("*") ? null : args.argv(4), si, args.getOpt("linkGroup"));
+                args.argv(4).equals("*") ? null : args.argv(4), fileAttributes, args.getOpt("linkGroup"));
         return list;
     }
 

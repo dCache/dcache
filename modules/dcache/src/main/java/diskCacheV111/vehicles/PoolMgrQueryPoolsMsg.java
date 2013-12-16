@@ -6,12 +6,18 @@ import java.util.List;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class PoolMgrQueryPoolsMsg extends Message {
    private final DirectionType _accessType  ;
 
-   private String _netUnitName;
-   private String _protocolUnitName;
-   private StorageInfo _storageInfo;
+   private final String _netUnitName;
+   private final String _protocolUnitName;
+   private final FileAttributes _fileAttributes;
    private List<String> []_poolList;
 
    private static final long serialVersionUID = 4739697573589962019L;
@@ -19,20 +25,20 @@ public class PoolMgrQueryPoolsMsg extends Message {
     public PoolMgrQueryPoolsMsg(DirectionType accessType,
             String protocolUnit,
             String netUnitName,
-            StorageInfo storageInfo) {
-       _accessType       = accessType ;
-       _protocolUnitName = protocolUnit;
-       _netUnitName      = netUnitName ;
-       _storageInfo      = storageInfo ;
+            FileAttributes fileAttributes) {
+       _accessType       = checkNotNull(accessType);
+       _protocolUnitName = checkNotNull(protocolUnit);
+       _netUnitName      = checkNotNull(netUnitName);
+       _fileAttributes   = checkNotNull(fileAttributes);
+       checkArgument(fileAttributes.isDefined(FileAttribute.STORAGEINFO));
 
-	setReplyRequired(true);
-        assert _storageInfo != null;
+       setReplyRequired(true);
    }
    public DirectionType getAccessType(){ return _accessType ; }
 
    public String getNetUnitName(){ return _netUnitName ; }
    public String getProtocolUnitName(){ return _protocolUnitName; }
-   public StorageInfo getStorageInfo(){ return _storageInfo ; }
+   public FileAttributes getFileAttributes() { return _fileAttributes; }
    public void setPoolList( List<String> [] poolList ){ _poolList = poolList ; }
    public List<String> [] getPools(){ return _poolList ; }
 }

@@ -21,6 +21,8 @@ import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
 
+import org.dcache.vehicles.FileAttributes;
+
 import static org.junit.Assert.*;
 
 
@@ -276,13 +278,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive off");
-        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
 
@@ -303,13 +306,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("Only default read link have to be triggered", 1, preference.length);
@@ -326,13 +330,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("Only default write link have to be triggered", 1, preference.length);
@@ -348,13 +353,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("H1 write link and default write link have to be triggered", 2, preference.length);
@@ -370,13 +376,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
@@ -393,14 +400,15 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set disabled h1-read");
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
@@ -446,14 +454,15 @@ public class PoolSelectionUnitTest {
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup h1-link-group"));
         _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       "h1-link-group"); // linkGroup
 
         assertEquals("Only h1 read link have to be triggered", 1, preference.length);
@@ -473,8 +482,9 @@ public class PoolSelectionUnitTest {
         _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
 
         StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
-
         storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(storageInfo);
 
         Set<String> supportedHSM = new HashSet<>();
         supportedHSM.add("osm");
@@ -485,7 +495,7 @@ public class PoolSelectionUnitTest {
                                                       DirectionType.CACHE,  // operation
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
-                                                      storageInfo,
+                                                      fileAttributes,
                                                       "h1-link-group"); // linkGroup
 
         assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
@@ -503,13 +513,14 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set pool h1-read rdonly");
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
         PoolPreferenceLevel[] preference =
             _psu.match(DirectionType.P2P,  // operation
                        "131.169.214.149", // net unit
                        null,  // protocol
-                       si,
+                       fileAttributes,
                        null); // linkGroup
 
         List<String> pools = new ArrayList<>();
@@ -529,13 +540,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive off");
-        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
 
@@ -556,13 +568,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("Only default read link have to be triggered", 1, preference.length);
@@ -579,13 +592,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("Only default write link have to be triggered", 1, preference.length);
@@ -601,13 +615,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("H1 write link and default write link have to be triggered", 2, preference.length);
@@ -623,13 +638,14 @@ public class PoolSelectionUnitTest {
 
 
         _ci.command("psu set allpoolsactive on");
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
@@ -646,14 +662,15 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set disabled h1-read");
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       null); // linkGroup
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
@@ -673,14 +690,15 @@ public class PoolSelectionUnitTest {
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup h1-link-group"));
         _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
-                                                      si,
+                                                      fileAttributes,
                                                       "h1-link-group"); // linkGroup
 
         assertEquals("Only h1 read link have to be triggered", 1, preference.length);
@@ -700,8 +718,9 @@ public class PoolSelectionUnitTest {
         _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
 
         StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
-
         storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(storageInfo);
 
         Set<String> supportedHSM = new HashSet<>();
         supportedHSM.add("osm");
@@ -712,7 +731,7 @@ public class PoolSelectionUnitTest {
                                                       DirectionType.CACHE,  // operation
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
-                                                      storageInfo,
+                                                      fileAttributes,
                                                       "h1-link-group"); // linkGroup
 
         assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
@@ -730,13 +749,14 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set pool h1-read rdonly");
-        StorageInfo si = GenericStorageInfo.valueOf("h1:u1@osm", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
 
         PoolPreferenceLevel[] preference =
             _psu.match(DirectionType.P2P,  // operation
                        "2001:638:700::f00:ba", // net unit
                        null,  // protocol
-                       si,
+                       fileAttributes,
                        null); // linkGroup
 
         List<String> pools = new ArrayList<>();
@@ -754,7 +774,7 @@ public class PoolSelectionUnitTest {
         _ci.command( new Args("psu set active -on h1-read"  )  );
         SelectionPool pool = _psu.getPool("h1-read");
 
-        assertNotNull("Null pool recieved", pool);
+        assertNotNull("Null pool received", pool);
         assertTrue("Pool is not active", pool.isActive());
         assertTrue("Pool is not readable", pool.canRead());
     }
@@ -797,12 +817,13 @@ public class PoolSelectionUnitTest {
 
         /* We cannot read from a write pool.
          */
-        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
         PoolPreferenceLevel[] preference =
             psu.match(DirectionType.READ,  // operation
                       "111.111.111.201", // net unit
                       null,  // protocol
-                      si,
+                      fileAttributes,
                       null); // linkGroup
         assertEquals(0, preference.length);
    }
