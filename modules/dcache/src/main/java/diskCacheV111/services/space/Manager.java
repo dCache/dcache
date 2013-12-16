@@ -115,6 +115,8 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.JdbcConnectionPool;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  *   <pre> Space Manager dCache service provides ability
  *    \to reserve space in the pool linkGroups
@@ -3361,13 +3363,16 @@ public final class Manager
      */
     private boolean isInterceptedMessage(Message message)
     {
-        return message instanceof PoolMgrSelectWritePoolMsg
+        return (message instanceof PoolMgrSelectWritePoolMsg
+                && ((PoolMgrSelectWritePoolMsg) message).getPnfsPath() != null
+                && message.getReturnCode() == 0
+                && (!message.isReply() || ((PoolMgrSelectWritePoolMsg) message).getLinkGroup() != null))
                 || message instanceof DoorTransferFinishedMessage;
     }
 
     private boolean isPoolAcceptFileReply(Message message)
     {
-        return message instanceof PoolAcceptFileMessage && ((PoolAcceptFileMessage) message).isReply();
+        return message instanceof PoolAcceptFileMessage && message.isReply();
     }
 
 
@@ -4613,11 +4618,7 @@ public final class Manager
                 throws Exception
         {
             logger.trace("selectPoolOnRequest({})", selectWritePool);
-            String pnfsPath = selectWritePool.getPnfsPath();
-            if (pnfsPath == null) {
-                forwardToPoolManager(envelope);
-                return;
-            }
+            String pnfsPath = checkNotNull(selectWritePool.getPnfsPath());
             File file = null;
             FileAttributes fileAttributes = selectWritePool.getFileAttributes();
             String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
@@ -4711,12 +4712,8 @@ public final class Manager
                 throws Exception
         {
             logger.trace("selectPoolOnReply({})", selectWritePool);
-            String pnfsPath = selectWritePool.getPnfsPath();
-            PnfsId pnfsId = selectWritePool.getPnfsId();
-            if (pnfsPath == null || selectWritePool.getReturnCode() != 0 || selectWritePool.getLinkGroup() == null) {
-                return;
-            }
-
+            String pnfsPath = checkNotNull(selectWritePool.getPnfsPath());
+            PnfsId pnfsId = checkNotNull(selectWritePool.getPnfsId());
             FileAttributes fileAttributes = selectWritePool.getFileAttributes();
             String spaceToken = fileAttributes.getStorageInfo().getMap().get("SpaceToken");
             Subject subject = selectWritePool.getSubject();
@@ -4754,7 +4751,7 @@ public final class Manager
                 reserveAndUseSpace(pnfsPath,
                         pnfsId,
                         selectWritePool.getPreallocated(),
-                        selectWritePool.getLinkGroup(),
+                        checkNotNull(selectWritePool.getLinkGroup()),
                         fileAttributes.getAccessLatency(),
                         fileAttributes.getRetentionPolicy(),
                         subject);
