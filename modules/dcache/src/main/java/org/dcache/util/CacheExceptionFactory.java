@@ -87,6 +87,8 @@ public class CacheExceptionFactory {
             case HSM_DELAY_ERROR:
             case FILE_NOT_STORED:
             case POOL_DISABLED:
+            case NO_POOL_CONFIGURED:
+            case NO_POOL_ONLINE:
             default:
                 return new CacheException(errorCode, message, cause);
         }

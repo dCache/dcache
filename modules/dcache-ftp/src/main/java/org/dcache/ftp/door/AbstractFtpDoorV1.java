@@ -2607,6 +2607,13 @@ public abstract class AbstractFtpDoorV1
             case CacheException.NOT_DIR:
                 transfer.abort(550, "Not a directory");
                 break;
+            case CacheException.NO_POOL_CONFIGURED:
+                transfer.abort(552, "No read pool configured for this transfer", e);
+                break;
+            case CacheException.FILE_NOT_IN_REPOSITORY:
+            case CacheException.NO_POOL_ONLINE:
+                transfer.abort(452, "File is unavailable", e);
+                break;
             default:
                 transfer.abort(451, "Operation failed: " + e.getMessage(), e);
                 break;
@@ -2715,6 +2722,12 @@ public abstract class AbstractFtpDoorV1
                 break;
             case CacheException.NOT_DIR:
                 transfer.abort(501, "Not a directory");
+                break;
+            case CacheException.NO_POOL_CONFIGURED:
+                transfer.abort(552, "No write pool configured for this transfer", e);
+                break;
+            case CacheException.NO_POOL_ONLINE:
+                transfer.abort(452, "No write pool available", e);
                 break;
             default:
                 transfer.abort(451, "Operation failed: " + e.getMessage(), e);

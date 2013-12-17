@@ -108,6 +108,9 @@ public class CacheException extends Exception
     public final static int SERVICE_UNAVAILABLE = 10023;
 
 
+    public static final int NO_POOL_CONFIGURED = 10024;
+    public static final int NO_POOL_ONLINE = 10025;
+
     /**
      * default error code. <b>It's recommended to use more specific error
      * codes</b>

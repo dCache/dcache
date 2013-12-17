@@ -1035,8 +1035,14 @@ public class Transfer implements Comparable<Transfer>
                     continue;
                 case CacheException.FILE_IN_CACHE:
                     throw e;
+                case CacheException.NO_POOL_CONFIGURED:
+                    _log.error(e.getMessage());
+                    throw e;
+                case CacheException.NO_POOL_ONLINE:
+                    _log.warn(e.getMessage());
+                    throw e;
                 default:
-                    _log.error(e.toString());
+                    _log.error(e.getMessage());
                     break;
                 }
                 lastFailure = e;
