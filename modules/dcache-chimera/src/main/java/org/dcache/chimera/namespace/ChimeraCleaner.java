@@ -473,8 +473,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             _log.debug("sendRemoveToPoolCleaner: poolName="+ poolName);
             _log.debug("sendRemoveToPoolCleaner: removeList="+ removeList);
         }
-        PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage(poolName);
-        msg.setFiles(removeList.toArray(new String[removeList.size()]));
+        PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage(poolName, removeList);
 
         MessageCallback<PoolRemoveFilesMessage> callback =
                 new RemoveMessageCallback(poolName, removeList);
@@ -556,8 +555,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
 
         try {
-            PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage("") ;
-            msg.setFiles(fileList.toArray(new String[fileList.size()]));
+            PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage("", fileList);
 
             /*
              * no rely required

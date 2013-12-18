@@ -790,9 +790,7 @@ public class UserAdminShell
                 sb.append(poolName).append(" : ");
             }
             try {
-                remove = new PoolRemoveFilesMessage(poolName);
-                String[] filelist = {pnfsId.toString()};
-                remove.setFiles(filelist);
+                remove = new PoolRemoveFilesMessage(poolName, pnfsId.toString());
                 remove = (PoolRemoveFilesMessage) sendObject(poolName, remove);
                 if (verbose) {
                     int rc = remove.getReturnCode();

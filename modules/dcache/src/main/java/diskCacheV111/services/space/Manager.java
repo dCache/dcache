@@ -2918,12 +2918,11 @@ public final class Manager
                                     Long lifetime,
                                     Integer state) throws SQLException {
                 File f=selectFileForUpdate(connection, id);
-                updateSpaceFile(connection, id, voGroup, voRole, pnfsId,
+                updateSpaceFile(connection, voGroup, voRole, pnfsId,
                                 sizeInBytes, lifetime, state, f);
         }
 
         public void updateSpaceFile(Connection connection,
-                                    long id,
                                     String voGroup,
                                     String voRole,
                                     PnfsId pnfsId,
@@ -3073,7 +3072,7 @@ public final class Manager
                 if (f.getPnfsId() != null) {
                     throw new SQLException("File is already assigned a PNFS ID.");
                 }
-                updateSpaceFile(connection, id, null, null, pnfsId,
+                updateSpaceFile(connection, null, null, pnfsId,
                         null, null, null, f);
                 connection.commit();
                 connection_pool.returnConnection(connection);
@@ -3873,13 +3872,12 @@ public final class Manager
                                     }
                             } else {
                                     updateSpaceFile(connection,
-                                                    f.getId(),
                                                     null,
                                                     null,
                                                     null,
                                                     null,
                                                     null,
-                                            FileState.TRANSFERRING.getStateId(),
+                                                    FileState.TRANSFERRING.getStateId(),
                                                     f);
                             }
                         }
@@ -3957,14 +3955,13 @@ public final class Manager
                                                 removeFileFromSpace(connection,f);
                                         }
                                         else {
-                                                updateSpaceFile(connection,f.getId(),
+                                                updateSpaceFile(connection,
                                                                 null,
                                                                 null,
                                                                 null,
-                                                        size,
+                                                                size,
                                                                 null,
-                                                        FileState.STORED
-                                                                .getStateId(),
+                                                                FileState.STORED.getStateId(),
                                                                 f);
                                         }
                                 }
@@ -4052,13 +4049,12 @@ public final class Manager
                                 }
                                 else {
                                         updateSpaceFile(connection,
-                                                        f.getId(),
                                                         null,
                                                         null,
                                                         null,
-                                                size,
+                                                        size,
                                                         null,
-                                                FileState.FLUSHED.getStateId(),
+                                                        FileState.FLUSHED.getStateId(),
                                                         f);
                                         connection.commit();
                                         connection_pool.returnConnection(connection);
@@ -4096,18 +4092,12 @@ public final class Manager
         private void  fileRemoved(PoolRemoveFilesMessage fileRemoved)
         {
                 logger.trace("fileRemoved()");
-                String[] pnfsIdStrings = fileRemoved.getFiles();
-                if(pnfsIdStrings == null || pnfsIdStrings.length == 0) {
-                        return;
-                }
-                for(String pnfsIdString : pnfsIdStrings ) {
+                for(String pnfsIdString : fileRemoved.getFiles()) {
                         PnfsId pnfsId ;
                         try {
                                 pnfsId = new PnfsId(pnfsIdString);
-                        }
-                        catch(Exception e) {
-                                logger.error("badly formed PNFS-ID: {}",
-                                        e.getMessage());
+                        } catch (IllegalArgumentException e) {
+                                logger.error("badly formed PNFS-ID: {}", pnfsIdString);
                                 continue;
                         }
                         logger.trace("fileRemoved({})", pnfsId);
@@ -4116,7 +4106,11 @@ public final class Manager
                                 connection = connection_pool.getConnection();
                                 connection.setAutoCommit(false);
                                 File f = selectFileForUpdate(connection,pnfsId);
-                                removeFileFromSpace(connection,f);
+                                if ((f.getState() != FileState.RESERVED && f.getState() != FileState.TRANSFERRING) || f.getPnfsPath() == null) {
+                                    removeFileFromSpace(connection,f);
+                                } else if (f.getState() == FileState.TRANSFERRING) {
+                                    removePnfsIdAndChangeStateOfFileInSpace(connection, f.getId(), FileState.RESERVED.getStateId());
+                                }
                                 connection.commit();
                                 connection_pool.returnConnection(connection);
                                 connection = null;
@@ -4619,13 +4613,7 @@ public final class Manager
             }
         }
 
-        private void namespaceEntryDeleted(PnfsDeleteEntryNotificationMessage msg) throws SQLException {
-                if (msg.getReturnCode()!=0) {
-                    return;
-                }
-                if( msg.getPnfsId() == null ) {
-                        return;
-                }
+        public void namespaceEntryDeleted(PnfsDeleteEntryNotificationMessage msg) throws SQLException {
                 File file;
                 try {
                         Set<File> files = dbManager.selectPrepared(fileIO,
@@ -4635,9 +4623,9 @@ public final class Manager
                             return;
                         }
                         if (files.size()>1) {
-                                throw new SQLException("found two records with pnfsId="+(msg.getPnfsId()!=null?msg.getPnfsId():"null"));
+                                throw new SQLException("found two records with pnfsId=" + msg.getPnfsId());
                         }
-                        file=Iterables.getFirst(files,null);
+                        file = Iterables.getOnlyElement(files);
                 }
                 catch (Exception e) {
                         logger.error("failed to retrieve file {} {}: {}",
@@ -4653,12 +4641,16 @@ public final class Manager
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);
                         File f = selectFileForUpdate(connection,file.getId());
-                        rc = dbManager.update(connection,
-                                            FileIO.UPDATE_DELETED_FLAG,
-                                            1,
-                                            f.getId());
-                        if (rc!=1) {
+                        if ((f.getState() != FileState.RESERVED && f.getState() != FileState.TRANSFERRING) || f.getPnfsPath() == null) {
+                            rc = dbManager.update(connection,
+                                    FileIO.UPDATE_DELETED_FLAG,
+                                    1,
+                                    f.getId());
+                            if (rc!=1) {
                                 throw new SQLException("Update failed, row count="+rc);
+                            }
+                        } else if (f.getState() == FileState.TRANSFERRING) {
+                            removePnfsIdAndChangeStateOfFileInSpace(connection, f.getId(), FileState.RESERVED.getStateId());
                         }
                         connection.commit();
                         connection_pool.returnConnection(connection);
