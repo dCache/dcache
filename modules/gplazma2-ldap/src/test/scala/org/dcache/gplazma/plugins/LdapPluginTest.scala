@@ -21,7 +21,6 @@ import org.dcache.auth.attributes.{ReadOnly, HomeDirectory, RootDirectory}
  * The tests are all ignored by default because they depend on DESY infrastructure.
  */
 @RunWith(classOf[JUnitRunner])
-@Ignore
 class LdapPluginTest extends FlatSpec with Matchers {
 
   val pluginProperties = {
@@ -32,6 +31,8 @@ class LdapPluginTest extends FlatSpec with Matchers {
     properties.put(Ldap.LDAP_USER_FILTER, "(uid=%s)")
     properties.put(Ldap.LDAP_PEOPLE_TREE, "People")
     properties.put(Ldap.LDAP_GROUP_TREE, "Groups")
+    properties.put(Ldap.LDAP_USER_HOME, "/root")
+    properties.put(Ldap.LDAP_USER_ROOT, "/root%homeDirectory%/home")
     properties
   }
 
@@ -94,8 +95,8 @@ class LdapPluginTest extends FlatSpec with Matchers {
     ldapPlugin.session(setAsJavaSet(Set[Principal](new UserNamePrincipal("testuser"))), attr)
 
     attr should have size 3
-    attr should contain (new RootDirectory("/"))
-    attr should contain (new HomeDirectory("/dcache-cloud/testuser"))
+    attr should contain (new HomeDirectory("/root"))
+    attr should contain (new RootDirectory("/root/dcache-cloud/testuser/home"))
     attr should contain (new ReadOnly(false))
   }
 

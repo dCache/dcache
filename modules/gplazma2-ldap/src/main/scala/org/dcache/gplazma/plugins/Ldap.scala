@@ -6,9 +6,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.convert.Wrappers._
 
 import javax.naming.{Context, CommunicationException, NamingEnumeration, NamingException}
-import javax.naming.directory.BasicAttributes
-import javax.naming.directory.SearchControls
-import javax.naming.directory.SearchResult
+import javax.naming.directory.{Attributes, BasicAttributes, SearchControls, SearchResult}
 import javax.naming.ldap.InitialLdapContext
 
 import java.security.Principal
@@ -43,9 +41,11 @@ import scala.collection.convert.WrapAsJava
  * <pre>
  * gplazma.ldap.server = ldap.example.com
  * gplazma.ldap.port = 389
- * gplazma.ldap.organization = o=SITE,c=CONTRY
+ * gplazma.ldap.organization = o=SITE,c=COUNTRY
  * gplazma.ldap.tree.people = People
  * gplazma.ldap.tree.groups = Groups
+ * gplazma.ldap.home-dir = "/"
+ * gplazma.ldap.root-dir = "%homeDirectory%" evaluates to the users home directory
  * </pre>
  *
  * @since 2.3
@@ -64,6 +64,8 @@ object Ldap {
   val LDAP_PEOPLE_TREE = "gplazma.ldap.tree.people"
   val LDAP_GROUP_TREE = "gplazma.ldap.tree.groups"
   val LDAP_USER_FILTER = "gplazma.ldap.userfilter"
+  val LDAP_USER_HOME = "gplazma.ldap.home-dir"
+  val LDAP_USER_ROOT = "gplazma.ldap.root-dir"
 }
 
 class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSessionPlugin with GPlazmaMappingPlugin {
@@ -93,6 +95,14 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     val organization = properties.getProperty(Ldap.LDAP_ORG)
     val groupTree = properties.getProperty(Ldap.LDAP_GROUP_TREE)
     String.format("ou=%s,%s", groupTree, organization)
+  }
+
+  private val userHome = {
+    properties.getProperty(Ldap.LDAP_USER_HOME)
+  }
+
+  private val userRoot = {
+    properties.getProperty(Ldap.LDAP_USER_ROOT)
   }
 
   private def recreateContext() = {
@@ -154,7 +164,7 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     retryWithNewContextOnException[NamingEnumeration[SearchResult]]( () => {
       ctx.search(peopleOU,
         String.format(userFilter, principal.getName),
-        getSimpleSearchControls(Array(Ldap.UID_NUMBER_ATTRIBUTE, Ldap.GID_NUMBER_ATTRIBUTE)))
+        getSimpleSearchControls(Ldap.UID_NUMBER_ATTRIBUTE, Ldap.GID_NUMBER_ATTRIBUTE))
     })
   }
 
@@ -188,7 +198,7 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     retryWithNewContextOnException( () => {
       ctx.search(groupOU,
         String.format("(%s=%s)", Ldap.COMMON_NAME_ATTRIBUTE, name),
-        getSimpleSearchControls(Array(Ldap.GID_NUMBER_ATTRIBUTE)))
+        getSimpleSearchControls(Ldap.GID_NUMBER_ATTRIBUTE))
     })
   }
 
@@ -196,7 +206,7 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     retryWithNewContextOnException( () => {
       ctx.search(peopleOU,
         String.format("(%s=%s)", Ldap.USER_ID_ATTRIBUTE, name),
-        getSimpleSearchControls(Array(Ldap.UID_NUMBER_ATTRIBUTE)))
+        getSimpleSearchControls(Ldap.UID_NUMBER_ATTRIBUTE))
     })
   }
 
@@ -247,10 +257,11 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     principal match {
       case Some(p) =>
         try {
-          val sResult = sessionSearchHome(p)
+          val keywords = extractKeywordsFrom(userHome, userRoot)
+          val sResult = sessionAttributes(p, keywords:_*)
           sResult.foreach( searchResult => {
-            attrib.add(new HomeDirectory(searchResult.getAttributes.get(Ldap.HOME_DIR_ATTRIBUTE)))
-            attrib.add(new RootDirectory("/"))
+            attrib.add(new HomeDirectory(replaceKeywordsByAttributes(userHome, searchResult.getAttributes)))
+            attrib.add(new RootDirectory(replaceKeywordsByAttributes(userRoot, searchResult.getAttributes)))
             attrib.add(new ReadOnly(false))
           })
         } catch {
@@ -260,18 +271,27 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     }
   }
 
-  private def sessionSearchHome(principal: Principal) = JEnumerationWrapper {
+  def replaceKeywordsByAttributes(s: String, attributes: Attributes): String = {
+    JEnumerationWrapper(attributes.getAll()).foldLeft(s)((s,attr) => {
+      s.replaceAll("%" + attr.getID + "%", attr)})
+  }
+
+  private def extractKeywordsFrom(ss: String*) : Seq[String] = {
+    ss.flatMap(s => "%([^%]+)%".r.findAllIn(s).matchData.map(_.group(1))).distinct
+  }
+
+  private def sessionAttributes(principal: Principal, keywords : String*) = JEnumerationWrapper {
     retryWithNewContextOnException( () => {
       ctx.search(peopleOU,
         String.format(userFilter, principal.getName),
-        getSimpleSearchControls(Array(Ldap.HOME_DIR_ATTRIBUTE)))
+        getSimpleSearchControls(keywords:_*))
     })
   }
 
-  private def getSimpleSearchControls(attr: Array[String]) = {
+  private def getSimpleSearchControls(attr: String*) = {
     val constraints = new SearchControls
     constraints.setSearchScope(SearchControls.SUBTREE_SCOPE)
-    constraints.setReturningAttributes(attr)
+    constraints.setReturningAttributes(attr.toArray)
     constraints
   }
 }
