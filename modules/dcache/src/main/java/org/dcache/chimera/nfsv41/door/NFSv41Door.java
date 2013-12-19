@@ -380,7 +380,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             } else {
                 final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
                 final PnfsId pnfsId = new PnfsId(inode.toString());
-                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote, stateid, new CellPath(getCellAddress()));
+                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote, stateid);
 
                 Transfer.initSession();
                 final NfsTransfer transfer = new NfsTransfer(_pnfsHandler,
