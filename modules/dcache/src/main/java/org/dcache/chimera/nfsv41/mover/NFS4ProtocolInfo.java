@@ -19,12 +19,14 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     private static final int _minor = 1;
     private static final int _major = 4;
     private final stateid4 _stateId;
-    private CellPath _door;
+    private final CellPath _door;
     private final InetSocketAddress _socketAddress;
 
-    public NFS4ProtocolInfo(InetSocketAddress clientSocketAddress, stateid4 stateId) {
+    public NFS4ProtocolInfo(InetSocketAddress clientSocketAddress,
+            stateid4 stateId, CellPath door) {
         _stateId = stateId;
         _socketAddress = clientSocketAddress;
+        _door = door;
     }
 
     //
@@ -56,10 +58,6 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
 
     public CellPath door() {
         return _door;
-    }
-
-    public void door(CellPath door) {
-        _door = door;
     }
 
     public stateid4 stateId() {

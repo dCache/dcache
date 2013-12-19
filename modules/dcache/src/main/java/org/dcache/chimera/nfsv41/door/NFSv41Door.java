@@ -378,16 +378,15 @@ public class NFSv41Door extends AbstractCellComponent implements
                  */
                 deviceid = MDS_ID;
             } else {
-                InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
-                PnfsId pnfsId = new PnfsId(inode.toString());
+                final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
+                final PnfsId pnfsId = new PnfsId(inode.toString());
+                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote, stateid, new CellPath(getCellAddress()));
+
                 Transfer.initSession();
-                NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT,
-                        context.getRpcCall().getCredential().getSubject(),
-                        remote, stateid);
+                final NfsTransfer transfer = new NfsTransfer(_pnfsHandler,
+                        context.getRpcCall().getCredential().getSubject());
 
-                NFS4ProtocolInfo protocolInfo = transfer.getProtocolInfoForPool();
-                protocolInfo.door(new CellPath(getCellAddress()));
-
+                transfer.setProtocolInfo(protocolInfo);
                 transfer.setCellName(this.getCellName());
                 transfer.setDomainName(this.getCellDomainName());
                 transfer.setBillingStub(_billingStub);
@@ -504,12 +503,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             pw.println();
             pw.println("  Known movers (layouts):");
             for (NfsTransfer io : _ioMessages.values()) {
-                pw.println(String.format("    %s : %s@%s, OS=%s,cl=[%s]",
-                        io.getPnfsId(),
-                        io.getMoverId(),
-                        io.getPool(),
-                        io.getProtocolInfoForPool().stateId(),
-                        io.getProtocolInfoForPool().getSocketAddress().getAddress().getHostAddress()));
+                pw.println(io);
             }
 
             pw.println();
@@ -593,26 +587,20 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private static class NfsTransfer extends RedirectedTransfer<PoolDS> {
 
-        private final stateid4 _stateid;
-        private final NFS4ProtocolInfo _protocolInfo;
-
-        NfsTransfer(PnfsHandler pnfs, Subject namespaceSubject, Subject ioSubject, InetSocketAddress client,
-                stateid4 stateid) {
-            super(pnfs, namespaceSubject, ioSubject,  new FsPath("/"));
-            _stateid = stateid;
-            _protocolInfo = new NFS4ProtocolInfo(client, _stateid);
+        NfsTransfer(PnfsHandler pnfs, Subject ioSubject) {
+            super(pnfs, Subjects.ROOT, ioSubject,  new FsPath("/"));
         }
 
         @Override
-        protected NFS4ProtocolInfo getProtocolInfoForPoolManager() {
-            return _protocolInfo;
+        public String toString() {
+            return String.format("    %s : %s@%s, OS=%s,cl=[%s]",
+                    getPnfsId(),
+                    getMoverId(),
+                    getPool(),
+                    ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
+                    ((NFS4ProtocolInfo)getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress());
         }
-
-        @Override
-        protected NFS4ProtocolInfo getProtocolInfoForPool() {
-            return _protocolInfo;
-        }
-        }
+    }
 
     /**
      * To allow the transfer monitoring in the httpd cell to recognize us
