@@ -52,34 +52,7 @@
 	factory-method="getInstance" lazy-init="false">
   </bean>
 
-  <bean id="authz-policy-class" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetClass"><value>java.lang.Class</value></property>
-    <property name="targetMethod"><value>forName</value></property>
-    <property name="arguments">
-      <list>
-	<value>diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy</value>
-      </list>
-    </property>
-  </bean>
-
-
-  <bean id="authz-policy-ctor" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject"><ref local="authz-policy-class"/></property>
-    <property name="targetMethod"><value>getConstructor</value></property>
-  </bean>
-
-
-  <bean id="authz-policy" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject"><ref local="authz-policy-ctor"/></property>
-    <property name="targetMethod"><value>newInstance</value></property>
-  </bean>
-
-
- <!--
-  <bean id="authz-policy" class="diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy"
-	factory-method="newInstance"/>
-  -->
-
+  <bean id="authz-policy" class="diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy"/>
 
   <bean id="spacemanager" class="diskCacheV111.services.space.Manager"
          init-method="start" destroy-method="stop">
@@ -115,6 +88,6 @@
     <property name="returnFlushedSpaceToReservation" value="true" />
     <property name="linkGroupAuthorizationFileName" value="${spacemanager.authz.link-group-file-name}" />
     <property name="authorizationPolicy" ref="authz-policy" />
-</bean>
+  </bean>
 
 </beans>
