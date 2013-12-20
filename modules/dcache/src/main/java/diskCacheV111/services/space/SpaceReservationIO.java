@@ -47,7 +47,7 @@ import diskCacheV111.util.RetentionPolicy;
 
 
 public class SpaceReservationIO extends IoPackage<Space> {
-        public static final String SRM_SPACE_TABLE = ManagerSchemaConstants.SpaceTableName;
+        public static final String SRM_SPACE_TABLE = ManagerSchemaConstants.SPACE_TABLE_NAME;
         public static final String INSERT = "INSERT INTO "+SRM_SPACE_TABLE+
                 " (id,vogroup,vorole,retentionpolicy,accesslatency,linkgroupid,"+
                 "sizeinbytes,creationtime,lifetime,description,state,usedspaceinbytes,allocatedspaceinbytes)"+

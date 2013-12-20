@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="1" author="behrmann">
+        <preConditions onFailMessage="Cannot upgrade directly from versions older than 1.9.5">
+            <or>
+                <not><tableExists tableName="srmspacemanagerschemaversion"/></not>
+                <sqlCheck expectedResult="3">SELECT version FROM srmspacemanagerschemaversion</sqlCheck>
+                <sqlCheck expectedResult="4">SELECT version FROM srmspacemanagerschemaversion</sqlCheck>
+            </or>
+        </preConditions>
+        <comment>Ensure that we only upgrade from schema version 3 or 4</comment>
+    </changeSet>
+
+    <changeSet id="2" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not creating space manager schema as it already exists (this is not an error)">
+            <not><tableExists tableName="srmspacemanagerschemaversion"/></not>
+        </preConditions>
+        <comment>Create base schema</comment>
+
+        <createTable tableName="srmspacemanagernextid">
+            <column name="nexttoken" type="bigint"/>
+        </createTable>
+
+        <insert tableName="srmspacemanagernextid">
+            <column name="nexttoken" value="0"/>
+        </insert>
+
+        <createTable tableName="srmlinkgroup">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="name" type="varchar(32672)"/>
+            <column name="freespaceinbytes" type="bigint"/>
+            <column name="lastupdatetime" type="bigint"/>
+            <column name="onlineallowed" type="int"/>
+            <column name="nearlineallowed" type="int"/>
+            <column name="replicaallowed" type="int"/>
+            <column name="outputallowed" type="int"/>
+            <column name="custodialallowed" type="int"/>
+            <column name="reservedspaceinbytes" type="bigint"/>
+        </createTable>
+
+        <createTable tableName="srmlinkgroupvos">
+            <column name="vogroup" type="varchar(32672)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="vorole" type="varchar(32672)"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="linkgroupid" type="bigint">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="linkgroupid"
+                                 baseTableName="srmlinkgroupvos"
+                                 constraintName="fk_srmlinkgroupvos_l"
+                                 onDelete="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="srmlinkgroup"/>
+
+        <createTable tableName="srmretentionpolicy">
+            <column name="id" type="int"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="name" type="varchar(32672)"/>
+        </createTable>
+
+        <createTable tableName="srmaccesslatency">
+            <column name="id" type="int"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="name" type="varchar(32672)"/>
+        </createTable>
+
+        <createTable tableName="srmspace">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="vogroup" type="varchar(32672)"/>
+            <column name="vorole" type="varchar(32672)"/>
+            <column name="retentionpolicy" type="int"/>
+            <column name="accesslatency" type="int"/>
+            <column name="linkgroupid" type="bigint"/>
+            <column name="sizeinbytes" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="description" type="varchar(32672)"/>
+            <column name="state" type="int"/>
+            <column name="usedspaceinbytes" type="bigint"/>
+            <column name="allocatedspaceinbytes" type="bigint"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="linkgroupid"
+                                 baseTableName="srmspace"
+                                 constraintName="fk_srmspace_l"
+                                 referencedColumnNames="id"
+                                 referencedTableName="srmlinkgroup"/>
+
+        <addForeignKeyConstraint baseColumnNames="accesslatency"
+                                 baseTableName="srmspace"
+                                 constraintName="fk_srmspace_a"
+                                 referencedColumnNames="id"
+                                 referencedTableName="srmaccesslatency"/>
+
+        <addForeignKeyConstraint baseColumnNames="retentionpolicy"
+                                 baseTableName="srmspace"
+                                 constraintName="fk_srmspace_r"
+                                 referencedColumnNames="id"
+                                 referencedTableName="srmretentionpolicy"/>
+
+        <createIndex tableName="srmspace" indexName="srmspace_linkgroupid_idx">
+            <column name="linkgroupid"/>
+        </createIndex>
+
+        <createIndex tableName="srmspace" indexName="srmspace_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <createIndex tableName="srmspace" indexName="srmspace_description_idx">
+            <column name="description"/>
+        </createIndex>
+
+        <createIndex tableName="srmspace" indexName="srmspace_lifetime_idx">
+            <column name="lifetime"/>
+        </createIndex>
+
+        <createIndex tableName="srmspace" indexName="srmspace_creationtime_idx">
+            <column name="creationtime"/>
+        </createIndex>
+
+        <createTable tableName="srmspacefile">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="vogroup" type="varchar(32672)"/>
+            <column name="vorole" type="varchar(32672)"/>
+            <column name="spacereservationid" type="bigint"/>
+            <column name="sizeinbytes" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="pnfspath" type="varchar(32672)"/>
+            <column name="pnfsId" type="varchar(32672)"/>
+            <column name="state" type="int"/>
+            <column name="deleted" type="int"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="spaceReservationId"
+                                 baseTableName="srmspacefile"
+                                 constraintName="fk_srmspacefile_l"
+                                 referencedColumnNames="id"
+                                 referencedTableName="srmspace"/>
+
+        <createIndex tableName="srmspacefile" indexName="srmspacefile_spaceresrevationid_idx">
+            <column name="spacereservationid"/>
+        </createIndex>
+
+        <createIndex tableName="srmspacefile" indexName="srmspacefile_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_idx">
+            <column name="pnfspath"/>
+        </createIndex>
+
+        <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfsid_idx">
+            <column name="pnfsid"/>
+        </createIndex>
+
+        <createIndex tableName="srmspacefile" indexName="srmspacefile_creationtime_idx">
+            <column name="creationtime"/>
+        </createIndex>
+
+        <createIndex tableName="srmspacefile" indexName="srmspacefile_lifetime_idx">
+            <column name="lifetime"/>
+        </createIndex>
+
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="3" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not creating srmspacefile_pnfspath_state_idx as it already exists (this is not an error)">
+            <not><indexExists indexName="srmspacefile_pnfspath_state_idx"/></not>
+        </preConditions>
+        <comment>Create compound index on pnfspath and state field</comment>
+        <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_state_idx">
+            <column name="pnfspath"/>
+            <column name="state"/>
+        </createIndex>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="4" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping srmspacemanagerschemaversion table as it does not exist (this is not an error)">
+            <tableExists tableName="srmspacemanagerschemaversion"/>
+        </preConditions>
+        <comment>Drop old schema management table</comment>
+        <dropTable tableName="srmspacemanagerschemaversion"/>
+        <rollback>
+            <createTable tableName="srmspacemanagerschemaversion">
+                <column name="version" type="int"/>
+            </createTable>
+            <insert tableName="srmspacemanagerschemaversion">
+                <column name="version" value="4"/>
+            </insert>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

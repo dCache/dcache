@@ -51,7 +51,6 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1178,7 +1177,7 @@ public final class Manager
         }
 
         public static final String SELECT_INVALID_SPACES=
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName+
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_TABLE_NAME +
                 " WHERE state = ";
 
         public List< Space > listInvalidSpaces( int spaceTypes , int nRows)
@@ -1251,7 +1250,7 @@ public final class Manager
 
 
         public static String SELECT_FILES_IN_SPACE=
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceFileTableName+
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_FILE_TABLE_NAME +
                 " WHERE spaceReservationId = ?";
 
         public static final String hh_listFilesInSpace=" <space-id>";
@@ -1432,262 +1431,17 @@ public final class Manager
                 return "Command is executed in a background thread.";
         }
 
-        private static final String selectNextToken=
-                "SELECT nexttoken  FROM "+
-                ManagerSchemaConstants.SpaceManagerNextIdTableName;
-
-        private static final String insertNextToken=
-                "INSERT INTO "+
-                ManagerSchemaConstants.SpaceManagerNextIdTableName+
-                " (nexttoken) VALUES ( 0 )";
-
         private void dbinit() throws SQLException {
-                logger.trace("WE ARE IN DBINIT");
-                String tables[] = {ManagerSchemaConstants.SpaceManagerSchemaVersionTableName,
-                                   ManagerSchemaConstants.SpaceManagerNextIdTableName,
-                                   ManagerSchemaConstants.LinkGroupTableName,
-                                   ManagerSchemaConstants.LinkGroupVOsTableName,
-                                   ManagerSchemaConstants.RetentionPolicyTableName,
-                                   ManagerSchemaConstants.AccessLatencyTableName,
-                                   ManagerSchemaConstants.SpaceTableName,
-                                   ManagerSchemaConstants.SpaceFileTableName};
-
-                String createTables[] = {ManagerSchemaConstants.CreateSpaceManagerSchemaVersionTable,
-                                         ManagerSchemaConstants.CreateSpaceManagerNextIdTable,
-                                         ManagerSchemaConstants.CreateLinkGroupTable,
-                                         ManagerSchemaConstants.CreateLinkGroupVOsTable,
-                                         ManagerSchemaConstants.CreateRetentionPolicyTable,
-                                         ManagerSchemaConstants.CreateAccessLatencyTable,
-                                         ManagerSchemaConstants.CreateSpaceTable,
-                                         ManagerSchemaConstants.CreateSpaceFileTable};
-                Map<String, Boolean> created=new Hashtable<>();
-                for (int i=0; i<tables.length; ++i) {
-                        String table = tables[i];
-                        created.put(table, Boolean.FALSE);
-                        try {
-                            if( dbManager.hasTable(table)) {
-                                logger.info("presence of table \"{}\" verified",
-                                        table);
-                            } else {
-                                dbManager.createTable(table, createTables[i]);
-                                created.put(table, Boolean.TRUE);
-                            }
-                        } catch (SQLException e) {
-                                logger.error("verfying table {} failed: {}",
-                                        table, e.getMessage());
-                        }
-                }
-                updateSchemaVersion(created);
-                Object obj=dbManager.selectPrepared(1, selectNextToken);
-                if (obj==null) {
-                        dbManager.insert(insertNextToken);
-                }
                 insertRetentionPolicies();
                 insertAccessLatencies();
         }
 
-        private static final String selectVersion=
-                "SELECT version FROM "+
-                ManagerSchemaConstants.SpaceManagerSchemaVersionTableName;
-
-        public static final String updateVersion=
-                "UPDATE "+
-                ManagerSchemaConstants.SpaceManagerSchemaVersionTableName+
-                " SET version= "+
-                currentSchemaVersion;
-
-        private static final String insertVersion="INSERT INTO "+
-                                                  ManagerSchemaConstants.SpaceManagerSchemaVersionTableName+
-                                                  " (version) VALUES ( "+
-                                                  currentSchemaVersion+" )";
-
-        private void updateSchemaVersion(Map<String, Boolean> created)
-                throws SQLException {
-                if (!created.get(ManagerSchemaConstants.SpaceManagerSchemaVersionTableName)) {
-                        Object o=dbManager.selectPrepared(1, selectVersion);
-                        if (o!=null) {
-                                previousSchemaVersion= (Integer) o;
-                                if (previousSchemaVersion<currentSchemaVersion) {
-                                        dbManager.update(updateVersion);
-                                }
-                        }
-                        else {
-                                // nothing is found in the schema version table,
-                                // pretend it was just created
-                                created.put(ManagerSchemaConstants.SpaceManagerSchemaVersionTableName,
-                                            Boolean.TRUE);
-                        }
-                }
-                if(created.get(ManagerSchemaConstants.SpaceManagerSchemaVersionTableName)) {
-                        dbManager.insert(insertVersion);
-                        if(created.get(ManagerSchemaConstants.LinkGroupTableName)) {
-                                //everything is created for the first time
-                                previousSchemaVersion=currentSchemaVersion;
-                        }
-                        else {
-                                //database was created when the Schema Version was not in existence
-                                previousSchemaVersion=0;
-                        }
-                }
-                if(previousSchemaVersion == currentSchemaVersion) {
-                        dbManager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,
-                                              "spacereservationid",
-                                              "state",
-                                              "pnfspath",
-                                              "pnfsid",
-                                              "creationtime",
-                                              "lifetime");
-                        dbManager.createIndexes(ManagerSchemaConstants.SpaceTableName,
-                                              "linkgroupid",
-                                              "state",
-                                              "description",
-                                              "lifetime",
-                                              "creationtime");
-                        return;
-                }
-                //
-                // Apply schema modifications
-                //
-                try {
-                        updateSchema();
-                }
-                catch (SQLException e) {
-                        logger.error("failed to update schema from {} to {}: {}",
-                                previousSchemaVersion, currentSchemaVersion,
-                                e.getMessage());
-                }
-        }
-
-        private static final String alterLinkGroupTable=
-                "ALTER TABLE "+
-                ManagerSchemaConstants.LinkGroupTableName+
-                " ADD COLUMN  onlineAllowed INT,"+
-                " ADD COLUMN  nearlineAllowed INT,"+
-                " ADD COLUMN  replicaAllowed INT,"+
-                " ADD COLUMN  outputAllowed INT,"+
-                " ADD COLUMN  custodialAllowed INT";
-
-        private static final String updateLinkGroupTable=
-                "UPDATE  "+
-                ManagerSchemaConstants.LinkGroupTableName+
-                "\n SET onlineAllowed = 1 ,"+
-                "\n     nearlineAllowed = 1 ,"+
-                "\n     replicaAllowed = CASE WHEN hsmType= 'None' THEN 1 ELSE 0 END,"+
-                "\n     outputAllowed = CASE WHEN hsmType= 'None' THEN 1 ELSE 0 END,"+
-                "\n     custodialAllowed = CASE WHEN hsmType= 'None' THEN 0 ELSE 1 END";
-
-        private static final String alterLinkGroupTable1="ALTER TABLE "+
-                                                         ManagerSchemaConstants.LinkGroupTableName+
-                                                         " DROP  COLUMN  hsmType ";
-
-
-        private static final Object createIndexLock = new Object();
-
-        private void updateSchema() throws SQLException {
-                if(previousSchemaVersion == currentSchemaVersion) {
-                        return;
-                }
-                logger.info("updating Schema, previous schema version " +
-                        "number={}, updating to current version number {}",
-                        previousSchemaVersion, currentSchemaVersion);
-                if(previousSchemaVersion == 0) {
-                        dbManager.batchUpdates(alterLinkGroupTable,
-                                             updateLinkGroupTable,
-                                             alterLinkGroupTable1);
-                        previousSchemaVersion=1;
-                }
-                if (previousSchemaVersion==1) {
-                        dbManager.batchUpdates("ALTER TABLE " +ManagerSchemaConstants.LinkGroupTableName+ " ADD COLUMN  reservedspaceinbytes BIGINT",
-                                             "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    +
-                                             " ADD COLUMN  usedspaceinbytes      BIGINT,"+
-                                             " ADD COLUMN  allocatedspaceinbytes  BIGINT");
-                        dbManager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid","creationtime","lifetime");
-                        dbManager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description","lifetime","creationtime");
-                        //
-                        // Now we need to calculate space one by and as
-                        // doing it in one go takes too long
-                        try {
-                                Set<Space> spaces=dbManager.selectPrepared(spaceReservationIO,
-                                                                         SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-                                for (Space space : spaces) {
-                                        try {
-                                                dbManager.update(ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
-                                                               space.getId(),
-                                                               space.getId(),
-                                                               space.getId());
-                                        }
-                                        catch(SQLException e) {
-                                            logger.error("failed to execute " +
-                                                    "{},?={}: {}",
-                                                    ManagerSchemaConstants.
-                                                    POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
-                                                    space.getId(),
-                                                    e.getMessage());
-                                        }
-                                }
-                        }
-                        catch (SQLException e) {
-                            logger.error("selectPrepare failed: {}", e.getMessage());
-                        }
-                        //
-                        // Do the same with linkgroups
-                        //
-                        try {
-                                Set<LinkGroup> groups=dbManager.selectPrepared( new LinkGroupIO(),
-                                                                              LinkGroupIO.SELECT_ALL);
-
-                                for (LinkGroup group : groups) {
-                                        try {
-                                                dbManager.update(ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
-                                                               group.getId(),
-                                                               group.getId());
-                                        }
-                                        catch(SQLException e) {
-                                            logger.error("failed to execute " +
-                                                    "{},?={}: {}",
-                                                    ManagerSchemaConstants.
-                                                    POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
-                                                    group.getId(),
-                                                    e.getMessage());
-                                        }
-                                }
-                        }
-                        catch (SQLException e) {
-                            logger.error("selectPrepare failed: {}", e.getMessage());
-                        }
-                        previousSchemaVersion=2;
-                }
-                if (previousSchemaVersion==2) {
-                        dbManager.batchUpdates("ALTER TABLE " +ManagerSchemaConstants.SpaceFileTableName+ " ADD COLUMN  deleted INTEGER");
-                        previousSchemaVersion=3;
-                }
-                if (previousSchemaVersion==3) {
-                        new Thread() {
-                                @Override
-                                public void run() {
-                                        synchronized(createIndexLock) {
-                                                try {
-                                                        dbManager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,
-                                                                              "pnfspath,state");
-                                                }
-                                                catch (SQLException e) {
-                                                    logger.error("failed to create index on table {} columns , \"pnfspath,state\": {}",
-                                                            ManagerSchemaConstants.SpaceFileTableName,
-                                                            e.getMessage());
-                                                }
-                                        }
-                                }
-                        }.start();
-                        previousSchemaVersion=4;
-                }
-        }
-
-        private static final String countPolicies=
+    private static final String countPolicies=
                 "SELECT count(*) from "+
-                ManagerSchemaConstants.RetentionPolicyTableName;
+                ManagerSchemaConstants.RETENTION_POLICY_TABLE_NAME;
 
         private static final String insertPolicy = "INSERT INTO "+
-                ManagerSchemaConstants.RetentionPolicyTableName+
+                ManagerSchemaConstants.RETENTION_POLICY_TABLE_NAME +
                 " (id, name) VALUES (?,?)" ;
 
         private void insertRetentionPolicies() throws  SQLException{
@@ -1708,10 +1462,10 @@ public final class Manager
         }
 
         private static final String countLatencies =
-                "SELECT count(*) from "+ManagerSchemaConstants.AccessLatencyTableName;
+                "SELECT count(*) from "+ManagerSchemaConstants.ACCESS_LATENCY_TABLE_NAME;
 
         private static final String insertLatency = "INSERT INTO "+
-                ManagerSchemaConstants.AccessLatencyTableName+
+                ManagerSchemaConstants.ACCESS_LATENCY_TABLE_NAME +
                 " (id, name) VALUES (?,?)";
 
         private void insertAccessLatencies() throws  SQLException {
@@ -1736,11 +1490,11 @@ public final class Manager
 //
 
         public static final String selectNextIdForUpdate =
-                "SELECT * from "+ManagerSchemaConstants.SpaceManagerNextIdTableName+" FOR UPDATE ";
+                "SELECT * from "+ManagerSchemaConstants.SPACE_MANAGER_NEXT_ID_TABLE_NAME +" FOR UPDATE ";
 
         public static final long NEXT_LONG_STEP=10000;
 
-        public static final String increaseNextId = "UPDATE "+ManagerSchemaConstants.SpaceManagerNextIdTableName+
+        public static final String increaseNextId = "UPDATE "+ManagerSchemaConstants.SPACE_MANAGER_NEXT_ID_TABLE_NAME +
                 " SET NextToken=NextToken+"+NEXT_LONG_STEP;
         private long nextLongBase;
         private long _nextLongBase;
@@ -1791,7 +1545,7 @@ public final class Manager
                 ResultSet set = s.executeQuery();
                 if(!set.next()) {
                         s.close();
-                        throw new SQLException("table "+ManagerSchemaConstants.SpaceManagerNextIdTableName+" is empty!!!", "02000");
+                        throw new SQLException("table "+ManagerSchemaConstants.SPACE_MANAGER_NEXT_ID_TABLE_NAME +" is empty!!!", "02000");
                 }
                 nextLongBase = set.getLong(1);
                 s.close();
@@ -1834,7 +1588,7 @@ public final class Manager
 // unchanged code ends here
 //
         public static final String selectLinkGroupVOs =
-                "SELECT VOGroup,VORole FROM "+ManagerSchemaConstants.LinkGroupVOsTableName+
+                "SELECT VOGroup,VORole FROM "+ManagerSchemaConstants.LINK_GROUP_VOS_TABLE_NAME +
                 " WHERE linkGroupId=?";
 
         public static final String onlineSelectionCondition =
@@ -2716,19 +2470,19 @@ public final class Manager
         }
 
         public static final String SELECT_SPACE_TOKENS_BY_DESCRIPTION =
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_TABLE_NAME +
                 " WHERE  state = ? AND description = ?";
 
         public static final String SELECT_SPACE_TOKENS_BY_VOGROUP =
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_TABLE_NAME +
                 " WHERE  state = ? AND voGroup = ?";
 
         public static final String SELECT_SPACE_TOKENS_BY_VOROLE =
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_TABLE_NAME +
                 " WHERE  state = ? AND  voRole = ?";
 
         public static final String SELECT_SPACE_TOKENS_BY_VOGROUP_AND_VOROLE =
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_TABLE_NAME +
                 " WHERE  state = ? AND voGroup = ? AND voRole = ?";
 
         private Set<Space> findSpacesByVoGroupAndRole(String voGroup, String voRole)
@@ -2790,15 +2544,15 @@ public final class Manager
         }
 
         public static final String SELECT_SPACE_FILE_BY_PNFSID =
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceFileTableName+
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_FILE_TABLE_NAME +
                 " WHERE pnfsId = ? ";
 
         public static final String SELECT_SPACE_FILE_BY_PNFSPATH =
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceFileTableName+
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_FILE_TABLE_NAME +
                 " WHERE pnfsPath = ? ";
 
         public static final String SELECT_SPACE_FILE_BY_PNFSID_AND_PNFSPATH =
-                "SELECT * FROM "+ManagerSchemaConstants.SpaceFileTableName+
+                "SELECT * FROM "+ManagerSchemaConstants.SPACE_FILE_TABLE_NAME +
                 " WHERE pnfsId = ? AND pnfsPath = ?";
 
 
@@ -3595,11 +3349,11 @@ public final class Manager
         }
 
         private static final String INSERT_LINKGROUP_VO =
-                "INSERT INTO "+ManagerSchemaConstants.LinkGroupVOsTableName+
+                "INSERT INTO "+ManagerSchemaConstants.LINK_GROUP_VOS_TABLE_NAME +
                 " ( VOGroup, VORole, linkGroupId ) VALUES ( ? , ? , ? )";
 
         private static final String DELETE_LINKGROUP_VO =
-                "DELETE FROM "+ManagerSchemaConstants.LinkGroupVOsTableName+
+                "DELETE FROM "+ManagerSchemaConstants.LINK_GROUP_VOS_TABLE_NAME +
                 " WHERE VOGroup  = ? AND VORole = ? AND linkGroupId = ? ";
 
         private long updateLinkGroup(String linkGroupName,

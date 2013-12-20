@@ -14,6 +14,20 @@
     <property name="location" value="arguments:"/>
   </bean>
 
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema manager</description>
+        <property name="dataSource">
+            <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+                <property name="driverClassName" value="${spacemanager.db.driver}"/>
+                <property name="url" value="${spacemanager.db.url}"/>
+                <property name="username" value="${spacemanager.db.user}"/>
+                <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>
+            </bean>
+        </property>
+        <property name="changeLog" value="classpath:${spacemanager.db.schema.changelog}"/>
+        <property name="shouldUpdate" value="${spacemanager.db.schema.auto}"/>
+    </bean>
+
   <bean id="scheduled-executor"
         class="java.util.concurrent.Executors"
         factory-method="newScheduledThreadPool"
@@ -55,7 +69,7 @@
   <bean id="authz-policy" class="diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy"/>
 
   <bean id="spacemanager" class="diskCacheV111.services.space.Manager"
-         init-method="start" destroy-method="stop">
+         init-method="start" destroy-method="stop" depends-on="liquibase">
     <description>SrmSpaceManager</description>
     <property name="dbManager"        ref="db-manager" />
     <property name="pnfsStub"         ref="pnfs-stub"/>

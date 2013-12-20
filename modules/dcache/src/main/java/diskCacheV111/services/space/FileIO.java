@@ -47,7 +47,7 @@ Indexes:
 
 public class FileIO extends IoPackage<File> {
 
-	public static final String SRM_SPACEFILE_TABLE = ManagerSchemaConstants.SpaceFileTableName;
+	public static final String SRM_SPACEFILE_TABLE = ManagerSchemaConstants.SPACE_FILE_TABLE_NAME;
 	public static final String SELECT_BY_SPACERESERVATION_ID =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE spacereservationid = ?";
 	public static final String SELECT_BY_ID="SELECT * FROM "+
