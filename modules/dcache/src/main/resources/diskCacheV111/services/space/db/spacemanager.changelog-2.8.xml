@@ -196,4 +196,16 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="5" author="behrmann">
+        <addNotNullConstraint tableName="srmlinkgroup" columnName="freespaceinbytes"/>
+        <addNotNullConstraint tableName="srmlinkgroup" columnName="reservedspaceinbytes"/>
+        <addNotNullConstraint tableName="srmspace" columnName="sizeinbytes"/>
+        <addNotNullConstraint tableName="srmspace" columnName="usedspaceinbytes"/>
+        <addNotNullConstraint tableName="srmspace" columnName="allocatedspaceinbytes"/>
+        <addNotNullConstraint tableName="srmspace" columnName="linkgroupid"/>
+        <addNotNullConstraint tableName="srmspace" columnName="state"/>
+        <addNotNullConstraint tableName="srmspacefile" columnName="sizeinbytes"/>
+        <addNotNullConstraint tableName="srmspacefile" columnName="spacereservationid"/>
+        <addNotNullConstraint tableName="srmspacefile" columnName="state"/>
+    </changeSet>
 </databaseChangeLog>

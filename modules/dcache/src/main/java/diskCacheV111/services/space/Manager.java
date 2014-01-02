@@ -1924,8 +1924,7 @@ public final class Manager
                 try {
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);
-                        File f = selectFileForUpdate(connection,id);
-                        removeFileFromSpace(connection,f);
+                        removeFileFromSpace(connection, id);
                         connection.commit();
                         connection_pool.returnConnection(connection);
                         connection = null;
@@ -1946,22 +1945,11 @@ public final class Manager
                 }
         }
 
-        public void removeFileFromSpace(Connection connection,
-                                        File f) throws SQLException {
-                Space space = selectSpaceForUpdate(connection,f.getSpaceId());
-                int rc = dbManager.delete(connection,FileIO.DELETE,f.getId());
+        public void removeFileFromSpace(Connection connection, long fileId) throws SQLException {
+                int rc = dbManager.delete(connection,FileIO.DELETE, fileId);
                 if(rc!=1){
                         throw new SQLException("delete returned row count ="+rc);
                 }
-                if(f.getState() == FileState.RESERVED ||
-                   f.getState() == FileState.TRANSFERRING) {
-                        decrementAllocatedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
-                }
-                else if (f.getState() == FileState.STORED) {
-                        decrementUsedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
-                        incrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
-                }
-
         }
 
 
@@ -2066,21 +2054,12 @@ public final class Manager
                 if (accessLatency!=null) {
                     space.setAccessLatency(accessLatency);
                 }
-                long deltaSize = 0;
-                long oldSize =  space.getSizeInBytes();
-                LinkGroup group = null;
                 if (sizeInBytes != null)  {
-                        if (sizeInBytes < space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes()) {
-                                long usedSpace = space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes();
+                        long usedSpace = space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes();
+                        if (sizeInBytes < usedSpace) {
                                 throw new SQLException("Cannot downsize space reservation below "+usedSpace+"bytes, remove files first ");
                         }
-                        deltaSize = sizeInBytes -oldSize;
                         space.setSizeInBytes(sizeInBytes);
-                        group = selectLinkGroupForUpdate(connection,
-                                                         space.getLinkGroupId());
-                        if (group.getAvailableSpaceInBytes()<deltaSize) {
-                                throw new SQLException("No space available to resize space reservation");
-                        }
                 }
                 if(lifetime!=null) {
                     space.setLifetime(lifetime);
@@ -2092,10 +2071,6 @@ public final class Manager
                 if(state != null)  {
                         if (SpaceState.isFinalState(oldState)==true) {
                                 throw new SQLException("change from "+oldState+" to "+state+" is not allowed");
-                        }
-                        if (group==null) {
-                                group = selectLinkGroupForUpdate(connection,
-                                                                 space.getLinkGroupId());
                         }
                         space.setState(state);
                 }
@@ -2112,25 +2087,6 @@ public final class Manager
                                space.getDescription(),
                                space.getState().getStateId(),
                                space.getId());
-
-                if (state==null) {
-                        if (sizeInBytes != null) {
-                                if (deltaSize!=0) {
-                                        if (!SpaceState.isFinalState(space.getState())) {
-                                                incrementReservedSpaceInLinkGroup(connection,
-                                                                                  group.getId(),
-                                                                                  deltaSize);
-                                        }
-                                }
-                        }
-                }
-                else {
-                        if (SpaceState.isFinalState(space.getState())) {
-                                decrementReservedSpaceInLinkGroup(connection,
-                                                                  group.getId(),
-                                                                  oldSize-space.getUsedSizeInBytes());
-                        }
-                }
         }
 
         public void updateSpaceReservation(long id,
@@ -2312,9 +2268,6 @@ public final class Manager
                                            long used,
                                            long allocated) throws SQLException {
                 long creationTime=System.currentTimeMillis();
-                LinkGroup g=selectLinkGroupForUpdate(connection,
-                                                     linkGroupId,
-                                                     sizeInBytes);
                 int rc=dbManager.insert(connection,
                                       SpaceReservationIO.INSERT,
                                       id,
@@ -2322,7 +2275,7 @@ public final class Manager
                                       voRole,
                                       retentionPolicy==null? 0 : retentionPolicy.getId(),
                                       accessLatency==null? 0 : accessLatency.getId(),
-                                      g.getId(),
+                                      linkGroupId,
                                       sizeInBytes,
                                       creationTime,
                                       lifetime,
@@ -2333,12 +2286,6 @@ public final class Manager
                 if (rc!=1) {
                         throw new SQLException("insert returned row count ="+rc);
                 }
-                //
-                // Now increment reservedspaceinbytes
-                //
-                incrementReservedSpaceInLinkGroup(connection,
-                                                  linkGroupId,
-                                                  sizeInBytes);
         }
 
         //
@@ -2532,12 +2479,8 @@ public final class Manager
         public void deleteSpaceReservation(Connection connection,
                                            Space space) throws SQLException {
                 dbManager.delete(connection,
-                               SpaceReservationIO.DELETE_SPACE_RESERVATION,
-                               space.getId());
-                decrementReservedSpaceInLinkGroup(connection,
-                                                  space.getLinkGroupId(),
-                                                  space.getSizeInBytes()-
-                                                  space.getUsedSizeInBytes());
+                        SpaceReservationIO.DELETE_SPACE_RESERVATION,
+                        space.getId());
         }
 
         public void deleteSpaceReservation(long id)
@@ -2630,62 +2573,13 @@ public final class Manager
                         f.setVoRole(voRole);
                 }
                 long oldSize=f.getSizeInBytes();
-                long deltaSize=0;
-                Space space=null;
-                if (sizeInBytes!=null) {
-                        deltaSize= sizeInBytes -oldSize;
-                        if (deltaSize!=0) {
-                                f.setSizeInBytes(sizeInBytes);
-                                //
-                                // idea below is questionable. We resize space reservation to fit this file. This way we
-                                // attempt to guarantee that there is no negative numbers in LinkGroup
-                                //
-                                Connection newConnection=null;
-                                try {
-                                        newConnection=connection_pool.getConnection();
-                                        newConnection.setAutoCommit(false);
-                                        space=selectSpaceForUpdate(newConnection,
-                                                                   f.getSpaceId());
-                                        if (deltaSize > space.getAvailableSpaceInBytes()) {
-                                                updateSpaceReservation(newConnection,
-                                                                       null,
-                                                                       null,
-                                                                       null,
-                                                                       null,
-                                                                       null,
-                                                        space.getSizeInBytes() + deltaSize - space
-                                                                .getAvailableSpaceInBytes(),
-                                                                       null,
-                                                                       null,
-                                                                       null,
-                                                                       space);
-                                        }
-                                        newConnection.commit();
-                                        connection_pool.returnConnection(newConnection);
-                                        newConnection=null;
-                                }
-                                catch (SQLException e) {
-                                        logger.error("failed to update space " +
-                                                "reservation: {}", e.getMessage());
-                                        if (newConnection!=null) {
-                                                newConnection.rollback();
-                                                connection_pool.returnFailedConnection(newConnection);
-                                                newConnection=null;
-                                        }
-                                        throw e;
-                                }
-                                space=selectSpaceForUpdate(connection,
-                                                           f.getSpaceId());
-                        }
+                if (sizeInBytes != null && sizeInBytes - oldSize != 0) {
+                    f.setSizeInBytes(sizeInBytes);
                 }
                 if (lifetime!=null) {
                     f.setLifetime(lifetime);
                 }
-                FileState oldState = f.getState();
                 if (state!=null)   {
-                        if ( space == null ) {
-                                space = selectSpaceForUpdate(connection,f.getSpaceId());
-                        }
                         f.setState(FileState.getState(state));
                 }
                 if (pnfsId!=null ) {
@@ -2715,44 +2609,6 @@ public final class Manager
                 }
                 if (rc!=1) {
                         throw new SQLException("Update failed, row count="+rc);
-                }
-                if (state==null) {
-                        if (sizeInBytes!=null) {
-                                if (deltaSize!=0) {
-                                        if (f.getState()==FileState.STORED) {
-                                                incrementUsedSpaceInSpaceReservation(connection,space,deltaSize);
-                                                decrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),deltaSize); // keep freespaceinbytes in check
-                                        }
-                                        if (f.getState()==FileState.RESERVED ||
-                                            f.getState()==FileState.TRANSFERRING) {
-                                                incrementAllocatedSpaceInSpaceReservation(connection,space,deltaSize);
-                                        }
-                                }
-                        }
-                }
-                else {
-                        if (oldState==FileState.RESERVED || oldState==FileState.TRANSFERRING) {
-                                if (f.getState() == FileState.STORED) {
-                                        decrementAllocatedSpaceInSpaceReservation(connection,space,oldSize);
-                                        incrementUsedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
-                                        decrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
-                                }
-                                else if (f.getState() == FileState.FLUSHED) {
-                                        decrementAllocatedSpaceInSpaceReservation(connection,space,oldSize);
-                                }
-                        }
-                        else if (oldState== FileState.STORED) {
-                                if (f.getState() == FileState.FLUSHED) {
-                                        decrementUsedSpaceInSpaceReservation(connection,space,oldSize);
-                                        incrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
-                                }
-                                else if (f.getState()==FileState.RESERVED || f.getState()==FileState.TRANSFERRING) {
-                                        // this should not happen
-                                        decrementUsedSpaceInSpaceReservation(connection,space,oldSize);
-                                        incrementAllocatedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
-                                        incrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
-                                }
-                        }
                 }
         }
 
@@ -2905,23 +2761,6 @@ public final class Manager
                 }
                 if(rc!=1 ){
                         throw new SQLException("insert returned row count ="+rc);
-                }
-                if (state==FileState.RESERVED.getStateId()||
-                    state==FileState.TRANSFERRING.getStateId()) {
-                        incrementAllocatedSpaceInSpaceReservation(connection,
-                                                                  space,
-                                                                  sizeInBytes);
-                }
-                else if (state==FileState.STORED.getStateId()) {
-                        incrementUsedSpaceInSpaceReservation(connection,
-                                                             space,
-                                                             sizeInBytes);
-                        decrementAllocatedSpaceInSpaceReservation(connection,
-                                                                  space,
-                                                                  sizeInBytes);
-                        decrementFreeSpaceInLinkGroup(connection,
-                                                      space.getLinkGroupId(),
-                                                      sizeInBytes); // keep freespaceinbytes in check
                 }
         }
 
@@ -3555,7 +3394,7 @@ public final class Manager
                                         /* This reservation was created by space manager
                                          * when the transfer started. Delete it.
                                          */
-                                        removeFileFromSpace(connection, f);
+                                        removeFileFromSpace(connection, f.getId());
 
                                         /* TODO: If we also created the reservation, we should
                                          * release it at this point, but at the moment we cannot
@@ -3645,7 +3484,7 @@ public final class Manager
                                         if(weDeleteStoredFileRecord) {
                                                 logger.trace("file transfered, " +
                                                         "deleting file record");
-                                                removeFileFromSpace(connection,f);
+                                                removeFileFromSpace(connection,f.getId());
                                         }
                                         else {
                                                 updateSpaceFile(connection,
@@ -3665,7 +3504,7 @@ public final class Manager
                                             /* This reservation was created by space manager
                                              * when the transfer started. Delete it.
                                              */
-                                            removeFileFromSpace(connection, f);
+                                            removeFileFromSpace(connection, f.getId());
 
                                             /* TODO: If we also created the reservation, we should
                                              * release it at this point, but at the moment we cannot
@@ -3738,7 +3577,7 @@ public final class Manager
                                 if(deleteStoredFileRecord) {
                                         logger.trace("returnSpaceToReservation, " +
                                                 "deleting file record");
-                                        removeFileFromSpace(connection,f);
+                                        removeFileFromSpace(connection,f.getId());
                                 }
                                 else {
                                         updateSpaceFile(connection,
@@ -3800,7 +3639,7 @@ public final class Manager
                                 connection.setAutoCommit(false);
                                 File f = selectFileForUpdate(connection,pnfsId);
                                 if ((f.getState() != FileState.RESERVED && f.getState() != FileState.TRANSFERRING) || f.getPnfsPath() == null) {
-                                    removeFileFromSpace(connection,f);
+                                    removeFileFromSpace(connection,f.getId());
                                 } else if (f.getState() == FileState.TRANSFERRING) {
                                     removePnfsIdAndChangeStateOfFileInSpace(connection, f.getId(), FileState.RESERVED.getStateId());
                                 }
@@ -3866,7 +3705,7 @@ public final class Manager
                                                 } catch (FileNotFoundCacheException ignored) {
                                                 }
                                         }
-                                        removeFileFromSpace(connection,f);
+                                        removeFileFromSpace(connection,f.getId());
                                         connection_pool.returnConnection(connection);
                                         connection = null;
                                 } catch (CacheException e) {
@@ -4473,121 +4312,6 @@ public final class Manager
                         if(connection != null) {
                                 connection_pool.returnConnection(connection);
                         }
-                }
-        }
-
-        //
-        // the crap below shoulda've been replaced with database triggers (litvinse@fnal.gov)
-        //
-
-        public void decrementReservedSpaceInLinkGroup(Connection connection,
-                                                      long id,
-                                                      long size)
-                throws SQLException {
-                dbManager.update(connection,
-                               LinkGroupIO.DECREMENT_RESERVED_SPACE,
-                               size,
-                               id);
-        }
-
-        public void incrementReservedSpaceInLinkGroup(Connection connection,
-                                                      long id,
-                                                      long size)
-                throws SQLException {
-                dbManager.update(connection,
-                               LinkGroupIO.INCREMENT_RESERVED_SPACE,
-                               size,
-                               id);
-        }
-
-        public void decrementFreeSpaceInLinkGroup(Connection connection,
-                                                  long id,
-                                                  long size)
-                throws SQLException {
-                dbManager.update(connection,
-                               LinkGroupIO.DECREMENT_FREE_SPACE,
-                               size,
-                               id);
-        }
-
-        public void incrementFreeSpaceInLinkGroup(Connection connection,
-                                                  long id,
-                                                  long size)
-                throws SQLException {
-                dbManager.update(connection,
-                               LinkGroupIO.INCREMENT_FREE_SPACE,
-                               size,
-                               id);
-        }
-
-
-        //
-        // Very important: we DO NOT touch reservedspaceinbytes of srmlinkgroup table
-        // when we change allocatedspaceinbytes in srmspace table (litvinse@fnal.gov)
-        //
-
-        public void decrementAllocatedSpaceInSpaceReservation(Connection connection,
-                                                              Space space,
-                                                              long size)
-                throws SQLException {
-                dbManager.update(connection,
-                               SpaceReservationIO.DECREMENT_ALLOCATED_SPACE,
-                               size,
-                               space.getId());
-        }
-
-        public void incrementAllocatedSpaceInSpaceReservation(Connection connection,
-                                                              Space space,
-                                                              long size)
-                throws SQLException {
-                dbManager.update(connection,
-                               SpaceReservationIO.INCREMENT_ALLOCATED_SPACE,
-                               size,
-                               space.getId());
-        }
-
-        //
-        // Very important: we DO  touch reservedspaceinbytes of srmlinkgroup table
-        // when we change usedspaceinbytes in srmspace table (litvinse@fnal.gov)
-        //
-
-        //
-        // when the space becomes "unused" we "return" it to "reservedspaceinbytes" space in linkgroup
-        //
-        public void decrementUsedSpaceInSpaceReservation(Connection connection,
-                                                         Space space,
-                                                         long size)
-                throws SQLException {
-                LinkGroup group = selectLinkGroupForUpdate(connection,
-                                                           space.getLinkGroupId());
-                dbManager.update(connection,
-                               SpaceReservationIO.DECREMENT_USED_SPACE,
-                               size,
-                               space.getId());
-                if (space.getState() == SpaceState.RESERVED) {
-                        incrementReservedSpaceInLinkGroup(connection,
-                                                          group.getId(),
-                                                          size);
-                }
-        }
-
-        //
-        // when the space becomes "used" we subtract it from "reservedspaceinbytes" space in linkgroup
-        //
-        public void incrementUsedSpaceInSpaceReservation(Connection connection,
-                                                         Space space,
-                                                         long size)
-                throws SQLException {
-                LinkGroup group = selectLinkGroupForUpdate(connection,
-                                                           space.getLinkGroupId());
-                dbManager.update(connection,
-                               SpaceReservationIO.INCREMENT_USED_SPACE,
-                               size,
-                               space.getId());
-                if (space.getState() == SpaceState.RESERVED) {
-                        decrementReservedSpaceInLinkGroup(connection,
-                                                          group.getId(),
-                                                          size);
                 }
         }
 }

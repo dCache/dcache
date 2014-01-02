@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- linkgroup.freespaceinbytes only ever decreases in trigger updates below; this is a heuristic
+         to quickly update freespaceinbytes as space is consumed. The real value is provided by
+         periodic updates from pool manager. The heuristic does not increase linkgroup.freespaceinbytes
+         as that would introduce a risk of advertising more free space than is actually available. -->
+
+    <changeSet id="1" author="behrmann" dbms="postgresql" runOnChange="true">
+        <comment>Create srmlinkgroup trigger to prevent over allocating link groups</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_linkgroup_on_update() RETURNS TRIGGER AS $$
+            BEGIN
+                IF NEW.reservedspaceinbytes > OLD.reservedspaceinbytes AND NEW.reservedspaceinbytes > NEW.freespaceinbytes THEN
+                    RAISE SQLSTATE '23D01' USING MESSAGE = 'Not enough free space in link group ' || NEW.id || ':' || NEW.name;
+                END IF;
+                RETURN NEW;
+            END;
+            $$
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER tgr_linkgroup_update BEFORE UPDATE ON srmlinkgroup FOR EACH ROW EXECUTE PROCEDURE f_linkgroup_on_update();
+        </createProcedure>
+    </changeSet>
+
+    <changeSet id="2" author="behrmann" dbms="postgresql" runOnChange="true">
+        <comment>Create srmspace triggers for maintaining accumulated fields</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_srmspace_on_insert() RETURNS TRIGGER AS  $$
+            BEGIN
+                IF NEW.state = 0 THEN
+                    UPDATE srmlinkgroup
+                        SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
+                            freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
+                        WHERE id = NEW.linkgroupid;
+                END IF;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER tgr_srmspace_insert AFTER INSERT ON srmspace FOR EACH ROW EXECUTE PROCEDURE f_srmspace_on_insert();
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_srmspace_on_update() RETURNS TRIGGER AS  $$
+            BEGIN
+                IF OLD.state = 0 AND NEW.state = 0 THEN
+                    IF OLD.linkGroupId != NEW.linkGroupId THEN
+                        UPDATE srmlinkgroup
+                            SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes
+                            WHERE id = OLD.linkgroupid;
+                        UPDATE srmlinkgroup
+                            SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
+                                freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
+                            WHERE id = NEW.linkgroupid;
+                    ELSEIF OLD.sizeinbytes != NEW.sizeinbytes OR OLD.usedspaceinbytes != NEW.usedspaceinbytes THEN
+                        UPDATE srmlinkgroup
+                            SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
+                                freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - NEW.usedspaceinbytes + OLD.usedspaceinbytes), 0)
+                            WHERE id = OLD.linkgroupid;
+                    END IF;
+                ELSEIF OLD.state = 0 AND NEW.state != 0 THEN
+                    UPDATE srmlinkgroup SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinBytes + OLD.usedspaceinbytes WHERE id = OLD.linkgroupid;
+                ELSEIF OLD.state != 0 AND NEW.state = 0 THEN
+                    UPDATE srmlinkgroup
+                        SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
+                            freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
+                        WHERE id = NEW.linkgroupid;
+                END IF;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER tgr_srmspace_update AFTER UPDATE ON srmspace FOR EACH ROW EXECUTE PROCEDURE f_srmspace_on_update();
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_srmspace_on_delete() RETURNS TRIGGER AS  $$
+            BEGIN
+                IF OLD.state = 0 THEN
+                    UPDATE srmlinkgroup SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes WHERE id = OLD.linkgroupid;
+                END IF;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER tgr_srmspace_delete AFTER DELETE ON srmspace FOR EACH ROW EXECUTE PROCEDURE f_srmspace_on_delete();
+        </createProcedure>
+
+        <rollback>
+            DROP TRIGGER tgr_srmspace_delete ON srmspace;
+            DROP FUNCTION f_srmspace_on_delete();
+            DROP TRIGGER tgr_srmspace_update ON srmspace;
+            DROP FUNCTION f_srmspace_on_update();
+            DROP TRIGGER tgr_srmspace_insert ON srmspace;
+            DROP FUNCTION f_srmspace_on_insert();
+        </rollback>
+    </changeSet>
+
+    <changeSet id="3" author="behrmann" dbms="postgresql" runOnChange="true">
+        <comment>Create srmspace trigger to enlarge space to fit its files</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_srmspace_check_size() RETURNS TRIGGER AS $$
+            BEGIN
+                IF NEW.allocatedspaceinbytes + NEW.usedspaceinbytes > NEW.sizeinbytes THEN
+                    NEW.sizeinbytes := NEW.allocatedspaceinbytes + NEW.usedspaceinbytes;
+                END IF;
+                RETURN NEW;
+            END;
+            $$
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER tgr_srmspace_before_update BEFORE UPDATE ON srmspace FOR EACH ROW EXECUTE PROCEDURE f_srmspace_check_size();
+        </createProcedure>
+
+        <rollback>
+            DROP TRIGGER tgr_srmspace_before_update ON srmspace;
+            DROP FUNCTION f_srmspace_check_size();
+        </rollback>
+    </changeSet>
+
+    <changeSet id="4" author="behrmann" dbms="postgresql" runOnChange="true">
+        <comment>Create srmspacefile triggers for maintaining accumulated fields</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_srmspacefile_on_insert() RETURNS TRIGGER AS  $$
+            BEGIN
+                CASE NEW.state
+                    WHEN 0, 1 THEN
+                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
+                    WHEN 2 THEN
+                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
+                END CASE;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER tgr_srmspacefile_insert AFTER INSERT ON srmspacefile FOR EACH ROW EXECUTE PROCEDURE f_srmspacefile_on_insert();
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_srmspacefile_on_update() RETURNS TRIGGER AS  $$
+            DECLARE
+                allocatedDelta bigint;
+                usedDelta bigint;
+            BEGIN
+                IF OLD.spaceReservationId = NEW.spaceReservationId THEN
+                    allocatedDelta :=
+                              CASE WHEN NEW.state IN (0, 1) THEN NEW.sizeinbytes ELSE 0 END
+                              -
+                              CASE WHEN OLD.state IN (0, 1) THEN OLD.sizeinbytes ELSE 0 END;
+                    usedDelta :=
+                              CASE WHEN NEW.state = 2 THEN NEW.sizeinbytes ELSE 0 END
+                              -
+                              CASE WHEN OLD.state = 2 THEN OLD.sizeinbytes ELSE 0 END;
+                    IF allocatedDelta != 0 OR usedDelta != 0 THEN
+                        UPDATE srmspace
+                            SET allocatedspaceinbytes = allocatedspaceinbytes + allocatedDelta,
+                                usedspaceinbytes = usedspaceinbytes + usedDelta
+                            WHERE id = OLD.spaceReservationId;
+                    END IF;
+                ELSE
+                    CASE OLD.state
+                        WHEN 0, 1 THEN
+                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
+                        WHEN 2 THEN
+                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
+                    END CASE;
+                    CASE NEW.state
+                        WHEN 0, 1 THEN
+                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
+                        WHEN 2 THEN
+                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
+                    END CASE;
+                END IF;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER tgr_srmspacefile_update AFTER UPDATE ON srmspacefile FOR EACH ROW EXECUTE PROCEDURE f_srmspacefile_on_update();
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_srmspacefile_on_delete() RETURNS TRIGGER AS  $$
+            BEGIN
+                CASE OLD.state
+                    WHEN 0, 1 THEN
+                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
+                    WHEN 2 THEN
+                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
+                END CASE;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+
+            CREATE TRIGGER tgr_srmspacefile_delete AFTER DELETE ON srmspacefile FOR EACH ROW EXECUTE PROCEDURE f_srmspacefile_on_delete();
+        </createProcedure>
+
+        <rollback>
+            DROP TRIGGER tgr_srmspacefile_insert ON srmspacefile;
+            DROP FUNCTION f_srmspacefile_on_insert();
+            DROP TRIGGER tgr_srmspacefile_update ON srmspacefile;
+            DROP FUNCTION f_srmspacefile_on_update();
+            DROP TRIGGER tgr_srmspacefile_delete ON srmspacefile;
+            DROP FUNCTION f_srmspacefile_on_delete();
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

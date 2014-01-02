@@ -88,10 +88,6 @@ public class SpaceReservationIO extends IoPackage<Space> {
                 " WHERE  id = ? AND sizeinbytes-allocatedspaceinbytes >= ? FOR UPDATE ";
         public static final String UPDATE_STATUS   = "UPDATE "+SRM_SPACE_TABLE+ "SET status=?  WHERE id=? ";
         public static final String UPDATE_LIFETIME = "UPDATE "+SRM_SPACE_TABLE+ "SET lifetime=?  WHERE id=? ";
-        public static final String DECREMENT_ALLOCATED_SPACE = "UPDATE "+SRM_SPACE_TABLE+" SET allocatedspaceinbytes = allocatedspaceinbytes - ? where id=?";
-        public static final String INCREMENT_ALLOCATED_SPACE = "UPDATE "+SRM_SPACE_TABLE+" SET allocatedspaceinbytes = allocatedspaceinbytes + ? where id=?";
-        public static final String DECREMENT_USED_SPACE = "UPDATE "+SRM_SPACE_TABLE+" SET usedspaceinbytes = usedspaceinbytes - ? where id=?";
-        public static final String INCREMENT_USED_SPACE = "UPDATE "+SRM_SPACE_TABLE+" SET usedspaceinbytes = usedspaceinbytes + ? where id=?";
         public static final String SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES="select * from srmspace where id in (select distinct spacereservationid from srmspacefile where (state= "+FileState.RESERVED.getStateId()+" or state = "+ FileState.TRANSFERRING.getStateId() +") and creationtime+lifetime<?)";
 
         public SpaceReservationIO() {

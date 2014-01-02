@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- linkgroup.freespaceinbytes only ever decreases in trigger updates below; this is a heuristic
+         to quickly update freespaceinbytes as space is consumed. The real value is provided by
+         periodic updates from pool manager. The heuristic does not increase linkgroup.freespaceinbytes
+         as that would introduce a risk of advertising more free space than is actually available. -->
+
+    <changeSet id="1" author="behrmann" dbms="hsqldb" runOnChange="true">
+        <comment>Create srmlinkgroup trigger to prevent over allocating link groups</comment>
+        <sql>DROP TRIGGER tgr_srmlinkgroup_update IF EXISTS</sql>
+        <createProcedure>
+            CREATE TRIGGER tgr_srmlinkgroup_update BEFORE UPDATE ON srmlinkgroup
+                REFERENCING OLD ROW AS old NEW ROW AS new
+                FOR EACH ROW WHEN (new.reservedspaceinbytes > old.reservedspaceinbytes AND new.reservedspaceinbytes > new.freespaceinbytes)
+                BEGIN ATOMIC
+                    SIGNAL SQLSTATE '23D01' SET MESSAGE_TEXT = 'Not enough free space in link group ';
+                END;
+        </createProcedure>
+    </changeSet>
+
+    <changeSet id="2" author="behrmann" dbms="hsqldb" runOnChange="true">
+        <comment>Create srmspace triggers for maintaining accumulated fields</comment>
+        <sql>DROP TRIGGER tgr_srmspace_insert IF EXISTS</sql>
+        <createProcedure>
+            CREATE TRIGGER tgr_srmspace_insert AFTER INSERT ON srmspace
+                REFERENCING NEW ROW AS space
+                FOR EACH ROW WHEN (space.state = 0)
+                    UPDATE srmlinkgroup
+                        SET reservedspaceinbytes = reservedspaceinbytes + space.sizeinbytes - space.usedspaceinbytes,
+                            freespaceinbytes = GREATEST(freespaceinbytes - space.usedspaceinbytes, 0)
+                        WHERE id = space.linkGroupId;
+        </createProcedure>
+
+        <sql>DROP TRIGGER tgr_srmspace_delete IF EXISTS</sql>
+        <createProcedure>
+            CREATE TRIGGER tgr_srmspace_delete AFTER DELETE ON srmspace
+                REFERENCING OLD ROW AS space
+                FOR EACH ROW WHEN (space.state = 0)
+                UPDATE srmlinkgroup SET reservedspaceinbytes = reservedspaceinbytes - space.sizeinbytes + space.usedspaceinbytes WHERE id = space.linkgroupid;
+        </createProcedure>
+
+        <sql>DROP TRIGGER tgr_srmspace_update IF EXISTS</sql>
+        <createProcedure>
+            CREATE TRIGGER tgr_srmspace_update AFTER UPDATE ON srmspace
+                REFERENCING OLD ROW AS old NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    IF old.state = 0 AND new.state = 0 THEN
+                        IF old.linkGroupId != new.linkGroupId THEN
+                            UPDATE srmlinkgroup
+                                SET reservedspaceinbytes = reservedspaceinbytes - old.sizeinbytes + old.usedspaceinbytes
+                                WHERE id = old.linkgroupid;
+                            UPDATE srmlinkgroup
+                                SET reservedspaceinbytes = reservedspaceinbytes + new.sizeinbytes - new.usedspaceinbytes,
+                                    freespaceinbytes = GREATEST(freespaceinbytes - new.usedspaceinbytes, 0)
+                                WHERE id = new.linkgroupid;
+                        ELSEIF old.sizeinbytes &lt;&gt; new.sizeinbytes OR old.usedspaceinbytes &lt;&gt; new.usedspaceinbytes THEN
+                            UPDATE srmlinkgroup
+                                SET reservedspaceinbytes = reservedspaceinbytes - old.sizeinbytes + old.usedspaceinbytes + new.sizeinbytes - new.usedspaceinbytes,
+                                    freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - new.usedspaceinbytes + old.usedspaceinbytes), 0)
+                                WHERE id = old.linkgroupid;
+                        END IF;
+                    ELSEIF old.state = 0 AND new.state &lt;&gt; 0 THEN
+                        UPDATE srmlinkgroup SET reservedspaceinbytes = reservedspaceinbytes - old.sizeinBytes + old.usedspaceinbytes WHERE id = old.linkgroupid;
+                    ELSEIF old.state &lt;&gt; 0 AND new.state = 0 THEN
+                        UPDATE srmlinkgroup
+                            SET reservedspaceinbytes = reservedspaceinbytes + new.sizeinbytes - new.usedspaceinbytes,
+                                freespaceinbytes = GREATEST(freespaceinbytes - new.usedspaceinbytes, 0)
+                            WHERE id = new.linkgroupid;
+                    END IF;
+                END;
+        </createProcedure>
+
+        <rollback>
+            <sql>DROP TRIGGER tgr_srmspace_insert IF EXISTS</sql>
+            <sql>DROP TRIGGER tgr_srmspace_update IF EXISTS</sql>
+            <sql>DROP TRIGGER tgr_srmspace_delete IF EXISTS</sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="3" author="behrmann" dbms="hsqldb" runOnChange="true">
+        <!-- Comment taken from old Java code: Idea below is questionable. We resize space reservation
+             to fit this file. This way we attempt to guarantee that there is no negative numbers in
+             LinkGroup. -->
+        <comment>Create srmspace trigger to enlarge space to fit its files</comment>
+        <sql>DROP TRIGGER tgr_srmspace_increase_size IF EXISTS</sql>
+        <createProcedure>
+            CREATE TRIGGER tgr_srmspace_increase_size BEFORE UPDATE ON srmspace
+                REFERENCING OLD ROW AS old NEW ROW as new
+                FOR EACH ROW WHEN (new.allocatedspaceinbytes + new.usedspaceinbytes > new.sizeinbytes)
+                SET new.sizeinbytes = new.allocatedspaceinbytes + new.usedspaceinbytes;
+        </createProcedure>
+        <rollback>
+            <sql>DROP TRIGGER tgr_srmspace_increase_size IF EXISTS</sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="4" author="behrmann" dbms="hsqldb" runOnChange="true">
+        <comment>Create srmspacefile triggers for maintaining accumulated fields</comment>
+        <sql>DROP TRIGGER tgr_srmspacefile_insert IF EXISTS</sql>
+        <createProcedure>
+            CREATE TRIGGER tgr_srmspacefile_insert AFTER INSERT ON srmspacefile
+                REFERENCING NEW ROW AS new
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    CASE new.state
+                        WHEN 0, 1 THEN
+                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
+                        WHEN 2 THEN
+                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
+                    END CASE;
+                END;
+        </createProcedure>
+
+        <sql>DROP TRIGGER tgr_srmspacefile_update IF EXISTS</sql>
+        <createProcedure>
+            CREATE TRIGGER tgr_srmspacefile_decrement_allocated AFTER UPDATE ON srmspacefile
+            REFERENCING OLD ROW AS old NEW ROW AS new
+            FOR EACH ROW
+            BEGIN ATOMIC
+                DECLARE allocatedDelta BIGINT;
+                DECLARE usedDelta BIGINT;
+                IF old.spaceReservationId = new.spaceReservationId THEN
+                    SET allocatedDelta =
+                              CASE WHEN new.state IN (0, 1) THEN new.sizeinbytes ELSE 0 END
+                              -
+                              CASE WHEN old.state IN (0, 1) THEN old.sizeinbytes ELSE 0 END;
+                    SET usedDelta =
+                              CASE WHEN new.state = 2 THEN new.sizeinbytes ELSE 0 END
+                              -
+                              CASE WHEN old.state = 2 THEN old.sizeinbytes ELSE 0 END;
+                    IF allocatedDelta &lt;&gt; 0 OR usedDelta &lt;&gt; 0 THEN
+                        UPDATE srmspace
+                            SET allocatedspaceinbytes = allocatedspaceinbytes + allocatedDelta,
+                                usedspaceinbytes = usedspaceinbytes + usedDelta
+                            WHERE id = old.spaceReservationId;
+                    END IF;
+                ELSE
+                    CASE old.state
+                        WHEN 0, 1 THEN
+                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
+                        WHEN 2 THEN
+                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
+                    END CASE;
+                    CASE new.state
+                        WHEN 0, 1 THEN
+                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
+                        WHEN 2 THEN
+                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
+                    END CASE;
+                END IF;
+            END;
+        </createProcedure>
+
+        <sql>DROP TRIGGER tgr_srmspacefile_delete IF EXISTS</sql>
+        <createProcedure>
+            CREATE TRIGGER tgr_srmspacefile_delete AFTER DELETE ON srmspacefile
+                REFERENCING OLD ROW AS old
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    CASE old.state
+                        WHEN 0, 1 THEN
+                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
+                        WHEN 2 THEN
+                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
+                    END CASE;
+                END;
+        </createProcedure>
+
+        <rollback>
+            <sql>DROP TRIGGER tgr_srmspacefile_insert IF EXISTS</sql>
+            <sql>DROP TRIGGER tgr_srmspacefile_update IF EXISTS</sql>
+            <sql>DROP TRIGGER tgr_srmspacefile_delete IF EXISTS</sql>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

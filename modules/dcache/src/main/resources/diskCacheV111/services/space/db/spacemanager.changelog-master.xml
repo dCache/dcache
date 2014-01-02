@@ -3,5 +3,11 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
+    <preConditions>
+        <dbms type="postgresql,hsqldb"/>
+    </preConditions>
+
     <include file="diskCacheV111/services/space/db/spacemanager.changelog-2.8.xml"/>
+    <include file="diskCacheV111/services/space/db/spacemanager.changelog-procedures-hsqldb.xml"/>
+    <include file="diskCacheV111/services/space/db/spacemanager.changelog-procedures-postgresql.xml"/>
 </databaseChangeLog>
