@@ -27,12 +27,12 @@
         <version.slf4j>1.7.5</version.slf4j>
         <version.milton>2.3.0.7</version.milton>
         <version.spring>4.0.0.RELEASE</version.spring>
-        <version.aspectj>1.7.3</version.aspectj>
+        <version.aspectj>1.7.4</version.aspectj>
         <version.smc>6.1.0</version.smc>
-        <version.xerces>2.9.1</version.xerces>
+        <version.xerces>2.10.0</version.xerces>
         <version.jetty>8.1.13.v20130916</version.jetty>
         <version.wicket>6.9.1</version.wicket>
-        <version.xrootd4j>1.2.2</version.xrootd4j>
+        <version.xrootd4j>1.2.3</version.xrootd4j>
         <version.jglobus>2.0.6-rc5.d</version.jglobus>
         <version.openmq>4.5.2</version.openmq>
 
@@ -63,16 +63,20 @@
          -->
         <bouncycastle.bcprov>bcprov-jdk16</bouncycastle.bcprov>
         <bouncycastle.version>1.43</bouncycastle.version>
-        <datanucleus-core.version>3.2.10</datanucleus-core.version>
-        <datanucleus.plugin.version>3.3.1</datanucleus.plugin.version>
+        <datanucleus-core.version>3.2.11</datanucleus-core.version>
+        <datanucleus.plugin.version>3.3.2</datanucleus.plugin.version>
     </properties>
+
+    <prerequisites>
+        <maven>3.0.3</maven>
+    </prerequisites>
 
     <scm>
         <connection>scm:git:https://github.com/dCache/dcache.git</connection>
         <developerConnection>scm:git:git@github.com:dCache/dcache.git</developerConnection>
         <url>https://github.com/dCache/dcache.git</url>
-      <tag>2.7</tag>
-  </scm>
+        <tag>2.7</tag>
+    </scm>
 
     <repositories>
         <repository>
@@ -137,13 +141,13 @@
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
-                <version>2.0.0</version>
+                <version>2.0.3</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>org.rrd4j</groupId>
                 <artifactId>rrd4j</artifactId>
-                <version>2.1.1</version>
+                <version>2.2</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -214,12 +218,16 @@
             <dependency>
                 <groupId>org.opensaml</groupId>
                 <artifactId>opensaml</artifactId>
-                <version>2.2.0</version>
+                <version>2.6.0</version>
                 <exclusions>
                     <exclusion>
                         <!-- We manually pull in a different variant -->
                         <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcprov-ext-jdk15</artifactId>
+                        <artifactId>bcprov-jdk15</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -278,7 +286,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>9.2-1003-jdbc4</version>
+                <version>9.3-1100-jdbc41</version>
             </dependency>
             <dependency>
                 <groupId>io.milton</groupId>
@@ -337,7 +345,7 @@
             <dependency>
                 <groupId>org.parboiled</groupId>
                 <artifactId>parboiled-java</artifactId>
-                <version>1.1.4</version>
+                <version>1.1.6</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
@@ -347,27 +355,27 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-cache</artifactId>
-                <version>3.1.2</version>
+                <version>3.1.3</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-api-jdo</artifactId>
-                <version>3.2.6</version>
+                <version>3.2.7</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-api-jpa</artifactId>
-                <version>3.3.5</version>
+                <version>3.3.6</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-rdbms</artifactId>
-                <version>3.2.9</version>
+                <version>3.2.10</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-xml</artifactId>
-                <version>3.2.0-release</version>
+                <version>3.2.1</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
@@ -414,6 +422,8 @@
             <dependency>
                 <groupId>org.apache.sshd</groupId>
                 <artifactId>sshd-core</artifactId>
+                <!-- Version 0.9.0 contains a bug that prevents upgrade (see
+                     https://issues.apache.org/jira/browse/SSHD-258?jql=project%20%3D%20SSHD%20AND%20issuetype%20%3D%20Bug%20AND%20text%20~%20%220.9.0%22)-->
                 <version>0.8.0</version>
             </dependency>
 
@@ -556,7 +566,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20090211</version>
+                <version>20131018</version>
             </dependency>
 
             <dependency>
@@ -619,23 +629,8 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.xerces</groupId>
-                <artifactId>xml-apis</artifactId>
-                <version>${version.xerces}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xerces</groupId>
+                <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
-                <version>${version.xerces}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xerces</groupId>
-                <artifactId>resolver</artifactId>
-                <version>${version.xerces}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xerces</groupId>
-                <artifactId>serializer</artifactId>
                 <version>${version.xerces}</version>
             </dependency>
 
@@ -704,7 +699,7 @@
             <dependency>
                 <groupId>org.freehep</groupId>
                 <artifactId>freehep-jaida</artifactId>
-                <version>3.4.1</version>
+                <version>3.4.6</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.freehep</groupId>
@@ -771,7 +766,7 @@
             <dependency>
               <groupId>org.apache.commons</groupId>
               <artifactId>commons-compress</artifactId>
-              <version>1.5</version>
+              <version>1.6</version>
             </dependency>
 
             <dependency>
@@ -815,7 +810,7 @@
         <dependency>
            <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito</artifactId>
-            <version>1.5.1</version>
+            <version>1.5.2</version>
             <scope>test</scope>
             <exclusions>
                 <!-- powermock-api-mockito depends on mockito-all,
@@ -852,7 +847,7 @@
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>1.5.1</version>
+            <version>1.5.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -925,17 +920,17 @@
                     <artifactId>buildnumber-maven-plugin</artifactId>
                     <version>1.2</version>
                 </plugin>
-		<plugin>
-		  <groupId>org.codehaus.mojo</groupId>
-		  <artifactId>build-helper-maven-plugin</artifactId>
-		  <version>1.8</version>
-		</plugin>
-		<plugin>
-		  <groupId>org.codehaus.mojo</groupId>
-		  <artifactId>exec-maven-plugin</artifactId>
-		  <version>1.2.1</version>
-		</plugin>
-		<plugin>
+                <plugin>
+                  <groupId>org.codehaus.mojo</groupId>
+                  <artifactId>build-helper-maven-plugin</artifactId>
+                  <version>1.8</version>
+                </plugin>
+                <plugin>
+                  <groupId>org.codehaus.mojo</groupId>
+                  <artifactId>exec-maven-plugin</artifactId>
+                  <version>1.2.1</version>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.16</version>
@@ -943,12 +938,22 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
-                    <version>2.4.1</version>
+                    <version>2.4.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.8.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>2.5.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>2.5.2</version>
+                    <version>2.5.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.datanucleus</groupId>
@@ -1112,7 +1117,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>2.5.2</version>
+                <version>2.5.3</version>
                 <configuration>
                     <omitVisitors>FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods</omitVisitors>
                 </configuration>

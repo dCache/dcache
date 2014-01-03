@@ -256,7 +256,7 @@
     </dependency>
     <dependency>
         <!-- The freehep libs depend on xerces -->
-        <groupId>org.apache.xerces</groupId>
+        <groupId>xerces</groupId>
         <artifactId>xercesImpl</artifactId>
         <scope>runtime</scope>
     </dependency>
