@@ -72,7 +72,6 @@
          init-method="start" destroy-method="stop" depends-on="liquibase">
     <description>SrmSpaceManager</description>
     <property name="dbManager"        ref="db-manager" />
-    <property name="pnfsStub"         ref="pnfs-stub"/>
     <property name="pnfsHandler"      ref="pnfs"/>
     <property name="poolManagerStub"  ref="pool-manager-stub"/>
     <property name="poolMonitor" ref="pool-monitor"/>
