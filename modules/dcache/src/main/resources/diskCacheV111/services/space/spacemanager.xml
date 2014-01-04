@@ -36,6 +36,19 @@
     <constructor-arg value="1"/>
   </bean>
 
+  <bean id="executor"
+      class="java.util.concurrent.ThreadPoolExecutor"
+      destroy-method="shutdown">
+    <description>Thread pool for message processing</description>
+    <constructor-arg value="1"/>
+    <constructor-arg value="${spacemanager.limits.threads}"/>
+    <constructor-arg value="60"/>
+    <constructor-arg value="SECONDS"/>
+    <constructor-arg>
+        <bean class="java.util.concurrent.LinkedBlockingQueue"/>
+    </constructor-arg>
+  </bean>
+
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
     <property name="destination" value="${srm.service.poolmanager}"/>
@@ -91,6 +104,7 @@
     <property name="pnfsHandler"      ref="pnfs"/>
     <property name="poolManagerStub"  ref="pool-manager-stub"/>
     <property name="poolMonitor" ref="pool-monitor"/>
+    <property name="executor" ref="executor"/>
     <property name="spaceManagerEnabled"
               value="${spacemanager.enable.space-reservation}" />
     <property name="updateLinkGroupsPeriod"

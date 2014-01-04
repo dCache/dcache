@@ -33,6 +33,7 @@ package diskCacheV111.services.space;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
+import org.dcache.util.CDCExecutorServiceDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -55,6 +56,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -80,7 +83,6 @@ import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.ThreadManager;
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -150,6 +152,8 @@ public final class Manager
         private PnfsHandler pnfs;
 
         private SpaceManagerAuthorizationPolicy authorizationPolicy;
+
+        private Executor executor;
 
         private JdbcConnectionPool connection_pool;
         private DBManager dbManager;
@@ -235,6 +239,12 @@ public final class Manager
         public void setLinkGroupAuthorizationFileName(String linkGroupAuthorizationFileName)
         {
                 this.linkGroupAuthorizationFileName = linkGroupAuthorizationFileName;
+        }
+
+        @Required
+        public void setExecutor(ExecutorService executor)
+        {
+            this.executor = new CDCExecutorServiceDecorator(executor);
         }
 
         @Required
@@ -2458,7 +2468,7 @@ public final class Manager
                 if (!isNotificationMessage(message) && !isSpaceManagerMessage(message)) {
                     messageToForward(envelope, message);
                 } else if (spaceManagerEnabled) {
-                    ThreadManager.execute(new Runnable()
+                    executor.execute(new Runnable()
                     {
                         @Override
                         public void run()
@@ -2503,7 +2513,7 @@ public final class Manager
 
             if (envelope.nextDestination()) {
                 if (spaceManagerEnabled && isInterceptedMessage(message)) {
-                    ThreadManager.execute(new Runnable()
+                    executor.execute(new Runnable()
                     {
                         @Override
                         public void run()
