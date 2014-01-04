@@ -12,6 +12,8 @@ package diskCacheV111.services.space.message;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  *
  * @author timur
@@ -23,17 +25,17 @@ public class GetFileSpaceTokensMessage extends Message{
     private PnfsId pnfsId;
     /** Creates a new instance of Reserve */
     public GetFileSpaceTokensMessage(String pnfsPath) {
-        this.pnfsPath = pnfsPath;
+        this.pnfsPath = checkNotNull(pnfsPath);
         setReplyRequired(true);
     }
 
     public GetFileSpaceTokensMessage(PnfsId pnfsId) {
-        this.pnfsId = pnfsId;
+        this.pnfsId = checkNotNull(pnfsId);
         setReplyRequired(true);
     }
     public GetFileSpaceTokensMessage(String pnfsPath, PnfsId pnfsId) {
-        this.pnfsPath = pnfsPath;
-        this.pnfsId = pnfsId;
+        this.pnfsPath = checkNotNull(pnfsPath);
+        this.pnfsId = checkNotNull(pnfsId);
         setReplyRequired(true);
     }
 

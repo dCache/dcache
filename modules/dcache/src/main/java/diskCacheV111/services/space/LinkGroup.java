@@ -109,11 +109,11 @@ public class LinkGroup implements Serializable{
 
 
 	public String toString(){
-		StringBuffer sb = new StringBuffer();
-		toStringBuffer(sb);
+		StringBuilder sb = new StringBuilder();
+		toStringBuilder(sb);
 		return sb.toString();
 	}
-	public void toStringBuffer(StringBuffer sb){
+	public void toStringBuilder(StringBuilder sb){
 		sb.append(id).append(' ');
 		sb.append("Name:").append(name).append(' ');
 		sb.append("FreeSpace:").append(freeSpace).append(' ');

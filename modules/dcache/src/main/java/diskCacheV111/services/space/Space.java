@@ -157,17 +157,17 @@ public class Space implements Serializable {
         this.state = state;
     }
     public String toString() {
-        StringBuffer sb = new StringBuffer();
-        toStringBuffer(sb);
+        StringBuilder sb = new StringBuilder();
+        toStringBuilder(sb);
         return sb.toString();
     }
 
-    public void toStringBuffer(StringBuffer sb) {
+    public void toStringBuilder(StringBuilder sb) {
                 sb.append(id).append(' ');
                 sb.append("voGroup:").append(voGroup).append(' ');
                 sb.append("voRole:").append(voRole).append(' ');
-		sb.append("retentionPolicy:").append(retentionPolicy.toString()).append(' ');
-		sb.append("accessLatency:").append(accessLatency.toString()).append(' ');
+                sb.append("retentionPolicy:").append(retentionPolicy.toString()).append(' ');
+                sb.append("accessLatency:").append(accessLatency.toString()).append(' ');
                 sb.append("linkGroupId:").append(linkGroupId).append(' ');
                 sb.append("size:").append(sizeInBytes).append(' ');
                 sb.append("created:").append((new Date(creationTime))).append(' ');

@@ -41,7 +41,6 @@ import diskCacheV111.util.PnfsId;
 Indexes:
     "srmspacefile_pkey" PRIMARY KEY, btree (id)
 */
-;
 
 
 
@@ -50,19 +49,13 @@ public class FileIO extends IoPackage<File> {
 	public static final String SRM_SPACEFILE_TABLE = ManagerSchemaConstants.SPACE_FILE_TABLE_NAME;
 	public static final String SELECT_BY_SPACERESERVATION_ID =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE spacereservationid = ?";
-	public static final String SELECT_BY_ID="SELECT * FROM "+
-		SRM_SPACEFILE_TABLE+" WHERE  id = ?";
-	public static final String SELECT_BY_PNFSID =
+    public static final String SELECT_BY_PNFSID =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE pnfsId=?";
 	public static final String SELECT_BY_PNFSPATH =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE pnfspath=? and deleted != 1";
-	public static final String SELECT_BY_PNFSID_AND_PNFSPATH =
-		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE pnfsid=? AND pnfspath=?";
 	public static final String SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE  pnfspath=? AND spacereservationid=? and (state= "+
 		FileState.RESERVED.getStateId()+" or state = "+ FileState.TRANSFERRING.getStateId() + ") FOR UPDATE";
-	public static final String SELECT_USED_SPACE_IN_SPACEFILES = "SELECT sum(sizeinbytes)  FROM "+
-		SRM_SPACEFILE_TABLE+" WHERE spacereservationid = ? AND state != ? "+FileState.FLUSHED.getStateId();
 	public static final String SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE pnfspath=? AND (state= "+FileState.RESERVED.getStateId()+
 		" or state = "+ FileState.TRANSFERRING.getStateId() +") and deleted!=1";
@@ -71,15 +64,11 @@ public class FileIO extends IoPackage<File> {
 		" SET pnfsid = NULL WHERE id=?";
 	public static final String REMOVE_PNFSID_AND_CHANGE_STATE_SPACEFILE="UPDATE "+SRM_SPACEFILE_TABLE+
 		" SET pnfsid = NULL, STATE=? WHERE id=?";
-	public static final String INSERT_WO_PNFSID  = "INSERT INTO "+SRM_SPACEFILE_TABLE+
-		" (id,vogroup,vorole,spacereservationid,sizeinbytes,creationtime,lifetime,pnfspath,pnfsid,state,deleted) "+
-		" VALUES  (?,?,?,?,?,?,?,?,NULL,?,0)";
 	public static final String INSERT_W_PNFSID  = "INSERT INTO "+SRM_SPACEFILE_TABLE+
 		" (id,vogroup,vorole,spacereservationid,sizeinbytes,creationtime,lifetime,pnfspath,pnfsid,state,deleted) "+
 		" VALUES  (?,?,?,?,?,?,?,?,?,?,0)";
 	public static final String DELETE="DELETE FROM "+SRM_SPACEFILE_TABLE+" WHERE id=?";
 
-	public static final String SELECT_FOR_UPDATE_BY_PNFSPATH = "SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE  pnfspath=? FOR UPDATE ";
 	public static final String SELECT_FOR_UPDATE_BY_PNFSID   = "SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE  pnfsid=?   FOR UPDATE ";
 	public static final String SELECT_FOR_UPDATE_BY_ID       = "SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE  id=?       FOR UPDATE ";
 
@@ -89,14 +78,10 @@ public class FileIO extends IoPackage<File> {
 	public static final String UPDATE_DELETED_FLAG = "UPDATE "+SRM_SPACEFILE_TABLE+
 		" SET deleted=? WHERE id=?";
 
-	public static final String UPDATE_WO_PNFSID = "UPDATE "+SRM_SPACEFILE_TABLE+
-		" SET vogroup=?, vorole=?, sizeinbytes=?, lifetime=?, state=? WHERE id=?";
 	public static final String SELECT_EXPIRED_SPACEFILES="SELECT * FROM "+SRM_SPACEFILE_TABLE+ " WHERE (state= "+FileState.RESERVED.getStateId()+
 		" or state = "+ FileState.TRANSFERRING.getStateId() +") and creationTime+lifetime < ? AND spacereservationid=?";
 	public static final String SELECT_EXPIRED_SPACEFILES1="SELECT * FROM "+SRM_SPACEFILE_TABLE+
 		" WHERE creationTime+lifetime < ? AND spacereservationid=?";
-	public static final String SELECT_DELETED_FILES="SELECT * FROM "+SRM_SPACEFILE_TABLE+
-		" WHERE deleted=1 and  spacereservationid=?";
 
 	public FileIO() {
 	}

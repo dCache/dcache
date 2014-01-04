@@ -65,14 +65,8 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 		" (id, name, freeSpaceInBytes, lastUpdateTime, onlineAllowed," +
 		" nearlineAllowed, replicaAllowed, outputAllowed, custodialAllowed,reservedspaceinbytes)"+
 		" VALUES ( ?,?,?,?,?,?,?,?,?,?)";
-	public static final String INSERT_LINK_GROUP_VO="INSERT INTO "+LINKGROUP_VO_TABLE+
-		" (linkgroupid,voGroup,voRole) VALUES (?,?,?) ";
 	public static final String SELECT_LINKGROUP_FOR_UPDATE_BY_NAME="SELECT * FROM "+LINKGROUP_TABLE+
 		" WHERE  name = ? FOR UPDATE";
-	public static final String SELECT_LINKGROUP_FOR_UPDATE_BY_ID="SELECT * FROM "+LINKGROUP_TABLE+
-		" WHERE  id = ? FOR UPDATE";
-	public static final String SELECT_LINKGROUP_INFO_FOR_UPDATE="SELECT * FROM "+ LINKGROUP_TABLE +
-		" WHERE  id = ? and freespaceinbytes-reservedspaceinbytes>=? FOR UPDATE";
 	public static final String SELECT_LINKGROUP_BY_ID  = "SELECT * FROM "+ LINKGROUP_TABLE + " WHERE  id = ?";
 	public static final String SELECT_LINKGROUP_BY_NAME= "SELECT * FROM "+ LINKGROUP_TABLE + " WHERE  name = ?";
 	public static final String SELECT_LINKGROUP_VO     ="SELECT voGroup,voRole FROM "+LINKGROUP_VO_TABLE+" WHERE linkGroupId=?";
@@ -80,7 +74,6 @@ public class LinkGroupIO extends IoPackage<LinkGroup>  {
 	public static final String SELECT_ALL_LINKGROUPS = "SELECT * FROM "+ LINKGROUP_TABLE;
 	public static final String UPDATE = "UPDATE "+LINKGROUP_TABLE+" SET freeSpaceInBytes=?,lastUpdateTime=?,onlineAllowed=?,nearlineAllowed=?,"+
 		"replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?";
-	public static final String SELECT_ALL = "SELECT * FROM "+LINKGROUP_TABLE;
 
 	public LinkGroupIO() {
 	}

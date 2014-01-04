@@ -30,8 +30,9 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
-import net.sf.saxon.functions.Remove;
+import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -45,7 +46,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -111,6 +111,7 @@ import org.dcache.util.JdbcConnectionPool;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Arrays.asList;
 
 /**
  *   <pre> Space Manager dCache service provides ability
@@ -437,14 +438,10 @@ public final class Manager
                                         }
                                 }
                                 if (!foundMatch) {
-                                        StringBuilder sb = new StringBuilder();
-                                        for (VOInfo info : lg.getVOs()) {
-                                                sb.append(info).append('\n');
-                                        }
                                         throw new IllegalArgumentException("cannot change voGroup:voRole to "+
                                                                            voGroup+ ':' +voRole+
                                                                            ". Supported vogroup:vorole pairs for this spacereservation\n"+
-                                                                           sb.toString());
+                                                                           Joiner.on('\n').join(lg.getVOs()));
                                 }
                         }
                         catch (SQLException e) {
@@ -469,7 +466,7 @@ public final class Manager
                 catch (SQLException e) {
                         return e.toString();
                 }
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 listSpaceReservations(false,
                                       String.valueOf(reservationId),
                                       null,
@@ -503,7 +500,7 @@ public final class Manager
                 if (args.argc() == 1) {
                         id = args.argv(0);
                 }
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 if (description != null && id !=null ) {
                         sb.append("Do not handle \"desc\" and id simultaneously\n");
                         return sb.toString();
@@ -535,7 +532,7 @@ public final class Manager
                                            String description,
                                            String group,
                                            String role,
-                                           StringBuffer sb) throws Exception {
+                                           StringBuilder sb) throws Exception {
                 Set<Space> spaces;
                 long lgId = 0;
                 LinkGroup lg = null;
@@ -557,7 +554,7 @@ public final class Manager
                 }
                 if (lg!=null) {
                         sb.append("Found LinkGroup:\n");
-                        lg.toStringBuffer(sb);
+                        lg.toStringBuilder(sb);
                         sb.append('\n');
                 }
 
@@ -596,7 +593,7 @@ public final class Manager
                                                 }
                                         }
                                         else {
-                                                space.toStringBuffer(sb);
+                                                space.toStringBuilder(sb);
                                         }
                                         sb.append('\n');
                                 }
@@ -627,7 +624,7 @@ public final class Manager
                                 long totalReserved = 0;
                                 for (Space space : spaces) {
                                         totalReserved += space.getSizeInBytes();
-                                        space.toStringBuffer(sb);
+                                        space.toStringBuilder(sb);
                                         sb.append('\n');
                                 }
                                 sb.append("total number of reservations: ").append(count).append('\n');
@@ -654,7 +651,7 @@ public final class Manager
                                         return;
                                 }
                                 for (Space space : spaces) {
-                                        space.toStringBuffer(sb);
+                                        space.toStringBuilder(sb);
                                         sb.append('\n');
                                 }
                                 return;
@@ -699,7 +696,7 @@ public final class Manager
                                         return;
                                 }
                                 for (Space space : spaces) {
-                                        space.toStringBuffer(sb);
+                                        space.toStringBuilder(sb);
                                         sb.append('\n');
                                 }
                                 return;
@@ -758,7 +755,7 @@ public final class Manager
                                         return;
                                 }
                                 for (Space space : spaces) {
-                                        space.toStringBuffer(sb);
+                                        space.toStringBuilder(sb);
                                         sb.append('\n');
                                 }
                                 return;
@@ -814,7 +811,7 @@ public final class Manager
                                         return;
                                 }
                                 for (Space space : spaces) {
-                                        space.toStringBuffer(sb);
+                                        space.toStringBuilder(sb);
                                         sb.append('\n');
                                 }
                                 return;
@@ -865,7 +862,7 @@ public final class Manager
                                         return;
                                 }
                                 for (Space space : spaces) {
-                                        space.toStringBuffer(sb);
+                                        space.toStringBuilder(sb);
                                         sb.append('\n');
                                 }
                         }
@@ -890,14 +887,14 @@ public final class Manager
         private void listLinkGroups(boolean isLongFormat,
                                     boolean all,
                                     String id,
-                                    StringBuffer sb)
+                                    StringBuilder sb)
         {
                 Set<LinkGroup> groups;
                 if(id != null) {
                         long longid = Long.parseLong(id);
                         try {
                                 LinkGroup lg=getLinkGroup(longid);
-                                lg.toStringBuffer(sb);
+                                lg.toStringBuilder(sb);
                                 sb.append('\n');
                                 return;
                         }
@@ -924,7 +921,7 @@ public final class Manager
                         for (LinkGroup g : groups) {
                                 totalReservable  += g.getAvailableSpaceInBytes();
                                 totalReserved    += g.getReservedSpaceInBytes();
-                                g.toStringBuffer(sb);
+                                g.toStringBuilder(sb);
                                 sb.append('\n');
                         }
                         sb.append("total number of linkGroups: ").
@@ -952,7 +949,7 @@ public final class Manager
                 if (args.argc() == 1) {
                         id = args.argv(0);
                 }
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("\n\nLinkGroups:\n");
                 listLinkGroups(isLongFormat,all,id,sb);
                 return sb.toString();
@@ -971,17 +968,13 @@ public final class Manager
                 catch(Exception e) {
                         pnfsId = null;
                 }
-                StringBuilder sb = new StringBuilder();
                 long[] tokens= getFileSpaceTokens(pnfsId, pnfsPath);
-                if(tokens != null && tokens.length >0) {
-                        for(long token:tokens) {
-                                sb.append('\n').append(token);
-                        }
+                if (tokens.length > 0) {
+                    return Joiner.on('\n').join(Longs.asList(tokens));
                 }
                 else {
-                        sb.append("\nno space tokens found for file:").append( args.argv(0));
+                    return "no space tokens found for file: " + args.argv(0);
                 }
-                return sb.toString();
         }
 
         public final String hh_reserve = "  [-vog=voGroup] [-vor=voRole] " +
@@ -1106,10 +1099,8 @@ public final class Manager
                                                               lifetime,
                                                               description);
                 }
-                StringBuffer sb = new StringBuffer();
                 Space space = getSpace(reservationId);
-                space.toStringBuffer(sb);
-                return sb.toString();
+                return space.toString();
         }
 
         public static final String hh_listInvalidSpaces = " [-e] [-r] <n>" +
@@ -1153,11 +1144,7 @@ public final class Manager
                 if ( expiredSpaces.isEmpty() ) {
                         return "There are no " + badSpaceType[ listOptions-1 ] + " spaces.";
                 }
-                StringBuilder report = new StringBuilder();
-                for ( Space es : expiredSpaces ) {
-                        report.append( es.toString() ).append( '\n' );
-                }
-                return report.toString();
+                return Joiner.on('\n').join(expiredSpaces);
         }
 
         private static final String SELECT_INVALID_SPACES=
@@ -1238,28 +1225,23 @@ public final class Manager
         //         the space specified by <i>space-id</i>.
 
         public String ac_listFilesInSpace_$_1( Args args )
-                throws Exception {
+                throws SQLException, NumberFormatException
+        {
                 long spaceId = Long.parseLong( args.argv( 0 ) );
                 // Get a list of the Invalid spaces
-                List<File> filesInSpace=listFilesInSpace(spaceId);
+                Set<File> filesInSpace=listFilesInSpace(spaceId);
                 if (filesInSpace.isEmpty()) {
                         return "There are no files in this space.";
                 }
-                // For each space, convert it to a string, one per line.
-                StringBuilder report = new StringBuilder();
-                for (File file : filesInSpace) {
-                        report.append(file.toString()).append('\n');
-                }
-                return report.toString();
+                return Joiner.on('\n').join(filesInSpace);
         }
 
         // This method returns an array of all the files in the specified space.
-        private List<File> listFilesInSpace(long spaceId)
+        private Set<File> listFilesInSpace(long spaceId)
                 throws SQLException {
-                Set<File> set=dbManager.selectPrepared(fileIO,
-                                                     FileIO.SELECT_BY_SPACERESERVATION_ID,
-                                                     spaceId);
-                return new ArrayList<>(set);
+                return dbManager.selectPrepared(fileIO,
+                                                FileIO.SELECT_BY_SPACERESERVATION_ID,
+                                                spaceId);
         }
 
         public static final String hh_removeFilesFromSpace=
@@ -2140,9 +2122,7 @@ public final class Manager
         private void getValidSpaceTokens(GetSpaceTokensMessage msg) throws SQLException {
                 Set<Space> spaces;
                 if(msg.getSpaceTokenId()!=null) {
-                        spaces = new HashSet<>();
-                        Space space = getSpace(msg.getSpaceTokenId());
-                        spaces.add(space);
+                        spaces = Collections.singleton(getSpace(msg.getSpaceTokenId()));
                 }
                 else {
                         spaces=dbManager.selectPrepared(spaceReservationIO,
@@ -2167,9 +2147,7 @@ public final class Manager
         private void getLinkGroups(GetLinkGroupsMessage msg) throws SQLException {
                 Set<LinkGroup> groups;
                 if (msg.getLinkgroupidId()!=null) {
-                        groups = new HashSet<>();
-                        LinkGroup lg = getLinkGroup(msg.getLinkgroupidId());
-                        groups.add(lg);
+                        groups = Collections.singleton(getLinkGroup(msg.getLinkgroupidId()));
                 }
                 else {
                         groups=dbManager.selectPrepared(linkGroupIO,
@@ -2284,7 +2262,7 @@ public final class Manager
                 "SELECT * FROM "+ManagerSchemaConstants.SPACE_FILE_TABLE_NAME +
                 " WHERE pnfsId = ? AND pnfsPath = ?";
 
-
+        @Nonnull
         private long[] getFileSpaceTokens(PnfsId pnfsId,
                                           String pnfsPath)  throws SQLException{
 
@@ -2332,8 +2310,7 @@ public final class Manager
                 if (voRole!=null) {
                         f.setVoRole(voRole);
                 }
-                long oldSize=f.getSizeInBytes();
-                if (sizeInBytes != null && sizeInBytes - oldSize != 0) {
+                if (sizeInBytes != null) {
                     f.setSizeInBytes(sizeInBytes);
                 }
                 if (lifetime!=null) {
@@ -2345,28 +2322,15 @@ public final class Manager
                 if (pnfsId!=null ) {
                     f.setPnfsId(pnfsId);
                 }
-                int rc;
-                if (f.getPnfsId()!=null) {
-                        rc = dbManager.update(connection,
-                                            FileIO.UPDATE,
-                                            f.getVoGroup(),
-                                            f.getVoRole(),
-                                            f.getSizeInBytes(),
-                                            f.getLifetime(),
-                                            f.getPnfsId().toString(),
-                                            f.getState().getStateId(),
-                                            f.getId());
-                }
-                else {
-                        rc = dbManager.update(connection,
-                                            FileIO.UPDATE_WO_PNFSID,
-                                            f.getVoGroup(),
-                                            f.getVoRole(),
-                                            f.getSizeInBytes(),
-                                            f.getLifetime(),
-                                            f.getState().getStateId(),
-                                            f.getId());
-                }
+                int rc = dbManager.update(connection,
+                                        FileIO.UPDATE,
+                                        f.getVoGroup(),
+                                        f.getVoRole(),
+                                        f.getSizeInBytes(),
+                                        f.getLifetime(),
+                                        Objects.toString(f.getPnfsId()),
+                                        f.getState().getStateId(),
+                                        f.getId());
                 if (rc!=1) {
                         throw new SQLException("Update failed, row count="+rc);
                 }
@@ -2425,7 +2389,6 @@ public final class Manager
                                       int state) throws SQLException,
                                                         SpaceException {
                 long creationTime=System.currentTimeMillis();
-                int rc;
                 Space space = selectSpaceForUpdate(connection,spaceReservationId,0L); // "0L" is a hack needed to get a better error code from comparison below
                 long currentTime = System.currentTimeMillis();
                 if(space.getLifetime() != -1 && space.getCreationTime()+space.getLifetime()  < currentTime) {
@@ -2448,21 +2411,7 @@ public final class Manager
                                                        spaceReservationId+
                                                        " does not have enough space");
                 }
-                if (pnfsId==null) {
-                        rc=dbManager.insert(connection,
-                                          FileIO.INSERT_WO_PNFSID,
-                                          id,
-                                          voGroup,
-                                          voRole,
-                                          spaceReservationId,
-                                          sizeInBytes,
-                                          creationTime,
-                                          lifetime,
-                                          Objects.toString(pnfsPath),
-                                          state);
-                }
-                else {
-                        rc=dbManager.insert(connection,
+                int rc = dbManager.insert(connection,
                                           FileIO.INSERT_W_PNFSID,
                                           id,
                                           voGroup,
@@ -2472,9 +2421,8 @@ public final class Manager
                                           creationTime,
                                           lifetime,
                                           Objects.toString(pnfsPath),
-                                          pnfsId.toString(),
+                                          Objects.toString(pnfsId),
                                           state);
-                }
                 if(rc!=1 ){
                         throw new SQLException("insert returned row count ="+rc);
                 }
@@ -2891,7 +2839,7 @@ public final class Manager
                         ResultSet VOsSet = sqlStatement2.executeQuery();
                         Set<VOInfo> insertVOs = new HashSet<>();
                         if(linkGroupVOs != null) {
-                                insertVOs.addAll(Arrays.asList(linkGroupVOs));
+                                insertVOs.addAll(asList(linkGroupVOs));
                         }
                         Set<VOInfo> deleteVOs = new HashSet<>();
                         while(VOsSet.next()) {
@@ -3048,10 +2996,9 @@ public final class Manager
                                                              fileAttributes.getRetentionPolicy(),
                                                              lifetime,
                                                              description);
-                Space space = getSpace(reservationId);
                 useSpace(reservationId,
-                        space.getVoGroup(),
-                        space.getVoRole(),
+                        voInfo.getVoGroup(),
+                        voInfo.getVoRole(),
                         sizeInBytes,
                         lifetime,
                         null,
@@ -3926,11 +3873,7 @@ public final class Manager
         private void getFileSpaceTokens(GetFileSpaceTokensMessage getFileTokens) throws SQLException{
                 PnfsId pnfsId = getFileTokens.getPnfsId();
                 String pnfsPath = getFileTokens.getPnfsPath();
-                if(pnfsId == null && pnfsPath == null) {
-                        throw new IllegalArgumentException("null voGroup");
-                }
-                long [] tokens = getFileSpaceTokens(pnfsId, pnfsPath);
-                getFileTokens.setSpaceToken(tokens);
+                getFileTokens.setSpaceToken(getFileSpaceTokens(pnfsId,pnfsPath));
         }
 
         private void extendLifetime(ExtendLifetime extendLifetime) throws SQLException, SpaceException {
