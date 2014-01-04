@@ -2,6 +2,7 @@
 
 package diskCacheV111.replicaManager;
 
+import com.jolbox.bonecp.BoneCPDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,8 +22,6 @@ import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellAdapter;
-
-import org.dcache.util.JdbcConnectionPool;
 
 import static org.dcache.commons.util.SqlHelper.tryToClose;
 
@@ -1154,12 +1153,27 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * @param password
      */
     public final static void setup(String connectURI, String jdbcClass, String user, String password) {
+        final BoneCPDataSource ds = new BoneCPDataSource();
+        ds.setJdbcUrl(connectURI);
+        ds.setDriverClass(jdbcClass);
+        ds.setUsername(user);
+        ds.setPassword(password);
+        ds.setIdleConnectionTestPeriodInMinutes(60);
+        ds.setIdleMaxAgeInMinutes(240);
+        ds.setMaxConnectionsPerPartition(10);
+        ds.setPartitionCount(3);
+        ds.setAcquireIncrement(5);
+        ds.setStatementsCacheSize(100);
 
-        try {
-            DATASOURCE = JdbcConnectionPool.getDataSource(connectURI, jdbcClass, user, password);
-        } catch (SQLException e) {
-            _log.error(e.toString(), e);
-        }
+        Runtime.getRuntime().addShutdownHook(new Thread("replica-bonecp-shutdown-hook") {
+            @Override
+            public void run()
+            {
+                ds.close();
+            }
+        });
+
+        DATASOURCE = ds;
     }
 
 

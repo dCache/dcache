@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.sql.DataSource;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -29,37 +30,21 @@ import java.util.Set;
 import org.dcache.util.JdbcConnectionPool;
 
 public class DBManager {
-	private static DBManager _instance;
 	private JdbcConnectionPool connectionPool;
-	private DBManager() {
-	}
-	private static Logger _logger =
+
+	private static final Logger _logger =
 		LoggerFactory.getLogger("logger.org.dcache.db.sql");
 
-	synchronized public void initConnectionPool(String url,
-				       String driver,
-				       String user,
-				       String password ) throws SQLException {
-
-		connectionPool=JdbcConnectionPool.getPool(url,
-							  driver,
-							  user,
-							  (password!=null?password:"srm"));
-
-	}
-	synchronized public static final DBManager getInstance()  {
-		if ( DBManager._instance==null) {
-			DBManager._instance = new DBManager();
-		}
-		return DBManager._instance;
-	}
+    public DBManager(DataSource dataSource)
+    {
+        connectionPool = new JdbcConnectionPool(dataSource);
+    }
 
 	public JdbcConnectionPool getConnectionPool() {
 		return connectionPool;
 	}
 
-
-	public <T> Set<T> select(IoPackage<T> pkg,
+    public <T> Set<T> select(IoPackage<T> pkg,
                                  String query) throws SQLException {
 		//
 		// Handling of connection is localized here

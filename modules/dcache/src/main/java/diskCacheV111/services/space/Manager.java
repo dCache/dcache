@@ -128,10 +128,6 @@ public final class Manager
 
         private static final long EAGER_LINKGROUP_UPDATE_PERIOD = 1000;
 
-        private String jdbcUrl;
-        private String jdbcDriver;
-        private String jdbcUser;
-        private String jdbcPassword;
         private long updateLinkGroupsPeriod;
         private long currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
         private long expireSpaceReservationsPeriod;
@@ -178,30 +174,6 @@ public final class Manager
         public void setPoolMonitor(PoolMonitor poolMonitor)
         {
                 this.poolMonitor = poolMonitor;
-        }
-
-        @Required
-        public void setJdbcUrl(String jdbcUrl)
-        {
-                this.jdbcUrl = jdbcUrl;
-        }
-
-        @Required
-        public void setJdbcDriver(String jdbcDriver)
-        {
-                this.jdbcDriver = jdbcDriver;
-        }
-
-        @Required
-        public void setJdbcUser(String jdbcUser)
-        {
-                this.jdbcUser = jdbcUser;
-        }
-
-        @Required
-        public void setJdbcPassword(String jdbcPassword)
-        {
-                this.jdbcPassword = jdbcPassword;
         }
 
         @Required
@@ -269,6 +241,7 @@ public final class Manager
         public void setDbManager(DBManager manager)
         {
                 dbManager = manager;
+                connection_pool = dbManager.getConnectionPool();
         }
 
         @Required
@@ -280,8 +253,6 @@ public final class Manager
 
         public void start() throws Exception
         {
-                dbManager.initConnectionPool(jdbcUrl, jdbcDriver, jdbcUser, jdbcPassword);
-                connection_pool = dbManager.getConnectionPool();
                 dbinit();
                 (updateLinkGroups = new Thread(this,"UpdateLinkGroups")).start();
                 (expireSpaceReservations = new Thread(this,"ExpireThreadReservations")).start();
@@ -302,9 +273,6 @@ public final class Manager
         public void getInfo(PrintWriter printWriter) {
                 printWriter.println("space.Manager "+getCellName());
                 printWriter.println("spaceManagerEnabled="+spaceManagerEnabled);
-                printWriter.println("JdbcUrl="+jdbcUrl);
-                printWriter.println("jdbcDriver="+jdbcDriver);
-                printWriter.println("databse jdbcUser="+jdbcUser);
                 printWriter.println("updateLinkGroupsPeriod="
                                     + updateLinkGroupsPeriod);
                 printWriter.println("expireSpaceReservationsPeriod="

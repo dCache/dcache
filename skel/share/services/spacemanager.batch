@@ -12,6 +12,9 @@ check -strong spacemanager.db.url
 check -strong spacemanager.db.driver
 check -strong spacemanager.db.user
 check -strong spacemanager.db.password
+check -strong spacemanager.db.connections.partition-count
+check -strong spacemanager.db.connections.min-per-partition
+check -strong spacemanager.db.connections.max-per-partition
 check -strong spacemanager.default-access-latency
 check -strong spacemanager.enable.reserve-space-for-non-srm-transfers
 check spacemanager.authz.link-group-file-name
