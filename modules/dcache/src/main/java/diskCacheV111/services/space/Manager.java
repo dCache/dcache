@@ -33,6 +33,8 @@ package diskCacheV111.services.space;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
+import dmg.cells.nucleus.*;
+import org.dcache.poolmanager.Utils;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,23 +93,15 @@ import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
-import diskCacheV111.vehicles.PoolMgrGetPoolLinkGroups;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
-import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.JdbcConnectionPool;
 import org.dcache.vehicles.FileAttributes;
@@ -148,7 +142,7 @@ public final class Manager
         private String linkGroupAuthorizationFileName;
         private boolean spaceManagerEnabled;
 
-        private CellStub poolManagerStub;
+        private CellPath poolManager;
         private PnfsHandler pnfs;
 
         private SpaceManagerAuthorizationPolicy authorizationPolicy;
@@ -164,9 +158,9 @@ public final class Manager
         private PoolMonitor poolMonitor;
 
         @Required
-        public void setPoolManagerStub(CellStub poolManagerStub)
+        public void setPoolManager(CellPath poolManager)
         {
-                this.poolManagerStub = poolManagerStub;
+                this.poolManager = poolManager;
         }
 
         @Required
@@ -2508,7 +2502,7 @@ public final class Manager
 
             final boolean isEnRouteToDoor = message.isReply() || message instanceof DoorTransferFinishedMessage;
             if (!isEnRouteToDoor) {
-                envelope.getDestinationPath().insert(poolManagerStub.getDestinationPath());
+                envelope.getDestinationPath().insert(poolManager);
             }
 
             if (envelope.nextDestination()) {
@@ -2686,24 +2680,15 @@ public final class Manager
         private void updateLinkGroups() {
                 currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
                 long currentTime = System.currentTimeMillis();
-                PoolMgrGetPoolLinkGroups getLinkGroups;
-                try {
-                        getLinkGroups=poolManagerStub.sendAndWait(new PoolMgrGetPoolLinkGroups());
-                }
-                catch(CacheException | InterruptedException e) {
-                        logger.error("failed to update linkgroups: {}",
-                                e.getMessage());
-                        return;
+                Collection<PoolLinkGroupInfo> linkGroupInfos = Utils.linkGroupInfos(poolMonitor.getPoolSelectionUnit(), poolMonitor.getCostModule()).values();
+                if (linkGroupInfos.isEmpty()) {
+                    return;
                 }
 
                 currentUpdateLinkGroupsPeriod = updateLinkGroupsPeriod;
 
-                PoolLinkGroupInfo[] poolLinkGroupInfos = getLinkGroups.getPoolLinkGroupInfos();
-                if(poolLinkGroupInfos.length == 0) {
-                        return;
-                }
                 updateLinkGroupAuthorizationFile();
-                for (PoolLinkGroupInfo info : poolLinkGroupInfos) {
+                for (PoolLinkGroupInfo info : linkGroupInfos) {
                         String linkGroupName = info.getName();
                         long avalSpaceInBytes = info.getAvailableSpaceInBytes();
                         VOInfo[] vos = null;

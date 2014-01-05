@@ -36,7 +36,6 @@ import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolManagerPoolModeMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
-import diskCacheV111.vehicles.PoolMgrGetPoolLinkGroups;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
@@ -421,17 +420,6 @@ public class PoolManagerV5
        }catch(Exception ee ){
           _log.warn("Failed to send poolStatus changed message: {}", ee.toString());
        }
-    }
-
-    public PoolMgrGetPoolLinkGroups
-        messageArrived(PoolMgrGetPoolLinkGroups msg)
-    {
-        Collection<PoolLinkGroupInfo> linkGroupInfos = Utils.linkGroupInfos(_selectionUnit, _costModule).values();
-
-    	PoolLinkGroupInfo[] poolLinkGroupInfos = linkGroupInfos.toArray(new PoolLinkGroupInfo[linkGroupInfos.size()]);
-    	msg.setPoolLinkGroupInfos(poolLinkGroupInfos);
-        msg.setSucceeded();
-        return msg;
     }
 
     public PoolManagerGetPoolListMessage

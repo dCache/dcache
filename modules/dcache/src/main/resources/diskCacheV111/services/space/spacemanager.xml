@@ -102,7 +102,7 @@
     <description>SrmSpaceManager</description>
     <property name="dbManager"        ref="db-manager" />
     <property name="pnfsHandler"      ref="pnfs"/>
-    <property name="poolManagerStub"  ref="pool-manager-stub"/>
+    <property name="poolManager"  value="${srm.service.poolmanager}"/>
     <property name="poolMonitor" ref="pool-monitor"/>
     <property name="executor" ref="executor"/>
     <property name="spaceManagerEnabled"
