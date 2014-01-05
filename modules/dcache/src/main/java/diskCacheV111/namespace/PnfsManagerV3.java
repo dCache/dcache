@@ -544,7 +544,7 @@ public class PnfsManagerV3
                     .getFileAttributes(ROOT, pnfsId, EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE,
                             CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME));
 
-            SimpleDateFormat formatter = new SimpleDateFormat("MM.dd-HH:mm:ss");
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
             StringBuilder info = new StringBuilder();
             switch (fileAttributes.getFileType()) {
             case DIR:
