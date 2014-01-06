@@ -13,7 +13,7 @@ check -strong spacemanager.db.driver
 check -strong spacemanager.db.user
 check -strong spacemanager.db.password
 check -strong spacemanager.default-access-latency
-check -strong spacemanager.enable.reserve-space-for-non-srm-tranfers
+check -strong spacemanager.enable.reserve-space-for-non-srm-transfers
 check spacemanager.authz.link-group-file-name
 check -strong spacemanager.enable.space-reservation
 check -strong spacemanager.service.poolmanager
