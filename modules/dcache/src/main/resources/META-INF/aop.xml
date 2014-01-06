@@ -3,9 +3,11 @@
 <aspectj>
     <weaver>
         <include within="org.dcache.pinmanager.*"/>
+        <include within="org.dcache.util.aspects.*"/>
     </weaver>
 
     <aspects>
-        <aspect name="org.springframework.transaction.aspectj.AnnotationTransactionAspect"/>
+        <exclude within="org.springframework.transaction.aspectj.AnnotationTransactionAspect"/>
+        <aspect name="org.dcache.util.aspects.PerInstanceAnnotationTransactionAspect"/>
     </aspects>
 </aspectj>

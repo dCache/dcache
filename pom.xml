@@ -895,6 +895,12 @@
                         <source>${source.version}</source>
                         <target>${target.version}</target>
                         <complianceLevel>${source.version}</complianceLevel>
+                        <XhasMember>true</XhasMember>
+                        <sources>
+                            <source>
+                                <basedir>${project.basedir}/src/main/aspect</basedir>
+                            </source>
+                        </sources>
                     </configuration>
                     <executions>
                         <execution>

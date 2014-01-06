@@ -149,10 +149,10 @@
         <scope>runtime</scope>
     </dependency>
 
-    <!-- Dependencies of a WAR artifact are not automatically
-         included, so we have to repeat them here. There is a plugin
-         (org.appfuse:maven-warpath-plugin) to solve
-         that (REVISIT). -->
+      <!-- Dependencies of a WAR artifact are not automatically
+           included, so we have to repeat them here. There is a plugin
+           (org.appfuse:maven-warpath-plugin) to solve
+           that (REVISIT). -->
     <dependency>
         <groupId>org.apache.wicket</groupId>
         <artifactId>wicket-core</artifactId>

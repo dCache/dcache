@@ -220,6 +220,7 @@
     <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjweaver</artifactId>
+        <scope>runtime</scope>
     </dependency>
 
     <dependency>
@@ -301,6 +302,11 @@
                       <version>${version.smc}</version>
                   </dependency>
               </dependencies>
+          </plugin>
+
+          <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>aspectj-maven-plugin</artifactId>
           </plugin>
 
           <plugin>
