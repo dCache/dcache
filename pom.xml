@@ -24,6 +24,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <source.version>1.7</source.version>
+        <target.version>1.7</target.version>
+
         <version.slf4j>1.7.5</version.slf4j>
         <version.milton>2.3.0.7</version.milton>
         <version.spring>4.0.0.RELEASE</version.spring>
@@ -494,7 +497,6 @@
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjrt</artifactId>
                 <version>${version.aspectj}</version>
-                <scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>org.aspectj</groupId>
@@ -878,6 +880,31 @@
                     <version>3.1</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>aspectj-maven-plugin</artifactId>
+                    <version>1.5</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.aspectj</groupId>
+                            <artifactId>aspectjtools</artifactId>
+                            <version>${version.aspectj}</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <XterminateAfterCompilation>true</XterminateAfterCompilation>
+                        <source>${source.version}</source>
+                        <target>${target.version}</target>
+                        <complianceLevel>${source.version}</complianceLevel>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
                     <version>3.0.1</version>
@@ -995,8 +1022,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>${source.version}</source>
+                    <target>${target.version}</target>
                 </configuration>
             </plugin>
 
