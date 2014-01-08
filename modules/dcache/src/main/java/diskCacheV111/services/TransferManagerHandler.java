@@ -423,7 +423,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
                 ? new PoolAcceptFileMessage(
                 pool,
                 protocol_info,
-                fileAttributes)
+                fileAttributes,
+                (size == null) ? 0L : size)
                 : new PoolDeliverFileMessage(
                 pool,
                 protocol_info,

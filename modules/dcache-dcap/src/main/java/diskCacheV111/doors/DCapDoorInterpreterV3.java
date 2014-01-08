@@ -2126,16 +2126,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // try to get some space to store the file.
                 //
-                long preallocated = 0L;
-                String value = _fileAttributes.getStorageInfo().getKey("alloc-size");
-                if (value != null) {
-                    try {
-                        preallocated = Long.parseLong(value);
-                    } catch (NumberFormatException e) {
-                        // bad values are ignored
-                    }
-                }
-                getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes, _protocolInfo, preallocated);
+                getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes, _protocolInfo, getPreallocated());
                 getPoolMessage.setIoQueueName(_ioQueueName );
                 if( _path != null ) {
                     getPoolMessage.setPnfsPath(_path);
@@ -2201,6 +2192,21 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             setTimer(_poolRetry) ;
 
         }
+
+        private long getPreallocated()
+        {
+            long preallocated = 0L;
+            String value = _fileAttributes.getStorageInfo().getKey("alloc-size");
+            if (value != null) {
+                try {
+                    preallocated = Long.parseLong(value);
+                } catch (NumberFormatException e) {
+                    // bad values are ignored
+                }
+            }
+            return preallocated;
+        }
+
         private void storeChecksumInPnfs( PnfsId pnfsId , String checksumString){
             try{
                 PnfsFlagMessage flag =
@@ -2265,7 +2271,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                         new PoolAcceptFileMessage(
                                 pool,
                                 _protocolInfo ,
-                                _fileAttributes);
+                                _fileAttributes,
+                                getPreallocated());
             }else{
                 sendReply( "poolMgrGetPoolArrived" , 7 ,
                 "Illegal Message arrived : "+reply.getClass().getName() ) ;

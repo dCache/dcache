@@ -834,8 +834,12 @@ public class Transfer implements Comparable<Transfer>
             ProtocolInfo protocolInfo = getProtocolInfoForPool();
             PoolIoFileMessage message;
             if (isWrite()) {
+                long allocated = _allocated;
+                if (allocated == 0 && fileAttributes.isDefined(SIZE)) {
+                    allocated = fileAttributes.getSize();
+                }
                 message =
-                    new PoolAcceptFileMessage(pool, protocolInfo, fileAttributes);
+                    new PoolAcceptFileMessage(pool, protocolInfo, fileAttributes, allocated);
             } else {
                 message =
                     new PoolDeliverFileMessage(pool, protocolInfo, fileAttributes);
