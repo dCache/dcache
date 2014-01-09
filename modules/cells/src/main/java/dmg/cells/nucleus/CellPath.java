@@ -105,32 +105,14 @@ public class CellPath  implements Cloneable , Serializable {
        addr._position = _position ;
        return addr ;
    }
-   /**
-     *  Adds a cell path &lt;path&gt; to the end of the current path.
-     *
-     *  @param path The added cell travel path.
+
+    /**
+     * Adds a cell path &lt;path&gt; after the current position.
      */
-   synchronized void insert( CellAddressCore core ){
-      _list.add(_position + 1, core) ;
-      if( _position < 0 ) {
-          _position = 0;
-      }
-   }
+    public synchronized void insert( CellPath path ){
+        _list.addAll(_position + 1, path._list);
+    }
 
-   public synchronized void insert( CellPath path ){
-      _list.addAll(_position + 1, path._list);
-      if( _position < 0 ) {
-          _position = 0;
-      }
-   }
-
-   public synchronized void insert( String path ){
-       insert(new CellPath(path));
-   }
-
-    public void insert( String cell , String domain ){
-       insert(new CellAddressCore(cell, domain)) ;
-   }
    /**
      * Increment the current cell position by one.
      *

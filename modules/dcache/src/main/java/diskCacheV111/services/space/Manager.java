@@ -2857,7 +2857,7 @@ public final class Manager
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);
                         Space space = selectSpaceForUpdate(connection,id);
-                        deleteSpaceReservation(connection,space);
+                        deleteSpaceReservation(connection, space);
                         connection.commit();
                         connection_pool.returnConnection(connection);
                         connection = null;
@@ -3301,252 +3301,209 @@ public final class Manager
                 return Iterables.getFirst(files,null);
         }
 
+        /** Returns true if message is of a type processed exclusively by SpaceManager */
+        private boolean isSpaceManagerMessage(Message message)
+        {
+                return message instanceof Reserve
+                        || message instanceof GetSpaceTokensMessage
+                        || message instanceof GetSpaceTokenIdsMessage
+                        || message instanceof GetLinkGroupsMessage
+                        || message instanceof GetLinkGroupNamesMessage
+                        || message instanceof GetLinkGroupIdsMessage
+                        || message instanceof Release
+                        || message instanceof Use
+                        || message instanceof CancelUse
+                        || message instanceof GetSpaceMetaData
+                        || message instanceof GetSpaceTokens
+                        || message instanceof ExtendLifetime
+                        || message instanceof GetFileSpaceTokensMessage;
+        }
+
+        /** Returns true if message is a notification to which SpaceManager subscribes */
+        private boolean isNotificationMessage(Message message)
+        {
+                return message instanceof PoolFileFlushedMessage
+                        || message instanceof PoolRemoveFilesMessage
+                        || message instanceof PnfsDeleteEntryNotificationMessage;
+        }
+
+        /**
+         * Returns true if message is of a type that needs processing by SpaceManager even if
+         * SpaceManager is not the intended final destination.
+         */
+        private boolean isInterceptedMessage(Message message)
+        {
+                return (message instanceof PoolMgrSelectWritePoolMsg
+                        && ((PoolMgrSelectWritePoolMsg) message).getPnfsPath() != null
+                        && message.getReturnCode() == 0
+                        && (!message.isReply() || ((PoolMgrSelectWritePoolMsg) message).getLinkGroup() != null))
+                        || message instanceof DoorTransferFinishedMessage
+                        || message instanceof PoolAcceptFileMessage && message.isReply();
+        }
+
         public void messageArrived(final CellMessage envelope,
                                    final Message message)
         {
-            logger.trace("messageArrived : type={} value={} " +
-                         "from {} going to {}", message.getClass().getName(),
-                         message, envelope.getSourcePath());
+            logger.trace("messageArrived : type={} value={} from {}",
+                         message.getClass().getName(), message, envelope.getSourcePath());
 
-            if (spaceManagerEnabled) {
-                if (isNotificationMessage(message) || isSpaceManagerMessage(message) || isInterceptedMessage(message)) {
-                    ThreadManager.execute(new Runnable() {
+            if (!message.isReply()) {
+                if (!isNotificationMessage(message) && !isSpaceManagerMessage(message)) {
+                    messageToForward(envelope, message);
+                } else if (spaceManagerEnabled) {
+                    ThreadManager.execute(new Runnable()
+                    {
                         @Override
                         public void run()
                         {
-                            processMessage(envelope, message);
+                            processMessage(message);
+                            if (message.getReplyRequired()) {
+                                try {
+                                    envelope.revertDirection();
+                                    sendMessage(envelope);
+                                }
+                                catch (NoRouteToCellException e) {
+                                    logger.error("Failed to send reply: {}", e.getMessage());
+                                }
+                            }
                         }
                     });
-                } else if (!message.isReply()) {
-                    forwardToPoolManager(envelope);
-                }
-            } else {
-                if (!isNotificationMessage(message)) {
-                    if (isSpaceManagerMessage(message)) {
-                        returnFailedResponse("SpaceManager is disabled in configuration", message, envelope);
-                    } else if (!message.isReply()) {
-                        forwardToPoolManager(envelope);
+                } else if (message.getReplyRequired()) {
+                    try {
+                        message.setReply(1, "Space manager is disabled in configuration");
+                        envelope.revertDirection();
+                        sendMessage(envelope);
+                    }
+                    catch (NoRouteToCellException e) {
+                        logger.error("Failed to send reply: {}", e.getMessage());
                     }
                 }
             }
         }
 
-    /** Returns true if message is of a type processed exclusively by SpaceManager */
-    private boolean isSpaceManagerMessage(Message message)
-    {
-        return message instanceof Reserve
-                || message instanceof GetSpaceTokensMessage
-                || message instanceof GetSpaceTokenIdsMessage
-                || message instanceof GetLinkGroupsMessage
-                || message instanceof GetLinkGroupNamesMessage
-                || message instanceof GetLinkGroupIdsMessage
-                || message instanceof Release
-                || message instanceof Use
-                || message instanceof CancelUse
-                || message instanceof GetSpaceMetaData
-                || message instanceof GetSpaceTokens
-                || message instanceof ExtendLifetime
-                || message instanceof GetFileSpaceTokensMessage;
-    }
-
-    /** Returns true if message is a notification to which SpaceManager subscribes */
-    private boolean isNotificationMessage(Message message)
-    {
-        return message instanceof PoolFileFlushedMessage
-                || message instanceof PoolRemoveFilesMessage
-                || message instanceof PnfsDeleteEntryNotificationMessage;
-    }
-
-    /**
-     * Returns true if message is of a type that needs processing by SpaceManager even if
-     * SpaceManager is not the intended final destination.
-     */
-    private boolean isInterceptedMessage(Message message)
-    {
-        return (message instanceof PoolMgrSelectWritePoolMsg
-                && ((PoolMgrSelectWritePoolMsg) message).getPnfsPath() != null
-                && message.getReturnCode() == 0
-                && (!message.isReply() || ((PoolMgrSelectWritePoolMsg) message).getLinkGroup() != null))
-                || message instanceof DoorTransferFinishedMessage;
-    }
-
-    private boolean isPoolAcceptFileReply(Message message)
-    {
-        return message instanceof PoolAcceptFileMessage && message.isReply();
-    }
-
-
-    private void processMessage(CellMessage envelope, Message message) {
-                boolean replyRequired = message.getReplyRequired();
-                try {
-                        if(message instanceof Reserve) {
-                                reserveSpace((Reserve)message);
-                        }
-                        else if(message instanceof GetSpaceTokensMessage) {
-                                getValidSpaceTokens((GetSpaceTokensMessage)message);
-                        }
-                        else if(message instanceof GetSpaceTokenIdsMessage) {
-                                getValidSpaceTokenIds((GetSpaceTokenIdsMessage)message);
-                        }
-                        else if(message instanceof GetLinkGroupsMessage) {
-                                getLinkGroups((GetLinkGroupsMessage)message);
-                        }
-                        else if(message instanceof GetLinkGroupNamesMessage) {
-                                getLinkGroupNames((GetLinkGroupNamesMessage)message);
-                        }
-                        else if(message instanceof GetLinkGroupIdsMessage) {
-                                getLinkGroupIds((GetLinkGroupIdsMessage)message);
-                        }
-                        else if(message instanceof Release) {
-                                releaseSpace((Release)message);
-                        }
-                        else if(message instanceof Use){
-                                useSpace((Use)message);
-                        }
-                        else if(message instanceof CancelUse){
-                                cancelUseSpace((CancelUse)message);
-                        }
-                        else if(message instanceof PoolMgrSelectWritePoolMsg) {
-                                selectPoolOnRequest(envelope, (PoolMgrSelectWritePoolMsg) message);
-                                replyRequired = false;
-                        }
-                        else if(message instanceof GetSpaceMetaData){
-                                getSpaceMetaData((GetSpaceMetaData) message);
-                        }
-                        else if(message instanceof GetSpaceTokens){
-                                getSpaceTokens((GetSpaceTokens) message);
-                        }
-                        else if(message instanceof ExtendLifetime){
-                                extendLifetime((ExtendLifetime) message);
-                        }
-                        else if(message instanceof PoolFileFlushedMessage) {
-                                fileFlushed((PoolFileFlushedMessage) message);
-                        }
-                        else if(message instanceof PoolRemoveFilesMessage) {
-                                fileRemoved((PoolRemoveFilesMessage) message);
-                        }
-                        else if(message instanceof GetFileSpaceTokensMessage) {
-                                getFileSpaceTokens((GetFileSpaceTokensMessage) message);
-                        }
-                        else if (message instanceof PnfsDeleteEntryNotificationMessage) {
-                                markFileDeleted((PnfsDeleteEntryNotificationMessage) message);
-                        }
-                        else {
-                            throw new RuntimeException("Unexpected " + message.getClass() + ": Please report this to support@dcache.org");
-                        }
-                }
-                catch(SpaceException se) {
-                        logger.error("failed to process message: {}", se.getMessage());
-                        message.setFailed(-2, se);
-                }
-                catch(SQLException e) {
-                        logger.error("database activity failed: {}",
-                                e.getMessage());
-                        message.setFailed(-1, e);
-                }
-                catch(Throwable t) {
-                        logger.error("an operation failed:", t);
-                        message.setFailed(-1, t);
-                }
-                if (replyRequired) {
-                        try {
-                                logger.trace("Sending reply {}", message);
-                                envelope.revertDirection();
-                                sendMessage(envelope);
-                        }
-                        catch (Exception e) {
-                                logger.error("can't reply message: {}",
-                                        e.getMessage());
-                        }
-                }
-                else {
-                    logger.trace("reply is not required, finished processing");
-                }
-        }
-
         public void messageToForward(final CellMessage envelope, final Message message)
         {
-            if (spaceManagerEnabled &&
-                (isInterceptedMessage(message) || isPoolAcceptFileReply(message)) ) {
-                    envelope.nextDestination();
-                    ThreadManager.execute(new Runnable() {
+            logger.trace("messageToForward: type={} value={} from {} going to {}",
+                         message.getClass().getName(),
+                         message,
+                         envelope.getSourcePath(),
+                         envelope.getDestinationPath());
+
+            final boolean isEnRouteToDoor = message.isReply() || message instanceof DoorTransferFinishedMessage;
+            if (!isEnRouteToDoor) {
+                envelope.getDestinationPath().insert(poolManagerStub.getDestinationPath());
+            }
+
+            if (envelope.nextDestination()) {
+                if (spaceManagerEnabled && isInterceptedMessage(message)) {
+                    ThreadManager.execute(new Runnable()
+                    {
                         @Override
                         public void run()
                         {
-                            processMessageToForward(envelope, message);
+                            processMessage(message);
+
+                            if (message.getReturnCode() != 0 && !isEnRouteToDoor) {
+                                envelope.revertDirection();
+                            }
+
+                            try {
+                                sendMessage(envelope);
+                            } catch (NoRouteToCellException e) {
+                                logger.error("Failed to forward message: {}", e.getMessage());
+                            }
                         }
                     });
-            } else if (message instanceof PoolIoFileMessage && !message.isReply()) {
-                envelope.getDestinationPath().insert(poolManagerStub.getDestinationPath());
+                } else {
+                    try {
+                        sendMessage(envelope);
+                    } catch (NoRouteToCellException e) {
+                        logger.error("Failed to forward message: {}", e.getMessage());
+                    }
+                }
             }
         }
 
-        public void processMessageToForward(CellMessage envelope, Message message) {
-                logger.trace("messageToForward,  arrived: type={} value={} " +
-                        "from {} going to {}", message.getClass().getName(),
-                        message, envelope.getSourcePath(),
-                        envelope.getDestinationPath());
-                try {
-                        if( message instanceof PoolMgrSelectWritePoolMsg) {
-                                selectPoolOnReply((PoolMgrSelectWritePoolMsg) message);
-                        }
-                        else if(message instanceof PoolAcceptFileMessage ) {
-                                Preconditions.checkArgument(message.isReply());
-                                PoolAcceptFileMessage poolRequest = (PoolAcceptFileMessage)message;
-                                transferStarted(poolRequest.getPnfsId(),poolRequest.getReturnCode() == 0);
-                        }
-                        else if (message instanceof DoorTransferFinishedMessage) {
-                                try {
-                                        transferFinished((DoorTransferFinishedMessage)message);
-                                }
-                                catch (Exception e) {
-                                        //
-                                        // we fail if we were unable to put file in space reservation
-                                        //
-                                        message.setFailed(1,e);
-                                }
-                        }
+        private void processMessage(Message message)
+        {
+            try {
+                if (message instanceof PoolRemoveFilesMessage) {
+                    fileRemoved((PoolRemoveFilesMessage) message);
                 }
-                catch (Exception e) {
-                        logger.error("forwarding msg failed: {}",
-                                e.getMessage(), e);
+                else if (message instanceof PoolMgrSelectWritePoolMsg) {
+                    if (message.isReply()) {
+                        selectPoolOnReply((PoolMgrSelectWritePoolMsg) message);
+                    } else {
+                        selectPoolOnRequest((PoolMgrSelectWritePoolMsg) message);
+                    }
                 }
-                try {
-                        sendMessage(envelope);
+                else if (message instanceof PoolAcceptFileMessage) {
+                    PoolAcceptFileMessage poolRequest = (PoolAcceptFileMessage) message;
+                    transferStarted(poolRequest.getPnfsId(), poolRequest.getReturnCode() == 0);
                 }
-                catch (NoRouteToCellException | SerializationException e) {
-                        logger.error("failed to forward message: {}", e.getMessage());
+                else if (message instanceof DoorTransferFinishedMessage) {
+                    transferFinished((DoorTransferFinishedMessage) message);
                 }
-        }
-
-        public void returnFailedResponse(Serializable reason ,
-                                         Message spaceManagerMessage,
-                                         CellMessage cellMessage) {
-                if( reason != null && !(reason instanceof Serializable)) {
-                        reason = reason.toString();
+                else if (message instanceof Reserve) {
+                    reserveSpace((Reserve) message);
                 }
-                try {
-                        spaceManagerMessage.setReply();
-                        spaceManagerMessage.setFailed(1, reason);
-                        cellMessage.revertDirection();
-                        sendMessage(cellMessage);
+                else if (message instanceof GetSpaceTokensMessage) {
+                    getValidSpaceTokens((GetSpaceTokensMessage) message);
                 }
-                catch(Exception e) {
-                        logger.error("cannot send a failed response: {}",
-                                e.getMessage());
+                else if (message instanceof GetLinkGroupsMessage) {
+                    getLinkGroups((GetLinkGroupsMessage) message);
                 }
-        }
-
-        public void returnMessage(Message message, CellMessage cellMessage) {
-                try {
-                        message.setReply();
-                        cellMessage.revertDirection();
-                        sendMessage(cellMessage);
+                else if (message instanceof GetLinkGroupNamesMessage) {
+                    getLinkGroupNames((GetLinkGroupNamesMessage) message);
                 }
-                catch(Exception e) {
-                        logger.error("cannot send a response: {}",
-                                e.getMessage());
+                else if (message instanceof Release) {
+                    releaseSpace((Release) message);
                 }
+                else if (message instanceof Use) {
+                    useSpace((Use) message);
+                }
+                else if (message instanceof CancelUse) {
+                    cancelUseSpace((CancelUse) message);
+                }
+                else if (message instanceof GetSpaceMetaData) {
+                    getSpaceMetaData((GetSpaceMetaData) message);
+                }
+                else if (message instanceof GetSpaceTokens) {
+                    getSpaceTokens((GetSpaceTokens) message);
+                }
+                else if (message instanceof ExtendLifetime) {
+                    extendLifetime((ExtendLifetime) message);
+                }
+                else if (message instanceof PoolFileFlushedMessage) {
+                    fileFlushed((PoolFileFlushedMessage) message);
+                }
+                else if (message instanceof GetFileSpaceTokensMessage) {
+                    getFileSpaceTokens((GetFileSpaceTokensMessage) message);
+                }
+                else if (message instanceof PnfsDeleteEntryNotificationMessage) {
+                    namespaceEntryDeleted((PnfsDeleteEntryNotificationMessage) message);
+                }
+                else {
+                    throw new RuntimeException(
+                            "Unexpected " + message.getClass() + ": Please report this to support@dcache.org");
+                }
+            } catch (SpaceAuthorizationException e) {
+                message.setFailedConditionally(CacheException.PERMISSION_DENIED, e.getMessage());
+            } catch (NoFreeSpaceException e) {
+                message.setFailedConditionally(CacheException.RESOURCE, e.getMessage());
+            } catch (SpaceException e) {
+                message.setFailedConditionally(CacheException.DEFAULT_ERROR_CODE, e.getMessage());
+            } catch (IllegalArgumentException e) {
+                logger.error("forwarding msg failed: {}", e.getMessage(), e);
+                message.setFailedConditionally(CacheException.INVALID_ARGS, e.getMessage());
+            } catch (SQLException e) {
+                logger.error("forwarding msg failed: {}", e.getMessage(), e);
+                message.setFailedConditionally(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+            } catch (RuntimeException e) {
+                logger.error("forwarding msg failed: {}", e.getMessage(), e);
+                message.setFailedConditionally(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                               "Internal failure during space management");
+            }
         }
 
         private final Object updateLinkGroupsSyncObject = new Object();
@@ -3974,7 +3931,7 @@ public final class Manager
                 }
         }
 
-        private void transferFinished(DoorTransferFinishedMessage finished) throws Exception {
+        private void transferFinished(DoorTransferFinishedMessage finished) throws SQLException {
                 boolean weDeleteStoredFileRecord = deleteStoredFileRecord;
                 PnfsId pnfsId = finished.getPnfsId();
                 long size = finished.getFileAttributes().getSize();
@@ -3989,26 +3946,20 @@ public final class Manager
                                 f = selectFileForUpdate(connection,pnfsId);
                         }
                         catch (SQLException e) {
-                            if (Objects.equals(e.getSQLState(), "02000")) {
-                                logger.trace("failed to find file {}: {}", pnfsId,
-                                        e.getMessage());
-                            } else {
-                                logger.error("failed to find file {}: {}", pnfsId,
-                                        e.getMessage());
-                            }
-                            if (connection!=null) {
-                                connection.rollback();
-                                connection_pool.returnConnection(connection);
-                                connection = null;
-                            }
-                            return;
-                        }
-                        catch (Exception e) {
-                                logger.error("failed to find file {}", pnfsId, e);
+                                if (Objects.equals(e.getSQLState(), "02000")) {
+                                    logger.trace("failed to find file {}: {}", pnfsId,
+                                            e.getMessage());
+                                } else {
+                                    logger.error("failed to find file {}: {}", pnfsId,
+                                            e.getMessage());
+                                }
                                 if (connection!=null) {
-                                        connection.rollback();
-                                        connection_pool.returnConnection(connection);
-                                        connection = null;
+                                    connection.rollback();
+                                    connection_pool.returnConnection(connection);
+                                    connection = null;
+                                }
+                                if (!Objects.equals(e.getSQLState(), "02000")) {
+                                    throw e;
                                 }
                                 return;
                         }
@@ -4073,9 +4024,9 @@ public final class Manager
                                 try {
                                         connection.rollback();
                                 }
-                        catch(SQLException sqle1) {}
-                        connection_pool.returnFailedConnection(connection);
-                        connection = null;
+                                catch(SQLException sqle1) {}
+                                connection_pool.returnFailedConnection(connection);
+                                connection = null;
                         }
                         throw sqle;
                 }
@@ -4086,7 +4037,7 @@ public final class Manager
                 }
         }
 
-        private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws Exception {
+        private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws SQLException {
                 if(!returnFlushedSpaceToReservation) {
                         return;
                 }
@@ -4587,8 +4538,8 @@ public final class Manager
                 }
         }
 
-        public void selectPoolOnRequest(CellMessage envelope, PoolMgrSelectWritePoolMsg selectWritePool)
-                throws Exception
+        public void selectPoolOnRequest(PoolMgrSelectWritePoolMsg selectWritePool)
+                throws SpaceException, SQLException
         {
             logger.trace("selectPoolOnRequest({})", selectWritePool);
             String pnfsPath = checkNotNull(selectWritePool.getPnfsPath());
@@ -4683,11 +4634,10 @@ public final class Manager
                         reserveSpaceForNonSRMTransfers,
                         subject.getPrincipals());
             }
-            forwardToPoolManager(envelope);
         }
 
     public void selectPoolOnReply(PoolMgrSelectWritePoolMsg selectWritePool)
-                throws Exception
+                throws SQLException, SpaceException
         {
             logger.trace("selectPoolOnReply({})", selectWritePool);
             String pnfsPath = checkNotNull(selectWritePool.getPnfsPath());
@@ -4754,7 +4704,7 @@ public final class Manager
             }
         }
 
-        public void markFileDeleted(PnfsDeleteEntryNotificationMessage msg) throws Exception {
+        private void namespaceEntryDeleted(PnfsDeleteEntryNotificationMessage msg) throws SQLException {
                 if (msg.getReturnCode()!=0) {
                     return;
                 }
@@ -4812,7 +4762,7 @@ public final class Manager
         }
 
 
-        public void getSpaceMetaData(GetSpaceMetaData gsmd) throws Exception{
+        private void getSpaceMetaData(GetSpaceMetaData gsmd) throws SQLException{
                 long[] tokens = gsmd.getSpaceTokens();
                 if(tokens == null) {
                         throw new IllegalArgumentException("null space tokens");
@@ -4843,14 +4793,14 @@ public final class Manager
                 gsmd.setSpaces(spaces);
         }
 
-        public void getSpaceTokens(GetSpaceTokens gst) throws Exception{
+        private void getSpaceTokens(GetSpaceTokens gst) throws SQLException{
                 String description = gst.getDescription();
 
                 long [] tokens = getSpaceTokens(gst.getSubject(), description);
                 gst.setSpaceToken(tokens);
         }
 
-        public void getFileSpaceTokens(GetFileSpaceTokensMessage getFileTokens) throws Exception{
+        private void getFileSpaceTokens(GetFileSpaceTokensMessage getFileTokens) throws SQLException{
                 PnfsId pnfsId = getFileTokens.getPnfsId();
                 String pnfsPath = getFileTokens.getPnfsPath();
                 if(pnfsId == null && pnfsPath == null) {
@@ -4860,7 +4810,7 @@ public final class Manager
                 getFileTokens.setSpaceToken(tokens);
         }
 
-        public void extendLifetime(ExtendLifetime extendLifetime) throws Exception{
+        private void extendLifetime(ExtendLifetime extendLifetime) throws SQLException, SpaceException {
                 long token            = extendLifetime.getSpaceToken();
                 long newLifetime      = extendLifetime.getNewLifetime();
                 Connection connection = null;
@@ -4872,7 +4822,7 @@ public final class Manager
                                 connection.rollback();
                                 connection_pool.returnConnection(connection);
                                 connection = null;
-                                throw new Exception("Space Is already Released");
+                                throw new SpaceException("Space Is already Released");
                         }
                         long creationTime = space.getCreationTime();
                         long lifetime = space.getLifetime();

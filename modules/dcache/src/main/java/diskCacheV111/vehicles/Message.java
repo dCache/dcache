@@ -39,6 +39,13 @@ public class Message
 	setReply(0,null);
     }
 
+    public void setFailedConditionally(int rc, Serializable errorObject)
+    {
+        if (getReturnCode() == 0) {
+            setFailed(rc, errorObject);
+        }
+    }
+
     public void setFailed(int errorCode, Serializable errorObject){
 	setReply(errorCode, errorObject);
     }
