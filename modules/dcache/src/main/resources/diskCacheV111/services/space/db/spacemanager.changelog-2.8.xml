@@ -197,6 +197,7 @@
     </changeSet>
 
     <changeSet id="5" author="behrmann">
+        <comment>Add non-null constraints to required fields</comment>
         <addNotNullConstraint tableName="srmlinkgroup" columnName="freespaceinbytes"/>
         <addNotNullConstraint tableName="srmlinkgroup" columnName="reservedspaceinbytes"/>
         <addNotNullConstraint tableName="srmspace" columnName="sizeinbytes"/>
@@ -207,5 +208,76 @@
         <addNotNullConstraint tableName="srmspacefile" columnName="sizeinbytes"/>
         <addNotNullConstraint tableName="srmspacefile" columnName="spacereservationid"/>
         <addNotNullConstraint tableName="srmspacefile" columnName="state"/>
+    </changeSet>
+
+    <changeSet id="6" author="behrmann">
+        <comment>Use auto-increment primary keys</comment>
+        <addAutoIncrement tableName="srmlinkgroup" columnName="id" columnDataType="bigint"/>
+        <addAutoIncrement tableName="srmspace" columnName="id" columnDataType="bigint"/>
+        <addAutoIncrement tableName="srmspacefile" columnName="id" columnDataType="bigint"/>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="7" author="behrmann" dbms="postgresql">
+        <!-- A workaround to https://liquibase.jira.com/browse/CORE-1705 -->
+        <comment>Postgresql specific auto increment sequences initialization</comment>
+
+        <sql>
+            SELECT setval('srmlinkgroup_id_seq', (SELECT max(id) FROM srmlinkgroup));
+            SELECT setval('srmspace_id_seq', (SELECT max(id) FROM srmspace));
+            SELECT setval('srmspacefile_id_seq', (SELECT max(id) FROM srmspacefile));
+        </sql>
+
+        <!-- This rollback really belongs to changeset 6. It is however postgresql
+             specific, so we put it here. -->
+        <rollback>
+            DROP SEQUENCE srmlinkgroup_id_seq CASCADE;
+            DROP SEQUENCE srmspace_id_seq CASCADE;
+            DROP SEQUENCE srmspacefile_id_seq CASCADE;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="8" author="behrmann">
+        <comment>Drop sequence table</comment>
+        <dropTable tableName="srmspacemanagernextid"/>
+        <rollback>
+            <createTable tableName="srmspacemanagernextid">
+                <column name="nexttoken" type="bigint"/>
+            </createTable>
+            <insert tableName="srmspacemanagernextid">
+                <column name="nexttoken" value="0"/>
+            </insert>
+
+            <sql>
+                UPDATE srmspacemanagernextid SET nexttoken =
+                    GREATEST(nexttoken,
+                             GREATEST(COALESCE((SELECT max(id) FROM srmlinkgroup), 0),
+                                      COALESCE((SELECT max(id) FROM srmspace), 0),
+                                      COALESCE((SELECT max(id) FROM srmspacefile), 0)) + 1)
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="9" author="behrmann">
+        <comment>Drop index on pnfsid column</comment>
+        <dropIndex tableName="srmspacefile" indexName="srmspacefile_pnfsid_idx"/>
+        <rollback>
+            <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfsid_idx">
+                <column name="pnfsid"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="10" author="behrmann">
+        <comment>Change pnfsid column to VARCHAR(36)</comment>
+        <modifyDataType tableName="srmspacefile" columnName="pnfsid" newDataType="varchar(36)"/>
+        <rollback>
+            <modifyDataType tableName="srmspacefile" columnName="pnfsid" newDataType="varchar(32672)"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="11" author="behrmann">
+        <comment>Add unique constraint (and thus index) on pnfsid column</comment>
+        <addUniqueConstraint tableName="srmspacefile" columnNames="pnfsid" constraintName="srmspacefile_pnfsid_unique"/>
     </changeSet>
 </databaseChangeLog>

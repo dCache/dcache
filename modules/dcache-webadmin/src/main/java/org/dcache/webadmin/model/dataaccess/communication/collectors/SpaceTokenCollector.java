@@ -33,7 +33,7 @@ public class SpaceTokenCollector extends Collector {
         _log.debug("Retrieving linkgroups");
         GetLinkGroupsMessage reply
             = _cellStub.sendAndWait(new GetLinkGroupsMessage());
-        _pageCache.put(ContextPaths.LINKGROUPS, reply.getLinkGroupSet());
+        _pageCache.put(ContextPaths.LINKGROUPS, reply.getLinkGroups());
         _log.debug("Linkgroups retrieved successfully");
     }
 

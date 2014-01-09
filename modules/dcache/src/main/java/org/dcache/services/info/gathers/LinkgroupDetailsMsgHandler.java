@@ -3,8 +3,8 @@ package org.dcache.services.info.gathers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Date;
-import java.util.Set;
 
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.message.GetLinkGroupsMessage;
@@ -47,9 +47,9 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 
 		GetLinkGroupsMessage msg = (GetLinkGroupsMessage) messagePayload;
 
-		Set<LinkGroup> linkGroups = msg.getLinkGroupSet();
+		Collection<LinkGroup> linkGroups = msg.getLinkGroups();
 
-		if( linkGroups.size() == 0) {
+		if( linkGroups.isEmpty()) {
 			_log.info( "received GetLinkGroupNamesMessage with no linkgroups listed");
 			return true;
 		}

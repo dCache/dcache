@@ -1,26 +1,4 @@
-//______________________________________________________________________________
-//
-// $Id: LinkGroupIO.java 8022 2008-01-07 21:25:23Z litvinse $
-// $Author: litvinse $
-//
-// Infrastructure to retrieve objects from DB
-//
-// created 11/07 by Dmitry Litvintsev (litvinse@fnal.gov)
-//
-//______________________________________________________________________________
-
 package diskCacheV111.services.space;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashSet;
-import java.util.Set;
-
-import diskCacheV111.util.IoPackage;
-import diskCacheV111.util.VOInfo;
 
 /*
 dcache=# \d srmlinkgroup;
@@ -55,97 +33,63 @@ Foreign-key constraints:
 */
 
 
+import org.springframework.jdbc.core.PreparedStatementCreator;
 
-public class LinkGroupIO extends IoPackage<LinkGroup>  {
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-	public static final String LINKGROUP_TABLE  = "srmLinkGroup".toLowerCase();
-	public static final String LINKGROUP_VO_TABLE = "srmLinkGroupVOs".toLowerCase();
-	public static final String INSERT =
-		"INSERT INTO "+LINKGROUP_TABLE +
-		" (id, name, freeSpaceInBytes, lastUpdateTime, onlineAllowed," +
-		" nearlineAllowed, replicaAllowed, outputAllowed, custodialAllowed,reservedspaceinbytes)"+
-		" VALUES ( ?,?,?,?,?,?,?,?,?,?)";
-	public static final String SELECT_LINKGROUP_FOR_UPDATE_BY_NAME="SELECT * FROM "+LINKGROUP_TABLE+
-		" WHERE  name = ? FOR UPDATE";
-	public static final String SELECT_LINKGROUP_BY_ID  = "SELECT * FROM "+ LINKGROUP_TABLE + " WHERE  id = ?";
-	public static final String SELECT_LINKGROUP_BY_NAME= "SELECT * FROM "+ LINKGROUP_TABLE + " WHERE  name = ?";
-	public static final String SELECT_LINKGROUP_VO     ="SELECT voGroup,voRole FROM "+LINKGROUP_VO_TABLE+" WHERE linkGroupId=?";
-	public static final String SELECT_CURRENT_LINKGROUPS = "SELECT * FROM "+ LINKGROUP_TABLE + " where lastUpdateTime >= ?";
-	public static final String SELECT_ALL_LINKGROUPS = "SELECT * FROM "+ LINKGROUP_TABLE;
-	public static final String UPDATE = "UPDATE "+LINKGROUP_TABLE+" SET freeSpaceInBytes=?,lastUpdateTime=?,onlineAllowed=?,nearlineAllowed=?,"+
-		"replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?";
+public class LinkGroupIO
+{
+    public static final String LINKGROUP_TABLE  = "srmLinkGroup".toLowerCase();
+    public static final String LINKGROUP_VO_TABLE = "srmLinkGroupVOs".toLowerCase();
+    public static final String INSERT =
+        "INSERT INTO "+LINKGROUP_TABLE +
+        " (name, freeSpaceInBytes, lastUpdateTime, onlineAllowed," +
+        " nearlineAllowed, replicaAllowed, outputAllowed, custodialAllowed,reservedspaceinbytes)"+
+        " VALUES (?,?,?,?,?,?,?,?,?)";
+    public static final String SELECT_LINKGROUP_FOR_UPDATE_BY_NAME="SELECT * FROM "+LINKGROUP_TABLE+
+        " WHERE  name = ? FOR UPDATE";
+    public static final String SELECT_LINKGROUP_BY_ID  = "SELECT * FROM "+ LINKGROUP_TABLE + " WHERE  id = ?";
+    public static final String SELECT_LINKGROUP_BY_NAME= "SELECT * FROM "+ LINKGROUP_TABLE + " WHERE  name = ?";
+    public static final String SELECT_LINKGROUP_VO     ="SELECT voGroup,voRole FROM "+LINKGROUP_VO_TABLE+" WHERE linkGroupId=?";
+    public static final String SELECT_CURRENT_LINKGROUPS = "SELECT * FROM "+ LINKGROUP_TABLE + " where lastUpdateTime >= ?";
+    public static final String SELECT_ALL_LINKGROUPS = "SELECT * FROM "+ LINKGROUP_TABLE;
+    public static final String UPDATE = "UPDATE "+LINKGROUP_TABLE+" SET freeSpaceInBytes=?,lastUpdateTime=?,onlineAllowed=?,nearlineAllowed=?,"+
+        "replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?";
 
-	public LinkGroupIO() {
-	}
-
-	@Override
-        public Set<LinkGroup> select(Connection connection,
-                                     String txt) throws SQLException {
-		Set<LinkGroup> container = new HashSet<>();
-		Statement stmt = connection.createStatement();
-		ResultSet set = stmt.executeQuery(txt);
-		while (set.next()) {
-			LinkGroup lg = new LinkGroup();
-			long id = set.getLong("id");
-			lg.setId(id);
-			lg.setName(set.getString("name"));
-			lg.setFreeSpace(set.getLong("freeSpaceInBytes"));
-			lg.setUpdateTime(set.getLong("lastUpdateTime"));
-			lg.setOnlineAllowed(set.getBoolean("onlineAllowed"));
-			lg.setNearlineAllowed(set.getBoolean("nearlineAllowed"));
-			lg.setReplicaAllowed(set.getBoolean("replicaAllowed"));
-			lg.setOutputAllowed(set.getBoolean("outputAllowed"));
-			lg.setCustodialAllowed(set.getBoolean("custodialAllowed"));
-			lg.setReservedSpaceInBytes(set.getLong("reservedspaceinbytes"));
-			PreparedStatement s = connection.prepareStatement(SELECT_LINKGROUP_VO);
-			s.setLong(1,id);
-			ResultSet vos = s.executeQuery();
-			Set<VOInfo> volist = new HashSet<>();
-			while (vos.next()) {
-				volist.add(new VOInfo(vos.getString("vogroup"),
-						      vos.getString("vorole")));
-			}
-			lg.setVOs(volist.toArray(new VOInfo[volist.size()]));
-			container.add(lg);
-			s.close();
-		}
-		stmt.close();
-		return container;
-	}
-
-
-	@Override
-        public Set<LinkGroup> selectPrepared(Connection connection,
-				      PreparedStatement statement) throws SQLException {
-		Set<LinkGroup> container = new HashSet<>();
-		ResultSet set = statement.executeQuery();
-		while (set.next()) {
-			LinkGroup lg = new LinkGroup();
-			long id = set.getLong("id");
-			lg.setId(id);
-			lg.setName(set.getString("name"));
-			lg.setFreeSpace(set.getLong("freeSpaceInBytes"));
-			lg.setUpdateTime(set.getLong("lastUpdateTime"));
-			lg.setOnlineAllowed(set.getBoolean("onlineAllowed"));
-			lg.setNearlineAllowed(set.getBoolean("nearlineAllowed"));
-			lg.setReplicaAllowed(set.getBoolean("replicaAllowed"));
-			lg.setOutputAllowed(set.getBoolean("outputAllowed"));
-			lg.setCustodialAllowed(set.getBoolean("custodialAllowed"));
-			lg.setReservedSpaceInBytes(set.getLong("reservedspaceinbytes"));
-			PreparedStatement s = statement.getConnection().prepareStatement(SELECT_LINKGROUP_VO);
-			s.setLong(1,id);
-			ResultSet vos = s.executeQuery();
-			Set<VOInfo> volist = new HashSet<>();
-			while (vos.next()) {
-				volist.add(new VOInfo(vos.getString("vogroup"),
-						      vos.getString("vorole")));
-			}
-			lg.setVOs(volist.toArray(new VOInfo[volist.size()]));
-			container.add(lg);
-			s.close();
-		}
-		return container;
-	}
-
-
+    public static PreparedStatementCreator insert(final String linkGroupName,
+                                                  final long freeSpace,
+                                                  final long updateTime,
+                                                  final boolean onlineAllowed,
+                                                  final boolean nearlineAllowed,
+                                                  final boolean replicaAllowed,
+                                                  final boolean outputAllowed,
+                                                  final boolean custodialAllowed,
+                                                  final long reservedSpace)
+    {
+        return new PreparedStatementCreator()
+        {
+            @Override
+            public PreparedStatement createPreparedStatement(Connection con) throws SQLException
+            {
+                /* Note that neither prepareStatement(String, String[]) nor prepareStatement(String, int[])
+                 * work for us: The former suffers from different interpretations of case in HSQLDB and
+                 * PostgreSQL and the latter is not support by the PostgreSQL JDBC driver.
+                 */
+                PreparedStatement stmt = con.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS);
+                stmt.setString(1, linkGroupName);
+                stmt.setLong(2, freeSpace);
+                stmt.setLong(3, updateTime);
+                stmt.setInt(4, (onlineAllowed ? 1 : 0));
+                stmt.setInt(5, (nearlineAllowed ? 1 : 0));
+                stmt.setInt(6, (replicaAllowed ? 1 : 0));
+                stmt.setInt(7, (outputAllowed ? 1 : 0));
+                stmt.setInt(8, (custodialAllowed ? 1 : 0));
+                stmt.setLong(9, reservedSpace);
+                return stmt;
+            }
+        };
+    }
 }

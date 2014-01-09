@@ -1,29 +1,4 @@
-//______________________________________________________________________________
-//
-// $Id: SpaceReservationIO.java 8022 2008-01-07 21:25:23Z litvinse $
-// $Author: litvinse $
-//
-// Infrastructure to retrieve objects from DB
-//
-// created 11/07 by Dmitry Litvintsev (litvinse@fnal.gov)
-//
-//______________________________________________________________________________
-
-
 package diskCacheV111.services.space;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashSet;
-import java.util.Set;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.IoPackage;
-import diskCacheV111.util.RetentionPolicy;
-
 
 /*
       Column      |           Type           | Modifiers
@@ -33,7 +8,7 @@ import diskCacheV111.util.RetentionPolicy;
  vorole           | character varying(32672) |
  retentionpolicy  | integer                  |
  accesslatency    | integer                  |
- linkgroupid       | bigint                   |
+ linkgroupid      | bigint                   |
  sizeinbytes      | bigint                   |
  creationtime     | bigint                   |
  lifetime         | bigint                   |
@@ -43,15 +18,23 @@ import diskCacheV111.util.RetentionPolicy;
  allocatedspaceinbytes | bigint                   |
 */
 
+import org.springframework.jdbc.core.PreparedStatementCreator;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 
-public class SpaceReservationIO extends IoPackage<Space> {
+public class SpaceReservationIO
+{
         public static final String SRM_SPACE_TABLE = ManagerSchemaConstants.SPACE_TABLE_NAME;
         public static final String INSERT = "INSERT INTO "+SRM_SPACE_TABLE+
-                " (id,vogroup,vorole,retentionpolicy,accesslatency,linkgroupid,"+
+                " (vogroup,vorole,retentionpolicy,accesslatency,linkgroupid,"+
                 "sizeinbytes,creationtime,lifetime,description,state,usedspaceinbytes,allocatedspaceinbytes)"+
-                " VALUES  (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                " VALUES  (?,?,?,?,?,?,?,?,?,?,?,?)";
         public static final String UPDATE = "UPDATE "+SRM_SPACE_TABLE+
                 " set vogroup=?,vorole=?,retentionpolicy=?,accesslatency=?,linkgroupid=?,sizeinbytes=?,"+
                 " creationtime=?,lifetime=?,description=?,state=? where id=?";
@@ -82,59 +65,44 @@ public class SpaceReservationIO extends IoPackage<Space> {
         public static final String SELECT_FOR_UPDATE_BY_ID_AND_SIZE = "SELECT * FROM "+SRM_SPACE_TABLE +
                 " WHERE  id = ? AND sizeinbytes-allocatedspaceinbytes >= ? FOR UPDATE ";
         public static final String UPDATE_LIFETIME = "UPDATE "+SRM_SPACE_TABLE+ "SET lifetime=?  WHERE id=? ";
-        public static final String SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES="select * from srmspace where id in (select distinct spacereservationid from srmspacefile where (state= "+FileState.RESERVED.getStateId()+" or state = "+ FileState.TRANSFERRING.getStateId() +") and creationtime+lifetime<?)";
 
-        public SpaceReservationIO() {
-        }
-
-        @Override
-        public Set<Space> select( Connection connection,
-                                  String txt) throws SQLException {
-                Set<Space>  container = new HashSet<>();
-                Statement s = connection.createStatement();
-                ResultSet set = s.executeQuery(txt);
-                while (set.next()) {
-                        container.add(
-                                new Space(set.getLong("id"),
-                                          set.getString("vogroup"),
-                                          set.getString("vorole"),
-                                          RetentionPolicy.getRetentionPolicy(set.getInt("retentionPolicy")),
-                                          AccessLatency.getAccessLatency(set.getInt("accessLatency")),
-                                          set.getLong("linkgroupid"),
-                                          set.getLong("sizeinbytes"),
-                                          set.getLong("creationtime"),
-                                          set.getLong("lifetime"),
-                                          set.getString("description"),
-                                          SpaceState.getState(set.getInt("state")),
-                                          set.getLong("usedspaceinbytes"),
-                                          set.getLong("allocatedspaceinbytes")));
+        public static PreparedStatementCreator insert(final String voGroup,
+                                                      final String voRole,
+                                                      final RetentionPolicy retentionPolicy,
+                                                      final AccessLatency accessLatency,
+                                                      final long linkGroupId,
+                                                      final long size,
+                                                      final long creationTime,
+                                                      final long lifetime,
+                                                      final String description,
+                                                      final SpaceState state,
+                                                      final long usedspace,
+                                                      final long allocatedspace)
+        {
+            return new PreparedStatementCreator()
+            {
+                @Override
+                public PreparedStatement createPreparedStatement(Connection con) throws SQLException
+                {
+                    /* Note that neither prepareStatement(String, String[]) nor prepareStatement(String, int[])
+                     * work for us: The former suffers from different interpretations of case in HSQLDB and
+                     * PostgreSQL and the latter is not support by the PostgreSQL JDBC driver.
+                     */
+                    PreparedStatement stmt = con.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS);
+                    stmt.setString(1, voGroup);
+                    stmt.setString(2, voRole);
+                    stmt.setInt(3, retentionPolicy == null ? 0 : retentionPolicy.getId());
+                    stmt.setInt(4, accessLatency == null ? 0 : accessLatency.getId());
+                    stmt.setLong(5, linkGroupId);
+                    stmt.setLong(6, size);
+                    stmt.setLong(7, creationTime);
+                    stmt.setLong(8, lifetime);
+                    stmt.setString(9, description);
+                    stmt.setInt(10, state.getStateId());
+                    stmt.setLong(11, usedspace);
+                    stmt.setLong(12, allocatedspace);
+                    return stmt;
                 }
-                s.close();
-                return container;
-        }
-
-        @Override
-        public Set<Space> selectPrepared(Connection connection,
-                                       PreparedStatement statement)
-                throws SQLException {
-                Set<Space>  container = new HashSet<>();
-                ResultSet set = statement.executeQuery();
-                while (set.next()) {
-                        container.add(
-                                new Space(set.getLong("id"),
-                                          set.getString("vogroup"),
-                                          set.getString("vorole"),
-                                          RetentionPolicy.getRetentionPolicy(set.getInt("retentionPolicy")),
-                                          AccessLatency.getAccessLatency(set.getInt("accessLatency")),
-                                          set.getLong("linkgroupid"),
-                                          set.getLong("sizeinbytes"),
-                                          set.getLong("creationtime"),
-                                          set.getLong("lifetime"),
-                                          set.getString("description"),
-                                          SpaceState.getState(set.getInt("state")),
-                                          set.getLong("usedspaceinbytes"),
-                                          set.getLong("allocatedspaceinbytes")));
-                }
-                return container;
+            };
         }
 }

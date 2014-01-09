@@ -2,6 +2,7 @@
         "-//AspectJ//DTD//EN" "http://www.eclipse.org/aspectj/dtd/aspectj.dtd">
 <aspectj>
     <weaver>
+        <include within="diskCacheV111.services.space.*"/>
         <include within="org.dcache.pinmanager.*"/>
         <include within="org.dcache.util.aspects.*"/>
     </weaver>

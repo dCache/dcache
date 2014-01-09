@@ -91,8 +91,13 @@
     <property name="statementsCacheSize" value="100"/>
   </bean>
 
-  <bean id="db-manager" class="diskCacheV111.util.DBManager">
-	<constructor-arg ref="data-source"/>
+  <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <description>Database transaction manager</description>
+    <property name="dataSource" ref="data-source"/>
+  </bean>
+
+  <bean class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+    <property name="transactionManager" ref="tx-manager"/>
   </bean>
 
   <bean id="authz-policy" class="diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy"/>
@@ -100,7 +105,7 @@
   <bean id="spacemanager" class="diskCacheV111.services.space.Manager"
          init-method="start" destroy-method="stop" depends-on="liquibase">
     <description>SrmSpaceManager</description>
-    <property name="dbManager"        ref="db-manager" />
+    <property name="dataSource"        ref="data-source" />
     <property name="pnfsHandler"      ref="pnfs"/>
     <property name="poolManager"  value="${srm.service.poolmanager}"/>
     <property name="poolMonitor" ref="pool-monitor"/>

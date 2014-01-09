@@ -20,6 +20,9 @@
                     SIGNAL SQLSTATE '23D01' SET MESSAGE_TEXT = 'Not enough free space in link group ';
                 END;
         </createProcedure>
+        <rollback>
+            <sql>DROP TRIGGER tgr_srmlinkgroup_update IF EXISTS</sql>
+        </rollback>
     </changeSet>
 
     <changeSet id="2" author="behrmann" dbms="hsqldb" runOnChange="true">

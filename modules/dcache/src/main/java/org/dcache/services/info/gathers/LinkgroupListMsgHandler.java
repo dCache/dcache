@@ -3,6 +3,8 @@ package org.dcache.services.info.gathers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+
 import diskCacheV111.services.space.message.GetLinkGroupNamesMessage;
 import diskCacheV111.vehicles.Message;
 
@@ -42,7 +44,7 @@ public class LinkgroupListMsgHandler implements MessageHandler {
 
 		GetLinkGroupNamesMessage msg = (GetLinkGroupNamesMessage) messagePayload;
 
-		String names[] = msg.getLinkGroupNames();
+		Collection<String> names = msg.getLinkGroupNames();
 
 		StateUpdate update = null;
 
