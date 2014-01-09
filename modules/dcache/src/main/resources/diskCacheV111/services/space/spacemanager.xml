@@ -83,7 +83,7 @@
 					 '${spacemanager.db.user}',
 					 '${spacemanager.db.password}')}"/>
     <property name="spaceManagerEnabled"
-              value="${dcache.enable.space-reservation}" />
+              value="${spacemanager.enable.space-reservation}" />
     <property name="updateLinkGroupsPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
 		     ${spacemanager.link-groups-update.period},
