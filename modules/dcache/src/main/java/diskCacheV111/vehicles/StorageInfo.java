@@ -137,8 +137,9 @@ public interface StorageInfo
      * corresponding entry is removed.
      * @param key
      * @param value
+     * @return The previous value associated with key
      */
-    public void    setKey( String key , String value ) ;
+    public String setKey( String key , String value ) ;
     /**
       * Returns a COPY of the internal key,value map.
       */

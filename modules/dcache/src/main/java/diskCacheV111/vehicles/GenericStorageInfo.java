@@ -190,11 +190,11 @@ public class GenericStorageInfo
 
     @Override
     @Deprecated
-    public void setKey(String key, String value) {
+    public String setKey(String key, String value) {
         if (value == null) {
-            _keyHash.remove(key);
+            return _keyHash.remove(key);
         } else {
-            _keyHash.put(key, value);
+            return _keyHash.put(key, value);
         }
     }
 
