@@ -290,7 +290,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * and NFSv4.1 device id. Finally, notify waiting request that we have got
      * the reply for LAYOUTGET
      */
-    public void messageArrived(PoolPassiveIoFileMessage<stateid4> message) {
+    public void messageArrived(PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
 
         String poolName = message.getPoolName();
 
@@ -322,8 +322,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             _log.debug("new mapping: {}", device);
         }
 
-        stateid4 stateid = message.challange();
-        NfsTransfer transfer = _ioMessages.get(stateid);
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.challange();
+        NfsTransfer transfer = _ioMessages.get(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         transfer.redirect(device);
     }
 
@@ -331,7 +331,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
         _log.debug("Mover {} done.", protocolInfo.stateId());
-        Transfer transfer = _ioMessages.remove(protocolInfo.stateId());
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = protocolInfo.stateId();
+        Transfer transfer = _ioMessages.remove(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         if(transfer != null) {
                 transfer.finished(transferFinishedMessage);
                 transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
@@ -417,7 +418,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 transfer.setClientAddress(remote);
                 transfer.readNameSpaceEntry();
 
-                _ioMessages.put(protocolInfo.stateId(), transfer);
+                _ioMessages.put(stateid, transfer);
 
                 PoolDS ds = getPool(transfer, protocolInfo, ioMode);
                 deviceid = ds.getDeviceId();
@@ -616,14 +617,12 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private static class NfsTransfer extends RedirectedTransfer<PoolDS> {
 
-        private final stateid4 _stateid;
         private final NFS4ProtocolInfo _protocolInfo;
 
         NfsTransfer(PnfsHandler pnfs, Subject namespaceSubject, Subject ioSubject, InetSocketAddress client,
                 stateid4 stateid) {
             super(pnfs, namespaceSubject, ioSubject,  new FsPath("/"));
-            _stateid = stateid;
-            _protocolInfo = new NFS4ProtocolInfo(client, _stateid);
+            _protocolInfo = new NFS4ProtocolInfo(client, new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid));
         }
 
         @Override
