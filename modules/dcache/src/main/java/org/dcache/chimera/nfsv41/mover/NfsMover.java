@@ -65,7 +65,8 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     }
 
     public stateid4 getStateId() {
-        return getProtocolInfo().stateId();
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
+        return new stateid4(legacyStateid.other, legacyStateid.seqid.value);
     }
 
     @Override
@@ -146,7 +147,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private class MoverState extends NFS4State {
 
         MoverState() {
-            super(NfsMover.this.getProtocolInfo().stateId());
+            super(NfsMover.this.getStateId());
         }
 
         @Override

@@ -102,7 +102,8 @@ public class NfsTransferService extends AbstractCellComponent
             final Cancellable cancellableMover = mover.enable(completionHandler);
 
             CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
-            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, mover.getStateId()));
+            final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
+            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, legacyStateId));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).
