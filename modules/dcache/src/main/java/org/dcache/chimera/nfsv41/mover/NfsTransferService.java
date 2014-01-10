@@ -22,9 +22,9 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.nfs.v4.NFS4Client;
-import org.dcache.chimera.nfs.v4.NFSv41Session;
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.nfs.v4.NFS4Client;
+import org.dcache.nfs.v4.NFSv41Session;
+import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
@@ -91,14 +91,20 @@ public class NfsTransferService extends AbstractCellComponent
         try {
             NFS4ProtocolInfo nfs4ProtocolInfo = (NFS4ProtocolInfo) transfer.getProtocolInfo();
 
-            stateid4 stateid = nfs4ProtocolInfo.stateId();
+            /*
+             * for backward compatibility with old pools, door will always send
+             * legacy version of stateid. We keep internally new version, but have to
+             * return back legacy one as request may come from old door.
+             */
+            org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = nfs4ProtocolInfo.stateId();
+            stateid4 stateid = new stateid4(legacyStateid.other, legacyStateid.seqid.value);
             final RepositoryChannel repositoryChannel = transfer.openChannel();
             final MoverBridge moverBridge = new MoverBridge((ManualMover) transfer.getMover(),
                     transfer.getFileAttributes().getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), transfer.getIoHandle());
             _nfsIO.addHandler(moverBridge);
 
             CellPath directDoorPath = new CellPath(transfer.getPathToDoor().getDestinationAddress());
-            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, stateid));
+            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, legacyStateid));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).

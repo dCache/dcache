@@ -50,37 +50,37 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.nfs.ChimeraNFSException;
-import org.dcache.chimera.nfs.ExportFile;
-import org.dcache.chimera.nfs.nfsstat;
-import org.dcache.chimera.nfs.v3.MountServer;
-import org.dcache.chimera.nfs.v3.NfsServerV3;
-import org.dcache.chimera.nfs.v3.xdr.mount_prot;
-import org.dcache.chimera.nfs.v3.xdr.nfs3_prot;
-import org.dcache.chimera.nfs.v4.CompoundContext;
-import org.dcache.chimera.nfs.v4.Layout;
-import org.dcache.chimera.nfs.v4.MDSOperationFactory;
-import org.dcache.chimera.nfs.v4.NFS4Client;
-import org.dcache.chimera.nfs.v4.NFSServerV41;
-import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
-import org.dcache.chimera.nfs.v4.NFSv41Session;
-import org.dcache.chimera.nfs.v4.NfsIdMapping;
-import org.dcache.chimera.nfs.v4.RoundRobinStripingPattern;
-import org.dcache.chimera.nfs.v4.StripingPattern;
-import org.dcache.chimera.nfs.v4.xdr.device_addr4;
-import org.dcache.chimera.nfs.v4.xdr.deviceid4;
-import org.dcache.chimera.nfs.v4.xdr.layout4;
-import org.dcache.chimera.nfs.v4.xdr.layoutiomode4;
-import org.dcache.chimera.nfs.v4.xdr.layouttype4;
-import org.dcache.chimera.nfs.v4.xdr.multipath_list4;
-import org.dcache.chimera.nfs.v4.xdr.netaddr4;
-import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
-import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
-import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
-import org.dcache.chimera.nfs.vfs.ChimeraVfs;
-import org.dcache.chimera.nfs.vfs.Inode;
-import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
+import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.ExportFile;
+import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.v3.MountServer;
+import org.dcache.nfs.v3.NfsServerV3;
+import org.dcache.nfs.v3.xdr.mount_prot;
+import org.dcache.nfs.v3.xdr.nfs3_prot;
+import org.dcache.nfs.v4.CompoundContext;
+import org.dcache.nfs.v4.Layout;
+import org.dcache.nfs.v4.MDSOperationFactory;
+import org.dcache.nfs.v4.NFS4Client;
+import org.dcache.nfs.v4.NFSServerV41;
+import org.dcache.nfs.v4.NFSv41DeviceManager;
+import org.dcache.nfs.v4.NFSv41Session;
+import org.dcache.nfs.v4.NfsIdMapping;
+import org.dcache.nfs.v4.RoundRobinStripingPattern;
+import org.dcache.nfs.v4.StripingPattern;
+import org.dcache.nfs.v4.xdr.device_addr4;
+import org.dcache.nfs.v4.xdr.deviceid4;
+import org.dcache.nfs.v4.xdr.layout4;
+import org.dcache.nfs.v4.xdr.layoutiomode4;
+import org.dcache.nfs.v4.xdr.layouttype4;
+import org.dcache.nfs.v4.xdr.multipath_list4;
+import org.dcache.nfs.v4.xdr.netaddr4;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
+import org.dcache.nfs.v4.xdr.nfs_fh4;
+import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
+import org.dcache.nfs.v4.xdr.stateid4;
+import org.dcache.nfs.vfs.ChimeraVfs;
+import org.dcache.nfs.vfs.Inode;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.util.NDC;
 import org.dcache.util.RedirectedTransfer;
@@ -246,7 +246,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * and NFSv4.1 device id. Finally, notify waiting request that we have got
      * the reply for LAYOUTGET
      */
-    public void messageArrived(PoolPassiveIoFileMessage<stateid4> message) {
+    public void messageArrived(PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
 
         String poolName = message.getPoolName();
 
@@ -278,9 +278,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             _log.debug("new mapping: {}", device);
         }
 
-        stateid4 stateid = message.challange();
-
-        NfsTransfer transfer = _ioMessages.get(stateid);
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.challange();
+        NfsTransfer transfer = _ioMessages.get(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         transfer.redirect(device);
     }
 
@@ -288,7 +287,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
         _log.debug("Mover {} done.", protocolInfo.stateId());
-        Transfer transfer = _ioMessages.remove(protocolInfo.stateId());
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = protocolInfo.stateId();
+        Transfer transfer = _ioMessages.remove(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         if(transfer != null) {
             transfer.finished(transferFinishedMessage);
             transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
@@ -373,7 +373,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 transfer.setClientAddress(remote);
                 transfer.readNameSpaceEntry();
 
-                _ioMessages.put(protocolInfo.stateId(), transfer);
+                _ioMessages.put(stateid, transfer);
 
                 PoolDS ds = getPool(transfer, protocolInfo, ioMode);
                 deviceid = ds.getDeviceId();
@@ -577,7 +577,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 stateid4 stateid) {
             super(pnfs, subject, path);
             _stateid = stateid;
-            _protocolInfo = new NFS4ProtocolInfo(client, _stateid);
+            _protocolInfo = new NFS4ProtocolInfo(client, new org.dcache.chimera.nfs.v4.xdr.stateid4(_stateid));
         }
 
         @Override
