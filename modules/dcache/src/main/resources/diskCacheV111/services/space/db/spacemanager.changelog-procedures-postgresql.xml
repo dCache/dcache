@@ -24,6 +24,10 @@
 
             CREATE TRIGGER tgr_linkgroup_update BEFORE UPDATE ON srmlinkgroup FOR EACH ROW EXECUTE PROCEDURE f_linkgroup_on_update();
         </createProcedure>
+        <rollback>
+            DROP TRIGGER tgr_linkgroup_update ON srmlinkgroup;
+            DROP FUNCTION f_linkgroup_on_update();
+        </rollback>
     </changeSet>
 
     <changeSet id="2" author="behrmann" dbms="postgresql" runOnChange="true">
