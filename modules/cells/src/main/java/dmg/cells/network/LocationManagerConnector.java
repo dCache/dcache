@@ -9,6 +9,8 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.UnresolvedAddressException;
+import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Random;
 
 import dmg.cells.nucleus.CellAdapter;
@@ -100,7 +102,16 @@ public class LocationManagerConnector
 
 
         setStatus("Connecting to " + address);
-        Socket socket = SocketChannel.open(address).socket();
+        Socket socket;
+        try {
+            socket = SocketChannel.open(address).socket();
+        } catch (UnsupportedAddressTypeException e) {
+            throw new IOException("Unsupported address type: " + address, e);
+        } catch (UnresolvedAddressException e) {
+            throw new IOException("Unable to resolve " + address, e);
+        } catch (IOException e) {
+            throw new IOException("Failed to connect to " + address + ": " + e.toString(), e);
+        }
         socket.setKeepAlive(true);
 
         String security = reply.getOpt("security");
