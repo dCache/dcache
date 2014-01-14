@@ -3,6 +3,8 @@
  */
 package org.dcache.chimera.nfsv41.door;
 
+import org.dcache.chimera.nfsv41.door.proxy.DcapProxyIoFactory;
+import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import org.glassfish.grizzly.Buffer;
@@ -61,7 +63,6 @@ import org.dcache.nfs.v3.xdr.mount_prot;
 import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.Layout;
-import org.dcache.nfs.v4.MDSOperationFactory;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
@@ -85,6 +86,7 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.util.NDC;
 import org.dcache.util.LoginBrokerHandler;
+import org.dcache.nfs.v4.MDSOperationFactory;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -173,6 +175,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private LoginBrokerHandler _loginBrokerHandler;
 
+    private DcapProxyIoFactory _proxyIoFactory;
+
     private final static TransferRetryPolicy RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
                                 NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
@@ -248,7 +252,15 @@ public class NFSv41Door extends AbstractCellComponent implements
                     break;
                 case V41:
                      final NFSv41DeviceManager _dm = this;
-                    _nfs4 = new NFSServerV41(new MDSOperationFactory(),
+                     _proxyIoFactory = new DcapProxyIoFactory(getCellAddress().getCellName() + "-dcap-proxy", "");
+                     _proxyIoFactory.setBillingStub(_billingStub);
+                     _proxyIoFactory.setFileSystemProvider(_fileFileSystemProvider);
+                     _proxyIoFactory.setPnfsHandler(_pnfsHandler);
+                     _proxyIoFactory.setPoolManager(_poolManagerStub.getDestinationPath());
+                     _proxyIoFactory.setIoQueue(_ioQueue);
+                     _proxyIoFactory.setRetryPolicy(RETRY_POLICY);
+                     _proxyIoFactory.startAdapter();
+                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
                             _dm, _vfs, _idMapper, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     _loginBrokerHandler.start();
@@ -266,6 +278,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void destroy() throws IOException {
         _loginBrokerHandler.stop();
         _rpcService.stop();
+        if(_proxyIoFactory != null) {
+            _proxyIoFactory.cleanUp();
+        }
     }
 
     /*
@@ -308,7 +323,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         stateid4 stateid = message.challange();
-
         NfsTransfer transfer = _ioMessages.get(stateid);
         transfer.redirect(device);
     }
@@ -319,8 +333,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         _log.debug("Mover {} done.", protocolInfo.stateId());
         Transfer transfer = _ioMessages.remove(protocolInfo.stateId());
         if(transfer != null) {
-            transfer.finished(transferFinishedMessage);
-            transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
+                transfer.finished(transferFinishedMessage);
+                transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
         }
     }
 
