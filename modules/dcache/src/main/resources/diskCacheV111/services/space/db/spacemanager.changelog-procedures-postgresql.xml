@@ -4,6 +4,19 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
+    <changeSet id="0" author="behrmann" dbms="postgresql">
+        <preConditions onFail="MARK_RAN" onFailMessage="plpgsql language already exists (this is not an error)">
+            <not>
+                <sqlCheck expectedResult="1">
+                    SELECT 1 FROM   pg_language WHERE  lanname = 'plpgsql'
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <comment>Install plpgsql procedural language</comment>
+        <sql>CREATE LANGUAGE plpgsql</sql>
+        <rollback/>
+    </changeSet>
+
     <!-- linkgroup.freespaceinbytes only ever decreases in trigger updates below; this is a heuristic
          to quickly update freespaceinbytes as space is consumed. The real value is provided by
          periodic updates from pool manager. The heuristic does not increase linkgroup.freespaceinbytes
