@@ -36,6 +36,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.RecoverableDataAccessException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
@@ -1155,12 +1157,23 @@ public final class SpaceManagerService
         private void processMessage(Message message)
         {
             try {
-                if (message instanceof PoolRemoveFilesMessage) {
-                    // fileRemoved does its own transaction management
-                    fileRemoved((PoolRemoveFilesMessage) message);
-                }
-                else {
-                    processMessageTransactionally(message);
+                boolean isSuccessful = false;
+                for (int attempts = 0; !isSuccessful; attempts++) {
+                    try {
+                        if (message instanceof PoolRemoveFilesMessage) {
+                            // fileRemoved does its own transaction management
+                            fileRemoved((PoolRemoveFilesMessage) message);
+                        }
+                        else {
+                            processMessageTransactionally(message);
+                        }
+                        isSuccessful = true;
+                    } catch (TransientDataAccessException | RecoverableDataAccessException e) {
+                        if (attempts >= 3) {
+                            throw e;
+                        }
+                        LOGGER.warn("Retriable data access error: {}", e.toString());
+                    }
                 }
             } catch (SpaceAuthorizationException e) {
                 message.setFailedConditionally(CacheException.PERMISSION_DENIED, e.getMessage());
