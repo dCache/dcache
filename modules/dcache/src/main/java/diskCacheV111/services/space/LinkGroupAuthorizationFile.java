@@ -4,8 +4,7 @@ package diskCacheV111.services.space;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,20 +21,14 @@ public class LinkGroupAuthorizationFile  {
 	private Map<String,LinkGroupAuthorizationRecord> records =
             new HashMap<>();
 
-	public LinkGroupAuthorizationFile(String filename)
+	public LinkGroupAuthorizationFile(java.io.File file)
 	    throws IOException,ParseException {
-		BufferedReader bufferedReader = new BufferedReader(new FileReader(filename));
-		read(bufferedReader);
-		bufferedReader.close();
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+            read(bufferedReader);
+        }
 	}
 
-	public LinkGroupAuthorizationFile(InputStream is)
-		throws IOException,ParseException {
-		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
-		read(bufferedReader);
-	}
-
-	public Collection<LinkGroupAuthorizationRecord>  geLinkGroupAuthiorizationRecords() {
+	public Collection<LinkGroupAuthorizationRecord> getLinkGroupAuthiorizationRecords() {
 		return records.values();
 	}
 
@@ -48,10 +41,10 @@ public class LinkGroupAuthorizationFile  {
 		records.put(record.getLinkGroupName(),record);
 	}
 
-	public void dump() {
+	public void dump(PrintStream out) {
             for (LinkGroupAuthorizationRecord record : records.values()) {
-                System.out.println(record.toString());
-                System.out.println();
+                out.println(record.toString());
+                out.println();
             }
 	}
 
@@ -111,31 +104,6 @@ public class LinkGroupAuthorizationFile  {
                     records.put(linkGroupName,record);
                 }
         }
-
-
-
-	public static void main(String[] argv) {
-		if (argv.length==1) {
-			try {
-				LinkGroupAuthorizationFile f = new LinkGroupAuthorizationFile(argv[0]);
-                                f.dump();
-			}
-			catch (IOException e) {
-				System.err.println("Failed to open or read file "+argv[0]);
-				System.exit(1);
-			}
-                        catch(ParseException pe) {
-				System.err.println("Failed to parse file "+argv[0]);
-				System.exit(1);
-
-                        }
-		}
-		else {
-				System.err.println("Usage: java diskCacheV111.services.space.LinkGroupAuthorizationFile <file name>");
-				System.exit(1);
-		}
-
-	}
 }
 
 

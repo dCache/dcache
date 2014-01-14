@@ -1,23 +1,12 @@
-/*
- * Link.java
- *
- * Created on July 18, 2006, 1:17 PM
- *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
-
 package diskCacheV111.services.space;
+
+import com.google.common.base.Function;
 
 import java.io.Serializable;
 import java.util.Date;
 
 import diskCacheV111.util.VOInfo;
 
-/**
- *
- * @author timur
- */
 public class LinkGroup implements Serializable{
         private static final long serialVersionUID = -7606565102712000875L;
         private long id;
@@ -56,31 +45,6 @@ public class LinkGroup implements Serializable{
         this.outputAllowed = outputAllowed;
         this.custodialAllowed = custodialAllowed;
         this.reservedSpaceInBytes = reseved;
-    }
-
-    //
-    // for backward compatibility
-    //
-    public LinkGroup(
-        long id,
-        String name,
-        long freeSpace,
-        VOInfo[] vos,
-        boolean onlineAllowed,
-        boolean nearlineAllowed,
-        boolean replicaAllowed,
-        boolean outputAllowed,
-        boolean custodialAllowed) {
-        this.id=id;
-        this.name=name;
-        this.freeSpace = freeSpace;
-        this.vos = vos;
-        this.onlineAllowed = onlineAllowed;
-        this.nearlineAllowed = nearlineAllowed;
-        this.replicaAllowed = replicaAllowed;
-        this.outputAllowed = outputAllowed;
-        this.custodialAllowed = custodialAllowed;
-        this.reservedSpaceInBytes = 0L;
     }
 
     public long getId() {
@@ -200,4 +164,13 @@ public class LinkGroup implements Serializable{
         return freeSpace-reservedSpaceInBytes;
     }
 
+    public static final Function<LinkGroup, String> getName =
+            new Function<LinkGroup, String>()
+            {
+                @Override
+                public String apply(LinkGroup linkGroup)
+                {
+                    return linkGroup.getName();
+                }
+            };
 }

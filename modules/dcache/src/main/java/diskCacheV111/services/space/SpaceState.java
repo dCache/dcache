@@ -75,6 +75,8 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.services.space;
 
+import com.google.common.base.Function;
+
 import java.io.Serializable;
 
 /**
@@ -84,6 +86,7 @@ import java.io.Serializable;
 public final class SpaceState implements Serializable {
 
     private static final long serialVersionUID = 1495390408566893839L;
+
     private final String name;
     private final int stateId;
 
@@ -172,4 +175,13 @@ public final class SpaceState implements Serializable {
         return name.hashCode();
     }
 
+    public static final Function<SpaceState, Integer> getStateId =
+            new Function<SpaceState, Integer>()
+            {
+                @Override
+                public Integer apply(SpaceState state)
+                {
+                    return state.getStateId();
+                }
+            };
 }

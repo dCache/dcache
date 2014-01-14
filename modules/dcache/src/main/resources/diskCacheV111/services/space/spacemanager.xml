@@ -102,12 +102,17 @@
 
   <bean id="authz-policy" class="diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy"/>
 
-  <bean id="spacemanager" class="diskCacheV111.services.space.Manager"
-         init-method="start" destroy-method="stop" depends-on="liquibase">
+  <bean id="database" class="diskCacheV111.services.space.JdbcSpaceManagerDatabase"
+        init-method="init" depends-on="liquibase">
+      <property name="dataSource" ref="data-source"/>
+  </bean>
+
+  <bean id="spacemanager" class="diskCacheV111.services.space.SpaceManagerService"
+         init-method="start" destroy-method="stop">
     <description>SrmSpaceManager</description>
-    <property name="dataSource"        ref="data-source" />
-    <property name="pnfsHandler"      ref="pnfs"/>
-    <property name="poolManager"  value="${srm.service.poolmanager}"/>
+    <property name="database" ref="database"/>
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="poolManager" value="${srm.service.poolmanager}"/>
     <property name="poolMonitor" ref="pool-monitor"/>
     <property name="executor" ref="executor"/>
     <property name="spaceManagerEnabled"
@@ -122,10 +127,10 @@
 		     '${spacemanager.expire-space-reservation.period.unit}')}" />
     <property name="defaultRetentionPolicy" value="#{T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${spacemanager.default-retention-policy}')}" />
     <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
-    <property name="reserveSpaceForNonSRMTransfers" value="${spacemanager.enable.reserve-space-for-non-srm-transfers}" />
-    <property name="deleteStoredFileRecord" value="false" />
-    <property name="cleanupExpiredSpaceFiles" value="true" />
-    <property name="returnFlushedSpaceToReservation" value="true" />
+    <property name="shouldReserveSpaceForNonSrmTransfers" value="${spacemanager.enable.reserve-space-for-non-srm-transfers}" />
+    <property name="shouldDeleteStoredFileRecord" value="false" />
+    <property name="shouldCleanupExpiredSpaceFiles" value="true" />
+    <property name="shouldReturnFlushedSpaceToReservation" value="true" />
     <property name="linkGroupAuthorizationFileName" value="${spacemanager.authz.link-group-file-name}" />
     <property name="authorizationPolicy" ref="authz-policy" />
   </bean>

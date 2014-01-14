@@ -9,6 +9,7 @@
 
 package diskCacheV111.services.space.message;
 
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
@@ -47,8 +48,8 @@ public class GetFileSpaceTokensMessage extends Message{
         this.spaceTokens = spaceTokens;
     }
 
-    public String getPnfsPath() {
-        return pnfsPath;
+    public FsPath getPnfsPath() {
+        return (pnfsPath != null) ? new FsPath(pnfsPath) : null;
     }
 
     public PnfsId getPnfsId() {
