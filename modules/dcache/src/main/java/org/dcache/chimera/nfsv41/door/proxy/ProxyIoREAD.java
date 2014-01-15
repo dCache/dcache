@@ -16,6 +16,7 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.NFS4State;
+import org.dcache.nfs.v4.OperationREAD;
 import org.dcache.nfs.v4.StateDisposeListener;
 import org.dcache.nfs.v4.xdr.READ4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
@@ -42,11 +43,20 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 
         try {
 
+            Inode inode = context.currentInode();
+            if (!context.getFs().hasIOLayout(inode)) {
+                /*
+                 * if we have a special file, then fall back to regular read operation
+                 */
+                new OperationREAD(_args).process(context, result);
+                return;
+            }
+
             long offset = _args.opread.offset.value.value;
             int count = _args.opread.count.value.value;
             stateid4 stateid = _args.opread.stateid;
 
-            ProxyIoAdapter proxyIoAdapter = getOrCreateProxy(context.currentInode(), stateid, context);
+            ProxyIoAdapter proxyIoAdapter = getOrCreateProxy(inode, stateid, context);
             ByteBuffer bb = ByteBuffer.allocate(count);
             int bytesReaded = proxyIoAdapter.read(bb, offset);
 
