@@ -3,6 +3,7 @@ package org.dcache.chimera.nfsv41.mover;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -18,6 +19,7 @@ import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
+import org.dcache.util.Checksum;
 
 public class DummyFileSystemProvider implements FileSystemProvider {
 
@@ -142,6 +144,14 @@ public class DummyFileSystemProvider implements FileSystemProvider {
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public Set<Checksum> getInodeChecksums(FsInode inode)
+                    throws ChimeraFsException {
+     // TODO Auto-generated method stub
+        return null;
+    }
+
 
     @Override
     public List<StorageLocatable> getInodeLocations(FsInode arg0, int arg1)
