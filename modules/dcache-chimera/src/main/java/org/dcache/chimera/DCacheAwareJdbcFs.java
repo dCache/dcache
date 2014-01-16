@@ -68,7 +68,6 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -89,79 +88,27 @@ import org.dcache.vehicles.FileAttributes;
 /**
  * Overrides protected methods so as to be able to provide live locality
  * information if requested. Embeds a Guava cache to maintain already
- * initialized PGET nodes; the latter is calls out in turn to the PNFS and Pool
+ * initialized PLOC nodes; the latter is calls out in turn to the PNFS and Pool
  * managers.
  *
  * @author arossi
  */
 public class DCacheAwareJdbcFs extends JdbcFs {
-
-    private final class LocalityArgs {
-        private final FsInode parent;
-        private final String id;
-        private final String[] args;
-
-        private LocalityArgs(FsInode parent, String[] args) {
-            this.parent = parent;
-            this.id = parent.toString();
-            this.args = args.clone();
-        }
-
-        private LocalityArgs(JdbcFs fs, String id, String[] args) {
-            this.parent = new FsInode(fs, id);
-            this.id = id;
-            this.args = args.clone();
-        }
-
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (!(o instanceof LocalityArgs)) {
-                return false;
-            }
-
-            LocalityArgs largs = (LocalityArgs) o;
-
-            if (!id.equals(largs.id)) {
-                return false;
-            }
-
-            return Arrays.equals(args, largs.args);
-        }
-
-        public int hashCode() {
-            return toString().hashCode();
-        }
-
-        public String toString() {
-            return id + Arrays.asList(args);
-        }
-
-    }
-
     private final class LocalityLoader extends
-                    CacheLoader<LocalityArgs, FsInode_PGET> {
+                    CacheLoader<String, FsInode_PLOC> {
 
         @Override
-        public FsInode_PGET load(LocalityArgs key) throws Exception {
-            FsInode_PGET pget = getSuperPGET(key.parent, key.args);
-            if (pget.hasMetadataFor(LOCALITY)) {
-                FsInode pathInode = inodeOf(key.parent, pget.getName());
-                String path = inode2path(pathInode);
-                String locality = getFileLocality(path);
-                pget.setMetadata(LOCALITY, locality);
-                /*
-                 * need to override the cached stat value
-                 */
-                pget.stat();
-            }
-            return pget;
+        public FsInode_PLOC load(String id) throws Exception {
+            FsInode_PLOC ploc = getSuperPLOC(id);
+            FsInode pathInode = new FsInode(DCacheAwareJdbcFs.this, id);
+            ploc.setLocality(getFileLocality(inode2path(pathInode)));
+            /*
+             * need to override the cached stat value
+             */
+            ploc.stat();
+            return ploc;
         }
     }
-
-    private static final String LOCALITY = "locality";
 
     private static String host;
 
@@ -181,7 +128,7 @@ public class DCacheAwareJdbcFs extends JdbcFs {
      * write because we do not want to get too far out of synchronization with
      * the live system. Maintains entries for 1 minute.
      */
-    private final LoadingCache<LocalityArgs, FsInode_PGET> CACHE
+    private final LoadingCache<String, FsInode_PLOC> CACHE
         = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES)
                                    .maximumSize(64)
                                    .softValues().build(new LocalityLoader());
@@ -205,26 +152,10 @@ public class DCacheAwareJdbcFs extends JdbcFs {
     /**
      * Goes to the cache instead of directly creating the inode.
      */
-    protected FsInode_PGET getPGET(FsInode parent, String[] cmd)
+    protected FsInode_PLOC getPLOC(String id)
                     throws ChimeraFsException {
         try {
-            return CACHE.get(new LocalityArgs(parent, cmd));
-        } catch (ExecutionException t) {
-            Throwable cause = t.getCause();
-            if (cause instanceof ChimeraFsException) {
-                throw (ChimeraFsException)cause;
-            }
-            throw new ChimeraFsException(t.toString());
-        }
-    }
-
-    /**
-     * Goes to the cache instead of directly creating the inode.
-     */
-    protected FsInode_PGET getPGET(String id, String[] cmd)
-                    throws ChimeraFsException {
-        try {
-            return CACHE.get(new LocalityArgs(this, id, cmd));
+            return CACHE.get(id);
         } catch (ExecutionException t) {
             Throwable cause = t.getCause();
             if (cause instanceof ChimeraFsException) {
@@ -262,8 +193,8 @@ public class DCacheAwareJdbcFs extends JdbcFs {
         return locality.toString();
     }
 
-    private FsInode_PGET getSuperPGET(FsInode parent, String[] cmd)
+    private FsInode_PLOC getSuperPLOC(String id)
                     throws ChimeraFsException {
-        return super.getPGET(parent, cmd);
+        return super.getPLOC(id);
     }
 }
