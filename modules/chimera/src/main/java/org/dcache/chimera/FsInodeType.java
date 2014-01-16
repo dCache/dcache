@@ -27,7 +27,8 @@ public enum FsInodeType {
     NAMEOF(6),   // the content of the inode is the name of the inode
     PGET(7),     // the content of the inode is the value of requested attributes
     PSET(8),     // by updating mtime of the inode the the defined attribute value is updated
-    CONST(9);    // the content of the inode is a free form information
+    CONST(9),    // the content of the inode is a free form information
+    PLOC(10);     // the content of the inode is the value of requested attributes
 
     private final int _id;
 

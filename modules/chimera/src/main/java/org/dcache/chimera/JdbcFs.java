@@ -1062,12 +1062,20 @@ public class JdbcFs implements FileSystemProvider {
                     throw new FileNotFoundHimeraFsException(name);
                 }
 
+                if (cmd[2].equals("locality")) {
+                    inode = inodeOf(parent, cmd[1]);
+                    if (!inode.exists()) {
+                        throw new FileNotFoundHimeraFsException(name);
+                    }
+                    return getPLOC(inode.toString());
+                }
+
                 /*
                  * pass in the name too (args 1 to n)
                  */
                 String[] args = new String[cmd.length - 1];
                 System.arraycopy(cmd, 1, args, 0, args.length);
-                inode = getPGET(parent, args);
+                inode = new FsInode_PGET(this, parent.toString(), args);
                 if (!inode.exists()) {
                     throw new FileNotFoundHimeraFsException(name);
                 }
@@ -2801,8 +2809,13 @@ public class JdbcFs implements FileSystemProvider {
                 break;
 
             case PGET:
-                inode = getPGET(inodeId, getArgs(opaque));
+                inode = new FsInode_PGET(this, inodeId, getArgs(opaque));
                 break;
+
+            case PLOC:
+                inode = getPLOC(inodeId);
+                break;
+
             default:
                 throw new FileNotFoundHimeraFsException("Unsupported file handle type: " + inodeType);
         }
@@ -2898,7 +2911,12 @@ public class JdbcFs implements FileSystemProvider {
                     for (int i = 0; i < argc; i++) {
                         args[i] = st.nextToken();
                     }
-                    inode = getPGET(id, args);
+                    inode = new FsInode_PGET(this, id, args);
+                    break;
+
+                case PLOC:
+                    id = st.nextToken();
+                    inode = getPLOC(id);
                     break;
 
             }
@@ -2916,18 +2934,12 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     /**
-     * So that subclasses can do something different (like caching).
+     * Subclass should cache the inode object for proper handling.
+     * This implementation will not work correctly by itself.  The
+     * adapter here is a placeholder.
      */
-    protected FsInode_PGET getPGET(String id, String[] args)
+    protected FsInode_PLOC getPLOC(String id)
                     throws ChimeraFsException {
-        return new FsInode_PGET(this, id, args);
-    }
-
-    /**
-     * So that subclasses can do something different (like caching).
-     */
-    protected FsInode_PGET getPGET(FsInode parent, String[] args)
-                    throws ChimeraFsException {
-        return new FsInode_PGET(this, parent.toString(), args);
+        return new FsInode_PLOC(this, id);
     }
 }
