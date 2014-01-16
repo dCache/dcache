@@ -32,6 +32,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import diskCacheV111.util.AccessLatency;
@@ -44,6 +45,8 @@ import org.dcache.acl.enums.Who;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.commons.util.SqlHelper;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 
 /**
  * SQL driver
@@ -2342,6 +2345,34 @@ class FsSqlDriver {
 
         return checksum;
 
+    }
+    private static final String sqlGetInodeChecksums = "SELECT isum, itype FROM t_inodes_checksum WHERE ipnfsid=?";
+    /**
+     *
+     * @param dbConnection
+     * @param inode
+     * @param type
+     * @param results holds set of checksums and their types {@link Checksum}
+     *        for this inode
+     * @throws SQLException
+     */
+    void getInodeChecksums(Connection dbConnection, FsInode inode, Set<Checksum> results)
+                    throws SQLException {
+        PreparedStatement stGetInodeChecksums = null;
+        ResultSet getGetInodeChecksumResultSet = null;
+        try {
+            stGetInodeChecksums = dbConnection.prepareStatement(sqlGetInodeChecksums);
+            stGetInodeChecksums.setString(1, inode.toString());
+            getGetInodeChecksumResultSet = stGetInodeChecksums.executeQuery();
+            if (getGetInodeChecksumResultSet.next()) {
+                String checksum = getGetInodeChecksumResultSet.getString("isum");
+                int type = getGetInodeChecksumResultSet.getInt("itype");
+                results.add(new Checksum(ChecksumType.getChecksumType(type), checksum));
+            }
+        } finally {
+            SqlHelper.tryToClose(getGetInodeChecksumResultSet);
+            SqlHelper.tryToClose(stGetInodeChecksums);
+        }
     }
     private static final String sqlRemoveInodeChecksum = "DELETE FROM t_inodes_checksum WHERE ipnfsid=? AND itype=?";
     private static final String sqlRemoveInodeAllChecksum = "DELETE FROM t_inodes_checksum WHERE ipnfsid=?";
