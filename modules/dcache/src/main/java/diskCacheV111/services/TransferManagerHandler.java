@@ -412,6 +412,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
         }
         setPool(pool_info.getPoolName());
         setPoolAddress(pool_info.getPoolAddress());
+        fileAttributes = pool_info.getFileAttributes();
         manager.persist(this);
         log.debug("Positive reply from pool {}", pool);
         startMoverOnThePool();
@@ -429,7 +430,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
                 pool,
                 protocol_info,
                 fileAttributes);
-
+        poolMessage.setSubject(transferRequest.getSubject());
         if (manager.getIoQueueName() != null) {
             poolMessage.setIoQueueName(manager.getIoQueueName());
         }
