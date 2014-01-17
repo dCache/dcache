@@ -25,6 +25,7 @@ public final class Strings {
     private static final Logger LOGGER =
         LoggerFactory.getLogger( Strings.class);
 
+    private static final String ANSI_ESCAPE = "\u001b[";
     private static final String[] ZERO_LENGTH_STRING_ARRAY=new String[0];
     private static final String INFINITY = "infinity";
 
@@ -81,8 +82,58 @@ public final class Strings {
         return matchList.toArray(new String[matchList.size()]);
     }
 
+    public static int plainLength(String s)
+    {
+        int length = s.length();
+        int plainLength = length;
+        int i = s.indexOf(ANSI_ESCAPE);
+        while (i > -1) {
+            plainLength -= ANSI_ESCAPE.length();
+            i += ANSI_ESCAPE.length();
+            if (i < length) {
+                while (i + 1 < length && (s.charAt(i) < 64 || s.charAt(i) > 126)) {
+                    i++;
+                    plainLength--;
+                }
+                i++;
+                plainLength--;
+            }
+            i = s.indexOf(ANSI_ESCAPE, i);
+        }
+        return plainLength;
+    }
+
+    /**
+     * Locates the last occurrence of a white space character after fromIndex and before
+     * wrapLength characters, or the first occurrence of a white space character after
+     * fromIndex if there is no white space before wrapLength characters.
+     *
+     * ANSI escape sequences are considered to have zero width.
+     */
+    private static int indexOfNextWrap(char[] chars, int fromIndex, int wrapLength)
+    {
+        int lastWrap = -1;
+        int max = fromIndex + wrapLength;
+        int length = chars.length;
+        for (int i = fromIndex; i < length && (i <= max || lastWrap == -1); i++) {
+            if (Character.isWhitespace(chars[i])) {
+                lastWrap = i;
+            } else if (chars[i] == 27 && i < length && chars[i + 1] == '[') {
+                i += 2;
+                max += 2;
+                for (;i < length && (chars[i] < 64 || chars[i] > 126); i++) {
+                    max++;
+                }
+                max++;
+            }
+        }
+        return length <= max || lastWrap == -1 ? length : lastWrap;
+    }
+
     /**
      * Wraps a text to a particular width.
+     *
+     * ANSI escape sequences are considered to have zero width.
      *
      * @param indent String to place at the beginning of each line
      * @param str String to wrap
@@ -92,39 +143,30 @@ public final class Strings {
     public static String wrap(String indent, String str, int wrapLength)
     {
         int offset = 0;
-        StringBuilder out = new StringBuilder();
+        StringBuilder out = new StringBuilder(str.length());
 
-        while (offset < str.length()) {
-            int eop = str.indexOf('\n', offset);
-            if (eop < 0) {
-                eop = str.length();
+        char[] chars = str.toCharArray();
+        int length = chars.length;
+        while (offset < length) {
+            int eop = offset;
+            while (eop < length && chars[eop] != '\n') {
+                eop++;
             }
 
-            boolean firstLine = true;
-            while ((eop - offset) > wrapLength) {
-                if (!firstLine && str.charAt(offset) == ' ') {
-                    offset++;
-                    continue;
-                }
-
-                int spaceToWrapAt = str.lastIndexOf(' ', wrapLength + offset);
-                // if the next string with length wrapLength doesn't contain ' '
-                if (spaceToWrapAt < offset) {
-                    spaceToWrapAt = str.indexOf(' ', wrapLength + offset);
-                    // if no more ' '
-                    if (spaceToWrapAt < 0 || spaceToWrapAt > eop) {
-                        break;
-                    }
-                }
-
+            int spaceToWrapAt;
+            while ((spaceToWrapAt = indexOfNextWrap(chars, offset, wrapLength)) < eop) {
                 out.append(indent);
-                out.append(str.substring(offset, spaceToWrapAt));
-                out.append("\n");
+                out.append(chars, offset, spaceToWrapAt - offset);
+                out.append('\n');
                 offset = spaceToWrapAt + 1;
-                firstLine = false;
+
+                // Skip leading spaces on next line
+                while (offset < length && chars[offset] == ' ') {
+                    offset++;
+                }
             }
 
-            out.append(indent).append(str.substring(offset, eop)).append('\n');
+            out.append(indent).append(chars, offset, eop - offset).append('\n');
             offset = eop + 1;
         }
 

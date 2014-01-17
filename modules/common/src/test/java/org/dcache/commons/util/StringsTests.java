@@ -2,7 +2,11 @@ package org.dcache.commons.util;
 
 import org.junit.Test;
 
+import static org.dcache.commons.util.Strings.plainLength;
+import static org.dcache.commons.util.Strings.wrap;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -106,4 +110,46 @@ public class StringsTests {
         assertArrayEquals(splitString, testString9ExpectedSplit);
     }
 
+    @Test
+    public void testPlainLength() {
+        assertThat(plainLength(""), is(0));
+        assertThat(plainLength("1"), is(1));
+        assertThat(plainLength("12"), is(2));
+        assertThat(plainLength("\u001b["), is(0));
+        assertThat(plainLength("\u001b[m"), is(0));
+        assertThat(plainLength("\u001b[1m"), is(0));
+        assertThat(plainLength("\u001b[12m"), is(0));
+        assertThat(plainLength("foo\u001b["), is(3));
+        assertThat(plainLength("foo\u001b[m"), is(3));
+        assertThat(plainLength("foo\u001b[1m"), is(3));
+        assertThat(plainLength("foo\u001b[12m"), is(3));
+        assertThat(plainLength("foo\u001b[m" + "bar"), is(6));
+        assertThat(plainLength("foo\u001b[1m" + "bar"), is(6));
+        assertThat(plainLength("foo\u001b[12m" + "bar"), is(6));
+    }
+
+    @Test
+    public void testWrap() {
+        assertThat(wrap("", "The quick brown fox jumps over the lazy dog.", 70),
+                   is("The quick brown fox jumps over the lazy dog.\n"));
+        assertThat(wrap("  ", "The quick brown fox jumps over the lazy dog.", 70),
+                   is("  The quick brown fox jumps over the lazy dog.\n"));
+        assertThat(wrap("  ", "The quick brown fox jumps\nover the lazy dog.", 70),
+                   is("  The quick brown fox jumps\n  over the lazy dog.\n"));
+        assertThat(wrap("  ", "The quick brown fox jumps over the lazy dog.", 14),
+                   is("  The quick\n  brown fox\n  jumps over the\n  lazy dog.\n"));
+        assertThat(wrap("  ", "The quick brown fox jumps over the lazy dog.", 15),
+                   is("  The quick brown\n  fox jumps over\n  the lazy dog.\n"));
+        assertThat(wrap("  ", "The quick brown fox jumps over the lazy dog.", 16),
+                   is("  The quick brown\n  fox jumps over\n  the lazy dog.\n"));
+        assertThat(wrap("  ", "  The quick brown fox jumps over the lazy dog.", 16),
+                   is("    The quick\n  brown fox jumps\n  over the lazy\n  dog.\n"));
+        assertThat(wrap("  ", "\u001B[1mThe quick brown\u001B[1m \u001B[1mfox jumps over the lazy dog.\u001B[1m", 15),
+                   is("  \u001B[1mThe quick brown\u001B[1m\n  \u001B[1mfox jumps over\n  the lazy dog.\u001B[1m\n"));
+        assertThat(
+                wrap("  ", "\u001B[1mThe quick brown\u001B[1m \u001B[1mfox jumps over the lazy dog.\u001B[1m\n\n"
+                        + "\u001B[1mThe quick brown\u001B[1m \u001B[1mfox jumps over the lazy dog.\u001B[1m", 15),
+                is("  \u001B[1mThe quick brown\u001B[1m\n  \u001B[1mfox jumps over\n  the lazy dog.\u001B[1m\n  \n"
+                           + "  \u001B[1mThe quick brown\u001B[1m\n  \u001B[1mfox jumps over\n  the lazy dog.\u001B[1m\n"));
+    }
 }

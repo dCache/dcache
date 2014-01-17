@@ -19,11 +19,19 @@ package dmg.util.command;
 
 import jline.ANSIBuffer;
 
+import org.dcache.commons.util.Strings;
+
 /**
  * Utility class to produce help texts suitable for an ANSI terminal.
  */
 public class AnsiHelpPrinter extends TextHelpPrinter
 {
+    @Override
+    protected int plainLength(String s)
+    {
+        return Strings.plainLength(s);
+    }
+
     @Override
     protected String value(String value)
     {

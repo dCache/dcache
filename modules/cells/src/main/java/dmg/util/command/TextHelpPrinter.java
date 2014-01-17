@@ -216,7 +216,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
     {
         String hint = (command.hint().isEmpty() ? "" : "# " + command.hint());
         String signature = getSignature(clazz);
-        if (signature.length() + hint.length() > 78) {
+        if (plainLength(signature) + plainLength(hint) > 78) {
             signature = getShortSignature(clazz);
         }
         return (signature.isEmpty() ? "" : signature + " ") + hint;
@@ -284,6 +284,11 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         writer.flush();
 
         return out.toString();
+    }
+
+    protected int plainLength(String s)
+    {
+        return s.length();
     }
 
     protected abstract String value(String value);
