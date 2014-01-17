@@ -74,19 +74,15 @@ public class LinkGroup implements Serializable{
 
     public String toString(){
         StringBuilder sb = new StringBuilder();
-        toStringBuilder(sb);
-        return sb.toString();
-    }
-    public void toStringBuilder(StringBuilder sb){
         sb.append(id).append(' ');
         sb.append("Name:").append(name).append(' ');
         sb.append("FreeSpace:").append(freeSpace).append(' ');
         sb.append("ReservedSpace:").append(reservedSpaceInBytes).append(' ');
         sb.append("AvailableSpace:").append(getAvailableSpaceInBytes()).append(' ');
         sb.append("VOs:");
-            for (VOInfo vo : vos) {
-                sb.append('{').append(vo).append('}');
-            }
+        for (VOInfo vo : vos) {
+            sb.append('{').append(vo).append('}');
+        }
         sb.append(' ');
         sb.append("onlineAllowed:").append(onlineAllowed).append(' ');
         sb.append("nearlineAllowed:").append(nearlineAllowed).append(' ');
@@ -94,6 +90,7 @@ public class LinkGroup implements Serializable{
         sb.append("custodialAllowed:").append(custodialAllowed).append(' ');
         sb.append("outputAllowed:").append(outputAllowed).append(' ');
         sb.append("UpdateTime:").append((new Date(updateTime)).toString()).append("(").append(updateTime).append(")");
+        return sb.toString();
     }
 
 
@@ -164,6 +161,15 @@ public class LinkGroup implements Serializable{
         return freeSpace-reservedSpaceInBytes;
     }
 
+    public static final Function<LinkGroup, Long> getId =
+            new Function<LinkGroup, Long>()
+            {
+                @Override
+                public Long apply(LinkGroup linkGroup)
+                {
+                    return linkGroup.getId();
+                }
+            };
     public static final Function<LinkGroup, String> getName =
             new Function<LinkGroup, String>()
             {

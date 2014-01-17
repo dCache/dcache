@@ -1,7 +1,6 @@
 package diskCacheV111.services.space;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -38,8 +37,11 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
 
+import org.dcache.util.Glob;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Iterables.getFirst;
+import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
 
 @Repository
@@ -235,30 +237,6 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     }
 
     @Override
-    public List<File> getFilesInSpace(long spaceId)
-            throws DataAccessException
-    {
-        return getJdbcTemplate().query(
-                "SELECT * FROM " + SPACEFILE_TABLE + " WHERE spacereservationid = ?", fileMapper, spaceId);
-    }
-
-    @Override
-    public void removeExpiredFilesFromSpace(long spaceId, Set<FileState> states)
-            throws DataAccessException
-    {
-        List<File> files = getJdbcTemplate().query(
-                "SELECT * FROM " + SPACEFILE_TABLE + " WHERE creationTime+lifetime < ? AND spacereservationid=?",
-                fileMapper,
-                System.currentTimeMillis(),
-                spaceId);
-        for (File file : files) {
-            if (states.contains(file.getState())) {
-                removeFile(file.getId());
-            }
-        }
-    }
-
-    @Override
     public void removeFile(long fileId) throws DataAccessException
     {
         int rc = getJdbcTemplate().update("DELETE FROM " + SPACEFILE_TABLE + " WHERE id=?", fileId);
@@ -321,7 +299,7 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
         try {
             return getJdbcTemplate().queryForObject(
                     "SELECT * FROM " + SPACEFILE_TABLE + " WHERE  pnfspath=? AND spacereservationid=? AND state IN "
-                            + "(" + FileState.RESERVED.getStateId() + "," + FileState.TRANSFERRING.getStateId() + ") FOR UPDATE",
+                            + "(" + FileState.ALLOCATED.getStateId() + "," + FileState.TRANSFERRING.getStateId() + ") FOR UPDATE",
                     fileMapper,
                     pnfsPath,
                     reservationId);
@@ -650,13 +628,6 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     }
 
     @Override
-    public List<LinkGroup> getLinkGroupsRefreshedAfter(long lastUpdateTime)
-    {
-        return getJdbcTemplate().query("SELECT * FROM " + LINKGROUP_TABLE + " WHERE lastUpdateTime >= ?",
-                                       linkGroupMapper, lastUpdateTime);
-    }
-
-    @Override
     public LinkGroup getLinkGroupByName(String name) throws DataAccessException
     {
         try {
@@ -947,6 +918,66 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     }
 
     @Override
+    public LinkGroupCriterion linkGroupCriterion()
+    {
+        return new LinkGroupCriterionImpl();
+    }
+
+    @Override
+    public List<LinkGroup> getLinkGroups(LinkGroupCriterion criterion)
+    {
+        Criterion c = (Criterion) criterion;
+        return getNamedParameterJdbcTemplate().query(
+                "SELECT * from " + LINKGROUP_TABLE + " WHERE " + c.getPredicate(), c.getParams(), linkGroupMapper);
+    }
+
+    @Override
+    public SpaceCriterion spaceCriterion()
+    {
+        return new SpaceCriterionImpl();
+    }
+
+    @Override
+    public List<Space> getSpaces(SpaceCriterion criterion, Integer limit)
+    {
+        Criterion c = (Criterion) criterion;
+        return getNamedParameterJdbcTemplate().query(
+                "SELECT * FROM " + SPACE_TABLE + " WHERE " + c.getPredicate() + (limit != null? " LIMIT " + limit : ""),
+                c.getParams(), spaceReservationMapper);
+    }
+
+    @Override
+    public int getCountOfSpaces(SpaceCriterion criterion)
+    {
+        Criterion c = (Criterion) criterion;
+        return getNamedParameterJdbcTemplate().queryForObject(
+                "SELECT count(*) from " + SPACE_TABLE + " WHERE " + c.getPredicate(), c.getParams(), Integer.class);
+    }
+
+    @Override
+    public FileCriterion fileCriterion()
+    {
+        return new FileCriterionImpl();
+    }
+
+    @Override
+    public List<File> getFiles(FileCriterion criterion, Integer limit)
+    {
+        Criterion c = (Criterion) criterion;
+        return getNamedParameterJdbcTemplate().query(
+                "SELECT * FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate() + (limit != null ? " LIMIT " + limit : ""),
+                c.getParams(), fileMapper);
+    }
+
+    @Override
+    public int getCountOfFiles(FileCriterion criterion)
+    {
+        Criterion c = (Criterion) criterion;
+        return getNamedParameterJdbcTemplate().queryForObject(
+                "SELECT count(*) FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate(), c.getParams(), Integer.class);
+    }
+
+    @Override
     public long insertFile(final long reservationId,
                            final String voGroup,
                            final String voRole,
@@ -964,7 +995,7 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
             path = new FsPath(pnfsPath);
             List<File> files = getJdbcTemplate().query(
                     "SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfspath=? AND state IN "
-                            + '(' + FileState.RESERVED.getStateId() + "," + FileState.TRANSFERRING.getStateId() + ") AND deleted <> 1",
+                            + '(' + FileState.ALLOCATED.getStateId() + "," + FileState.TRANSFERRING.getStateId() + ") AND deleted <> 1",
                     fileMapper, path.toString());
             if (!files.isEmpty()) {
                 throw new DataIntegrityViolationException(
@@ -1013,7 +1044,7 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
                 stmt.setLong(6, lifetime);
                 stmt.setString(7, Objects.toString(path, null));
                 stmt.setString(8, Objects.toString(pnfsId, null));
-                stmt.setInt(9, FileState.RESERVED.getStateId());
+                stmt.setInt(9, FileState.ALLOCATED.getStateId());
                 return stmt;
             }
         }, keyHolder);
@@ -1075,7 +1106,7 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     {
         return getJdbcTemplate().query(
                 "SELECT * FROM " + SPACEFILE_TABLE + " WHERE state IN "
-                        + '(' + FileState.RESERVED.getStateId() + ',' + FileState.TRANSFERRING.getStateId() + ") AND creationTime+lifetime < ?",
+                        + '(' + FileState.ALLOCATED.getStateId() + ',' + FileState.TRANSFERRING.getStateId() + ") AND creationTime+lifetime < ?",
                 fileMapper,
                 System.currentTimeMillis());
     }
@@ -1098,41 +1129,192 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
         return getFirst(files, null);
     }
 
-    @Override
-    public List<Space> findSpaces(String group, String role, String description, LinkGroup lg)
+    private static class Criterion
     {
-        // FIXME: This is postgresql specific
-        StringBuilder query = new StringBuilder("SELECT * FROM " + SPACE_TABLE + " WHERE");
-        Map<String, Object> params = new HashMap<>();
+        final StringBuilder predicate = new StringBuilder();
+        final Map<String, Object> params = new HashMap<>();
 
-        if (group != null) {
-            query.append(" vogroup ~ :group AND ");
-            params.put("group", group);
+        protected void addClause(String clause)
+        {
+            if (predicate.length() > 0) {
+                predicate.append(" AND ");
+            }
+            predicate.append(clause);
         }
-        if (role != null) {
-            query.append(" vorole ~ :role AND");
-            params.put("role", role);
-        }
-        if (description != null) {
-            query.append(" description ~ :description AND");
-            params.put("description", description);
-        }
-        if (lg != null) {
-            query.append(" linkgroupid = :linkgroupid AND");
-            params.put("linkgroupid", lg.getId());
-        }
-        query.append(" state = ").append(SpaceState.RESERVED.getStateId());
 
-        return getNamedParameterJdbcTemplate().query(query.toString(), params, spaceReservationMapper);
+        protected void addClause(String clause, String key, Object value)
+        {
+            addClause(clause);
+            params.put(key, value);
+        }
+
+        public String getPredicate()
+        {
+            return predicate.length() == 0 ? "true" : predicate.toString();
+        }
+
+        public Map<String, Object> getParams()
+        {
+            return params;
+        }
     }
 
-    @Override
-    public List<Space> getSpaces(Set<SpaceState> states, int nRows)
-            throws DataAccessException
+    private static class LinkGroupCriterionImpl extends Criterion implements LinkGroupCriterion
     {
-        String query = "SELECT * FROM " + SPACE_TABLE + " WHERE state IN "
-                + '(' + Joiner.on(",").join(Iterables.transform(states, SpaceState.getStateId)) + ')'
-                + " LIMIT " + nRows;
-        return getJdbcTemplate().query(query, spaceReservationMapper);
+        @Override
+        public LinkGroupCriterion whereUpdateTimeAfter(long latestLinkGroupUpdateTime)
+        {
+            addClause("lastupdatetime >= :lastupdatetime", "lastupdatetime", latestLinkGroupUpdateTime);
+            return this;
+        }
+
+        @Override
+        public LinkGroupCriterion allowsAccessLatency(AccessLatency al)
+        {
+            if (al == AccessLatency.NEARLINE) {
+                addClause("nearlineallowed=1");
+            } else if (al == AccessLatency.ONLINE) {
+                addClause("onlineallowed=1");
+            }
+            return this;
+        }
+
+        @Override
+        public LinkGroupCriterion allowsRetentionPolicy(RetentionPolicy rp)
+        {
+            if (rp == RetentionPolicy.OUTPUT) {
+                addClause("outputallowed=1");
+            } else if (rp == RetentionPolicy.REPLICA) {
+                addClause("replicaallowed=1");
+            } else if (rp == RetentionPolicy.CUSTODIAL) {
+                addClause("custodialallowed=1");
+            }
+            return this;
+        }
+
+        @Override
+        public LinkGroupCriterion whereNameMatches(Glob name)
+        {
+            addClause("name LIKE :name", "name", name.toSql());
+            return this;
+        }
+    }
+
+    private static class SpaceCriterionImpl extends Criterion implements SpaceCriterion
+    {
+        @Override
+        public SpaceCriterion whereStateIsIn(SpaceState... states)
+        {
+            addClause("state IN (" + Joiner.on(",").join(transform(asList(states), SpaceState.getStateId)) + ')');
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereRetentionPolicyIs(RetentionPolicy rp)
+        {
+            addClause("retentionpolicy = :rp", "rp", rp.getId());
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereAccessLatencyIs(AccessLatency al)
+        {
+            addClause("accesslatency = :al", "al", al.getId());
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereDescriptionMatches(Glob desc)
+        {
+            addClause("description LIKE :desc", "desc", desc.toSql());
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereRoleMatches(Glob role)
+        {
+            addClause("vorole LIKE :role", "role", role.toSql());
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereGroupMatches(Glob group)
+        {
+            addClause("vogroup LIKE :group", "group", group.toSql());
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereTokenIs(long token)
+        {
+            addClause("id = :id", "id", token);
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereLifetimeIs(int i)
+        {
+            addClause("lifetime = :lifetime", "lifetime", i);
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereLinkGroupIs(long id)
+        {
+            addClause("linkgroupid = :linkgroup", "linkgroup", id);
+            return this;
+        }
+    }
+
+    private static class FileCriterionImpl extends Criterion implements FileCriterion
+    {
+        @Override
+        public FileCriterion whereGroupMatches(Glob group)
+        {
+            addClause("group LIKE :group", "group", group.toSql());
+            return this;
+        }
+
+        @Override
+        public FileCriterion whereRoleMatches(Glob role)
+        {
+            addClause("role LIKE :role", "role", role.toSql());
+            return this;
+        }
+
+        @Override
+        public FileCriterion whereSpaceTokenIs(Long token)
+        {
+            addClause("spacereservationid = :token", "token", token);
+            return this;
+        }
+
+        @Override
+        public FileCriterion whereStateIsIn(FileState... states)
+        {
+            addClause("state in (" + Joiner.on(",").join(transform(asList(states), FileState.getStateId)) + ')');
+            return this;
+        }
+
+        @Override
+        public FileCriterion whereDeletedIs(boolean deleted)
+        {
+            addClause("deleted = :deleted", "deleted", deleted ? 1 : 0);
+            return this;
+        }
+
+        @Override
+        public FileCriterion wherePathMatches(Glob pattern)
+        {
+            addClause("pnfspath LIKE :path", "path", pattern.toSql());
+            return this;
+        }
+
+        @Override
+        public FileCriterion wherePnfsIdIs(PnfsId pnfsId)
+        {
+            addClause("pnfsid = :pnfsid", "pnfsid", pnfsId.toString());
+            return this;
+        }
     }
 }

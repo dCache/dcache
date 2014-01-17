@@ -219,6 +219,10 @@ public final class RetentionPolicy implements Serializable {
         throw new IllegalArgumentException("Unknown policy Id");
     }
 
+    public static RetentionPolicy valueOf(String value) {
+        return getRetentionPolicy(value);
+    }
+
     public boolean equals(Object obj) {
         return ( obj instanceof RetentionPolicy) && ( ((RetentionPolicy)obj).getId() == this.getId() );
     }

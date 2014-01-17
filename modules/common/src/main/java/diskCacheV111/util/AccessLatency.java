@@ -210,6 +210,10 @@ public final class AccessLatency implements Serializable {
         return _name.hashCode();
     }
 
+    public static AccessLatency valueOf(String value) {
+        return getAccessLatency(value);
+    }
+
     public Object readResolve() throws ObjectStreamException {
        return AccessLatency.getAccessLatency(getId());
     }

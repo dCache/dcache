@@ -158,25 +158,21 @@ public class Space implements Serializable {
     }
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        toStringBuilder(sb);
+        sb.append(id).append(' ');
+        sb.append("voGroup:").append(voGroup).append(' ');
+        sb.append("voRole:").append(voRole).append(' ');
+        sb.append("retentionPolicy:").append(retentionPolicy.toString()).append(' ');
+        sb.append("accessLatency:").append(accessLatency.toString()).append(' ');
+        sb.append("linkGroupId:").append(linkGroupId).append(' ');
+        sb.append("size:").append(sizeInBytes).append(' ');
+        sb.append("created:").append((new Date(creationTime))).append(' ');
+        sb.append("lifetime:").append(lifetime).append("ms ");
+        sb.append("expiration:").append(lifetime==-1?"NEVER":new Date(creationTime+lifetime).toString()).append(' ');
+        sb.append("description:").append(description).append(' ');
+        sb.append("state:").append(state).append(' ');
+        sb.append("used:").append(usedSizeInBytes).append(' ');
+        sb.append("allocated:").append(allocatedSpaceInBytes).append(' ');
         return sb.toString();
-    }
-
-    public void toStringBuilder(StringBuilder sb) {
-                sb.append(id).append(' ');
-                sb.append("voGroup:").append(voGroup).append(' ');
-                sb.append("voRole:").append(voRole).append(' ');
-                sb.append("retentionPolicy:").append(retentionPolicy.toString()).append(' ');
-                sb.append("accessLatency:").append(accessLatency.toString()).append(' ');
-                sb.append("linkGroupId:").append(linkGroupId).append(' ');
-                sb.append("size:").append(sizeInBytes).append(' ');
-                sb.append("created:").append((new Date(creationTime))).append(' ');
-                sb.append("lifetime:").append(lifetime).append("ms ");
-                sb.append("expiration:").append(lifetime==-1?"NEVER":new Date(creationTime+lifetime).toString()).append(' ');
-                sb.append("description:").append(description).append(' ');
-                sb.append("state:").append(state).append(' ');
-                sb.append("used:").append(usedSizeInBytes).append(' ');
-                sb.append("allocated:").append(allocatedSpaceInBytes).append(' ');
     }
 
     public String getVoGroup() {

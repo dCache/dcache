@@ -75,6 +75,8 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.services.space;
 
+import com.google.common.base.Function;
+
 import java.io.Serializable;
 
 /**
@@ -87,8 +89,8 @@ public final class FileState implements Serializable {
     private final String name;
     private final int stateId;
 
-    public static final FileState RESERVED       = new FileState("Reserved",    0);
-    public static final FileState TRANSFERRING    = new FileState("Transferring", 1);
+    public static final FileState ALLOCATED      = new FileState("Allocated",    0);
+    public static final FileState TRANSFERRING   = new FileState("Transferring", 1);
     public static final FileState STORED         = new FileState("Stored",      2);
     public static final FileState FLUSHED        = new FileState("Flushed",     3);
 
@@ -102,7 +104,7 @@ public final class FileState implements Serializable {
 
     public static FileState[] getAllStates() {
         return new FileState[] {
-         RESERVED,
+                ALLOCATED,
          TRANSFERRING,
          STORED,
          FLUSHED
@@ -124,19 +126,19 @@ public final class FileState implements Serializable {
             throw new NullPointerException(" null state ");
         }
 
-        if(RESERVED.name.equals(state)) {
-            return RESERVED;
+        if(ALLOCATED.name.equalsIgnoreCase(state)) {
+            return ALLOCATED;
         }
 
-        if(TRANSFERRING.name.equals(state)) {
+        if(TRANSFERRING.name.equalsIgnoreCase(state)) {
             return TRANSFERRING;
         }
 
-        if(STORED.name.equals(state)) {
+        if(STORED.name.equalsIgnoreCase(state)) {
             return STORED;
         }
 
-        if(FLUSHED.name.equals(state)) {
+        if(FLUSHED.name.equalsIgnoreCase(state)) {
             return FLUSHED;
         }
         try{
@@ -150,8 +152,8 @@ public final class FileState implements Serializable {
 
     public static FileState getState(int stateId) throws IllegalArgumentException {
 
-        if(RESERVED.stateId == stateId) {
-            return RESERVED;
+        if(ALLOCATED.stateId == stateId) {
+            return ALLOCATED;
         }
 
         if(TRANSFERRING.stateId == stateId) {
@@ -169,6 +171,10 @@ public final class FileState implements Serializable {
         throw new IllegalArgumentException("Unknown State Id");
     }
 
+    public static FileState valueOf(String s) {
+        return getState(s);
+    }
+
     public static boolean isFinalState(FileState state) {
         return state == FLUSHED;
     }
@@ -183,4 +189,14 @@ public final class FileState implements Serializable {
     public int hashCode() {
         return name.hashCode();
     }
+
+    public static final Function<FileState, Integer> getStateId =
+            new Function<FileState, Integer>()
+            {
+                @Override
+                public Integer apply(FileState state)
+                {
+                    return state.getStateId();
+                }
+            };
 }

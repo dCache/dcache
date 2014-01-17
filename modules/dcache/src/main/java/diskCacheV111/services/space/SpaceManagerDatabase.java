@@ -6,13 +6,14 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import java.util.List;
-import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
+
+import org.dcache.util.Glob;
 
 @ParametersAreNonnullByDefault
 public interface SpaceManagerDatabase
@@ -22,12 +23,6 @@ public interface SpaceManagerDatabase
     File selectFileForUpdate(long id) throws DataAccessException;
 
     File selectFileFromSpaceForUpdate(String pnfsPath, long reservationId)
-            throws DataAccessException;
-
-    List<File> getFilesInSpace(long spaceId)
-            throws DataAccessException;
-
-    void removeExpiredFilesFromSpace(long spaceId, Set<FileState> states)
             throws DataAccessException;
 
     void removeFile(long fileId) throws DataAccessException;
@@ -69,12 +64,6 @@ public interface SpaceManagerDatabase
     void expireSpaces();
 
     List<Space> getReservedSpaces();
-
-    List<Space> findSpaces(@Nullable String group, @Nullable String role, @Nullable String description,
-                           @Nullable LinkGroup lg);
-
-    List<Space> getSpaces(Set<SpaceState> states, int nRows)
-            throws DataAccessException;
 
     Space insertSpace(@Nullable String voGroup,
                       @Nullable String voRole,
@@ -136,8 +125,6 @@ public interface SpaceManagerDatabase
 
     List<LinkGroup> getLinkGroups();
 
-    List<LinkGroup> getLinkGroupsRefreshedAfter(long lastUpdateTime);
-
     LinkGroup getLinkGroupByName(String name) throws DataAccessException;
 
     List<Long> findLinkGroupIds(long sizeInBytes,
@@ -155,4 +142,79 @@ public interface SpaceManagerDatabase
             throws DataAccessException;
 
     File getFile(PnfsId pnfsId) throws DataAccessException;
+
+    /** Return a new link group criterion. */
+    LinkGroupCriterion linkGroupCriterion();
+
+    /** Return link groups matching a criterion. */
+    List<LinkGroup> getLinkGroups(LinkGroupCriterion criterion);
+
+    /** Return a new space reservation criterion. */
+    SpaceCriterion spaceCriterion();
+
+    /** Return space reservations matching a criterion. */
+    List<Space> getSpaces(SpaceCriterion criterion, Integer limit);
+
+    int getCountOfSpaces(SpaceCriterion criterion);
+
+    /** Return a new file criterion. */
+    FileCriterion fileCriterion();
+
+    /** Get files matching the criterion. */
+    List<File> getFiles(FileCriterion criterion, Integer limit);
+
+    /** Return the number of files matching the criterion. */
+    int getCountOfFiles(FileCriterion criterion);
+
+    /** Selection criterion for link groups. */
+    public interface LinkGroupCriterion
+    {
+        LinkGroupCriterion whereUpdateTimeAfter(long latestLinkGroupUpdateTime);
+
+        LinkGroupCriterion allowsAccessLatency(AccessLatency al);
+
+        LinkGroupCriterion allowsRetentionPolicy(RetentionPolicy rp);
+
+        LinkGroupCriterion whereNameMatches(Glob name);
+    }
+
+    /** Selection criterion for space reservations. */
+    public interface SpaceCriterion
+    {
+        SpaceCriterion whereStateIsIn(SpaceState... state);
+
+        SpaceCriterion whereRetentionPolicyIs(RetentionPolicy rp);
+
+        SpaceCriterion whereAccessLatencyIs(AccessLatency al);
+
+        SpaceCriterion whereDescriptionMatches(Glob desc);
+
+        SpaceCriterion whereRoleMatches(Glob role);
+
+        SpaceCriterion whereGroupMatches(Glob group);
+
+        SpaceCriterion whereTokenIs(long token);
+
+        SpaceCriterion whereLifetimeIs(int i);
+
+        SpaceCriterion whereLinkGroupIs(long id);
+    }
+
+    /** Selection criterion for file reservations. */
+    public interface FileCriterion
+    {
+        FileCriterion whereGroupMatches(Glob group);
+
+        FileCriterion whereRoleMatches(Glob role);
+
+        FileCriterion whereSpaceTokenIs(Long token);
+
+        FileCriterion whereStateIsIn(FileState... states);
+
+        FileCriterion whereDeletedIs(boolean b);
+
+        FileCriterion wherePathMatches(Glob pattern);
+
+        FileCriterion wherePnfsIdIs(PnfsId pnfsId);
+    }
 }

@@ -107,31 +107,46 @@
       <property name="dataSource" ref="data-source"/>
   </bean>
 
+  <bean id="linkgroup-loader" class="diskCacheV111.services.space.LinkGroupLoader"
+      init-method="start" destroy-method="stop">
+    <property name="database" ref="database"/>
+    <property name="poolMonitor" ref="pool-monitor"/>
+    <property name="updateLinkGroupsPeriod"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+         ${spacemanager.link-groups-update.period},
+         '${spacemanager.link-groups-update.period.unit}')}" />
+    <property name="authorizationFileName" value="${spacemanager.authz.link-group-file-name}" />
+  </bean>
+
+  <bean id="cli" class="diskCacheV111.services.space.SpaceManagerCommandLineInterface">
+    <property name="database" ref="database"/>
+    <property name="defaultRetentionPolicy" value="#{T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${spacemanager.default-retention-policy}')}" />
+    <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
+    <property name="linkGroupLoader" ref="linkgroup-loader"/>
+    <property name="pnfs" ref="pnfs"/>
+    <property name="executor" ref="executor"/>
+  </bean>
+
   <bean id="spacemanager" class="diskCacheV111.services.space.SpaceManagerService"
          init-method="start" destroy-method="stop">
     <description>SrmSpaceManager</description>
     <property name="database" ref="database"/>
+    <property name="linkGroupLoader" ref="linkgroup-loader"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="poolManager" value="${srm.service.poolmanager}"/>
     <property name="poolMonitor" ref="pool-monitor"/>
     <property name="executor" ref="executor"/>
     <property name="spaceManagerEnabled"
               value="${spacemanager.enable.space-reservation}" />
-    <property name="updateLinkGroupsPeriod"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${spacemanager.link-groups-update.period},
-		     '${spacemanager.link-groups-update.period.unit}')}" />
     <property name="expireSpaceReservationsPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
 		     ${spacemanager.expire-space-reservation.period},
 		     '${spacemanager.expire-space-reservation.period.unit}')}" />
-    <property name="defaultRetentionPolicy" value="#{T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${spacemanager.default-retention-policy}')}" />
     <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
     <property name="shouldReserveSpaceForNonSrmTransfers" value="${spacemanager.enable.reserve-space-for-non-srm-transfers}" />
     <property name="shouldDeleteStoredFileRecord" value="false" />
     <property name="shouldCleanupExpiredSpaceFiles" value="true" />
     <property name="shouldReturnFlushedSpaceToReservation" value="true" />
-    <property name="linkGroupAuthorizationFileName" value="${spacemanager.authz.link-group-file-name}" />
     <property name="authorizationPolicy" ref="authz-policy" />
   </bean>
 

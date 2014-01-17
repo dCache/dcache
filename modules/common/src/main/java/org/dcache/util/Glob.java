@@ -29,9 +29,51 @@ public class Glob implements Serializable
         return toPattern().matcher(s).matches();
     }
 
+    @Override
+    public String toString()
+    {
+        return _pattern;
+    }
+
     public Pattern toPattern()
     {
         return parseGlobToPattern(_pattern);
+    }
+
+    public String toSql()
+    {
+        return parseGlobToSql(_pattern);
+    }
+
+    public static String parseGlobToSql(String glob)
+    {
+        StringBuilder s = new StringBuilder(glob.length() * 2 + 2);
+        int j = 0;
+        for (int i = 0; i < glob.length(); i++) {
+            switch (glob.charAt(i)) {
+                case '?':
+                    s.append(quoteSql(glob.substring(j, i)));
+                    s.append("_");
+                    j = i + 1;
+                    break;
+
+                case '*':
+                    s.append(quoteSql(glob.substring(j, i)));
+                    s.append("%");
+                    j = i + 1;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        s.append(quoteSql(glob.substring(j)));
+        return s.toString();
+    }
+
+    private static String quoteSql(String s)
+    {
+        return s.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%");
     }
 
     public static Pattern parseGlobToPattern(String glob)

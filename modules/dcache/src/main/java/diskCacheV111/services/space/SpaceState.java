@@ -122,15 +122,15 @@ public final class SpaceState implements Serializable {
             throw new NullPointerException(" null state ");
         }
 
-        if(RESERVED.name.equals(state)) {
+        if(RESERVED.name.equalsIgnoreCase(state)) {
             return RESERVED;
         }
 
-        if(RELEASED.name.equals(state)) {
+        if(RELEASED.name.equalsIgnoreCase(state)) {
             return RELEASED;
         }
 
-        if(EXPIRED.name.equals(state)) {
+        if(EXPIRED.name.equalsIgnoreCase(state)) {
             return EXPIRED;
         }
 
@@ -162,6 +162,11 @@ public final class SpaceState implements Serializable {
 
     public static boolean isFinalState(SpaceState state) {
         return state == RELEASED || state == EXPIRED;
+    }
+
+    public static SpaceState valueOf(String value)
+    {
+        return getState(value);
     }
 
     // this is what we need to correctly implement
