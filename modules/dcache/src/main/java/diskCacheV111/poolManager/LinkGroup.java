@@ -2,11 +2,6 @@ package diskCacheV111.poolManager;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
@@ -16,8 +11,7 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
     private static final long serialVersionUID = 5425784079451748166L;
     private final String _name;
     private final Collection<SelectionLink> _links = new CopyOnWriteArraySet<>();
-    // no duplicates is allowed
-    private final Map<String, Set<String>> _attributes = new ConcurrentHashMap<>();
+
     /*
      * my personal view to default behavior
      */
@@ -52,50 +46,6 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
     }
 
     @Override
-    public void attribute(String attribute, String value, boolean replace) {
-        Set<String> valuesSet;
-        if (!_attributes.containsKey(attribute)) {
-            valuesSet = new HashSet<>();
-            _attributes.put(attribute, valuesSet);
-        } else {
-            valuesSet = _attributes.get(attribute);
-            if (replace) {
-                valuesSet.clear();
-            }
-        }
-        valuesSet.add(value);
-    }
-
-    @Override
-    public Set<String> attribute(String attribute) {
-        return _attributes.get(attribute);
-    }
-
-    /**
-     *
-     * remove a value associated with a attribute if attribute is empty,
-     * remove attribute as well.
-     *
-     * @param attribute
-     * @param value
-     */
-    @Override
-    public void removeAttribute(String attribute, String value) {
-        if (_attributes.containsKey(attribute)) {
-            Set<String> valuesSet = _attributes.get(attribute);
-            valuesSet.remove(value);
-            if (valuesSet.isEmpty()) {
-                _attributes.remove(attribute);
-            }
-        }
-    }
-
-    @Override
-    public Map<String, Set<String>> attributes() {
-        return new HashMap<>(_attributes);
-    }
-
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(_name);
         sb.append(" : ");
@@ -110,14 +60,6 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
             sb.append("[EMPTY]");
         }
         sb.append("\n");
-        sb.append("    Attributes:\n");
-        for (Map.Entry<String, Set<String>> aAttribute : _attributes.entrySet()) {
-            sb.append("           ").append(aAttribute.getKey()).append(" = ");
-            for (String aAttributeValue : aAttribute.getValue()) {
-                sb.append(aAttributeValue).append(" ");
-            }
-            sb.append("\n");
-        }
         sb.append("    AccessLatency:\n");
         sb.append("           ").append("onlineAllowed=").append(_isOnlineAllowed).append("\n");
         sb.append("           ").append("nearlineAllowed=").append(_isNearlineAllowed).append("\n");

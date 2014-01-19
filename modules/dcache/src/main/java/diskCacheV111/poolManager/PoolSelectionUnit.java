@@ -154,10 +154,6 @@ public interface PoolSelectionUnit  {
 	   public void add(SelectionLink link);
 	   public boolean remove(SelectionLink link);
 	   Collection<SelectionLink> getLinks();
-	   void attribute(String attribute, String value, boolean replace);
-	   Set<String> attribute(String attribute);
-	   void removeAttribute(String attribute, String value);
-	   Map<String, Set<String>> attributes();
 
        void setCustodialAllowed(boolean isAllowed);
        void setOutputAllowed(boolean isAllowed);
