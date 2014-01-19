@@ -959,6 +959,7 @@ public class MigrationModule
                 Job job = i.next();
                 switch (job.getState()) {
                 case CANCELLED:
+                case FAILED:
                 case FINISHED:
                     i.remove();
                     _commands.remove(job);
@@ -1069,7 +1070,17 @@ public class MigrationModule
         pw.println("#\n# MigrationModule\n#");
         for (Job job: _jobs.values()) {
             if (job.getDefinition().isPermanent) {
-                pw.println(_commands.get(job));
+                switch (job.getState()) {
+                case CANCELLED:
+                case CANCELLING:
+                case STOPPING:
+                case FAILED:
+                case FINISHED:
+                    break;
+                default:
+                    pw.println(_commands.get(job));
+                    break;
+                }
             }
         }
     }
