@@ -79,13 +79,13 @@ public class Job
     enum State { INITIALIZING, RUNNING, SLEEPING, PAUSED, SUSPENDED,
             STOPPING, CANCELLING, CANCELLED, FINISHED, FAILED }
 
-    private final static Logger _log = LoggerFactory.getLogger(Job.class);
+    private static final Logger _log = LoggerFactory.getLogger(Job.class);
 
-    private final Set<PnfsId> _queued = new LinkedHashSet();
-    private final Map<PnfsId,Long> _sizes = new HashMap();
-    private final Map<PnfsId,Task> _running = new HashMap();
+    private final Set<PnfsId> _queued = new LinkedHashSet<>();
+    private final Map<PnfsId,Long> _sizes = new HashMap<>();
+    private final Map<PnfsId,Task> _running = new HashMap<>();
     private final Future<?> _refreshTask;
-    private final BlockingQueue<Error> _errors = new ArrayBlockingQueue(15);
+    private final BlockingQueue<Error> _errors = new ArrayBlockingQueue<>(15);
     private final Map<PoolMigrationJobCancelMessage,DelayedReply> _cancelRequests =
         new HashMap<>();
 
@@ -201,7 +201,7 @@ public class Job
 
         pw.println("Concurrency: " + _concurrency);
         pw.println("Running tasks:");
-        List<Task> tasks = new ArrayList(_running.values());
+        List<Task> tasks = new ArrayList<>(_running.values());
         Collections.sort(tasks, new Comparator<Task>() {
                 @Override
                 public int compare(Task t1, Task t2)
