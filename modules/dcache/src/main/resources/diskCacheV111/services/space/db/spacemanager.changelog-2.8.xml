@@ -280,4 +280,10 @@
         <comment>Add unique constraint (and thus index) on pnfsid column</comment>
         <addUniqueConstraint tableName="srmspacefile" columnNames="pnfsid" constraintName="srmspacefile_pnfsid_unique"/>
     </changeSet>
+
+    <changeSet id="12" author="behrmann">
+        <comment>Remove deleted flushed files</comment>
+        <sql>DELETE FROM srmspacefile WHERE state = 3 AND deleted = 1</sql>
+        <rollback/>
+    </changeSet>
 </databaseChangeLog>

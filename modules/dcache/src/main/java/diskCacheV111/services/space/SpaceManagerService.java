@@ -1165,7 +1165,9 @@ public final class SpaceManagerService
             try {
                 File f = db.selectFileForUpdate(msg.getPnfsId());
                 LOGGER.trace("Marking file as deleted {}", f);
-                if ((f.getState() != FileState.ALLOCATED && f.getState() != FileState.TRANSFERRING) || f.getPnfsPath() == null) {
+                if (f.getState() == FileState.FLUSHED) {
+                    db.removeFile(f.getId());
+                } else if (f.getState() == FileState.STORED || f.getPnfsPath() == null) {
                     db.updateFile(null, null, null, null, null, null, true, f);
                 } else if (f.getState() == FileState.TRANSFERRING) {
                     db.removePnfsIdAndChangeStateOfFile(f.getId(), FileState.ALLOCATED);
