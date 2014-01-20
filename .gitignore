@@ -27,9 +27,9 @@
 ##     http://devnet.jetbrains.com/docs/DOC-1186
 ##
 /*.iml
-/modules/*/*.iml
-/packages/*/*.iml
-/plugins/*/*.iml
+/modules/**/*.iml
+/packages/**/*.iml
+/plugins/**/*.iml
 /.idea/
 
 
