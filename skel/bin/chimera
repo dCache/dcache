@@ -1,0 +1,22 @@
+#!/bin/sh
+
+@DCACHE_LOAD_CONFIG@
+
+lib="$(getProperty dcache.paths.share.lib)"
+. ${lib}/utils.sh
+. ${lib}/services.sh
+
+classpath=$(printLimitedClassPath chimera bonecp \
+    guava jline dcache-common cells acl dcache-chimera \
+    slf4j-api logback-classic logback-core logback-console-config \
+    $(getProperty chimera.db.jar))
+
+quickJava -Xbootclasspath/a:$classpath -Dlog=${DCACHE_LOG:-warn} \
+    org.dcache.chimera.cli.Shell \
+    "$(getProperty chimera.db.driver)" \
+    "$(getProperty chimera.db.url)" \
+    "$(getProperty chimera.db.dialect)" \
+    "$(getProperty chimera.db.user)" \
+    "$(getProperty chimera.db.password)" \
+    "$@"
+

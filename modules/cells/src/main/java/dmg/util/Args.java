@@ -50,7 +50,11 @@ public class Args implements Serializable
     {
         Scanner scanner = new Scanner();
         for (String arg : args) {
-            scanner.scan(arg, true);
+            if (arg.isEmpty()) {
+                scanner.arguments.add("");
+            } else {
+                scanner.scan(arg, true);
+            }
         }
         _options = scanner.options.build();
         _arguments = scanner.arguments.build();
@@ -203,6 +207,13 @@ public class Args implements Serializable
     {
         if (!_arguments.isEmpty()) {
             _arguments = _arguments.subList(1, _arguments.size());
+        }
+    }
+
+    public void shift(int n)
+    {
+        while (n-- > 0) {
+            shift();
         }
     }
 

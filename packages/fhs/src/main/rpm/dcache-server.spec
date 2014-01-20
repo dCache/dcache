@@ -88,6 +88,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/sbin/dcache-pool-meta-preupgrade
 /usr/sbin/dcache-info-provider
 /usr/sbin/dcache-billing-indexer
+/usr/bin/chimera
 /usr/bin/chimera-cli
 /usr/bin/dcache
 /usr/bin/dcache-star

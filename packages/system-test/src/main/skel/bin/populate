@@ -35,48 +35,48 @@ if [ ! -f etc/admin/authorized_keys2 ]; then
     done
 fi
 
-chimera() {
-    echo "chimera $@"
-    bin/chimera-cli "$@"
+createfs() {
+    bin/chimera -e - <<EOF
+writetag / OSMTemplate "StoreName test"
+writetag / sGroup "default"
+chmod 555 /
+
+mkdir /tape
+writetag /tape sGroup "tape"
+writetag /tape RetentionPolicy CUSTODIAL
+writetag /tape AccessLatency NEARLINE
+chown $uid:$gid /tape
+
+mkdir /disk
+writetag /disk sGroup "disk"
+chown $uid:$gid /disk
+
+mkdir /resilient
+writetag /resilient sGroup "resilient"
+chown $uid:$gid /resilient
+writetag /resilient RetentionPolicy CUSTODIAL
+
+mkdir /reserved
+writetag /reserved sGroup "reserved"
+chown $uid:$gid /reserved
+
+mkdir /public
+chmod 777 /public
+writetag /public sGroup "public"
+chown $uid:$gid /public
+
+mkdir /private
+chmod 700 /private
+writetag /private sGroup "private"
+chown $uid:$gid /private
+EOF
 }
 
-if [ ! -d var/db ]; then
-    bin/dcache database update
+bin/dcache database update
 
-    chimera writetag / OSMTemplate "StoreName test"
-    chimera writetag / sGroup "default"
-    chimera chmod / 555
-
-    chimera mkdir /tape
-    chimera writetag /tape sGroup "tape"
-    chimera writetag /tape RetentionPolicy CUSTODIAL
-    chimera writetag /tape AccessLatency NEARLINE
-    chimera chown /tape $uid:$gid
-
-    chimera mkdir /disk
-    chimera writetag /disk sGroup "disk"
-    chimera chown /disk $uid:$gid
-
-    chimera mkdir /resilient
-    chimera writetag /resilient sGroup "resilient"
-    chimera chown /resilient $uid:$gid
-    chimera writetag /resilient RetentionPolicy CUSTODIAL
-
-    chimera mkdir /reserved
-    chimera writetag /reserved sGroup "reserved"
-    chimera chown /reserved $uid:$gid
-
-    chimera mkdir /public
-    chimera chmod /public 777
-    chimera writetag /public sGroup "public"
-    chimera chown /public $uid:$gid
-
-    chimera mkdir /private
-    chimera chmod /private 700
-    chimera writetag /private sGroup "private"
-    chimera chown /private $uid:$gid
-else
-    bin/dcache database update
+if [ ! -f var/db/chimera.initialized ]; then
+    createfs
+    touch var/db/chimera.initialized
 fi
 
 if [ ! -f etc/hostcert.p12 ]; then
