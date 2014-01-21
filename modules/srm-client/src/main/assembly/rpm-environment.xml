@@ -1,0 +1,32 @@
+<assembly>
+    <id>rpm-environment</id>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <files>
+      <file>
+	<source>src/main/rpm/dcache-srmclient.spec</source>
+	<outputDirectory>SPECS</outputDirectory>
+	<filtered>true</filtered>
+      </file>
+    </files>
+
+    <fileSets>
+	<!-- Create empty BUILD dirctory -->
+        <fileSet>
+            <directory>src/main/assembly</directory>
+            <outputDirectory>BUILD</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+
+	<!-- Create empty RPMS dirctory -->
+        <fileSet>
+            <directory>src/main/assembly</directory>
+            <outputDirectory>RPMS</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+</assembly>

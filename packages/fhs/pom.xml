@@ -18,6 +18,9 @@
         <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
         <fhs.outputDirectory>${project.build.directory}</fhs.outputDirectory>
         <fhs.finalName>${project.build.finalName}</fhs.finalName>
+
+	<!-- Directory that has RPMS, SPECS, BUILD, etc -->
+	<rpm.baseDirectory>${project.build.directory}/rpmbuild</rpm.baseDirectory>
     </properties>
 
     <build>
@@ -178,17 +181,25 @@
                                     <finalName>${fhs.finalName}</finalName>
                                 </configuration>
                             </execution>
+
                             <execution>
-                                <id>specs</id>
+                                <id>rpm-environment</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
                                 <configuration>
                                     <descriptors>
-                                        <descriptor>src/main/assembly/spec.xml</descriptor>
+                                        <descriptor>src/main/assembly/rpm-environment.xml</descriptor>
                                     </descriptors>
-                                    <finalName>SPECS</finalName>
+                                    <outputDirectory>${rpm.baseDirectory}</outputDirectory>
+				    <!-- Work-around for a bug in maven-assembly-plugin that
+				         it ignores an empty finalName, so we must provide a
+					 non-empty value:
+
+					 http://jira.codehaus.org/browse/MASSEMBLY-681
+				    -->
+				    <finalName>.</finalName>
                                 </configuration>
                             </execution>
                         </executions>
@@ -211,10 +222,10 @@
                             <arguments>
                                 <argument>-bb</argument>
                                 <argument>--define</argument>
-                                <argument>_topdir ${project.build.directory}</argument>
+                                <argument>_topdir ${rpm.baseDirectory}</argument>
                                 <argument>--buildroot</argument>
                                 <argument>${fhs.outputDirectory}/${fhs.finalName}</argument>
-                                <argument>SPECS/dcache-server.spec</argument>
+                                <argument>${rpm.baseDirectory}/SPECS/dcache-server.spec</argument>
                             </arguments>
                         </configuration>
                     </plugin>
