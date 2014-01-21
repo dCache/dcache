@@ -135,7 +135,7 @@
             <column name="deleted" type="int"/>
         </createTable>
 
-        <addForeignKeyConstraint baseColumnNames="spaceReservationId"
+        <addForeignKeyConstraint baseColumnNames="spacereservationid"
                                  baseTableName="srmspacefile"
                                  constraintName="fk_srmspacefile_l"
                                  referencedColumnNames="id"
