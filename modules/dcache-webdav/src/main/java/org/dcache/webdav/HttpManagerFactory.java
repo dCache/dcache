@@ -3,10 +3,13 @@ package org.dcache.webdav;
 import io.milton.config.HttpManagerBuilder;
 import io.milton.http.HttpManager;
 import io.milton.http.webdav.DefaultWebDavResponseHandler;
+import io.milton.http.webdav.WebDavResponseHandler;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
+
+import org.dcache.webdav.federation.FederationResponseHandler;
 
 public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBean
 {
@@ -17,7 +20,8 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
     public Object getObject() throws Exception
     {
         DcacheResponseHandler dcacheResponseHandler = new DcacheResponseHandler();
-        setWebdavResponseHandler(dcacheResponseHandler);
+        WebDavResponseHandler handler = new FederationResponseHandler(dcacheResponseHandler);
+        setWebdavResponseHandler(handler);
 
         init();
 

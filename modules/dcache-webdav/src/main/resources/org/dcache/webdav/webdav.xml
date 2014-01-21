@@ -103,7 +103,6 @@
       <property name="rootPath" value="${webdav.root}"/>
   </bean>
 
-
   <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">
       <description>Logs all requests</description>
   </bean>
