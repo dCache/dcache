@@ -41,8 +41,8 @@ public class CellNameServiceRegistryTests {
     @Before
     public void setup() {
         _registry = new CellNameServiceRegistry();
-        simulateDomainRegistration(DOMAIN_1, 100, DOMAIN_1_CELLS);
-        simulateDomainRegistration(DOMAIN_2, 100, DOMAIN_2_CELLS);
+        simulateDomainRegistration(DOMAIN_1, 60000, DOMAIN_1_CELLS);
+        simulateDomainRegistration(DOMAIN_2, 60000, DOMAIN_2_CELLS);
     }
 
     @Test
