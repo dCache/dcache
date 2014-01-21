@@ -130,7 +130,7 @@
             <column name="creationtime" type="bigint"/>
             <column name="lifetime" type="bigint"/>
             <column name="pnfspath" type="varchar(32672)"/>
-            <column name="pnfsId" type="varchar(32672)"/>
+            <column name="pnfsid" type="varchar(32672)"/>
             <column name="state" type="int"/>
             <column name="deleted" type="int"/>
         </createTable>
