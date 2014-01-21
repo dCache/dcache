@@ -736,7 +736,7 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
             " ORDER BY lg.freespaceinbytes-lg.reservedspaceinbytes DESC ";
 
     private static final String selectLinkGroupIdPart1 =
-            "SELECT lg.id FROM " + LINKGROUP_TABLE + "lg, " + LINKGROUP_VO_TABLE + " lgvo " +
+            "SELECT lg.id FROM " + LINKGROUP_TABLE + " lg, " + LINKGROUP_VO_TABLE + " lgvo " +
                     "WHERE lg.id = lgvo.linkGroupId  AND  lg.lastUpdateTime >= ? ";
 
     private static final String selectLinkGroupInfoPart1 =
