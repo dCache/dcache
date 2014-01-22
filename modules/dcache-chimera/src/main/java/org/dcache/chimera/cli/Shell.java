@@ -252,7 +252,9 @@ public class Shell implements Closeable
         }
     }
 
-    @Command(name = "chgrp", hint = "change file group")
+    @Command(name = "chgrp", hint = "change file group",
+             usage = "The chgrp command sets the group ID of PATH to GID. Mapped group names " +
+                     "cannot be used.")
     public class ChgrpCommand implements Callable<Serializable>
     {
         @Argument(index = 0)
@@ -269,7 +271,9 @@ public class Shell implements Closeable
         }
     }
 
-    @Command(name = "chmod", hint = "change file mode")
+    @Command(name = "chmod", hint = "change file mode",
+             usage = "The chmod command modifies the file mode bits of PATH to MODE. The MODE must " +
+                     "be expressed as an octal bit mask.")
     public class ChmodCommand implements Callable<Serializable>
     {
         @Argument(index = 0)
@@ -286,7 +290,9 @@ public class Shell implements Closeable
         }
     }
 
-    @Command(name = "chown", hint = "change file owner and group")
+    @Command(name = "chown", hint = "change file owner and group",
+             usage = "The chown command sets the owner of PATH to UID. Mapped user names " +
+                     "cannot be used.")
     public class ChownCommand implements Callable<Serializable>
     {
         @Argument(index = 0, valueSpec = "UID[:GID]")
@@ -858,7 +864,7 @@ public class Shell implements Closeable
         @Argument(index = 0)
         File path;
 
-        @Argument(index = 1)
+        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type")
         ChecksumType type;
 
         @Override
@@ -882,7 +888,7 @@ public class Shell implements Closeable
         @Argument(index = 0)
         File path;
 
-        @Argument(index = 1)
+        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type")
         ChecksumType type;
 
         @Argument(index = 2)
@@ -893,6 +899,9 @@ public class Shell implements Closeable
         {
             Checksum c = new Checksum(type, checksum);
             FsInode inode = lookup(path);
+            if (inode.isDirectory() || inode.isLink()) {
+                throw new ChimeraFsException("Not a regular file: " + path);
+            }
             fs.setInodeChecksum(inode, type.getType(), c.getValue());
             return null;
         }
@@ -904,7 +913,7 @@ public class Shell implements Closeable
         @Argument(index = 0)
         File path;
 
-        @Argument(index = 1)
+        @Argument(index = 1, valueSpec = "adler32|md5_type|md4_type")
         ChecksumType type;
 
         @Override
