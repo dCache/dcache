@@ -239,9 +239,9 @@
             <properties>
                 <build.id>1</build.id>
                 <local.version />
-                <build.number>${build.id}${local.version}</build.number>
+                <revision>${build.id}${local.version}</revision>
 
-                <Version>${deb.version}-${build.number}</Version>
+                <Version>${deb.version}-${revision}</Version>
                 <MaintainerName>The dCache team</MaintainerName>
                 <MaintainerMail>support@dcache.org</MaintainerMail>
                 <PackageName>dcache</PackageName>
@@ -263,8 +263,8 @@
                                 <configuration>
                                     <name>deb.version</name>
                                     <value>${project.version}</value>
-                                    <regex>-</regex>
-                                    <replacement>~</replacement>
+                                    <regex>-SNAPSHOT</regex>
+                                    <replacement>~\${timestamp}</replacement>
                                     <failIfNoMatch>false</failIfNoMatch>
                                 </configuration>
                             </execution>
