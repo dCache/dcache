@@ -643,7 +643,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         .value("deleted", file.isDeleted() == 1 ? 'd' : '-')
                         .value("state", state)
                         .value("expires",
-                               state == 'r' || state == 't' ? file.getCreationTime() + file.getLifetime() : null);
+                               state == 'a' || state == 't' ? file.getCreationTime() + file.getLifetime() : null);
             }
 
             return writer.toString();
