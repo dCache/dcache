@@ -83,6 +83,14 @@ public class FsInode_PSET extends FsInode {
     }
 
     @Override
+    public void setStat(Stat newStat) {
+	try {
+	    this.setMTime(newStat.getMTime());
+	} catch (ChimeraFsException ignored) {
+	}
+    }
+
+    @Override
     public Stat stat() throws ChimeraFsException {
         Stat ret = super.stat();
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
