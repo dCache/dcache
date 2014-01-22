@@ -1176,11 +1176,11 @@ public final class SpaceManagerService
                     }
                 }
             } catch (SpaceAuthorizationException e) {
-                message.setFailedConditionally(CacheException.PERMISSION_DENIED, e.getMessage());
+                message.setFailedConditionally(CacheException.PERMISSION_DENIED, e);
             } catch (NoFreeSpaceException e) {
-                message.setFailedConditionally(CacheException.RESOURCE, e.getMessage());
+                message.setFailedConditionally(CacheException.RESOURCE, e);
             } catch (SpaceException e) {
-                message.setFailedConditionally(CacheException.DEFAULT_ERROR_CODE, e.getMessage());
+                message.setFailedConditionally(CacheException.DEFAULT_ERROR_CODE, e);
             } catch (IllegalArgumentException e) {
                 LOGGER.error("Message processing failed: {}", e.getMessage(), e);
                 message.setFailedConditionally(CacheException.INVALID_ARGS, e.getMessage());
