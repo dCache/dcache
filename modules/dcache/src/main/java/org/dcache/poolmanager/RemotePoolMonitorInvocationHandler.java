@@ -2,6 +2,7 @@ package org.dcache.poolmanager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.target.dynamic.Refreshable;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.lang.reflect.InvocationHandler;
@@ -21,18 +22,20 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * InvocationHandler to access a cached PoolMonitor that is periodically imported from pool manager.
  */
-public class RemotePoolMonitorInvocationHandler implements InvocationHandler
+public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Refreshable
 {
-    private final static Logger _log = LoggerFactory
+    private static final Logger _log = LoggerFactory
             .getLogger(RemotePoolMonitorInvocationHandler.class);
 
     /**
      * The delay we use after transient failures during initialization.
      * Adding a small delay prevents tight retry loops.
      */
-    private final static long INIT_DELAY = MILLISECONDS.toMillis(10);
+    private static final long INIT_DELAY = MILLISECONDS.toMillis(10);
 
     private long _refreshDelay = SECONDS.toMillis(20);
+    private long _refreshCount;
+    private long _lastRefreshTime;
     private CellStub _poolManagerStub;
     private ScheduledExecutorService _executor;
 
@@ -66,6 +69,8 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler
 
     private synchronized void setPoolMonitor(PoolMonitor poolMonitor)
     {
+        _refreshCount++;
+        _lastRefreshTime = System.currentTimeMillis();
         _poolMonitor = poolMonitor;
         notify();
     }
@@ -77,6 +82,25 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler
             wait();
         }
         return _poolMonitor;
+    }
+
+    @Override
+    public synchronized void refresh()
+    {
+        _poolMonitor = null;
+        new UpdatePoolMonitorTask().run();
+    }
+
+    @Override
+    public synchronized long getRefreshCount()
+    {
+        return _refreshCount;
+    }
+
+    @Override
+    public synchronized long getLastRefreshTime()
+    {
+        return _lastRefreshTime;
     }
 
     public void init()
@@ -110,6 +134,9 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler
     public Object invoke(Object proxy, Method method, Object[] args)
             throws Throwable
     {
+        if (method.getDeclaringClass() == Refreshable.class) {
+            return method.invoke(this, args);
+        }
         return method.invoke(getPoolMonitor(), args);
     }
 

@@ -2,6 +2,7 @@ package diskCacheV111.services.space;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.target.dynamic.Refreshable;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 
@@ -183,6 +184,9 @@ public class LinkGroupLoader
         @Override
         public String call()
         {
+            if (poolMonitor instanceof Refreshable) {
+                ((Refreshable) poolMonitor).refresh();
+            }
             synchronized (updateLinkGroupsSyncObject) {
                 updateLinkGroupsSyncObject.notify();
             }

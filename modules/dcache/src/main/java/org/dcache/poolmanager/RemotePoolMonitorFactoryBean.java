@@ -1,5 +1,6 @@
 package org.dcache.poolmanager;
 
+import org.springframework.aop.target.dynamic.Refreshable;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -23,7 +24,7 @@ public class RemotePoolMonitorFactoryBean implements FactoryBean<PoolMonitor>
     public PoolMonitor getObject() throws Exception
     {
         return (PoolMonitor) Proxy.newProxyInstance(PoolMonitor.class.getClassLoader(),
-                new Class[] { PoolMonitor.class}, handler);
+                new Class[] { PoolMonitor.class, Refreshable.class }, handler);
     }
 
     @Override
