@@ -89,14 +89,18 @@ public class Shell implements Closeable
     public static void main(String[] arguments) throws Throwable
     {
         if (arguments.length < FsFactory.ARGC) {
-            System.err.println(
-                    "Usage: chimera " + FsFactory.USAGE + " [-e] [-f=<file>]|[-]|[COMMAND]");
+            System.err.println("Usage: chimera " + FsFactory.USAGE);
             System.exit(4);
         }
 
         try (Shell shell = new Shell(arguments)) {
             Args args = new Args(arguments);
-            if (args.hasOption("f")) {
+            if (args.hasOption("h")) {
+                System.out.println("Usage: chimera [-e] [-f=<file>]|[-]|[COMMAND]");
+                System.out.println();
+                System.out.println("Use 'chimera help' for an overview of available commands.");
+                System.exit(0);
+            } else if (args.hasOption("f")) {
                 try (InputStream in = new FileInputStream(args.getOption("f"))) {
                     shell.execute(new BufferedInputStream(in), System.out, args.hasOption("e"));
                 }
@@ -168,7 +172,7 @@ public class Shell implements Closeable
             if (isAnsiSupported && args.argc() > 0) {
                 if (args.argv(0).equals("help")) {
                     args.shift();
-                    args = new Args("help -format=" + HelpFormat.ANSI + args.toString());
+                    args = new Args("help -format=" + HelpFormat.ANSI + " " + args.toString());
                 }
             }
             try {
