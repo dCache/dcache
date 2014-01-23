@@ -362,7 +362,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
         @Option(name = "rp",
                 usage = "Only show spaces with this default retention policy.",
-                values = { "output", "replica", "custodial" })
+                values = { "replica", "custodial" })
         RetentionPolicy rp;
 
         @Option(name = "state",
@@ -700,7 +700,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         AccessLatency al = defaultAccessLatency;
 
         @Option(name = "rp", usage = "Retention policy.",
-                values = { "output", "replica", "custodial"})
+                values = { "replica", "custodial"})
         RetentionPolicy rp  = defaultRetentionPolicy;
 
         @Option(name = "desc")
