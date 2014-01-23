@@ -179,7 +179,7 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
                             set.getString("pnfspath"),
                             (pnfsId != null) ? new PnfsId(pnfsId) : null,
                             FileState.getState(set.getInt("state")),
-                            (set.getObject("deleted") != null) ? set.getInt("deleted") : 0);
+                            (set.getObject("deleted") != null) && set.getInt("deleted") == 1);
         }
     };
 
@@ -668,17 +668,18 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
             f.setPnfsId(pnfsId);
         }
         if (deleted != null) {
-            f.setDeleted(deleted ? 1 : 0);
+            f.setDeleted(deleted);
         }
         int rc = getJdbcTemplate().update(
                 "UPDATE " + SPACEFILE_TABLE +
-                        " SET vogroup=?, vorole=?, sizeinbytes=?, lifetime=?, pnfsid=?, state=? WHERE id=?",
+                        " SET vogroup=?, vorole=?, sizeinbytes=?, lifetime=?, pnfsid=?, state=?, deleted=? WHERE id=?",
                 f.getVoGroup(),
                 f.getVoRole(),
                 f.getSizeInBytes(),
                 f.getLifetime(),
                 Objects.toString(f.getPnfsId(), null),
                 f.getState().getStateId(),
+                f.isDeleted() ? 1 : 0,
                 f.getId());
         if (rc != 1) {
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("Update failed, row count=" + rc, 1, rc);

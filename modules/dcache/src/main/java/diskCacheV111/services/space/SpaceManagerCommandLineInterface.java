@@ -632,7 +632,12 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                     state = '-';
                 }
                 PnfsId pnfsId = file.getPnfsId();
-                String path = (pnfsId == null || !lookup) ? file.getPnfsPath() : pnfs.getPathByPnfsId(pnfsId);
+                String path;
+                try {
+                    path = (pnfsId == null || !lookup || file.isDeleted()) ? file.getPnfsPath() : pnfs.getPathByPnfsId(pnfsId);
+                } catch (FileNotFoundCacheException e) {
+                    path = file.getPnfsPath();
+                }
                 writer.row()
                         .value("owner", toOwner(file.getVoGroup(), file.getVoRole()))
                         .value("created", file.getCreationTime())
@@ -640,7 +645,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         .value("pnfsid", pnfsId)
                         .value("path", path)
                         .value("token", file.getSpaceId())
-                        .value("deleted", file.isDeleted() == 1 ? 'd' : '-')
+                        .value("deleted", file.isDeleted() ? 'd' : '-')
                         .value("state", state)
                         .value("expires",
                                state == 'a' || state == 't' ? file.getCreationTime() + file.getLifetime() : null);

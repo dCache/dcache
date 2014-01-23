@@ -25,10 +25,7 @@ public class File implements Serializable {
 	private String pnfsPath;
 	private PnfsId pnfsId;
 	private FileState state;
-	private int deleted;
-
-	public File() {
-	}
+	private boolean isDeleted;
 
 	public File(
 		long id,
@@ -41,7 +38,7 @@ public class File implements Serializable {
 		String pnfsPath,
 		PnfsId pnfsId,
 		FileState state,
-		int isDeleted
+		boolean isDeleted
 		) {
 		this.id = id;
 		this.voGroup = voGroup;
@@ -53,36 +50,8 @@ public class File implements Serializable {
 		this.pnfsPath = pnfsPath;
 		this.pnfsId = pnfsId;
 		this.state = state;
-		this.deleted= isDeleted;
+		this.isDeleted = isDeleted;
 	}
-
-
-	public File(
-		long id,
-		String voGroup,
-		String voRole,
-		long spaceId,
-		long sizeInBytes,
-		long creationTime,
-		long lifetime,
-		String pnfsPath,
-		PnfsId pnfsId,
-		FileState state
-		) {
-		this.id = id;
-		this.voGroup = voGroup;
-		this.voRole = voRole;
-		this.spaceId = spaceId;
-		this.sizeInBytes = sizeInBytes;
-		this.creationTime = creationTime;
-		this.lifetime = lifetime;
-		this.pnfsPath = pnfsPath;
-		this.pnfsId = pnfsId;
-		this.state = state;
-		this.deleted=0;
-	}
-
-
 
 	public FileState getState() {
 		return state;
@@ -159,7 +128,7 @@ public class File implements Serializable {
 			pnfsPath+" "+
 			pnfsId+" "+
 			state+" "+
-			deleted+" ";
+                isDeleted +" ";
 
 	}
 
@@ -179,11 +148,11 @@ public class File implements Serializable {
 		this.voRole = voRole;
 	}
 
-	public void setDeleted(int yes) {
-		this.deleted=yes;
+	public void setDeleted(boolean value) {
+		this.isDeleted = value;
 	}
 
-	public int isDeleted() {
-		return this.deleted;
+	public boolean isDeleted() {
+		return this.isDeleted;
 	}
 }
