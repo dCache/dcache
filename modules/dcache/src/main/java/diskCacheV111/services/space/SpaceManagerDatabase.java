@@ -43,8 +43,6 @@ public interface SpaceManagerDatabase
                     File f)
             throws DataAccessException;
 
-    List<File> getExpiredFiles();
-
     File getUnboundFile(String pnfsPath);
 
     long insertFile(long reservationId,
@@ -56,7 +54,7 @@ public interface SpaceManagerDatabase
                     @Nullable PnfsId pnfsId)
             throws DataAccessException, SpaceException;
 
-    void expireSpaces();
+    void expire(SpaceCriterion criterion);
 
     Space insertSpace(@Nullable String voGroup,
                       @Nullable String voRole,
@@ -139,6 +137,8 @@ public interface SpaceManagerDatabase
     /** Return the number of space reservations matching criterion. */
     int count(SpaceCriterion criterion);
 
+    /** Delete all spaces matching criterion. */
+    int remove(SpaceCriterion spaceCriterion);
 
     /** Return a new file criterion. */
     FileCriterion files();
@@ -148,6 +148,9 @@ public interface SpaceManagerDatabase
 
     /** Return the number of files matching the criterion. */
     int count(FileCriterion criterion);
+
+    /** Delete all files matching criterion. */
+    int remove(FileCriterion criterion);
 
     /** Selection criterion for link groups. */
     public interface LinkGroupCriterion
@@ -187,6 +190,10 @@ public interface SpaceManagerDatabase
         SpaceCriterion whereRoleIs(String role);
 
         SpaceCriterion whereDescriptionIs(String description);
+
+        SpaceCriterion thatExpireBefore(long millis);
+
+        SpaceCriterion thatHaveNoFiles();
     }
 
     /** Selection criterion for file reservations. */
@@ -205,5 +212,9 @@ public interface SpaceManagerDatabase
         FileCriterion wherePathMatches(Glob pattern);
 
         FileCriterion wherePnfsIdIs(PnfsId pnfsId);
+
+        FileCriterion in(SpaceCriterion spaceCriterion);
+
+        FileCriterion thatExpireBefore(long millis);
     }
 }

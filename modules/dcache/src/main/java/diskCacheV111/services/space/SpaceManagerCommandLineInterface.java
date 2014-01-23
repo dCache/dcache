@@ -805,6 +805,34 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         }
     }
 
+    @Command(name = "purge spaces", hint = "remove perished spaces",
+             usage = "Space reservations that are expired or released are said to have perished. " +
+                     "Perished space is no longer considered reserved, but it is kept in the database " +
+                     "until purged. Until a space is purged, the files it contained are still tracked " +
+                     "in the database and can be inspected using the 'ls files' command.\n\n" +
+
+                     "Purging a space does not delete the files in dCache. They remain in the linkgroup " +
+                     "in which they were stored, however space manager no longer tracks the files.\n\n" +
+
+                     "Spaces that have an expiration date are purged automatically after a configurable " +
+                     "amount of time after they expire. Spaces without an expiration data have to be " +
+                     "purged explicitly.")
+    public class PurgeSpacesCommand extends AsyncCommand<String>
+    {
+        @Override
+        protected String executeInTransaction() throws DataAccessException
+        {
+            db.remove(db.files().in(
+                    db.spaces()
+                            .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)));
+            int spaces =
+                    db.remove(db.spaces()
+                                      .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
+                                      .thatHaveNoFiles());
+            return (spaces == 1) ? "One space purged." : (spaces + " spaces purged.");
+        }
+    }
+
     private enum Unit
     {
         K(1000L),

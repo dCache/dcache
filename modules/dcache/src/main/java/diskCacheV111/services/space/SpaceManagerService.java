@@ -133,6 +133,7 @@ public final class SpaceManagerService
         private PoolMonitor poolMonitor;
         private SpaceManagerDatabase db;
         private LinkGroupLoader linkGroupLoader;
+        private long perishedSpacePurgeDelay;
 
         @Required
         public void setPoolManager(CellPath poolManager)
@@ -218,15 +219,22 @@ public final class SpaceManagerService
             this.linkGroupLoader = linkGroupLoader;
         }
 
+        @Required
+        public void setPerishedSpacePurgeDelay(long millis)
+        {
+            this.perishedSpacePurgeDelay = millis;
+        }
+
         public void start()
         {
                 (expireSpaceReservations = new Thread(this,"ExpireThreadReservations")).start();
         }
 
-        public void stop()
+        public void stop() throws InterruptedException
         {
                 if (expireSpaceReservations != null) {
                         expireSpaceReservations.interrupt();
+                        expireSpaceReservations.join();
                 }
         }
 
@@ -250,27 +258,55 @@ public final class SpaceManagerService
         {
                 LOGGER.trace("expireSpaceReservations()...");
                 if (shouldCleanupExpiredSpaceFiles) {
-                    for (File file : db.getExpiredFiles()) {
+                        /* We do not run the entire loop in a single transaction
+                         * to prevent locking the space and link group records
+                         * while deleting the files in the name space.
+                         */
+                        SpaceManagerDatabase.FileCriterion expiredFiles =
+                                db.files()
+                                        .whereStateIsIn(FileState.ALLOCATED,FileState.TRANSFERRING)
+                                        .thatExpireBefore(System.currentTimeMillis());
+                    final int maximumNumberFilesToLoadAtOnce = 1000;
+                    for (File file : db.get(expiredFiles, maximumNumberFilesToLoadAtOnce)) {
                                 try {
-                                        if (file.getPnfsId() != null) {
-                                                try {
-                                                        pnfs.deletePnfsEntry(file.getPnfsId(), file.getPnfsPath());
-                                                } catch (FileNotFoundCacheException ignored) {
-                                                }
-                                        }
-                                        db.removeFile(file.getId());
-                                }
-                                catch (DataAccessException e) {
-                                        LOGGER.error("Failed to remove file {}: {}",
+                                    removeExpiredFile(file.getId());
+                                } catch (DataAccessException e) {
+                                        LOGGER.error("Failed to remove file reservation {}: {}",
                                                      file, e.getMessage());
-                                }
-                                catch (CacheException e) {
+                                } catch (CacheException e) {
                                         LOGGER.error("Failed to delete file {}: {}",
                                                      file.getPnfsId(), e.getMessage());
                                 }
                         }
                 }
-                db.expireSpaces();
+
+                db.expire(db.spaces()
+                                  .whereStateIsIn(SpaceState.RESERVED)
+                                  .thatExpireBefore(System.currentTimeMillis()));
+                db.remove(db.files()
+                                  .whereStateIsIn(FileState.STORED, FileState.FLUSHED)
+                                  .in(db.spaces()
+                                              .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
+                                              .thatExpireBefore(
+                                                      System.currentTimeMillis() - perishedSpacePurgeDelay)));
+                db.remove(db.spaces()
+                                  .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
+                                  .thatHaveNoFiles());
+        }
+
+        @Transactional(rollbackFor = { CacheException.class })
+        private void removeExpiredFile(long id) throws CacheException
+        {
+                File file = db.selectFileForUpdate(id);
+                if (file.isExpired()) {
+                        if (file.getPnfsId() != null) {
+                                try {
+                                        pnfs.deletePnfsEntry(file.getPnfsId(), file.getPnfsPath());
+                                } catch (FileNotFoundCacheException ignored) {
+                                }
+                        }
+                        db.removeFile(file.getId());
+                }
         }
 
         private void getValidSpaceTokens(GetSpaceTokensMessage msg) throws DataAccessException {
@@ -515,22 +551,21 @@ public final class SpaceManagerService
         }
 
         @Override
-        public void run(){
-            while (true) {
-                    expireSpaceReservations();
-                    try{
-                            Thread.sleep(expireSpaceReservationsPeriod);
+        public void run()
+        {
+            try {
+                while (true) {
+                    try {
+                        expireSpaceReservations();
+                    } catch (DataAccessException e) {
+                        LOGGER.error("Expiration failed: {}", e.getMessage());
+                    } catch (Exception e) {
+                        LOGGER.error("Expiration failed: {}", e.toString());
                     }
-                    catch (InterruptedException ie) {
-                        LOGGER.trace("expire SpaceReservations thread has been interrupted");
-                        return;
-                    }
-                    catch (DataAccessException e) {
-                            LOGGER.error("expireSpaceReservations failed: {}", e.getMessage());
-                    }
-                    catch (Exception e) {
-                            LOGGER.error("expireSpaceReservations failed: {}", e.toString());
-                    }
+                    Thread.sleep(expireSpaceReservationsPeriod);
+                }
+            } catch (InterruptedException e) {
+                LOGGER.trace("Expiration thread has terminated.");
             }
         }
 

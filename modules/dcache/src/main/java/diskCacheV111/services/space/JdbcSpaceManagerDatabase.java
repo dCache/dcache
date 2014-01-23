@@ -853,7 +853,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     @Override
     public List<LinkGroup> get(LinkGroupCriterion criterion)
     {
-        Criterion c = (Criterion) criterion;
+        JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
                 "SELECT * from " + LINKGROUP_TABLE + " WHERE " + c.getPredicate(), c.getArguments(), linkGroupMapper);
     }
@@ -867,7 +867,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     @Override
     public List<Space> get(SpaceCriterion criterion, Integer limit)
     {
-        Criterion c = (Criterion) criterion;
+        JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
                 "SELECT * FROM " + SPACE_TABLE + " WHERE " + c.getPredicate() + (limit != null ? " LIMIT " + limit : ""),
                 c.getArguments(), spaceReservationMapper);
@@ -876,7 +876,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     @Override
     public List<Long> getSpaceTokensOf(SpaceCriterion criterion)
     {
-        Criterion c = (Criterion) criterion;
+        JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().queryForList(
                 "SELECT id FROM " + SPACE_TABLE + " WHERE " + c.getPredicate(), c.getArguments(), Long.class);
     }
@@ -884,7 +884,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     @Override
     public int count(SpaceCriterion criterion)
     {
-        Criterion c = (Criterion) criterion;
+        JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().queryForObject(
                 "SELECT count(*) FROM " + SPACE_TABLE + " WHERE " + c.getPredicate(), c.getArguments(), Integer.class);
     }
@@ -898,7 +898,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     @Override
     public List<File> get(FileCriterion criterion, Integer limit)
     {
-        Criterion c = (Criterion) criterion;
+        JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
                 "SELECT * FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate() + (limit != null ? " LIMIT " + limit : ""),
                 c.getArguments(), fileMapper);
@@ -907,10 +907,26 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     @Override
     public int count(FileCriterion criterion)
     {
-        Criterion c = (Criterion) criterion;
+        JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().queryForObject(
                 "SELECT count(*) FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate(), c.getArguments(),
                 Integer.class);
+    }
+
+    @Override
+    public int remove(FileCriterion criterion)
+    {
+        JdbcCriterion c = (JdbcCriterion) criterion;
+        return getJdbcTemplate().update(
+                "DELETE FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate(), c.getArguments());
+    }
+
+    @Override
+    public int remove(SpaceCriterion criterion)
+    {
+        JdbcCriterion c = (JdbcCriterion) criterion;
+        return getJdbcTemplate().update(
+                "DELETE FROM " + SPACE_TABLE + " WHERE " + c.getPredicate(), c.getArguments());
     }
 
     @Override
@@ -990,24 +1006,12 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         return (Long) keyHolder.getKeys().get("id");
     }
 
-
     @Override
-    public void expireSpaces()
+    public void expire(SpaceCriterion criterion)
     {
+        JdbcCriterion c = (JdbcCriterion) criterion;
         getJdbcTemplate().update(
-                "UPDATE " + SPACE_TABLE + " SET state = " + SpaceState.EXPIRED.getStateId()
-                        + " WHERE state = " + SpaceState.RESERVED.getStateId() + " AND lifetime != -1 AND creationTime + lifetime < ?",
-                System.currentTimeMillis());
-    }
-
-    @Override
-    public List<File> getExpiredFiles()
-    {
-        return getJdbcTemplate().query(
-                "SELECT * FROM " + SPACEFILE_TABLE + " WHERE state IN "
-                        + '(' + FileState.ALLOCATED.getStateId() + ',' + FileState.TRANSFERRING.getStateId() + ") AND creationTime+lifetime < ?",
-                fileMapper,
-                System.currentTimeMillis());
+                "UPDATE " + SPACE_TABLE + " SET state = " + SpaceState.EXPIRED.getStateId() + " WHERE " + c.getPredicate(), c.getArguments());
     }
 
     @Override
@@ -1020,7 +1024,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         return getFirst(files, null);
     }
 
-    private static class Criterion
+    private static class JdbcCriterion
     {
         final StringBuilder predicate = new StringBuilder();
         final List<Object> arguments = new ArrayList<>();
@@ -1045,7 +1049,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         }
     }
 
-    private static class LinkGroupCriterionImpl extends Criterion implements LinkGroupCriterion
+    private static class LinkGroupCriterionImpl extends JdbcCriterion implements LinkGroupCriterion
     {
         @Override
         public LinkGroupCriterion whereUpdateTimeAfter(long latestLinkGroupUpdateTime)
@@ -1086,7 +1090,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         }
     }
 
-    private static class SpaceCriterionImpl extends Criterion implements SpaceCriterion
+    private static class SpaceCriterionImpl extends JdbcCriterion implements SpaceCriterion
     {
         @Override
         public SpaceCriterion whereStateIsIn(SpaceState... states)
@@ -1171,9 +1175,23 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             addClause("description = ?", description);
             return this;
         }
+
+        @Override
+        public SpaceCriterion thatExpireBefore(long millis)
+        {
+            addClause("lifetime != -1 AND creationtime + lifetime < ?", millis);
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion thatHaveNoFiles()
+        {
+            addClause("id NOT IN (SELECT spacereservationid FROM " + SPACEFILE_TABLE + ")");
+            return this;
+        }
     }
 
-    private static class FileCriterionImpl extends Criterion implements FileCriterion
+    private static class FileCriterionImpl extends JdbcCriterion implements FileCriterion
     {
         @Override
         public FileCriterion whereGroupMatches(Glob group)
@@ -1224,5 +1242,19 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             return this;
         }
 
+        @Override
+        public FileCriterion in(SpaceCriterion spaceCriterion)
+        {
+            JdbcCriterion criterion = (JdbcCriterion) spaceCriterion;
+            addClause("spacereservationid IN (SELECT id FROM " + SPACE_TABLE + " WHERE " + criterion.getPredicate() + ")", criterion.getArguments());
+            return this;
+        }
+
+        @Override
+        public FileCriterion thatExpireBefore(long millis)
+        {
+            addClause("creationtime + lifetime < ?", millis);
+            return this;
+        }
     }
 }

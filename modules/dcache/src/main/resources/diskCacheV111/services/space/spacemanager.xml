@@ -113,8 +113,8 @@
     <property name="poolMonitor" ref="pool-monitor"/>
     <property name="updateLinkGroupsPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-         ${spacemanager.link-groups-update.period},
-         '${spacemanager.link-groups-update.period.unit}')}" />
+                     ${spacemanager.link-groups-update.period},
+                    '${spacemanager.link-groups-update.period.unit}')}" />
     <property name="authorizationFileName" value="${spacemanager.authz.link-group-file-name}" />
   </bean>
 
@@ -136,12 +136,16 @@
     <property name="poolManager" value="${srm.service.poolmanager}"/>
     <property name="poolMonitor" ref="pool-monitor"/>
     <property name="executor" ref="executor"/>
+    <property name="perishedSpacePurgeDelay"
+              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${spacemanager.perished-space-purge-delay},
+                     '${spacemanager.perished-space-purge-delay.unit}')}" />
     <property name="spaceManagerEnabled"
               value="${spacemanager.enable.space-reservation}" />
     <property name="expireSpaceReservationsPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-		     ${spacemanager.expire-space-reservation.period},
-		     '${spacemanager.expire-space-reservation.period.unit}')}" />
+                     ${spacemanager.expire-space-reservation.period},
+                     '${spacemanager.expire-space-reservation.period.unit}')}" />
     <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
     <property name="shouldReserveSpaceForNonSrmTransfers" value="${spacemanager.enable.reserve-space-for-non-srm-transfers}" />
     <property name="shouldDeleteStoredFileRecord" value="false" />

@@ -158,6 +158,11 @@ public class File implements Serializable {
 		return this.isDeleted;
 	}
 
+    public boolean isExpired()
+    {
+        return (state == FileState.ALLOCATED || state == FileState.TRANSFERRING) && creationTime + lifetime < System.currentTimeMillis();
+    }
+
     public static Function<File, Long> getSpaceToken =
             new Function<File, Long>()
             {
