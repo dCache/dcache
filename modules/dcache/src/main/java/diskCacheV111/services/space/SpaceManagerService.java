@@ -233,7 +233,6 @@ public final class SpaceManagerService
 
         @Override
         public void getInfo(PrintWriter printWriter) {
-                printWriter.println("space.Manager "+getCellName());
                 printWriter.println("isSpaceManagerEnabled="+ isSpaceManagerEnabled);
                 printWriter.println("expireSpaceReservationsPeriod="
                                     + expireSpaceReservationsPeriod);

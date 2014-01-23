@@ -784,7 +784,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
         @Option(name = "path",
                 usage = "File system path. Only allowed for files for which no PNFS ID has been " +
-                        "bound yet. Other file reservation must be removed by PNFS ID.")
+                        "bound yet. Other file reservations must be removed by PNFS ID.")
         String path;
 
         @Override
