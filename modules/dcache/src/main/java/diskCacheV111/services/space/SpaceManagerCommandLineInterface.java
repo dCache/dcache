@@ -689,7 +689,10 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                      "Space reservations are created in link groups. The link group authorizes " +
                      "reservations. The owner of the reservation as well as its file type " +
                      "(retention policy and access latency) must be allowed in the link group " +
-                     "within which the reservation is created.")
+                     "within which the reservation is created.\n\n" +
+
+                     "The size argument accepts an optional byte unit suffix using either SI or " +
+                     "IEEE 1541 prefixes.")
     public class ReserveSpaceCommand extends AsyncCommand<String>
     {
         @Option(name = "owner", usage = "User name or FQAN.", valueSpec="USER|FQAN")
@@ -715,7 +718,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         "never expire.")
         Long lifetime;
 
-        @Argument(help = "Size of reservation, with optional byte unit suffix using either SI or IEEE 1541 prefixes.")
+        @Argument
         String size;
 
         @Override
