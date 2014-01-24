@@ -121,7 +121,7 @@
 
         <sql>DROP TRIGGER tgr_srmspacefile_update IF EXISTS</sql>
         <createProcedure>
-            CREATE TRIGGER tgr_srmspacefile_decrement_allocated AFTER UPDATE ON srmspacefile
+            CREATE TRIGGER tgr_srmspacefile_update AFTER UPDATE ON srmspacefile
             REFERENCING OLD ROW AS old NEW ROW AS new
             FOR EACH ROW
             BEGIN ATOMIC
