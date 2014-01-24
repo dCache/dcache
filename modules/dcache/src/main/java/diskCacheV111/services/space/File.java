@@ -10,6 +10,7 @@ import com.google.common.base.Function;
 
 import java.io.Serializable;
 
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 /**
@@ -24,7 +25,7 @@ public class File implements Serializable {
 	private long sizeInBytes;
     private long creationTime;
 	private long lifetime;
-	private String pnfsPath;
+	private FsPath path;
 	private PnfsId pnfsId;
 	private FileState state;
 	private boolean isDeleted;
@@ -37,7 +38,7 @@ public class File implements Serializable {
 		long sizeInBytes,
 		long creationTime,
 		long lifetime,
-		String pnfsPath,
+		FsPath path,
 		PnfsId pnfsId,
 		FileState state,
 		boolean isDeleted
@@ -49,7 +50,7 @@ public class File implements Serializable {
 		this.sizeInBytes = sizeInBytes;
 		this.creationTime = creationTime;
 		this.lifetime = lifetime;
-		this.pnfsPath = pnfsPath;
+		this.path = path;
 		this.pnfsId = pnfsId;
 		this.state = state;
 		this.isDeleted = isDeleted;
@@ -104,12 +105,12 @@ public class File implements Serializable {
 		this.lifetime = lifetime;
 	}
 
-	public String getPnfsPath() {
-		return pnfsPath;
+	public FsPath getPath() {
+		return path;
 	}
 
-	public void setPnfsPath(String pnfsPath) {
-		this.pnfsPath = pnfsPath;
+	public void setPath(FsPath path) {
+		this.path = path;
 	}
 
 	public PnfsId getPnfsId() {
@@ -127,7 +128,7 @@ public class File implements Serializable {
 			sizeInBytes+" "+
 			creationTime+" "+
 			lifetime+" "+
-			pnfsPath+" "+
+                path +" "+
 			pnfsId+" "+
 			state+" "+
                 isDeleted +" ";

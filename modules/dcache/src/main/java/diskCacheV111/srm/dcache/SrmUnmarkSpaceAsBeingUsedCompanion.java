@@ -151,8 +151,7 @@ public final class SrmUnmarkSpaceAsBeingUsedCompanion {
         CancelUse cancelUse =
                 new CancelUse(
                 spaceToken,
-                pnfsPath,
-                null);
+                pnfsPath);
         cancelUse.setReplyRequired(true);
         try {
             cancelUse=spaceManagerStub.sendAndWait(cancelUse, CancelUse.class);

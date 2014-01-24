@@ -205,7 +205,6 @@ public final class SrmMarkSpaceAsBeingUsedCompanion
         Use use = new Use(
                 spaceToken,
                 pnfsPath,
-                null,
                 sizeInBytes,
                 markLifetime,
                 overwrite);

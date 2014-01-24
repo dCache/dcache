@@ -166,6 +166,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         public File mapRow(ResultSet set, int rowNum) throws SQLException
         {
             String pnfsId = set.getString("pnfsId");
+            String path = set.getString("pnfspath");
             return new File(set.getLong("id"),
                             set.getString("vogroup"),
                             set.getString("vorole"),
@@ -173,7 +174,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                             set.getLong("sizeinbytes"),
                             set.getLong("creationtime"),
                             set.getLong("lifetime"),
-                            set.getString("pnfspath"),
+                            (path != null) ? new FsPath(path) : null,
                             (pnfsId != null) ? new PnfsId(pnfsId) : null,
                             FileState.getState(set.getInt("state")),
                             (set.getObject("deleted") != null) && set.getInt("deleted") == 1);
@@ -261,7 +262,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                     "SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfsid = ? FOR UPDATE ", fileMapper,
                     pnfsId.toString());
         } catch (EmptyResultDataAccessException e) {
-            throw new EmptyResultDataAccessException("No file with PNFS ID: " + pnfsId, 1, e);
+            throw new EmptyResultDataAccessException("Reservation for " + pnfsId + " not found.", 1, e);
         }
     }
 
@@ -277,7 +278,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     }
 
     @Override @Transactional(propagation = Propagation.MANDATORY, noRollbackFor = EmptyResultDataAccessException.class)
-    public File selectFileFromSpaceForUpdate(String pnfsPath, long reservationId)
+    public File selectFileFromSpaceForUpdate(FsPath path, long reservationId)
             throws DataAccessException
     {
         try {
@@ -285,11 +286,11 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                     "SELECT * FROM " + SPACEFILE_TABLE + " WHERE  pnfspath=? AND spacereservationid=? AND state IN "
                             + "(" + FileState.ALLOCATED.getStateId() + "," + FileState.TRANSFERRING.getStateId() + ") FOR UPDATE",
                     fileMapper,
-                    pnfsPath,
+                    path.toString(),
                     reservationId);
         } catch (EmptyResultDataAccessException e) {
             throw new EmptyResultDataAccessException(
-                    "No such transient file in space " + reservationId + ": " + pnfsPath, 1, e);
+                    "No such transient file in space " + reservationId + ": " + path, 1, e);
         }
     }
 
@@ -935,26 +936,22 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                            final String voRole,
                            final long sizeInBytes,
                            final long lifetime,
-                           String pnfsPath,
+                           final FsPath path,
                            final PnfsId pnfsId)
             throws DataAccessException, SpaceException
     {
         //
         // check that there is no such file already being transferred
         //
-        final FsPath path;
-        if (pnfsPath != null) {
-            path = new FsPath(pnfsPath);
+        if (path != null) {
             List<File> files = getJdbcTemplate().query(
                     "SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfspath=? AND state IN "
                             + '(' + FileState.ALLOCATED.getStateId() + "," + FileState.TRANSFERRING.getStateId() + ") AND deleted <> 1",
                     fileMapper, path.toString());
             if (!files.isEmpty()) {
                 throw new DataIntegrityViolationException(
-                        "Already have " + files.size() + " record(s) with pnfsPath=" + pnfsPath);
+                        "Already have " + files.size() + " record(s) with pnfsPath=" + path);
             }
-        } else {
-            path = null;
         }
         final long creationTime = System.currentTimeMillis();
 
@@ -1015,12 +1012,12 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     }
 
     @Override
-    public File getUnboundFile(String pnfsPath)
+    public File getUnboundFile(FsPath path)
     {
         List<File> files = getJdbcTemplate().query(
                 "SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfspath=? AND pnfsid IS NULL AND deleted != 1",
                 fileMapper,
-                pnfsPath);
+                path.toString());
         return getFirst(files, null);
     }
 

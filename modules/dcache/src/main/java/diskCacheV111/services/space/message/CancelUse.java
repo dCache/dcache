@@ -1,64 +1,30 @@
-/*
- * Reserve.java
- *
- * Created on July 20, 2006, 8:56 PM
- *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
-
 package diskCacheV111.services.space.message;
 
-import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.Message;
 
-/**
- *
- * @author timur
- */
-public class CancelUse extends Message{
-    private static final long serialVersionUID = 1530375623803317300L;
-    private long spaceToken;
-    private String pnfsName;
-    private PnfsId pnfsId;
-    /** Creates a new instance of Reserve */
-    public CancelUse() {
-    }
+import static com.google.common.base.Preconditions.checkNotNull;
 
-    public CancelUse(
-            long spaceToken,
-            String pnfsName,
-            PnfsId pnfsId){
+public class CancelUse extends Message
+{
+    private static final long serialVersionUID = 1530375623803317300L;
+    private final long spaceToken;
+    private final String path;
+
+    public CancelUse(long spaceToken, String path)
+    {
         this.spaceToken = spaceToken;
-        this.pnfsName= pnfsName;
-        this.pnfsId = pnfsId;
+        this.path = checkNotNull(path);
         setReplyRequired(true);
     }
 
-    public long getSpaceToken() {
+    public long getSpaceToken()
+    {
         return spaceToken;
     }
 
-    public void setSpaceToken(long spaceToken) {
-        this.spaceToken = spaceToken;
+    public FsPath getPath()
+    {
+        return new FsPath(path);
     }
-
-
-    public String getPnfsName() {
-        return pnfsName;
-    }
-
-    public void setPnfsName(String pnfsName) {
-        this.pnfsName = pnfsName;
-    }
-
-    public PnfsId getPnfsId() {
-        return pnfsId;
-    }
-
-    public void setPnfsId(PnfsId pnfsId) {
-        this.pnfsId = pnfsId;
-    }
-
-
 }

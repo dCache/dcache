@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -301,7 +302,7 @@ public final class SpaceManagerService
                 if (file.isExpired()) {
                         if (file.getPnfsId() != null) {
                                 try {
-                                        pnfs.deletePnfsEntry(file.getPnfsId(), file.getPnfsPath());
+                                        pnfs.deletePnfsEntry(file.getPnfsId(), Objects.toString(file.getPath(), null));
                                 } catch (FileNotFoundCacheException ignored) {
                                 }
                         }
@@ -626,15 +627,14 @@ public final class SpaceManagerService
                 long reservationId = use.getSpaceToken();
                 Subject subject = use.getSubject();
                 long sizeInBytes = use.getSizeInBytes();
-                String pnfsPath = use.getPnfsName();
-                PnfsId pnfsId = use.getPnfsId();
+                FsPath path = use.getPath();
                 long lifetime = use.getLifetime();
                 long fileId = useSpace(reservationId,
                                        subject,
                                        sizeInBytes,
                                        lifetime,
-                                       pnfsPath,
-                                       pnfsId);
+                                       path,
+                                       null);
                 use.setFileId(fileId);
         }
 
@@ -710,7 +710,7 @@ public final class SpaceManagerService
                 File f = db.selectFileForUpdate(pnfsId);
                 if (f.getState() == FileState.ALLOCATED) {
                     if(!success) {
-                            if (f.getPnfsPath() != null) {
+                            if (f.getPath() != null) {
                                 db.clearPnfsIdOfFile(f.getId());
                             } else {
                                 /* This reservation was created by space manager
@@ -784,7 +784,7 @@ public final class SpaceManagerService
                                 }
                         }
                         else {
-                                if (f.getPnfsPath() != null) {
+                                if (f.getPath() != null) {
                                     db.removePnfsIdAndChangeStateOfFile(f.getId(), FileState.ALLOCATED);
                                 } else {
                                     /* This reservation was created by space manager
@@ -873,7 +873,7 @@ public final class SpaceManagerService
         {
             LOGGER.trace("fileRemoved({})", pnfsId);
             File f = db.selectFileForUpdate(new PnfsId(pnfsId));
-            if ((f.getState() != FileState.ALLOCATED && f.getState() != FileState.TRANSFERRING) || f.getPnfsPath() == null) {
+            if ((f.getState() != FileState.ALLOCATED && f.getState() != FileState.TRANSFERRING) || f.getPath() == null) {
                 db.removeFile(f.getId());
             } else if (f.getState() == FileState.TRANSFERRING) {
                 db.removePnfsIdAndChangeStateOfFile(f.getId(), FileState.ALLOCATED);
@@ -885,10 +885,10 @@ public final class SpaceManagerService
         {
                 LOGGER.trace("cancelUseSpace({})", cancelUse);
                 long reservationId = cancelUse.getSpaceToken();
-                String pnfsPath    = cancelUse.getPnfsName();
+                FsPath path = cancelUse.getPath();
                 File f;
                 try {
-                        f = db.selectFileFromSpaceForUpdate(pnfsPath, reservationId);
+                        f = db.selectFileFromSpaceForUpdate(path, reservationId);
                 }
                 catch (IncorrectResultSizeDataAccessException sqle) {
                         //
@@ -904,13 +904,13 @@ public final class SpaceManagerService
                         try {
                                 if (f.getPnfsId() != null) {
                                         try {
-                                        pnfs.deletePnfsEntry(f.getPnfsId(), pnfsPath);
+                                        pnfs.deletePnfsEntry(f.getPnfsId(), path.toString());
                                         } catch (FileNotFoundCacheException ignored) {
                                         }
                                 }
                                 db.removeFile(f.getId());
                         } catch (CacheException e) {
-                            throw new SpaceException("Failed to delete " + pnfsPath +
+                            throw new SpaceException("Failed to delete " + path +
                                                      " while attempting to cancel its reservation in space " +
                                                      reservationId + ": " + e.getMessage(), e);
                         }
@@ -1059,7 +1059,7 @@ public final class SpaceManagerService
                               Subject subject,
                               long sizeInBytes,
                               long lifetime,
-                              String pnfsPath,
+                              FsPath path,
                               PnfsId pnfsId)
                 throws DataAccessException, SpaceException
         {
@@ -1079,7 +1079,7 @@ public final class SpaceManagerService
                                  effectiveRole,
                                  sizeInBytes,
                                  lifetime,
-                                 pnfsPath,
+                                 path,
                                  pnfsId);
         }
 
@@ -1099,8 +1099,8 @@ public final class SpaceManagerService
             boolean hasIdentity =
                     !Subjects.getFqans(subject).isEmpty() || Subjects.getUserName(subject) != null;
 
-            String pnfsPath = new FsPath(checkNotNull(selectWritePool.getPnfsPath())).toString();
-            File file = db.getUnboundFile(pnfsPath);
+            FsPath path = new FsPath(checkNotNull(selectWritePool.getPnfsPath()));
+            File file = db.getUnboundFile(path);
             if (file != null) {
                 /*
                  * This takes care of records created by SRM before
@@ -1182,7 +1182,7 @@ public final class SpaceManagerService
                 LOGGER.trace("Marking file as deleted {}", f);
                 if (f.getState() == FileState.FLUSHED) {
                     db.removeFile(f.getId());
-                } else if (f.getState() == FileState.STORED || f.getPnfsPath() == null) {
+                } else if (f.getState() == FileState.STORED || f.getPath() == null) {
                     db.updateFile(null, null, null, null, null, null, true, f);
                 } else if (f.getState() == FileState.TRANSFERRING) {
                     db.removePnfsIdAndChangeStateOfFile(f.getId(), FileState.ALLOCATED);

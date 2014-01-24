@@ -267,8 +267,8 @@ public class DirectoryLookUpPool extends AbstractCell
             int index = 0;
 
             try {
-                String path = _pnfs.getPathByPnfsId(pnfsId);
-                String dirList = list(new FsPath(path));
+                FsPath path = _pnfs.getPathByPnfsId(pnfsId);
+                String dirList = list(path);
 
                 connectToClinet();
 

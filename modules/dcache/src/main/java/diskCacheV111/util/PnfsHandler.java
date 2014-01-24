@@ -420,8 +420,8 @@ public class PnfsHandler
 	 * @return path
 	 * @throws CacheException
 	 */
-	public String getPathByPnfsId(PnfsId pnfsID) throws CacheException {
-		return pnfsRequest(new PnfsMapPathMessage(pnfsID)).getGlobalPath();
+	public FsPath getPathByPnfsId(PnfsId pnfsID) throws CacheException {
+		return new FsPath(pnfsRequest(new PnfsMapPathMessage(pnfsID)).getPnfsPath());
 	}
 
 	/**

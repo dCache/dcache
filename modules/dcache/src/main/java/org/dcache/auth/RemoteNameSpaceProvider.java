@@ -108,7 +108,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     public String pnfsidToPath(Subject subject, PnfsId id) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        return pnfs.getPathByPnfsId(id);
+        return pnfs.getPathByPnfsId(id).toString();
     }
 
     @Override

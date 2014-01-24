@@ -15,6 +15,7 @@ import java.util.concurrent.Executor;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -632,11 +633,11 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                     state = '-';
                 }
                 PnfsId pnfsId = file.getPnfsId();
-                String path;
+                FsPath path;
                 try {
-                    path = (pnfsId == null || !lookup || file.isDeleted()) ? file.getPnfsPath() : pnfs.getPathByPnfsId(pnfsId);
+                    path = (pnfsId == null || !lookup || file.isDeleted()) ? file.getPath() : pnfs.getPathByPnfsId(pnfsId);
                 } catch (FileNotFoundCacheException e) {
-                    path = file.getPnfsPath();
+                    path = file.getPath();
                 }
                 writer.row()
                         .value("owner", toOwner(file.getVoGroup(), file.getVoRole()))
@@ -786,7 +787,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Option(name = "path",
                 usage = "File system path. Only allowed for files for which no PNFS ID has been " +
                         "bound yet. Other file reservations must be removed by PNFS ID.")
-        String path;
+        FsPath path;
 
         @Override
         public String executeInTransaction() throws DataAccessException

@@ -8,6 +8,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
@@ -21,7 +22,7 @@ public interface SpaceManagerDatabase
 
     File selectFileForUpdate(long id) throws DataAccessException;
 
-    File selectFileFromSpaceForUpdate(String pnfsPath, long reservationId)
+    File selectFileFromSpaceForUpdate(FsPath pnfsPath, long reservationId)
             throws DataAccessException;
 
     void removeFile(long fileId) throws DataAccessException;
@@ -43,14 +44,14 @@ public interface SpaceManagerDatabase
                     File f)
             throws DataAccessException;
 
-    File getUnboundFile(String pnfsPath);
+    File getUnboundFile(FsPath path);
 
     long insertFile(long reservationId,
                     @Nullable String voGroup,
                     @Nullable String voRole,
                     long sizeInBytes,
                     long lifetime,
-                    @Nullable String pnfsPath,
+                    @Nullable FsPath path,
                     @Nullable PnfsId pnfsId)
             throws DataAccessException, SpaceException;
 
