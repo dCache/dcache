@@ -16,73 +16,32 @@
  */
 package org.dcache.chimera;
 
-import com.google.common.base.Charsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.dcache.chimera.posix.Stat;
 
 /**
- * This class has been generalized to be able to provide any number of metadata
- * attribute values.  Currently these must be injected at creation.  (The only
- * one currently implemented is file locality.)
+ * This class has been generalized as a superclass.  The specific operation
+ * should be encoded as a concrete {@link FsInodeType}.
  *
  * @author arossi
  */
-public class FsInode_PGET extends FsInode {
-    private static final String NEWLINE = "\n\r";
+public abstract class FsInode_PGET extends FsInode {
+    protected static final String NEWLINE = "\n\r";
 
-    private final Map<String, String> _metadata = new HashMap<>();
-    private String _name;
-
-    public FsInode_PGET(FileSystemProvider fs, String id, String[] args) {
-        super(fs, id, FsInodeType.PGET);
-        if (args.length > 0) {
-            _name = args[0];
-            for (int i = 1; i < args.length; i++) {
-                _metadata.put(args[i], null);
-            }
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-
-        if (!(o instanceof FsInode_PGET)) {
-            return false;
-        }
-
-        FsInode_PGET other = (FsInode_PGET)o;
-
-        if ( _name != null && !_name.equals(other._name)) {
-            return false;
-        }
-
-        return super.equals(o) &&
-                        Arrays.equals(_metadata.keySet().toArray(),
-                                        other._metadata.keySet().toArray());
-    }
-
-    public synchronized String getMetadataFor(String name) {
-        return _metadata.get(name);
-    }
-
-    public String getName() {
-        return _name;
-    }
-
-    public synchronized boolean hasMetadataFor(String name) {
-        return _metadata.containsKey(name);
+    protected FsInode_PGET(FileSystemProvider fs, String id, FsInodeType type) {
+        super(fs, id, type);
     }
 
     @Override
     public int read(long pos, byte[] data, int offset, int len) {
-        byte[] b = metadata().getBytes();
+        String value;
+
+        try {
+            value = value();
+        } catch (ChimeraFsException e) {
+            value = "";
+        }
+
+        byte[] b = value.getBytes();
 
         if (pos > b.length) {
             return 0;
@@ -94,33 +53,14 @@ public class FsInode_PGET extends FsInode {
         return copyLen;
     }
 
-    public synchronized void setMetadata(String name, String value) {
-        _metadata.put(name, value);
-    }
-
     @Override
     public Stat stat() throws ChimeraFsException {
         Stat ret = super.stat();
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
-        ret.setSize(metadata().length());
+        ret.setSize(value().length());
         // invalidate NFS cache
         ret.setMTime(System.currentTimeMillis());
         return ret;
-    }
-
-    @Override
-    public byte[] getIdentifier() {
-        StringBuilder sb = new StringBuilder();
-
-        if(_name != null) {
-            sb.append(_name).append(':');
-        }
-
-        for (String arg : _metadata.keySet()) {
-            sb.append(arg).append(':');
-        }
-
-        return byteBase(sb.toString().getBytes(Charsets.UTF_8));
     }
 
     @Override
@@ -128,14 +68,10 @@ public class FsInode_PGET extends FsInode {
         return -1;
     }
 
-    private synchronized String metadata() {
-        StringBuilder builder = new StringBuilder();
-        for (Entry<String, String> entry: _metadata.entrySet()) {
-            builder.append(entry.getKey())
-                   .append("=")
-                   .append(entry.getValue())
-                   .append(NEWLINE);
-        }
-        return builder.toString();
-    }
+    /*
+     * Concrete class should always do work here.  Implementation of specific
+     * operation will determine whether the node needs to be stateful or not.
+     * Should not return <code>null</code>.
+     */
+    protected abstract String value() throws ChimeraFsException;
 }
