@@ -538,7 +538,7 @@ public class Shell implements Closeable
     @Command(name = "lstag", hint = "list directory tags")
     public class LstagCommand implements Callable<Serializable>
     {
-        @Argument
+        @Argument(required = false)
         File path;
 
         @Override
