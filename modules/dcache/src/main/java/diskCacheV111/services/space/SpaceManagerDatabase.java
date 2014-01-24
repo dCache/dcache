@@ -22,15 +22,12 @@ public interface SpaceManagerDatabase
 
     File selectFileForUpdate(long id) throws DataAccessException;
 
-    File selectFileFromSpaceForUpdate(FsPath pnfsPath, long reservationId)
-            throws DataAccessException;
+    File selectFileForUpdate(FsPath path);
 
     void removeFile(long fileId) throws DataAccessException;
 
     void updateFile(File f)
             throws DataAccessException;
-
-    File getUnboundFile(FsPath path);
 
     long insertFile(long reservationId,
                     @Nullable String voGroup,
@@ -100,7 +97,17 @@ public interface SpaceManagerDatabase
                                    long lastUpdateTime)
             throws DataAccessException;
 
-    File getFile(PnfsId pnfsId) throws DataAccessException;
+    /**
+     *  Returns the file reservation bound to the pnfsid, or null
+     *  if such a reservation is not found.
+     */
+    File findFile(PnfsId pnfsId) throws DataAccessException;
+
+    /**
+     * Returns the file reservation bound to path, or null if such
+     * a reservation is not found.
+     * */
+    File findFile(FsPath path) throws DataAccessException;
 
 
 

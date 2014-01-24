@@ -293,4 +293,29 @@
         <addUniqueConstraint tableName="srmlinkgroup" columnNames="name" constraintName="srmlinkgroup_name_unique"/>
     </changeSet>
 
+    <changeSet id="14" author="behrmann">
+        <comment>Drop indexes on pnfspath column</comment>
+        <dropIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_idx"/>
+        <dropIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_state_idx"/>
+        <rollback>
+            <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_state_idx">
+                <column name="pnfspath"/>
+                <column name="state"/>
+            </createIndex>
+            <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_idx">
+                <column name="pnfspath"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="15" author="behrmann">
+        <comment>Clear pnfspath on deleted, stored and flushed files</comment>
+        <sql>UPDATE srmspacefile SET pnfspath = NULL WHERE deleted = 1 OR state IN (2,3)</sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="16" author="behrmann">
+        <comment>Add unique constraint (and thus index) on pnfspath column</comment>
+        <addUniqueConstraint tableName="srmspacefile" columnNames="pnfspath" constraintName="srmspacefile_pnfspath_unique"/>
+    </changeSet>
 </databaseChangeLog>

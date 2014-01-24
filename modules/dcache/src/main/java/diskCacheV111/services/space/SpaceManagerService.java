@@ -34,7 +34,6 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +44,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -624,15 +624,16 @@ public final class SpaceManagerService
                 throws DataAccessException, SpaceException
         {
                 LOGGER.trace("useSpace({})", use);
-                long reservationId = use.getSpaceToken();
-                Subject subject = use.getSubject();
-                long sizeInBytes = use.getSizeInBytes();
                 FsPath path = use.getPath();
-                long lifetime = use.getLifetime();
-                long fileId = useSpace(reservationId,
-                                       subject,
-                                       sizeInBytes,
-                                       lifetime,
+                File file = db.findFile(path);
+                if (file != null) {
+                    throw new SpaceException("The file is locked by space management for another upload. " +
+                                                     "The lock expires at " + new Date(file.getExpirationTime()) + ".");
+                }
+                long fileId = useSpace(use.getSpaceToken(),
+                                       use.getSubject(),
+                                       use.getSizeInBytes(),
+                                       use.getLifetime(),
                                        path,
                                        null);
                 use.setFileId(fileId);
@@ -773,6 +774,7 @@ public final class SpaceManagerService
                                 else {
                                         f.setSizeInBytes(size);
                                         f.setState(FileState.STORED);
+                                        f.setPath(null);
                                         db.updateFile(f);
                                 }
                         }
@@ -881,19 +883,11 @@ public final class SpaceManagerService
                 FsPath path = cancelUse.getPath();
                 File f;
                 try {
-                        f = db.selectFileFromSpaceForUpdate(path, reservationId);
-                }
-                catch (IncorrectResultSizeDataAccessException sqle) {
-                        //
-                        // this is not an error: we are here in two cases
-                        //   1) no transient file found - OK
-                        //   2) more than one transient file found, less OK, but
-                        //      remaining transient files will be garbage collected after timeout
-                        //
+                        f = db.selectFileForUpdate(path);
+                } catch (EmptyResultDataAccessException ignored) {
                         return;
                 }
-                if(f.getState() == FileState.ALLOCATED ||
-                   f.getState() == FileState.TRANSFERRING) {
+                if ((f.getState() == FileState.ALLOCATED || f.getState() == FileState.TRANSFERRING) && f.getSpaceId() == reservationId) {
                         try {
                                 if (f.getPnfsId() != null) {
                                         try {
@@ -1083,7 +1077,7 @@ public final class SpaceManagerService
          * and SpaceFileId flags to StorageInfo. These are accessed when space manager intercepts
          * the subsequent PoolAcceptFileMessage.
          */
-        private void selectPool(PoolMgrSelectWritePoolMsg selectWritePool) throws DataAccessException
+        private void selectPool(PoolMgrSelectWritePoolMsg selectWritePool) throws DataAccessException, SpaceException
         {
             LOGGER.trace("selectPool({})", selectWritePool);
             FileAttributes fileAttributes = selectWritePool.getFileAttributes();
@@ -1093,8 +1087,12 @@ public final class SpaceManagerService
                     !Subjects.getFqans(subject).isEmpty() || Subjects.getUserName(subject) != null;
 
             FsPath path = new FsPath(checkNotNull(selectWritePool.getPnfsPath()));
-            File file = db.getUnboundFile(path);
+            File file = db.findFile(path);
             if (file != null) {
+                if (file.getPnfsId() != null) {
+                    throw new SpaceException("The file is locked by space management for another upload.");
+                }
+
                 /*
                  * This takes care of records created by SRM before
                  * transfer has started

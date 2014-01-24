@@ -22,6 +22,9 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.CommandException;
+import dmg.util.CommandExitException;
+import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
@@ -785,24 +788,29 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         PnfsId pnfsId;
 
         @Option(name = "path",
-                usage = "File system path. Only allowed for files for which no PNFS ID has been " +
-                        "bound yet. Other file reservations must be removed by PNFS ID.")
+                usage = "File system path. Only applicable to reservations bound to a file " +
+                        "system path.")
         FsPath path;
 
         @Override
-        public String executeInTransaction() throws DataAccessException
+        public String executeInTransaction() throws DataAccessException, CommandSyntaxException
         {
+            File f;
             if (path != null) {
-                File f = db.getUnboundFile(path);
-                db.removeFile(f.getId());
-                return "Removed reservation for " + path + '.';
+                f = db.findFile(path);
+                if (f == null) {
+                    return "No such file reservation: " + path;
+                }
+            } else if (pnfsId != null) {
+                f = db.findFile(pnfsId);
+                if (f == null) {
+                    return "No such file reservation: " + pnfsId;
+                }
+            } else {
+                throw new CommandSyntaxException("Required option is missing.");
             }
-            if (pnfsId != null) {
-                File f = db.getFile(pnfsId);
-                db.removeFile(f.getId());
-                return "Removed reservation for " + pnfsId + '.';
-            }
-            return null;
+            db.removeFile(f.getId());
+            return "Removed " + f;
         }
     }
 
