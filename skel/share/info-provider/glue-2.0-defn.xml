@@ -148,7 +148,7 @@
             <attr name="GLUE2ManagerProductVersion">
               <map name="cell-version-to-dcache-version">
                 <lookup default="UNDEFINEDVALUE"
-                        path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
+                        path="/d:dCache/d:domains/d:domain[@name=/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='PoolManager']/d:domainref/@name]/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
               </map>
             </attr>
 

@@ -1035,7 +1035,7 @@
       <attr name="GlueSEImplementationVersion" not-empty="1">
         <map name="cell-version-to-dcache-version">
           <lookup default="UNDEFINEDVALUE"
-                  path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
+                  path="/d:dCache/d:domains/d:domain[@name=/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='PoolManager']/d:domainref/@name]/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
         </map> (ns=<map name="cleaner-class-to-namespace-impl">
           <lookup path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='org.dcache.chimera.namespace.ChimeraCleaner']">
             <lookup default="UNDEFINEDVALUE"
