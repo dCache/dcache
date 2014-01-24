@@ -286,4 +286,11 @@
         <sql>DELETE FROM srmspacefile WHERE state = 3 AND deleted = 1</sql>
         <rollback/>
     </changeSet>
+
+    <changeSet id="13" author="behrmann">
+        <comment>Add not-null and uniqueness constraints to linkgroup name</comment>
+        <addNotNullConstraint tableName="srmlinkgroup" columnName="name"/>
+        <addUniqueConstraint tableName="srmlinkgroup" columnNames="name" constraintName="srmlinkgroup_name_unique"/>
+    </changeSet>
+
 </databaseChangeLog>
