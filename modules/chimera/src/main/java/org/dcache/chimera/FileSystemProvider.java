@@ -322,4 +322,12 @@ public interface FileSystemProvider extends Closeable {
      */
     public byte[] inodeToBytes(FsInode inode) throws ChimeraFsException;
 
+    /**
+     * Query the PoolManager for live locality information.
+     * @param node
+     * @return
+     * @throws ChimeraFsException
+     */
+    public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException;
+
 }

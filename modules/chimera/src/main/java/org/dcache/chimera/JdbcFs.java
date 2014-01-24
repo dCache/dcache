@@ -1082,7 +1082,7 @@ public class JdbcFs implements FileSystemProvider {
 
                 switch(cmd[2]) {
                     case "locality":
-                        return getPLOC(inode.toString());
+                        return new FsInode_PLOC(this, inode.toString());
                     case "checksum":
                     case "checksums":
                         return new FsInode_PCRC(this, inode.toString());
@@ -2845,7 +2845,7 @@ public class JdbcFs implements FileSystemProvider {
                 break;
 
             case PLOC:
-                inode = getPLOC(inodeId);
+                inode = new FsInode_PLOC(this, inodeId);
                 break;
 
             case PCRC:
@@ -2947,7 +2947,7 @@ public class JdbcFs implements FileSystemProvider {
 
                 case PLOC:
                     id = st.nextToken();
-                    inode = getPLOC(id);
+                    inode = new FsInode_PLOC(this, id);
                     break;
 
                 case PCRC:
@@ -2969,13 +2969,10 @@ public class JdbcFs implements FileSystemProvider {
         return inode.getIdentifier();
     }
 
-    /**
-     * Subclass should cache the inode object for proper handling.
-     * This implementation will not work correctly by itself.  The
-     * adapter here is a placeholder.
-     */
-    protected FsInode_PLOC getPLOC(String id)
-                    throws ChimeraFsException {
-        return new FsInode_PLOC(this, id);
+    @Override
+    public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException {
+        throw new ChimeraFsException("this operation is unsupported for this "
+                        + "file system; please install a dCache-aware "
+                        + "implementation of the file system interface");
     }
 }
