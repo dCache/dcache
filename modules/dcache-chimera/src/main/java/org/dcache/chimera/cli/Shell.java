@@ -573,6 +573,33 @@ public class Shell implements Closeable
         }
     }
 
+    @Command(name = "rm", hint = "remove a file",
+             usage = "The rm command deletes the file.  If the file has data " +
+                     "stored in dCache then dCache will remove that data in a " +
+                     "timely fashion.")
+    public class RmCommand implements Callable<Serializable>
+    {
+        @Argument
+        File path;
+
+        @Override
+        public Serializable call() throws ChimeraFsException
+        {
+            if (lookup(path).isDirectory()) {
+                throw new ChimeraFsException(path + " is a directory");
+            }
+
+            // NB remove based on path to handle hard links correctly.
+            if (path.isAbsolute()) {
+                fs.remove(path.toString());
+            } else {
+                fs.remove(Shell.this.path + "/" + path);
+            }
+
+            return null;
+        }
+    }
+
     @Command(name = "rmdir", hint = "remove directory")
     public class RmdirCommand implements Callable<Serializable>
     {
