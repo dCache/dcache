@@ -9,8 +9,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.cells.CellStub;
-import org.dcache.util.backoff.BackoffControllerBuilder;
-import org.dcache.util.backoff.BackoffControllerBuilder.BackoffController;
+import org.dcache.util.backoff.BackoffController;
 import org.dcache.util.backoff.IBackoffAlgorithm;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.util.backoff.IBackoffAlgorithmFactory;
@@ -48,7 +47,7 @@ public abstract class Collector implements Runnable,
     }
 
     public void initialize() {
-        controller = new BackoffControllerBuilder().using(factory).build();
+        controller = new BackoffController(factory);
     }
 
     public synchronized boolean isEnabled() {

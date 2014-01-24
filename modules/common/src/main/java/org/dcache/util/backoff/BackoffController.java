@@ -65,72 +65,52 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.dcache.util.backoff.IBackoffAlgorithm.Status.FAILURE;
+import static org.dcache.util.backoff.IBackoffAlgorithm.Status.SUCCESS;
 
 /**
- * Fluid builder for constructing {@link BackoffController}.
- *
- * @author arossi
+ * Executes a {@link Callable} object in a loop controlled by an
+ * {@link IBackoffAlgorithm} implementation which provides the logic for
+ * determining how long of a wait should be executed between passes, or
+ * whether the thread should quit, when the call status is FAILURE.
  */
-public class BackoffControllerBuilder {
-    /**
-     * Executes a {@link Callable} object in a loop controlled by an
-     * {@link IBackoffAlgorithm} implementation which provides the logic for
-     * determining how long of a wait should be executed between passes, or
-     * whether the thread should quit, when the call status is FAILURE.
-     */
-    public class BackoffController {
+public class BackoffController
+{
+    private static final Logger logger =
+            LoggerFactory.getLogger(BackoffController.class);
 
-        private final Logger logger = LoggerFactory.getLogger(this.getClass());
-        private IBackoffAlgorithmFactory algorithmFactory;
+    private final IBackoffAlgorithmFactory factory;
 
-        /**
-         * only available to the builder
-         */
-        private BackoffController() {
-        }
+    public BackoffController(IBackoffAlgorithmFactory factory)
+    {
+        this.factory = factory;
+    }
 
-        public IBackoffAlgorithm.Status call(Callable<IBackoffAlgorithm.Status> callable)
-                        throws Exception {
-            IBackoffAlgorithm backoffAlgorithm = algorithmFactory.getAlgorithm();
-            IBackoffAlgorithm.Status rval = IBackoffAlgorithm.Status.FAILURE;
-            long wait = IBackoffAlgorithm.NO_WAIT;
+    public IBackoffAlgorithm.Status call(Callable<IBackoffAlgorithm.Status> callable)
+                    throws Exception
+    {
+        IBackoffAlgorithm algorithm = factory.getAlgorithm();
 
-            while (true) {
-                rval = callable.call();
+        while (true) {
+            switch (callable.call()) {
+            case SUCCESS:
+                 return SUCCESS;
 
-                if (rval == IBackoffAlgorithm.Status.SUCCESS) {
-                    break;
-                }
-
-                wait = backoffAlgorithm.getWaitDuration();
+            case FAILURE:
+                long wait = algorithm.getWaitDuration();
 
                 if (wait == IBackoffAlgorithm.NO_WAIT) {
-                    logger.debug("algorithm returned NO_WAIT");
-                    break;
+                    logger.trace("algorithm returned NO_WAIT");
+                    return FAILURE;
                 }
 
-                synchronized (this) {
-                    try {
-                        wait(wait);
-                    } catch (final InterruptedException e) {
-                        logger.trace("wait was interrupted", e);
-                    }
-                }
+                handleWait(wait);
             }
-
-            return rval;
         }
     }
 
-    private final BackoffController controller = new BackoffController();
-
-    public BackoffController build() {
-        return controller;
-    }
-
-    public BackoffControllerBuilder using(IBackoffAlgorithmFactory algorithmFactory) {
-        checkNotNull(algorithmFactory);
-        controller.algorithmFactory = algorithmFactory;
-        return this;
+    protected void handleWait(long wait) throws InterruptedException
+    {
+        Thread.sleep(wait);
     }
 }
