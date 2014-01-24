@@ -13,6 +13,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.FsInode_PLOC;
 import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.FsStat;
 import org.dcache.chimera.HimeraDirectoryEntry;
@@ -556,6 +557,12 @@ public class DummyFileSystemProvider implements FileSystemProvider {
 
     @Override
     public void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException {
+    }
+
+    @Override
+    public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }
