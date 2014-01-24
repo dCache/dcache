@@ -1,6 +1,3 @@
-// $Id: SpaceState.java,v 1.5 2007-08-14 22:36:13 timur Exp $
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -67,117 +64,59 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * SpaceState.java
- *
- * Created on March 19, 2004, 2:51 PM
- */
-
 package diskCacheV111.services.space;
 
 import com.google.common.base.Function;
 
-import java.io.Serializable;
+public enum SpaceState
+{
+    /**
+     * RESERVED space reservations have not been released or expired.
+     * The reserved but unused space is tracked as reserved in the
+     * link group.
+     */
+    RESERVED(0, false),
 
-/**
- *
- * @author  timur
- */
-public final class SpaceState implements Serializable {
+    /**
+     * RELEASED space reservations are no longer considered for space
+     * management. The space is no longer tracked in the link group.
+     */
+    RELEASED(1, true),
 
-    private static final long serialVersionUID = 1495390408566893839L;
+    /**
+     * EXPIRED is like RELEASED, except that the space reservation
+     * was not released by admin or used action, but expired due to
+     * its lifetime having been exceeded.
+     */
+    EXPIRED(2, true);
 
-    private final String name;
     private final int stateId;
+    private final boolean isFinal;
 
-    public static final SpaceState RESERVED = new SpaceState("RESERVED", 0);
-    public static final SpaceState RELEASED = new SpaceState("RELEASED", 1);
-    public static final SpaceState EXPIRED  = new SpaceState("EXPIRED" , 2);
-
-
-    private SpaceState(String name,int stateId) {
-        this.name = name;
+    private SpaceState(int stateId, boolean isFinal)
+    {
         this.stateId = stateId;
+        this.isFinal = isFinal;
     }
 
-    public static SpaceState[] getAllStates() {
-        return new SpaceState[] {
-         RESERVED,
-         RELEASED,
-         EXPIRED};
-    }
-    public String toString() {
-        return name;
-    }
-
-    public int getStateId() {
+    public int getStateId()
+    {
         return stateId;
     }
-    /**
-     * this package visible method is used to restore the SpaceState from
-     * the database
-     */
-    public static SpaceState getState(String state) throws IllegalArgumentException {
-        if(state == null || state.equalsIgnoreCase("null")) {
-            throw new NullPointerException(" null state ");
-        }
 
-        if(RESERVED.name.equalsIgnoreCase(state)) {
-            return RESERVED;
-        }
-
-        if(RELEASED.name.equalsIgnoreCase(state)) {
-            return RELEASED;
-        }
-
-        if(EXPIRED.name.equalsIgnoreCase(state)) {
-            return EXPIRED;
-        }
-
-        try{
-            int stateId = Integer.parseInt(state);
-            return getState(stateId);
-        }
-        catch(Exception e) {
-            throw new IllegalArgumentException("Unknown State");
-        }
-    }
-
-    public static SpaceState getState(int stateId) throws IllegalArgumentException {
-
-        if(RESERVED.stateId == stateId) {
-            return RESERVED;
-        }
-
-        if(RELEASED.stateId == stateId) {
-            return RELEASED;
-        }
-
-        if(EXPIRED.stateId == stateId) {
-            return EXPIRED;
-        }
-
-        throw new IllegalArgumentException("Unknown State Id");
-    }
-
-    public static boolean isFinalState(SpaceState state) {
-        return state == RELEASED || state == EXPIRED;
-    }
-
-    public static SpaceState valueOf(String value)
+    public boolean isFinal()
     {
-        return getState(value);
+        return isFinal;
     }
 
-    // this is what we need to correctly implement
-    // serialization of the singleton
-    public Object readResolve()
+    public static SpaceState valueOf(int stateId) throws IllegalArgumentException
     {
-        return getState(stateId);
-    }
-
-    public int hashCode() {
-        return name.hashCode();
+        for (SpaceState state : values()) {
+            if (state.stateId == stateId) {
+                return state;
+            }
+        }
+        throw new IllegalArgumentException("Unknown state id: " + stateId);
     }
 
     public static final Function<SpaceState, Integer> getStateId =

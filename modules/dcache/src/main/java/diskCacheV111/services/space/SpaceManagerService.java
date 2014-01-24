@@ -1263,7 +1263,7 @@ public final class SpaceManagerService
                 long token            = extendLifetime.getSpaceToken();
                 long newLifetime      = extendLifetime.getNewLifetime();
                 Space space = db.selectSpaceForUpdate(token);
-                if(SpaceState.isFinalState(space.getState())) {
+                if (space.getState().isFinal()) {
                         throw new DataIntegrityViolationException("Space is already released");
                 }
                 long creationTime = space.getCreationTime();

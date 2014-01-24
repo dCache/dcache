@@ -129,7 +129,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                              set.getLong("creationtime"),
                              set.getLong("lifetime"),
                              set.getString("description"),
-                             SpaceState.getState(set.getInt("state")),
+                             SpaceState.valueOf(set.getInt("state")),
                              set.getLong("usedspaceinbytes"),
                              set.getLong("allocatedspaceinbytes"));
         }
@@ -175,7 +175,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                             set.getLong("lifetime"),
                             (path != null) ? new FsPath(path) : null,
                             (pnfsId != null) ? new PnfsId(pnfsId) : null,
-                            FileState.getState(set.getInt("state")),
+                            FileState.valueOf(set.getInt("state")),
                             (set.getObject("deleted") != null) && set.getInt("deleted") == 1);
         }
     };
@@ -329,7 +329,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         }
         SpaceState oldState = space.getState();
         if (state != null) {
-            if (SpaceState.isFinalState(oldState)) {
+            if (oldState.isFinal()) {
                 throw new DataIntegrityViolationException(
                         "change from " + oldState + " to " + state + " is not allowed");
             }

@@ -2748,13 +2748,17 @@ public final class Storage
                 metaDataSpace.setUnusedSize(unusedSize);
 
                 SpaceState spaceState = space.getState();
-                if (SpaceState.RESERVED.equals(spaceState)) {
+                switch (spaceState) {
+                case RESERVED:
                     status = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-                } else if (SpaceState.EXPIRED.equals(spaceState)) {
+                    break;
+                case EXPIRED:
                     status = new TReturnStatus(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED,
-                            "The lifetime on the space that is associated with the spaceToken has expired already");
-                } else {
+                                               "The lifetime on the space that is associated with the spaceToken has expired already");
+                    break;
+                default:
                     status = new TReturnStatus(TStatusCode.SRM_FAILURE, "Space has been released");
+                    break;
                 }
                 metaDataSpace.setOwner("VoGroup=" + space.getVoGroup() + " VoRole=" + space.getVoRole());
             } else {

@@ -1,6 +1,3 @@
-// $Id: FileState.java,v 1.4 2007-08-03 15:46:03 timur Exp $
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -67,127 +64,63 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * FileState.java
- *
- * Created on March 19, 2004, 2:51 PM
- */
-
 package diskCacheV111.services.space;
 
 import com.google.common.base.Function;
 
-import java.io.Serializable;
-
-/**
- *
- * @author  timur
- */
-public final class FileState implements Serializable {
-
-    private static final long serialVersionUID = 5569202385370444308L;
-    private final String name;
-    private final int stateId;
-
-    public static final FileState ALLOCATED      = new FileState("Allocated",    0);
-    public static final FileState TRANSFERRING   = new FileState("Transferring", 1);
-    public static final FileState STORED         = new FileState("Stored",      2);
-    public static final FileState FLUSHED        = new FileState("Flushed",     3);
+public enum FileState
+{
+    /**
+     * ALLOCATED file reservations are bound to a path, but have not yet
+     * been created in the name space and thus do not have a PNFS ID.
+     * The space is tracked as allocated in the space reservation.
+     */
+    ALLOCATED(0),
 
     /**
-     * Creates a new instance of FileState
+     * TRANSFERRING file reservations are bound to a PNFS ID, thus the
+     * name space entry has been created, but the file has not finished
+     * uploading yet. If the file reservation was created in ALLOCATED
+     * first, then the reservation will also have path. The space is
+     * tracked as allocated in the space reservation.
      */
-    private FileState(String name,int stateId) {
-        this.name = name;
+    TRANSFERRING(1),
+
+    /**
+     * STORED file reservations are bound to a PNFS ID and do not have a
+     * path. The file has been completely uploaded to dCache and resides
+     * on disk. The space is tracked as used in the space reservation.
+     */
+    STORED(2),
+
+    /**
+     * FLUSHED file reservations are bound to a PNFS ID and not to a path.
+     * The file has been flushed to tape and purged from the space. The
+     * space is not tracked by the space reservation.
+     */
+    FLUSHED(3);
+
+    private final int stateId;
+
+
+    private FileState(int stateId)
+    {
         this.stateId = stateId;
     }
 
-    public static FileState[] getAllStates() {
-        return new FileState[] {
-                ALLOCATED,
-         TRANSFERRING,
-         STORED,
-         FLUSHED
-        };
-    }
-    public String toString() {
-        return name;
-    }
-
-    public int getStateId() {
+    public int getStateId()
+    {
         return stateId;
     }
-    /**
-     * this package visible method is used to restore the FileState from
-     * the database
-     */
-    public static FileState getState(String state) throws IllegalArgumentException {
-        if(state == null || state.equalsIgnoreCase("null")) {
-            throw new NullPointerException(" null state ");
-        }
 
-        if(ALLOCATED.name.equalsIgnoreCase(state)) {
-            return ALLOCATED;
-        }
-
-        if(TRANSFERRING.name.equalsIgnoreCase(state)) {
-            return TRANSFERRING;
-        }
-
-        if(STORED.name.equalsIgnoreCase(state)) {
-            return STORED;
-        }
-
-        if(FLUSHED.name.equalsIgnoreCase(state)) {
-            return FLUSHED;
-        }
-        try{
-            int stateId = Integer.parseInt(state);
-            return getState(stateId);
-        }
-        catch(Exception e) {
-            throw new IllegalArgumentException("Unknown State");
-        }
-    }
-
-    public static FileState getState(int stateId) throws IllegalArgumentException {
-
-        if(ALLOCATED.stateId == stateId) {
-            return ALLOCATED;
-        }
-
-        if(TRANSFERRING.stateId == stateId) {
-            return TRANSFERRING;
-        }
-
-        if(STORED.stateId == stateId) {
-            return STORED;
-        }
-
-        if(FLUSHED.stateId == stateId) {
-            return FLUSHED;
-        }
-
-        throw new IllegalArgumentException("Unknown State Id");
-    }
-
-    public static FileState valueOf(String s) {
-        return getState(s);
-    }
-
-    public static boolean isFinalState(FileState state) {
-        return state == FLUSHED;
-    }
-
-    // this is what we need to correctly implement
-    // serialization of the singleton
-    public Object readResolve()
+    public static FileState valueOf(int stateId) throws IllegalArgumentException
     {
-        return getState(stateId);
-    }
-
-    public int hashCode() {
-        return name.hashCode();
+        for (FileState state : values()) {
+            if (state.stateId == stateId) {
+                return state;
+            }
+        }
+        throw new IllegalArgumentException("Unknown state id: " + stateId);
     }
 
     public static final Function<FileState, Integer> getStateId =

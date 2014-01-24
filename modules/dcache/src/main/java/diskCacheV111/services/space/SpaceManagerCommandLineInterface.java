@@ -444,12 +444,16 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
             for (Space space : spaces) {
                 char status;
-                if (space.getState() == SpaceState.EXPIRED) {
+                switch (space.getState()) {
+                case EXPIRED:
                     status = 'e';
-                } else if (space.getState() == SpaceState.RELEASED) {
+                    break;
+                case RELEASED:
                     status = 'r';
-                } else {
+                    break;
+                default:
                     status = '-';
+                    break;
                 }
                 writer.row()
                         .value("token", space.getId())
@@ -623,17 +627,22 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
             for (File file : files) {
                 char state;
-                FileState fileState = file.getState();
-                if (fileState == FileState.ALLOCATED) {
+                switch (file.getState()) {
+                case ALLOCATED:
                     state = 'a';
-                } else if (fileState == FileState.TRANSFERRING) {
+                    break;
+                case TRANSFERRING:
                     state = 't';
-                } else if (fileState == FileState.STORED) {
+                    break;
+                case STORED:
                     state = 's';
-                } else if (fileState == FileState.FLUSHED) {
+                    break;
+                case FLUSHED:
                     state = 'f';
-                } else {
+                    break;
+                default:
                     state = '-';
+                    break;
                 }
                 PnfsId pnfsId = file.getPnfsId();
                 FsPath path;
