@@ -653,9 +653,10 @@ public final class SpaceManagerService
                  */
                 File f = db.selectFileForUpdate(Long.parseLong(fileId));
                 if (f.getPnfsId() != null) {
-                    throw new DataIntegrityViolationException("File is already assigned a PNFS ID.");
+                    throw new SpaceException("The file is locked by space management for another upload.");
                 }
-                db.updateFile(null, null, pnfsId, null, null, null, null, f);
+                f.setPnfsId(pnfsId);
+                db.updateFile(f);
             } else if (spaceToken != null) {
                 LOGGER.trace("transferStarting: file is not " +
                                      "found, found default space " +
@@ -711,7 +712,8 @@ public final class SpaceManagerService
                 if (f.getState() == FileState.ALLOCATED) {
                     if(!success) {
                             if (f.getPath() != null) {
-                                db.clearPnfsIdOfFile(f.getId());
+                                f.setPnfsId(null);
+                                db.updateFile(f);
                             } else {
                                 /* This reservation was created by space manager
                                  * when the transfer started. Delete it.
@@ -725,13 +727,8 @@ public final class SpaceManagerService
                                  */
                             }
                     } else {
-                            db.updateFile(null,
-                                          null,
-                                          null,
-                                          null,
-                                          null,
-                                          FileState.TRANSFERRING,
-                                          null, f);
+                            f.setState(FileState.TRANSFERRING);
+                            db.updateFile(f);
                     }
                 }
             } catch (EmptyResultDataAccessException e) {
@@ -774,18 +771,16 @@ public final class SpaceManagerService
                                         db.removeFile(f.getId());
                                 }
                                 else {
-                                        db.updateFile(null,
-                                                      null,
-                                                      null,
-                                                      size,
-                                                      null,
-                                                      FileState.STORED,
-                                                      null, f);
+                                        f.setSizeInBytes(size);
+                                        f.setState(FileState.STORED);
+                                        db.updateFile(f);
                                 }
                         }
                         else {
                                 if (f.getPath() != null) {
-                                    db.removePnfsIdAndChangeStateOfFile(f.getId(), FileState.ALLOCATED);
+                                    f.setPnfsId(null);
+                                    f.setState(FileState.ALLOCATED);
+                                    db.updateFile(f);
                                 } else {
                                     /* This reservation was created by space manager
                                      * when the transfer started. Delete it.
@@ -830,13 +825,9 @@ public final class SpaceManagerService
                                         db.removeFile(f.getId());
                                 }
                                 else {
-                                        db.updateFile(null,
-                                                      null,
-                                                      null,
-                                                      size,
-                                                      null,
-                                                      FileState.FLUSHED,
-                                                      null, f);
+                                        f.setSizeInBytes(size);
+                                        f.setState(FileState.FLUSHED);
+                                        db.updateFile(f);
                                 }
                         }
                         else {
@@ -876,7 +867,9 @@ public final class SpaceManagerService
             if ((f.getState() != FileState.ALLOCATED && f.getState() != FileState.TRANSFERRING) || f.getPath() == null) {
                 db.removeFile(f.getId());
             } else if (f.getState() == FileState.TRANSFERRING) {
-                db.removePnfsIdAndChangeStateOfFile(f.getId(), FileState.ALLOCATED);
+                f.setPnfsId(null);
+                f.setState(FileState.ALLOCATED);
+                db.updateFile(f);
             }
         }
 
@@ -1183,9 +1176,12 @@ public final class SpaceManagerService
                 if (f.getState() == FileState.FLUSHED) {
                     db.removeFile(f.getId());
                 } else if (f.getState() == FileState.STORED || f.getPath() == null) {
-                    db.updateFile(null, null, null, null, null, null, true, f);
+                    f.setDeleted(true);
+                    db.updateFile(f);
                 } else if (f.getState() == FileState.TRANSFERRING) {
-                    db.removePnfsIdAndChangeStateOfFile(f.getId(), FileState.ALLOCATED);
+                    f.setPnfsId(null);
+                    f.setState(FileState.ALLOCATED);
+                    db.updateFile(f);
                 }
             } catch (EmptyResultDataAccessException ignored) {
             }

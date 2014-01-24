@@ -566,37 +566,9 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     }
 
     @Override
-    public void updateFile(String voGroup,
-                           String voRole,
-                           PnfsId pnfsId,
-                           Long sizeInBytes,
-                           Long lifetime,
-                           FileState state,
-                           Boolean deleted,
-                           File f)
+    public void updateFile(File f)
             throws DataAccessException
     {
-        if (voGroup != null) {
-            f.setVoGroup(voGroup);
-        }
-        if (voRole != null) {
-            f.setVoRole(voRole);
-        }
-        if (sizeInBytes != null) {
-            f.setSizeInBytes(sizeInBytes);
-        }
-        if (lifetime != null) {
-            f.setLifetime(lifetime);
-        }
-        if (state != null) {
-            f.setState(state);
-        }
-        if (pnfsId != null) {
-            f.setPnfsId(pnfsId);
-        }
-        if (deleted != null) {
-            f.setDeleted(deleted);
-        }
         int rc = getJdbcTemplate().update(
                 "UPDATE " + SPACEFILE_TABLE +
                         " SET vogroup=?, vorole=?, sizeinbytes=?, lifetime=?, pnfsid=?, state=?, deleted=? WHERE id=?",
@@ -807,28 +779,6 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             }
         }
         return getJdbcTemplate().query(select, linkGroupMapper, lastUpdateTime, sizeInBytes);
-    }
-
-
-    @Override
-    public void clearPnfsIdOfFile(long id)
-            throws DataAccessException
-    {
-        int rc = getJdbcTemplate().update("UPDATE " + SPACEFILE_TABLE + " SET pnfsid = NULL WHERE id=?", id);
-        if (rc != 1) {
-            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("Update failed, row count=" + rc, 1, rc);
-        }
-    }
-
-    @Override
-    public void removePnfsIdAndChangeStateOfFile(long id, FileState state)
-            throws DataAccessException
-    {
-        int rc = getJdbcTemplate().update(
-                "UPDATE " + SPACEFILE_TABLE + " SET pnfsid = NULL, STATE=? WHERE id=?", state.getStateId(), id);
-        if (rc != 1) {
-            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("Update failed, row count=" + rc, 1, rc);
-        }
     }
 
     @Override

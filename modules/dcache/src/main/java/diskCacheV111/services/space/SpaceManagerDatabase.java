@@ -27,21 +27,7 @@ public interface SpaceManagerDatabase
 
     void removeFile(long fileId) throws DataAccessException;
 
-    void clearPnfsIdOfFile(long id)
-            throws DataAccessException;
-
-    void removePnfsIdAndChangeStateOfFile(long id, FileState state)
-            throws DataAccessException;
-
-
-    void updateFile(@Nullable String voGroup,
-                    @Nullable String voRole,
-                    @Nullable PnfsId pnfsId,
-                    @Nullable Long sizeInBytes,
-                    @Nullable Long lifetime,
-                    @Nullable FileState state,
-                    @Nullable Boolean deleted,
-                    File f)
+    void updateFile(File f)
             throws DataAccessException;
 
     File getUnboundFile(FsPath path);
