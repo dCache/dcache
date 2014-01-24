@@ -11,7 +11,7 @@ import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcDaoSupport;
+import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
@@ -23,11 +23,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -39,13 +37,12 @@ import diskCacheV111.util.VOInfo;
 
 import org.dcache.util.Glob;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
 
 @Repository
-public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport implements SpaceManagerDatabase
+public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceManagerDatabase
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcSpaceManagerDatabase.class);
 
@@ -246,19 +243,6 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     }
 
     @Override @Transactional(propagation = Propagation.MANDATORY, noRollbackFor = EmptyResultDataAccessException.class)
-    public Space selectSpaceForUpdate(long id, long sizeInBytes) throws DataAccessException
-    {
-        try {
-            return getJdbcTemplate().queryForObject(
-                    "SELECT * FROM " + SPACE_TABLE + " WHERE  id = ? AND sizeinbytes-allocatedspaceinbytes >= ? FOR UPDATE",
-                    spaceReservationMapper, id, sizeInBytes);
-        } catch (EmptyResultDataAccessException e) {
-            throw new EmptyResultDataAccessException(
-                    "No space reservation with id " + id + " and " + sizeInBytes + " bytes available.", 1, e);
-        }
-    }
-
-    @Override @Transactional(propagation = Propagation.MANDATORY, noRollbackFor = EmptyResultDataAccessException.class)
     public Space selectSpaceForUpdate(long id) throws DataAccessException
     {
         try {
@@ -307,31 +291,6 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
             throw new EmptyResultDataAccessException(
                     "No such transient file in space " + reservationId + ": " + pnfsPath, 1, e);
         }
-    }
-
-    @Override
-    public Space updateSpace(long id,
-                             String voGroup,
-                             String voRole,
-                             RetentionPolicy retentionPolicy,
-                             AccessLatency accessLatency,
-                             Long linkGroupId,
-                             Long sizeInBytes,
-                             Long lifetime,
-                             String description,
-                             SpaceState state)
-            throws DataAccessException
-    {
-        return updateSpace(selectSpaceForUpdate(id),
-                           voGroup,
-                           voRole,
-                           retentionPolicy,
-                           accessLatency,
-                           linkGroupId,
-                           sizeInBytes,
-                           lifetime,
-                           description,
-                           state);
     }
 
     @Override
@@ -573,33 +532,6 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     }
 
     @Override
-    public List<Long> findSpaceTokensByVoGroupAndRole(String voGroup, String voRole)
-            throws DataAccessException
-    {
-        if (!isNullOrEmpty(voGroup) && !isNullOrEmpty(voRole)) {
-            return getJdbcTemplate().queryForList(
-                    "SELECT id FROM " + SPACE_TABLE + " WHERE  state = ? AND voGroup = ? AND voRole = ?",
-                    Long.class,
-                    SpaceState.RESERVED.getStateId(),
-                    voGroup,
-                    voRole);
-        }
-        if (!isNullOrEmpty(voGroup)) {
-            return getJdbcTemplate().queryForList(
-                    "SELECT id FROM " + SPACE_TABLE + " WHERE  state = ? AND voGroup = ?", Long.class,
-                    SpaceState.RESERVED.getStateId(),
-                    voGroup);
-        }
-        if (!isNullOrEmpty(voRole)) {
-            return getJdbcTemplate().queryForList(
-                    "SELECT id FROM " + SPACE_TABLE + " WHERE  state = ? AND  voRole = ?", Long.class,
-                    SpaceState.RESERVED.getStateId(),
-                    voRole);
-        }
-        return Collections.emptyList();
-    }
-
-    @Override
     public Space getSpace(long id) throws DataAccessException
     {
         try {
@@ -619,12 +551,6 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
         } catch (EmptyResultDataAccessException e) {
             throw new EmptyResultDataAccessException("No such link group: " + id, 1, e);
         }
-    }
-
-    @Override
-    public List<LinkGroup> getLinkGroups()
-    {
-        return getJdbcTemplate().query("SELECT * FROM " + LINKGROUP_TABLE, linkGroupMapper);
     }
 
     @Override
@@ -919,63 +845,72 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     }
 
     @Override
-    public LinkGroupCriterion linkGroupCriterion()
+    public LinkGroupCriterion linkGroups()
     {
         return new LinkGroupCriterionImpl();
     }
 
     @Override
-    public List<LinkGroup> getLinkGroups(LinkGroupCriterion criterion)
+    public List<LinkGroup> get(LinkGroupCriterion criterion)
     {
         Criterion c = (Criterion) criterion;
-        return getNamedParameterJdbcTemplate().query(
-                "SELECT * from " + LINKGROUP_TABLE + " WHERE " + c.getPredicate(), c.getParams(), linkGroupMapper);
+        return getJdbcTemplate().query(
+                "SELECT * from " + LINKGROUP_TABLE + " WHERE " + c.getPredicate(), c.getArguments(), linkGroupMapper);
     }
 
     @Override
-    public SpaceCriterion spaceCriterion()
+    public SpaceCriterion spaces()
     {
         return new SpaceCriterionImpl();
     }
 
     @Override
-    public List<Space> getSpaces(SpaceCriterion criterion, Integer limit)
+    public List<Space> get(SpaceCriterion criterion, Integer limit)
     {
         Criterion c = (Criterion) criterion;
-        return getNamedParameterJdbcTemplate().query(
-                "SELECT * FROM " + SPACE_TABLE + " WHERE " + c.getPredicate() + (limit != null? " LIMIT " + limit : ""),
-                c.getParams(), spaceReservationMapper);
+        return getJdbcTemplate().query(
+                "SELECT * FROM " + SPACE_TABLE + " WHERE " + c.getPredicate() + (limit != null ? " LIMIT " + limit : ""),
+                c.getArguments(), spaceReservationMapper);
     }
 
     @Override
-    public int getCountOfSpaces(SpaceCriterion criterion)
+    public List<Long> getSpaceTokensOf(SpaceCriterion criterion)
     {
         Criterion c = (Criterion) criterion;
-        return getNamedParameterJdbcTemplate().queryForObject(
-                "SELECT count(*) from " + SPACE_TABLE + " WHERE " + c.getPredicate(), c.getParams(), Integer.class);
+        return getJdbcTemplate().queryForList(
+                "SELECT id FROM " + SPACE_TABLE + " WHERE " + c.getPredicate(), c.getArguments(), Long.class);
     }
 
     @Override
-    public FileCriterion fileCriterion()
+    public int count(SpaceCriterion criterion)
+    {
+        Criterion c = (Criterion) criterion;
+        return getJdbcTemplate().queryForObject(
+                "SELECT count(*) FROM " + SPACE_TABLE + " WHERE " + c.getPredicate(), c.getArguments(), Integer.class);
+    }
+
+    @Override
+    public FileCriterion files()
     {
         return new FileCriterionImpl();
     }
 
     @Override
-    public List<File> getFiles(FileCriterion criterion, Integer limit)
+    public List<File> get(FileCriterion criterion, Integer limit)
     {
         Criterion c = (Criterion) criterion;
-        return getNamedParameterJdbcTemplate().query(
+        return getJdbcTemplate().query(
                 "SELECT * FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate() + (limit != null ? " LIMIT " + limit : ""),
-                c.getParams(), fileMapper);
+                c.getArguments(), fileMapper);
     }
 
     @Override
-    public int getCountOfFiles(FileCriterion criterion)
+    public int count(FileCriterion criterion)
     {
         Criterion c = (Criterion) criterion;
-        return getNamedParameterJdbcTemplate().queryForObject(
-                "SELECT count(*) FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate(), c.getParams(), Integer.class);
+        return getJdbcTemplate().queryForObject(
+                "SELECT count(*) FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate(), c.getArguments(),
+                Integer.class);
     }
 
     @Override
@@ -1006,8 +941,8 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
             path = null;
         }
         final long creationTime = System.currentTimeMillis();
-        Space space = selectSpaceForUpdate(reservationId,
-                                           0L); // "0L" is a hack needed to get a better error code from comparison below
+
+        Space space = selectSpaceForUpdate(reservationId);
         long currentTime = System.currentTimeMillis();
         if (space.getLifetime() != -1 && space.getCreationTime() + space.getLifetime() < currentTime) {
             throw new SpaceExpiredException("space with id=" + reservationId + " has expired");
@@ -1057,43 +992,6 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
 
 
     @Override
-    public List<Long> findSpaceTokensByDescription(String description)
-    {
-        return getJdbcTemplate().queryForList(
-                "SELECT id FROM " + SPACE_TABLE + " WHERE  state = ? AND description = ?",
-                Long.class,
-                SpaceState.RESERVED.getStateId(),
-                description);
-    }
-
-
-    @Override
-    public List<Long> getSpaceTokensOfFile(PnfsId pnfsId, FsPath pnfsPath) throws DataAccessException
-    {
-        List<Long> files;
-        if (pnfsId != null && pnfsPath != null) {
-            files = getJdbcTemplate().queryForList(
-                    "SELECT spacereservationid FROM " + SPACEFILE_TABLE + " WHERE pnfsId = ? AND pnfsPath = ?",
-                    Long.class,
-                    pnfsId.toString(),
-                    pnfsPath.toString());
-        } else if (pnfsId != null) {
-            files = getJdbcTemplate().queryForList(
-                    "SELECT spacereservationid FROM " + SPACEFILE_TABLE + " WHERE pnfsId = ? ",
-                    Long.class,
-                    pnfsId.toString());
-        } else if (pnfsPath != null) {
-            files = getJdbcTemplate().queryForList(
-                    "SELECT spacereservationid FROM " + SPACEFILE_TABLE + " WHERE pnfsPath = ? ",
-                    Long.class,
-                    pnfsPath.toString());
-        } else {
-            throw new IllegalArgumentException("getSpaceTokensOfFile: all arguments are nulls, not supported");
-        }
-        return files;
-    }
-
-    @Override
     public void expireSpaces()
     {
         getJdbcTemplate().update(
@@ -1113,14 +1011,6 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     }
 
     @Override
-    public List<Space> getReservedSpaces()
-    {
-        return getJdbcTemplate().query(
-                "SELECT * FROM " + SPACE_TABLE + " WHERE state = " + SpaceState.RESERVED.getStateId(),
-                spaceReservationMapper);
-    }
-
-    @Override
     public File getUnboundFile(String pnfsPath)
     {
         List<File> files = getJdbcTemplate().query(
@@ -1133,20 +1023,15 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
     private static class Criterion
     {
         final StringBuilder predicate = new StringBuilder();
-        final Map<String, Object> params = new HashMap<>();
+        final List<Object> arguments = new ArrayList<>();
 
-        protected void addClause(String clause)
+        protected void addClause(String clause, Object... arguments)
         {
             if (predicate.length() > 0) {
                 predicate.append(" AND ");
             }
             predicate.append(clause);
-        }
-
-        protected void addClause(String clause, String key, Object value)
-        {
-            addClause(clause);
-            params.put(key, value);
+            this.arguments.addAll(asList(arguments));
         }
 
         public String getPredicate()
@@ -1154,9 +1039,9 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
             return predicate.length() == 0 ? "true" : predicate.toString();
         }
 
-        public Map<String, Object> getParams()
+        public Object[] getArguments()
         {
-            return params;
+            return arguments.toArray(new Object[arguments.size()]);
         }
     }
 
@@ -1165,7 +1050,7 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
         @Override
         public LinkGroupCriterion whereUpdateTimeAfter(long latestLinkGroupUpdateTime)
         {
-            addClause("lastupdatetime >= :lastupdatetime", "lastupdatetime", latestLinkGroupUpdateTime);
+            addClause("lastupdatetime >= ?", latestLinkGroupUpdateTime);
             return this;
         }
 
@@ -1196,7 +1081,7 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
         @Override
         public LinkGroupCriterion whereNameMatches(Glob name)
         {
-            addClause("name LIKE :name", "name", name.toSql());
+            addClause("name LIKE ?", name.toSql());
             return this;
         }
     }
@@ -1213,56 +1098,77 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
         @Override
         public SpaceCriterion whereRetentionPolicyIs(RetentionPolicy rp)
         {
-            addClause("retentionpolicy = :rp", "rp", rp.getId());
+            addClause("retentionpolicy = ?", rp.getId());
             return this;
         }
 
         @Override
         public SpaceCriterion whereAccessLatencyIs(AccessLatency al)
         {
-            addClause("accesslatency = :al", "al", al.getId());
+            addClause("accesslatency = ?", al.getId());
             return this;
         }
 
         @Override
         public SpaceCriterion whereDescriptionMatches(Glob desc)
         {
-            addClause("description LIKE :desc", "desc", desc.toSql());
+            addClause("description LIKE ?", desc.toSql());
             return this;
         }
 
         @Override
         public SpaceCriterion whereRoleMatches(Glob role)
         {
-            addClause("vorole LIKE :role", "role", role.toSql());
+            addClause("vorole LIKE ?", role.toSql());
             return this;
         }
 
         @Override
         public SpaceCriterion whereGroupMatches(Glob group)
         {
-            addClause("vogroup LIKE :group", "group", group.toSql());
+            addClause("vogroup LIKE ?", group.toSql());
             return this;
         }
 
         @Override
         public SpaceCriterion whereTokenIs(long token)
         {
-            addClause("id = :id", "id", token);
+            addClause("id = ?", token);
             return this;
         }
 
         @Override
         public SpaceCriterion whereLifetimeIs(int i)
         {
-            addClause("lifetime = :lifetime", "lifetime", i);
+            addClause("lifetime = ?", i);
             return this;
         }
 
         @Override
         public SpaceCriterion whereLinkGroupIs(long id)
         {
-            addClause("linkgroupid = :linkgroup", "linkgroup", id);
+            addClause("linkgroupid = ?", id);
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereGroupIs(String group)
+        {
+            addClause("vogroup = ?", group);
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereRoleIs(String role)
+        {
+            addClause("vorole = ?", role);
+            return this;
+        }
+
+        @Override
+        public SpaceCriterion whereDescriptionIs(String description)
+        {
+            addClause("description = ?", description);
             return this;
         }
     }
@@ -1272,21 +1178,21 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
         @Override
         public FileCriterion whereGroupMatches(Glob group)
         {
-            addClause("group LIKE :group", "group", group.toSql());
+            addClause("group LIKE ?", group.toSql());
             return this;
         }
 
         @Override
         public FileCriterion whereRoleMatches(Glob role)
         {
-            addClause("role LIKE :role", "role", role.toSql());
+            addClause("role LIKE ?", role.toSql());
             return this;
         }
 
         @Override
         public FileCriterion whereSpaceTokenIs(Long token)
         {
-            addClause("spacereservationid = :token", "token", token);
+            addClause("spacereservationid = ?", token);
             return this;
         }
 
@@ -1300,22 +1206,23 @@ public class JdbcSpaceManagerDatabase extends NamedParameterJdbcDaoSupport imple
         @Override
         public FileCriterion whereDeletedIs(boolean deleted)
         {
-            addClause("deleted = :deleted", "deleted", deleted ? 1 : 0);
+            addClause("deleted = ?", deleted ? 1 : 0);
             return this;
         }
 
         @Override
         public FileCriterion wherePathMatches(Glob pattern)
         {
-            addClause("pnfspath LIKE :path", "path", pattern.toSql());
+            addClause("pnfspath LIKE ?", pattern.toSql());
             return this;
         }
 
         @Override
         public FileCriterion wherePnfsIdIs(PnfsId pnfsId)
         {
-            addClause("pnfsid = :pnfsid", "pnfsid", pnfsId.toString());
+            addClause("pnfsid = ?", pnfsId.toString());
             return this;
         }
+
     }
 }

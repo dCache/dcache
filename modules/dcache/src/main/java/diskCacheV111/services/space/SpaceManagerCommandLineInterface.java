@@ -126,16 +126,17 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Override
         public String executeInTransaction() throws DataAccessException
         {
-            Space space = db.updateSpace(token,
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         SpaceState.RELEASED);
+            Space space =
+                    db.updateSpace(db.selectSpaceForUpdate(token),
+                                   null,
+                                   null,
+                                   null,
+                                   null,
+                                   null,
+                                   null,
+                                   null,
+                                   null,
+                                   SpaceState.RELEASED);
             return space.toString();
         }
     }
@@ -271,18 +272,18 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Override
         public String executeInTransaction() throws DataAccessException
         {
-            SpaceManagerDatabase.LinkGroupCriterion criterion = db.linkGroupCriterion();
+            SpaceManagerDatabase.LinkGroupCriterion linkgroups = db.linkGroups();
             if (!all) {
-                criterion.whereUpdateTimeAfter(linkGroupLoader.getLatestUpdateTime());
+                linkgroups.whereUpdateTimeAfter(linkGroupLoader.getLatestUpdateTime());
             }
             if (al != null) {
-                criterion.allowsAccessLatency(al);
+                linkgroups.allowsAccessLatency(al);
             }
             if (rp != null) {
-                criterion.allowsRetentionPolicy(rp);
+                linkgroups.allowsRetentionPolicy(rp);
             }
             if (name != null) {
-                criterion.whereNameMatches(name);
+                linkgroups.whereNameMatches(name);
             }
 
             ColumnWriter writer = new ColumnWriter()
@@ -297,14 +298,14 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                     .space().header("UPDATED").date("updated")
                     .space().header("NAME").left("name");
 
-            for (LinkGroup group : db.getLinkGroups(criterion)) {
+            for (LinkGroup group : db.get(linkgroups)) {
                 writer.row()
                         .value("output", group.isOutputAllowed() ? 'o' : '-')
                         .value("replica", group.isReplicaAllowed() ? 'r' : '-')
                         .value("custodial", group.isCustodialAllowed() ? 'c' : '-')
                         .value("nearline", group.isNearlineAllowed() ? 'n' : '-')
                         .value("online", group.isOnlineAllowed() ? 'o' : '-')
-                        .value("spaces", db.getCountOfSpaces(db.spaceCriterion().whereLinkGroupIs(group.getId())))
+                        .value("spaces", db.count(db.spaces().whereLinkGroupIs(group.getId())))
                         .value("reserved", group.getReservedSpaceInBytes())
                         .value("available", group.getAvailableSpaceInBytes())
                         .value("free", group.getFreeSpace())
@@ -423,19 +424,19 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
             Iterable<Space> spaces;
             if (pattern == null) {
-                spaces = db.getSpaces(whereOptionsMatch(db.spaceCriterion()), limit);
+                spaces = db.get(spacesWhereOptionsMatch(), limit);
             } else {
-                spaces = db.getSpaces(whereOptionsMatch(db.spaceCriterion()).whereDescriptionMatches(pattern), limit);
+                spaces = db.get(spacesWhereOptionsMatch().whereDescriptionMatches(pattern), limit);
                 Long token = tryParse(pattern.toString());
                 if (token != null) {
                     List<Space> moreSpaces =
-                            db.getSpaces(whereOptionsMatch(db.spaceCriterion()).whereTokenIs(token), limit);
+                            db.get(spacesWhereOptionsMatch().whereTokenIs(token), limit);
                     spaces = concat(moreSpaces, spaces);
                 }
             }
 
             Map<Long,String> linkGroups =
-                    Maps.transformValues(Maps.uniqueIndex(db.getLinkGroups(), LinkGroup.getId), LinkGroup.getName);
+                    Maps.transformValues(Maps.uniqueIndex(db.get(db.linkGroups()), LinkGroup.getId), LinkGroup.getName);
 
             for (Space space : spaces) {
                 char status;
@@ -452,7 +453,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         .value("linkgroup", linkGroups.get(space.getLinkGroupId()))
                         .value("rp", space.getRetentionPolicy())
                         .value("al", space.getAccessLatency())
-                        .value("files", db.getCountOfFiles(db.fileCriterion().whereSpaceTokenIs(space.getId())))
+                        .value("files", db.count(db.files().whereSpaceTokenIs(space.getId())))
                         .value("allocated", space.getAllocatedSpaceInBytes())
                         .value("used", space.getUsedSizeInBytes())
                         .value("free", space.getAvailableSpaceInBytes())
@@ -465,33 +466,34 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             return writer.toString();
         }
 
-        private SpaceManagerDatabase.SpaceCriterion whereOptionsMatch(SpaceManagerDatabase.SpaceCriterion criterion)
+        private SpaceManagerDatabase.SpaceCriterion spacesWhereOptionsMatch()
         {
+            SpaceManagerDatabase.SpaceCriterion spaces = db.spaces();
             if (owner != null) {
                 FQAN fqan = new FQAN(owner);
-                criterion.whereGroupMatches(new Glob(fqan.getGroup()));
+                spaces.whereGroupMatches(new Glob(fqan.getGroup()));
                 if (fqan.hasRole()) {
-                    criterion.whereRoleMatches(new Glob(fqan.getRole()));
+                    spaces.whereRoleMatches(new Glob(fqan.getRole()));
                 }
             }
             if (linkGroup != null) {
-                criterion.whereLinkGroupIs(db.getLinkGroupByName(linkGroup).getId());
+                spaces.whereLinkGroupIs(db.getLinkGroupByName(linkGroup).getId());
             }
             if (al != null) {
-                criterion.whereAccessLatencyIs(al);
+                spaces.whereAccessLatencyIs(al);
             }
             if (rp != null) {
-                criterion.whereRetentionPolicyIs(rp);
+                spaces.whereRetentionPolicyIs(rp);
             }
             if (states != null && states.length > 0) {
-                criterion.whereStateIsIn(states);
+                spaces.whereStateIsIn(states);
             } else if (!all && pattern == null) {
-                criterion.whereStateIsIn(SpaceState.RESERVED);
+                spaces.whereStateIsIn(SpaceState.RESERVED);
             }
             if (!ephemeral && !all && pattern == null) {
-                criterion.whereLifetimeIs(-1);
+                spaces.whereLifetimeIs(-1);
             }
-            return criterion;
+            return spaces;
         }
     }
 
@@ -597,24 +599,22 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             writer.space().header("PNFSID").left("pnfsid")
                     .space().header("PATH").left("path");
 
-            SpaceManagerDatabase.FileCriterion criterion = db.fileCriterion();
-            whereOptionsMatch(criterion);
             Iterable<File> files;
             if (pattern != null) {
                 try {
                     PnfsId pnfsId = pnfs.getPnfsIdByPath(pattern.toString());
-                    files = db.getFiles(whereOptionsMatch(db.fileCriterion().wherePnfsIdIs(pnfsId)), limit);
+                    files = db.get(filesWhereOptionsMatch().wherePnfsIdIs(pnfsId), limit);
                 } catch (FileNotFoundCacheException ignored) {
-                    files = db.getFiles(whereOptionsMatch(db.fileCriterion().wherePathMatches(pattern)), limit);
+                    files = db.get(filesWhereOptionsMatch().wherePathMatches(pattern), limit);
                 }
                 try {
                     PnfsId pnfsId = new PnfsId(pattern.toString());
-                    List<File> moreFiles = db.getFiles(whereOptionsMatch(db.fileCriterion().wherePnfsIdIs(pnfsId)), limit);
+                    List<File> moreFiles = db.get(filesWhereOptionsMatch().wherePnfsIdIs(pnfsId), limit);
                     files = concat(moreFiles, files);
                 } catch (IllegalArgumentException ignored) {
                 }
             } else {
-                files = db.getFiles(whereOptionsMatch(db.fileCriterion()), limit);
+                files = db.get(filesWhereOptionsMatch(), limit);
             }
 
             for (File file : files) {
@@ -654,27 +654,28 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             return writer.toString();
         }
 
-        private SpaceManagerDatabase.FileCriterion whereOptionsMatch(SpaceManagerDatabase.FileCriterion criterion)
+        private SpaceManagerDatabase.FileCriterion filesWhereOptionsMatch()
         {
+            SpaceManagerDatabase.FileCriterion files = db.files();
             if (owner != null) {
                 FQAN fqan = new FQAN(owner);
-                criterion.whereGroupMatches(new Glob(fqan.getGroup()));
+                files.whereGroupMatches(new Glob(fqan.getGroup()));
                 if (fqan.hasRole()) {
-                    criterion.whereRoleMatches(new Glob(fqan.getRole()));
+                    files.whereRoleMatches(new Glob(fqan.getRole()));
                 }
             }
             if (token != null) {
-                criterion.whereSpaceTokenIs(token);
+                files.whereSpaceTokenIs(token);
             }
             if (states != null && states.length > 0) {
-                criterion.whereStateIsIn(states);
+                files.whereStateIsIn(states);
             } else if (!all && pattern == null) {
-                criterion.whereStateIsIn(FileState.ALLOCATED, FileState.TRANSFERRING, FileState.STORED);
+                files.whereStateIsIn(FileState.ALLOCATED, FileState.TRANSFERRING, FileState.STORED);
             }
             if (!all && pattern == null) {
-                criterion.whereDeletedIs(false);
+                files.whereDeletedIs(false);
             }
-            return criterion;
+            return files;
         }
     }
 

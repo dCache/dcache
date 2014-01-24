@@ -39,7 +39,6 @@ import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
@@ -100,7 +99,8 @@ import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Iterables.transform;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Lists.newArrayList;
 
 public final class SpaceManagerService
@@ -233,15 +233,15 @@ public final class SpaceManagerService
 
         @Override
         public void getInfo(PrintWriter printWriter) {
-                printWriter.println("isSpaceManagerEnabled="+ isSpaceManagerEnabled);
+                printWriter.println("isSpaceManagerEnabled=" + isSpaceManagerEnabled);
                 printWriter.println("expireSpaceReservationsPeriod="
                                     + expireSpaceReservationsPeriod);
                 printWriter.println("shouldDeleteStoredFileRecord="
                                     + shouldDeleteStoredFileRecord);
                 printWriter.println("defaultLatencyForSpaceReservations="
-                                    + defaultAccessLatency);
+                                            + defaultAccessLatency);
                 printWriter.println("shouldReserveSpaceForNonSrmTransfers="
-                                    + shouldReserveSpaceForNonSrmTransfers);
+                                            + shouldReserveSpaceForNonSrmTransfers);
                 printWriter.println("shouldReturnFlushedSpaceToReservation="
                                             + shouldReturnFlushedSpaceToReservation);
         }
@@ -279,39 +279,20 @@ public final class SpaceManagerService
                         spaces = Collections.singletonList(db.getSpace(msg.getSpaceTokenId()));
                 }
                 else {
-                        spaces = db.getReservedSpaces();
+                        spaces = db.get(db.spaces().whereStateIsIn(SpaceState.RESERVED), null);
                 }
                 msg.setSpaceTokenSet(spaces);
         }
 
         private void getLinkGroups(GetLinkGroupsMessage msg) throws DataAccessException {
-                msg.setLinkGroups(db.getLinkGroups());
+                msg.setLinkGroups(db.get(db.linkGroups()));
         }
 
         private void getLinkGroupNames(GetLinkGroupNamesMessage msg) throws DataAccessException {
-                msg.setLinkGroupNames(newArrayList(transform(db.getLinkGroups(), LinkGroup.getName)));
+                msg.setLinkGroupNames(newArrayList(transform(db.get(db.linkGroups()), LinkGroup.getName)));
         }
 
-        @Nonnull
-        private long[] getSpaceTokens(Subject subject, String description) throws DataAccessException
-        {
-                Set<Long> spaces = new HashSet<>();
-                if (description==null) {
-                    for (String s : Subjects.getFqans(subject)) {
-                        if (s != null) {
-                            FQAN fqan = new FQAN(s);
-                            spaces.addAll(db.findSpaceTokensByVoGroupAndRole(fqan.getGroup(), fqan.getRole()));
-                        }
-                    }
-                    spaces.addAll(db.findSpaceTokensByVoGroupAndRole(Subjects.getUserName(subject), ""));
-                }
-                else {
-                    spaces.addAll(db.findSpaceTokensByDescription(description));
-                }
-                return Longs.toArray(spaces);
-        }
-
-        /** Returns true if message is of a type processed exclusively by SpaceManager */
+    /** Returns true if message is of a type processed exclusively by SpaceManager */
         private boolean isSpaceManagerMessage(Message message)
         {
                 return message instanceof Reserve
@@ -1209,16 +1190,43 @@ public final class SpaceManagerService
         private void getSpaceTokens(GetSpaceTokens gst) throws DataAccessException
         {
                 String description = gst.getDescription();
-                long [] tokens = getSpaceTokens(gst.getSubject(), description);
-                gst.setSpaceToken(tokens);
+                Subject subject = gst.getSubject();
+                Set<Long> spaces = new HashSet<>();
+                if (description == null) {
+                    for (String s : Subjects.getFqans(subject)) {
+                        if (s != null) {
+                            FQAN fqan = new FQAN(s);
+                            String role = fqan.getRole();
+                            SpaceManagerDatabase.SpaceCriterion criterion =
+                                    db.spaces()
+                                            .whereStateIsIn(SpaceState.RESERVED)
+                                            .whereGroupIs(fqan.getGroup());
+                            if (!isNullOrEmpty(role)) {
+                                criterion.whereRoleIs(role);
+                            }
+                            spaces.addAll(db.getSpaceTokensOf(criterion));
+                        }
+                    }
+                    spaces.addAll(db.getSpaceTokensOf(
+                            db.spaces()
+                                    .whereStateIsIn(SpaceState.RESERVED)
+                                    .whereGroupIs(Subjects.getUserName(subject))));
+                }
+                else {
+                    spaces.addAll(db.getSpaceTokensOf(
+                            db.spaces()
+                                    .whereStateIsIn(SpaceState.RESERVED)
+                                    .whereDescriptionIs(description)));
+                }
+                gst.setSpaceToken(Longs.toArray(spaces));
         }
 
         private void getFileSpaceTokens(GetFileSpaceTokensMessage getFileTokens)
                 throws DataAccessException
         {
                 PnfsId pnfsId = getFileTokens.getPnfsId();
-                FsPath pnfsPath = getFileTokens.getPnfsPath();
-                getFileTokens.setSpaceToken(Longs.toArray(db.getSpaceTokensOfFile(pnfsId, pnfsPath)));
+                List<File> files = db.get(db.files().wherePnfsIdIs(pnfsId), null);
+                getFileTokens.setSpaceToken(Longs.toArray(transform(files, File.getSpaceToken)));
         }
 
         private void extendLifetime(ExtendLifetime extendLifetime) throws DataAccessException

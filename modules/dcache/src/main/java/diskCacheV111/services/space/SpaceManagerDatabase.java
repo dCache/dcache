@@ -8,7 +8,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
@@ -57,13 +56,7 @@ public interface SpaceManagerDatabase
                     @Nullable PnfsId pnfsId)
             throws DataAccessException, SpaceException;
 
-    List<Long> getSpaceTokensOfFile(@Nullable PnfsId pnfsId, @Nullable FsPath pnfsPath) throws DataAccessException;
-
-    List<Long> findSpaceTokensByDescription(String description);
-
     void expireSpaces();
-
-    List<Space> getReservedSpaces();
 
     Space insertSpace(@Nullable String voGroup,
                       @Nullable String voRole,
@@ -78,21 +71,7 @@ public interface SpaceManagerDatabase
                       long allocated)
             throws DataAccessException;
 
-    Space selectSpaceForUpdate(long id, long sizeInBytes) throws DataAccessException;
-
     Space selectSpaceForUpdate(long id) throws DataAccessException;
-
-    Space updateSpace(long id,
-                      @Nullable String voGroup,
-                      @Nullable String voRole,
-                      @Nullable RetentionPolicy retentionPolicy,
-                      @Nullable AccessLatency accessLatency,
-                      @Nullable Long linkGroupId,
-                      @Nullable Long sizeInBytes,
-                      @Nullable Long lifetime,
-                      @Nullable String description,
-                      @Nullable SpaceState state)
-            throws DataAccessException;
 
     Space updateSpace(Space space,
                       @Nullable String voGroup,
@@ -104,9 +83,6 @@ public interface SpaceManagerDatabase
                       @Nullable Long lifetime,
                       @Nullable String description,
                       @Nullable SpaceState state)
-            throws DataAccessException;
-
-    List<Long> findSpaceTokensByVoGroupAndRole(@Nullable String voGroup, @Nullable String voRole)
             throws DataAccessException;
 
     Space getSpace(long id) throws DataAccessException;
@@ -122,8 +98,6 @@ public interface SpaceManagerDatabase
                          VOInfo[] linkGroupVOs) throws DataAccessException;
 
     LinkGroup getLinkGroup(long id) throws DataAccessException;
-
-    List<LinkGroup> getLinkGroups();
 
     LinkGroup getLinkGroupByName(String name) throws DataAccessException;
 
@@ -143,28 +117,37 @@ public interface SpaceManagerDatabase
 
     File getFile(PnfsId pnfsId) throws DataAccessException;
 
-    /** Return a new link group criterion. */
-    LinkGroupCriterion linkGroupCriterion();
 
-    /** Return link groups matching a criterion. */
-    List<LinkGroup> getLinkGroups(LinkGroupCriterion criterion);
+
+    /** Return a new link group criterion. */
+    LinkGroupCriterion linkGroups();
+
+    /** Return link groups matching criterion. */
+    List<LinkGroup> get(LinkGroupCriterion criterion);
+
+
 
     /** Return a new space reservation criterion. */
-    SpaceCriterion spaceCriterion();
+    SpaceCriterion spaces();
 
-    /** Return space reservations matching a criterion. */
-    List<Space> getSpaces(SpaceCriterion criterion, Integer limit);
+    /** Return space reservations matching criterion. */
+    List<Space> get(SpaceCriterion criterion, Integer limit);
 
-    int getCountOfSpaces(SpaceCriterion criterion);
+    /** Return space tokens of spaces matchin criterion. */
+    List<Long> getSpaceTokensOf(SpaceCriterion criterion);
+
+    /** Return the number of space reservations matching criterion. */
+    int count(SpaceCriterion criterion);
+
 
     /** Return a new file criterion. */
-    FileCriterion fileCriterion();
+    FileCriterion files();
 
     /** Get files matching the criterion. */
-    List<File> getFiles(FileCriterion criterion, Integer limit);
+    List<File> get(FileCriterion criterion, Integer limit);
 
     /** Return the number of files matching the criterion. */
-    int getCountOfFiles(FileCriterion criterion);
+    int count(FileCriterion criterion);
 
     /** Selection criterion for link groups. */
     public interface LinkGroupCriterion
@@ -198,6 +181,12 @@ public interface SpaceManagerDatabase
         SpaceCriterion whereLifetimeIs(int i);
 
         SpaceCriterion whereLinkGroupIs(long id);
+
+        SpaceCriterion whereGroupIs(String group);
+
+        SpaceCriterion whereRoleIs(String role);
+
+        SpaceCriterion whereDescriptionIs(String description);
     }
 
     /** Selection criterion for file reservations. */
