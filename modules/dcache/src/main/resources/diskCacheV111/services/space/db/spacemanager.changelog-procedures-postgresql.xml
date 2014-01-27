@@ -4,13 +4,11 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <changeSet id="0" author="behrmann" dbms="postgresql">
+    <changeSet id="0" author="behrmann" dbms="postgresql" runOnChange="true">
         <preConditions onFail="MARK_RAN" onFailMessage="plpgsql language already exists (this is not an error)">
-            <not>
-                <sqlCheck expectedResult="1">
-                    SELECT 1 FROM   pg_language WHERE  lanname = 'plpgsql'
-                </sqlCheck>
-            </not>
+            <sqlCheck expectedResult="f">
+                SELECT 'plpgsql' IN (SELECT lanname FROM pg_language)
+            </sqlCheck>
         </preConditions>
         <comment>Install plpgsql procedural language</comment>
         <sql>CREATE LANGUAGE plpgsql</sql>
