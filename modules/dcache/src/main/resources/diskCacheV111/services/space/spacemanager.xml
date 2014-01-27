@@ -14,20 +14,6 @@
     <property name="location" value="arguments:"/>
   </bean>
 
-    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
-        <description>Database schema manager</description>
-        <property name="dataSource">
-            <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                <property name="driverClassName" value="${spacemanager.db.driver}"/>
-                <property name="url" value="${spacemanager.db.url}"/>
-                <property name="username" value="${spacemanager.db.user}"/>
-                <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>
-            </bean>
-        </property>
-        <property name="changeLog" value="classpath:${spacemanager.db.schema.changelog}"/>
-        <property name="shouldUpdate" value="${spacemanager.db.schema.auto}"/>
-    </bean>
-
   <bean id="scheduled-executor"
         class="java.util.concurrent.Executors"
         factory-method="newScheduledThreadPool"
@@ -75,21 +61,36 @@
     <constructor-arg ref="pnfs-stub"/>
   </bean>
 
-  <bean id="data-source" class="com.jolbox.bonecp.BoneCPDataSource"
-      destroy-method="close">
-    <description>Database connection pool</description>
-    <property name="driverClass" value="${spacemanager.db.driver}"/>
-    <property name="jdbcUrl" value="${spacemanager.db.url}"/>
-    <property name="username" value="${spacemanager.db.user}"/>
-    <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>
-    <property name="partitionCount" value="${spacemanager.db.connections.partition-count}"/>
-    <property name="minConnectionsPerPartition" value="${spacemanager.db.connections.min-per-partition}"/>
-    <property name="maxConnectionsPerPartition" value="${spacemanager.db.connections.max-per-partition}"/>
-    <property name="idleConnectionTestPeriodInMinutes" value="60"/>
-    <property name="idleMaxAgeInMinutes" value="240"/>
-    <property name="acquireIncrement" value="5"/>
-    <property name="statementsCacheSize" value="100"/>
-  </bean>
+    <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
+            destroy-method="shutdown">
+        <constructor-arg>
+            <bean class="com.zaxxer.hikari.HikariConfig">
+                <constructor-arg type="java.util.Properties">
+                    <value>
+                        minimumPoolSize = ${spacemanager.db.connections.min}
+                        maximumPoolSize = ${spacemanager.db.connections.max}
+                        autoCommit = true
+                        transactionIsolation = TRANSACTION_READ_COMMITTED
+                    </value>
+                </constructor-arg>
+                <property name="dataSource">
+                    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+                        <property name="driverClassName" value="${spacemanager.db.driver}"/>
+                        <property name="url" value="${spacemanager.db.url}"/>
+                        <property name="username" value="${spacemanager.db.user}"/>
+                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>
+                    </bean>
+                </property>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema manager</description>
+        <property name="dataSource" ref="data-source"/>
+        <property name="changeLog" value="classpath:${spacemanager.db.schema.changelog}"/>
+        <property name="shouldUpdate" value="${spacemanager.db.schema.auto}"/>
+    </bean>
 
   <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
     <description>Database transaction manager</description>
