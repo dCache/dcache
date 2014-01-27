@@ -38,7 +38,6 @@ public class SrmReserveSpace
     private final Configuration configuration;
     private final String client_host;
     private SrmReserveSpaceResponse response;
-    private final SRM srm;
 
     public SrmReserveSpace(SRMUser user,
                            RequestCredential credential,
@@ -52,7 +51,6 @@ public class SrmReserveSpace
         this.credential = checkNotNull(credential);
         this.configuration = checkNotNull(srm.getConfiguration());
         this.client_host = checkNotNull(clientHost);
-        this.srm = checkNotNull(srm);
     }
 
     public SrmReserveSpaceResponse getResponse()
@@ -102,7 +100,7 @@ public class SrmReserveSpace
                             userSpaceTokenDescription,
                             client_host);
             reserveRequest.applyJdc();
-            srm.schedule(reserveRequest);
+            reserveRequest.schedule();
             return reserveRequest.getSrmReserveSpaceResponse();
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted");

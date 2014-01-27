@@ -139,7 +139,9 @@ public class Main extends CommandInterpreter implements  Runnable {
             sb.append(" storage info ");
             sb.append('\n');
             sb.append(config.toString()).append('\n');
-            sb.append(srm.getSchedulerInfo());
+            srm.printGetSchedulerInfo(sb);
+            srm.printPutSchedulerInfo(sb);
+            srm.printCopySchedulerInfo(sb);
             printWriter.println( sb.toString()) ;
         }
 
@@ -234,17 +236,23 @@ public class Main extends CommandInterpreter implements  Runnable {
                 }
                 if(get) {
                     sb.append("Get Request Scheduler:\n");
-                    sb.append(srm.getGetSchedulerInfo());
+                    srm.printGetSchedulerThreadQueue(sb);
+                    srm.printGetSchedulerPriorityThreadQueue(sb);
+                    srm.printCopySchedulerReadyThreadQueue(sb);
                     sb.append('\n');
                 }
                 if(put) {
                     sb.append("Put Request Scheduler:\n");
-                    sb.append(srm.getPutSchedulerInfo());
+                    srm.printPutSchedulerThreadQueue(sb);
+                    srm.printPutSchedulerPriorityThreadQueue(sb);
+                    srm.printPutSchedulerReadyThreadQueue(sb);
                     sb.append('\n');
                 }
                 if(copy) {
                     sb.append("Copy Request Scheduler:\n");
-                    sb.append(srm.getCopySchedulerInfo());
+                    srm.printCopySchedulerThreadQueue(sb);
+                    srm.printCopySchedulerPriorityThreadQueue(sb);
+                    srm.printCopySchedulerReadyThreadQueue(sb);
                     sb.append('\n');
                 }
                 return sb.toString();

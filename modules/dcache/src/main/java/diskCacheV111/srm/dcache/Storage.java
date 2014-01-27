@@ -210,8 +210,6 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import dmg.cells.services.login.LoginBrokerHandler;
-
-import org.dcache.srm.request.GetFileRequest;
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -480,8 +478,16 @@ public final class Storage
         if (info != null) {
             pw.println(info);
         }
+
         pw.println(config);
-        pw.println(srm.getSchedulerInfo());
+
+        StringBuilder sb = new StringBuilder();
+        srm.printGetSchedulerInfo(sb);
+        srm.printPutSchedulerInfo(sb);
+        srm.printCopySchedulerInfo(sb);
+        srm.printBringOnlineSchedulerInfo(sb);
+        srm.printLsSchedulerInfo(sb);
+        pw.println(sb);
     }
 
     public final static String hh_set_switch_to_async_mode_delay_get =
@@ -721,27 +727,37 @@ public final class Storage
         }
         if(get) {
             sb.append("Get Request Scheduler:\n");
-            sb.append(srm.getGetSchedulerInfo());
+            srm.printGetSchedulerThreadQueue(sb);
+            srm.printGetSchedulerPriorityThreadQueue(sb);
+            srm.printGetSchedulerReadyThreadQueue(sb);
             sb.append('\n');
         }
         if(put) {
             sb.append("Put Request Scheduler:\n");
-            sb.append(srm.getPutSchedulerInfo());
+            srm.printPutSchedulerThreadQueue(sb);
+            srm.printPutSchedulerPriorityThreadQueue(sb);
+            srm.printPutSchedulerReadyThreadQueue(sb);
             sb.append('\n');
         }
         if(copy) {
             sb.append("Copy Request Scheduler:\n");
-            sb.append(srm.getCopySchedulerInfo());
+            srm.printCopySchedulerThreadQueue(sb);
+            srm.printCopySchedulerPriorityThreadQueue(sb);
+            srm.printCopySchedulerReadyThreadQueue(sb);
             sb.append('\n');
         }
         if(bring) {
             sb.append("Bring Online Request Scheduler:\n");
-            sb.append(srm.getBringOnlineSchedulerInfo());
+            srm.printBringOnlineSchedulerThreadQueue(sb);
+            srm.printBringOnlineSchedulerPriorityThreadQueue(sb);
+            srm.printBringOnlineSchedulerReadyThreadQueue(sb);
             sb.append('\n');
         }
         if(ls) {
             sb.append("Ls Request Scheduler:\n");
-            sb.append(srm.getLsSchedulerInfo());
+            srm.printLsSchedulerThreadQueue(sb);
+            srm.printLsSchedulerPriorityThreadQueue(sb);
+            srm.printLsSchedulerReadyThreadQueue(sb);
             sb.append('\n');
         }
         return sb.toString();
@@ -830,7 +846,8 @@ public final class Storage
             throw new IllegalArgumentException("count is not specified");
         }
         int value = Integer.parseInt(args.argv(0));
-        srm.setPutMaxReadyJobs(value);
+        config.setPutMaxReadyJobs(value);
+        srm.getPutRequestScheduler().setMaxReadyJobs(value);
         _log.info("put-req-max-ready-requests="+value);
         return "put-req-max-ready-requests="+value;
     }
@@ -843,7 +860,8 @@ public final class Storage
             throw new IllegalArgumentException("count is not specified");
         }
         int value = Integer.parseInt(args.argv(0));
-        srm.setGetMaxReadyJobs(value);
+        config.setGetMaxReadyJobs(value);
+        srm.getGetRequestScheduler().setMaxReadyJobs(value);
         _log.info("get-req-max-ready-requests="+value);
         return "get-req-max-ready-requests="+value;
     }
@@ -856,7 +874,8 @@ public final class Storage
             throw new IllegalArgumentException("count is not specified");
         }
         int value = Integer.parseInt(args.argv(0));
-        srm.setBringOnlineMaxReadyJobs(value);
+        config.setBringOnlineMaxReadyJobs(value);
+        srm.getBringOnlineRequestScheduler().setMaxReadyJobs(value);
         _log.info("bring-online-req-max-ready-requests="+value);
         return "bring-online-req-max-ready-requests="+value;
     }
@@ -877,7 +896,8 @@ public final class Storage
             throw new IllegalArgumentException("count is not specified");
         }
         int value = Integer.parseInt(args.argv(0));
-        srm.setLsMaxReadyJobs(value);
+        config.setLsMaxReadyJobs(value);
+        srm.getLsRequestScheduler().setMaxReadyJobs(value);
         _log.info("ls-request-max-ready-requests="+value);
         return "ls-request-max-ready-requests="+value;
     }

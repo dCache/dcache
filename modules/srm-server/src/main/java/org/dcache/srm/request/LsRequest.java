@@ -16,7 +16,6 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
-import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
@@ -144,23 +143,17 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         @Override
-        public Class<? extends Job> getSchedulerType()
-        {
-            return LsFileRequest.class;
-        }
+        public void schedule() throws InterruptedException,
+                IllegalStateTransition {
 
-        @Override
-        public void scheduleWith(Scheduler scheduler) throws InterruptedException,
-                IllegalStateTransition
-        {
-            // save this request in request storage unconditionally
-            // file requests will get stored as soon as they are
-            // scheduled, and the saved state needs to be consistent
-            saveJob(true);
+                // save this request in request storage unconditionally
+                // file requests will get stored as soon as they are
+                // scheduled, and the saved state needs to be consistent
 
-            for (LsFileRequest request : getFileRequests()) {
-                request.scheduleWith(scheduler);
-            }
+                saveJob(true);
+                for (LsFileRequest request : getFileRequests()) {
+                        request.schedule();
+                }
         }
 
         @Override

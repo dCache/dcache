@@ -39,7 +39,6 @@ public class SrmCopy
     private final SrmCopyRequest request;
     private SrmCopyResponse response;
     private final SRMUser user;
-    private final SRM srm;
     private final RequestCredential credential;
     private final Configuration configuration;
     private String clientHost;
@@ -56,7 +55,6 @@ public class SrmCopy
         this.credential = checkNotNull(credential);
         this.configuration = srm.getConfiguration();
         this.clientHost = clientHost;
-        this.srm = checkNotNull(srm);
     }
 
     public SrmCopyResponse getResponse()
@@ -125,7 +123,7 @@ public class SrmCopy
                     LOGGER.warn("Ignoring non-integer priority value: {}", priority);
                 }
             }
-            srm.schedule(r);
+            r.schedule();
             return r.getSrmCopyResponse();
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);

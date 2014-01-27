@@ -42,7 +42,6 @@ public class SrmPrepareToGet
     private final AbstractStorageElement storage;
     private final SrmPrepareToGetRequest request;
     private final SRMUser user;
-    private final SRM srm;
     private final RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
@@ -61,7 +60,6 @@ public class SrmPrepareToGet
         this.clientHost = clientHost;
         this.storage = checkNotNull(storage);
         this.configuration = checkNotNull(srm.getConfiguration());
-        this.srm = checkNotNull(srm);
     }
 
     public SrmPrepareToGetResponse getResponse()
@@ -122,7 +120,7 @@ public class SrmPrepareToGet
                     LOGGER.warn("Ignoring non-integer user priority: {}" , priority);
                 }
             }
-            srm.schedule(r);
+            r.schedule();
             return r.getSrmPrepareToGetResponse(configuration.getGetSwitchToAsynchronousModeDelay());
         }
     }

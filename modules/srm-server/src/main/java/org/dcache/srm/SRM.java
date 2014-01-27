@@ -125,7 +125,6 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
@@ -158,7 +157,6 @@ public class SRM {
     private RrdRequestExecutionTimeGauges<?> rrdSrmServerV2Gauges;
     private RrdRequestExecutionTimeGauges<?> rrdSrmServerV1Gauges;
     private RrdRequestExecutionTimeGauges<?> rrdAstractStorageElementGauges;
-    private final SchedulerContainer schedulers;
 
     private static SRM srm;
     /**
@@ -262,19 +260,8 @@ public class SRM {
 
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
-
-        schedulers = new SchedulerContainer();
-        SchedulerFactory factory = new SchedulerFactory(config, name);
-        schedulers.add(factory.buildBringOnlineScheduler());
-        schedulers.add(factory.buildCopyScheduler());
-        schedulers.add(factory.buildGetScheduler());
-        schedulers.add(factory.buildLsScheduler());
-        schedulers.add(factory.buildPutScheduler());
-        schedulers.add(factory.buildReserveSpaceScheduler());
-        schedulers.start();
-
+        SchedulerFactory.initSchedulerFactory(config, name);
         DatabaseJobStorageFactory afactory = new DatabaseJobStorageFactory(configuration);
-        afactory.setSchedulerContainer(schedulers);
         JobStorageFactory.initJobStorageFactory(afactory);
         afactory.init();
 
@@ -317,7 +304,7 @@ public class SRM {
     }
 
     public void stop() {
-        schedulers.stop();
+        SchedulerFactory.getSchedulerFactory().shutdown();
     }
 
     /**
@@ -606,7 +593,8 @@ public class SRM {
                     client_host,
                     null);
             logger.debug(" Copy Request = " + r);
-            schedulers.schedule(r);
+            // RequesScheduler will take care of the rest
+            r.schedule();
 
             // Return the request status
             RequestStatus rs = r.getRequestStatus();
@@ -671,7 +659,7 @@ public class SRM {
                             configuration.getGetMaxNumOfRetries(),
                             null,
                             client_host);
-            schedulers.schedule(r);
+            r.schedule();
             // RequestScheduler will take care of the rest
             //getGetRequestScheduler().add(r);
             // Return the request status
@@ -900,18 +888,13 @@ public class SRM {
                     null,
                     null,
                     null);
-            schedulers.schedule(r);
+            r.schedule();
             // return status
             return r.getRequestStatus();
         } catch (Exception e) {
             logger.error(e.toString());
             return createFailedRequestStatus("put(): error " + e);
         }
-    }
-
-    public void schedule(Job job) throws InterruptedException, IllegalStateException, IllegalStateTransition
-    {
-        schedulers.schedule(job);
     }
 
     /**
@@ -1061,34 +1044,40 @@ public class SRM {
     }
 
 
-    public CharSequence getSchedulerInfo()
-    {
-        return schedulers.getInfo();
+    public void printGetSchedulerInfo(StringBuilder sb) {
+        getGetRequestScheduler().getInfo(sb);
     }
 
-    public CharSequence getGetSchedulerInfo()
-    {
-        return schedulers.getDetailedInfo(GetFileRequest.class);
+    public void printLsSchedulerInfo(StringBuilder sb) {
+        getLsRequestScheduler().getInfo(sb);
     }
 
-    public CharSequence getLsSchedulerInfo()
-    {
-        return schedulers.getDetailedInfo(LsFileRequest.class);
+    public void printGetSchedulerThreadQueue(StringBuilder sb) {
+        getGetRequestScheduler().printThreadQueue(sb);
+
     }
 
-    public CharSequence getPutSchedulerInfo()
-    {
-        return schedulers.getDetailedInfo(PutFileRequest.class);
+    public void printGetSchedulerPriorityThreadQueue(StringBuilder sb) {
+        getGetRequestScheduler().printPriorityThreadQueue(sb);
     }
 
-    public CharSequence getCopySchedulerInfo()
-    {
-        return schedulers.getDetailedInfo(CopyRequest.class);
+    public void printGetSchedulerReadyThreadQueue(StringBuilder sb) {
+        getGetRequestScheduler().printReadyQueue(sb);
+
     }
 
-    public CharSequence getBringOnlineSchedulerInfo()
-    {
-        return schedulers.getDetailedInfo(BringOnlineFileRequest.class);
+    public void printLsSchedulerThreadQueue(StringBuilder sb) {
+        getLsRequestScheduler().printThreadQueue(sb);
+
+    }
+
+    public void printLsSchedulerPriorityThreadQueue(StringBuilder sb) {
+        getLsRequestScheduler().printPriorityThreadQueue(sb);
+    }
+
+    public void printLsSchedulerReadyThreadQueue(StringBuilder sb) {
+        getLsRequestScheduler().printReadyQueue(sb);
+
     }
 
     public void listPutRequests(StringBuilder sb) throws DataAccessException {
@@ -1115,6 +1104,24 @@ public class SRM {
         listRequests(sb, getPutStorage().getLatestDoneJobIds(maxCount), PutRequest.class);
     }
 
+    public void printPutSchedulerInfo(StringBuilder sb) {
+        getPutRequestScheduler().getInfo(sb);
+    }
+
+    public void printPutSchedulerThreadQueue(StringBuilder sb) {
+        getPutRequestScheduler().printThreadQueue(sb);
+
+    }
+
+    public void printPutSchedulerPriorityThreadQueue(StringBuilder sb) {
+        getPutRequestScheduler().printPriorityThreadQueue(sb);
+    }
+
+    public void printPutSchedulerReadyThreadQueue(StringBuilder sb) {
+        getPutRequestScheduler().printReadyQueue(sb);
+
+    }
+
     public void listCopyRequests(StringBuilder sb) throws DataAccessException {
         listRequests(sb, CopyRequest.class);
     }
@@ -1137,6 +1144,23 @@ public class SRM {
 
     public void listLatestDoneCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getCopyStorage().getLatestDoneJobIds(maxCount), CopyRequest.class);
+    }
+
+    public void printCopySchedulerInfo(StringBuilder sb) {
+        getCopyRequestScheduler().getInfo(sb);
+    }
+
+    public void printCopySchedulerThreadQueue(StringBuilder sb) {
+        getCopyRequestScheduler().printThreadQueue(sb);
+    }
+
+    public void printCopySchedulerPriorityThreadQueue(StringBuilder sb) {
+        getCopyRequestScheduler().printPriorityThreadQueue(sb);
+    }
+
+    public void printCopySchedulerReadyThreadQueue(StringBuilder sb) {
+        getCopyRequestScheduler().printReadyQueue(sb);
+
     }
 
     public void listBringOnlineRequests(StringBuilder sb) throws DataAccessException {
@@ -1162,6 +1186,28 @@ public class SRM {
 
     public void listLatestDoneBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
         listRequests(sb, getBringOnlineStorage().getLatestDoneJobIds(maxCount), BringOnlineRequest.class);
+    }
+
+    public void printBringOnlineSchedulerInfo(StringBuilder sb) {
+        getBringOnlineRequestScheduler().getInfo(sb);
+    }
+
+    public void printBringOnlineSchedulerThreadQueue(StringBuilder sb) {
+        getBringOnlineRequestScheduler().printThreadQueue(sb);
+
+    }
+
+    public void printBringOnlineSchedulerPriorityThreadQueue(StringBuilder sb) {
+        getBringOnlineRequestScheduler().printPriorityThreadQueue(sb);
+    }
+
+    public void printBringOnlineSchedulerReadyThreadQueue(StringBuilder sb) {
+        getBringOnlineRequestScheduler().printReadyQueue(sb);
+    }
+
+    private Scheduler getScheduler(Class<? extends Job> requestType) {
+        return SchedulerFactory.getSchedulerFactory().
+                getScheduler(requestType);
     }
 
     public void listReserveSpaceRequests(StringBuilder sb) throws DataAccessException {
@@ -1195,9 +1241,17 @@ public class SRM {
     }
 
     public double getLoad() {
-        return (schedulers.getLoad(CopyRequest.class) +
-                schedulers.getLoad(GetFileRequest.class) +
-                schedulers.getLoad(PutFileRequest.class))/3;
+        int copyRunning = getCopyRequestScheduler().getTotalRunningThreads();
+        int maxCopyRunning = getCopyRequestScheduler().getThreadPoolSize();
+        int getRunning = getGetRequestScheduler().getTotalRunningThreads();
+        int maxGetRunning = getGetRequestScheduler().getThreadPoolSize();
+        int putRunning = getPutRequestScheduler().getTotalRunningThreads();
+        int maxPutRunning = getPutRequestScheduler().getThreadPoolSize();
+
+        double load = (double) copyRunning / (double) maxCopyRunning / 3.0d +
+                (double) getRunning / (double) maxGetRunning / 3.0d +
+                (double) putRunning / (double) maxPutRunning / 3.0d;
+        return load;
     }
 
     public void listRequest(StringBuilder sb, long requestId, boolean longformat)
@@ -1235,41 +1289,42 @@ public class SRM {
     public void cancelAllGetRequest(StringBuilder sb, String pattern)
             throws DataAccessException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, GetRequest.class);
+        cancelAllRequest(sb, pattern, getGetRequestScheduler(), GetRequest.class);
     }
 
     public void cancelAllBringOnlineRequest(StringBuilder sb, String pattern)
             throws DataAccessException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, BringOnlineRequest.class);
+        cancelAllRequest(sb, pattern, getBringOnlineRequestScheduler(), BringOnlineRequest.class);
     }
 
     public void cancelAllPutRequest(StringBuilder sb, String pattern)
             throws DataAccessException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, PutRequest.class);
+        cancelAllRequest(sb, pattern, getPutRequestScheduler(), PutRequest.class);
     }
 
     public void cancelAllCopyRequest(StringBuilder sb, String pattern)
             throws DataAccessException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, CopyRequest.class);
+        cancelAllRequest(sb, pattern, getCopyRequestScheduler(), CopyRequest.class);
     }
 
     public void cancelAllReserveSpaceRequest(StringBuilder sb, String pattern)
             throws DataAccessException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, ReserveSpaceRequest.class);
+        cancelAllRequest(sb, pattern, getReserveSpaceScheduler(), ReserveSpaceRequest.class);
     }
 
     public void cancelAllLsRequests(StringBuilder sb, String pattern)
             throws DataAccessException, SRMInvalidRequestException {
 
-        cancelAllRequest(sb, pattern, LsRequest.class);
+        cancelAllRequest(sb, pattern, getLsRequestScheduler(), LsRequest.class);
     }
 
     private void cancelAllRequest(StringBuilder sb,
             String pattern,
+            Scheduler scheduler,
             Class<? extends Job> type)
             throws DataAccessException, SRMInvalidRequestException
     {
@@ -1279,16 +1334,13 @@ public class SRM {
         for (long requestId : activeRequestIds) {
             Matcher m = p.matcher(String.valueOf(requestId));
             if (m.matches()) {
-                logger.debug("cancelAllRequest: request Id #{} of type {} " +
-                        "matches pattern", requestId, type.getSimpleName());
+                logger.debug("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
                 jobsToKill.add(requestId);
             }
         }
         if (jobsToKill.isEmpty()) {
-            sb.append("no requests of type ")
-                    .append(type.getSimpleName())
-                    .append(" matched the pattern \"").append(pattern)
-                    .append("\"\n");
+            sb.append("no requests match the pattern=\"").append(pattern)
+                    .append(" in scheduler ").append(scheduler).append("\n");
             return;
         }
         for (long requestId : jobsToKill) {
@@ -1330,28 +1382,20 @@ public class SRM {
         return requestCredentialStorage;
     }
 
-    public void setPutMaxReadyJobs(int value)
-    {
-        configuration.setPutMaxReadyJobs(value);
-        schedulers.setMaxReadyJobs(PutFileRequest.class, value);
+    public Scheduler getGetRequestScheduler() {
+        return getScheduler(GetFileRequest.class);
     }
 
-    public void setGetMaxReadyJobs(int value)
-    {
-        configuration.setGetMaxReadyJobs(value);
-        schedulers.setMaxReadyJobs(GetRequest.class, value);
+    public Scheduler getBringOnlineRequestScheduler() {
+        return getScheduler(BringOnlineFileRequest.class);
     }
 
-    public void setBringOnlineMaxReadyJobs(int value)
-    {
-        configuration.setBringOnlineMaxReadyJobs(value);
-        schedulers.setMaxReadyJobs(BringOnlineFileRequest.class, value);
+    public Scheduler getPutRequestScheduler() {
+        return  getScheduler(PutFileRequest.class);
     }
 
-    public void setLsMaxReadyJobs(int value)
-    {
-        configuration.setLsMaxReadyJobs(value);
-        schedulers.setMaxReadyJobs(LsFileRequest.class, value);
+    public Scheduler getCopyRequestScheduler() {
+        return getScheduler(CopyRequest.class);
     }
 
     public JobStorage<ReserveSpaceRequest> getReserveSpaceRequestStorage() {
@@ -1397,6 +1441,14 @@ public class SRM {
 
     public JobStorage<CopyFileRequest> getCopyFileRequestStorage() {
         return JobStorageFactory.getJobStorageFactory().getJobStorage(CopyFileRequest.class);
+    }
+
+    public Scheduler getReserveSpaceScheduler() {
+        return getScheduler(ReserveSpaceRequest.class);
+    }
+
+    public Scheduler getLsRequestScheduler() {
+        return getScheduler(LsFileRequest.class);
     }
 
     public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description)
