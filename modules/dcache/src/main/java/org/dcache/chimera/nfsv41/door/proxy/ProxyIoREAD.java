@@ -91,11 +91,11 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                         @Override
                         public ProxyIoAdapter call() throws Exception {
                             final RpcCall call = context.getRpcCall();
+                            final NFS4State state = context.getStateHandler().getClientIdByStateId(stateid).state(stateid);
+
                             final ProxyIoAdapter adapter = proxyIoFactory.getAdapter(inode, call.getCredential().getSubject(),
                                     call.getTransport().getRemoteSocketAddress());
 
-
-                            final NFS4State state = context.getStateHandler().getClientIdByStateId(stateid).state(stateid);
                             state.addDisposeListener( new StateDisposeListener() {
 
                                 @Override
