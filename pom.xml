@@ -1011,6 +1011,23 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+               <!--
+                  2.4.2 fersion fixes bug which affect releasing with git:
+                  http://jira.codehaus.org/browse/MRELEASE-812
+               -->
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-release-plugin</artifactId>
+               <version>2.4.2</version>
+               <dependencies>
+                  <dependency>
+                     <groupId>org.apache.maven.scm</groupId>
+                     <artifactId>maven-scm-provider-gitexe</artifactId>
+                     <version>1.9</version>
+                 </dependency>
+               </dependencies>
+            </plugin>
         </plugins>
     </build>
 
