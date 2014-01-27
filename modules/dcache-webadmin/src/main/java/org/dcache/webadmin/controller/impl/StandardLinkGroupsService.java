@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -37,9 +38,9 @@ public class StandardLinkGroupsService implements LinkGroupsService {
     @Override
     public List<LinkGroupBean> getLinkGroups() throws LinkGroupsServiceException {
         try {
-            Set<LinkGroup> linkGroups = getLinkGroupsDAO().getLinkGroups();
+            Collection<LinkGroup> linkGroups = getLinkGroupsDAO().getLinkGroups();
             _log.debug("returned link Groups: {} ", linkGroups.size());
-            Set<Space> reservations = getLinkGroupsDAO().getSpaceReservations();
+            Collection<Space> reservations = getLinkGroupsDAO().getSpaceReservations();
             _log.debug("returned spacereservations: {} ", reservations.size());
             List<SpaceReservationBean> reservationBeans = createReservations(reservations);
             List<LinkGroupBean> linkGroupBeans = createLinkGroups(linkGroups);
@@ -52,7 +53,7 @@ public class StandardLinkGroupsService implements LinkGroupsService {
         }
     }
 
-    private List<LinkGroupBean> createLinkGroups(Set<LinkGroup> linkGroups) {
+    private List<LinkGroupBean> createLinkGroups(Collection<LinkGroup> linkGroups) {
         List<LinkGroupBean> linkGroupBeans = new ArrayList<>();
         for (LinkGroup linkGroup : linkGroups) {
             LinkGroupBean newBean = BeanDataMapper.linkGroupModelToView(linkGroup);
@@ -69,7 +70,7 @@ public class StandardLinkGroupsService implements LinkGroupsService {
         _daoFactory = daoFactory;
     }
 
-    private List<SpaceReservationBean> createReservations(Set<Space> reservations) {
+    private List<SpaceReservationBean> createReservations(Collection<Space> reservations) {
         List<SpaceReservationBean> reservationBeans = new ArrayList<>();
         for (Space reservation : reservations) {
             SpaceReservationBean newReservation =

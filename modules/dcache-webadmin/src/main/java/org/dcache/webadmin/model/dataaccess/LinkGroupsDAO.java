@@ -1,6 +1,6 @@
 package org.dcache.webadmin.model.dataaccess;
 
-import java.util.Set;
+import java.util.Collection;
 
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.Space;
@@ -15,7 +15,7 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public interface LinkGroupsDAO {
 
-    public Set<LinkGroup> getLinkGroups() throws DAOException;
+    public Collection<LinkGroup> getLinkGroups() throws DAOException;
 
-    public Set<Space> getSpaceReservations() throws DAOException;
+    public Collection<Space> getSpaceReservations() throws DAOException;
 }

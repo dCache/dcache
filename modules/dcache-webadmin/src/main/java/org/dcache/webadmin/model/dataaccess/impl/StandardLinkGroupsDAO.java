@@ -3,7 +3,7 @@ package org.dcache.webadmin.model.dataaccess.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import java.util.Collection;
 
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.Space;
@@ -31,32 +31,30 @@ public class StandardLinkGroupsDAO implements LinkGroupsDAO {
     }
 
     @Override
-    public Set<Space> getSpaceReservations() throws DAOException {
+    public Collection<Space> getSpaceReservations() throws DAOException {
         _log.debug("getSpaceReservations called");
         try {
-            Set<Space> reservations = tryToGetSpaceReservations();
-            return reservations;
+            return tryToGetSpaceReservations();
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - Srm up already?", ex);
         }
     }
 
     @Override
-    public Set<LinkGroup> getLinkGroups() throws DAOException {
+    public Collection<LinkGroup> getLinkGroups() throws DAOException {
         _log.debug("getLinkGroups called");
         try {
-            Set<LinkGroup> linkGroups = tryToGetLinkGroups();
-            return linkGroups;
+            return tryToGetLinkGroups();
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - Srm up already?", ex);
         }
     }
 
-    private Set<LinkGroup> tryToGetLinkGroups() throws NoSuchContextException {
-        return (Set<LinkGroup>) _pageCache.getCacheContent(ContextPaths.LINKGROUPS);
+    private Collection<LinkGroup> tryToGetLinkGroups() throws NoSuchContextException {
+        return (Collection<LinkGroup>) _pageCache.getCacheContent(ContextPaths.LINKGROUPS);
     }
 
-    private Set<Space> tryToGetSpaceReservations() throws NoSuchContextException {
-        return (Set<Space>) _pageCache.getCacheContent(ContextPaths.SPACETOKENS);
+    private Collection<Space> tryToGetSpaceReservations() throws NoSuchContextException {
+        return (Collection<Space>) _pageCache.getCacheContent(ContextPaths.SPACETOKENS);
     }
 }

@@ -52,8 +52,6 @@ public class SpaceReservationPanel extends BasePanel {
                 item.add(new Label("allocated", Long.valueOf(
                         spaceReservation.getAllocatedSpace()).toString()));
                 item.add(new Label("created", spaceReservation.getCreated()));
-                item.add(new Label("lifetime", spaceReservation.getLifetime(TimeUnit.HOURS)));
-                item.add(new Label("expiration", spaceReservation.getExpiration()));
             }
         });
     }

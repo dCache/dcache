@@ -311,14 +311,7 @@ public final class SpaceManagerService
         }
 
         private void getValidSpaceTokens(GetSpaceTokensMessage msg) throws DataAccessException {
-                List<Space> spaces;
-                if(msg.getSpaceTokenId()!=null) {
-                        spaces = Collections.singletonList(db.getSpace(msg.getSpaceTokenId()));
-                }
-                else {
-                        spaces = db.get(db.spaces().whereStateIsIn(SpaceState.RESERVED), null);
-                }
-                msg.setSpaceTokenSet(spaces);
+            msg.setSpaceTokenSet(db.get(db.spaces().whereLifetimeIs(-1).whereStateIsIn(SpaceState.RESERVED), null));
         }
 
         private void getLinkGroups(GetLinkGroupsMessage msg) throws DataAccessException {
