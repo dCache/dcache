@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import diskCacheV111.util.AccessLatency;
@@ -37,6 +39,7 @@ import diskCacheV111.util.RetentionPolicy;
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
+import org.dcache.util.Checksum;
 
 import static org.dcache.commons.util.SqlHelper.tryToClose;
 
@@ -1072,24 +1075,29 @@ public class JdbcFs implements FileSystemProvider {
                     throw new FileNotFoundHimeraFsException(name);
                 }
 
-                if (cmd[2].equals("locality")) {
-                    inode = inodeOf(parent, cmd[1]);
-                    if (!inode.exists()) {
-                        throw new FileNotFoundHimeraFsException(name);
-                    }
-                    return getPLOC(inode.toString());
+                switch(cmd[2]) {
+                    case "locality":
+                        inode = inodeOf(parent, cmd[1]);
+                        if (!inode.exists()) {
+                            throw new FileNotFoundHimeraFsException(name);
+                        }
+                        return getPLOC(inode.toString());
+                    case "checksum":
+                    case "checksums":
+                        inode = inodeOf(parent, cmd[1]);
+                        if (!inode.exists()) {
+                            throw new FileNotFoundHimeraFsException(name);
+                        }
+                        return new FsInode_PCRC(this, inode.toString());
+                    default:
+                        String[] args = new String[cmd.length - 1];
+                        System.arraycopy(cmd, 1, args, 0, args.length);
+                        inode = new FsInode_PGET(this, parent.toString(), args);
+                        if (!inode.exists()) {
+                            throw new FileNotFoundHimeraFsException(name);
+                        }
+                        return inode;
                 }
-
-                /*
-                 * pass in the name too (args 1 to n)
-                 */
-                String[] args = new String[cmd.length - 1];
-                System.arraycopy(cmd, 1, args, 0, args.length);
-                inode = new FsInode_PGET(this, parent.toString(), args);
-                if (!inode.exists()) {
-                    throw new FileNotFoundHimeraFsException(name);
-                }
-                return inode;
             }
 
             if (name.equals(".(config)")) {
@@ -2537,6 +2545,28 @@ public class JdbcFs implements FileSystemProvider {
         return checkSum;
     }
 
+    @Override
+    public Set<Checksum> getInodeChecksums(FsInode inode) throws ChimeraFsException {
+        Set<Checksum> checkSums = new HashSet<>();
+        Connection dbConnection;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+        try {
+            dbConnection.setAutoCommit(true);
+            _sqlDriver.getInodeChecksums(dbConnection, inode, checkSums);
+        } catch (SQLException e) {
+            _log.error("getInodeChecksum", e);
+            throw new IOHimeraFsException(e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
+        return checkSums;
+    }
+
     /**
      * Get inode's Access Control List. An empty list is returned if there are no ACL assigned
      * to the <code>inode</code>.
@@ -2826,6 +2856,10 @@ public class JdbcFs implements FileSystemProvider {
                 inode = getPLOC(inodeId);
                 break;
 
+            case PCRC:
+                inode = new FsInode_PCRC(this, inodeId);
+                break;
+
             default:
                 throw new FileNotFoundHimeraFsException("Unsupported file handle type: " + inodeType);
         }
@@ -2927,6 +2961,11 @@ public class JdbcFs implements FileSystemProvider {
                 case PLOC:
                     id = st.nextToken();
                     inode = getPLOC(id);
+                    break;
+
+                case PCRC:
+                    id = st.nextToken();
+                    inode = new FsInode_PCRC(this, id);
                     break;
 
             }

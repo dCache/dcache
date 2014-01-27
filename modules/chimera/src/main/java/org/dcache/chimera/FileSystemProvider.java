@@ -18,6 +18,7 @@ package org.dcache.chimera;
 
 import java.io.Closeable;
 import java.util.List;
+import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -25,6 +26,7 @@ import diskCacheV111.util.RetentionPolicy;
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
+import org.dcache.util.Checksum;
 
 public interface FileSystemProvider extends Closeable {
 
@@ -275,6 +277,9 @@ public interface FileSystemProvider extends Closeable {
 
     public abstract String getInodeChecksum(FsInode inode, int type)
             throws ChimeraFsException;
+
+    public abstract Set<Checksum> getInodeChecksums(FsInode inode)
+                    throws ChimeraFsException;
 
     public abstract String getInfo();
 

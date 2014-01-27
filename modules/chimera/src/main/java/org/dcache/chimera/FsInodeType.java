@@ -28,7 +28,8 @@ public enum FsInodeType {
     PGET(7),     // the content of the inode is the value of requested attributes
     PSET(8),     // by updating mtime of the inode the the defined attribute value is updated
     CONST(9),    // the content of the inode is a free form information
-    PLOC(10);     // the content of the inode is the value of requested attributes
+    PLOC(10),     // the content of the inode is the value of requested attributes
+    PCRC(11);    // the content of the inode is a name-value list of checksum types and checksums
 
     private final int _id;
 
