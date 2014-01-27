@@ -246,22 +246,40 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="14" author="behrmann">
-        <comment>Drop indexes on pnfspath column</comment>
+    <changeSet id="14.1" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping srmspacefile_pnfspath_idx as it does not exist (this is not an error)">
+            <indexExists indexName="srmspacefile_pnfspath_idx"/>
+        </preConditions>
+
+        <comment>Drop index on pnfspath column</comment>
         <dropIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_idx"/>
-        <dropIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_state_idx"/>
         <rollback>
-            <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_state_idx">
-                <column name="pnfspath"/>
-                <column name="state"/>
-            </createIndex>
             <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_idx">
                 <column name="pnfspath"/>
             </createIndex>
         </rollback>
     </changeSet>
 
-    <changeSet id="9" author="behrmann">
+    <changeSet id="14.2" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping srmspacefile_pnfspath_state_idx as it does not exists (this is not an error)">
+            <indexExists indexName="srmspacefile_pnfspath_state_idx"/>
+        </preConditions>
+
+        <comment>Drop index on (pnfspath,state) columns</comment>
+        <dropIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_state_idx"/>
+        <rollback>
+            <createIndex tableName="srmspacefile" indexName="srmspacefile_pnfspath_state_idx">
+                <column name="pnfspath"/>
+                <column name="state"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="9.1" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping srmspacefile_pnfsid_idx as it does not exists (this is not an error)">
+            <indexExists indexName="srmspacefile_pnfsid_idx"/>
+        </preConditions>
+
         <comment>Drop index on pnfsid column</comment>
         <dropIndex tableName="srmspacefile" indexName="srmspacefile_pnfsid_idx"/>
         <rollback>
