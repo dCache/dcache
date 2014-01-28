@@ -837,7 +837,7 @@ public final class SpaceManagerService
                                 LOGGER.error("badly formed PNFS-ID: {}", pnfsId);
                         }
                         catch (DataAccessException sqle) {
-                                LOGGER.trace("failed to remove file from space: {}",
+                                LOGGER.trace("failed to remove file from space reservation: {}",
                                              sqle.getMessage());
                                 LOGGER.trace("fileRemoved({}): file not in a " +
                                                      "reservation, do nothing", pnfsId);
@@ -882,7 +882,7 @@ public final class SpaceManagerService
                                 db.removeFile(f.getId());
                         } catch (CacheException e) {
                             throw new SpaceException("Failed to delete " + path +
-                                                     " while attempting to cancel its reservation in space " +
+                                                     " while attempting to cancel its reservation in space reservation " +
                                                      reservationId + ": " + e.getMessage(), e);
                         }
                 }
@@ -1192,7 +1192,7 @@ public final class SpaceManagerService
                                 }
                         }
                         catch(EmptyResultDataAccessException e) {
-                                LOGGER.error("failed to find space {}: {}",
+                                LOGGER.error("failed to find space reservation {}: {}",
                                              tokens[i], e.getMessage());
                         }
                         spaces[i] = space;
@@ -1248,7 +1248,7 @@ public final class SpaceManagerService
                 long newLifetime      = extendLifetime.getNewLifetime();
                 Space space = db.selectSpaceForUpdate(token);
                 if (space.getState().isFinal()) {
-                        throw new DataIntegrityViolationException("Space is already released");
+                        throw new DataIntegrityViolationException("Space reservation was already released.");
                 }
                 Long oldExpirationTime = space.getExpirationTime();
                 if (oldExpirationTime != null) {
