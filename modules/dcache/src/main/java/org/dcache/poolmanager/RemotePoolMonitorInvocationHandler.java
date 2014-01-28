@@ -105,34 +105,28 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
     }
 
     public void init()
-            throws InterruptedException
     {
-        initPoolMonitor();
-        scheduleUpdateTask();
-    }
+        _executor.submit(new Runnable()
+        {
+            private static final double ERRORS_PER_SECOND = 1.0 / 60.0;
+            private final RateLimiter rate = RateLimiter.create(ERRORS_PER_SECOND);
 
-    private void initPoolMonitor() throws InterruptedException
-    {
-        final double errorsPerSecond = 1.0 / 60.0;
-        RateLimiter rate = RateLimiter.create(errorsPerSecond);
-        while (true) {
-            try {
-                setPoolMonitor(_poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor());
-                break;
-            } catch (CacheException e) {
-                if (rate.tryAcquire()) {
-                    _log.error(e.toString());
+            @Override
+            public void run()
+            {
+                try {
+                    setPoolMonitor(_poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor());
+                    _executor.scheduleWithFixedDelay(
+                            new UpdatePoolMonitorTask(), _refreshDelay / 2, _refreshDelay, TimeUnit.MILLISECONDS);
+                } catch (CacheException e) {
+                    if (rate.tryAcquire()) {
+                        _log.error(e.toString());
+                    }
+                    _executor.schedule(this, INIT_DELAY, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException ignored) {
                 }
-                Thread.sleep(INIT_DELAY);
             }
-        }
-    }
-
-    private void scheduleUpdateTask()
-    {
-        _executor.scheduleWithFixedDelay(new UpdatePoolMonitorTask(),
-                _refreshDelay / 2, _refreshDelay,
-                TimeUnit.MILLISECONDS);
+        });
     }
 
     @Override
