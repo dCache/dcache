@@ -73,6 +73,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -266,16 +267,22 @@ public final class SpaceManagerService
                                 db.files()
                                         .whereStateIsIn(FileState.ALLOCATED,FileState.TRANSFERRING)
                                         .thatExpireBefore(System.currentTimeMillis());
-                    final int maximumNumberFilesToLoadAtOnce = 1000;
-                    for (File file : db.get(expiredFiles, maximumNumberFilesToLoadAtOnce)) {
+                        final int maximumNumberFilesToLoadAtOnce = 1000;
+                        for (File file : db.get(expiredFiles, maximumNumberFilesToLoadAtOnce)) {
                                 try {
                                     removeExpiredFile(file.getId());
-                                } catch (DataAccessException e) {
-                                        LOGGER.error("Failed to remove file reservation {}: {}",
+                                } catch (TransientDataAccessException e) {
+                                        LOGGER.warn("Transient data access failure while deleting expired file {}: {}",
                                                      file, e.getMessage());
+                                } catch (DataAccessException e) {
+                                        LOGGER.error("Data access failure while deleting expired file {}: {}",
+                                                     file, e.getMessage());
+                                        break;
+                                } catch (TimeoutCacheException e) {
+                                        LOGGER.error("Failed to delete file {}: {}", file.getPnfsId(), e.getMessage());
+                                        break;
                                 } catch (CacheException e) {
-                                        LOGGER.error("Failed to delete file {}: {}",
-                                                     file.getPnfsId(), e.getMessage());
+                                        LOGGER.error("Failed to delete file {}: {}", file.getPnfsId(), e.getMessage());
                                 }
                         }
                 }
