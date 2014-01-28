@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
@@ -260,7 +261,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                     "SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfsid = ? FOR UPDATE ", fileMapper,
                     pnfsId.toString());
         } catch (EmptyResultDataAccessException e) {
-            throw new EmptyResultDataAccessException("Space reservation for " + pnfsId + " not found.", 1, e);
+            throw new EmptyResultDataAccessException("Reservation for " + pnfsId + " not found.", 1, e);
         }
     }
 
@@ -283,7 +284,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                     "SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfspath = ? FOR UPDATE ",
                     fileMapper, path.toString());
         } catch (EmptyResultDataAccessException e) {
-            throw new EmptyResultDataAccessException("Space reservation for " + path + " not found.", 1, e);
+            throw new EmptyResultDataAccessException("Reservation for " + path + " not found.", 1, e);
         }
     }
 

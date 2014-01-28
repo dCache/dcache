@@ -1,6 +1,5 @@
 package org.dcache.poolmanager;
 
-import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.target.dynamic.Refreshable;
@@ -32,7 +31,7 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
      * The delay we use after transient failures during initialization.
      * Adding a small delay prevents tight retry loops.
      */
-    private static final long INIT_DELAY = MILLISECONDS.toMillis(100);
+    private static final long INIT_DELAY = MILLISECONDS.toMillis(10);
 
     private long _refreshDelay = SECONDS.toMillis(20);
     private long _refreshCount;
@@ -113,16 +112,12 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
 
     private void initPoolMonitor() throws InterruptedException
     {
-        final double errorsPerSecond = 1.0 / 60.0;
-        RateLimiter rate = RateLimiter.create(errorsPerSecond);
         while (true) {
             try {
                 setPoolMonitor(_poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor());
                 break;
             } catch (CacheException e) {
-                if (rate.tryAcquire()) {
-                    _log.error(e.getMessage());
-                }
+                _log.error(e.toString());
                 Thread.sleep(INIT_DELAY);
             }
         }

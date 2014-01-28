@@ -147,7 +147,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         String owner;
 
         @Option(name = "lifetime",
-                usage = "Lifetime in seconds from now.")
+                usage = "Lifetime in seconds since creation time.")
         Long lifetime;
 
         @Option(name = "eternal",
@@ -326,9 +326,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
                      "For each space reservation the following information may be displayed left to right: " +
                      "Space token, reservation state (reserved(-), released(r), expired(e)), default " +
-                     "retention policy, default access latency, number of files in space reservation, owner, " +
-                     "allocated bytes, used bytes, unused bytes, size of space, creation time, expiration time, " +
-                     "and space description.\n\n" +
+                     "retention policy, default access latency, number of files in space, owner, allocated " +
+                     "bytes, used bytes, unused bytes, size of space, creation time, expiration time, and " +
+                     "description.\n\n" +
 
                      "Space reservations have a size. This size can be partitioned into space that is " +
                      "used by files stored in the space reservation, space that is allocated for named " +
@@ -338,37 +338,37 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                      "obviously not free anymore and will thus not appear in the link group statistics.")
     public class ListSpacesCommand extends AsyncCommand<String>
     {
-        @Option(name = "a", usage = "Include ephemeral, expired and released space reservations.")
+        @Option(name = "a", usage = "Include ephemeral, expired and released spaces.")
         boolean all;
 
         @Option(name = "l", usage = "Include additional details.")
         boolean verbose;
 
-        @Option(name = "e", usage = "Include ephemeral space reservations.")
+        @Option(name = "e", usage = "Include ephemeral spaces.")
         boolean ephemeral;
 
         @Option(name = "owner",
-                usage = "Only show reservations whose owner matches this pattern.",
+                usage = "Only show spaces whose owner matches this pattern.",
                 valueSpec="USER|FQAN")
         String owner;
 
         @Option(name = "al",
-                usage = "Only show reservations with this default access latency.",
+                usage = "Only show spaces with this default access latency.",
                 values = { "online", "nearline" })
         AccessLatency al;
 
         @Option(name = "rp",
-                usage = "Only show reservations with this default retention policy.",
+                usage = "Only show spaces with this default retention policy.",
                 values = { "replica", "custodial" })
         RetentionPolicy rp;
 
         @Option(name = "state",
                 values = { "reserved", "released", "expired" },
-                usage = "Only show reservations in one of these states.")
+                usage = "Only show spaces in one of these states.")
         SpaceState[] states;
 
         @Option(name = "lg",
-                usage = "Only show reservations in the named link group.")
+                usage = "Only show spaces in the named link group.")
         String linkGroup;
 
         @Option(name = "h",
@@ -383,7 +383,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         Integer limit = 10000;
 
         @Argument(required = false,
-                  help = "Only show reservations with this token or a description matching this pattern.",
+                  help = "Only show spaces with this token or a description matching this pattern.",
                   valueSpec = "TOKEN|PATTERN")
         Glob pattern;
 
@@ -513,9 +513,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                      "further expanded or restricted using the options.\n\n" +
 
                      "For each file reservation the following information may be displayed left to right: " +
-                     "Whether the name space entry has been deleted (d), current state [allocated(a), " +
-                     "transferring(t), stored(s), flushed(f)], space token, owner, size in bytes, creation " +
-                     "time, expiration time, PNFS ID, and path.\n\n" +
+                     "Whether the name space has been deleted (d), state (allocated(a), transferring(t), " +
+                     "stored(s), flushed(f)), space token, owner, size in bytes, creation time, expiration " +
+                     "time, PNFS ID, and path.\n\n" +
 
                      "A space reservation contains file reservations that consume the reserved space. " +
                      "Each file reservation is in one of four states: ALLOCATED, TRANSFERRING, STORED, " +
@@ -532,7 +532,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                      "STORED files have finished uploading.\n\n" +
 
                      "FLUSHED files have been flushed to tape and no longer consume space in the " +
-                     "space reservation.\n\n" +
+                     "reservation.\n\n" +
 
                      "Files in the states ALLOCATED and TRANSFERRING have a limited lifetime. Unless " +
                      "moved to the STORED or FLUSHED state, such entries will be deleted when they " +
@@ -579,7 +579,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         FileState[] states;
 
         @Argument(required = false,
-                  help = "Only show files with this PNFSID or a path matching this pattern.",
+                  help = "Only show spaces with this PNFSID or a path matching this pattern.",
                   valueSpec = "PNFSID|PATH|PATTERN")
         Glob pattern;
 
@@ -589,7 +589,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             ColumnWriter writer = new ColumnWriter()
                     .abbreviateBytes(humanReadable)
                     .header("FLAGS").left("deleted").left("state")
-                    .space().header("TOKEN").right("token")
+                    .space().header("SPACE").right("token")
                     .space().header("OWNER").left("owner")
                     .space().header("SIZE").bytes("size")
                     .space().header("CREATED").date("created");
@@ -814,19 +814,18 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         }
     }
 
-    @Command(name = "purge spaces", hint = "remove perished space reservations",
+    @Command(name = "purge spaces", hint = "remove perished spaces",
              usage = "Space reservations that are expired or released are said to have perished. " +
                      "Perished space is no longer considered reserved, but it is kept in the database " +
-                     "until purged. Until a space reservation is purged, the files it contained are " +
-                     "still tracked in the database and can be inspected using the 'ls files' command.\n\n" +
+                     "until purged. Until a space is purged, the files it contained are still tracked " +
+                     "in the database and can be inspected using the 'ls files' command.\n\n" +
 
-                     "Purging a space reservation does not delete the files in dCache. They remain in " +
-                     "the linkgroup in which they were stored, however space manager no longer tracks " +
-                     "the files.\n\n" +
+                     "Purging a space does not delete the files in dCache. They remain in the linkgroup " +
+                     "in which they were stored, however space manager no longer tracks the files.\n\n" +
 
-                     "Space reservations that have an expiration date are purged automatically after " +
-                     "a configurable amount of time after they expire. Space reservations without an " +
-                     "expiration data have to be purged explicitly.")
+                     "Spaces that have an expiration date are purged automatically after a configurable " +
+                     "amount of time after they expire. Spaces without an expiration data have to be " +
+                     "purged explicitly.")
     public class PurgeSpacesCommand extends AsyncCommand<String>
     {
         @Override
@@ -839,7 +838,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                     db.remove(db.spaces()
                                       .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
                                       .thatHaveNoFiles());
-            return (spaces == 1) ? "One space reservation purged." : (spaces + " space reservations purged.");
+            return (spaces == 1) ? "One space purged." : (spaces + " spaces purged.");
         }
     }
 
