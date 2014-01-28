@@ -73,6 +73,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -266,16 +267,22 @@ public final class SpaceManagerService
                                 db.files()
                                         .whereStateIsIn(FileState.ALLOCATED,FileState.TRANSFERRING)
                                         .thatExpireBefore(System.currentTimeMillis());
-                    final int maximumNumberFilesToLoadAtOnce = 1000;
-                    for (File file : db.get(expiredFiles, maximumNumberFilesToLoadAtOnce)) {
+                        final int maximumNumberFilesToLoadAtOnce = 1000;
+                        for (File file : db.get(expiredFiles, maximumNumberFilesToLoadAtOnce)) {
                                 try {
                                     removeExpiredFile(file.getId());
-                                } catch (DataAccessException e) {
-                                        LOGGER.error("Failed to remove file reservation {}: {}",
+                                } catch (TransientDataAccessException e) {
+                                        LOGGER.warn("Transient data access failure while deleting expired file {}: {}",
                                                      file, e.getMessage());
+                                } catch (DataAccessException e) {
+                                        LOGGER.error("Data access failure while deleting expired file {}: {}",
+                                                     file, e.getMessage());
+                                        break;
+                                } catch (TimeoutCacheException e) {
+                                        LOGGER.error("Failed to delete file {}: {}", file.getPnfsId(), e.getMessage());
+                                        break;
                                 } catch (CacheException e) {
-                                        LOGGER.error("Failed to delete file {}: {}",
-                                                     file.getPnfsId(), e.getMessage());
+                                        LOGGER.error("Failed to delete file {}: {}", file.getPnfsId(), e.getMessage());
                                 }
                         }
                 }
@@ -837,7 +844,7 @@ public final class SpaceManagerService
                                 LOGGER.error("badly formed PNFS-ID: {}", pnfsId);
                         }
                         catch (DataAccessException sqle) {
-                                LOGGER.trace("failed to remove file from space: {}",
+                                LOGGER.trace("failed to remove file from space reservation: {}",
                                              sqle.getMessage());
                                 LOGGER.trace("fileRemoved({}): file not in a " +
                                                      "reservation, do nothing", pnfsId);
@@ -882,7 +889,7 @@ public final class SpaceManagerService
                                 db.removeFile(f.getId());
                         } catch (CacheException e) {
                             throw new SpaceException("Failed to delete " + path +
-                                                     " while attempting to cancel its reservation in space " +
+                                                     " while attempting to cancel its reservation in space reservation " +
                                                      reservationId + ": " + e.getMessage(), e);
                         }
                 }
@@ -1192,7 +1199,7 @@ public final class SpaceManagerService
                                 }
                         }
                         catch(EmptyResultDataAccessException e) {
-                                LOGGER.error("failed to find space {}: {}",
+                                LOGGER.error("failed to find space reservation {}: {}",
                                              tokens[i], e.getMessage());
                         }
                         spaces[i] = space;
@@ -1248,7 +1255,7 @@ public final class SpaceManagerService
                 long newLifetime      = extendLifetime.getNewLifetime();
                 Space space = db.selectSpaceForUpdate(token);
                 if (space.getState().isFinal()) {
-                        throw new DataIntegrityViolationException("Space is already released");
+                        throw new DataIntegrityViolationException("Space reservation was already released.");
                 }
                 Long oldExpirationTime = space.getExpirationTime();
                 if (oldExpirationTime != null) {
