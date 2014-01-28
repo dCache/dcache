@@ -509,15 +509,15 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     @Command(name = "ls files", hint = "list file reservations",
              usage = "If an argument is given, the command displays reserved files for which the " +
                      "PNFS ID matches the argument, or the path matches the pattern. If no argument is " +
-                     "given, all space reservations are displayed. The list can be further restricted " +
-                     "using the options.\n\n" +
+                     "given, all file reservations in a transient state are displayed. The list can be " +
+                     "further expanded or restricted using the options.\n\n" +
 
                      "For each file reservation the following information may be displayed left to right: " +
-                     "Whether the name space has been deleted (d), state, (allocated(a), transferring(t), " +
+                     "Whether the name space has been deleted (d), state (allocated(a), transferring(t), " +
                      "stored(s), flushed(f)), space token, owner, size in bytes, creation time, expiration " +
                      "time, PNFS ID, and path.\n\n" +
 
-                     "A space reservation can contain file reservations that consume the reserved space. " +
+                     "A space reservation contains file reservations that consume the reserved space. " +
                      "Each file reservation is in one of four states: ALLOCATED, TRANSFERRING, STORED, " +
                      "or FLUSHED.\n\n" +
 
@@ -554,7 +554,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         boolean verbose;
 
         @Option(name = "a",
-                usage = "Include deleted and flushed files.")
+                usage = "Include stored, flushed and deleted files.")
         boolean all;
 
         @Option(name = "p",
@@ -675,7 +675,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             if (states != null && states.length > 0) {
                 files.whereStateIsIn(states);
             } else if (!all && pattern == null) {
-                files.whereStateIsIn(FileState.ALLOCATED, FileState.TRANSFERRING, FileState.STORED);
+                files.whereStateIsIn(FileState.ALLOCATED, FileState.TRANSFERRING);
             }
             if (!all && pattern == null) {
                 files.whereDeletedIs(false);
