@@ -43,7 +43,6 @@ import javax.security.auth.Subject;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -311,7 +310,7 @@ public final class SpaceManagerService
         }
 
         private void getValidSpaceTokens(GetSpaceTokensMessage msg) throws DataAccessException {
-            msg.setSpaceTokenSet(db.get(db.spaces().whereLifetimeIs(-1).whereStateIsIn(SpaceState.RESERVED), null));
+            msg.setSpaceTokenSet(db.get(db.spaces().thatNeverExpire().whereStateIsIn(SpaceState.RESERVED), null));
         }
 
         private void getLinkGroups(GetLinkGroupsMessage msg) throws DataAccessException {
@@ -581,16 +580,8 @@ public final class SpaceManagerService
                 }
                 Subject subject =  release.getSubject();
                 authorizationPolicy.checkReleasePermission(subject, space);
-                db.updateSpace(space,
-                               null,
-                               null,
-                               null,
-                               null,
-                               null,
-                               null,
-                               null,
-                               null,
-                               SpaceState.RELEASED);
+                space.setState(SpaceState.RELEASED);
+                db.updateSpace(space);
         }
 
         private void reserveSpace(Reserve reserve)
@@ -1194,8 +1185,8 @@ public final class SpaceManagerService
                                 // the state as EXPIRED even when the actual state has not been updated in the
                                 // database yet. See usecase.CheckGarbageSpaceCollector (S2).
                                 if (space.getState().equals(SpaceState.RESERVED)) {
-                                        long expirationTime = space.getExpirationTime();
-                                        if (expirationTime > -1 && expirationTime - System.currentTimeMillis() <= 0) {
+                                        Long expirationTime = space.getExpirationTime();
+                                        if (expirationTime != null && expirationTime <= System.currentTimeMillis()) {
                                                 space.setState(SpaceState.EXPIRED);
                                         }
                                 }
@@ -1259,20 +1250,18 @@ public final class SpaceManagerService
                 if (space.getState().isFinal()) {
                         throw new DataIntegrityViolationException("Space is already released");
                 }
-                long creationTime = space.getCreationTime();
-                long lifetime = space.getLifetime();
-                if(lifetime == -1) {
-                        return;
+                Long oldExpirationTime = space.getExpirationTime();
+                if (oldExpirationTime != null) {
+                    if (newLifetime == -1) {
+                            space.setExpirationTime(null);
+                            db.updateSpace(space);
+                            return;
+                    }
+                    long newExpirationTime = System.currentTimeMillis() + newLifetime;
+                    if (newExpirationTime > oldExpirationTime) {
+                        space.setExpirationTime(newExpirationTime);
+                        db.updateSpace(space);
+                    }
                 }
-                if(newLifetime == -1) {
-                        db.updateSpace(space, null, null, null, null, null, null, newLifetime, null, null);
-                        return;
-                }
-                long currentTime = System.currentTimeMillis();
-                long remainingLifetime = creationTime+lifetime-currentTime;
-                if(remainingLifetime > newLifetime) {
-                        return;
-                }
-                db.updateSpace(space, null, null, null, null, null, null, newLifetime, null, null);
         }
 }

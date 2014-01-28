@@ -86,8 +86,8 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
       accesslatency         | integer                  |
       linkgroupid           | bigint                   | not null
       sizeinbytes           | bigint                   | not null
-      creationtime          | bigint                   |
-      lifetime              | bigint                   |
+      creationtime          | bigint                   | not null
+      expirationtime        | bigint                   |
       description           | character varying(32672) |
       state                 | integer                  | not null
       usedspaceinbytes      | bigint                   | not null
@@ -104,10 +104,10 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
      vorole             | character varying(32672) |
      spacereservationid | bigint                   | not null
      sizeinbytes        | bigint                   | not null
-     creationtime       | bigint                   |
-     lifetime           | bigint                   |
-     pnfspath           | character varying(32672) |
-     pnfsid             | character varying(32672) | unique
+     creationtime       | bigint                   | not null
+     expirationtime     | bigint                   |
+     pnfspath           | character varying(32672) | unique
+     pnfsid             | character varying(36)    | unique
      state              | integer                  | not null
      deleted            | integer                  |
     */
@@ -127,7 +127,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                              set.getLong("linkgroupid"),
                              set.getLong("sizeinbytes"),
                              set.getLong("creationtime"),
-                             set.getLong("lifetime"),
+                             set.getLong("expirationtime"),
                              set.getString("description"),
                              SpaceState.valueOf(set.getInt("state")),
                              set.getLong("usedspaceinbytes"),
@@ -172,7 +172,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                             set.getLong("spacereservationid"),
                             set.getLong("sizeinbytes"),
                             set.getLong("creationtime"),
-                            set.getLong("lifetime"),
+                            set.getLong("expirationtime"),
                             (path != null) ? new FsPath(path) : null,
                             (pnfsId != null) ? new PnfsId(pnfsId) : null,
                             FileState.valueOf(set.getInt("state")),
@@ -289,56 +289,13 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     }
 
     @Override
-    public Space updateSpace(Space space,
-                             String voGroup,
-                             String voRole,
-                             RetentionPolicy retentionPolicy,
-                             AccessLatency accessLatency,
-                             Long linkGroupId,
-                             Long sizeInBytes,
-                             Long lifetime,
-                             String description,
-                             SpaceState state)
+    public Space updateSpace(Space space)
             throws DataAccessException
     {
-        if (voGroup != null) {
-            space.setVoGroup(voGroup);
-        }
-        if (voRole != null) {
-            space.setVoRole(voRole);
-        }
-        if (retentionPolicy != null) {
-            space.setRetentionPolicy(retentionPolicy);
-        }
-        if (accessLatency != null) {
-            space.setAccessLatency(accessLatency);
-        }
-        if (sizeInBytes != null) {
-            long usedSpace = space.getUsedSizeInBytes() + space.getAllocatedSpaceInBytes();
-            if (sizeInBytes < usedSpace) {
-                throw new DataIntegrityViolationException(
-                        "Cannot downsize space reservation below " + usedSpace + "bytes, remove files first ");
-            }
-            space.setSizeInBytes(sizeInBytes);
-        }
-        if (lifetime != null) {
-            space.setLifetime(lifetime);
-        }
-        if (description != null) {
-            space.setDescription(description);
-        }
-        SpaceState oldState = space.getState();
-        if (state != null) {
-            if (oldState.isFinal()) {
-                throw new DataIntegrityViolationException(
-                        "change from " + oldState + " to " + state + " is not allowed");
-            }
-            space.setState(state);
-        }
         getJdbcTemplate().update(
                 "UPDATE " + SPACE_TABLE
                         + " SET vogroup=?,vorole=?,retentionpolicy=?,accesslatency=?,linkgroupid=?,sizeinbytes=?,"
-                        + " creationtime=?,lifetime=?,description=?,state=? WHERE id=?",
+                        + " creationtime=?,expirationTime=?,description=?,state=? WHERE id=?",
                 space.getVoGroup(),
                 space.getVoRole(),
                 space.getRetentionPolicy().getId(),
@@ -346,7 +303,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                 space.getLinkGroupId(),
                 space.getSizeInBytes(),
                 space.getCreationTime(),
-                space.getLifetime(),
+                space.getExpirationTime(),
                 space.getDescription(),
                 space.getState().getStateId(),
                 space.getId());
@@ -490,7 +447,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                         PreparedStatement stmt = con.prepareStatement(
                                 "INSERT INTO " + SPACE_TABLE
                                         + " (vogroup,vorole,retentionpolicy,accesslatency,linkgroupid,"
-                                        + "sizeinbytes,creationtime,lifetime,description,state,usedspaceinbytes,allocatedspaceinbytes)"
+                                        + "sizeinbytes,creationtime,expirationtime,description,state,usedspaceinbytes,allocatedspaceinbytes)"
                                         + " VALUES  (?,?,?,?,?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
                         stmt.setString(1, voGroup);
                         stmt.setString(2, voRole);
@@ -499,7 +456,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                         stmt.setLong(5, linkGroupId);
                         stmt.setLong(6, sizeInBytes);
                         stmt.setLong(7, creationTime);
-                        stmt.setLong(8, lifetime);
+                        stmt.setLong(8, (lifetime == -1) ? null : creationTime + lifetime);
                         stmt.setString(9, description);
                         stmt.setInt(10, state.getStateId());
                         stmt.setLong(11, used);
@@ -519,7 +476,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                          linkGroupId,
                          sizeInBytes,
                          creationTime,
-                         lifetime,
+                         (lifetime == -1) ? null : creationTime + lifetime,
                          description,
                          state,
                          used,
@@ -565,11 +522,11 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         int rc = getJdbcTemplate().update(
                 "UPDATE " + SPACEFILE_TABLE +
-                        " SET vogroup=?, vorole=?, sizeinbytes=?, lifetime=?, pnfsid=?, state=?, deleted=? WHERE id=?",
+                        " SET vogroup=?, vorole=?, sizeinbytes=?, expirationtime=?, pnfsid=?, state=?, deleted=? WHERE id=?",
                 f.getVoGroup(),
                 f.getVoRole(),
                 f.getSizeInBytes(),
-                f.getLifetime(),
+                f.getExpirationTime(),
                 Objects.toString(f.getPnfsId(), null),
                 f.getState().getStateId(),
                 f.isDeleted() ? 1 : 0,
@@ -890,7 +847,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
 
         Space space = selectSpaceForUpdate(reservationId);
         long currentTime = System.currentTimeMillis();
-        if (space.getLifetime() != -1 && space.getCreationTime() + space.getLifetime() < currentTime) {
+        if (space.getExpirationTime() != null && space.getExpirationTime() <= currentTime) {
             throw new SpaceExpiredException("space with id=" + reservationId + " has expired");
         }
         if (space.getState() == SpaceState.EXPIRED) {
@@ -916,14 +873,14 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                  */
                 PreparedStatement stmt = con.prepareStatement(
                         "INSERT INTO " + SPACEFILE_TABLE
-                                + " (vogroup,vorole,spacereservationid,sizeinbytes,creationtime,lifetime,pnfspath,pnfsid,state,deleted) "
+                                + " (vogroup,vorole,spacereservationid,sizeinbytes,creationtime,expirationtime,pnfspath,pnfsid,state,deleted) "
                                 + " VALUES  (?,?,?,?,?,?,?,?,?,0)", Statement.RETURN_GENERATED_KEYS);
                 stmt.setString(1, voGroup);
                 stmt.setString(2, voRole);
                 stmt.setLong(3, reservationId);
                 stmt.setLong(4, sizeInBytes);
                 stmt.setLong(5, creationTime);
-                stmt.setLong(6, lifetime);
+                stmt.setLong(6, (lifetime == -1) ? null : creationTime + lifetime);
                 stmt.setString(7, Objects.toString(path, null));
                 stmt.setString(8, Objects.toString(pnfsId, null));
                 stmt.setInt(9, FileState.ALLOCATED.getStateId());
@@ -1062,9 +1019,9 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         }
 
         @Override
-        public SpaceCriterion whereLifetimeIs(int i)
+        public SpaceCriterion thatNeverExpire()
         {
-            addClause("lifetime = ?", i);
+            addClause("expirationtime IS NULL");
             return this;
         }
 
@@ -1099,7 +1056,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public SpaceCriterion thatExpireBefore(long millis)
         {
-            addClause("lifetime != -1 AND creationtime + lifetime < ?", millis);
+            addClause("expirationtime < ?", millis);
             return this;
         }
 
@@ -1173,7 +1130,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public FileCriterion thatExpireBefore(long millis)
         {
-            addClause("creationtime + lifetime < ?", millis);
+            addClause("expirationtime < ?", millis);
             return this;
         }
     }

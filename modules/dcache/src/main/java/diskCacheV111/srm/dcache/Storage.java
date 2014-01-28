@@ -2719,13 +2719,13 @@ public final class Storage
             TMetaDataSpace metaDataSpace = new TMetaDataSpace();
             TReturnStatus status;
             if (space != null) {
-                long lifetime = space.getLifetime();
-                if (lifetime == -1) {  // -1 corresponds to infinite lifetime
+                Long expirationTime = space.getExpirationTime();
+                if (expirationTime == null) {
                     metaDataSpace.setLifetimeAssigned(-1);
                     metaDataSpace.setLifetimeLeft(-1);
                 } else {
-                    long lifetimeleft = Math.max(0, MILLISECONDS.toSeconds(space.getCreationTime() + lifetime - System.currentTimeMillis()));
-                    metaDataSpace.setLifetimeAssigned((int) MILLISECONDS.toSeconds(lifetime));
+                    long lifetimeleft = Math.max(0, MILLISECONDS.toSeconds(expirationTime - System.currentTimeMillis()));
+                    metaDataSpace.setLifetimeAssigned((int) MILLISECONDS.toSeconds(expirationTime - space.getCreationTime()));
                     metaDataSpace.setLifetimeLeft((int) lifetimeleft);
                 }
 

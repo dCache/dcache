@@ -25,7 +25,7 @@ public class SpaceReservationBean implements Serializable {
     private long _allocatedSpace;
     private String _created = "";
     private long _lifetime;
-    private long _expiration;
+    private Long _expiration;
     private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
 
     public long getAllocatedSpace() {
@@ -53,14 +53,10 @@ public class SpaceReservationBean implements Serializable {
     }
 
     public String getExpiration() {
-        if (_expiration != 0) {
-            return _expiration == -1
-                    ? "NEVER" : new Date(_expiration).toString();
-        }
-        return "UNKNOWN";
+        return (_expiration == null) ? "NEVER" : new Date(_expiration).toString();
     }
 
-    public void setExpiration(long expiration) {
+    public void setExpiration(Long expiration) {
         _expiration = expiration;
     }
 

@@ -170,7 +170,7 @@ public class BeanDataMapper {
         newReservation.setDescription(reservation.getDescription());
         newReservation.setExpiration(reservation.getExpirationTime());
         newReservation.setId(Long.toString(reservation.getId()));
-        newReservation.setLifetime(reservation.getLifetime());
+        newReservation.setLifetime((reservation.getExpirationTime() == null) ? -1 : reservation.getCreationTime() + reservation.getExpirationTime());
         newReservation.setLinkGroupRef(reservation.getLinkGroupId());
         newReservation.setState(reservation.getState().toString());
         newReservation.setStorage(mapReservationAllowanceFlags(reservation));

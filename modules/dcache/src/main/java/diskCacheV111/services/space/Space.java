@@ -1,12 +1,3 @@
-/*
- * Space.java
- *
- * Created on July 18, 2006, 1:26 PM
- *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
-
 package diskCacheV111.services.space;
 
 import java.io.Serializable;
@@ -15,14 +6,9 @@ import java.util.Date;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 
-
-/**
- *
- * @author timur
- */
 public class Space implements Serializable {
     private static final long serialVersionUID = -1935368561781812540L;
-    private long id;
+    private final long id;
     private String voGroup;
     private String voRole;
     private RetentionPolicy retentionPolicy;
@@ -32,13 +18,9 @@ public class Space implements Serializable {
     private long usedSizeInBytes;
     private long allocatedSpaceInBytes;
     private long creationTime;
-    private long lifetime;
+    private Long expirationTime;
     private String description;
     private SpaceState state;
-    /** Creates a new instance of Space */
-
-    public Space() {
-    }
 
     public Space(
             long id,
@@ -49,65 +31,30 @@ public class Space implements Serializable {
             long linkGroupId,
             long sizeInBytes,
             long creationTime,
-            long lifetime,
+            Long expirationTime,
             String description,
             SpaceState state,
-	    long used,
-	    long allocated
-            ) {
-        this.setId(id);
+	        long used,
+            long allocated)
+    {
+        this.id = id;
         this.voGroup = voGroup;
         this.voRole = voRole;
         this.retentionPolicy = retentionPolicy;
         this.accessLatency = accessLatency;
-        this.setLinkGroupId(linkGroupId);
-        this.setSizeInBytes(sizeInBytes);
-        this.setCreationTime(creationTime);
-        this.setLifetime(lifetime);
-        this.setDescription(description);
-        this.setState(state);
-        this.setUsedSizeInBytes(used);
-        this.setAllocatedSpaceInBytes(allocated);
-    }
-
-	// for backward compatibility
-
-    public Space(
-            long id,
-            String voGroup,
-            String voRole,
-            RetentionPolicy retentionPolicy,
-            AccessLatency accessLatency,
-            long linkGroupId,
-            long sizeInBytes,
-            long creationTime,
-            long lifetime,
-            String description,
-            SpaceState state)
-             {
-        this.setId(id);
-        this.voGroup = voGroup;
-        this.voRole = voRole;
-        this.retentionPolicy = retentionPolicy;
-        this.accessLatency = accessLatency;
-        this.setLinkGroupId(linkGroupId);
-        this.setSizeInBytes(sizeInBytes);
-        this.setCreationTime(creationTime);
-        this.setLifetime(lifetime);
-        this.setDescription(description);
-        this.setState(state);
-        this.setUsedSizeInBytes(0L);
-        this.setAllocatedSpaceInBytes(0L);
+        this.linkGroupId = linkGroupId;
+        this.sizeInBytes = sizeInBytes;
+        this.creationTime = creationTime;
+        this.expirationTime = expirationTime;
+        this.description = description;
+        this.state = state;
+        this.usedSizeInBytes = used;
+        this.allocatedSpaceInBytes = allocated;
     }
 
     public long getId() {
         return id;
     }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
 
     public long getLinkGroupId() {
         return linkGroupId;
@@ -122,6 +69,11 @@ public class Space implements Serializable {
     }
 
     public void setSizeInBytes(long sizeInBytes) {
+        long usedSpace = getUsedSizeInBytes() + getAllocatedSpaceInBytes();
+        if (sizeInBytes < usedSpace) {
+            throw new IllegalStateException(
+                    "Cannot downsize space reservation below " + usedSpace + " bytes, release files first.");
+        }
         this.sizeInBytes = sizeInBytes;
     }
 
@@ -131,14 +83,6 @@ public class Space implements Serializable {
 
     public void setCreationTime(long creationTime) {
         this.creationTime = creationTime;
-    }
-
-    public long getLifetime() {
-        return lifetime;
-    }
-
-    public void setLifetime(long lifetime) {
-        this.lifetime = lifetime;
     }
 
     public String getDescription() {
@@ -154,6 +98,10 @@ public class Space implements Serializable {
     }
 
     public void setState(SpaceState state) {
+        if (this.state.isFinal()) {
+            throw new IllegalStateException(
+                    "Change from " + this.state + " to " + state + " is not allowed.");
+        }
         this.state = state;
     }
     public String toString() {
@@ -166,8 +114,9 @@ public class Space implements Serializable {
         sb.append("linkGroupId:").append(linkGroupId).append(' ');
         sb.append("size:").append(sizeInBytes).append(' ');
         sb.append("created:").append((new Date(creationTime))).append(' ');
-        sb.append("lifetime:").append(lifetime).append("ms ");
-        sb.append("expiration:").append(lifetime==-1?"NEVER":new Date(creationTime+lifetime).toString()).append(' ');
+        if (expirationTime != null) {
+            sb.append("expiration:").append(new Date(expirationTime).toString()).append(' ');
+        }
         sb.append("description:").append(description).append(' ');
         sb.append("state:").append(state).append(' ');
         sb.append("used:").append(usedSizeInBytes).append(' ');
@@ -211,11 +160,6 @@ public class Space implements Serializable {
         return usedSizeInBytes;
     }
 
-    public void setUsedSizeInBytes(long usedSizeInBytes) {
-        this.usedSizeInBytes = usedSizeInBytes;
-    }
-
-
     public long getAllocatedSpaceInBytes() {
         return allocatedSpaceInBytes;
     }
@@ -224,14 +168,12 @@ public class Space implements Serializable {
 		return sizeInBytes-usedSizeInBytes-allocatedSpaceInBytes;
 	}
 
-	public void setAllocatedSpaceInBytes(long allocated) {
-		this.allocatedSpaceInBytes = allocated;
-
+    public Long getExpirationTime() {
+        return expirationTime;
     }
-    /*
-     * @return expriation time as long in ms ; -1 means 'Never'
-     */
-    public long getExpirationTime() {
-        return lifetime == -1 ? -1 : creationTime + lifetime;
+
+    public void setExpirationTime(Long expirationTime)
+    {
+        this.expirationTime = expirationTime;
     }
 }

@@ -1,9 +1,3 @@
-/*
- * File.java
- *
- * Created on July 18, 2006, 1:39 PM
- */
-
 package diskCacheV111.services.space;
 
 import com.google.common.base.Function;
@@ -13,9 +7,6 @@ import java.io.Serializable;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
-/**
- * @author timur
- */
 public class File implements Serializable {
         private static final long serialVersionUID = 1231338433325990419L;
         private long id;
@@ -24,7 +15,7 @@ public class File implements Serializable {
 	private long spaceId;
 	private long sizeInBytes;
     private long creationTime;
-	private long lifetime;
+	private Long expirationTime;
 	private FsPath path;
 	private PnfsId pnfsId;
 	private FileState state;
@@ -37,7 +28,7 @@ public class File implements Serializable {
 		long spaceId,
 		long sizeInBytes,
 		long creationTime,
-		long lifetime,
+		Long expirationTime,
 		FsPath path,
 		PnfsId pnfsId,
 		FileState state,
@@ -49,7 +40,7 @@ public class File implements Serializable {
 		this.spaceId = spaceId;
 		this.sizeInBytes = sizeInBytes;
 		this.creationTime = creationTime;
-		this.lifetime = lifetime;
+		this.expirationTime = expirationTime;
 		this.path = path;
 		this.pnfsId = pnfsId;
 		this.state = state;
@@ -97,12 +88,12 @@ public class File implements Serializable {
 		this.creationTime = creationTime;
 	}
 
-	public long getLifetime() {
-		return lifetime;
+	public Long getExpirationTime() {
+		return expirationTime;
 	}
 
-	public void setLifetime(long lifetime) {
-		this.lifetime = lifetime;
+	public void setExpirationTime(Long expirationTime) {
+		this.expirationTime = expirationTime;
 	}
 
 	public FsPath getPath() {
@@ -127,7 +118,7 @@ public class File implements Serializable {
 			spaceId+" "+
 			sizeInBytes+" "+
 			creationTime+" "+
-			lifetime+" "+
+			expirationTime+" "+
                 path +" "+
 			pnfsId+" "+
 			state+" "+
@@ -161,12 +152,7 @@ public class File implements Serializable {
 
     public boolean isExpired()
     {
-        return (state == FileState.ALLOCATED || state == FileState.TRANSFERRING) && creationTime + lifetime < System.currentTimeMillis();
-    }
-
-    public long getExpirationTime()
-    {
-        return creationTime + lifetime;
+        return (state == FileState.ALLOCATED || state == FileState.TRANSFERRING) && expirationTime != null && creationTime + expirationTime < System.currentTimeMillis();
     }
 
     public static Function<File, Long> getSpaceToken =

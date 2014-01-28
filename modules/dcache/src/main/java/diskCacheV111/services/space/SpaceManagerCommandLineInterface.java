@@ -22,8 +22,6 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
 
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.util.CommandException;
-import dmg.util.CommandExitException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -130,17 +128,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Override
         public String executeInTransaction() throws DataAccessException
         {
-            Space space =
-                    db.updateSpace(db.selectSpaceForUpdate(token),
-                                   null,
-                                   null,
-                                   null,
-                                   null,
-                                   null,
-                                   null,
-                                   null,
-                                   null,
-                                   SpaceState.RELEASED);
+            Space space = db.selectSpaceForUpdate(token);
+            space.setState(SpaceState.RELEASED);
+            db.updateSpace(space);
             return space.toString();
         }
     }
@@ -174,12 +164,20 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Override
         public String executeInTransaction() throws DataAccessException, SpaceReleasedException, SpaceExpiredException
         {
-            String group = null;
-            String role = null;
+            Space space = db.selectSpaceForUpdate(token);
+
+            if (space.getState() == SpaceState.RELEASED) {
+                throw new SpaceReleasedException("Space reservation has been released and cannot be updated.");
+            }
+            if (space.getState() == SpaceState.EXPIRED) {
+                throw new SpaceExpiredException("Space reservation has expired and cannot be updated.");
+            }
 
             if (owner != null) {
+                String group;
+                String role;
+
                 // check that linkgroup allows this owner combination
-                Space space = db.getSpace(token);
                 LinkGroup lg = db.getLinkGroup(space.getLinkGroupId());
 
                 FQAN fqan = new FQAN(owner);
@@ -198,32 +196,26 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                             "Authorized for this link group are:\n"+
                             Joiner.on('\n').join(lg.getVOs());
                 }
+                space.setVoGroup(group);
+                space.setVoRole(role);
             }
 
             if (eternal) {
                 if (lifetime != null) {
                     throw new IllegalArgumentException("Eternal reservations cannot have a lifetime.");
                 }
-                lifetime = -1L;
+                space.setExpirationTime(null);
+            } else if (lifetime != null) {
+                space.setExpirationTime(System.currentTimeMillis() + lifetime * 1000);
             }
 
-            Space space = db.selectSpaceForUpdate(token);
-            if (space.getState() == SpaceState.RELEASED) {
-                throw new SpaceReleasedException("Space reservation has been released and cannot be updated.");
+            if (size != null) {
+                space.setSizeInBytes(Unit.parseByteQuantity(size));
             }
-            if (space.getState() == SpaceState.EXPIRED) {
-                throw new SpaceExpiredException("Space reservation has expired and cannot be updated.");
+            if (description != null) {
+                space.setDescription(description);
             }
-            space = db.updateSpace(space,
-                                   group,
-                                   role,
-                                   null,
-                                   null,
-                                   null,
-                                   (size != null ? Unit.parseByteQuantity(size) : null),
-                                   lifetime == null ? null : lifetime == -1 ? -1 : lifetime * 1000,
-                                   description,
-                                   null);
+            db.updateSpace(space);
             return space.toString();
         }
     }
@@ -467,7 +459,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         .value("free", space.getAvailableSpaceInBytes())
                         .value("size", space.getSizeInBytes())
                         .value("created", space.getCreationTime())
-                        .value("expires", (space.getLifetime() > -1) ? space.getCreationTime() + space.getLifetime() : null)
+                        .value("expires", space.getExpirationTime())
                         .value("description", space.getDescription())
                         .value("owner", toOwner(space.getVoGroup(), space.getVoRole()));
             }
@@ -499,7 +491,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 spaces.whereStateIsIn(SpaceState.RESERVED);
             }
             if (!ephemeral && !all && pattern == null) {
-                spaces.whereLifetimeIs(-1);
+                spaces.thatNeverExpire();
             }
             return spaces;
         }
@@ -661,7 +653,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         .value("deleted", file.isDeleted() ? 'd' : '-')
                         .value("state", state)
                         .value("expires",
-                               state == 'a' || state == 't' ? file.getCreationTime() + file.getLifetime() : null);
+                               state == 'a' || state == 't' ? file.getExpirationTime() : null);
             }
 
             return writer.toString();

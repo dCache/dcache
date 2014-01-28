@@ -289,6 +289,62 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="17" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping srmspace_lifetime_idx as it does not exists (this is not an error)">
+            <indexExists indexName="srmspace_lifetime_idx"/>
+        </preConditions>
+
+        <comment>Drop index on lifetime column</comment>
+        <dropIndex tableName="srmspace" indexName="srmspace_lifetime_idx"/>
+        <rollback>
+            <createIndex tableName="srmspace" indexName="srmspace_lifetime_idx">
+                <column name="lifetime"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="18" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping srmspacefile_lifetime_idx as it does not exists (this is not an error)">
+            <indexExists indexName="srmspacefile_lifetime_idx"/>
+        </preConditions>
+
+        <comment>Drop index on lifetime column</comment>
+        <dropIndex tableName="srmspacefile" indexName="srmspacefile_lifetime_idx"/>
+        <rollback>
+            <createIndex tableName="srmspacefile" indexName="srmspacefile_lifetime_idx">
+                <column name="lifetime"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="19" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping srmspacefile_creationtime_idx as it does not exists (this is not an error)">
+            <indexExists indexName="srmspacefile_creationtime_idx"/>
+        </preConditions>
+
+        <comment>Drop index on creationtime column</comment>
+        <dropIndex tableName="srmspacefile" indexName="srmspacefile_creationtime_idx"/>
+        <rollback>
+            <createIndex tableName="srmspacefile" indexName="srmspacefile_creationtime_idx">
+                <column name="creationtime"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="20" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping srmspace_creationtime_idx as it does not exists (this is not an error)">
+            <indexExists indexName="srmspace_creationtime_idx"/>
+        </preConditions>
+
+        <comment>Drop index on creationtime column</comment>
+        <dropIndex tableName="srmspace" indexName="srmspace_creationtime_idx"/>
+        <rollback>
+            <createIndex tableName="srmspace" indexName="srmspace_creationtime_idx">
+                <column name="creationtime"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+
     <changeSet id="12" author="behrmann">
         <comment>Remove deleted flushed files</comment>
         <sql>DELETE FROM srmspacefile WHERE state = 3 AND deleted = 1</sql>
@@ -306,6 +362,30 @@
         <modifyDataType tableName="srmspacefile" columnName="pnfsid" newDataType="varchar(36)"/>
         <rollback>
             <modifyDataType tableName="srmspacefile" columnName="pnfsid" newDataType="varchar(32672)"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="21" author="behrmann">
+        <comment>Convert lifetime to expirationtime</comment>
+
+        <renameColumn tableName="srmspace" oldColumnName="lifetime" newColumnName="expirationtime" columnDataType="bigint"/>
+        <sql>UPDATE srmspace SET expirationtime = CASE WHEN expirationtime = -1 THEN NULL ELSE creationtime + expirationtime END</sql>
+
+        <rollback>
+            <renameColumn tableName="srmspace" oldColumnName="expirationtime" newColumnName="lifetime" columnDataType="bigint"/>
+            <sql>UPDATE srmspace SET lifetime = CASE WHEN lifetime IS NULL THEN -1 ELSE lifetime - creationtime END</sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="22" author="behrmann">
+        <comment>Convert lifetime to expirationtime</comment>
+
+        <renameColumn tableName="srmspacefile" oldColumnName="lifetime" newColumnName="expirationtime" columnDataType="bigint"/>
+        <sql>UPDATE srmspacefile SET expirationtime = CASE WHEN expirationtime = -1 THEN NULL ELSE creationtime + expirationtime END</sql>
+
+        <rollback>
+            <renameColumn tableName="srmspacefile" oldColumnName="expirationtime" newColumnName="lifetime" columnDataType="bigint"/>
+            <sql>UPDATE srmspacefile SET lifetime = CASE WHEN lifetime IS NULL THEN -1 ELSE lifetime - creationtime END</sql>
         </rollback>
     </changeSet>
 
@@ -338,4 +418,25 @@
         <addNotNullConstraint tableName="srmlinkgroup" columnName="name"/>
         <addUniqueConstraint tableName="srmlinkgroup" columnNames="name" constraintName="srmlinkgroup_name_unique"/>
     </changeSet>
+
+    <changeSet id="23" author="behrmann">
+        <comment>Add not-null constraints to creationtime</comment>
+        <addNotNullConstraint tableName="srmspace" columnName="creationtime"/>
+        <addNotNullConstraint tableName="srmspacefile" columnName="creationtime"/>
+    </changeSet>
+
+    <changeSet id="24" author="behrmann">
+        <comment>Create index on expirationtime</comment>
+        <createIndex tableName="srmspace" indexName="srmspace_expirationtime_idx">
+            <column name="expirationtime"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="25" author="behrmann">
+        <comment>Create index on expirationtime</comment>
+        <createIndex tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx">
+            <column name="expirationtime"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

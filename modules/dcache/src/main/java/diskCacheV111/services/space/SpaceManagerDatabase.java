@@ -55,16 +55,7 @@ public interface SpaceManagerDatabase
 
     Space selectSpaceForUpdate(long id) throws DataAccessException;
 
-    Space updateSpace(Space space,
-                      @Nullable String voGroup,
-                      @Nullable String voRole,
-                      @Nullable RetentionPolicy retentionPolicy,
-                      @Nullable AccessLatency accessLatency,
-                      @Nullable Long linkGroupId,
-                      @Nullable Long sizeInBytes,
-                      @Nullable Long lifetime,
-                      @Nullable String description,
-                      @Nullable SpaceState state)
+    Space updateSpace(Space space)
             throws DataAccessException;
 
     Space getSpace(long id) throws DataAccessException;
@@ -175,7 +166,7 @@ public interface SpaceManagerDatabase
 
         SpaceCriterion whereTokenIs(long token);
 
-        SpaceCriterion whereLifetimeIs(int i);
+        SpaceCriterion thatNeverExpire();
 
         SpaceCriterion whereLinkGroupIs(long id);
 

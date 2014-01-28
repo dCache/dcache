@@ -77,10 +77,10 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 			update.appendUpdate( thisSpacePath.newChild( "id"), new StringStateValue( String.valueOf( space.getId()), metricLifetime));
 			update.appendUpdate( thisSpacePath.newChild( "state"), new StringStateValue( space.getState().toString(), metricLifetime));
 
-			long spaceLifetime = space.getLifetime();
-			if( spaceLifetime > 0) {
+			Long expirationTime = space.getExpirationTime();
+			if (expirationTime != null) {
                             update.appendUpdate(thisSpacePath
-                                    .newChild("lifetime"), new IntegerStateValue(spaceLifetime, metricLifetime));
+                                    .newChild("lifetime"), new IntegerStateValue(expirationTime - space.getCreationTime(), metricLifetime));
                         }
 
 			addLinkgroup( update, thisSpacePath, String.valueOf( space.getLinkGroupId()), String.valueOf(space.getId()), metricLifetime);
