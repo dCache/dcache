@@ -775,15 +775,14 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         }
     }
 
-    @Command(name = "release file", hint = "remove file reservation",
-             usage = "Removes a file reservation from its space reservation without deleting " +
-                     "the file from dCache. The space in the reservation that was set aside " +
-                     "for the file will be available to other files, assuming the link group " +
-                     "has enough free space.\n\n" +
+    @Command(name = "purge file", hint = "purge file from space",
+             usage = "Removes a file from its space reservation without deleting the file from " +
+                     "dCache. The space in the reservation that was set aside for the file will be " +
+                     "available to other files, assuming the link group has enough free space.\n\n" +
 
                      "This command is the file level equivalent to releasing the entire space " +
                      "reservation.")
-    public class ReleaseFileCommand extends AsyncCommand<String>
+    public class PurgeFileCommand extends AsyncCommand<String>
     {
         @Option(name = "pnfsid", usage = "PNFS ID of file.")
         PnfsId pnfsId;
@@ -811,7 +810,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 throw new CommandSyntaxException("Required option is missing.");
             }
             db.removeFile(f.getId());
-            return "Removed " + f;
+            return "Purged " + f;
         }
     }
 
