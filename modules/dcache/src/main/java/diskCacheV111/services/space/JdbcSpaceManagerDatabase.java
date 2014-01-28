@@ -1062,7 +1062,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public SpaceCriterion thatHaveNoFiles()
         {
-            addClause("id NOT IN (SELECT spacereservationid FROM " + SPACEFILE_TABLE + ")");
+            addClause("NOT EXISTS (SELECT * FROM " + SPACEFILE_TABLE + " WHERE spacereservationid = srmspace.id)");
             return this;
         }
     }
