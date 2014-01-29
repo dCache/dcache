@@ -574,7 +574,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         boolean humanReadable;
 
         @Option(name = "state",
-                values = { "reserved", "transferring", "stored", "flushed" },
+                values = { "allocated", "transferring", "stored", "flushed" },
                 usage = "Only show files in one of these states.")
         FileState[] states;
 
