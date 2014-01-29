@@ -110,12 +110,11 @@
                 REFERENCING NEW ROW AS new
                 FOR EACH ROW
                 BEGIN ATOMIC
-                    CASE new.state
-                        WHEN 0, 1 THEN
-                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
-                        WHEN 2 THEN
-                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
-                    END CASE;
+                    IF new.state IN (0, 1) THEN
+                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
+                    ELSEIF new.state = 2 THEN
+                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
+                    END IF;
                 END;
         </createProcedure>
 
@@ -143,18 +142,16 @@
                             WHERE id = old.spaceReservationId;
                     END IF;
                 ELSE
-                    CASE old.state
-                        WHEN 0, 1 THEN
-                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
-                        WHEN 2 THEN
-                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
-                    END CASE;
-                    CASE new.state
-                        WHEN 0, 1 THEN
-                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
-                        WHEN 2 THEN
-                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
-                    END CASE;
+                    IF old.state IN (0, 1) THEN
+                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
+                    ELSEIF old.state = 2 THEN
+                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
+                    END IF;
+                    IF new.state IN (0, 1) THEN
+                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
+                    ELSEIF new.state = 2 THEN
+                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + new.sizeinbytes WHERE id = new.spacereservationid;
+                    END IF;
                 END IF;
             END;
         </createProcedure>
@@ -165,12 +162,11 @@
                 REFERENCING OLD ROW AS old
                 FOR EACH ROW
                 BEGIN ATOMIC
-                    CASE old.state
-                        WHEN 0, 1 THEN
-                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
-                        WHEN 2 THEN
-                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
-                    END CASE;
+                    IF old.state IN (0, 1) THEN
+                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
+                    ELSEIF old.state = 2 THEN
+                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - old.sizeinbytes WHERE id = old.spacereservationid;
+                    END IF;
                 END;
         </createProcedure>
 

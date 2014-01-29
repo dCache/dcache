@@ -33,6 +33,7 @@
             $$
             LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS tgr_linkgroup_update ON srmlinkgroup;
             CREATE TRIGGER tgr_linkgroup_update BEFORE UPDATE ON srmlinkgroup FOR EACH ROW EXECUTE PROCEDURE f_linkgroup_on_update();
         </createProcedure>
         <rollback>
@@ -57,6 +58,7 @@
             $$
             LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS tgr_srmspace_insert ON srmspace;
             CREATE TRIGGER tgr_srmspace_insert AFTER INSERT ON srmspace FOR EACH ROW EXECUTE PROCEDURE f_srmspace_on_insert();
         </createProcedure>
 
@@ -91,6 +93,7 @@
             $$
             LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS tgr_srmspace_update ON srmspace;
             CREATE TRIGGER tgr_srmspace_update AFTER UPDATE ON srmspace FOR EACH ROW EXECUTE PROCEDURE f_srmspace_on_update();
         </createProcedure>
 
@@ -105,6 +108,7 @@
             $$
             LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS tgr_srmspace_delete ON srmspace;
             CREATE TRIGGER tgr_srmspace_delete AFTER DELETE ON srmspace FOR EACH ROW EXECUTE PROCEDURE f_srmspace_on_delete();
         </createProcedure>
 
@@ -131,6 +135,7 @@
             $$
             LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS tgr_srmspace_before_update ON srmspace;
             CREATE TRIGGER tgr_srmspace_before_update BEFORE UPDATE ON srmspace FOR EACH ROW EXECUTE PROCEDURE f_srmspace_check_size();
         </createProcedure>
 
@@ -145,17 +150,17 @@
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_srmspacefile_on_insert() RETURNS TRIGGER AS  $$
             BEGIN
-                CASE NEW.state
-                    WHEN 0, 1 THEN
-                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
-                    WHEN 2 THEN
-                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
-                END CASE;
+                IF NEW.state IN (0, 1) THEN
+                    UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
+                ELSEIF NEW.state = 2 THEN
+                    UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
+                END IF;
                 RETURN NULL;
             END;
             $$
             LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS tgr_srmspacefile_insert ON srmspacefile;
             CREATE TRIGGER tgr_srmspacefile_insert AFTER INSERT ON srmspacefile FOR EACH ROW EXECUTE PROCEDURE f_srmspacefile_on_insert();
         </createProcedure>
 
@@ -181,41 +186,40 @@
                             WHERE id = OLD.spaceReservationId;
                     END IF;
                 ELSE
-                    CASE OLD.state
-                        WHEN 0, 1 THEN
-                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
-                        WHEN 2 THEN
-                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
-                    END CASE;
-                    CASE NEW.state
-                        WHEN 0, 1 THEN
-                            UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
-                        WHEN 2 THEN
-                            UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
-                    END CASE;
+                    IF OLD.state IN (0, 1) THEN
+                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
+                    ELSEIF OLD.state = 2 THEN
+                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
+                    END IF;
+                    IF NEW.state IN (0, 1) THEN
+                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
+                    ELSEIF NEW.state = 2 THEN
+                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes + NEW.sizeinbytes WHERE id = NEW.spacereservationid;
+                    END IF;
                 END IF;
                 RETURN NULL;
             END;
             $$
             LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS tgr_srmspacefile_update ON srmspacefile;
             CREATE TRIGGER tgr_srmspacefile_update AFTER UPDATE ON srmspacefile FOR EACH ROW EXECUTE PROCEDURE f_srmspacefile_on_update();
         </createProcedure>
 
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_srmspacefile_on_delete() RETURNS TRIGGER AS  $$
             BEGIN
-                CASE OLD.state
-                    WHEN 0, 1 THEN
-                        UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
-                    WHEN 2 THEN
-                        UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
-                END CASE;
+                IF OLD.state IN (0, 1) THEN
+                    UPDATE srmspace SET allocatedspaceinbytes = allocatedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
+                ELSEIF OLD.state = 2 THEN
+                    UPDATE srmspace SET usedspaceinbytes = usedspaceinbytes - OLD.sizeinbytes WHERE id = OLD.spacereservationid;
+                END IF;
                 RETURN NULL;
             END;
             $$
             LANGUAGE plpgsql;
 
+            DROP TRIGGER IF EXISTS tgr_srmspacefile_delete ON srmspacefile;
             CREATE TRIGGER tgr_srmspacefile_delete AFTER DELETE ON srmspacefile FOR EACH ROW EXECUTE PROCEDURE f_srmspacefile_on_delete();
         </createProcedure>
 
