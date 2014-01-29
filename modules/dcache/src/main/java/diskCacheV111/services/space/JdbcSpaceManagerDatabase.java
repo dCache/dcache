@@ -521,11 +521,12 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         int rc = getJdbcTemplate().update(
                 "UPDATE " + SPACEFILE_TABLE +
-                        " SET vogroup=?, vorole=?, sizeinbytes=?, expirationtime=?, pnfsid=?, state=?, deleted=? WHERE id=?",
+                        " SET vogroup=?, vorole=?, sizeinbytes=?, expirationtime=?, pnfspath=?, pnfsid=?, state=?, deleted=? WHERE id=?",
                 f.getVoGroup(),
                 f.getVoRole(),
                 f.getSizeInBytes(),
                 f.getExpirationTime(),
+                Objects.toString(f.getPath(), null),
                 Objects.toString(f.getPnfsId(), null),
                 f.getState().getStateId(),
                 f.isDeleted() ? 1 : 0,
