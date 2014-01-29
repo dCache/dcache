@@ -15,6 +15,8 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.dcache.util.Args;
+
 public class OptionParser {
 
     public static Set<String> getOptions(Object o){
@@ -51,7 +53,7 @@ public class OptionParser {
                                     boolean setDefault)
      throws IllegalArgumentException {
          String s;
-         s = args.getOpt(option.name());
+         s = args.getOption(option.name());
          if (s != null ) {
              if (s.length()==0 && !option.required()) {
                  return "true";    // to support switch type options
@@ -75,8 +77,7 @@ public class OptionParser {
       * match class field names.
       */
      public static void checkOptions(Object o, Args args) {
-         for (int i=0;i<args.optc();i++) {
-             String optionName=args.optv(i);
+         for (String optionName : args.optionsAsMap().keySet()) {
              Boolean exists=false;
              Class<?> c = o.getClass();
              while(c!=null) {

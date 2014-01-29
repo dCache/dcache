@@ -94,6 +94,8 @@ import java.util.Set;
 
 import org.dcache.srm.Logger;
 import org.dcache.srm.client.Transport;
+import org.dcache.util.Args;
+
 /**
  *
  * @author  timur
@@ -2270,7 +2272,7 @@ public class Configuration {
         " type srm [command option] -h for more info about a particular option";
     }
 
-    public void parseArguments(String args[]) throws Exception {
+    public void parseArguments(String arguments[]) throws Exception {
         //
         // This is nasty kludge to make Jon Bakken happy,
         // namely handle case when option and option value
@@ -2285,12 +2287,12 @@ public class Configuration {
         StringBuilder sb = new StringBuilder();
         {
             int i=0;
-            while(i<args.length) {
+            while(i<arguments.length) {
                 //
                 // follow Gerd's suggestion and strip "-" to
                 // expose possible option name
                 //
-                String name = args[i];
+                String name = arguments[i];
                 while(name.startsWith("-")) {
                     name=name.substring(1);
                 }
@@ -2299,7 +2301,7 @@ public class Configuration {
                     // we have space separated option value
                     // that is "-option "
                     //
-                    sb.append(args[i]);
+                    sb.append(arguments[i]);
                     i++;
                     //
                     // if this was last string on command line we are done
@@ -2308,10 +2310,10 @@ public class Configuration {
                     // checks if option is boolean, of not we will get
                     // exception later)
                     //
-                    if (i>=args.length) {
+                    if (i>=arguments.length) {
                         break;
                     }
-                    String value=args[i];
+                    String value=arguments[i];
                     //
                     // Option value must be :
                     // 1) string that does not start with "-"
@@ -2394,19 +2396,19 @@ public class Configuration {
                     // 4) "=123"
                     // 5) any string , e.g. argument list
                     //
-                    if (!args[i].endsWith("=")) {
+                    if (!arguments[i].endsWith("=")) {
                         //
                         // if we do not have "=" at the end, append space,
                         // this is "complete" case ((1) (4) (5))
                         //
-                        sb.append(args[i]).append(" ");
+                        sb.append(arguments[i]).append(" ");
                     }
                     else {
                         //
                         // if we have "exposed" "=" then we
                         // have incomplete case ((2) (3))
                         //
-                        sb.append(args[i]);
+                        sb.append(arguments[i]);
                     }
                 }
                 i++;
@@ -2421,7 +2423,7 @@ public class Configuration {
         // and use another convenient constructor
         // of Args to continue business as usual
         //
-        Args _args = new Args(sb.toString());
+        Args args = new Args(sb.toString());
         //
         // Set all fields to default values
         //
@@ -2430,8 +2432,8 @@ public class Configuration {
         // Need to parse "conf" option first, so we set the value
         // of config_file field. Make sure "conf" options is specified.
         //
-        if (_args.getOpt("conf")!=null) {
-            OptionParser.parseOption(this,"conf",_args);
+        if (args.hasOption("conf")) {
+            OptionParser.parseOption(this,"conf",args);
         }
         else {
             config_file=DEFAULT_CONFIG_FILE;
@@ -2441,7 +2443,7 @@ public class Configuration {
             read(config_file);
         }
         else {
-            if (_args.getOpt("conf")!=null) {
+            if (args.hasOption("conf")) {
                 throw new IOException("specified configuratioin file \""+config_file+"\" does not exist or can not be read");
             }
         }
@@ -2451,7 +2453,7 @@ public class Configuration {
         // values from config file and then possibly overriden by command
         // line options.
         //
-        OptionParser.parseSpecifiedOptions(this,_args);
+        OptionParser.parseSpecifiedOptions(this,args);
         extraParameters.put("priority",priority.toString());
         //
         // take care of normal people who tend to specify range as MIN:MAX
@@ -2475,7 +2477,7 @@ public class Configuration {
             throw new IllegalArgumentException(
                     "only one option of -srm_protocol_version, -1 or -2 should be specified");
         }
-        if ((isSrmv1||isSrmv2) && _args.getOpt("srm_protocol_version")!=null) {
+        if ((isSrmv1||isSrmv2) && args.hasOption("srm_protocol_version")) {
             throw new IllegalArgumentException(
             "only one option of -srm_protocol_version, -1 or -2 should be specified");
         }
@@ -2536,15 +2538,14 @@ public class Configuration {
                     "specified:\n\n" + usage());
         }
 
-        int numberOfArguments = _args.argc();
+        int numberOfArguments = args.argc();
 
         if (numberOfArguments==0 && copyjobfile==null) {
             throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
         }
 
-        surls = new String[numberOfArguments];
-        for(int i=0;i<numberOfArguments;i++){surls[i]=_args.argv(i);}
-        srmUrl=_args.argv(0);
+        surls = args.getArguments().toArray(new String[numberOfArguments]);
+        srmUrl=args.argv(0);
 
         //
         // take care of protocol version for srm v2.2 functions
@@ -2573,7 +2574,7 @@ public class Configuration {
         }
         if (getRequestStatus) {
             if (numberOfArguments == 1) {
-                getRequestStatusSurl = _args.argv(0);
+                getRequestStatusSurl = args.argv(0);
             }
             else {
                 throw new IllegalArgumentException(
@@ -2582,10 +2583,10 @@ public class Configuration {
             }
         }
         else if (is_getRequestTokens) {
-            getRequestStatusSurl =  _args.argv(0);
+            getRequestStatusSurl =  args.argv(0);
         }
         else if (is_getRequestSummary) {
-            getRequestStatusSurl =  _args.argv(0);
+            getRequestStatusSurl =  args.argv(0);
             arrayOfRequestTokens=readListOfOptions(requestTokens,",");
         }
         else if (is_AbortRequest) {
@@ -2618,9 +2619,9 @@ public class Configuration {
                         "should be specified");
                     }
                     int number_of_sources = numberOfArguments - 1;
-                    from = new String[number_of_sources];
-                    for(int i=0;i<number_of_sources;i++){from[i]=_args.argv(i);}
-                    to  = _args.argv(number_of_sources);
+                    from = args.getArguments().subList(0, number_of_sources).
+                            toArray(new String[number_of_sources]);
+                    to  = args.argv(number_of_sources);
                 }
                 else {
                     if (is_mv) {
@@ -2647,10 +2648,10 @@ public class Configuration {
             protocols = readListOfOptions(protocols_list,",");
         }
         else if(ping) {
-            srmUrl = _args.argv(0);
+            srmUrl = args.argv(0);
         }
         else if (setPermission) {
-            setPermissionSurl = _args.argv(0);
+            setPermissionSurl = args.argv(0);
             OptionParser.checkNullOptions(this,"type");
         }
         else {
