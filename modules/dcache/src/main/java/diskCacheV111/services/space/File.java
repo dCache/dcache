@@ -152,7 +152,7 @@ public class File implements Serializable {
 
     public boolean isExpired()
     {
-        return (state == FileState.ALLOCATED || state == FileState.TRANSFERRING) && expirationTime != null && creationTime + expirationTime < System.currentTimeMillis();
+        return (state == FileState.ALLOCATED || state == FileState.TRANSFERRING) && expirationTime != null && expirationTime < System.currentTimeMillis();
     }
 
     public static Function<File, Long> getSpaceToken =
