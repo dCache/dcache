@@ -12,7 +12,7 @@ public enum FileAttribute {
     ACCESS_TIME,
     ACL,
     CHECKSUM,
-    CHANGE_TIME,
+    CHANGE_TIME,   // Not supported in 2.6, so be careful not to send this to pools
     CREATION_TIME,
     FLAGS,
     HSM,

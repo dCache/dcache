@@ -41,7 +41,7 @@ public class PnfsCreateEntryMessage extends PnfsGetFileAttributes
             Set<FileAttribute> attr) {
         super(path, EnumSet.copyOf(Sets.union(attr,
                 EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
-                        CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME,
+                        CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME,
                         PNFSID, STORAGEINFO, ACCESS_LATENCY, RETENTION_POLICY))));
         _path = path;
         _uid  = uid ;

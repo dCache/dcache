@@ -1071,7 +1071,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             super(sessionId, commandId, args);
 
             _attributes = EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
-                    CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME, PNFSID);
+                    CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, PNFSID);
             if (!metaDataOnly) {
                 _attributes.add(STORAGEINFO);
             }
@@ -1290,6 +1290,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             boolean followLinks)
         {
             super( sessionId , commandId , args , true , followLinks ) ;
+            _attributes.add(CHANGE_TIME);
         }
 
         @Override
