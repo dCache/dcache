@@ -11,18 +11,17 @@
         </addColumn>
     </changeSet>
 
-    <changeSet author="tigran" id="15">
+    <changeSet author="tigran" id="15.1">
         <sql stripComments="true">
-            UPDATE t_inodes SET icrtime = (
-                SELECT
+            UPDATE t_inodes SET icrtime =
                     CASE
                         WHEN ictime &lt;= imtime and ictime &lt;= iatime THEN ictime
                         WHEN imtime &lt;= ictime and imtime &lt;= iatime THEN imtime
                         ELSE iatime
-                    END AS icrtime
-                FROM t_inodes AS p WHERE p.ipnfsid = t_inodes.ipnfsid
-            )
+                    END
+                WHERE icrtime IS NULL
         </sql>
+        <rollback/>
     </changeSet>
 
     <changeSet author="tigran" id="16">
@@ -31,7 +30,7 @@
                       tableName="t_inodes"/>
     </changeSet>
 
-    <changeSet author="litvinse" id="17" dbms="postgresql">
+    <changeSet author="litvinse" id="17.1" dbms="postgresql">
        <createProcedure>
 	 ---  RFC 2396 :  http://www.ietf.org/rfc/rfc2396.txt
 	 ---        unreserved = alpha num | mark
@@ -119,6 +118,7 @@
 	  $$
 	  LANGUAGE 'plpgsql';
        </createProcedure>
+        <rollback/>
     </changeSet>
 
 </databaseChangeLog>
