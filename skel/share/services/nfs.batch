@@ -32,6 +32,8 @@ check -strong nfs.db.dialect
 check -strong nfs.db.user
 check -strong nfs.db.url
 check -strong nfs.db.driver
+check -strong nfs.db.schema.changelog
+check -strong nfs.db.schema.auto
 check nfs.db.password
 check nfs.domain
 check nfs.mover.queue

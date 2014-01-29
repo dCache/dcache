@@ -63,7 +63,15 @@
         <property name="statementsCacheSize" value="100"/>
     </bean>
 
-    <bean id="fileSystem" class="org.dcache.chimera.DCacheAwareJdbcFs">
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema manager</description>
+        <property name="dataSource" ref="dataSource"/>
+        <property name="changeLog" value="classpath:${nfs.db.schema.changelog}"/>
+        <property name="shouldUpdate" value="${nfs.db.schema.auto}"/>
+    </bean>
+
+    <bean id="fileSystem" class="org.dcache.chimera.DCacheAwareJdbcFs"
+            depends-on="liquibase">
         <description>Chimera Filesystem</description>
         <constructor-arg ref="dataSource" />
         <constructor-arg value="${nfs.db.dialect}" />
