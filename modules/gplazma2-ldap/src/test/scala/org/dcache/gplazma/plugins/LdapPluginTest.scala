@@ -20,7 +20,7 @@ import org.dcache.auth.attributes.{ReadOnly, HomeDirectory, RootDirectory}
  *
  * The tests are all ignored by default because they depend on DESY infrastructure.
  */
-@RunWith(classOf[JUnitRunner])
+@RunWith(classOf[JUnitRunner]) @Ignore
 class LdapPluginTest extends FlatSpec with Matchers {
 
   val pluginProperties = {
