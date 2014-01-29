@@ -1,10 +1,11 @@
 package diskCacheV111.doors;
 
+import diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
+
 import dmg.cells.services.login.LoginCellFactory;
 import dmg.cells.services.login.LoginCellProvider;
-import dmg.util.Args;
 
-import static diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
+import org.dcache.util.Args;
 
 public class LineBasedDoorProvider implements LoginCellProvider
 {

@@ -7,7 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.services.login.user.MinimalAdminShell;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 /**
   *

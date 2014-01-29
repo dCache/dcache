@@ -12,7 +12,7 @@ import java.net.Socket;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 public class VspListener implements Runnable {
    public static final int IOCMD_WRITE     = 1 ;

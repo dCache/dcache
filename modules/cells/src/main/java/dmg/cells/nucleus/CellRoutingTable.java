@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 /**
   *

@@ -11,7 +11,8 @@ import java.util.Enumeration;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 import dmg.util.Authorizable;
 import dmg.util.AuthorizedString;
 import dmg.util.CommandPanicException;

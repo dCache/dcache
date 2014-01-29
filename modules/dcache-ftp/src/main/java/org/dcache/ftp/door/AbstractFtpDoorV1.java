@@ -118,6 +118,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import diskCacheV111.doors.FTPTransactionLog;
+import diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.ChecksumFactory;
@@ -150,7 +151,6 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
 import dmg.util.CommandExitException;
 
 import org.dcache.acl.enums.AccessType;
@@ -174,6 +174,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.services.login.RemoteLoginStrategy;
+import org.dcache.util.Args;
 import org.dcache.util.AsynchronousRedirectedTransfer;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -186,7 +187,6 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 
-import static diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**

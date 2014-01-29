@@ -6,7 +6,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 
 public class VspDeviceShell {

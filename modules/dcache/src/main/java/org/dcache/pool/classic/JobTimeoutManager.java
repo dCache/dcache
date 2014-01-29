@@ -10,10 +10,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 
-import dmg.util.Args;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+
+import org.dcache.util.Args;
 
 class SchedulerEntry
 {

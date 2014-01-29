@@ -6,12 +6,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
+
 import dmg.cells.nucleus.Cell;
 import dmg.cells.services.login.LoginCellFactory;
-import dmg.util.Args;
 import dmg.util.StreamEngine;
 
-import static diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
+import org.dcache.util.Args;
 
 public class LineBasedDoorFactory extends AbstractService implements LoginCellFactory
 {

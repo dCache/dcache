@@ -15,6 +15,8 @@ import dmg.util.command.CommandExecutor;
 import dmg.util.command.CommandScanner;
 import dmg.util.command.HelpFormat;
 
+import org.dcache.util.Args;
+
 /**
  *
  *   Scans a specified object and makes a special set

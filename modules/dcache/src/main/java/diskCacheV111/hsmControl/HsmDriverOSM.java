@@ -15,7 +15,7 @@ import diskCacheV111.util.RunSystem;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 /**
  *

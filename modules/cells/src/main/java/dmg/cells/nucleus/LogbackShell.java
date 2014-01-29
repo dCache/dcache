@@ -19,8 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import dmg.util.Args;
-import dmg.util.PinboardAppender;
+import org.dcache.util.Args;
 
 public class LogbackShell
 {

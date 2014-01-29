@@ -21,7 +21,8 @@ import java.util.StringTokenizer;
 import dmg.cells.applets.login.DomainConnection;
 import dmg.cells.applets.login.DomainEventListener;
 import dmg.cells.services.gui.realm.JRealm;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 //
 

@@ -13,9 +13,10 @@ import java.io.StringReader;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellShell;
-import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.Exceptions;
+
+import org.dcache.util.Args;
 
 public class BatchCell extends CellAdapter implements Runnable
 {

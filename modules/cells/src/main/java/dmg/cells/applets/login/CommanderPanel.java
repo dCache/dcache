@@ -20,7 +20,8 @@ import java.awt.event.ActionListener;
 import java.io.Serializable;
 
 import dmg.cells.applets.spy.HistoryTextField;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 
 public class      CommanderPanel

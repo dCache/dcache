@@ -23,10 +23,9 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
-import dmg.util.Args;
-
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;

@@ -4,8 +4,9 @@ import com.google.common.base.Objects;
 
 import java.io.Serializable;
 
-import dmg.util.Args;
 import dmg.util.Formats;
+
+import org.dcache.util.Args;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;

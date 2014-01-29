@@ -65,9 +65,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import dmg.util.Args;
-
 import org.dcache.pool.classic.ChecksumScanner;
+import org.dcache.util.Args;
 
 /**
  * This class may be used for testing a live logging server configured with the

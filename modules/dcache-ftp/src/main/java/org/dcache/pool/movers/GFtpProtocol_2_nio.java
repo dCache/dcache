@@ -23,7 +23,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.util.Args;
 
 import org.dcache.ftp.data.BlockLog;
 import org.dcache.ftp.data.ConnectionMonitor;
@@ -40,6 +39,7 @@ import org.dcache.ftp.data.Role;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.NetworkUtils;

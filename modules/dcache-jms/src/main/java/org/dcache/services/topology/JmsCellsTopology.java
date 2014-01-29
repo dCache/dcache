@@ -15,11 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 import dmg.cells.network.CellDomainNode;
-import dmg.util.Args;
-
 import dmg.cells.nucleus.CellCommandListener;
+
 import org.dcache.cells.CellNameService;
 import org.dcache.cells.CellNameServiceRegistry;
+import org.dcache.util.Args;
 
 /**
  * CellsTopology for JMS based dCache installations.

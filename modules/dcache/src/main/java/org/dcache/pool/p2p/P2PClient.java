@@ -23,16 +23,16 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
-import dmg.util.Args;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
 public class P2PClient

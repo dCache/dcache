@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import dmg.cells.nucleus.CellInfoProvider;
-import dmg.util.Args;
 
 import org.dcache.services.httpd.HttpServiceCell;
 import org.dcache.services.httpd.handlers.BadConfigHandler;
@@ -19,6 +18,7 @@ import org.dcache.services.httpd.handlers.ContextHandler;
 import org.dcache.services.httpd.handlers.PathHandler;
 import org.dcache.services.httpd.handlers.RedirectHandler;
 import org.dcache.services.httpd.handlers.ResponseEngineHandler;
+import org.dcache.util.Args;
 
 /**
  * Abstraction for httpd aliases. Integrates webapp type.

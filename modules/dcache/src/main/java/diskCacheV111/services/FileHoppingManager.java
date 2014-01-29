@@ -1,33 +1,33 @@
  // $Id: FileHoppingManager.java,v 1.3 2006-04-21 11:21:33 patrick Exp $Cg
+package  diskCacheV111.services;
 
-package  diskCacheV111.services ;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.util.Date;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
 
- import java.io.BufferedReader;
- import java.io.File;
- import java.io.FileReader;
- import java.io.FileWriter;
- import java.io.PrintWriter;
- import java.net.InetSocketAddress;
- import java.util.Date;
- import java.util.Map;
- import java.util.TreeMap;
- import java.util.regex.Pattern;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.Pool2PoolTransferMsg;
+import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
- import diskCacheV111.vehicles.DCapProtocolInfo;
- import diskCacheV111.vehicles.Pool2PoolTransferMsg;
- import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
- import diskCacheV111.vehicles.ProtocolInfo;
- import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.util.Formats;
 
- import dmg.cells.nucleus.CellAdapter;
- import dmg.cells.nucleus.CellMessage;
- import dmg.cells.nucleus.CellNucleus;
- import dmg.cells.nucleus.CellPath;
- import dmg.util.Args;
- import dmg.util.Formats;
+import org.dcache.util.Args;
 
  /**
   *  @Author: Patrick Fuhrmann

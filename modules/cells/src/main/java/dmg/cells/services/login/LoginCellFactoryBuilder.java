@@ -5,7 +5,7 @@ import com.google.common.collect.Ordering;
 
 import java.util.ServiceLoader;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 public class LoginCellFactoryBuilder
 {

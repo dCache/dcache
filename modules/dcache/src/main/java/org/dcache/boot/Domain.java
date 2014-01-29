@@ -25,9 +25,9 @@ import java.util.Map;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
-import dmg.util.Args;
 import dmg.util.CommandException;
 
+import org.dcache.util.Args;
 import org.dcache.util.ConfigurationProperties;
 
 import static org.dcache.boot.Properties.*;

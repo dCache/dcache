@@ -8,7 +8,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 public class      W2Main
        extends    Frame

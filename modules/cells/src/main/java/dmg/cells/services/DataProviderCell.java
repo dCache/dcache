@@ -14,7 +14,8 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class DataProviderCell extends CellAdapter {
 

@@ -13,7 +13,8 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.security.digest.Crypt;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 import dmg.util.Authorizable;
 import dmg.util.UserPasswords;
 

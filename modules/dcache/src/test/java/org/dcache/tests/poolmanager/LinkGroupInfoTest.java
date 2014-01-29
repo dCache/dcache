@@ -10,11 +10,11 @@ import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
 
-import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
 
 import org.dcache.poolmanager.Utils;
+import org.dcache.util.Args;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

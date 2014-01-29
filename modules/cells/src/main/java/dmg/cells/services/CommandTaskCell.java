@@ -19,10 +19,11 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
-import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandSyntaxException;
+
+import org.dcache.util.Args;
 
 /**
  *

@@ -8,8 +8,9 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import dmg.cells.nucleus.CellAdapter;
-import dmg.util.Args;
 import dmg.util.CollectionFactory;
+
+import org.dcache.util.Args;
 
 /**
  * Author : Patrick Fuhrmann

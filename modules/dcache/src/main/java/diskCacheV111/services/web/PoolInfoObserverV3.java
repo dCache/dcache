@@ -15,12 +15,12 @@ import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
-import dmg.util.Args;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.Option;
+import org.dcache.util.Args;
 
 public class PoolInfoObserverV3 extends AbstractCell
 {

@@ -2,7 +2,7 @@ package dmg.cells.nucleus;
 
 import java.util.Map;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 /**
  * Interface encapsulating a cell as seen by cell components.

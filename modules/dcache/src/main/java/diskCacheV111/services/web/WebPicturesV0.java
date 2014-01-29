@@ -37,7 +37,8 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 /**
   *  @Author: Patrick Fuhrmann

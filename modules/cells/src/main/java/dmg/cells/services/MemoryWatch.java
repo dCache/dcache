@@ -11,7 +11,8 @@ import java.util.Date;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class MemoryWatch extends CellAdapter implements Runnable {
 

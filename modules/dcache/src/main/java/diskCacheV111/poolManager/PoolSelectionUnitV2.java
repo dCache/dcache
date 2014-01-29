@@ -30,9 +30,9 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellSetupProvider;
-import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
+import org.dcache.util.Args;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 

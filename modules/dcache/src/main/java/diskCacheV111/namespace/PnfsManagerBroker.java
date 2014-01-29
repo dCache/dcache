@@ -20,7 +20,8 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SyncFifo2;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class PnfsManagerBroker extends CellAdapter {
 

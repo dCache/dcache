@@ -17,12 +17,12 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.services.login.ControlBufferedReader;
 import dmg.protocols.ssh.SshInputStreamReader;
-import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.Gate;
 import dmg.util.StreamEngine;
 
 import org.dcache.auth.Subjects;
+import org.dcache.util.Args;
 
 /**
   *

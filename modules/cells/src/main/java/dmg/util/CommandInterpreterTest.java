@@ -3,6 +3,8 @@ package dmg.util ;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import org.dcache.util.Args;
+
 public class CommandInterpreterTest extends CommandInterpreter {
 
    public static void main( String [] args ){

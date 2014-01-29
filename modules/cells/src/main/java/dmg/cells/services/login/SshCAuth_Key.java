@@ -12,7 +12,8 @@ import dmg.protocols.ssh.SshAuthRsa;
 import dmg.protocols.ssh.SshClientAuthentication;
 import dmg.protocols.ssh.SshRsaKey;
 import dmg.protocols.ssh.SshSharedKey;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 /**
  **

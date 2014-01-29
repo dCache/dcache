@@ -7,7 +7,8 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellShell;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 import dmg.util.AuthorizedString;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;

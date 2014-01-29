@@ -24,8 +24,9 @@ import dmg.protocols.ssh.SshRsaKeyContainer;
 import dmg.protocols.ssh.SshServerAuthentication;
 import dmg.protocols.ssh.SshSharedKey;
 import dmg.protocols.ssh.SshStreamEngine;
-import dmg.util.Args;
 import dmg.util.StreamEngine;
+
+import org.dcache.util.Args;
 
 /**
  **

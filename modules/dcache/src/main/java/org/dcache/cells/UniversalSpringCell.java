@@ -71,10 +71,10 @@ import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.SetupInfoMessage;
-import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandThrowableException;
 
+import org.dcache.util.Args;
 import org.dcache.util.ClassNameComparator;
 import org.dcache.vehicles.BeanQueryAllPropertiesMessage;
 import org.dcache.vehicles.BeanQueryMessage;

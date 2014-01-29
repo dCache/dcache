@@ -7,7 +7,7 @@ import java.util.Set;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.StorageClassFlushInfo;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 /**
  * Whenever a HsmFlushControlManager cell loads a driver it provides
  * an implementation of this class to enable a drive to query resp.

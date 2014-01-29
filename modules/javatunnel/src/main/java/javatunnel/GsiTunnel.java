@@ -30,10 +30,9 @@ import java.io.OutputStream;
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
 
-import dmg.util.Args;
-
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.util.GSSUtils;
+import org.dcache.util.Args;
 import org.dcache.util.Crypto;
 
 import static org.dcache.util.Files.checkDirectory;

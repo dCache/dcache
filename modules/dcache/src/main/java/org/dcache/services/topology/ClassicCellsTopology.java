@@ -3,9 +3,9 @@ package org.dcache.services.topology;
 import java.util.Collection;
 
 import dmg.cells.network.CellDomainNode;
-import dmg.util.Args;
-
 import dmg.cells.nucleus.CellCommandListener;
+
+import org.dcache.util.Args;
 
 /**
  * CellsTopology for dCache installation with classic (non-JMS) cells

@@ -29,9 +29,9 @@ import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
 import dmg.cells.nucleus.SerializationException;
-import dmg.util.Args;
 import dmg.util.StreamEngine;
 
+import org.dcache.util.Args;
 import org.dcache.util.Version;
 
 /**

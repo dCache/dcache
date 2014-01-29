@@ -38,7 +38,8 @@ import diskCacheV111.vehicles.PoolStatusChangedMessage;
 
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class ReplicaManagerV2 extends DCacheCoreControllerV2
 {

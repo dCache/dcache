@@ -17,10 +17,10 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
-import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
 
+import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.junit.Assert.*;

@@ -20,7 +20,8 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.SyncFifo2;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class HsmControlOsm extends CellAdapter implements Runnable {
 

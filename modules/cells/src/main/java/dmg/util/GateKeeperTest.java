@@ -2,6 +2,8 @@ package dmg.util ;
 
 import dmg.cells.nucleus.CellNucleus;
 
+import org.dcache.util.Args;
+
 public class GateKeeperTest {
    private CellNucleus _nucleus ;
    private GateKeeper  _gate ;

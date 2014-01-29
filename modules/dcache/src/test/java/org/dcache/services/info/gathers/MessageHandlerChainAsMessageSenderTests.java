@@ -17,10 +17,8 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
-import dmg.util.Args;
 
-import org.dcache.services.info.base.StateUpdate;
-import org.dcache.services.info.base.StateUpdateManager;
+import org.dcache.util.Args;
 
 import static org.junit.Assert.*;
 

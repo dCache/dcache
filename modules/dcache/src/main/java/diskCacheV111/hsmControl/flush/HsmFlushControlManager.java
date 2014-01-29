@@ -37,7 +37,8 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class HsmFlushControlManager  extends CellAdapter {
 

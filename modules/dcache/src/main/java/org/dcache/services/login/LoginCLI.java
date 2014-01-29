@@ -7,14 +7,14 @@ import java.security.Principal;
 
 import diskCacheV111.util.CacheException;
 
-import dmg.util.Args;
+import dmg.cells.nucleus.CellCommandListener;
 
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
-import dmg.cells.nucleus.CellCommandListener;
+import org.dcache.util.Args;
 
 public class LoginCLI
     implements CellCommandListener

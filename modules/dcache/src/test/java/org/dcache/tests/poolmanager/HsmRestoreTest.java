@@ -34,7 +34,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.util.Args;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.IoQueueManager;
@@ -42,6 +41,7 @@ import org.dcache.poolmanager.PartitionManager;
 import org.dcache.tests.cells.GenericMockCellHelper;
 import org.dcache.tests.cells.GenericMockCellHelper.MessageAction;
 import org.dcache.tests.util.CurrentThreadExceutorHelper;
+import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 

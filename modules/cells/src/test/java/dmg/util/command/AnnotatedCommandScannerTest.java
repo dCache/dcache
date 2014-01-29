@@ -10,9 +10,10 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import dmg.cells.nucleus.DelayedReply;
-import dmg.util.Args;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandSyntaxException;
+
+import org.dcache.util.Args;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.*;

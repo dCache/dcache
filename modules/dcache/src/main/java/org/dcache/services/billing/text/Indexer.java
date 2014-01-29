@@ -56,9 +56,8 @@ import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import dmg.util.Args;
-
 import org.dcache.boot.LayoutBuilder;
+import org.dcache.util.Args;
 import org.dcache.util.ConfigurationProperties;
 
 import static com.google.common.base.Preconditions.checkArgument;

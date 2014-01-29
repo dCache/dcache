@@ -17,7 +17,8 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class MulticastCell extends CellAdapter {
 

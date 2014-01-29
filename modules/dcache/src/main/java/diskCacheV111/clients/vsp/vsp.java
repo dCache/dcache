@@ -4,7 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 public class vsp {
 

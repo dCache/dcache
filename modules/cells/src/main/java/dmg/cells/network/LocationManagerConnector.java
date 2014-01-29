@@ -19,9 +19,10 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.SshCAuth_Key;
 import dmg.protocols.ssh.SshStreamEngine;
-import dmg.util.Args;
 import dmg.util.DummyStreamEngine;
 import dmg.util.StreamEngine;
+
+import org.dcache.util.Args;
 
 public class LocationManagerConnector
     extends CellAdapter

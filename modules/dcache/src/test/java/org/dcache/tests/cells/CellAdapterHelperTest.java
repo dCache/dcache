@@ -2,7 +2,7 @@ package org.dcache.tests.cells;
 
 import org.junit.Test;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 import static org.junit.Assert.*;
 

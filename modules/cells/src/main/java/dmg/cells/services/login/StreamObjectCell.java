@@ -25,12 +25,12 @@ import java.lang.reflect.Method;
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.StreamEngine;
 
 import org.dcache.auth.Subjects;
+import org.dcache.util.Args;
 
 import static com.google.common.base.Objects.firstNonNull;
 

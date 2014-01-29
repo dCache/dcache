@@ -1,6 +1,6 @@
 package diskCacheV111.clients.vsp ;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 
 public class VspCheck1 {

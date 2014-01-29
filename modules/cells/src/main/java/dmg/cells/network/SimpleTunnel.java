@@ -23,8 +23,8 @@ import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
-import dmg.util.Args;
 
+import org.dcache.util.Args;
 import org.dcache.util.Version;
 
 /**

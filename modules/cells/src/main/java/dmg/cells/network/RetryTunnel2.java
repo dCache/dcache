@@ -26,9 +26,10 @@ import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
-import dmg.util.Args;
 import dmg.util.Gate;
 import dmg.util.StreamEngine;
+
+import org.dcache.util.Args;
 
 /**
   *

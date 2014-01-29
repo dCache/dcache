@@ -11,9 +11,9 @@ import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.util.logging.LogManager;
 
-import dmg.util.Args;
 import dmg.util.CommandException;
 
+import org.dcache.util.Args;
 import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 

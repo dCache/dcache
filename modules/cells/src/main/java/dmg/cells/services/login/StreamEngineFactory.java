@@ -10,9 +10,10 @@ import dmg.protocols.ssh.SshServerAuthentication;
 import dmg.protocols.ssh.SshStreamEngine;
 import dmg.protocols.telnet.TelnetServerAuthentication;
 import dmg.protocols.telnet.TelnetStreamEngine;
-import dmg.util.Args;
 import dmg.util.DummyStreamEngine;
 import dmg.util.StreamEngine;
+
+import org.dcache.util.Args;
 
 /**
  * StreamEngineFactory instantiates the appropriate Streamengine for the given

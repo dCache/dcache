@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 import dmg.cells.nucleus.CellAdapter;
-import dmg.util.Args;
 import dmg.util.CollectionFactory;
 
 import org.dcache.auth.KAuthFile;
 import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.UserAuthRecord;
+import org.dcache.util.Args;
 
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov

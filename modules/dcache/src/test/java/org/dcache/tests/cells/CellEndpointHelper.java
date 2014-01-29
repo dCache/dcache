@@ -26,8 +26,8 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
-import dmg.util.Args;
 
+import org.dcache.util.Args;
 import static com.google.common.base.Preconditions.checkState;
 
 /**

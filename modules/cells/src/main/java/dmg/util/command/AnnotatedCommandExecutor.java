@@ -22,11 +22,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
+
+import org.dcache.util.Args;
 
 import static com.google.common.collect.Iterables.*;
 import static java.util.Arrays.asList;

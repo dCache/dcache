@@ -8,13 +8,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
+
+import org.dcache.util.Args;
 
 /**
  * Implements the legacy cell shell commands which use reflection

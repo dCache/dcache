@@ -6,10 +6,11 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
-import dmg.util.Args;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
+
+import org.dcache.util.Args;
 
 import static dmg.util.command.HelpFormat.PLAIN;
 import static java.util.Arrays.asList;

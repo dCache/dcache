@@ -2,7 +2,7 @@ package dmg.cells.nucleus;
 
 import org.junit.Test;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;

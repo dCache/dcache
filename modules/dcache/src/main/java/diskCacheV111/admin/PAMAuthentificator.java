@@ -27,8 +27,9 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.security.digest.Crypt;
 import dmg.util.AgingHash;
-import dmg.util.Args;
 import dmg.util.UserPasswords;
+
+import org.dcache.util.Args;
 
 
 /**

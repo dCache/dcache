@@ -13,9 +13,9 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.MessageEvent;
-import dmg.util.Args;
 import dmg.util.Formats;
 
+import org.dcache.util.Args;
 import org.dcache.util.Version;
 
 /**

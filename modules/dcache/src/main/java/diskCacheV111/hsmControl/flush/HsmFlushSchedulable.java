@@ -3,7 +3,7 @@ package diskCacheV111.hsmControl.flush ;
 
 import java.util.Map;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 /**
  * An implemantation of the HsmFlushScheduler is called by the HsmFlushController
  * in the corresponding events.

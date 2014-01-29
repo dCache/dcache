@@ -37,12 +37,12 @@ import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.util.Args;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
+import org.dcache.util.Args;
 
 /**
  * Base class for services that transfer files on behalf of SRM. Used to

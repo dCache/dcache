@@ -27,7 +27,8 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.cells.nucleus.UOID;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 /**
  * Abstract cell implementation providing features needed by many

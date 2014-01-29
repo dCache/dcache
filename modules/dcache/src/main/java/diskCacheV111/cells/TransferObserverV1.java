@@ -35,7 +35,8 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class TransferObserverV1
     extends CellAdapter

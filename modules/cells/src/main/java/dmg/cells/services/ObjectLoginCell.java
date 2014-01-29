@@ -16,9 +16,10 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.UOID;
-import dmg.util.Args;
 import dmg.util.Gate;
 import dmg.util.StreamEngine;
+
+import org.dcache.util.Args;
 
 /**
   *

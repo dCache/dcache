@@ -16,8 +16,9 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.StorageClassFlushInfo;
 
 import dmg.cells.nucleus.CellAdapter;
-import dmg.util.Args;
 import dmg.util.CommandInterpreter;
+
+import org.dcache.util.Args;
 
 /**
  * @author Patrick Fuhrmann patrick.fuhrmann@desy.de

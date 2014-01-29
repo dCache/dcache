@@ -7,7 +7,7 @@ import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 import dmg.util.Authorizable;
 import dmg.util.CommandSyntaxException;
 import dmg.util.Interpretable;

@@ -3,7 +3,7 @@ package dmg.cells.nucleus;
 import java.io.PrintWriter;
 import java.util.Map;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 public class AbstractCellComponent
     implements CellInfoProvider,

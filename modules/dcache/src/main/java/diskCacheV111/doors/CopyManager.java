@@ -29,10 +29,10 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Args;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
+import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;

@@ -1,4 +1,4 @@
-package dmg.util;
+package org.dcache.util;
 
 import org.junit.Test;
 

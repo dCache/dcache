@@ -10,9 +10,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import dmg.util.Args;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandRequestable;
+
+import org.dcache.util.Args;
 
 /**
  * Implements the legacy cell shell commands which use reflection

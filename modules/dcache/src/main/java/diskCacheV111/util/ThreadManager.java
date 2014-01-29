@@ -83,8 +83,8 @@ import java.util.concurrent.TimeUnit;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
-import dmg.util.Args;
 
+import org.dcache.util.Args;
 import org.dcache.util.FireAndForgetTask;
 
 /**ThreadManager Cell.<br/>

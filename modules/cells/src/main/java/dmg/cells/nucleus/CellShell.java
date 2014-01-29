@@ -34,7 +34,6 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import dmg.cells.network.PingMessage;
-import dmg.util.Args;
 import dmg.util.BufferedLineWriter;
 import dmg.util.ClassDataProvider;
 import dmg.util.ClassLoaderFactory;
@@ -54,6 +53,8 @@ import dmg.util.Replaceable;
 import dmg.util.ReplaceableBackedProperties;
 import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
+
+import org.dcache.util.Args;
 
 /**
   *

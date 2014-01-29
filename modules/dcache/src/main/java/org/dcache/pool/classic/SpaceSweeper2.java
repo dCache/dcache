@@ -18,10 +18,9 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfos;
 
-import dmg.util.Args;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.Formats;
 
-import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;
@@ -34,6 +33,7 @@ import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
+import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
 public class SpaceSweeper2

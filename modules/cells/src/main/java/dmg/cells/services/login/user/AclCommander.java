@@ -8,7 +8,7 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 import dmg.util.AuthorizedArgs;
 import dmg.util.CommandInterpreter;
 

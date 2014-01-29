@@ -1,6 +1,6 @@
 package dmg.cells.services.login;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 /**
  * Service provider interface for LoginCellFactory.

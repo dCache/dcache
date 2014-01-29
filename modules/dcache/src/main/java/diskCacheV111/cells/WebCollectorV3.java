@@ -29,7 +29,8 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
-import dmg.util.Args;
+
+import org.dcache.util.Args;
 
 public class WebCollectorV3 extends CellAdapter implements Runnable
 {

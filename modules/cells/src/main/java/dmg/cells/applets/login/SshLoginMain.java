@@ -15,7 +15,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.StringTokenizer;
 
-import dmg.util.Args;
+import org.dcache.util.Args;
 
 public class      SshLoginMain
        extends    Frame

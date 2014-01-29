@@ -1,4 +1,4 @@
-package dmg.util ;
+package org.dcache.util ;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;

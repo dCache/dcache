@@ -14,11 +14,11 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import dmg.util.Args;
 import dmg.util.CommandInterpreter;
 
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorization;
+import org.dcache.util.Args;
 
 /**
  *
