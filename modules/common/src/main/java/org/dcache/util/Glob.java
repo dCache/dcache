@@ -1,5 +1,7 @@
 package org.dcache.util;
 
+import com.google.common.base.CharMatcher;
+
 import java.io.Serializable;
 import java.util.regex.Pattern;
 
@@ -16,6 +18,7 @@ import java.util.regex.Pattern;
 public class Glob implements Serializable
 {
     private static final long serialVersionUID = -5052804169005574207L;
+    private static final CharMatcher WILDCARD = CharMatcher.anyOf("*?");
 
     private final String _pattern;
 
@@ -27,6 +30,11 @@ public class Glob implements Serializable
     public boolean matches(String s)
     {
         return toPattern().matcher(s).matches();
+    }
+
+    public boolean isGlob()
+    {
+        return WILDCARD.matchesAnyOf(_pattern);
     }
 
     @Override

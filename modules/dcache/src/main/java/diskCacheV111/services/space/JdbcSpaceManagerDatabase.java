@@ -915,6 +915,15 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             this.arguments.addAll(asList(arguments));
         }
 
+        protected void whereFieldMatches(String field, Glob pattern)
+        {
+            if (pattern.isGlob()) {
+                addClause(field + "LIKE ?", pattern.toSql());
+            } else {
+                addClause(field + " = ?", pattern.toString());
+            }
+        }
+
         public String getPredicate()
         {
             return predicate.length() == 0 ? "true" : predicate.toString();
@@ -962,7 +971,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public LinkGroupCriterion whereNameMatches(Glob name)
         {
-            addClause("name LIKE ?", name.toSql());
+            whereFieldMatches("name", name);
             return this;
         }
     }
@@ -993,21 +1002,21 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public SpaceCriterion whereDescriptionMatches(Glob desc)
         {
-            addClause("description LIKE ?", desc.toSql());
+            whereFieldMatches("description", desc);
             return this;
         }
 
         @Override
         public SpaceCriterion whereRoleMatches(Glob role)
         {
-            addClause("vorole LIKE ?", role.toSql());
+            whereFieldMatches("vorole", role);
             return this;
         }
 
         @Override
         public SpaceCriterion whereGroupMatches(Glob group)
         {
-            addClause("vogroup LIKE ?", group.toSql());
+            whereFieldMatches("vogroup", group);
             return this;
         }
 
@@ -1073,14 +1082,14 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public FileCriterion whereGroupMatches(Glob group)
         {
-            addClause("group LIKE ?", group.toSql());
+            whereFieldMatches("group", group);
             return this;
         }
 
         @Override
         public FileCriterion whereRoleMatches(Glob role)
         {
-            addClause("role LIKE ?", role.toSql());
+            whereFieldMatches("role", role);
             return this;
         }
 
@@ -1108,7 +1117,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public FileCriterion wherePathMatches(Glob pattern)
         {
-            addClause("pnfspath LIKE ?", pattern.toSql());
+            whereFieldMatches("pnfspath", pattern);
             return this;
         }
 
