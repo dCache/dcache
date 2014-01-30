@@ -401,8 +401,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             }
             writer
                     .space().header("RETENTION").left("rp")
-                    .space().header("LATENCY").left("al")
-                    .space().header("FILES").right("files");
+                    .space().header("LATENCY").left("al");
             if (verbose || owner != null) {
                 writer.space().header("OWNER").left("owner");
             }
@@ -453,7 +452,6 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         .value("linkgroup", linkGroups.get(space.getLinkGroupId()))
                         .value("rp", space.getRetentionPolicy())
                         .value("al", space.getAccessLatency())
-                        .value("files", db.count(db.files().whereSpaceTokenIs(space.getId())))
                         .value("allocated", space.getAllocatedSpaceInBytes())
                         .value("used", space.getUsedSizeInBytes())
                         .value("free", space.getAvailableSpaceInBytes())
