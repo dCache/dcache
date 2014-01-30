@@ -1,6 +1,7 @@
 package diskCacheV111.services.space;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
@@ -101,7 +102,8 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         }
 
         @Override
-        protected final String execute() throws Exception
+        protected final String execute()
+                throws SpaceException, CacheException, CommandSyntaxException, DataAccessException, IllegalArgumentException
         {
             try {
                 return callInTransaction(new Callable<String>()
@@ -115,10 +117,16 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             } catch (EmptyResultDataAccessException e) {
                 // These are usually a result of the user querying for an object that doesn't exist.
                 return e.getMessage();
+            } catch (Exception e) {
+                Throwables.propagateIfInstanceOf(e, CommandSyntaxException.class);
+                Throwables.propagateIfInstanceOf(e, SpaceException.class);
+                Throwables.propagateIfInstanceOf(e, CacheException.class);
+                throw Throwables.propagate(e);
             }
         }
 
-        protected abstract String executeInTransaction() throws Exception;
+        protected abstract String executeInTransaction()
+                throws SpaceException, CacheException, CommandSyntaxException, DataAccessException, IllegalArgumentException;
     }
 
     @Command(name = "release space", hint = "release reservation",

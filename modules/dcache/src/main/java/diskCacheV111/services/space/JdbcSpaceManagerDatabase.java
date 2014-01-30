@@ -459,7 +459,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                         stmt.setLong(5, linkGroupId);
                         stmt.setLong(6, sizeInBytes);
                         stmt.setLong(7, creationTime);
-                        stmt.setLong(8, (lifetime == -1) ? null : creationTime + lifetime);
+                        stmt.setObject(8, (lifetime == -1) ? null : creationTime + lifetime);
                         stmt.setString(9, description);
                         stmt.setInt(10, state.getStateId());
                         stmt.setLong(11, used);
@@ -884,7 +884,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                 stmt.setLong(3, reservationId);
                 stmt.setLong(4, sizeInBytes);
                 stmt.setLong(5, creationTime);
-                stmt.setLong(6, (lifetime == -1) ? null : creationTime + lifetime);
+                stmt.setObject(6, (lifetime == -1) ? null : creationTime + lifetime);
                 stmt.setString(7, Objects.toString(path, null));
                 stmt.setString(8, Objects.toString(pnfsId, null));
                 stmt.setInt(9, FileState.ALLOCATED.getStateId());
