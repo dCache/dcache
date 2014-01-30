@@ -727,6 +727,12 @@ public class   CellAdapter
         }
         return sb.toString();
     }
+
+    protected void awaitStart()
+    {
+        _startGate.check();
+    }
+
     /**
      * has to be overwritten to perform any actions before this
      * cell is destroyed. 'cleanUp' is called after the last

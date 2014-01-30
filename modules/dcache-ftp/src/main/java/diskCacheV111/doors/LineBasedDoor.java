@@ -15,7 +15,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
-import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
@@ -25,6 +24,7 @@ import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
 import org.dcache.cells.AbstractCell;
+import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.SequentialExecutor;
 import org.dcache.util.Transfer;
 
@@ -69,11 +69,10 @@ public class LineBasedDoor
         getNucleus().setMessageExecutor(new SequentialExecutor(executor));
         this.interpreterClass = interpreterClass;
         this.engine = engine;
-        this.executor = executor;
+        this.executor = new CDCExecutorServiceDecorator(executor);
 
         try {
             doInit();
-            executor.execute(this);
         } catch (InterruptedException e) {
             shutdownGate.countDown();
         } catch (ExecutionException e) {
@@ -108,6 +107,7 @@ public class LineBasedDoor
         if (interpreter instanceof CellMessageReceiver) {
             addMessageListener((CellMessageReceiver) interpreter);
         }
+        executor.execute(this);
     }
 
     private synchronized void shutdownInputStream()
@@ -141,6 +141,8 @@ public class LineBasedDoor
     @Override
     public void run()
     {
+        awaitStart();
+
         try {
             SequentialExecutor executor = new SequentialExecutor(this.executor);
             try {
@@ -255,26 +257,22 @@ public class LineBasedDoor
 
     private class Command implements Runnable
     {
-        private final CDC cdc;
         private final String command;
 
         public Command(String command)
         {
-            this.cdc = new CDC();
             this.command = command;
         }
 
         @Override
         public void run()
         {
-            try (CDC ignored = cdc.restore()) {
-                try {
-                    interpreter.execute(command);
-                } catch (CommandExitException e) {
-                    shutdownInputStream();
-                } catch (RuntimeException e) {
-                    LOGGER.error("Bug detected", e);
-                }
+            try {
+                interpreter.execute(command);
+            } catch (CommandExitException e) {
+                shutdownInputStream();
+            } catch (RuntimeException e) {
+                LOGGER.error("Bug detected", e);
             }
         }
     }

@@ -690,12 +690,24 @@ public class CellNucleus implements ThreadFactory
         };
     }
 
+    private <T> Callable<T> wrapLoggingContext(final Callable<T> callable)
+    {
+        return new Callable<T>() {
+            @Override
+            public T call() throws Exception {
+                try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                    return callable.call();
+                }
+            }
+        };
+    }
+
     /**
      * Submits a task for execution on the message thread.
      */
     <T> Future<T> invokeOnMessageThread(Callable<T> task)
     {
-        return _messageExecutor.submit(task);
+        return _messageExecutor.submit(wrapLoggingContext(task));
     }
 
     @Override @Nonnull
