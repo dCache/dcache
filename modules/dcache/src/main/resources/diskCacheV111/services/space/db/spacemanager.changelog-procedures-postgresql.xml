@@ -21,13 +21,17 @@
          as that would introduce a risk of advertising more free space than is actually available. -->
 
     <changeSet id="1" author="behrmann" dbms="postgresql" runOnChange="true">
-        <comment>Create srmlinkgroup trigger to prevent over allocating link groups</comment>
+        <comment>Create srmlinkgroup trigger to prevent overallocating link groups</comment>
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_linkgroup_on_update() RETURNS TRIGGER AS $$
             BEGIN
-                IF NEW.reservedspaceinbytes > OLD.reservedspaceinbytes AND NEW.reservedspaceinbytes > NEW.freespaceinbytes THEN
+                IF NEW.freespaceinbytes - NEW.reservedspaceinbytes &lt; OLD.freespaceinbytes - OLD.reservedspaceinbytes AND
+                   NEW.freespaceinbytes - NEW.reservedspaceinbytes &lt; 0  THEN
                     RAISE SQLSTATE '23D01' USING MESSAGE = 'Not enough free space in link group ' || NEW.id || ':' || NEW.name;
                 END IF;
+
+                NEW.freespaceinbytes := GREATEST(LEAST(OLD.freespaceinbytes, NEW.freespaceinbytes), 0);
+
                 RETURN NEW;
             END;
             $$
@@ -47,10 +51,12 @@
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_srmspace_on_insert() RETURNS TRIGGER AS  $$
             BEGIN
+                IF NEW.usedspaceinbytes != 0 THEN
+                    RAISE SQLSTATE '23000' USING MESSAGE = 'Space reservation must be empty at time of creation.';
+                END IF;
                 IF NEW.state = 0 THEN
                     UPDATE srmlinkgroup
-                        SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
-                            freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
+                        SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes
                         WHERE id = NEW.linkgroupid;
                 END IF;
                 RETURN NULL;
@@ -68,16 +74,17 @@
                 IF OLD.state = 0 AND NEW.state = 0 THEN
                     IF OLD.linkGroupId != NEW.linkGroupId THEN
                         UPDATE srmlinkgroup
-                            SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes
+                            SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes,
+                                freespaceinbytes = freespaceinbytes + OLD.usedspaceinbytes
                             WHERE id = OLD.linkgroupid;
                         UPDATE srmlinkgroup
                             SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
-                                freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
+                                freespaceinbytes = freespaceinbytes - NEW.usedspaceinbytes
                             WHERE id = NEW.linkgroupid;
                     ELSEIF OLD.sizeinbytes != NEW.sizeinbytes OR OLD.usedspaceinbytes != NEW.usedspaceinbytes THEN
                         UPDATE srmlinkgroup
                             SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
-                                freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - NEW.usedspaceinbytes + OLD.usedspaceinbytes), 0)
+                                freespaceinbytes = freespaceinbytes - NEW.usedspaceinbytes + OLD.usedspaceinbytes
                             WHERE id = OLD.linkgroupid;
                     END IF;
                 ELSEIF OLD.state = 0 AND NEW.state != 0 THEN
@@ -85,7 +92,7 @@
                 ELSEIF OLD.state != 0 AND NEW.state = 0 THEN
                     UPDATE srmlinkgroup
                         SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
-                            freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
+                            freespaceinbytes = freespaceinbytes - NEW.usedspaceinbytes
                         WHERE id = NEW.linkgroupid;
                 END IF;
                 RETURN NULL;
@@ -101,7 +108,9 @@
             CREATE OR REPLACE FUNCTION f_srmspace_on_delete() RETURNS TRIGGER AS  $$
             BEGIN
                 IF OLD.state = 0 THEN
-                    UPDATE srmlinkgroup SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes WHERE id = OLD.linkgroupid;
+                    UPDATE srmlinkgroup
+                        SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes
+                        WHERE id = OLD.linkgroupid;
                 END IF;
                 RETURN NULL;
             END;
