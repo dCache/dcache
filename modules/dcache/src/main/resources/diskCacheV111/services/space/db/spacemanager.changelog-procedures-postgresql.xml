@@ -21,20 +21,10 @@
          as that would introduce a risk of advertising more free space than is actually available. -->
 
     <changeSet id="1" author="behrmann" dbms="postgresql" runOnChange="true">
-        <comment>Create srmlinkgroup trigger to prevent over allocating link groups</comment>
+        <comment>Not used any more</comment>
         <createProcedure>
-            CREATE OR REPLACE FUNCTION f_linkgroup_on_update() RETURNS TRIGGER AS $$
-            BEGIN
-                IF NEW.reservedspaceinbytes > OLD.reservedspaceinbytes AND NEW.reservedspaceinbytes > NEW.freespaceinbytes THEN
-                    RAISE SQLSTATE '23D01' USING MESSAGE = 'Not enough free space in link group ' || NEW.id || ':' || NEW.name;
-                END IF;
-                RETURN NEW;
-            END;
-            $$
-            LANGUAGE plpgsql;
-
             DROP TRIGGER IF EXISTS tgr_linkgroup_update ON srmlinkgroup;
-            CREATE TRIGGER tgr_linkgroup_update BEFORE UPDATE ON srmlinkgroup FOR EACH ROW EXECUTE PROCEDURE f_linkgroup_on_update();
+            DROP FUNCTION f_linkgroup_on_update();
         </createProcedure>
         <rollback>
             DROP TRIGGER tgr_linkgroup_update ON srmlinkgroup;
@@ -47,11 +37,17 @@
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_srmspace_on_insert() RETURNS TRIGGER AS  $$
             BEGIN
+                IF NEW.usedspaceinbytes != 0 OR NEW.allocatedspaceinbytes != 0 THEN
+                    RAISE SQLSTATE '23D02' USING MESSAGE = 'Space reservation must be empty at time of creation.';
+                END IF;
                 IF NEW.state = 0 THEN
                     UPDATE srmlinkgroup
-                        SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
-                            freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
-                        WHERE id = NEW.linkgroupid;
+                        SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes
+                        WHERE id = NEW.linkgroupid AND NEW.sizeinbytes &lt;= freespaceinbytes - reservedspaceinbytes;
+
+                    IF NOT FOUND THEN
+                        RAISE SQLSTATE '23D01' USING MESSAGE = 'Not enough free space in link group.';
+                    END IF;
                 END IF;
                 RETURN NULL;
             END;
@@ -65,28 +61,41 @@
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_srmspace_on_update() RETURNS TRIGGER AS  $$
             BEGIN
+                IF old.linkgroupid != new.linkgroupid THEN
+                    RAISE SQLSTATE '23D03' USING MESSAGE = 'Cannot move reservations between link groups.';
+                END IF;
+
                 IF OLD.state = 0 AND NEW.state = 0 THEN
-                    IF OLD.linkGroupId != NEW.linkGroupId THEN
-                        UPDATE srmlinkgroup
-                            SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes
-                            WHERE id = OLD.linkgroupid;
-                        UPDATE srmlinkgroup
-                            SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
-                                freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
-                            WHERE id = NEW.linkgroupid;
-                    ELSEIF OLD.sizeinbytes != NEW.sizeinbytes OR OLD.usedspaceinbytes != NEW.usedspaceinbytes THEN
-                        UPDATE srmlinkgroup
-                            SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinbytes + OLD.usedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
-                                freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - NEW.usedspaceinbytes + OLD.usedspaceinbytes), 0)
-                            WHERE id = OLD.linkgroupid;
+                    IF OLD.sizeinbytes != NEW.sizeinbytes OR OLD.usedspaceinbytes != NEW.usedspaceinbytes THEN
+                        IF OLD.sizeinbytes >= NEW.sizeinbytes THEN
+                            -- Size is unchanged or downsized, always okay
+                            UPDATE srmlinkgroup
+                                SET reservedspaceinbytes = reservedspaceinbytes + (NEW.sizeinbytes - NEW.usedspaceinbytes) - (OLD.sizeinbytes - OLD.usedspaceinbytes),
+                                    freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - NEW.usedspaceinbytes + OLD.usedspaceinbytes), 0)
+                                WHERE id = OLD.linkgroupid;
+                        ELSE
+                            -- Increased reservation, okay if space is available
+                            UPDATE srmlinkgroup
+                                SET reservedspaceinbytes = reservedspaceinbytes + (NEW.sizeinbytes - NEW.usedspaceinbytes) - (OLD.sizeinbytes - OLD.usedspaceinbytes),
+                                    freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - NEW.usedspaceinbytes + OLD.usedspaceinbytes), 0)
+                                WHERE id = OLD.linkgroupid AND NEW.sizeinbytes - OLD.sizeinbytes &lt;= freespaceinbytes - reservedspaceinbytes;
+                            IF NOT FOUND THEN
+                                RAISE SQLSTATE '23D01' USING MESSAGE = 'Not enough free space in link group.';
+                            END IF;
+                        END IF;
                     END IF;
                 ELSEIF OLD.state = 0 AND NEW.state != 0 THEN
-                    UPDATE srmlinkgroup SET reservedspaceinbytes = reservedspaceinbytes - OLD.sizeinBytes + OLD.usedspaceinbytes WHERE id = OLD.linkgroupid;
+                    UPDATE srmlinkgroup
+                        SET reservedspaceinbytes = reservedspaceinbytes - (OLD.sizeinBytes - OLD.usedspaceinbytes)
+                        WHERE id = OLD.linkgroupid;
                 ELSEIF OLD.state != 0 AND NEW.state = 0 THEN
                     UPDATE srmlinkgroup
-                        SET reservedspaceinbytes = reservedspaceinbytes + NEW.sizeinbytes - NEW.usedspaceinbytes,
+                        SET reservedspaceinbytes = reservedspaceinbytes + (NEW.sizeinbytes - NEW.usedspaceinbytes),
                             freespaceinbytes = GREATEST(freespaceinbytes - NEW.usedspaceinbytes, 0)
-                        WHERE id = NEW.linkgroupid;
+                        WHERE id = NEW.linkgroupid AND NEW.sizeinbytes - NEW.usedspaceinbytes &lt;= freespaceinbytes - reservedspaceinbytes;
+                    IF NOT FOUND THEN
+                        RAISE SQLSTATE '23D01' USING MESSAGE = 'Not enough free space in link group.';
+                    END IF;
                 END IF;
                 RETURN NULL;
             END;

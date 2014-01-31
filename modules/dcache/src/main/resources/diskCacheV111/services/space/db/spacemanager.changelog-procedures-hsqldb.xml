@@ -10,16 +10,8 @@
          as that would introduce a risk of advertising more free space than is actually available. -->
 
     <changeSet id="1" author="behrmann" dbms="hsqldb" runOnChange="true">
-        <comment>Create srmlinkgroup trigger to prevent over allocating link groups</comment>
+        <comment>Not used any more</comment>
         <sql>DROP TRIGGER tgr_srmlinkgroup_update IF EXISTS</sql>
-        <createProcedure>
-            CREATE TRIGGER tgr_srmlinkgroup_update BEFORE UPDATE ON srmlinkgroup
-                REFERENCING OLD ROW AS old NEW ROW AS new
-                FOR EACH ROW WHEN (new.reservedspaceinbytes > old.reservedspaceinbytes AND new.reservedspaceinbytes > new.freespaceinbytes)
-                BEGIN ATOMIC
-                    SIGNAL SQLSTATE '23D01' SET MESSAGE_TEXT = 'Not enough free space in link group ';
-                END;
-        </createProcedure>
         <rollback>
             <sql>DROP TRIGGER tgr_srmlinkgroup_update IF EXISTS</sql>
         </rollback>
@@ -31,11 +23,20 @@
         <createProcedure>
             CREATE TRIGGER tgr_srmspace_insert AFTER INSERT ON srmspace
                 REFERENCING NEW ROW AS space
-                FOR EACH ROW WHEN (space.state = 0)
-                    UPDATE srmlinkgroup
-                        SET reservedspaceinbytes = reservedspaceinbytes + space.sizeinbytes - space.usedspaceinbytes,
-                            freespaceinbytes = GREATEST(freespaceinbytes - space.usedspaceinbytes, 0)
-                        WHERE id = space.linkGroupId;
+                FOR EACH ROW
+                BEGIN ATOMIC
+                    IF space.usedspaceinbytes &lt;&gt; 0 OR space.allocatedspaceinbytes &lt;&gt; 0 THEN
+                        SIGNAL SQLSTATE '23D02' SET MESSAGE_TEXT = 'Space reservations must be created empty.';
+                    END IF;
+                    IF space.state = 0 THEN
+                        UPDATE srmlinkgroup
+                            SET reservedspaceinbytes = reservedspaceinbytes + space.sizeinbytes
+                            WHERE id = space.linkgroupid AND space.sizeinbytes &lt;= freespaceinbytes - reservedspaceinbytes;
+                        IF DIAGNOSTICS(ROW_COUNT) = 0 THEN
+                            SIGNAL SQLSTATE '23D01' SET MESSAGE_TEXT = 'Not enough free space in link group.';
+                        END IF;
+                    END IF;
+                END;
         </createProcedure>
 
         <sql>DROP TRIGGER tgr_srmspace_delete IF EXISTS</sql>
@@ -43,7 +44,9 @@
             CREATE TRIGGER tgr_srmspace_delete AFTER DELETE ON srmspace
                 REFERENCING OLD ROW AS space
                 FOR EACH ROW WHEN (space.state = 0)
-                UPDATE srmlinkgroup SET reservedspaceinbytes = reservedspaceinbytes - space.sizeinbytes + space.usedspaceinbytes WHERE id = space.linkgroupid;
+                UPDATE srmlinkgroup
+                    SET reservedspaceinbytes = reservedspaceinbytes - (space.sizeinbytes - space.usedspaceinbytes)
+                    WHERE id = space.linkgroupid;
         </createProcedure>
 
         <sql>DROP TRIGGER tgr_srmspace_update IF EXISTS</sql>
@@ -52,28 +55,41 @@
                 REFERENCING OLD ROW AS old NEW ROW AS new
                 FOR EACH ROW
                 BEGIN ATOMIC
+                    IF old.linkgroupid &lt;&gt; new.linkgroupid THEN
+                        SIGNAL SQLSTATE '23D03' SET MESSAGE_TEXT = 'Cannot move reservations between link groups.';
+                    END IF;
+
                     IF old.state = 0 AND new.state = 0 THEN
-                        IF old.linkGroupId != new.linkGroupId THEN
-                            UPDATE srmlinkgroup
-                                SET reservedspaceinbytes = reservedspaceinbytes - old.sizeinbytes + old.usedspaceinbytes
-                                WHERE id = old.linkgroupid;
-                            UPDATE srmlinkgroup
-                                SET reservedspaceinbytes = reservedspaceinbytes + new.sizeinbytes - new.usedspaceinbytes,
-                                    freespaceinbytes = GREATEST(freespaceinbytes - new.usedspaceinbytes, 0)
-                                WHERE id = new.linkgroupid;
-                        ELSEIF old.sizeinbytes &lt;&gt; new.sizeinbytes OR old.usedspaceinbytes &lt;&gt; new.usedspaceinbytes THEN
-                            UPDATE srmlinkgroup
-                                SET reservedspaceinbytes = reservedspaceinbytes - old.sizeinbytes + old.usedspaceinbytes + new.sizeinbytes - new.usedspaceinbytes,
-                                    freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - new.usedspaceinbytes + old.usedspaceinbytes), 0)
-                                WHERE id = old.linkgroupid;
+                        IF old.sizeinbytes &lt;&gt; new.sizeinbytes OR old.usedspaceinbytes &lt;&gt; new.usedspaceinbytes THEN
+                            IF old.sizeinbytes >= new.sizeinbytes THEN
+                                -- Size is unchanged or downsized, always okay
+                                UPDATE srmlinkgroup
+                                    SET reservedspaceinbytes = reservedspaceinbytes + (new.sizeinbytes - new.usedspaceinbytes) - (old.sizeinbytes - old.usedspaceinbytes),
+                                        freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - new.usedspaceinbytes + old.usedspaceinbytes), 0)
+                                    WHERE id = old.linkgroupid;
+                            ELSE
+                                -- Increased reservation, okay if space is available
+                                UPDATE srmlinkgroup
+                                    SET reservedspaceinbytes = reservedspaceinbytes + (new.sizeinbytes - new.usedspaceinbytes) - (old.sizeinbytes - old.usedspaceinbytes),
+                                        freespaceinbytes = GREATEST(LEAST(freespaceinbytes, freespaceinbytes - new.usedspaceinbytes + old.usedspaceinbytes), 0)
+                                    WHERE id = old.linkgroupid AND new.sizeinbytes - old.sizeinbytes &lt;= freespaceinbytes - reservedspaceinbytes;
+                                IF DIAGNOSTICS(ROW_COUNT) = 0 THEN
+                                    SIGNAL SQLSTATE '23D01' SET MESSAGE_TEXT = 'Not enough free space in link group.';
+                                END IF;
+                            END IF;
                         END IF;
                     ELSEIF old.state = 0 AND new.state &lt;&gt; 0 THEN
-                        UPDATE srmlinkgroup SET reservedspaceinbytes = reservedspaceinbytes - old.sizeinBytes + old.usedspaceinbytes WHERE id = old.linkgroupid;
+                        UPDATE srmlinkgroup
+                            SET reservedspaceinbytes = reservedspaceinbytes - (old.sizeinBytes - old.usedspaceinbytes)
+                            WHERE id = old.linkgroupid;
                     ELSEIF old.state &lt;&gt; 0 AND new.state = 0 THEN
                         UPDATE srmlinkgroup
-                            SET reservedspaceinbytes = reservedspaceinbytes + new.sizeinbytes - new.usedspaceinbytes,
+                            SET reservedspaceinbytes = reservedspaceinbytes + (new.sizeinbytes - new.usedspaceinbytes),
                                 freespaceinbytes = GREATEST(freespaceinbytes - new.usedspaceinbytes, 0)
-                            WHERE id = new.linkgroupid;
+                            WHERE id = new.linkgroupid AND new.sizeinbytes - new.usedspaceinbytes &lt;= freespaceinbytes - reservedspaceinbytes;
+                        IF DIAGNOSTICS(ROW_COUNT) = 0 THEN
+                            SIGNAL SQLSTATE '23D01' SET MESSAGE_TEXT = 'Not enough free space in link group.';
+                        END IF;
                     END IF;
                 END;
         </createProcedure>
