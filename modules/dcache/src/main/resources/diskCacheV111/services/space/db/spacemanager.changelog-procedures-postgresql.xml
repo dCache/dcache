@@ -24,11 +24,11 @@
         <comment>Not used any more</comment>
         <createProcedure>
             DROP TRIGGER IF EXISTS tgr_linkgroup_update ON srmlinkgroup;
-            DROP FUNCTION f_linkgroup_on_update();
+            DROP FUNCTION IF EXISTS f_linkgroup_on_update();
         </createProcedure>
         <rollback>
-            DROP TRIGGER tgr_linkgroup_update ON srmlinkgroup;
-            DROP FUNCTION f_linkgroup_on_update();
+            DROP TRIGGER IF EXISTS tgr_linkgroup_update ON srmlinkgroup;
+            DROP FUNCTION IF EXISTS f_linkgroup_on_update();
         </rollback>
     </changeSet>
 
