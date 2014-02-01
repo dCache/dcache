@@ -8,7 +8,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import dmg.cells.nucleus.CellShell;
 import dmg.util.command.AcCommandScanner;
 import dmg.util.command.AnnotatedCommandScanner;
 import dmg.util.command.CommandExecutor;
@@ -97,12 +96,7 @@ public class CommandInterpreter implements Interpretable
             Map<List<String>,? extends CommandExecutor> commands = scanner.scan(commandListener);
             for (Map.Entry<List<String>,? extends CommandExecutor> entry: commands.entrySet()) {
                 CommandEntry currentEntry = _rootEntry.getOrCreate(entry.getKey());
-                if (currentEntry.hasCommand() && !(this instanceof CellShell)) {
-                    // Unfortunately CellAdapter and CellShell contain some of
-                    // the same commands and the two classes are combined by
-                    // SystemCell. Until that is fixed we need a special case
-                    // for that command.
-
+                if (currentEntry.hasCommand()) {
                     throw new IllegalArgumentException("Conflicting implementations of shell command '" +
                             Joiner.on(" ").join(entry.getKey()) + "': " +
                             currentEntry.getCommand() + " and " + entry.getValue());

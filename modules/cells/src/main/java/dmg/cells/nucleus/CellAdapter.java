@@ -227,23 +227,6 @@ public class   CellAdapter
         _nucleus.setAsyncCallback(async);
     }
 
-    public final static String hh_exec_context = "<var> [<arg> ...]";
-    public final static String fh_exec_context =
-        "Executes the batch script in the context variable.";
-    public String ac_exec_context_$_1_99(Args args)
-        throws IOException, CommandExitException
-    {
-        StringWriter out = new StringWriter();
-        String var = args.argv(0);
-        try (Reader in = _nucleus.getDomainContextReader(var)) {
-            args.shift();
-            CellShell shell = new CellShell(this);
-            shell.execute("context:" + var, in, out, out, args);
-        }
-
-        return out.toString();
-    }
-
     /**
      * Creates a Cell and the corresponding CellNucleus with the
      * specified name.
@@ -773,10 +756,6 @@ public class   CellAdapter
     // methods which are automatically scanned by
     // the CommandInterpreterFacility
     //
-    public String ac_say_$_1(Args args) {
-        _log.info(args.argv(0));
-        return "";
-    }
     public Object ac_xgetcellinfo(Args args) {
         return getCellInfo();
     }
