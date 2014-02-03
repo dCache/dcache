@@ -8,6 +8,7 @@
     </preConditions>
 
     <include file="diskCacheV111/services/space/db/spacemanager.changelog-2.8.xml"/>
+    <include file="diskCacheV111/services/space/db/spacemanager.changelog-2.9.xml"/>
     <include file="diskCacheV111/services/space/db/spacemanager.changelog-procedures-hsqldb.xml"/>
     <include file="diskCacheV111/services/space/db/spacemanager.changelog-procedures-postgresql.xml"/>
 </databaseChangeLog>

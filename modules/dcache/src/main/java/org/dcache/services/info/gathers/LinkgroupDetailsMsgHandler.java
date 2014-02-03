@@ -67,8 +67,8 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 
 			StatePath spacePath = thisLinkGroupPath.newChild( "space");
 			update.appendUpdate( spacePath.newChild("free"), new IntegerStateValue( linkGroup.getFreeSpace(), metricLifetime));
-			update.appendUpdate( spacePath.newChild("reserved"), new IntegerStateValue( linkGroup.getReservedSpaceInBytes(), metricLifetime));
-			update.appendUpdate( spacePath.newChild("available"), new IntegerStateValue( linkGroup.getAvailableSpaceInBytes(), metricLifetime));
+			update.appendUpdate( spacePath.newChild("reserved"), new IntegerStateValue( linkGroup.getReservedSpace(), metricLifetime));
+			update.appendUpdate( spacePath.newChild("available"), new IntegerStateValue( linkGroup.getAvailableSpace(), metricLifetime));
 
 			StatePath accLatPath = thisLinkGroupPath.newChild("access-latency");
 			update.appendUpdate( accLatPath.newChild("onlineAllowed"), new BooleanStateValue( linkGroup.isOnlineAllowed(), metricLifetime));

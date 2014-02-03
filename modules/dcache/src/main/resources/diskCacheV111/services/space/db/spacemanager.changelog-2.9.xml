@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="1" author="behrmann">
+        <comment>Replace free space column with available space column</comment>
+        <renameColumn tableName="srmlinkgroup" oldColumnName="freespaceinbytes" newColumnName="availablespaceinbytes" columnDataType="bigint"/>
+        <sql>UPDATE srmlinkgroup SET availablespaceinbytes = availablespaceinbytes - reservedspaceinbytes</sql>
+
+        <rollback>
+            <renameColumn tableName="srmlinkgroup" oldColumnName="availablespaceinbytes" newColumnName="freeapceinbytes" columnDataType="bigint"/>
+            <sql>UPDATE srmlinkgroup SET freespaceinbytes = freespaceinbytes + reservedspaceinbytes</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -316,8 +316,8 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         .value("nearline", group.isNearlineAllowed() ? 'n' : '-')
                         .value("online", group.isOnlineAllowed() ? 'o' : '-')
                         .value("spaces", db.count(db.spaces().whereLinkGroupIs(group.getId())))
-                        .value("reserved", group.getReservedSpaceInBytes())
-                        .value("available", group.getAvailableSpaceInBytes())
+                        .value("reserved", group.getReservedSpace())
+                        .value("available", group.getAvailableSpace())
                         .value("free", group.getFreeSpace())
                         .value("updated", group.getUpdateTime())
                         .value("name", group.getName());

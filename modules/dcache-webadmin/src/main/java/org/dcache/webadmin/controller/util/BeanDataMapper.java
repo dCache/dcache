@@ -139,8 +139,8 @@ public class BeanDataMapper {
         newBean.setAllowed(mapLinkGroupAllowanceFlags(linkGroup));
         newBean.setFree(linkGroup.getFreeSpace());
         newBean.setName(linkGroup.getName());
-        newBean.setAvailable(linkGroup.getAvailableSpaceInBytes());
-        newBean.setReserved(linkGroup.getReservedSpaceInBytes());
+        newBean.setAvailable(linkGroup.getAvailableSpace());
+        newBean.setReserved(linkGroup.getReservedSpace());
         if (linkGroup.getVOs() != null) {
             newBean.setVos(extractVos(linkGroup.getVOs()));
         }

@@ -11,7 +11,7 @@ public class LinkGroup implements Serializable{
         private static final long serialVersionUID = -7606565102712000875L;
         private long id;
     private String name;
-    private long freeSpace;
+    private long availableSpace;
     private boolean onlineAllowed ;
     private boolean nearlineAllowed ;
     private boolean replicaAllowed ;
@@ -19,32 +19,9 @@ public class LinkGroup implements Serializable{
     private boolean custodialAllowed ;
     private VOInfo[] vos;
     private long updateTime;
-    private long reservedSpaceInBytes;
+    private long reservedSpace;
 
     public LinkGroup(){
-    }
-
-    public LinkGroup(
-        long id,
-        String name,
-        long freeSpace,
-        VOInfo[] vos,
-        boolean onlineAllowed,
-        boolean nearlineAllowed,
-        boolean replicaAllowed,
-        boolean outputAllowed,
-        boolean custodialAllowed,
-        long reseved) {
-        this.id=id;
-        this.name=name;
-        this.freeSpace = freeSpace;
-        this.vos = vos;
-        this.onlineAllowed = onlineAllowed;
-        this.nearlineAllowed = nearlineAllowed;
-        this.replicaAllowed = replicaAllowed;
-        this.outputAllowed = outputAllowed;
-        this.custodialAllowed = custodialAllowed;
-        this.reservedSpaceInBytes = reseved;
     }
 
     public long getId() {
@@ -64,21 +41,16 @@ public class LinkGroup implements Serializable{
     }
 
     public long getFreeSpace() {
-        return freeSpace;
+        return reservedSpace + availableSpace;
     }
-
-    public void setFreeSpace(long freeSpace) {
-        this.freeSpace = freeSpace;
-    }
-
 
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append(id).append(' ');
         sb.append("Name:").append(name).append(' ');
-        sb.append("FreeSpace:").append(freeSpace).append(' ');
-        sb.append("ReservedSpace:").append(reservedSpaceInBytes).append(' ');
-        sb.append("AvailableSpace:").append(getAvailableSpaceInBytes()).append(' ');
+        sb.append("AvailableSpace:").append(availableSpace).append(' ');
+        sb.append("ReservedSpace:").append(reservedSpace).append(' ');
+        sb.append("AvailableSpace:").append(getAvailableSpace()).append(' ');
         sb.append("VOs:");
         for (VOInfo vo : vos) {
             sb.append('{').append(vo).append('}');
@@ -150,15 +122,21 @@ public class LinkGroup implements Serializable{
         this.custodialAllowed = custodialAllowed;
     }
 
-    public long getReservedSpaceInBytes() {
-        return reservedSpaceInBytes;
+    public long getReservedSpace() {
+        return reservedSpace;
     }
 
-    public void setReservedSpaceInBytes(long reserved) {
-        this.reservedSpaceInBytes = reserved;
+    public void setReservedSpace(long reserved) {
+        this.reservedSpace = reserved;
     }
-    public long getAvailableSpaceInBytes() {
-        return freeSpace-reservedSpaceInBytes;
+
+    public void setAvailableSpace(long availableSpace)
+    {
+        this.availableSpace = availableSpace;
+    }
+
+    public long getAvailableSpace() {
+        return availableSpace;
     }
 
     public static final Function<LinkGroup, Long> getId =

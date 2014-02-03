@@ -53,7 +53,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     ----------------------+--------------------------+-----------
      id                   | bigint                   | not null
      name                 | character varying(32672) |
-     freespaceinbytes     | bigint                   | not null
+     availablespaceinbytes| bigint                   | not null
      lastupdatetime       | bigint                   |
      onlineallowed        | integer                  |
      nearlineallowed      | integer                  |
@@ -146,14 +146,14 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             LinkGroup lg = new LinkGroup();
             lg.setId(set.getLong("id"));
             lg.setName(set.getString("name"));
-            lg.setFreeSpace(set.getLong("freeSpaceInBytes"));
-            lg.setUpdateTime(set.getLong("lastUpdateTime"));
-            lg.setOnlineAllowed(set.getBoolean("onlineAllowed"));
-            lg.setNearlineAllowed(set.getBoolean("nearlineAllowed"));
-            lg.setReplicaAllowed(set.getBoolean("replicaAllowed"));
-            lg.setOutputAllowed(set.getBoolean("outputAllowed"));
-            lg.setCustodialAllowed(set.getBoolean("custodialAllowed"));
-            lg.setReservedSpaceInBytes(set.getLong("reservedspaceinbytes"));
+            lg.setAvailableSpace(set.getLong("availablespaceinbytes"));
+            lg.setUpdateTime(set.getLong("lastupdatetime"));
+            lg.setOnlineAllowed(set.getBoolean("onlineallowed"));
+            lg.setNearlineAllowed(set.getBoolean("nearlineallowed"));
+            lg.setReplicaAllowed(set.getBoolean("replicaallowed"));
+            lg.setOutputAllowed(set.getBoolean("outputallowed"));
+            lg.setCustodialAllowed(set.getBoolean("custodialallowed"));
+            lg.setReservedSpace(set.getLong("reservedspaceinbytes"));
             List<VOInfo> vos = getJdbcTemplate().query(
                     "SELECT voGroup,voRole FROM " + LINKGROUP_VO_TABLE + " WHERE linkGroupId=?", voInfoMapper,
                     lg.getId());
@@ -334,7 +334,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                             linkGroupName);
             id = group.getId();
             getJdbcTemplate().update(
-                    "UPDATE " + LINKGROUP_TABLE + " SET freeSpaceInBytes=?,lastUpdateTime=?,onlineAllowed=?,nearlineAllowed=?,"
+                    "UPDATE " + LINKGROUP_TABLE + " SET availableSpaceInBytes=?-reservedSpaceInBytes,lastUpdateTime=?,onlineAllowed=?,nearlineAllowed=?,"
                             + "replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?",
                     freeSpace,
                     updateTime,
@@ -359,7 +359,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                                  */
                                 PreparedStatement stmt = con.prepareStatement(
                                         "INSERT INTO " + LINKGROUP_TABLE
-                                                + " (name, freeSpaceInBytes, lastUpdateTime, onlineAllowed,"
+                                                + " (name, availableSpaceInBytes, lastUpdateTime, onlineAllowed,"
                                                 + " nearlineAllowed, replicaAllowed, outputAllowed, custodialAllowed,reservedspaceinbytes)"
                                                 + " VALUES (?,?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
                                 stmt.setString(1, linkGroupName);
@@ -557,9 +557,9 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             " ( lgvo.VORole = ? OR lgvo.VORole = '*' ) ";
 
     private static final String spaceCondition =
-            " lg.freespaceinbytes-lg.reservedspaceinbytes >= ? ";
+            " lg.availablespaceinbytes >= ? ";
     private static final String orderBy =
-            " ORDER BY lg.freespaceinbytes-lg.reservedspaceinbytes DESC ";
+            " ORDER BY lg.availablespaceinbytes DESC ";
 
     private static final String selectLinkGroupIdPart1 =
             "SELECT lg.id FROM " + LINKGROUP_TABLE + " lg, " + LINKGROUP_VO_TABLE + " lgvo " +
