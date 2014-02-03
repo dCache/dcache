@@ -2105,51 +2105,57 @@ public abstract class AbstractFtpDoorV1
               port % 256 + ")");
     }
 
-// IPv6 support disable because IPv4 client use these commands too. The use
-// of these commands is not compatible with redirected FTP.
-//
-//    public void ftp_eprt(String arg)
-//            throws FTPCommandException
-//    {
-//        checkLoggedIn();
-//
-//        setActive(getExtendedAddressOf(arg));
-//
-//        reply(ok("EPRT"));
-//    }
-//
-//    public void ftp_epsv(String arg)
-//        throws FTPCommandException
-//    {
-//        checkLoggedIn();
-//
-//        if  ("ALL".equalsIgnoreCase(arg)) {
-//            _sessionAllPassive = true;
-//            reply(ok("EPSV ALL"));
-//            return;
-//        }
-//        if (arg.isEmpty()) {
-//            /* If already in passive mode then we close the previous
-//             * socket and allocate a new one. This is a defensive move to
-//             * recover from the server socket having been closed by some
-//             * error condition.
-//             */
-//            closePassiveModeServerSocket();
-//            InetSocketAddress address = setPassive();
-//            reply("229 Entering Extended Passive Mode (|||"+address.getPort()+"|)");
-//        } else {
-//            try {
-//                _preferredProtocol = Protocol.find(arg);
-//                reply(ok("EPSV" +arg));
-//            } catch (NumberFormatException nfe) {
-//                throw new FTPCommandException(501, "Syntax error: '"+
-//                        arg+"' is not a valid argument for EPSV.");
-//            } catch (IllegalArgumentException e) {
-//                throw new FTPCommandException(522, "Protocol family '"+
-//                        arg+"'is not supported, use one of (1,2)");
-//            }
-//        }
-//    }
+    public void ftp_eprt(String arg)
+            throws FTPCommandException
+    {
+        checkIpV6();
+        checkLoggedIn();
+
+        setActive(getExtendedAddressOf(arg));
+
+        reply(ok("EPRT"));
+    }
+
+    public void ftp_epsv(String arg)
+        throws FTPCommandException
+    {
+        checkIpV6();
+        checkLoggedIn();
+
+        if  ("ALL".equalsIgnoreCase(arg)) {
+            _sessionAllPassive = true;
+            reply(ok("EPSV ALL"));
+            return;
+        }
+        if (arg.isEmpty()) {
+            /* If already in passive mode then we close the previous
+             * socket and allocate a new one. This is a defensive move to
+             * recover from the server socket having been closed by some
+             * error condition.
+             */
+            closePassiveModeServerSocket();
+            InetSocketAddress address = setPassive();
+            reply("229 Entering Extended Passive Mode (|||"+address.getPort()+"|)");
+        } else {
+            try {
+                _preferredProtocol = Protocol.find(arg);
+                reply(ok("EPSV" +arg));
+            } catch (NumberFormatException nfe) {
+                throw new FTPCommandException(501, "Syntax error: '"+
+                        arg+"' is not a valid argument for EPSV.");
+            } catch (IllegalArgumentException e) {
+                throw new FTPCommandException(522, "Protocol family '"+
+                        arg+"'is not supported, use one of (1,2)");
+            }
+        }
+    }
+
+    private void checkIpV6() throws FTPCommandException
+    {
+        if (!_localAddress.getAddress().getClass().equals(Inet6Address.class)) {
+            throw new FTPCommandException(502, "Command only supported for IPv6");
+        }
+    }
 
     public void ftp_mode(String arg)
     {
