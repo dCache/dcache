@@ -884,7 +884,7 @@ public class HsmStorageHandler2
 
     @Command(name = "rh set timeout",
             hint = "set restore timeout",
-            usage = "Set restore timeout for the HSM script. When the timeout expires " +
+            description = "Set restore timeout for the HSM script. When the timeout expires " +
                     "the HSM script is killed.")
     class RestoreSetTimeoutCommand implements Callable<String>
     {
@@ -903,7 +903,7 @@ public class HsmStorageHandler2
 
     @Command(name = "rh set max active",
             hint = "set restore concurrency",
-            usage = "Set the maximum number of restore instances of the HSM script to " +
+            description = "Set the maximum number of restore instances of the HSM script to " +
                     "start. Additional restore requests will be queued.")
     class RestoreSetMaxActiveCommand implements Callable<String>
     {
@@ -921,7 +921,7 @@ public class HsmStorageHandler2
 
     @Command(name = "rh kill",
             hint = "kill restore request",
-            usage = "Remove an HSM restore request.")
+            description = "Remove an HSM restore request.")
     class RestoreKillCommand implements Callable<String>
     {
         @Argument
@@ -940,7 +940,7 @@ public class HsmStorageHandler2
 
     @Command(name = "rh ls",
             hint = "list restore queue",
-            usage = "List the HSM requests on the restore queue.\n\n" +
+            description = "List the HSM requests on the restore queue.\n\n" +
                     "The columns in the output show: job id, job status, pnfs id, request counter, " +
                     "and request submission time.")
     class RestoreListCommand implements Callable<String>
@@ -954,7 +954,7 @@ public class HsmStorageHandler2
 
     @Command(name = "st set timeout",
             hint = "set store timeout",
-            usage = "Set store timeout for the HSM script. When the timeout expires " +
+            description = "Set store timeout for the HSM script. When the timeout expires " +
                     "the HSM script is killed.")
     class StoreSetTimeoutCommand implements Callable<String>
     {
@@ -973,7 +973,7 @@ public class HsmStorageHandler2
 
     @Command(name = "st set max active",
             hint = "set store concurrency",
-            usage = "Set the maximum number of store instances of the HSM script to " +
+            description = "Set the maximum number of store instances of the HSM script to " +
                     "start. Additional store requests will be queued.")
     class StoreSetMaxActiveCommand implements Callable<String>
     {
@@ -991,7 +991,7 @@ public class HsmStorageHandler2
 
     @Command(name = "st kill",
             hint = "kill store request",
-            usage = "Remove an HSM store request.")
+            description = "Remove an HSM store request.")
     class StoreKillCommand implements Callable<String>
     {
         @Argument
@@ -1010,7 +1010,7 @@ public class HsmStorageHandler2
 
     @Command(name = "st ls",
             hint = "list store queue",
-            usage = "List the HSM requests on the store queue.\n\n" +
+            description = "List the HSM requests on the store queue.\n\n" +
                     "The columns in the output show: job id, job status, pnfs id, request counter, " +
                     "and request submission time.")
     class StoreListCommand implements Callable<String>
@@ -1024,7 +1024,7 @@ public class HsmStorageHandler2
 
     @Command(name = "rm set timeout",
             hint = "set tape remove timeout",
-            usage = "Set remove timeout for the HSM script. When the timeout expires " +
+            description = "Set remove timeout for the HSM script. When the timeout expires " +
                     "the HSM script is killed.")
     class RemoveSetTimeoutCommand implements Callable<String>
     {
@@ -1043,7 +1043,7 @@ public class HsmStorageHandler2
 
     @Command(name = "rm set max active",
             hint = "set remoe concurrency",
-            usage = "Set the maximum number of remove instances of the HSM script to " +
+            description = "Set the maximum number of remove instances of the HSM script to " +
                     "start. Additional remove requests will be queued.")
     class RemoveSetMaxActiveCommand implements Callable<String>
     {
@@ -1062,7 +1062,7 @@ public class HsmStorageHandler2
 
     @Command(name = "rh restore",
             hint = "restore file from tape",
-            usage = "Restore a file from tape.")
+            description = "Restore a file from tape.")
     class RestoreCommand extends DelayedReply implements Callable<Serializable>
     {
         @Argument

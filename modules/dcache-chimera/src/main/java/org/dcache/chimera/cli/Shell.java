@@ -257,7 +257,7 @@ public class Shell implements Closeable
     }
 
     @Command(name = "chgrp", hint = "change file group",
-             usage = "The chgrp command sets the group ID of PATH to GID. Mapped group names " +
+             description = "The chgrp command sets the group ID of PATH to GID. Mapped group names " +
                      "cannot be used.")
     public class ChgrpCommand implements Callable<Serializable>
     {
@@ -276,7 +276,7 @@ public class Shell implements Closeable
     }
 
     @Command(name = "chmod", hint = "change file mode",
-             usage = "The chmod command modifies the file mode bits of PATH to MODE. The MODE must " +
+             description = "The chmod command modifies the file mode bits of PATH to MODE. The MODE must " +
                      "be expressed as an octal bit mask.")
     public class ChmodCommand implements Callable<Serializable>
     {
@@ -295,7 +295,7 @@ public class Shell implements Closeable
     }
 
     @Command(name = "chown", hint = "change file owner and group",
-             usage = "The chown command sets the owner of PATH to UID. Mapped user names " +
+             description = "The chown command sets the owner of PATH to UID. Mapped user names " +
                      "cannot be used.")
     public class ChownCommand implements Callable<Serializable>
     {
@@ -574,7 +574,7 @@ public class Shell implements Closeable
     }
 
     @Command(name = "rm", hint = "remove a file",
-             usage = "The rm command deletes the file.  If the file has data " +
+             description = "The rm command deletes the file.  If the file has data " +
                      "stored in dCache then dCache will remove that data in a " +
                      "timely fashion.")
     public class RmCommand implements Callable<Serializable>
@@ -697,7 +697,7 @@ public class Shell implements Closeable
     }
 
     @Command(name = "setfacl", hint = "change access control lists",
-             usage = "Sets a new ACL consisting of one or more ACEs to a resource (a file or directory), " +
+             description = "Sets a new ACL consisting of one or more ACEs to a resource (a file or directory), " +
                      "which is defined by its pnfsId or globalPath.\n\n" +
 
                      "Each ACE defines permissions to access this resource " +
@@ -825,7 +825,7 @@ public class Shell implements Closeable
     }
 
     @Command(name = "writedata", hint = "write file content",
-             usage = "Be aware that such data is stored in the Chimera database and not in dCache. " +
+             description = "Be aware that such data is stored in the Chimera database and not in dCache. " +
                      "The data will not be accessible through dCache.")
     public class WriteDataCommand implements Callable<Serializable>
     {

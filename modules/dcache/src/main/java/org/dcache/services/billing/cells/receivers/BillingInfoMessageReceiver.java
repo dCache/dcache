@@ -101,13 +101,13 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
     private Thread commitStatistics;
 
     @Command(name = "display insert statistics",
-             hint = "prints once a minute to stdout/pinboard the queue "
-                                    + "and database commit totals and rate for "
-                                    + "billing message inserts",
-             usage = "use 'start' or 'stop' to control")
+             hint = "toggles logging of statistics",
+             description = "Prints once a minute to stdout/pinboard the queue " +
+                     "and database commit totals and rate for " +
+                     "billing message inserts.")
     class StatisticsCommand implements Callable<String> {
 
-        @Argument(help = "<start|stop>")
+        @Argument(valueSpec = "start|stop")
         String option;
 
         public String call() throws Exception {

@@ -27,7 +27,7 @@ public @interface Command
     /**
      * Longer, detailed, description of the command.
      */
-    String usage() default "";
+    String description() default "";
 
     /**
      * ACL specification of the command.

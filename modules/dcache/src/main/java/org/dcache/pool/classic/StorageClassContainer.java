@@ -240,7 +240,7 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue activate",
-            usage = "Move a file from FAILED to ACTIVE.")
+            description = "Move a file from FAILED to ACTIVE.")
     class ActivateFileCommand implements Callable<String>
     {
         @Argument
@@ -259,7 +259,7 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue activate class",
-            usage = "Move files of a storage class from FAILED to ACTIVE.")
+            description = "Move files of a storage class from FAILED to ACTIVE.")
     class ActivateClassCommand implements Callable<String>
     {
         @Argument(valueSpec = "<storageClass>@<hsm>")
@@ -285,7 +285,7 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue deactivate",
-            usage = "Move a file from ACTIVE to FAILED.")
+            description = "Move a file from ACTIVE to FAILED.")
     class DeactivateFileCommand implements Callable<String>
     {
         @Argument
@@ -304,7 +304,7 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue ls classes",
-            usage = "List flush queues.")
+            description = "List flush queues.")
     class LsClassesCommand implements Callable<String>
     {
         @Option(name = "l")
@@ -329,7 +329,7 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue ls queue",
-            usage = "List content of flush queues.")
+            description = "List content of flush queues.")
     class LsQueueCommand implements Callable<String>
     {
         @Option(name = "l", usage = "Verbose listing")
@@ -403,13 +403,13 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue remove class",
-            usage = "Delete a flush queue")
+            description = "Delete a flush queue")
     class RemoveQueueCommand implements Callable<String>
     {
-        @Argument(index = 0, help = "Name of HSM system")
+        @Argument(index = 0, usage = "Name of HSM system")
         String hsm;
 
-        @Argument(index = 1, help = "Name of storage class")
+        @Argument(index = 1, usage = "Name of storage class")
         String storageClass;
 
         @Override
@@ -421,13 +421,13 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue suspend class",
-            usage = "Disable a flush queue.")
+            description = "Disable a flush queue.")
     class SuspendQueueCommand implements Callable<String>
     {
-        @Argument(index = 0, help = "Name of HSM system", valueSpec = "<hsm>|*")
+        @Argument(index = 0, usage = "Name of HSM system", valueSpec = "<hsm>|*")
         String hsm;
 
-        @Argument(index = 1, help = "Name of storage class", required = false)
+        @Argument(index = 1, usage = "Name of storage class", required = false)
         String storageClass;
 
         @Override
@@ -443,13 +443,13 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue resume class",
-            usage = "Enable a previously suspended flush queue.")
+            description = "Enable a previously suspended flush queue.")
     class ResumeQueueCommand implements Callable<String>
     {
-        @Argument(index = 0, help = "Name of HSM system", valueSpec = "<hsm>|*")
+        @Argument(index = 0, usage = "Name of HSM system", valueSpec = "<hsm>|*")
         String hsm;
 
-        @Argument(index = 1, help = "Name of storage class", required = false)
+        @Argument(index = 1, usage = "Name of storage class", required = false)
         String storageClass;
 
         @Override
@@ -465,13 +465,13 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue define class",
-            usage = "Create a new flush queue.")
+            description = "Create a new flush queue.")
     class DefineQueueCommand implements Callable<String>
     {
-        @Argument(index = 0, help = "Name of HSM system")
+        @Argument(index = 0, usage = "Name of HSM system")
         String hsm;
 
-        @Argument(index = 1, help = "Name of storage class")
+        @Argument(index = 1, usage = "Name of storage class")
         String storageClass;
 
         @Option(name = "expire", valueSpec="<seconds>")
@@ -502,7 +502,7 @@ public class StorageClassContainer
     }
 
     @Command(name = "queue remove pnfsid",
-            usage = "Remove a file from the flush queue. WARNING: The file will no longer flushed to tape!")
+            description = "Remove a file from the flush queue. WARNING: The file will no longer flushed to tape!")
     class RemoveFileCommand implements Callable<String>
     {
         @Argument

@@ -277,7 +277,7 @@ public class HsmFlushController
     }
 
     @Command(name = "flush set max active",
-            usage = "Set the maximum number of storage classes to flush simultaneously.")
+            description = "Set the maximum number of storage classes to flush simultaneously.")
     class SetMaxActiveCommand implements Callable<String>
     {
         @Argument
@@ -293,7 +293,7 @@ public class HsmFlushController
     }
 
     @Command(name = "flush set interval",
-            usage = "Set the interval at which to flush files to tape")
+            description = "Set the interval at which to flush files to tape")
     class SetIntervalCommand implements Callable<String>
     {
         @Argument(metaVar = "seconds")
@@ -309,7 +309,7 @@ public class HsmFlushController
     }
 
     @Command(name = "flush set retry delay",
-            usage = "Set the minimum delay before the next flush after a failure.")
+            description = "Set the minimum delay before the next flush after a failure.")
     class SetRetryDelayCommand implements Callable<String>
     {
         @Argument(metaVar = "seconds")
@@ -325,7 +325,7 @@ public class HsmFlushController
     }
 
     @Command(name = "flush ls",
-            usage = "List the storge classes queued for flush.")
+            description = "List the storge classes queued for flush.")
     class ListCommand implements Callable<Serializable>
     {
         @Option(name = "binary")
@@ -376,7 +376,7 @@ public class HsmFlushController
     }
 
     @Command(name = "flush class",
-            usage = "Flush files of storage class to tape.")
+            description = "Flush files of storage class to tape.")
     class FlushClassCommand implements Callable<String>
     {
         @Argument(index = 0)
@@ -398,7 +398,7 @@ public class HsmFlushController
     }
 
     @Command(name = "flush pnfsid",
-            usage = "Flush a single file to tape.")
+            description = "Flush a single file to tape.")
     class FlushPnfsIdCommand implements Callable<String>
     {
         @Argument

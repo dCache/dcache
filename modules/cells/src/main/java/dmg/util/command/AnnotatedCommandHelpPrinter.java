@@ -26,5 +26,5 @@ public interface AnnotatedCommandHelpPrinter
 {
     String getHelpHint(Command command, Class<?> clazz);
 
-    Serializable getHelp(Command command, Class<?> clazz);
+    Serializable getHelp(Object command);
 }

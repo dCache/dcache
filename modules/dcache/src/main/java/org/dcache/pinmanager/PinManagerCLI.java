@@ -104,7 +104,7 @@ public class PinManagerCLI
     }
 
     @Command(name="pin", hint="pin a file to disk",
-    usage = "Pins a file to disk for some time. A file may be pinned forever by " +
+    description = "Pins a file to disk for some time. A file may be pinned forever by " +
             "specifying a lifetime of -1. Pinning a file may involve staging it " +
             "or copying it from one pool to another. For that reason pinning may " +
             "take awhile and the pin command may time out. The pin request will " +
@@ -135,7 +135,7 @@ public class PinManagerCLI
     }
 
     @Command(name="unpin", hint="unpin a file",
-            usage = "Unpin a previously pinned file. Either a specific pin or all " +
+            description = "Unpin a previously pinned file. Either a specific pin or all " +
                     "pins on a specific file can be removed.")
     public class UnpinCommand implements Callable<String>
     {
@@ -158,7 +158,7 @@ public class PinManagerCLI
     }
 
     @Command(name="extend", hint="extend lifetime of a pin",
-            usage = "Extend the lifetime of an existing pin. A pin with a lifetime of -1 " +
+            description = "Extend the lifetime of an existing pin. A pin with a lifetime of -1 " +
                     "will never expire and has to be unpinned explicitly. The lifetime " +
                     "of a pin can only be extended, not shortened.")
     public class ExtendCommand implements Callable<String>
@@ -196,7 +196,7 @@ public class PinManagerCLI
     }
 
     @Command(name="ls", hint="list pins",
-            usage = "Lists all pins or a specified pin by pin id or PNFSID.")
+            description = "Lists all pins or a specified pin by pin id or PNFSID.")
     public class ListCommand implements Callable<String>
     {
         @Argument(index = 0, required = false, valueSpec="PIN|PNFSID")
@@ -227,7 +227,7 @@ public class PinManagerCLI
     }
 
     @Command(name="bulk pin", hint="pin several files",
-            usage = "Pin a list of PNFS IDs from FILE for a specified number of " +
+            description = "Pin a list of PNFS IDs from FILE for a specified number of " +
                     "seconds. Each line FILE must be a PNFS ID.")
     public class BulkPinCommand implements Callable<String>
     {
@@ -250,7 +250,7 @@ public class PinManagerCLI
     }
 
     @Command(name = "bulk unpin", hint = "unpin several files",
-            usage = "Unpin a list of PNFS IDs from FILE. Each line of FILE " +
+            description = "Unpin a list of PNFS IDs from FILE. Each line of FILE " +
                     "must be a PNFS ID.")
     public class BulkUnpinCommand implements Callable<String>
     {
@@ -275,7 +275,7 @@ public class PinManagerCLI
     }
 
     @Command(name = "bulk clear", hint = "remove completed bulk jobs",
-            usage = "Removes completed jobs. For reference, information " +
+            description = "Removes completed jobs. For reference, information " +
                     "about background jobs is kept until explicitly cleared.")
     public class BulkClearCommand implements Callable<String>
     {
@@ -295,7 +295,7 @@ public class PinManagerCLI
     }
 
     @Command(name = "bulk cancel", hint="cancel bulk job",
-            usage = "Cancels a background job. Note that cancelling a bulk job will " +
+            description = "Cancels a background job. Note that cancelling a bulk job will " +
                     "cause all pins already created by the job to be released.")
     public class BulkCancelCommand implements Callable<String>
     {
@@ -315,7 +315,7 @@ public class PinManagerCLI
     }
 
     @Command(name = "bulk ls", hint = "list bulk jobs",
-            usage = "Lists background jobs. If a job id is specified then additional " +
+            description = "Lists background jobs. If a job id is specified then additional " +
                     "status information about the job is provided.")
     public class BulkListCommand implements Callable<String>
     {

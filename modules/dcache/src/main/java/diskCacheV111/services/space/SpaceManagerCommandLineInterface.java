@@ -130,13 +130,13 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     }
 
     @Command(name = "release space", hint = "release reservation",
-             usage = "Releases a space reservation. The files in the reservation are not deleted " +
+             description = "Releases a space reservation. The files in the reservation are not deleted " +
                      "from dCache, but the space occupied by those files is no longer accounted " +
                      "for by the space manager. Such files will continue to appear as used space in " +
                      "their link group.")
     public class ReleaseSpaceCommand extends AsyncCommand
     {
-        @Argument
+        @Argument(usage = "Space token of reservation to release.")
         long token;
 
         @Override
@@ -172,7 +172,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 usage = "Space token description.")
         String description;
 
-        @Argument(metaVar="spacetoken", help = "Token of space reservation to update.")
+        @Argument(metaVar="spacetoken", usage = "Token of space reservation to update.")
         Long token;
 
         @Override
@@ -235,7 +235,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     }
 
     @Command(name = "ls link groups", hint = "list link groups",
-             usage = "If an argument is given, the command displays all link groups with a name " +
+             description = "If an argument is given, the command displays all link groups with a name " +
                      "matching the pattern. If no argument is given, all link groups are " +
                      "displayed. The list can be further restricted using the options.\n\n" +
 
@@ -332,7 +332,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     }
 
     @Command(name = "ls spaces", hint = "list space reservations",
-             usage = "If an argument is given, the command displays space reservations for which the " +
+             description = "If an argument is given, the command displays space reservations for which the " +
                      "space description matches the pattern. If the argument is an integer, the argument " +
                      "is interpreted as a space token and a matching space reservation is displayed." +
                      "If no argument is given, all space reservations are displayed. The list can be " +
@@ -397,7 +397,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         Integer limit = 10000;
 
         @Argument(required = false,
-                  help = "Only show reservations with this token or a description matching this pattern.",
+                  usage = "Only show reservations with this token or a description matching this pattern.",
                   valueSpec = "TOKEN|PATTERN")
         Glob pattern;
 
@@ -519,7 +519,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     }
 
     @Command(name = "ls files", hint = "list file reservations",
-             usage = "If an argument is given, the command displays reserved files for which the " +
+             description = "If an argument is given, the command displays reserved files for which the " +
                      "PNFS ID matches the argument, or the path matches the pattern. If no argument is " +
                      "given, all file reservations in a transient state are displayed. The list can be " +
                      "further expanded or restricted using the options.\n\n" +
@@ -591,7 +591,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         FileState[] states;
 
         @Argument(required = false,
-                  help = "Only show files with this PNFSID or a path matching this pattern.",
+                  usage = "Only show files with this PNFSID or a path matching this pattern.",
                   valueSpec = "PNFSID|PATH|PATTERN")
         Glob pattern;
 
@@ -697,7 +697,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     }
 
     @Command(name = "reserve space", hint = "create space reservation",
-             usage = "A space reservation has a size, an access latency, a retention policy, " +
+             description = "A space reservation has a size, an access latency, a retention policy, " +
                      "and an owner. It may have a description, and a lifetime. If the lifetime " +
                      "is exceeded, the reservation expires and the files in it are released. " +
                      "The owner is only used to authorize creation of the reservation in the " +
@@ -736,7 +736,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         "never expire.")
         Long lifetime;
 
-        @Argument
+        @Argument(
+                usage = "Size of reservation in bytes. Accepts an optional byte unit suffix using " +
+                        "either SI or IEEE 1541 prefixes.")
         String size;
 
         @Override
@@ -788,7 +790,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     }
 
     @Command(name = "purge file", hint = "purge file from space",
-             usage = "Removes a file from its space reservation without deleting the file from " +
+             description = "Removes a file from its space reservation without deleting the file from " +
                      "dCache. The space in the reservation that was set aside for the file will be " +
                      "available to other files, assuming the link group has enough free space.\n\n" +
 
@@ -827,7 +829,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     }
 
     @Command(name = "purge spaces", hint = "remove perished space reservations",
-             usage = "Space reservations that are expired or released are said to have perished. " +
+             description = "Space reservations that are expired or released are said to have perished. " +
                      "Perished space is no longer considered reserved, but it is kept in the database " +
                      "until purged. Until a space reservation is purged, the files it contained are " +
                      "still tracked in the database and can be inspected using the 'ls files' command.\n\n" +

@@ -19,19 +19,23 @@ package dmg.util.command;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Multimap;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.dcache.commons.util.Strings;
 
 import static com.google.common.base.CharMatcher.JAVA_UPPER_CASE;
+import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
 
@@ -45,9 +49,24 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
     //     [ ] | ...
     //
     // and any sequence of upper case letters.
-    private final static Pattern VALUESPEC_SEPARATOR =
+    private static final Pattern VALUESPEC_SEPARATOR =
             Pattern.compile("(?<=[\\[\\]|]|\\.{3})|(?=[\\[\\]|]|\\.{3})|(?<=[^A-Z])(?=[A-Z])|(?<=[A-Z])(?=[^A-Z])");
-    public static final int WIDTH = 72;
+
+    private static final int WIDTH = 72;
+
+    private static final Predicate<? super Field> shouldBeDocumented =
+            new Predicate<Field>()
+            {
+                @Override
+                public boolean apply(Field field)
+                {
+                    Argument argument = field.getAnnotation(Argument.class);
+                    /* Arguments that are not required might have a default value and should thus
+                     * be included in the help output.
+                     */
+                    return argument != null && (!argument.usage().isEmpty() || !argument.required());
+                }
+            };
 
     private <T> Iterable<String> literal(T[] values)
     {
@@ -223,8 +242,11 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
     }
 
     @Override
-    public String getHelp(Command command, Class<?> clazz)
+    public String getHelp(Object instance)
     {
+        Class<?> clazz = instance.getClass();
+        Command command = clazz.getAnnotation(Command.class);
+
         StringWriter out = new StringWriter();
         PrintWriter writer = new PrintWriter(out);
 
@@ -240,11 +262,28 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         writer.append(Strings.wrap("       ", literal(command.name()) + " " + getSignature(clazz), WIDTH));
         writer.println();
 
-        if (!command.usage().isEmpty()) {
+        if (!command.description().isEmpty()) {
             writer.println(heading("DESCRIPTION"));
-            writer.append(Strings.wrap("       ", command.usage(), WIDTH));
+            writer.append(Strings.wrap("       ", command.description(), WIDTH));
         }
         writer.println();
+
+        List<Field> arguments = AnnotatedCommandUtils.getArguments(clazz);
+        if (!arguments.isEmpty() && any(arguments, shouldBeDocumented)) {
+            writer.println(heading("ARGUMENTS"));
+            for (Field field : arguments) {
+                Argument argument = field.getAnnotation(Argument.class);
+                writer.append("       ").println(getMetaVar(field, argument));
+                String help = argument.usage();
+                if (!argument.required()) {
+                    help = Joiner.on(' ').join(help, getDefaultDescription(instance, field));
+                }
+                if (!help.isEmpty()) {
+                    writer.append(Strings.wrap("              ", help, 65));
+                }
+            }
+            writer.println();
+        }
 
         Multimap<String,Field> options = AnnotatedCommandUtils.getOptionsByCategory(clazz);
         if (!options.isEmpty()) {
@@ -275,8 +314,12 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                         writer.append(value("..."));
                     }
                     writer.println();
-                    if (!option.usage().isEmpty()) {
-                        writer.append(Strings.wrap("              ", option.usage(), 65));
+                    String usage = option.usage();
+                    if (!option.required()) {
+                        usage = Joiner.on(' ').join(usage, getDefaultDescription(instance, field));
+                    }
+                    if (!usage.isEmpty()) {
+                        writer.append(Strings.wrap("              ", usage, 65));
                     }
                 }
             }
@@ -284,6 +327,21 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         writer.flush();
 
         return out.toString();
+    }
+
+    private String getDefaultDescription(Object instance, Field field)
+    {
+        try {
+            field.setAccessible(true);
+            Object value = field.get(instance);
+            Class<?> type = field.getType();
+            if (value != null && (!Boolean.class.equals(type) && !Boolean.TYPE.equals(type) || (Boolean) value)) {
+                return "Defaults to " + literal(value.toString()) + '.';
+            }
+        } catch (IllegalAccessException e) {
+            throw Throwables.propagate(e);
+        }
+        return "";
     }
 
     protected int plainLength(String s)

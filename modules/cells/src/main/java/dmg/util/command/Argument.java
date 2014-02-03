@@ -15,7 +15,7 @@ public @interface Argument
     /**
      * Position of the argument.
      *
-     * Negative entries count from the of the argument list, ie -1 is the last
+     * Negative entries count from the end of the argument list, ie -1 is the last
      * argument, -2 is the second to last, and so on.
      *
      * Multi valued properties bound to arguments must always be the last entry.
@@ -25,7 +25,7 @@ public @interface Argument
     /**
      * See {@link Option#usage()}.
      */
-    String help() default "";
+    String usage() default "";
 
     /**
      * See {@link Option#metaVar()}.

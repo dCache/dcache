@@ -176,7 +176,7 @@ public class LinkGroupLoader
     }
 
     @Command(name = "update link groups", hint = "trigger link group update",
-             usage = "Link groups are periodically imported from pool manager and stored in " +
+             description = "Link groups are periodically imported from pool manager and stored in " +
                      "the space manager database. This command triggers an immediate " +
                      "asynchronous update of the link group information.")
     public class UpdateLinkGroupsCommand implements Callable<String>

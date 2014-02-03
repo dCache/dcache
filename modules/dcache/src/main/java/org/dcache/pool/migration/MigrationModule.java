@@ -246,7 +246,7 @@ public class MigrationModule
     }
 
     @Command(name="migration concurrency",
-            usage="Adjust the concurrency of a job.")
+            description ="Adjust the concurrency of a job.")
     public class MigrationConcurrencyCommand implements Callable<String>
     {
         @Argument(index=0)
@@ -265,7 +265,7 @@ public class MigrationModule
     }
 
     @Command(name="migration copy",
-            usage = "Copies files to other pools. Unless filter options are specified, " +
+            description = "Copies files to other pools. Unless filter options are specified, " +
                     "all files on the source pool are copied.\n\n" +
 
                     "The operation is idempotent, that is, it can safely be repeated " +
@@ -357,7 +357,7 @@ public class MigrationModule
 
         @Option(name="concurrency",
                 category="Transfer options",
-                usage="Specifies how many concurrent transfers to perform. Defaults to 1.")
+                usage="Specifies how many concurrent transfers to perform.")
         int concurrency = 1;
 
         @Option(name="order", valueSpec="[-]size|[-]lru",
@@ -389,7 +389,7 @@ public class MigrationModule
                 category="Transfer options",
                 usage = "Update the local replica to the given mode after transfer:\n" +
                         "same:\n" +
-                        "    does not change the local state (this is the default).\n" +
+                        "    does not change the local state.\n" +
                         "cached:\n" +
                         "    marks it cached.\n" +
                         "precious:\n" +
@@ -410,7 +410,7 @@ public class MigrationModule
                 usage = "Set the mode of the target replica:\n" +
                         "same:\n" +
                         "    applies the state and sticky bits excluding pins\n" +
-                        "    of the local replica (this is the default).\n" +
+                        "    of the local replica.\n" +
                         "cached:\n" +
                         "    marks it cached.\n" +
                         "precious:\n" +
@@ -472,7 +472,7 @@ public class MigrationModule
                 usage = "Sets the period in seconds of when target pool information " +
                         "is queried from the pool manager. Inclusion and exclusion " +
                         "expressions are evaluated whenever the information is " +
-                        "refreshed. The default is 300 seconds.")
+                        "refreshed.")
         int refresh = 300;
 
         @Option(name="select", values={"proportional", "random"},
@@ -482,14 +482,12 @@ public class MigrationModule
                         "    selects a pool with a probability proportional\n" +
                         "    to the free space.\n" +
                         "random:\n" +
-                        "    selects a pool randomly.\n" +
-                        "The default is 'proportional'.")
+                        "    selects a pool randomly.\n")
         String select = "proportional";
 
         @Option(name="target", values={"pool", "pgroup", "link"},
                 category="Target options",
-                usage = "Determines the interpretation of the target names. The " +
-                        "default is 'pool'")
+                usage = "Determines the interpretation of the target names.")
         String target = "pool";
 
         @Option(name="pause-when", metaVar="expr",
@@ -844,7 +842,7 @@ public class MigrationModule
     }
 
     @Command(name="migration move",
-            usage = "Moves replicas to other pools. The source replica is deleted. " +
+            description = "Moves replicas to other pools. The source replica is deleted. " +
                     "Accepts the same options as 'migration copy'. Corresponds to\n\n" +
                     "     migration copy -smode=delete -tmode=same -pins=move -verify")
     public class MigrationMoveCommand extends MigrationCopyCommand
@@ -862,7 +860,7 @@ public class MigrationModule
     }
 
     @Command(name="migration cache",
-            usage = "Caches replicas on other pools. Accepts the same options as " +
+            description = "Caches replicas on other pools. Accepts the same options as " +
                     "'migration copy'. Corresponds to\n\n" +
                     "     migration copy -smode=same -tmode=cached")
     public class MigrationCacheCommand extends MigrationCopyCommand
@@ -880,7 +878,7 @@ public class MigrationModule
     }
 
     @Command(name="migration suspend",
-            usage = "Suspends a migration job. A suspended job finishes ongoing " +
+            description = "Suspends a migration job. A suspended job finishes ongoing " +
                     "transfers, but is does not start any new transfer.")
     public class MigrationSuspendCommand implements Callable<String>
     {
@@ -897,7 +895,7 @@ public class MigrationModule
     }
 
     @Command(name="migration resume",
-            usage = "Resumes a suspended migration job.")
+            description = "Resumes a suspended migration job.")
     public class MigrationResumeCommand implements Callable<String>
     {
         @Argument(metaVar="job")
@@ -913,7 +911,7 @@ public class MigrationModule
     }
 
     @Command(name="migration cancel",
-            usage="Cancels a migration job.")
+            description ="Cancels a migration job.")
     public class MigrationCancelCommand implements Callable<String>
     {
         @Option(name="force", usage="Kill ongoing transfers.")
@@ -932,7 +930,7 @@ public class MigrationModule
     }
 
     @Command(name="migration clear",
-            usage="Removes completed migration jobs. For reference, information about " +
+            description ="Removes completed migration jobs. For reference, information about " +
                     "migration jobs are kept until explicitly cleared.")
     public class MigrationClearCommand implements Callable<String>
     {
@@ -958,7 +956,7 @@ public class MigrationModule
     }
 
     @Command(name="migration ls",
-            usage = "Lists all migration jobs")
+            description = "Lists all migration jobs")
     public class MigrationListCommand implements Callable<String>
     {
         @Override
@@ -973,7 +971,7 @@ public class MigrationModule
     }
 
     @Command(name="migration info",
-    usage = "Shows detailed information about a migration job. Possible " +
+    description = "Shows detailed information about a migration job. Possible " +
             "job states are:\n\n" +
             "   INITIALIZING   Initial scan of repository\n" +
             "   RUNNING        Job runs (schedules new tasks)\n" +

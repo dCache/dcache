@@ -219,15 +219,15 @@ public class MoverProtocolTransferService extends AbstractCellComponent
     }
 
     @Command(name = "movermap define",
-            usage = "Adds a transfer protocol mapping")
+            description = "Adds a transfer protocol mapping")
     class DefineCommand implements Callable<String>
     {
         @Argument(index = 0, valueSpec = "PROTOCOL-MAJOR",
-                help = "Protocol identification string")
+                usage = "Protocol identification string")
         String protocol;
 
         @Argument(index = 1, metaVar = "moverclassname",
-                help = "A class implementing the MoverProtocol interface.")
+                usage = "A class implementing the MoverProtocol interface.")
         String moverClassName;
 
         @Override
@@ -239,11 +239,11 @@ public class MoverProtocolTransferService extends AbstractCellComponent
     }
 
     @Command(name = "movermap undefine",
-            usage = "Removes a transfer protocol mapping")
+            description = "Removes a transfer protocol mapping")
     class UndefineCommand implements Callable<String>
     {
         @Argument(valueSpec = "PROTOCOL-MAJOR",
-                help = "Protocol identification string")
+                usage = "Protocol identification string")
         String protocol;
 
         @Override
@@ -255,7 +255,7 @@ public class MoverProtocolTransferService extends AbstractCellComponent
     }
 
     @Command(name = "movermap ls",
-            usage = "Lists all defined protocol mappings.")
+            description = "Lists all defined protocol mappings.")
     class ListCommand implements Callable<String>
     {
         @Override
