@@ -26,12 +26,15 @@ public class TapeTransferQueue extends SortableBasePage {
     private static final long serialVersionUID = 8313857084027604473L;
     private static final Logger _log = LoggerFactory.getLogger(TapeTransferQueue.class);
 
+    final List<RestoreBean> _restoreBeans;
+
     public TapeTransferQueue() {
         Form<?> form = getAutoRefreshingForm("tapeTransferQueueForm");
         form.add(new FeedbackPanel("feedback"));
+        _restoreBeans = getRestoreBeans();
         ListView<RestoreBean> listview =
                 new EvenOddListView<RestoreBean>("TapeTransferQueueListview",
-                new PropertyModel(this, "restoreBeans")) {
+                new PropertyModel(this, "_restoreBeans")) {
 
                     private static final long serialVersionUID = 9166078572922366382L;
 
