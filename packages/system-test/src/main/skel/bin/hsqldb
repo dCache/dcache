@@ -1,0 +1,18 @@
+#!/bin/sh
+
+@DCACHE_LOAD_CONFIG@
+
+lib="$(getProperty dcache.paths.share.lib)"
+. ${lib}/utils.sh
+. ${lib}/services.sh
+
+classpath=$(printLimitedClassPath hsqldb)
+
+if [ -n "$1" ]; then
+    user=$(getProperty $1.db.user)
+    password=$(getProperty $1.db.password)
+    url=$(getProperty $1.db.url)
+    java -cp ${classpath} org.hsqldb.util.DatabaseManagerSwing -url "$url" -user "$user" -password "$password"
+else
+    java -cp ${classpath} org.hsqldb.util.DatabaseManagerSwing
+fi

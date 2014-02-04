@@ -66,6 +66,9 @@
                               </copy>
                               <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
                                   <fileset dir="${project.basedir}/src/main/skel" />
+                                  <filterset>
+                                      <filtersfile file="${project.basedir}/src/main/assembly/filter.properties" />
+                                  </filterset>
                               </copy>
                           </target>
                       </configuration>
