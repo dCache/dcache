@@ -17,23 +17,17 @@
 package org.dcache.chimera;
 
 /**
- * This class retrieves file locality metadata via an invocation of
- * the pool manager.
+ * Cursor returns 0-byte string.
  *
  * @author arossi
  */
-public class FsInode_PLOC extends FsInode_PGET {
-    private String _locality;
+public class FsInode_PCUR extends FsInode_PGET {
 
-    public FsInode_PLOC(FileSystemProvider fs, String id) {
-        super(fs, id, FsInodeType.PLOC);
+    public FsInode_PCUR(FileSystemProvider fs, String id) {
+        super(fs, id, FsInodeType.PCUR);
     }
 
-    @Override
     protected String value() throws ChimeraFsException {
-        if (_locality == null) {
-           _locality = _fs.getFileLocality(this);
-        }
-        return _locality + NEWLINE;
+        return "";
     }
 }

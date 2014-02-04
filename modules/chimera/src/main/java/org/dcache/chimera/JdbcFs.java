@@ -1062,7 +1062,7 @@ public class JdbcFs implements FileSystemProvider {
             }
 
             if (name.equals(".(get)(cursor)")) {
-                FsInode pgetInode = new FsInode_PGET(this, parent.toString(), new String[0]);
+                FsInode pgetInode = new FsInode_PCUR(this, parent.toString());
                 if (!pgetInode.exists()) {
                     throw new FileNotFoundHimeraFsException(name);
                 }
@@ -1075,28 +1075,20 @@ public class JdbcFs implements FileSystemProvider {
                     throw new FileNotFoundHimeraFsException(name);
                 }
 
+                inode = inodeOf(parent, cmd[1]);
+                if (!inode.exists()) {
+                    throw new FileNotFoundHimeraFsException(name);
+                }
+
                 switch(cmd[2]) {
                     case "locality":
-                        inode = inodeOf(parent, cmd[1]);
-                        if (!inode.exists()) {
-                            throw new FileNotFoundHimeraFsException(name);
-                        }
-                        return getPLOC(inode.toString());
+                        return new FsInode_PLOC(this, inode.toString());
                     case "checksum":
                     case "checksums":
-                        inode = inodeOf(parent, cmd[1]);
-                        if (!inode.exists()) {
-                            throw new FileNotFoundHimeraFsException(name);
-                        }
                         return new FsInode_PCRC(this, inode.toString());
                     default:
-                        String[] args = new String[cmd.length - 1];
-                        System.arraycopy(cmd, 1, args, 0, args.length);
-                        inode = new FsInode_PGET(this, parent.toString(), args);
-                        if (!inode.exists()) {
-                            throw new FileNotFoundHimeraFsException(name);
-                        }
-                        return inode;
+                        throw new ChimeraFsException
+                            ("unsupported argument for .(get) " + cmd[2]);
                 }
             }
 
@@ -2848,12 +2840,12 @@ public class JdbcFs implements FileSystemProvider {
                 inode = new FsInode_PSET(this, inodeId, getArgs(opaque));
                 break;
 
-            case PGET:
-                inode = new FsInode_PGET(this, inodeId, getArgs(opaque));
+            case PCUR:
+                inode = new FsInode_PCUR(this, inodeId);
                 break;
 
             case PLOC:
-                inode = getPLOC(inodeId);
+                inode = new FsInode_PLOC(this, inodeId);
                 break;
 
             case PCRC:
@@ -2948,19 +2940,14 @@ public class JdbcFs implements FileSystemProvider {
                     inode = new FsInode_PSET(this, id, args);
                     break;
 
-                case PGET:
+                case PCUR:
                     id = st.nextToken();
-                    argc = st.countTokens();
-                    args = new String[argc];
-                    for (int i = 0; i < argc; i++) {
-                        args[i] = st.nextToken();
-                    }
-                    inode = new FsInode_PGET(this, id, args);
+                    inode = new FsInode_PCUR(this, id);
                     break;
 
                 case PLOC:
                     id = st.nextToken();
-                    inode = getPLOC(id);
+                    inode = new FsInode_PLOC(this, id);
                     break;
 
                 case PCRC:
@@ -2982,13 +2969,10 @@ public class JdbcFs implements FileSystemProvider {
         return inode.getIdentifier();
     }
 
-    /**
-     * Subclass should cache the inode object for proper handling.
-     * This implementation will not work correctly by itself.  The
-     * adapter here is a placeholder.
-     */
-    protected FsInode_PLOC getPLOC(String id)
-                    throws ChimeraFsException {
-        return new FsInode_PLOC(this, id);
+    @Override
+    public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException {
+        throw new ChimeraFsException("this operation is unsupported for this "
+                        + "file system; please install a dCache-aware "
+                        + "implementation of the file system interface");
     }
 }

@@ -59,19 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.chimera;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-
 import javax.sql.DataSource;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -87,29 +80,11 @@ import org.dcache.vehicles.FileAttributes;
 
 /**
  * Overrides protected methods so as to be able to provide live locality
- * information if requested. Embeds a Guava cache to maintain already
- * initialized PLOC nodes; the latter is calls out in turn to the PNFS and Pool
- * managers.
+ * information if requested; the latter calls the PNFS and Pool managers.
  *
  * @author arossi
  */
 public class DCacheAwareJdbcFs extends JdbcFs {
-    private final class LocalityLoader extends
-                    CacheLoader<String, FsInode_PLOC> {
-
-        @Override
-        public FsInode_PLOC load(String id) throws Exception {
-            FsInode_PLOC ploc = getSuperPLOC(id);
-            FsInode pathInode = new FsInode(DCacheAwareJdbcFs.this, id);
-            ploc.setLocality(getFileLocality(inode2path(pathInode)));
-            /*
-             * need to override the cached stat value
-             */
-            ploc.stat();
-            return ploc;
-        }
-    }
-
     private static String host;
 
     static {
@@ -122,16 +97,6 @@ public class DCacheAwareJdbcFs extends JdbcFs {
 
     private CellStub poolManagerStub;
     private PnfsHandler pnfsHandler;
-
-    /**
-     * Short-term caching of locality information. Policy uses expire after
-     * write because we do not want to get too far out of synchronization with
-     * the live system. Maintains entries for 1 minute.
-     */
-    private final LoadingCache<String, FsInode_PLOC> CACHE
-        = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES)
-                                   .maximumSize(64)
-                                   .softValues().build(new LocalityLoader());
 
     public DCacheAwareJdbcFs(DataSource dataSource, String dialect) {
         super(dataSource, dialect);
@@ -149,29 +114,20 @@ public class DCacheAwareJdbcFs extends JdbcFs {
         this.poolManagerStub = poolManagerStub;
     }
 
-    /**
-     * Goes to the cache instead of directly creating the inode.
-     */
-    protected FsInode_PLOC getPLOC(String id)
-                    throws ChimeraFsException {
-        try {
-            return CACHE.get(id);
-        } catch (ExecutionException t) {
-            Throwable cause = t.getCause();
-            if (cause instanceof ChimeraFsException) {
-                throw (ChimeraFsException)cause;
-            }
-            throw new ChimeraFsException(t.toString());
-        }
+    @Override
+    public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException {
+        FsInode pathInode = new FsInode(DCacheAwareJdbcFs.this, node.toString());
+        return getFileLocality(inode2path(pathInode));
     }
 
     /**
      * Callout to get pool monitor and check for live (network) status of a file
      * instead of simply its status as recorded in the Chimera database.
      */
-    private String getFileLocality(String filePath) throws IOException {
+    private String getFileLocality(String filePath) throws ChimeraFsException {
         PoolMonitor _poolMonitor;
         FileLocality locality = FileLocality.UNAVAILABLE;
+
         try {
             _poolMonitor = poolManagerStub.sendAndWait(
                             new PoolManagerGetPoolMonitor()).getPoolMonitor();
@@ -187,14 +143,9 @@ public class DCacheAwareJdbcFs extends JdbcFs {
                                                 accessMask);
             locality = _poolMonitor.getFileLocality(attributes, host);
         } catch (CacheException | InterruptedException t) {
-            throw new IOException(t);
+            throw new ChimeraFsException("getFileLocality", t);
         }
 
         return locality.toString();
-    }
-
-    private FsInode_PLOC getSuperPLOC(String id)
-                    throws ChimeraFsException {
-        return super.getPLOC(id);
     }
 }
