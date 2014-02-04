@@ -1,21 +1,18 @@
 package org.dcache.pool.repository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
-
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.util.Args;
 import dmg.util.Formats;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.cells.CellCommandListener;
 
@@ -129,10 +126,18 @@ public class RepositoryInterpreter
     {
         if (args.argc() > 0) {
             StringBuilder sb   = new StringBuilder();
+            List<FileNotInCacheException> cacheExceptions = new ArrayList<>();
             for (int i = 0; i < args.argc(); i++) {
                 PnfsId pnfsid = new PnfsId(args.argv(i));
-                sb.append(_repository.getEntry(pnfsid));
-                sb.append("\n");
+                try {
+                    sb.append(_repository.getEntry(pnfsid));
+                    sb.append("\n");
+                } catch (FileNotInCacheException fnice) {
+                    cacheExceptions.add(fnice);
+                }
+            }
+            for (FileNotInCacheException cacheException : cacheExceptions) {
+                sb.append(cacheException).append("\n");
             }
             return sb.toString();
         }
