@@ -83,6 +83,7 @@ import java.util.concurrent.TimeUnit;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
+import dmg.util.command.Command;
 
 import org.dcache.util.Args;
 import org.dcache.util.FireAndForgetTask;
@@ -247,38 +248,31 @@ import org.dcache.util.FireAndForgetTask;
    return target;
   }
 
-  /**
-   * Composes output for "help" command
-   */
-  public String ac_help( Args args )
-  {
-      return super.ac_info(args);
-  }
-
-  /**
-   * Composes output for "info" command
-   */
-  @Override
-  public String ac_info(Args args)
-  {
-    StringBuilder sb = new StringBuilder(super.ac_info(args));
-    sb.append("ActiveCount=").append(executor.getActiveCount()).append("\n");
-    sb.append("CompletedTaskCount=").append(executor.getCompletedTaskCount())
-            .append("\n");
-    sb.append("CorePoolSize=").append(executor.getCorePoolSize()).append("\n");
-    sb.append("KeepAliveTime=")
-            .append(executor.getKeepAliveTime(TimeUnit.SECONDS)).append("\n");
-    sb.append("LargestPoolSize=").append(executor.getLargestPoolSize())
-            .append("\n");
-    sb.append("MaximumPoolSize=").append(executor.getMaximumPoolSize())
-            .append("\n");
-    sb.append("PoolSize=").append(executor.getPoolSize()).append("\n");
-    sb.append("TaskCount=").append(executor.getTaskCount()).append("\n");
-    sb.append("IsShutdown=").append(executor.isShutdown()).append("\n");
-    sb.append("IsTerminated=").append(executor.isTerminated()).append("\n");
-    sb.append("IsTerminating=").append(executor.isTerminating()).append("\n");
-    return sb.toString();
-  }
+    @Command(name = "info")
+    public class InfoCommand extends CellAdapter.InfoCommand
+    {
+        @Override
+        public String call()
+        {
+            StringBuilder sb = new StringBuilder(super.call());
+            sb.append("ActiveCount=").append(executor.getActiveCount()).append("\n");
+            sb.append("CompletedTaskCount=").append(executor.getCompletedTaskCount())
+                    .append("\n");
+            sb.append("CorePoolSize=").append(executor.getCorePoolSize()).append("\n");
+            sb.append("KeepAliveTime=")
+                    .append(executor.getKeepAliveTime(TimeUnit.SECONDS)).append("\n");
+            sb.append("LargestPoolSize=").append(executor.getLargestPoolSize())
+                    .append("\n");
+            sb.append("MaximumPoolSize=").append(executor.getMaximumPoolSize())
+                    .append("\n");
+            sb.append("PoolSize=").append(executor.getPoolSize()).append("\n");
+            sb.append("TaskCount=").append(executor.getTaskCount()).append("\n");
+            sb.append("IsShutdown=").append(executor.isShutdown()).append("\n");
+            sb.append("IsTerminated=").append(executor.isTerminated()).append("\n");
+            sb.append("IsTerminating=").append(executor.isTerminating()).append("\n");
+            return sb.toString();
+        }
+    }
 
   /**
    * Sets the allowed number of threads. Same as set CorePoolSize.

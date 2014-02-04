@@ -26,6 +26,7 @@ import com.google.common.collect.Multimap;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
@@ -334,14 +335,43 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         try {
             field.setAccessible(true);
             Object value = field.get(instance);
-            Class<?> type = field.getType();
-            if (value != null && (!Boolean.class.equals(type) && !Boolean.TYPE.equals(type) || (Boolean) value)) {
-                return "Defaults to " + literal(value.toString()) + '.';
+            if (value != null && hasDefaultDescription(field.getType(), value)) {
+                return "Defaults to " + literal(value) + '.';
             }
         } catch (IllegalAccessException e) {
             throw Throwables.propagate(e);
         }
         return "";
+    }
+
+    private String literal(Object value)
+    {
+        if (value.getClass().isArray()) {
+            int length = Array.getLength(value);
+            StringBuilder s = new StringBuilder();
+            if (length > 0) {
+                s.append(literal(Array.get(value, 0).toString()));
+                for (int i = 1; i < length; i++) {
+                    s.append(' ').append(literal(Array.get(value, i).toString()));
+                }
+            }
+            return s.toString();
+        }
+        return literal(value.toString());
+    }
+
+    private boolean hasDefaultDescription(Class<?> type, Object value)
+    {
+        if (type.isArray()) {
+            if (Array.getLength(value) == 0) {
+                return false;
+            }
+        } else if (Boolean.class.equals(type) || Boolean.TYPE.equals(type)) {
+            if (!(Boolean) value) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected int plainLength(String s)

@@ -30,6 +30,10 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.Gate;
 import dmg.util.Pinboard;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.HelpFormat;
+import dmg.util.command.Option;
 import dmg.util.logback.FilterShell;
 
 import org.dcache.util.Args;
@@ -170,6 +174,7 @@ public class   CellAdapter
         }
 
         addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
+        addCommandListener(new HelpCommands());
 
         if (startNow) {
             start();
@@ -657,9 +662,9 @@ public class   CellAdapter
      *
      */
     public void messageArrived(CellMessage msg) {
-        _log.info(" CellMessage From   : "+msg.getSourcePath());
-        _log.info(" CellMessage To     : "+msg.getDestinationPath());
-        _log.info(" CellMessage Object : "+msg.getMessageObject());
+        _log.info(" CellMessage From   : " + msg.getSourcePath());
+        _log.info(" CellMessage To     : " + msg.getDestinationPath());
+        _log.info(" CellMessage Object : " + msg.getMessageObject());
 
     }
     /**
@@ -752,89 +757,110 @@ public class   CellAdapter
      */
     @Override
     public void routeDeleted(CellEvent ce) {}
-    //
-    // methods which are automatically scanned by
-    // the CommandInterpreterFacility
-    //
-    public Object ac_xgetcellinfo(Args args) {
-        return getCellInfo();
-    }
-    public static final String hh_info = "[-l|-a]";
-    public String ac_info(Args args)
+
+    @Command(name = "xgetcellinfo")
+    public class GetCellInfoCommand implements Callable<CellInfo>
     {
-        boolean full = args.hasOption("a");
-        boolean lng  = full || args.hasOption("l");
-        if (lng) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(getInfo()).append("\n");
-            Map<UOID,CellLock > map = _nucleus.getWaitQueue();
-            if (! map.isEmpty()) {
-                sb.append("\nWe are waiting for the following messages\n");
-            }
-            for (Map.Entry<UOID,CellLock > entry : map.entrySet()) {
-                Object    key   = entry.getKey();
-                CellLock  lock  = entry.getValue();
-                sb.append(key.toString()).append(" r=");
-                long res = lock.getTimeout() - System.currentTimeMillis();
-                sb.append(res/1000).append(" sec;");
-                CellMessage msg = lock.getMessage();
-                if (msg == null) {
-                    sb.append("msg=none");
-                } else {
-                    Object obj = msg.getMessageObject();
-                    if (obj != null) {
-                        sb.append("msg=").append(obj.getClass().getName());
-                        if (full) {
-                            sb.append("/").append(obj.toString());
+        @Override
+        public CellInfo call()
+        {
+            return getCellInfo();
+        }
+    }
+
+    @Command(name = "info")
+    public class InfoCommand implements Callable<String>
+    {
+        @Option(name = "a", usage = "Display content of unanswered message requests.")
+        boolean full;
+
+        @Option(name = "l", usage = "Display unanswered message requests.")
+        boolean lng;
+
+        @Override
+        public String call()
+        {
+            if (lng || full) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(getInfo()).append("\n");
+                Map<UOID,CellLock > map = _nucleus.getWaitQueue();
+                if (! map.isEmpty()) {
+                    sb.append("\nWe are waiting for the following messages\n");
+                }
+                for (Map.Entry<UOID,CellLock > entry : map.entrySet()) {
+                    Object    key   = entry.getKey();
+                    CellLock  lock  = entry.getValue();
+                    sb.append(key.toString()).append(" r=");
+                    long res = lock.getTimeout() - System.currentTimeMillis();
+                    sb.append(res/1000).append(" sec;");
+                    CellMessage msg = lock.getMessage();
+                    if (msg == null) {
+                        sb.append("msg=none");
+                    } else {
+                        Object obj = msg.getMessageObject();
+                        if (obj != null) {
+                            sb.append("msg=").append(obj.getClass().getName());
+                            if (full) {
+                                sb.append("/").append(obj.toString());
+                            }
                         }
                     }
+                    sb.append("\n");
                 }
-                sb.append("\n");
+                return sb.toString();
+            } else {
+                return getInfo();
             }
+        }
+    }
+
+    @Command(name = "show pinboard",
+             hint = "display the most recent pinboard messages",
+             description = "The pinboard always stores the most recent log messages.  It has " +
+                     "a fixed capacity: once full appending a new message will eject the oldest " +
+                     "stored message.  See also the 'log set' command.")
+    public class ShowPinboardCommand implements Callable<String>
+    {
+        @Argument(required = false, metaVar = "lines",
+                  usage = "How many pinboard entries to display.")
+        int lines = 20;
+
+        @Override
+        public String call()
+        {
+            Pinboard pinboard = _nucleus.getPinboard();
+            if (pinboard == null) {
+                return "No pinboard defined";
+            }
+            StringBuilder sb = new StringBuilder();
+            pinboard.dump(sb, lines);
             return sb.toString();
-        } else {
-            return getInfo();
         }
     }
-    public static final String hh_show_pinboard =
-        "[<lines>] # dumps the last <lines> to the terminal";
-    public String ac_show_pinboard_$_0_1(Args args)
+
+    @Command(name = "dump pinboard", hint = "write pinboard to file",
+             description = "Writes the pinboard log to FILE on the local file system of the service.")
+    public class DumpPinboardCommand implements Callable<String>
     {
-        Pinboard pinboard = _nucleus.getPinboard();
-        if (pinboard == null) {
-            return "No Pinboard defined";
-        }
-        StringBuffer sb = new StringBuffer();
-        if (args.argc() > 0) {
-            pinboard.dump(sb, Integer.parseInt(args.argv(0)));
-        } else {
-            pinboard.dump(sb, 20);
-        }
+        @Argument(metaVar = "file")
+        File file;
 
-        return sb.toString();
-    }
-
-    public static final String hh_dump_pinboard =
-        "<filename> # dumps the full pinboard to <filename>";
-    public String ac_dump_pinboard_$_1(Args args)
-    {
-        Pinboard pinboard = _nucleus.getPinboard();
-        if (pinboard == null) {
-            return "No Pinboard defined";
+        @Override
+        public String call() throws IOException
+        {
+            Pinboard pinboard = _nucleus.getPinboard();
+            if (pinboard == null) {
+                return "No pinboard defined.";
+            }
+            pinboard.dump(file);
+            return "Pinboard dumped to " + file;
         }
-
-        try {
-            pinboard.dump(new File(args.argv(0)));
-        } catch (IOException e) {
-            return "Dump Failed : "+e;
-        }
-        return "Pinboard dumped to "+args.argv(0);
     }
 
     /**
      *   belongs to the Cell Interface.
      *   If this method is overwritten, the 'cleanUp'
-     *   method won't becalled.
+     *   method won't be called.
      */
     @Override
     public void prepareRemoval(KillEvent ce)

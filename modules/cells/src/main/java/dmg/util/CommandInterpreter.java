@@ -7,12 +7,16 @@ import com.google.common.collect.ImmutableSortedMap;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import dmg.util.command.AcCommandScanner;
 import dmg.util.command.AnnotatedCommandScanner;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import dmg.util.command.CommandExecutor;
 import dmg.util.command.CommandScanner;
 import dmg.util.command.HelpFormat;
+import dmg.util.command.Option;
 
 import org.dcache.util.Args;
 
@@ -104,34 +108,6 @@ public class CommandInterpreter implements Interpretable
                 currentEntry.setCommand(entry.getValue());
             }
         }
-    }
-
-    private Serializable runHelp(Args args) {
-        CommandEntry entry = _rootEntry;
-        StringBuilder path = new StringBuilder();
-        while (args.argc() > 0) {
-            CommandEntry ce = entry.get(args.argv(0));
-            if (ce == null) {
-                break;
-            }
-            path.append(ce.getName()).append(" ");
-            args.shift();
-            entry = ce;
-        }
-
-        HelpFormat format = getHelpFormat(args.getOption("format"));
-        Serializable help = entry.getFullHelp(format);
-        if (help == null) {
-            StringBuilder sb = new StringBuilder();
-            entry.dumpHelpHint(path.toString(), sb, format);
-            help = sb.toString();
-        }
-        return help;
-    }
-
-    private HelpFormat getHelpFormat(String format)
-    {
-        return Strings.isNullOrEmpty(format) ? HelpFormat.PLAIN : HelpFormat.valueOf(format.toUpperCase());
     }
 
     /**
@@ -230,13 +206,6 @@ public class CommandInterpreter implements Interpretable
             return "";
         }
 
-        //
-        // check for the help command.
-        //
-        if (args.argc() > 0 && args.argv(0).equals("help")) {
-            args.shift();
-            return runHelp(args);
-        }
         //
         // check for the NOOP command.
         //
@@ -381,7 +350,7 @@ public class CommandInterpreter implements Interpretable
             return _commandExecutor.execute(arguments, methodType);
         }
 
-        public Serializable getFullHelp(HelpFormat format)
+        public String getFullHelp(HelpFormat format)
         {
             return (_commandExecutor == null) ? null : _commandExecutor.getFullHelp(format);
         }
@@ -399,6 +368,50 @@ public class CommandInterpreter implements Interpretable
                 sb.append(" -> ").append(key).append("\n");
             }
             return sb.toString();
+        }
+    }
+
+    public String getHelp(HelpFormat format, String... command)
+    {
+        CommandEntry entry = _rootEntry;
+        StringBuilder path = new StringBuilder();
+        for (String word : command) {
+            CommandEntry ce = entry.get(word);
+            if (ce == null) {
+                break;
+            }
+            path.append(ce.getName()).append(' ');
+            entry = ce;
+        }
+
+        String help = entry.getFullHelp(format);
+        if (help == null) {
+            StringBuilder sb = new StringBuilder();
+            entry.dumpHelpHint(path.toString(), sb, format);
+            help = sb.toString();
+        }
+        return help;
+    }
+
+    public class HelpCommands
+    {
+        @Command(name = "help", hint = "display help pages")
+        public class HelpCommand implements Callable<String>
+        {
+            @Option(name = "format", usage = "Output format.")
+            HelpFormat format;
+
+            @Argument(valueSpec = "COMMAND", required = false,
+                      usage = "When invoked with a specific command, detailed help for that " +
+                              "command is displayed. When invoked with a partial command or without " +
+                              "an argument, a summary of all matching commands is shown.")
+            String[] command = {};
+
+            @Override
+            public String call()
+            {
+                return getHelp((format == null) ? HelpFormat.PLAIN : format, command);
+            }
         }
     }
 }

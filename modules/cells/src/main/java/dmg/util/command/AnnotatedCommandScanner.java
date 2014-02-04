@@ -42,21 +42,25 @@ public class AnnotatedCommandScanner implements CommandScanner
     {
         Map<List<String>, AnnotatedCommandExecutor> commands = Maps.newHashMap();
 
-        Class<?>[] classes = obj.getClass().getDeclaredClasses();
-        for (Class<?> clazz: classes) {
-            Command command = clazz.getAnnotation(Command.class);
-            if (command != null && !clazz.isInterface() &&
-                Callable.class.isAssignableFrom(clazz)) {
-                try {
-                    Constructor<? extends Callable<? extends Serializable>> constructor =
-                        cast(clazz).getDeclaredConstructor(obj.getClass());
-                    constructor.setAccessible(true);
-                    commands.put(asList(command.name().split(" ")),
-                            new AnnotatedCommandExecutor(obj, command, constructor));
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException("This is a bug. Please notify support@dcache.org.", e);
+        Class<?> containerClass = obj.getClass();
+        while (containerClass != null) {
+            Class<?>[] classes = containerClass.getDeclaredClasses();
+            for (Class<?> commandClass : classes) {
+                Command command = commandClass.getAnnotation(Command.class);
+                if (command != null && !commandClass.isInterface() &&
+                    Callable.class.isAssignableFrom(commandClass)) {
+                    try {
+                        Constructor<? extends Callable<? extends Serializable>> constructor =
+                            cast(commandClass).getDeclaredConstructor(commandClass.getDeclaringClass());
+                        constructor.setAccessible(true);
+                        commands.put(asList(command.name().split(" ")),
+                                new AnnotatedCommandExecutor(obj, command, constructor));
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException("This is a bug. Please notify support@dcache.org.", e);
+                    }
                 }
             }
+            containerClass = containerClass.getSuperclass();
         }
 
         return commands;

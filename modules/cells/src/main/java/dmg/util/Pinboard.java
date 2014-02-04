@@ -39,10 +39,10 @@ public class Pinboard {
           _pin.remove(0);
       }
    }
-   public synchronized void dump( StringBuffer sb ){
+   public synchronized void dump( StringBuilder sb ){
        dump( sb , _size ) ;
    }
-   public synchronized void dump( StringBuffer sb , int last ){
+   public synchronized void dump( StringBuilder sb , int last ){
        int i = _pin.size() - last + 1 ;
        for( i =i<0?0:i ; i < _pin.size() ; i++) {
            sb.append(_pin.get(i).toString()).append("\n");

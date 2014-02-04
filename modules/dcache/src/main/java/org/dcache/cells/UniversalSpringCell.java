@@ -53,6 +53,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -73,6 +74,9 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.SetupInfoMessage;
 import dmg.util.CommandException;
 import dmg.util.CommandThrowableException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.util.Args;
 import org.dcache.util.ClassNameComparator;
@@ -200,6 +204,10 @@ public class UniversalSpringCell
 
         checkArgument(_setupController == null || _setupClass != null,
                 "Setup class must be specified when a setup controller is used");
+
+        if (_setupFile != null || _setupClass != null) {
+            addCommandListener(new SetupCommandListener());
+        }
 
         /* To ensure that all required file systems are mounted, the
          * admin may specify some required files. We will block until
@@ -440,59 +448,6 @@ public class UniversalSpringCell
         }
     }
 
-    public static final String hh_save = "[-sc=<setupController>|none] [-file=<filename>] # saves setup to disk or setup controller";
-    public String ac_save(Args args)
-        throws IOException, IllegalArgumentException, NoRouteToCellException
-    {
-        String controller = args.getOpt("sc");
-        String file = args.getOpt("file");
-
-        if ("none".equals(controller)) {
-            controller = null;
-            file = _setupFile.getPath();
-        } else if (file == null && controller == null) {
-            controller = _setupController;
-            file = _setupFile.getPath();
-        }
-
-        checkArgument(file != null || controller != null,
-                "Either a setup controller or setup file must be specified");
-
-        if (controller != null) {
-            checkState(!Strings.isNullOrEmpty(_setupClass),
-                    "Cannot save to a setup controller since the cell has no setup class");
-
-            try {
-                StringWriter sw = new StringWriter();
-                printSetup(new PrintWriter(sw));
-
-                SetupInfoMessage info =
-                    new SetupInfoMessage("put", getCellName(),
-                                         _setupClass, sw.toString());
-
-                sendMessage(new CellMessage(new CellPath(controller), info));
-            } catch (NoRouteToCellException e) {
-                throw new NoRouteToCellException("Failed to send setup to " + controller + ": " + e.getMessage());
-            }
-        }
-
-        if (file != null) {
-            File path = new File(file).getAbsoluteFile();
-            File directory = path.getParentFile();
-            File temp = File.createTempFile(path.getName(), null, directory);
-            temp.deleteOnExit();
-
-            try (PrintWriter pw = new PrintWriter(new FileWriter(temp))) {
-                printSetup(pw);
-            }
-
-
-            renameWithBackup(temp, path);
-        }
-
-        return "";
-    }
-
     private static void renameWithBackup(File source, File dest)
         throws IOException
     {
@@ -552,85 +507,161 @@ public class UniversalSpringCell
         }
     }
 
-    public static final String hh_reload = "-yes";
-    public static final String fh_reload =
-        "This command destroys the current setup and replaces it" +
-        "by the setup on disk.";
-    public String ac_reload(Args args)
-        throws IOException, CommandException
+    public class SetupCommandListener implements CellCommandListener
     {
-        if (!args.hasOption("yes")) {
-            return
-                " This command destroys the current setup\n" +
-                " and replaces it by the setup on disk\n" +
-                " Please use 'reload -yes' if you really want\n" +
-                " to do that.";
-        }
+        @Command(name = "save", hint = "save service configuration")
+        public class SaveCommand implements Callable<String>
+        {
+            @Option(name = "sc", usage = "Cell address of setup controller.")
+            String controller;
 
-        if (_setupFile != null && !_setupFile.exists()) {
-            return String.format("Setup file [%s] does not exist", _setupFile);
-        }
+            @Option(name = "file", usage = "Path of setup file.")
+            File file;
 
-        executeSetup();
+            @Override
+            public String call()
+                    throws IOException, IllegalArgumentException, NoRouteToCellException
+            {
+                if ("none".equals(controller)) {
+                    controller = null;
+                    file = _setupFile;
+                } else if (file == null && controller == null) {
+                    controller = _setupController;
+                    file = _setupFile;
+                }
 
-        return "";
-    }
+                checkArgument(file != null || controller != null,
+                              "Either a setup controller or setup file must be specified.");
 
-    /**
-     * Should be renamed to 'info' when command interpreter learns
-     * to handle overloaded commands.
-     */
-    public static final String hh_infox = "<bean>";
-    public String ac_infox_$_1(Args args)
-    {
-        String name = args.argv(0);
-        Object bean = getBean(name);
-        if (CellInfoProvider.class.isInstance(bean)) {
-            StringWriter s = new StringWriter();
-            PrintWriter pw = new PrintWriter(s);
-            ((CellInfoProvider)bean).getInfo(pw);
-            return s.toString();
-        }
-        return "No such bean: " + name;
-    }
+                if (controller != null) {
+                    checkState(!Strings.isNullOrEmpty(_setupClass),
+                               "Cannot save to a setup controller since the cell has no setup class.");
 
-    public static final String hh_bean_ls = "# lists running beans";
-    public String ac_bean_ls(Args args)
-    {
-        String format = "%-30s %s\n";
-        try (Formatter s = new Formatter(new StringBuilder())) {
-            ConfigurableListableBeanFactory factory = _context.getBeanFactory();
-            s.format(format, "Bean", "Description");
-            s.format(format, "----", "-----------");
-            for (String name : getBeanNames()) {
-                if (!name.startsWith("org.springframework.")) {
                     try {
-                        BeanDefinition definition = factory.getBeanDefinition(name);
-                        String description = definition.getDescription();
-                        s.format(format, name,
-                                        (description != null ? description : "-"));
-                    } catch (NoSuchBeanDefinitionException e) {
-                        debug("Failed to query bean definition for " + name);
+                        StringWriter sw = new StringWriter();
+                        printSetup(new PrintWriter(sw));
+
+                        SetupInfoMessage info =
+                                new SetupInfoMessage("put", getCellName(),
+                                                     _setupClass, sw.toString());
+
+                        sendMessage(new CellMessage(new CellPath(controller), info));
+                    } catch (NoRouteToCellException e) {
+                        throw new NoRouteToCellException("Failed to send setup to " + controller + ": " + e.getMessage());
                     }
                 }
-            }
 
-            return s.toString();
+                if (file != null) {
+                    File path = file.getAbsoluteFile();
+                    File directory = path.getParentFile();
+                    File temp = File.createTempFile(path.getName(), null, directory);
+                    temp.deleteOnExit();
+
+                    try (PrintWriter pw = new PrintWriter(new FileWriter(temp))) {
+                        printSetup(pw);
+                    }
+
+
+                    renameWithBackup(temp, path);
+                }
+
+                return "";
+            }
+        }
+
+        @Command(name = "reload",
+                 hint = "reload service configuration",
+                 description = "This command destroys the current setup and replaces it " +
+                         "by the setup on disk.")
+        public class ReloadCommand implements Callable<String>
+        {
+            @Option(name = "yes", required = true,
+                    usage = "Confirms that the current setup should be destroyed and replaced " +
+                            "with the one on disk.")
+            boolean confirmed;
+
+            @Override
+            public String call() throws IOException, CommandException, IllegalArgumentException
+            {
+                checkArgument(confirmed, "Required option is missing.");
+                if (_setupFile != null && !_setupFile.exists()) {
+                    return String.format("Setup file [%s] does not exist", _setupFile);
+                }
+                executeSetup();
+                return "";
+            }
         }
     }
 
-    public static final String hh_bean_dep = "# shows bean dependencies";
-    public String ac_bean_dep(Args args)
+    @Command(name = "infox", hint = "show status information about bean")
+    public class InfoxCommand implements Callable<String>
     {
-        String format = "%-30s %s\n";
-        try (Formatter s = new Formatter(new StringBuilder())) {
-            s.format(format, "Bean", "Used by");
-            s.format(format, "----", "-------");
-            for (String name : getBeanNames()) {
-                s.format(format, name, Joiner.on(",").join(getDependentBeans(name)));
-            }
+        @Argument(metaVar = "bean")
+        String name;
 
-            return s.toString();
+        @Override
+        public String call()
+        {
+            Object bean = getBean(name);
+            if (CellInfoProvider.class.isInstance(bean)) {
+                StringWriter s = new StringWriter();
+                PrintWriter pw = new PrintWriter(s);
+                ((CellInfoProvider)bean).getInfo(pw);
+                return s.toString();
+            }
+            return "No such bean: " + name;
+        }
+    }
+
+    @Command(name = "bean ls", hint = "list running beans",
+             description = "Lists the bean in this service. Services are composed of components " +
+                     "called beans. Each bean implements a part of a service.")
+    public class BeanLsCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            String format = "%-30s %s\n";
+            try (Formatter s = new Formatter(new StringBuilder())) {
+                ConfigurableListableBeanFactory factory = _context.getBeanFactory();
+                s.format(format, "Bean", "Description");
+                s.format(format, "----", "-----------");
+                for (String name : getBeanNames()) {
+                    if (!name.startsWith("org.springframework.")) {
+                        try {
+                            BeanDefinition definition = factory.getBeanDefinition(name);
+                            String description = definition.getDescription();
+                            s.format(format, name,
+                                     (description != null ? description : "-"));
+                        } catch (NoSuchBeanDefinitionException e) {
+                            debug("Failed to query bean definition for " + name);
+                        }
+                    }
+                }
+
+                return s.toString();
+            }
+        }
+    }
+
+    @Command(name = "bean dep", hint = "show bean dependencies",
+             description = "Shows dependencies between beans. This information is mostly useful " +
+                     "as a debugging aid.")
+    public class BeanDepCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            String format = "%-30s %s\n";
+            try (Formatter s = new Formatter(new StringBuilder())) {
+                s.format(format, "Bean", "Used by");
+                s.format(format, "----", "-------");
+                for (String name : getBeanNames()) {
+                    s.format(format, name, Joiner.on(",").join(getDependentBeans(name)));
+                }
+
+                return s.toString();
+            }
         }
     }
 
@@ -685,43 +716,56 @@ public class UniversalSpringCell
         }
     }
 
-    public static final String hh_bean_properties =
-        "<bean> # shows properties of a bean";
-    public String ac_bean_properties_$_1(Args args)
+    @Command(name = "bean properties", hint = "show properties of a bean",
+             description = "Shows the properties of a bean and their values. Each bean exposes " +
+                     "some properties that can be read with this command.")
+    public class BeanPropertiesCommand implements Callable<String>
     {
-        String name = args.argv(0);
-        Object o = getBeanProperty(name);
-        if (o != null) {
-            StringBuilder s = new StringBuilder();
-            BeanWrapper bean = new BeanWrapperImpl(o);
-            for (PropertyDescriptor p : bean.getPropertyDescriptors()) {
-                if (!p.isHidden()) {
-                    String property = p.getName();
-                    if (bean.isReadableProperty(property)) {
-                        Object value = bean.getPropertyValue(property);
-                        s.append(property).append('=').append(valueToString(value));
-                        if (!bean.isWritableProperty(property)) {
-                            s.append(" [read-only]");
+        @Argument(metaVar = "bean", usage = "Name of bean or property reference.")
+        String name;
+
+        @Override
+        public String call()
+        {
+            Object o = getBeanProperty(name);
+            if (o != null) {
+                StringBuilder s = new StringBuilder();
+                BeanWrapper bean = new BeanWrapperImpl(o);
+                for (PropertyDescriptor p : bean.getPropertyDescriptors()) {
+                    if (!p.isHidden()) {
+                        String property = p.getName();
+                        if (bean.isReadableProperty(property)) {
+                            Object value = bean.getPropertyValue(property);
+                            s.append(property).append('=').append(valueToString(value));
+                            if (!bean.isWritableProperty(property)) {
+                                s.append(" [read-only]");
+                            }
+                            s.append('\n');
                         }
-                        s.append('\n');
                     }
                 }
+                return s.toString();
             }
-            return s.toString();
+            return "No such bean: " + name;
         }
-        return "No such bean: " + name;
     }
 
-    public static final String hh_bean_property =
-        "<property-name> # shows property of a bean";
-    public String ac_bean_property_$_1(Args args)
+    @Command(name = "bean property", hint = "show property of a bean")
+    public class BeanPropertyCommand implements Callable<String>
     {
-        String name = args.argv(0);
-        Object o = getBeanProperty(name);
-        return (o != null) ? String.valueOf(valueToString(o)) : ("No such bean: " + name);
+        @Argument(metaVar = "property")
+        String name;
+
+        @Override
+        public String call()
+        {
+            Object o = getBeanProperty(name);
+            return (o != null) ? String.valueOf(valueToString(o)) : ("No such property: " + name);
+        }
     }
 
-    /** Returns a formated name of a message class. */
+
+    /** Returns a formatted name of a message class. */
     protected String getMessageName(Class<?> c)
     {
         String name = c.getSimpleName();
@@ -735,53 +779,57 @@ public class UniversalSpringCell
         return name;
     }
 
-    public static final String hh_bean_messages =
-        "[<bean>] # shows message types handled by beans";
-    public String ac_bean_messages_$_0_1(Args args)
+    @Command(name = "bean messages", hint = "show message types handled by beans",
+             description = "Shows messages processed by each bean. dCache services communicate " +
+                     "by message passing. Each bean may be able to handle zero or more messages and " +
+                     "this command shows which messages.")
+    public class BeanMessagesCommand implements Callable<String>
     {
-        switch (args.argc()) {
-        case 0:
-            Multimap<String,Class<? extends Serializable>> nameToClassMap = ArrayListMultimap.create();
-            for (String name: getBeanNames()) {
+        @Argument(required = false, metaVar = "bean",
+                  usage = "Bean name. If omitted, the information is displayed for all beans.")
+        String name;
+
+        @Override
+        public String call()
+        {
+            if (name == null) {
+                Multimap<String,Class<? extends Serializable>> nameToClassMap = ArrayListMultimap.create();
+                for (String name: getBeanNames()) {
+                    Object bean = getBean(name);
+                    if (CellMessageReceiver.class.isInstance(bean)) {
+                        Collection<Class<? extends Serializable>> types =
+                                _messageDispatcher.getMessageTypes(bean);
+                        nameToClassMap.putAll(name, types);
+                    }
+                }
+
+                Multimap<Class<? extends Serializable>,String> classToNameMap = Multimaps.invertFrom(
+                        nameToClassMap, ArrayListMultimap.<Class<? extends Serializable>,String>create());
+
+                final String format = "%-40s %s\n";
+                Formatter f = new Formatter(new StringBuilder());
+                f.format(format, "Message", "Receivers");
+                f.format(format, "-------", "---------");
+                for (Map.Entry<Class<? extends Serializable>,Collection<String>> e: classToNameMap.asMap().entrySet()) {
+                    f.format(format,
+                             getMessageName(e.getKey()),
+                             Joiner.on(",").join(e.getValue()));
+                }
+
+                return f.toString();
+            } else {
                 Object bean = getBean(name);
                 if (CellMessageReceiver.class.isInstance(bean)) {
+                    StringBuilder s = new StringBuilder();
                     Collection<Class<? extends Serializable>> types =
-                        _messageDispatcher.getMessageTypes(bean);
-                    nameToClassMap.putAll(name, types);
+                            _messageDispatcher.getMessageTypes(bean);
+                    for (Class<? extends Serializable> t : types) {
+                        s.append(getMessageName(t)).append('\n');
+                    }
+                    return s.toString();
                 }
+                return "No such bean: " + name;
             }
-
-            Multimap<Class<? extends Serializable>,String> classToNameMap = Multimaps.invertFrom(
-                    nameToClassMap, ArrayListMultimap.<Class<? extends Serializable>,String>create());
-
-            final String format = "%-40s %s\n";
-            Formatter f = new Formatter(new StringBuilder());
-            f.format(format, "Message", "Receivers");
-            f.format(format, "-------", "---------");
-            for (Map.Entry<Class<? extends Serializable>,Collection<String>> e: classToNameMap.asMap().entrySet()) {
-                f.format(format,
-                         getMessageName(e.getKey()),
-                         Joiner.on(",").join(e.getValue()));
-            }
-
-            return f.toString();
-
-        case 1:
-            String name = args.argv(0);
-            Object bean = getBean(name);
-            if (CellMessageReceiver.class.isInstance(bean)) {
-                StringBuilder s = new StringBuilder();
-                Collection<Class<? extends Serializable>> types =
-                    _messageDispatcher.getMessageTypes(bean);
-                for (Class<? extends Serializable> t : types) {
-                    s.append(getMessageName(t)).append('\n');
-                }
-                return s.toString();
-            }
-            return "No such bean: " + name;
-
-        default:
-            return "";
         }
     }
 

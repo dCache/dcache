@@ -17,8 +17,6 @@
  */
 package dmg.util.command;
 
-import java.io.Serializable;
-
 /**
  * Interface of classes that can generate help output for annotated commands.
  */
@@ -26,5 +24,5 @@ public interface AnnotatedCommandHelpPrinter
 {
     String getHelpHint(Command command, Class<?> clazz);
 
-    Serializable getHelp(Object command);
+    String getHelp(Object command);
 }

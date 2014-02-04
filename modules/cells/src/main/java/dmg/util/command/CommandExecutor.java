@@ -28,7 +28,7 @@ public interface CommandExecutor
      *
      * @param format The format to return the help in.
      */
-    Serializable getFullHelp(HelpFormat format);
+    String getFullHelp(HelpFormat format);
 
     /**
      * Returns a one-line signature and an optional description of the command.

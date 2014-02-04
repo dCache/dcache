@@ -2,6 +2,7 @@ package org.dcache.cells;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import diskCacheV111.vehicles.Message;
 
@@ -13,6 +14,7 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
+import dmg.util.command.Command;
 
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -73,27 +75,40 @@ public class MessageProcessingMonitor
         }
     }
 
-    public final static String hh_monitoring_enable =
-        "# Enables monitoring of message processing";
-    public String ac_monitoring_enable(Args args)
+    @Command(name = "monitoring enable", hint = "gather message handling statistics",
+             description="Gather some basic statistics on whether sent messages " +
+                     "were successful and how long they took to process.")
+    public class MonitoringEnableCommand implements Callable<String>
     {
-        _enabled = true;
-        return "";
+        @Override
+        public String call()
+        {
+            _enabled = true;
+            return "";
+        }
     }
 
-    public final static String hh_monitoring_disable =
-        "# Disables monitoring of message processing";
-    public String ac_monitoring_disable(Args args)
+    @Command(name = "monitoring disable", hint = "disable message monitoring",
+             description = "Stops gathering of message handling statistics.")
+    public class MonitoringDisableCommand implements Callable<String>
     {
-        _enabled = false;
-        return "";
+        @Override
+        public String call()
+        {
+            _enabled = false;
+            return "";
+        }
     }
 
-    public final static String hh_monitoring_info =
-        "# Provides information about message processing";
-    public String ac_monitoring_info(Args args)
+    @Command(name = "monitoring info", hint = "display message monitoring information",
+             description = "Provides information about message processing.")
+    public class MonitoringInfoCommand implements Callable<String>
     {
-        return _counters.toString() + "\n\n" + _gauges.toString();
+        @Override
+        public String call()
+        {
+            return _counters.toString() + "\n\n" + _gauges.toString();
+        }
     }
 
     public class MonitoringReplyCellEndpoint implements CellEndpoint

@@ -97,7 +97,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public Serializable getFullHelp(HelpFormat format)
+    public String getFullHelp(HelpFormat format)
     {
         return getHelpPrinter(format).getHelp(createInstance());
     }

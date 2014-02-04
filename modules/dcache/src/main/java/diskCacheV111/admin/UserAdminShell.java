@@ -275,58 +275,9 @@ public class UserAdminShell
        }else{
            _instance = null;
        }
+       addCommandListener(new HelpCommands());
     }
-    public UserAdminShell(String user, final CellNucleus nucleus, final Args args) {
-        this(user, new CellEndpoint()   {
 
-            @Override
-            public void sendMessage(CellMessage envelope) throws SerializationException, NoRouteToCellException {
-                nucleus.sendMessage(envelope);
-            }
-
-            @Override
-            public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, long timeout) throws SerializationException {
-                nucleus.sendMessage(envelope, true, true, callback, timeout);
-            }
-
-            @Override
-            public CellMessage sendAndWait(CellMessage envelope, long timeout) throws SerializationException, NoRouteToCellException, InterruptedException {
-                return nucleus.sendAndWait(envelope, true, true, timeout);
-            }
-            private long timeUntil(long time) {
-                return time - System.currentTimeMillis();
-            }
-            private final static long RETRY_PERIOD = 30000; // 30 seconds
-            @Override
-            public CellMessage sendAndWaitToPermanent(CellMessage envelope, long timeout) throws SerializationException, InterruptedException {
-
-                long deadline = System.currentTimeMillis() + timeout;
-                while (true) {
-                    try {
-                        return sendAndWait(envelope, timeUntil(deadline));
-                    } catch (NoRouteToCellException e) {
-                        Thread.sleep(Math.min(timeUntil(deadline), RETRY_PERIOD));
-                    }
-                }
-            }
-
-            @Override
-            public CellInfo getCellInfo() {
-                return nucleus.getCellInfo();
-            }
-
-            @Override
-            public Map<String, Object> getDomainContext() {
-                return nucleus.getDomainContext();
-            }
-
-            @Override
-            public Args getArgs() {
-                return args;
-            }
-        },
-        args);
-    }
     protected String getUser(){ return _user ; }
     public void checkPermission( String aclName )
            throws AclException {
