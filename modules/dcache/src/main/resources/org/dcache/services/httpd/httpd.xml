@@ -8,12 +8,8 @@
                            http://www.springframework.org/schema/context
                            http://www.springframework.org/schema/context/spring-context.xsd">
 
+    <context:property-placeholder/>
     <context:annotation-config/>
-
-    <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-        <description>Imported configuration data</description>
-        <property name="location" value="arguments:"/>
-    </bean>
 
     <bean id="serviceCell" class="org.dcache.services.httpd.HttpServiceCell"
         init-method="initialize" destroy-method="cleanUp">

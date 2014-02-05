@@ -20,18 +20,17 @@ import org.springframework.beans.PropertyAccessException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.PropertySource;
 
 import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -48,7 +47,6 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
@@ -218,22 +216,7 @@ public class UniversalSpringCell
         /* Instantiate Spring application context. This will
          * eagerly instantiate all beans.
          */
-        try {
-            _context =
-                new UniversalSpringCellApplicationContext(getArgs());
-        } catch (BeanInstantiationException e) {
-            Throwable t = e.getMostSpecificCause();
-            Throwables.propagateIfPossible(t);
-            String msg = "Failed to instantiate class " + e.getBeanClass().getName() +
-                    ": " + t.getMessage();
-            throw new CommandThrowableException(msg, t);
-        } catch (BeanCreationException e) {
-            Throwable t = e.getMostSpecificCause();
-            Throwables.propagateIfPossible(t);
-            String msg = "Failed to create bean '" + e.getBeanName() +
-                    "' : " + t.getMessage();
-            throw new CommandThrowableException(msg, t);
-        }
+        createContext();
 
         /* Cell threading is configurable through arguments to
          * UniversalSpringCell. The executors have to be created as
@@ -1057,89 +1040,62 @@ public class UniversalSpringCell
         return bean;
     }
 
-    class UniversalSpringCellApplicationContext
-        extends ClassPathXmlApplicationContext
+    private void createContext() throws CommandThrowableException
     {
-        UniversalSpringCellApplicationContext(Args args)
-        {
-            super(args.argv(0));
-        }
-
-        private ByteArrayResource getArgumentsResource()
-        {
-            Args args = new Args(getArgs());
-            args.shift();
-
-            Properties properties = new Properties();
-            for (Map.Entry<String, Object> entry : _environment.entrySet()) {
-                properties.setProperty(entry.getKey(), entry.getValue().toString());
-            }
-            for (Map.Entry<String, String> option : args.optionsAsMap().entrySet()) {
-                properties.setProperty(option.getKey(), option.getValue());
-            }
-            String arguments =
-                    args.toString().replaceAll("-\\$\\{[0-9]+\\}", "");
-            properties.setProperty("arguments", arguments);
-
-
-            /* Convert to byte array form such that we can make it
-             * available as a Spring resource.
-             */
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try {
-                properties.store(out, "");
-            } catch (IOException e) {
-                /* This should never happen with a ByteArrayOutputStream.
-                 */
-                throw Throwables.propagate(e);
-            }
-            final byte[] _domainContext = out.toByteArray();
-
-            return new ByteArrayResource(_domainContext) {
-                /**
-                 * Fake file name to make
-                 * PropertyPlaceholderConfigurer happy.
-                 */
+        ClassPathXmlApplicationContext context;
+        Args args = getArgs();
+        try {
+            context = new ClassPathXmlApplicationContext();
+            context.setConfigLocations(new String[]{args.argv(0)});
+            context.addBeanFactoryPostProcessor(new BeanFactoryPostProcessor()
+            {
                 @Override
-                public String getFilename()
+                public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException
                 {
-                    return "arguments.properties";
-                }
-            };
-        }
+                    beanFactory.addBeanPostProcessor(UniversalSpringCell.this);            }
+            });
 
-        @Override
-        public Resource getResource(String location)
-        {
-            if (location.startsWith("arguments:")) {
-                return getArgumentsResource();
-            } else {
-                return super.getResource(location);
+            ConfigurableEnvironment environment = context.getEnvironment();
+            environment.getPropertySources().addFirst(
+                    new MapPropertySource("environment", _environment));
+            environment.getPropertySources().addFirst(
+                    new MapPropertySource("options", Maps.<String,Object>newHashMap(args.optionsAsMap())));
+            environment.getPropertySources().addFirst(
+                    new PropertySource<Object>("arguments")
+                    {
+                        private final String arguments;
+
+                        {
+                            Args args = new Args(getArgs());
+                            args.shift();
+                            arguments = args.toString().replaceAll("-\\$\\{[0-9]+\\}", "");
+                        }
+
+                        @Override
+                        public Object getProperty(String name)
+                        {
+                            return name.equals("arguments") ? arguments : null;
+                        }
+                    }
+            );
+            if (args.hasOption("profiles")) {
+                environment.setActiveProfiles(args.getOption("profiles").split(","));
             }
+            context.refresh();
+        } catch (BeanInstantiationException e) {
+            Throwable t = e.getMostSpecificCause();
+            Throwables.propagateIfPossible(t);
+            String msg = "Failed to instantiate class " + e.getBeanClass().getName() +
+                    ": " + t.getMessage();
+            throw new CommandThrowableException(msg, t);
+        } catch (BeanCreationException e) {
+            Throwable t = e.getMostSpecificCause();
+            Throwables.propagateIfPossible(t);
+            String msg = "Failed to create bean '" + e.getBeanName() +
+                    "' : " + t.getMessage();
+            throw new CommandThrowableException(msg, t);
         }
 
-        @Override
-        protected void customizeBeanFactory(DefaultListableBeanFactory beanFactory)
-        {
-            super.customizeBeanFactory(beanFactory);
-            beanFactory.addBeanPostProcessor(UniversalSpringCell.this);
-        }
-
-        @Override
-        public synchronized ConfigurableEnvironment getEnvironment() {
-            ConfigurableEnvironment environment = super.getEnvironment();
-
-            Args args = getArgs();
-
-            if(args.hasOption("profiles")) {
-                String[] profiles = args.getOption("profiles").split(",");
-
-                if(!Arrays.equals(profiles, environment.getActiveProfiles())) {
-                    environment.setActiveProfiles(profiles);
-                }
-            }
-
-            return environment;
-        }
+        _context = context;
     }
 }

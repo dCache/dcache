@@ -10,12 +10,8 @@
            http://www.springframework.org/schema/task
            http://www.springframework.org/schema/task/spring-task.xsd">
 
+  <context:property-placeholder/>
   <context:annotation-config/>
-
-  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-    <description>Imported configuration data</description>
-    <property name="location" value="arguments:"/>
-  </bean>
 
     <!--
         Convert protperies with multiple values separated by comma into an array of strings:

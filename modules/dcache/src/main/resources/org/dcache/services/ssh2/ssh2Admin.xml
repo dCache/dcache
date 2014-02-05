@@ -8,11 +8,7 @@
            http://www.springframework.org/schema/context/spring-context.xsd ">
 
   <context:annotation-config/>
-
-  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-    <description>Imported configuration data</description>
-    <property name="location" value="arguments:"/>
-  </bean>
+  <context:property-placeholder/>
 
   <bean id="login-stub" class="org.dcache.cells.CellStub">
     <description>Login serviceunication stub</description>
