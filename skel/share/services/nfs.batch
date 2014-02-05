@@ -15,6 +15,9 @@ check -strong nfs.service.loginbroker.version
 check -strong nfs.service.poolmanager
 check -strong nfs.service.poolmanager.timeout
 check -strong nfs.service.poolmanager.timeout.unit
+check -strong nfs.service.pinmanager
+check -strong nfs.service.pinmanager.timeout
+check -strong nfs.service.pinmanager.timeout.unit
 check -strong nfs.service.pool.timeout
 check -strong nfs.service.pool.timeout.unit
 check -strong nfs.service.pnfsmanager
