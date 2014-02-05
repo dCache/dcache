@@ -21,12 +21,18 @@
         </property>
     </bean>
 
-
     <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
         <description>Pool manager cell stub</description>
         <property name="timeout" value="${nfs.service.poolmanager.timeout}"/>
         <property name="timeoutUnit" value="${nfs.service.poolmanager.timeout.unit}"/>
         <property name="destination" value="${nfs.service.poolmanager}"/>
+    </bean>
+
+    <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
+        <description>Pin manager cell stub</description>
+        <property name="timeout" value="${nfs.service.pinmanager.timeout}"/>
+        <property name="timeoutUnit" value="${nfs.service.pinmanager.timeout.unit}"/>
+        <property name="destination" value="${nfs.service.pinmanager}"/>
     </bean>
 
     <bean id="pool-stub" class="org.dcache.cells.CellStub">
@@ -77,6 +83,7 @@
         <constructor-arg value="${nfs.db.dialect}" />
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="pinManagerStub" ref="pinManagerStub"/>
     </bean>
 
     <bean id="export" class="org.dcache.nfs.ExportFile">

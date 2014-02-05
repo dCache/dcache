@@ -280,6 +280,11 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     }
 
     @Override
+    public void pin(String pnfsid, long lifetime) throws ChimeraFsException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public int read(FsInode arg0, int arg1, long arg2, byte[] arg3, int arg4,
             int arg5) throws ChimeraFsException {
         // TODO Auto-generated method stub
@@ -507,6 +512,11 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     public String[] tags(FsInode arg0) throws ChimeraFsException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void unpin(String pnfsid) throws ChimeraFsException{
+        // TODO Auto-generated method stub
     }
 
     @Override
