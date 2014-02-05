@@ -330,4 +330,20 @@ public interface FileSystemProvider extends Closeable {
      */
     public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException;
 
+    /**
+     * Implementation-specific.  Can be NOP.
+     *
+     * @param pnfsid
+     * @param lifetime
+     * @throws ChimeraFsException
+     */
+    public void pin(String pnfsid, long lifetime) throws ChimeraFsException;
+
+    /**
+     * Implementation-specific.  Can be NOP.
+     *
+     * @param pnfsid
+     * @throws ChimeraFsException
+     */
+    public void unpin(String pnfsid) throws ChimeraFsException;
 }

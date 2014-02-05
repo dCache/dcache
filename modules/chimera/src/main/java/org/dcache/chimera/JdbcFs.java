@@ -53,6 +53,13 @@ import static org.dcache.commons.util.SqlHelper.tryToClose;
  * @Threadsafe
  */
 public class JdbcFs implements FileSystemProvider {
+    /**
+     * common error message for unimplemented
+     */
+    private static final String NOT_IMPL =
+                    "this operation is unsupported for this "
+                                    + "file system; please install a dCache-aware "
+                                    + "implementation of the file system interface";
 
     /**
      * logger
@@ -2961,8 +2968,24 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException {
-        throw new ChimeraFsException("this operation is unsupported for this "
-                        + "file system; please install a dCache-aware "
-                        + "implementation of the file system interface");
+        throw new ChimeraFsException(NOT_IMPL);
+    }
+
+    /**
+     * To maintain the abstraction level, we relegate the actual
+     * callout to the subclass.
+     */
+    @Override
+    public void pin(String pnfsid, long lifetime) throws ChimeraFsException {
+       throw new ChimeraFsException(NOT_IMPL);
+    }
+
+   /**
+    * To maintain the abstraction level, we relegate the actual
+    * callout to the subclass.
+    */
+    @Override
+    public void unpin(String pnfsid) throws ChimeraFsException {
+       throw new ChimeraFsException(NOT_IMPL);
     }
 }
