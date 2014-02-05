@@ -50,6 +50,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.nfsv41.door.proxy.DcapProxyIoFactory;
+import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.nfsstat;
@@ -169,6 +171,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
                                 NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
 
+    private DcapProxyIoFactory _proxyIoFactory;
+
     public void setGssSessionManager(GssSessionManager sessionManager) {
         _gssSessionManager = sessionManager;
     }
@@ -213,12 +217,20 @@ public class NFSv41Door extends AbstractCellComponent implements
         _cellName = getCellName();
         _domainName = getCellDomainName();
         final NFSv41DeviceManager _dm = this;
+	_proxyIoFactory = new DcapProxyIoFactory(getCellAddress().getCellName() + "-dcap-proxy", "");
+	_proxyIoFactory.setBillingStub(_billingStub);
+	_proxyIoFactory.setFileSystemProvider(_fileFileSystemProvider);
+	_proxyIoFactory.setPnfsHandler(_pnfsHandler);
+	_proxyIoFactory.setPoolManager(_poolManagerStub.getDestinationPath());
+	_proxyIoFactory.setIoQueue(_ioQueue);
+	_proxyIoFactory.setRetryPolicy(RETRY_POLICY);
+	_proxyIoFactory.startAdapter();
 
         _rpcService = new OncRpcSvc(_port, IpProtocolType.TCP, true);
         _rpcService.setGssSessionManager(_gssSessionManager);
 
         _vfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
-        _nfs4 = new NFSServerV41( new MDSOperationFactory(),
+        _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
                 _dm, _vfs, _idMapper, _exportFile);
 
         MountServer ms = new MountServer(_exportFile, _vfs);
@@ -236,6 +248,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     public void destroy() throws IOException {
+	_proxyIoFactory.cleanUp();
         _rpcService.stop();
     }
 
@@ -358,7 +371,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
                 PnfsId pnfsId = new PnfsId(inode.toString());
                 Transfer.initSession();
-                NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"),
+                NfsTransfer transfer = new NfsTransfer(_pnfsHandler, new FsPath("/"),
                         remote, stateid);
 
                 NFS4ProtocolInfo protocolInfo = transfer.getProtocolInfoForPool();
@@ -573,9 +586,9 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final stateid4 _stateid;
         private final NFS4ProtocolInfo _protocolInfo;
 
-        NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path, InetSocketAddress client,
+        NfsTransfer(PnfsHandler pnfs, FsPath path, InetSocketAddress client,
                 stateid4 stateid) {
-            super(pnfs, subject, path);
+            super(pnfs, Subjects.ROOT, path);
             _stateid = stateid;
             _protocolInfo = new NFS4ProtocolInfo(client, new org.dcache.chimera.nfs.v4.xdr.stateid4(_stateid));
         }
