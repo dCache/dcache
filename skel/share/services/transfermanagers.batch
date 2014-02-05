@@ -26,7 +26,6 @@ check -strong transfermanagers.limits.external-transfers
 
 check -strong transfermanagers.enable.log-to-database
 
-check -strong transfermanagers.db.driver
 check -strong transfermanagers.db.url
 check -strong transfermanagers.db.user
 
@@ -48,7 +47,6 @@ create diskCacheV111.services.RemoteTransferManager ${transfermanagers.cell.name
         -max_transfers=${transfermanagers.limits.external-transfers} \
         -io-queue=${transfermanagers.mover.queue} \
         -jdbcUrl=${transfermanagers.db.url} \
-        -jdbcDriver=${transfermanagers.db.driver} \
         -dbUser=${transfermanagers.db.user} \
         -dbPass=${transfermanagers.db.password} \
         -pgPass=${transfermanagers.db.password.file}   \

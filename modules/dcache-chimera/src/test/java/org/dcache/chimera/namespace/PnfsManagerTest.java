@@ -76,7 +76,6 @@ public class PnfsManagerTest
         Properties dbProperties = new Properties();
         dbProperties.load(Resources.newInputStreamSupplier(DB_TEST_PROPERTIES).getInput());
 
-        Class.forName(dbProperties.getProperty("chimera.db.driver"));
         _conn = DriverManager.getConnection(dbProperties.getProperty("chimera.db.url"),
                 dbProperties.getProperty("chimera.db.user"), dbProperties.getProperty("chimera.db.password"));
 
@@ -94,7 +93,6 @@ public class PnfsManagerTest
         liquibase.update("");
         _fs = ChimeraFsHelper.getFileSystemProvider(
                 dbProperties.getProperty("chimera.db.url"),
-                dbProperties.getProperty("chimera.db.driver"),
                 dbProperties.getProperty("chimera.db.user"),
                 dbProperties.getProperty("chimera.db.password"),
                 dbProperties.getProperty("chimera.db.dialect"));

@@ -35,7 +35,6 @@ public class DAOFactoryImpl implements DAOFactory {
     private PageInfoCache _pageCache;
     private ILogEntryDAO _logEntryDAO;
     private String _alarmsXMLPath;
-    private String _alarmsDbDriver;
     private String _alarmsDbUrl;
     private String _alarmsDbUser;
     private String _alarmsDbPass;
@@ -121,10 +120,6 @@ public class DAOFactoryImpl implements DAOFactory {
         _alarmCleanerSleepIntervalUnit = checkNotNull(timeUnit);
     }
 
-    public void setAlarmsDbDriver(String alarmsDbDriver) {
-        _alarmsDbDriver = alarmsDbDriver;
-    }
-
     public void setAlarmsDbPass(String alarmsDbPass) {
         _alarmsDbPass = alarmsDbPass;
     }
@@ -181,8 +176,7 @@ public class DAOFactoryImpl implements DAOFactory {
 
     private Properties getAlarmsProperties() throws IOException {
         Properties properties = new Properties();
-        properties.setProperty("datanucleus.ConnectionDriverName",
-                        _alarmsDbDriver);
+        properties.setProperty("datanucleus.ConnectionDriverName", "java.lang.String"); // dummy value - JDBC 4 drivers auto-load
         properties.setProperty("datanucleus.ConnectionPassword", _alarmsDbPass);
         properties.setProperty("datanucleus.ConnectionURL", _alarmsDbUrl);
         properties.setProperty("datanucleus.ConnectionUserName", _alarmsDbUser);

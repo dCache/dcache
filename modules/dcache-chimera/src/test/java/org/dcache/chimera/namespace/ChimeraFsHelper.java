@@ -7,7 +7,7 @@ public class ChimeraFsHelper {
 
     private ChimeraFsHelper() {}
 
-    public static JdbcFs getFileSystemProvider(String url, String drv, String user,
+    public static JdbcFs getFileSystemProvider(String url, String user,
             String pass, String dialect)
     {
 
@@ -15,7 +15,6 @@ public class ChimeraFsHelper {
         ds.setJdbcUrl(url);
         ds.setUsername(user);
         ds.setPassword(pass);
-        ds.setDriverClass(drv);
         ds.setMaxConnectionsPerPartition(2);
         ds.setPartitionCount(1);
 

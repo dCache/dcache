@@ -20,7 +20,6 @@ check -strong cleaner.limits.threads
 check -strong cleaner.destination.remove-notification
 check -strong cleaner.db.user
 check -strong cleaner.db.url
-check -strong cleaner.db.driver
 check cleaner.db.password
 
 create org.dcache.chimera.namespace.ChimeraCleaner ${cleaner.cell.name} \
@@ -36,7 +35,6 @@ create org.dcache.chimera.namespace.ChimeraCleaner ${cleaner.cell.name} \
          -chimera.db.user=${cleaner.db.user} \
          -chimera.db.password=${cleaner.db.password} \
          -chimera.db.url=${cleaner.db.url} \
-         -chimera.db.driver=${cleaner.db.driver} \
          -hsmCleaner=${cleaner.enable.hsm} \
          -hsmCleanerRequest=${cleaner.limits.hsm-batch-size} \
          -hsmCleanerTimeout=${cleaner.service.pool.hsm-timeout} \

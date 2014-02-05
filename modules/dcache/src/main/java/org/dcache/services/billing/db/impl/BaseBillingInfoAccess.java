@@ -86,7 +86,6 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
      * Injected properties
      */
     protected String propertiesPath;
-    protected String jdbcDriver;
     protected String jdbcUrl;
     protected String jdbcUser;
     protected String jdbcPassword;
@@ -201,10 +200,6 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
 
     public void setMinConnectionsPerPartition(int count) {
         minConnectionsPerPartition = count;
-    }
-
-    public void setJdbcDriver(String jdbcDriver) {
-        this.jdbcDriver = jdbcDriver;
     }
 
     public void setJdbcPassword(String jdbcPassword) {

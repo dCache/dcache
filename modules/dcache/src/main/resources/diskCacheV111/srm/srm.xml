@@ -485,7 +485,6 @@
   <bean id="data-source" class="com.jolbox.bonecp.BoneCPDataSource"
         destroy-method="close">
     <description>Database connection pool</description>
-    <property name="driverClass" value="${srm.db.driver}"/>
     <property name="jdbcUrl" value="${srm.db.url}"/>
     <property name="username" value="${srm.db.user}"/>
     <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srm.db.password.file}', '${srm.db.url}', '${srm.db.user}', '${srm.db.password}') }"/>

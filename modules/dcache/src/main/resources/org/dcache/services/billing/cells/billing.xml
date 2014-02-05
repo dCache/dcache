@@ -41,7 +41,6 @@
     <bean id="jdbc-billing-info-access" class="org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo"
           init-method="initialize" destroy-method="close">
       <property name="jdbcUrl" value="${billing.db.url}"/>
-      <property name="jdbcDriver" value="${billing.db.driver}"/>
       <property name="jdbcUser" value="${billing.db.user}"/>
       <property name="jdbcPassword" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
       <property name="propertiesPath" value="${billing.db.config.path}"/>
@@ -70,7 +69,6 @@
       <description>Database schema manager</description>
       <property name="dataSource">
         <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-          <property name="driverClassName" value="${billing.db.driver}"/>
           <property name="url" value="${billing.db.url}"/>
           <property name="username" value="${billing.db.user}"/>
           <property name="password"

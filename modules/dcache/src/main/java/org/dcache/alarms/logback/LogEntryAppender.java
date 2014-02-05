@@ -167,10 +167,6 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
         this.definitionsPath = definitionsPath;
     }
 
-    public void setDriver(String driver) {
-        properties.setProperty("datanucleus.ConnectionDriverName", driver);
-    }
-
     public void setPass(String pass) {
         properties.setProperty("datanucleus.ConnectionPassword", pass);
     }
@@ -215,6 +211,7 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
                         properties.load(stream);
                     }
                 }
+                properties.setProperty("datanucleus.ConnectionDriverName", "java.lang.String"); // dummy value - JDBC 4 drivers auto-load
                 store = new DataNucleusLogEntryStore(path, properties);
             }
 

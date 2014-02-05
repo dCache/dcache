@@ -71,7 +71,6 @@
         <url>${alarms.db.url}</url>
         <user>${alarms.db.user}</user>
         <pass>${alarms.db.password}</pass>
-        <driver>${alarms.db.driver}</driver>
         <propertiesPath>${alarms.db.config.path}</propertiesPath>
         <definitionsPath>${alarms.definitions.path}</definitionsPath>
         <!-- it would be normal to comment this out if you are using an RDBMS

@@ -9,7 +9,6 @@ check -strong replica.cell.export
 check -strong replica.db.user
 check replica.db.password
 check replica.db.password.file
-check -strong replica.db.driver
 check -strong replica.poolgroup
 check -strong replica.limits.pool-watchdog-period
 check -strong replica.limits.pool-watchdog-period.unit
@@ -56,7 +55,6 @@ create diskCacheV111.replicaManager.ReplicaManagerV2 ${replica.cell.name} \
         -waitReduceTO=${replica.limits.wait-reduce-timeout} \
         -waitReduceTOUnit=${replica.limits.wait-reduce-timeout.unit} \
         -dbURL=${replica.db.url} \
-        -jdbcDrv=${replica.db.driver} \
         -dbUser=${replica.db.user} \
         -dbPass=${replica.db.password} \
         -pgPass=${replica.db.password.file}   \

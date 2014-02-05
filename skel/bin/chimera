@@ -13,7 +13,6 @@ classpath=$(printLimitedClassPath chimera bonecp \
 
 quickJava -Xbootclasspath/a:$classpath -Dlog=${DCACHE_LOG:-warn} \
     org.dcache.chimera.cli.Shell \
-    "$(getProperty chimera.db.driver)" \
     "$(getProperty chimera.db.url)" \
     "$(getProperty chimera.db.dialect)" \
     "$(getProperty chimera.db.user)" \

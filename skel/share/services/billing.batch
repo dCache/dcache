@@ -17,7 +17,6 @@ define env billingToDb.exe endExe
   onerror shutdown
 
   check -strong billing.db.url
-  check -strong billing.db.driver
   check -strong billing.db.host
   check -strong billing.db.user
   check -strong billing.db.schema.changelog

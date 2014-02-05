@@ -8,7 +8,6 @@ onerror shutdown
 check -strong spacemanager.cell.name
 check -strong spacemanager.cell.export
 check -strong spacemanager.db.url
-check -strong spacemanager.db.driver
 check -strong spacemanager.db.user
 check -strong spacemanager.db.password
 check -strong spacemanager.db.connections.min

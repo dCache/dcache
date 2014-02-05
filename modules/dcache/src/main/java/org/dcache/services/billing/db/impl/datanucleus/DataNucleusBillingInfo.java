@@ -306,10 +306,8 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
      * .properties resource or file.
      */
     private void addJdbcDNProperties() {
-        if (jdbcDriver != null && !"".equals(jdbcDriver)) {
-            properties.setProperty("datanucleus.ConnectionDriverName",
-                            jdbcDriver);
-        }
+        // Dummy value - JDBC 4 drivers auto load
+        properties.setProperty("datanucleus.ConnectionDriverName", "java.lang.String");
         if (!Strings.isNullOrEmpty(jdbcUrl)) {
             properties.setProperty("datanucleus.ConnectionURL", jdbcUrl);
         }

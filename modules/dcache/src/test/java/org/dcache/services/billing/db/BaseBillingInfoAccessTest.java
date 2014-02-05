@@ -18,7 +18,6 @@ import org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo;
 public abstract class BaseBillingInfoAccessTest extends TestCase {
 
     private static final String URL = "jdbc:hsqldb:mem:billing_test";
-    private static final String DRIVER = "org.hsqldb.jdbcDriver";
     private static final String USER = "sa";
     private static final String PASS = "";
 
@@ -30,7 +29,6 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        Class.forName(DRIVER);
         messageGenerator = new InfoMessageGenerator();
         setProperties();
         createAccess();
@@ -90,7 +88,6 @@ public abstract class BaseBillingInfoAccessTest extends TestCase {
         try {
             access = new DataNucleusBillingInfo();
             access.setPropertiesPath(testProperties.getAbsolutePath());
-            access.setJdbcDriver(DRIVER);
             access.setJdbcUrl(URL);
             access.setJdbcUser(USER);
             access.setJdbcPassword(PASS);

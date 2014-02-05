@@ -40,7 +40,6 @@
 
   <bean id="chimera-data-source" class="com.jolbox.bonecp.BoneCPDataSource"
         destroy-method="close">
-      <property name="driverClass" value="${pnfsmanager.db.driver}"/>
       <property name="jdbcUrl" value="${pnfsmanager.db.url}"/>
       <property name="username" value="${pnfsmanager.db.user}"/>
       <property name="password" value="${pnfsmanager.db.password}"/>
@@ -57,7 +56,6 @@
       <description>Database schema manager</description>
       <property name="dataSource">
           <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-              <property name="driverClassName" value="${pnfsmanager.db.driver}"/>
               <property name="url" value="${pnfsmanager.db.url}"/>
               <property name="username" value="${pnfsmanager.db.user}"/>
               <property name="password" value="${pnfsmanager.db.password}"/>

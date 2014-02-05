@@ -200,7 +200,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         _executor = Executors.newScheduledThreadPool(_threadPoolSize);
 
-        dbInit(getArgs().getOpt("chimera.db.url"), getArgs().getOpt("chimera.db.driver"),
+        dbInit(getArgs().getOpt("chimera.db.url"),
                 getArgs().getOpt("chimera.db.user"), getArgs().getOpt("chimera.db.password"));
 
         if (!_reportTo.isEmpty()) {
@@ -266,16 +266,12 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                                              _refreshIntervalUnit);
     }
 
-    void dbInit(String jdbcUrl, String jdbcClass, String user, String pass )
+    void dbInit(String jdbcUrl, String user, String pass )
         throws ClassNotFoundException
     {
-        if ((jdbcUrl == null) || (jdbcClass == null) || (user == null)
-            || (pass == null) ) {
+        if (jdbcUrl == null || user == null || pass == null) {
             throw new IllegalArgumentException("Not enough arguments to Init SQL database");
         }
-
-        // Add driver to JDBC
-        Class.forName(jdbcClass);
 
         BoneCPDataSource ds = new BoneCPDataSource();
         ds.setJdbcUrl(jdbcUrl);

@@ -127,7 +127,6 @@
     <description>Database schema manager</description>
     <property name="dataSource">
       <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="driverClassName" value="${pinmanager.db.driver}"/>
         <property name="url" value="${pinmanager.db.url}"/>
         <property name="username" value="${pinmanager.db.user}"/>
         <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }"/>
@@ -148,7 +147,7 @@
         <prop key="javax.jdo.option.ConnectionURL">${pinmanager.db.url}</prop>
         <prop key="javax.jdo.option.ConnectionUserName">${pinmanager.db.user}</prop>
         <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }</prop>
-        <prop key="javax.jdo.option.ConnectionDriverName">${pinmanager.db.driver}</prop>
+        <prop key="javax.jdo.option.ConnectionDriverName">java.lang.String</prop> <!-- dummy value - JDBC 4 driver auto load -->
         <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
         <prop key="datanucleus.connectionPoolingType">BoneCP</prop>
 

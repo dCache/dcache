@@ -93,7 +93,6 @@ public class LogEntryServerWrapper {
     private String definitionsPath;
     private String path;
     private String properties;
-    private String driver;
     private String url;
     private String user;
     private String pass;
@@ -112,10 +111,6 @@ public class LogEntryServerWrapper {
 
     public void setDefinitions(String definitionsPath) {
         this.definitionsPath = definitionsPath;
-    }
-
-    public void setDriver(String driver) {
-        this.driver = driver;
     }
 
     public void setLevel(String level) {
@@ -175,7 +170,6 @@ public class LogEntryServerWrapper {
 
         loggerContext.putProperty("alarms.dir", f.getAbsolutePath());
         loggerContext.putProperty("alarms.db.xml.path", path);
-        loggerContext.putProperty("alarms.db.driver", driver);
         loggerContext.putProperty("alarms.db.url", url);
         loggerContext.putProperty("alarms.db.user", user);
         loggerContext.putProperty("alarms.db.password", pass);

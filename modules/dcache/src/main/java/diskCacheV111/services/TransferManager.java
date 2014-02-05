@@ -52,7 +52,6 @@ public abstract class TransferManager extends AbstractCell
 {
     private static final Logger log = LoggerFactory.getLogger(TransferManager.class);
     private String _jdbcUrl = "jdbc:postgresql://localhost/srmdcache";
-    private String _jdbcDriver = "org.postgresql.Driver";
     private String _user = "srmdcache";
     private String _pass;
     private String _pwdFile;
@@ -99,7 +98,6 @@ public abstract class TransferManager extends AbstractCell
         Args args = getArgs();
 
         _jdbcUrl = args.getOpt("jdbcUrl");
-        _jdbcDriver = args.getOpt("jdbcDriver");
         _user = args.getOpt("dbUser");
         _pass = args.getOpt("dbPass");
         _pwdFile = args.getOpt("pgPass");
@@ -118,14 +116,14 @@ public abstract class TransferManager extends AbstractCell
         }
 
         try {
-            if (_jdbcUrl != null && _jdbcDriver != null && _user != null && _pass != null) {
+            if (_jdbcUrl != null && _user != null && _pass != null) {
                 initIdGenerator();
             } else {
                 idGenerator = null;
             }
         } catch (Exception e) {
             log.error("Failed to initialize Data Base connection to generate nextTransferId using default values");
-            log.error("jdbcUrl=" + _jdbcUrl + " jdbcDriver=" + _jdbcDriver + " dbUser=" + _user + " dbPass=" + _pass + " pgPass=" + _pwdFile);
+            log.error("jdbcUrl=" + _jdbcUrl + " dbUser=" + _user + " dbPass=" + _pass + " pgPass=" + _pwdFile);
             idGenerator = null;
             //logString.error(e);
         }
@@ -135,7 +133,7 @@ public abstract class TransferManager extends AbstractCell
                 Properties properties = new Properties();
                 properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
                         "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-                properties.setProperty("javax.jdo.option.ConnectionDriverName", _jdbcDriver);
+                properties.setProperty("javax.jdo.option.ConnectionDriverName", "java.lang.String"); // dummy value - JDBC 4 drivers auto-load
                 properties.setProperty("javax.jdo.option.ConnectionURL", _jdbcUrl);
                 properties.setProperty("javax.jdo.option.ConnectionUserName", _user);
                 properties.setProperty("javax.jdo.option.ConnectionPassword", _pass);
@@ -165,7 +163,7 @@ public abstract class TransferManager extends AbstractCell
                 _pm = pmf.getPersistenceManager();
             } catch (Exception e) {
                 log.error("Failed to initialize Data Base connection using default values");
-                log.error("jdbcUrl=" + _jdbcUrl + " jdbcDriver=" + _jdbcDriver + " dbUser=" + _user + " dbPass=" + _pass + " pgPass=" + _pwdFile);
+                log.error("jdbcUrl=" + _jdbcUrl + " dbUser=" + _user + " dbPass=" + _pass + " pgPass=" + _pwdFile);
                 log.error(e.toString());
                 _pm = null;
                 setDbLogging(false);
@@ -196,7 +194,6 @@ public abstract class TransferManager extends AbstractCell
     {
         try {
             final BoneCPDataSource ds = new BoneCPDataSource();
-            ds.setDriverClass(_jdbcDriver);
             ds.setJdbcUrl(_jdbcUrl);
             ds.setUsername(_user);
             ds.setPassword(_pass);
@@ -222,7 +219,6 @@ public abstract class TransferManager extends AbstractCell
         pw.printf("    %s\n", getClass().getName());
         pw.println("---------------------------------");
         pw.printf("Name   : %s\n", getCellName());
-        pw.printf("jdbcClass : %s\n", _jdbcDriver);
         pw.printf("jdbcUrl : %s\n", _jdbcUrl);
         pw.printf("jdbcUser : %s\n", _user);
         if (doDbLogging()) {
@@ -271,7 +267,7 @@ public abstract class TransferManager extends AbstractCell
                 Properties properties = new Properties();
                 properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
                         "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-                properties.setProperty("javax.jdo.option.ConnectionDriverName", _jdbcDriver);
+                properties.setProperty("javax.jdo.option.ConnectionDriverName", "java.lang.String"); // dummy value - JDBC 4 drivers auto-load
                 properties.setProperty("javax.jdo.option.ConnectionURL", _jdbcUrl);
                 properties.setProperty("javax.jdo.option.ConnectionUserName", _user);
                 properties.setProperty("javax.jdo.option.ConnectionPassword", _pass);
@@ -300,12 +296,6 @@ public abstract class TransferManager extends AbstractCell
             }
         }
         return sb.toString();
-    }
-
-    public String ac_set_jdbcDriver_$_1(Args args)
-    {
-        _jdbcDriver = args.argv(0);
-        return "setting jdbcDriver to " + _jdbcDriver;
     }
 
     public String ac_set_maxNumberOfDeleteRetries_$_1(Args args)

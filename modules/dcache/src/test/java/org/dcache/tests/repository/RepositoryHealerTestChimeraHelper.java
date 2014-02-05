@@ -41,11 +41,8 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         Properties dbProperties = new Properties();
         dbProperties.load(Resources.newInputStreamSupplier(DB_TEST_PROPERTIES).getInput());
 
-        Class.forName(dbProperties.getProperty("chimera.db.driver"));
-
         DataSource ds = getFileSystemProvider(
                 dbProperties.getProperty("chimera.db.url") + ":" + UUID.randomUUID(),
-                dbProperties.getProperty("chimera.db.driver"),
                 dbProperties.getProperty("chimera.db.user"),
                 dbProperties.getProperty("chimera.db.password"));
 
@@ -125,13 +122,12 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         return entries;
     }
 
-    public static BoneCPDataSource getFileSystemProvider(String url, String drv, String user, String pass) {
+    public static BoneCPDataSource getFileSystemProvider(String url, String user, String pass) {
 
         BoneCPDataSource ds = new BoneCPDataSource();
         ds.setJdbcUrl(url);
         ds.setUsername(user);
         ds.setPassword(pass);
-        ds.setDriverClass(drv);
         ds.setMaxConnectionsPerPartition(3); // looks like we need >= 3
         ds.setPartitionCount(1);
 

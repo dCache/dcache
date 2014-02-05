@@ -23,21 +23,18 @@ import org.dcache.chimera.JdbcFs;
 
 public class FsFactory {
 
-    public static final String USAGE = "<jdbcDrv> <jdbcUrl> <dbDialect> <dbUser> <dbPass>";
-    public static final int ARGC = 5;
+    public static final String USAGE = "<jdbcUrl> <dbDialect> <dbUser> <dbPass>";
+    public static final int ARGC = 4;
     public static FileSystemProvider createFileSystem(String[] args) throws Exception {
 
-        if (args.length < 5) {
+        if (args.length < ARGC) {
             throw new IllegalArgumentException();
         }
 
-        String jdbcDrv = args[0];
-        String jdbcUrl = args[1];
-        String dbDialect = args[2];
-        String dbUser = args[3];
-        String dbPass = args[4];
-
-        Class.forName(jdbcDrv);
+        String jdbcUrl = args[0];
+        String dbDialect = args[1];
+        String dbUser = args[2];
+        String dbPass = args[3];
 
         BoneCPDataSource ds = new BoneCPDataSource();
         ds.setJdbcUrl(jdbcUrl);

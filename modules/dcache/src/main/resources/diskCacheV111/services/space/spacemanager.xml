@@ -75,7 +75,6 @@
                 </constructor-arg>
                 <property name="dataSource">
                     <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                        <property name="driverClassName" value="${spacemanager.db.driver}"/>
                         <property name="url" value="${spacemanager.db.url}"/>
                         <property name="username" value="${spacemanager.db.user}"/>
                         <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>

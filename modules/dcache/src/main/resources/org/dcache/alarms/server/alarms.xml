@@ -16,7 +16,6 @@
         <property name="baseDir" value="${alarms.dir}"/>
         <property name="configFile" value="${alarms.log.config.path}"/>
         <property name="path" value="${alarms.db.xml.path}"/>
-        <property name="driver" value="${alarms.db.driver}"/>
         <property name="url" value="${alarms.db.url}"/>
         <property name="user" value="${alarms.db.user}"/>
         <property name="pass" value="${alarms.db.password}"/>
@@ -30,7 +29,6 @@
             <description>Database schema manager</description>
             <property name="dataSource">
                 <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                    <property name="driverClassName" value="${alarms.db.driver}"/>
                     <property name="url" value="${alarms.db.url}"/>
                     <property name="username" value="${alarms.db.user}"/>
                     <property name="password" value="${alarms.db.password}"/>

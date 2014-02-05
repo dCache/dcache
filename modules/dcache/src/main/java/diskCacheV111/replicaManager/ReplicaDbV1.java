@@ -1152,10 +1152,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * @param user
      * @param password
      */
-    public final static void setup(String connectURI, String jdbcClass, String user, String password) {
+    public final static void setup(String connectURI, String user, String password) {
         final BoneCPDataSource ds = new BoneCPDataSource();
         ds.setJdbcUrl(connectURI);
-        ds.setDriverClass(jdbcClass);
         ds.setUsername(user);
         ds.setPassword(password);
         ds.setIdleConnectionTestPeriodInMinutes(60);
@@ -1181,7 +1180,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     {
         System.out.println("Test ReplicaDbV1, cvsId=" + _cvsId);
 
-        setup("jdbc:postgresql://localhost:5432/replicas", "org.postgresql.Driver", "enstore", "NoPassword");
+        setup("jdbc:postgresql://localhost:5432/replicas", "enstore", "NoPassword");
         ReplicaDbV1 db = new ReplicaDbV1(null);
 
         System.out.println("List pnfsId's in all pools");

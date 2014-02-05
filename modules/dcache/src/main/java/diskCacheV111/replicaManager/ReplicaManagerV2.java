@@ -47,7 +47,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       LoggerFactory.getLogger(ReplicaManagerV2.class);
 
   private String _jdbcUrl = "jdbc:postgresql://localhost/replicas";
-  private String _driver = "org.postgresql.Driver";
   private String _user = "postgres";
   private String _pass = "NoPassword";
   private String _pwdfile;
@@ -265,11 +264,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
             _jdbcUrl = cfURL;
         }
 
-        String cfDriver = _args.getOpt("jdbcDrv");
-        if (cfDriver != null) {
-            _driver = cfDriver;
-        }
-
         String cfUser = _args.getOpt("dbUser");
         if (cfUser != null) {
             _user = cfUser;
@@ -284,7 +278,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
 
         // Now check if all required parameters are present
 //      if ((cfURL == null ) || (cfDriver == null) || (cfUser == null) || (cfPass == null && _pwdfile == null) ) {
-        if ((_jdbcUrl == null ) || (_driver == null) || (_user == null) || (_pass == null && _pwdfile == null)) {
+        if ((_jdbcUrl == null ) || (_user == null) || (_pass == null && _pwdfile == null)) {
             throw new IllegalArgumentException("Not enough arguments to Init SQL database");
         }
 
@@ -394,8 +388,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
 
     parseDBArgs();
 
-    _log.debug("Setup database with: URL="+_jdbcUrl+" driver="+_driver+" user="+_user+" passwd=********");
-    ReplicaDbV1.setup(_jdbcUrl, _driver, _user, _pass);
+    _log.debug("Setup database with: URL="+_jdbcUrl+" user="+_user+" passwd=********");
+    ReplicaDbV1.setup(_jdbcUrl, _user, _pass);
 
     try {
       _dbrmv2 = installReplicaDb();

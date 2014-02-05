@@ -56,7 +56,6 @@
 
     <bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource"
           destroy-method="close">
-        <property name="driverClass" value="${nfs.db.driver}"/>
         <property name="jdbcUrl" value="${nfs.db.url}"/>
         <property name="username" value="${nfs.db.user}"/>
         <property name="password" value="${nfs.db.password}"/>

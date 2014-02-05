@@ -228,7 +228,6 @@
         <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
         <property name="pageCache" ref="PageInfoCache"/>
         <property name="alarmsXMLPath" value="${httpd.alarms.db.xml.path}"/>
-        <property name="alarmsDbDriver" value="${httpd.alarms.db.driver}"/>
         <property name="alarmsDbUrl" value="${httpd.alarms.db.url}"/>
         <property name="alarmsDbUser" value="${httpd.alarms.db.user}"/>
         <property name="alarmsDbPass" value="${httpd.alarms.db.password}"/>

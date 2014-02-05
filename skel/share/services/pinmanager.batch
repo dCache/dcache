@@ -2,7 +2,6 @@ onerror shutdown
 
 check -strong pinmanager.cell.name
 check -strong pinmanager.cell.export
-check -strong pinmanager.db.driver
 check -strong pinmanager.db.url
 check -strong pinmanager.db.user
 check -strong pinmanager.db.schema.auto
