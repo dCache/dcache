@@ -29,8 +29,8 @@ define env billingToDb.exe endExe
   check billing.db.password
   check billing.db.password.file
   check billing.db.config.path
-  check billing.db.connections.max-per-partition
-  check billing.db.connections.min-per-partition
+  check billing.db.connections.max
+  check billing.db.connections.min
   check billing.db.schema.auto
   check billing.db.schema.changelog
 endExe

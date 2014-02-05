@@ -7,7 +7,8 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
   <context:property-placeholder/>
 
@@ -34,19 +35,48 @@
 
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-true">
+      <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
+            destroy-method="shutdown">
+          <constructor-arg>
+              <bean class="com.zaxxer.hikari.HikariConfig">
+                  <constructor-arg type="java.util.Properties">
+                      <value>
+                          minimumPoolSize = ${billing.db.connections.min}
+                          maximumPoolSize = ${billing.db.connections.max}
+                          autoCommit = true
+                          transactionIsolation = TRANSACTION_READ_COMMITTED
+                      </value>
+                  </constructor-arg>
+                  <property name="dataSource">
+                      <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+                          <property name="url" value="${billing.db.url}"/>
+                          <property name="username" value="${billing.db.user}"/>
+                          <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
+                      </bean>
+                  </property>
+              </bean>
+          </constructor-arg>
+      </bean>
+
+      <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
+            depends-on="liquibase" destroy-method="close">
+          <description>Database persistence manager</description>
+          <constructor-arg>
+              <util:properties location="${billing.db.config.path}" local-override="true">
+                  <prop key="datanucleus.connectionPoolingType">None</prop>
+              </util:properties>
+          </constructor-arg>
+          <property name="connectionFactory" ref="data-source"/>
+      </bean>
+
+
     <bean id="jdbc-billing-info-access" class="org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo"
           init-method="initialize" destroy-method="close">
-      <property name="jdbcUrl" value="${billing.db.url}"/>
-      <property name="jdbcUser" value="${billing.db.user}"/>
-      <property name="jdbcPassword" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
-      <property name="propertiesPath" value="${billing.db.config.path}"/>
-      <property name="partitionCount" value="${billing.db.connections.partition-count}"/>
-      <property name="maxConnectionsPerPartition" value="${billing.db.connections.max-per-partition}"/>
-      <property name="minConnectionsPerPartition" value="${billing.db.connections.min-per-partition}"/>
       <property name="delegateType" value="${billing.db.inserts.queue-delegate.type}"/>
       <property name="maxQueueSize" value="${billing.db.inserts.max-queue-size}"/>
       <property name="maxBatchSize" value="${billing.db.inserts.max-batch-size}"/>
       <property name="dropMessagesAtLimit" value="${billing.db.inserts.drop-messages-at-limit}"/>
+      <property name="persistenceManagerFactory" ref="pmf"/>
     </bean>
 
     <bean id="histogram-service" class="org.dcache.services.billing.histograms.data.JDOTimeFrameHistogramDataService">
@@ -63,14 +93,7 @@
 
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
       <description>Database schema manager</description>
-      <property name="dataSource">
-        <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-          <property name="url" value="${billing.db.url}"/>
-          <property name="username" value="${billing.db.user}"/>
-          <property name="password"
-                    value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
-        </bean>
-      </property>
+      <property name="dataSource" ref="data-source"/>
       <property name="changeLog" value="classpath:${billing.db.schema.changelog}"/>
       <property name="shouldUpdate" value="${billing.db.schema.auto}"/>
     </bean>

@@ -936,14 +936,8 @@ case "$1" in
                                 user=$(getScopedProperty db.user "$domain" "$cell")
                                 changelog=$(getScopedProperty db.schema.changelog "$domain" "$cell")
                                 database=$(getScopedProperty db.name "$domain" "$cell")
-                                partitions=$(getScopedProperty db.connections.partition-count "$domain" "$cell")
-                                if [ -z "$partitions" ]; then
-                                    maxConnections=$(getScopedProperty db.connections.max "$domain" "$cell")
-                                    minConnections=$(getScopedProperty db.connections.min "$domain" "$cell")
-                                else
-                                    maxConnections=$(( $partitions * $(getScopedProperty db.connections.max-per-partition "$domain" "$cell") ))
-                                    minConnections=$(( $partitions * $(getScopedProperty db.connections.min-per-partition "$domain" "$cell") ))
-                                fi
+                                maxConnections=$(getScopedProperty db.connections.max "$domain" "$cell")
+                                minConnections=$(getScopedProperty db.connections.min "$domain" "$cell")
                                 if [ -n "$maxConnections" ]; then
                                     totalMaxConnections=$(( $totalMaxConnections + $maxConnections ))
                                 fi

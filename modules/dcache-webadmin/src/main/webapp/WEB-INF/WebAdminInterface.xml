@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:jee="http://www.springframework.org/schema/jee"
-    xmlns:context="http://www.springframework.org/schema/context"
-    xsi:schemaLocation="http://www.springframework.org/schema/jee
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/jee
                         http://www.springframework.org/schema/jee/spring-jee.xsd
                         http://www.springframework.org/schema/beans
                         http://www.springframework.org/schema/beans/spring-beans.xsd
                         http://www.springframework.org/schema/context
-                        http://www.springframework.org/schema/context/spring-context.xsd">
+                        http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
     <context:property-placeholder/>
     <context:annotation-config/>
@@ -217,19 +218,10 @@
     </bean>
 
     <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
+        <property name="logEntryDAO" ref="alarmStore"/>
         <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
         <property name="pageCache" ref="PageInfoCache"/>
-        <property name="alarmsXMLPath" value="${httpd.alarms.db.xml.path}"/>
-        <property name="alarmsDbUrl" value="${httpd.alarms.db.url}"/>
-        <property name="alarmsDbUser" value="${httpd.alarms.db.user}"/>
-        <property name="alarmsDbPass" value="${httpd.alarms.db.password}"/>
-        <property name="alarmsPropertiesPath" value="${httpd.alarms.db.config.path}"/>
-        <property name="alarmsCleanerEnabled" value="${httpd.enable.alarm-cleaner}"/>
-        <property name="alarmsCleanerSleepInterval" value="${httpd.alarm-cleaner.timeout}"/>
-        <property name="alarmsCleanerSleepIntervalUnit" value="${httpd.alarm-cleaner.timeout.unit}"/>
-        <property name="alarmsCleanerDeleteThreshold" value="${httpd.alarm-cleaner.delete-entries-before}"/>
-        <property name="alarmsCleanerDeleteThresholdUnit" value="${httpd.alarm-cleaner.delete-entries-before.unit}"/>
-    </bean>
+   </bean>
 
     <bean id="PoolSpaceService" class="org.dcache.webadmin.controller.impl.StandardPoolSpaceService">
         <constructor-arg>
@@ -335,4 +327,72 @@
         <property name="httpPort" value="${httpd.net.port}"/>
         <property name="httpsPort" value="${httpd.net.https-port}"/>
     </bean>
+
+    <beans profile="alarms-rdbms">
+        <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource"
+              destroy-method="shutdown">
+            <description>Database connection pool</description>
+            <constructor-arg>
+                <bean class="com.zaxxer.hikari.HikariConfig">
+                    <property name="dataSource">
+                        <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+                            <property name="url" value="${httpd.alarms.db.url}"/>
+                            <property name="username" value="${httpd.alarms.db.user}"/>
+                            <property name="password" value="${httpd.alarms.db.password}"/>
+                        </bean>
+                    </property>
+                </bean>
+            </constructor-arg>
+        </bean>
+
+        <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
+              destroy-method="close">
+            <description>Database persistence manager</description>
+            <constructor-arg>
+                <util:properties location="file:${httpd.alarms.db.config.path}" local-override="true">
+                    <prop key="datanucleus.connectionPoolingType">None</prop>
+                </util:properties>
+            </constructor-arg>
+            <property name="connectionFactory" ref="dataSource"/>
+        </bean>
+
+        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore"
+              init-method="initialize" destroy-method="shutDown">
+            <property name="persistenceManagerFactory" ref="pmf"/>
+            <property name="alarmsCleanerEnabled" value="${httpd.enable.alarm-cleaner}"/>
+            <property name="alarmsCleanerSleepInterval" value="${httpd.alarm-cleaner.timeout}"/>
+            <property name="alarmsCleanerSleepIntervalUnit" value="${httpd.alarm-cleaner.timeout.unit}"/>
+            <property name="alarmsCleanerDeleteThreshold" value="${httpd.alarm-cleaner.delete-entries-before}"/>
+            <property name="alarmsCleanerDeleteThresholdUnit" value="${httpd.alarm-cleaner.delete-entries-before.unit}"/>
+        </bean>
+    </beans>
+
+    <beans profile="alarms-xml">
+        <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
+              destroy-method="close">
+            <description>Database persistence manager</description>
+            <constructor-arg>
+                <util:properties location="file:${httpd.alarms.db.config.path}" local-override="true">
+                    <prop key="datanucleus.ConnectionURL">${httpd.alarms.db.url}</prop>
+                </util:properties>
+            </constructor-arg>
+        </bean>
+
+        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore"
+              init-method="initialize" destroy-method="shutDown">
+            <property name="persistenceManagerFactory" ref="pmf"/>
+            <property name="alarmsXMLPath" value="${httpd.alarms.db.xml.path}"/>
+            <property name="alarmsCleanerEnabled" value="${httpd.enable.alarm-cleaner}"/>
+            <property name="alarmsCleanerSleepInterval" value="${httpd.alarm-cleaner.timeout}"/>
+            <property name="alarmsCleanerSleepIntervalUnit" value="${httpd.alarm-cleaner.timeout.unit}"/>
+            <property name="alarmsCleanerDeleteThreshold" value="${httpd.alarm-cleaner.delete-entries-before}"/>
+            <property name="alarmsCleanerDeleteThresholdUnit" value="${httpd.alarm-cleaner.delete-entries-before.unit}"/>
+        </bean>
+    </beans>
+
+    <beans profile="alarms-off">
+        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore"
+              init-method="initialize" destroy-method="shutDown">
+        </bean>
+    </beans>
 </beans>

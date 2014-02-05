@@ -64,7 +64,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Properties;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.RetryException;
@@ -76,22 +75,7 @@ import org.dcache.services.billing.histograms.data.IHistogramData;
  * @author arossi
  */
 public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
-    protected static final int DUMMY_VALUE = -1;
-
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    protected Properties properties;
-
-    /**
-     * Injected properties
-     */
-    protected String propertiesPath;
-    protected String jdbcUrl;
-    protected String jdbcUser;
-    protected String jdbcPassword;
-    protected int partitionCount = DUMMY_VALUE;
-    protected int maxConnectionsPerPartition = DUMMY_VALUE;
-    protected int minConnectionsPerPartition = DUMMY_VALUE;
 
     private String delegateType;
     private QueueDelegate delegate;
@@ -129,21 +113,14 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
         return delegate.getQueueSize();
     }
 
-    public Properties getProperties() {
-        return properties;
-    }
-
     public void initialize() {
         logger.debug("access type: {}", this.getClass().getName());
-
-        properties = new Properties();
-        initializeInternal();
 
         /*
          * can be null (configuration for read-only access; see #put())
          */
         if (delegateType != null) {
-            Class clzz;
+            Class<?> clzz;
             try {
                 clzz = Class.forName(delegateType);
             } catch (ClassNotFoundException t) {
@@ -189,34 +166,4 @@ public abstract class BaseBillingInfoAccess implements IBillingInfoAccess {
     public void setMaxBatchSize(int maxBatchSize) {
         this.maxBatchSize = maxBatchSize;
     }
-
-    public void setPartitionCount(int count) {
-        partitionCount = count;
-    }
-
-    public void setMaxConnectionsPerPartition(int count) {
-        maxConnectionsPerPartition = count;
-    }
-
-    public void setMinConnectionsPerPartition(int count) {
-        minConnectionsPerPartition = count;
-    }
-
-    public void setJdbcPassword(String jdbcPassword) {
-        this.jdbcPassword = jdbcPassword;
-    }
-
-    public void setJdbcUrl(String jdbcUrl) {
-        this.jdbcUrl = jdbcUrl;
-    }
-
-    public void setJdbcUser(String jdbcUser) {
-        this.jdbcUser = jdbcUser;
-    }
-
-    public void setPropertiesPath(String propetiesPath) {
-        this.propertiesPath = propetiesPath;
-    }
-
-    protected abstract void initializeInternal();
 }

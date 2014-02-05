@@ -59,24 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.impl.datanucleus;
 
-import com.google.common.base.Strings;
 import org.datanucleus.FetchPlan;
 
 import javax.jdo.JDOCanRetryException;
-import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Properties;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.RetryException;
@@ -91,9 +83,6 @@ import org.dcache.services.billing.histograms.data.IHistogramData;
  * @author arossi
  */
 public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
-
-    public static final String DEFAULT_PROPERTIES
-        = "org/dcache/services/billing/db/datanucleus.properties";
 
     private PersistenceManagerFactory pmf;
 
@@ -188,38 +177,6 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
     }
 
-    @Override
-    public void initializeInternal() {
-        addJdbcDNProperties();
-        try {
-            if (propertiesPath != null && !"".equals(propertiesPath.trim())) {
-                File file = new File(propertiesPath);
-                if (!file.exists()) {
-                    throw new RuntimeException(
-                                    "Cannot run BillingInfoCell for properties file: "
-                                                    + file);
-                }
-                try (InputStream stream = new FileInputStream(file)) {
-                    properties.load(stream);
-                }
-
-            } else {
-                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                URL resource = classLoader.getResource(DEFAULT_PROPERTIES);
-                if (resource == null) {
-                    throw new RuntimeException(
-                                    "Cannot run BillingInfoCell"
-                                                    + "; cannot find resource "
-                                                    + DEFAULT_PROPERTIES);
-                }
-                properties.load(resource.openStream());
-            }
-            pmf = JDOHelper.getPersistenceManagerFactory(properties);
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot run BillingInfoCell", e);
-        }
-    }
-
     /**
      * Does bulk deletes. Properties file must set
      * <code>datanucleus.query.jdoql.allowAll=true</code> (non-Javadoc)
@@ -296,44 +253,8 @@ public class DataNucleusBillingInfo extends BaseBillingInfoAccess {
         }
     }
 
-    @Override
-    public void setPropertiesPath(String propetiesPath) {
-        propertiesPath = propetiesPath;
-    }
-
-    /**
-     * From injection, but will be overwritten by any properties set in the
-     * .properties resource or file.
-     */
-    private void addJdbcDNProperties() {
-        // Dummy value - JDBC 4 drivers auto load
-        properties.setProperty("datanucleus.ConnectionDriverName", "java.lang.String");
-        if (!Strings.isNullOrEmpty(jdbcUrl)) {
-            properties.setProperty("datanucleus.ConnectionURL", jdbcUrl);
-        }
-        if (!Strings.isNullOrEmpty(jdbcUser)) {
-            properties.setProperty("datanucleus.ConnectionUserName", jdbcUser);
-        }
-        if (!Strings.isNullOrEmpty(jdbcPassword)) {
-            properties.setProperty("datanucleus.ConnectionPassword",
-                            jdbcPassword);
-        }
-
-        // datanucleus currently doesn't support setting the partition count
-        // so the default value is used. This is '1' (from the
-        // /bonecp-default-config.xml file in bonecp-<version>.jar)
-        setPropertyIfValueSet(properties,
-                        "datanucleus.connectionPool.minPoolSize",
-                        minConnectionsPerPartition);
-        setPropertyIfValueSet(properties,
-                        "datanucleus.connectionPool.maxPoolSize",
-                        maxConnectionsPerPartition);
-    }
-
-    private void setPropertyIfValueSet(Properties properties, String key,
-                    int value) {
-        if (value != DUMMY_VALUE) {
-            properties.setProperty(key, String.valueOf(value));
-        }
+    public void setPersistenceManagerFactory(PersistenceManagerFactory pmf)
+    {
+        this.pmf = pmf;
     }
 }

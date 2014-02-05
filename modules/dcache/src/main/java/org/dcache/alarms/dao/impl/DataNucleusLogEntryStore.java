@@ -63,19 +63,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jdo.FetchPlan;
-import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Collection;
-import java.util.Properties;
 
 import org.dcache.alarms.dao.ILogEntryDAO;
 import org.dcache.alarms.dao.LogEntry;
@@ -89,15 +82,11 @@ import org.dcache.alarms.dao.LogEntry;
  */
 public class DataNucleusLogEntryStore implements ILogEntryDAO {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private final String xmlPath;
-    private final Properties properties = new Properties();
-    private PersistenceManagerFactory pmf;
+    private final PersistenceManagerFactory pmf;
 
-    public DataNucleusLogEntryStore(String xmlPath, Properties properties)
-                    throws IOException {
-        this.xmlPath = xmlPath;
-        this.properties.putAll(properties);
-        initialize();
+    public DataNucleusLogEntryStore(PersistenceManagerFactory pmf)
+    {
+        this.pmf = pmf;
     }
 
     @Override
@@ -154,36 +143,6 @@ public class DataNucleusLogEntryStore implements ILogEntryDAO {
              * closing is necessary in order to avoid memory leaks
              */
             insertManager.close();
-        }
-    }
-
-    private void initialize() throws IOException {
-        if (properties.getProperty("datanucleus.ConnectionURL")
-                        .startsWith("xml:")) {
-            initializeXmlFile();
-        }
-        properties.put("javax.jdo.PersistenceManagerFactoryClass",
-                        "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-        pmf = JDOHelper.getPersistenceManagerFactory(properties);
-    }
-
-    /**
-     * Checks for the existence of the file and creates it if not. Note that
-     * existing files are not validated against any schema, explicit or
-     * implicit. If the parent does not exist, an exception will be thrown.
-     */
-    private void initializeXmlFile() throws IOException {
-        File file = new File(xmlPath);
-        if (!file.exists()) {
-            if (!file.getParentFile().isDirectory()) {
-                String parent = file.getParentFile().getAbsolutePath();
-                throw new FileNotFoundException(parent + " is not a directory");
-            }
-            try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                pw.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-                pw.println("<entries></entries>");
-                pw.flush();
-            }
         }
     }
 }

@@ -59,12 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import javax.jdo.JDOException;
-import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Transaction;
@@ -75,7 +74,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.alarms.dao.LogEntry;
@@ -85,6 +83,7 @@ import org.dcache.webadmin.model.util.AlarmJDOUtils;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * DataNucleus wrapper to underlying alarm store.<br>
@@ -102,24 +101,17 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     private static final Logger logger
         = LoggerFactory.getLogger(DataNucleusAlarmStore.class);
 
-    private final Properties properties;
-    private final File xml;
-    private final boolean active;
-    private final boolean usesXml;
-
-    /**
-     * how long (in milliseconds) the alarm cleaner should sleep before running.
-     */
-    private final long cleanerSleepInterval;
-
-    /**
-     * timestamp to use in query for deletion of closed alarms. represents time
-     * (in milliseconds) before time at which alarm thread is awakened.
-     */
-    private final long cleanerDeleteThreshold;
+    private boolean active;
 
     private PersistenceManagerFactory pmf;
     private Thread cleanerThread;
+
+    private File alarmsXMLPath;
+    private boolean alarmCleanerEnabled;
+    private int alarmCleanerSleepInterval;
+    private TimeUnit alarmCleanerSleepIntervalUnit;
+    private int alarmCleanerDeleteThreshold;
+    private TimeUnit alarmCleanerDeleteThresholdUnit;
 
     private static void rollbackIfActive(Transaction tx) {
         if (tx.isActive()) {
@@ -127,38 +119,41 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
         }
     }
 
-    public DataNucleusAlarmStore(String xmlPath, Properties properties,
-                    boolean enableCleaner,
-                    int cleanerSleepInterval,
-                    TimeUnit sleepIntervalUnit,
-                    int cleanerDeleteThreshold,
-                    TimeUnit deleteThresholdUnit) {
-        this.cleanerSleepInterval = sleepIntervalUnit.toMillis(cleanerSleepInterval);
-        this.cleanerDeleteThreshold = deleteThresholdUnit.toMillis(cleanerDeleteThreshold);
+    @Required
+    public void setAlarmsCleanerDeleteThreshold(
+            int alarmCleanerDeleteThreshold) {
+        this.alarmCleanerDeleteThreshold = alarmCleanerDeleteThreshold;
+    }
 
-        this.properties = properties;
-        properties.put("javax.jdo.PersistenceManagerFactoryClass",
-                        "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
+    @Required
+    public void setAlarmsCleanerDeleteThresholdUnit(TimeUnit timeUnit) {
+        alarmCleanerDeleteThresholdUnit = checkNotNull(timeUnit);
+    }
 
-        String url = properties.getProperty("datanucleus.ConnectionURL");
+    @Required
+    public void setAlarmsCleanerEnabled(boolean alarmCleanerEnabled) {
+        this.alarmCleanerEnabled = alarmCleanerEnabled;
+    }
 
-        if (Strings.isNullOrEmpty(url)) {
-           active = false;
-           xml = null;
-           usesXml = false;
-        } else {
-           active = true;
+    @Required
+    public void setAlarmsCleanerSleepInterval(
+            int alarmCleanerSleepInterval) {
+        this.alarmCleanerSleepInterval = alarmCleanerSleepInterval;
+    }
 
-           usesXml = url.startsWith("xml:");
-           xml = Strings.isNullOrEmpty(xmlPath) ? null : new File(xmlPath);
-           checkArgument(!(usesXml && xml == null));
+    @Required
+    public void setAlarmsCleanerSleepIntervalUnit(TimeUnit timeUnit) {
+        alarmCleanerSleepIntervalUnit = checkNotNull(timeUnit);
+    }
 
-           if (enableCleaner) {
-               checkArgument(cleanerSleepInterval > 0);
-               checkArgument(cleanerDeleteThreshold > 0);
-               cleanerThread = new Thread(this, "alarm-cleanup-daemon");
-           }
-        }
+    public void setAlarmsXMLPath(File alarmsXMLPath) {
+        this.alarmsXMLPath = alarmsXMLPath;
+    }
+
+    @Required
+    public void setPersistenceManagerFactory(PersistenceManagerFactory pmf)
+    {
+        this.pmf = pmf;
     }
 
     @Override
@@ -194,6 +189,19 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     public void initialize() {
+
+        if (pmf == null) {
+            active = false;
+        } else {
+            active = true;
+
+            if (alarmCleanerEnabled) {
+                checkArgument(alarmCleanerSleepInterval > 0);
+                checkArgument(alarmCleanerDeleteThreshold > 0);
+                cleanerThread = new Thread(this, "alarm-cleanup-daemon");
+            }
+        }
+
         if (!active) {
             return;
         }
@@ -243,7 +251,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     public void run() {
         while (isRunning()) {
             Long currentThreshold
-                = System.currentTimeMillis() - cleanerDeleteThreshold;
+                = System.currentTimeMillis() - alarmCleanerDeleteThresholdUnit.toMillis(alarmCleanerDeleteThreshold);
 
             try {
                 long count = remove(currentThreshold);
@@ -254,7 +262,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             }
 
             try {
-                Thread.sleep(cleanerSleepInterval);
+                alarmCleanerSleepIntervalUnit.sleep(alarmCleanerSleepInterval);
             } catch (InterruptedException ignored) {
                 logger.trace("cleaner thread interrupted ... exiting");
                 break;
@@ -318,20 +326,9 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     }
 
     private PersistenceManager getManager() {
-        if (usesXml) {
-            if (!xml.exists() || !xml.isFile()) {
-                if (pmf != null) {
-                    pmf.close();
-                    pmf = null;
-                }
-                return null;
-            }
+        if (!active || alarmsXMLPath != null && !alarmsXMLPath.isFile()) {
+            return null;
         }
-
-        if (pmf == null) {
-            pmf = JDOHelper.getPersistenceManagerFactory(properties);
-        }
-
         return pmf.getPersistenceManager();
     }
 
