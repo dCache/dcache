@@ -10,18 +10,10 @@
                         http://www.springframework.org/schema/context
                         http://www.springframework.org/schema/context/spring-context.xsd">
 
+    <context:property-placeholder/>
     <context:annotation-config/>
 
     <jee:jndi-lookup id="ServiceCellEndpoint" jndi-name="java:comp/env/serviceCellEndpoint"/>
-
-    <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-       <description>Imported from httpd service environment</description>
-       <property name="properties">
-            <bean class="org.springframework.jndi.JndiObjectFactoryBean">
-                <property name="jndiName" value="java:comp/env/jndiArgs"/>
-            </bean>
-       </property>
-    </bean>
 
     <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
