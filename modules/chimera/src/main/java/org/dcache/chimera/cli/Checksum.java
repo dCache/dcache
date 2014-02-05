@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
+import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 import org.dcache.util.ChecksumType;
 

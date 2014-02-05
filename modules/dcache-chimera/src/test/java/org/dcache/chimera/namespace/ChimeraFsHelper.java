@@ -1,6 +1,9 @@
 package org.dcache.chimera.namespace;
 
-import com.jolbox.bonecp.BoneCPDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
 import org.dcache.chimera.JdbcFs;
 
 public class ChimeraFsHelper {
@@ -10,14 +13,10 @@ public class ChimeraFsHelper {
     public static JdbcFs getFileSystemProvider(String url, String user,
             String pass, String dialect)
     {
-
-        BoneCPDataSource ds = new BoneCPDataSource();
-        ds.setJdbcUrl(url);
-        ds.setUsername(user);
-        ds.setPassword(pass);
-        ds.setMaxConnectionsPerPartition(2);
-        ds.setPartitionCount(1);
-
-        return new JdbcFs(ds, dialect);
+        HikariConfig config = new HikariConfig();
+        config.setDataSource(new DriverManagerDataSource(url, user, pass));
+        config.setMinimumPoolSize(1);
+        config.setMaximumPoolSize(2);
+        return new JdbcFs(new HikariDataSource(config), dialect);
     }
 }

@@ -119,49 +119,47 @@
   <!--  DATABASE BEANS
   -->
 
-  <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
-    <description>Database schema manager</description>
-    <property name="dataSource">
-      <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="url" value="${pinmanager.db.url}"/>
-        <property name="username" value="${pinmanager.db.user}"/>
-        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }"/>
-      </bean>
-    </property>
-    <property name="changeLog" value="classpath:${pinmanager.db.schema.changelog}"/>
-    <property name="shouldUpdate" value="${pinmanager.db.schema.auto}"/>
-  </bean>
+    <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
+          destroy-method="shutdown">
+        <description>Database connection pool</description>
+        <constructor-arg>
+            <bean class="com.zaxxer.hikari.HikariConfig">
+                <constructor-arg type="java.util.Properties">
+                    <value>
+                        minimumPoolSize = ${pinmanager.db.connections.min}
+                        maximumPoolSize = ${pinmanager.db.connections.max}
+                        autoCommit = true
+                        transactionIsolation = TRANSACTION_READ_COMMITTED
+                    </value>
+                </constructor-arg>
+                <property name="dataSource">
+                    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+                        <property name="url" value="${pinmanager.db.url}"/>
+                        <property name="username" value="${pinmanager.db.user}"/>
+                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }"/>
+                    </bean>
+                </property>
+            </bean>
+        </constructor-arg>
+    </bean>
 
-  <bean id="pmf"
-        class="org.springframework.orm.jdo.LocalPersistenceManagerFactoryBean"
-        depends-on="liquibase">
-    <description>JDO connection</description>
-    <property name="jdoProperties">
-      <props>
-        <prop key="javax.jdo.PersistenceManagerFactoryClass">
-        org.datanucleus.api.jdo.JDOPersistenceManagerFactory</prop>
-        <prop key="javax.jdo.option.ConnectionURL">${pinmanager.db.url}</prop>
-        <prop key="javax.jdo.option.ConnectionUserName">${pinmanager.db.user}</prop>
-        <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }</prop>
-        <prop key="javax.jdo.option.ConnectionDriverName">java.lang.String</prop> <!-- dummy value - JDBC 4 driver auto load -->
-        <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
-        <prop key="datanucleus.connectionPoolingType">BoneCP</prop>
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema manager</description>
+        <property name="dataSource" ref="data-source"/>
+        <property name="changeLog" value="classpath:${pinmanager.db.schema.changelog}"/>
+        <property name="shouldUpdate" value="${pinmanager.db.schema.auto}"/>
+    </bean>
 
-        <!-- BoneCP setMaxConnectionsPerPartition: maximum number of
-             connections (per partition) -->
-        <prop key="datanucleus.connectionPool.maxPoolSize">${pinmanager.db.connections.max-per-partition}</prop>
-
-        <!-- BoneCP setMinConnectionsPerPartition: the minimum number of
-             connections that will be contained in every partition -->
-        <prop key="datanucleus.connectionPool.minPoolSize">${pinmanager.db.connections.max-per-partition}</prop>
-
-        <!-- BoneCP setStatementsCacheSize: the number of statements to
-             cache -->
-        <prop key="datanucleus.connectionPool.maxStatements">100</prop>
-
-        <prop key="datanucleus.cache.level2.type">none</prop>
-      </props>
-    </property>
+  <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory" depends-on="liquibase">
+      <description>Database persistence manager</description>
+      <constructor-arg>
+          <props>
+              <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
+              <prop key="datanucleus.connectionPoolingType">None</prop>
+              <prop key="datanucleus.cache.level2.type">none</prop>
+          </props>
+      </constructor-arg>
+      <property name="connectionFactory" ref="data-source"/>
   </bean>
 
   <bean id="tx-manager" class="org.springframework.orm.jdo.JdoTransactionManager">

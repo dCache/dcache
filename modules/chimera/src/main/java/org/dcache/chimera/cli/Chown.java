@@ -17,6 +17,7 @@
 package org.dcache.chimera.cli;
 
 import org.dcache.chimera.FileSystemProvider;
+import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 
 import static com.google.common.base.Preconditions.checkArgument;

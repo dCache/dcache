@@ -478,20 +478,29 @@
               value="#{ '${srm.persistence.reserve-space.enable.store-transient-state}'.equals('false') ? true : false }"/>
   </bean>
 
-  <bean id="data-source" class="com.jolbox.bonecp.BoneCPDataSource"
-        destroy-method="close">
-    <description>Database connection pool</description>
-    <property name="jdbcUrl" value="${srm.db.url}"/>
-    <property name="username" value="${srm.db.user}"/>
-    <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srm.db.password.file}', '${srm.db.url}', '${srm.db.user}', '${srm.db.password}') }"/>
-    <property name="partitionCount" value="${srm.db.connections.partition-count}"/>
-    <property name="minConnectionsPerPartition" value="${srm.db.connections.min-per-partition}"/>
-    <property name="maxConnectionsPerPartition" value="${srm.db.connections.max-per-partition}"/>
-    <property name="idleConnectionTestPeriodInMinutes" value="60"/>
-    <property name="idleMaxAgeInMinutes" value="240"/>
-    <property name="acquireIncrement" value="5"/>
-    <property name="statementsCacheSize" value="100"/>
-  </bean>
+    <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
+          destroy-method="shutdown">
+        <description>Database connection pool</description>
+        <constructor-arg>
+            <bean class="com.zaxxer.hikari.HikariConfig">
+                <constructor-arg type="java.util.Properties">
+                    <value>
+                        minimumPoolSize = ${srm.db.connections.min}
+                        maximumPoolSize = ${srm.db.connections.max}
+                        autoCommit = true
+                        transactionIsolation = TRANSACTION_READ_COMMITTED
+                    </value>
+                </constructor-arg>
+                <property name="dataSource">
+                    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+                        <property name="url" value="${srm.db.url}"/>
+                        <property name="username" value="${srm.db.user}"/>
+                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srm.db.password.file}', '${srm.db.url}', '${srm.db.user}', '${srm.db.password}') }"/>
+                    </bean>
+                </property>
+            </bean>
+        </constructor-arg>
+    </bean>
 
   <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
     <description>Database transaction manager</description>

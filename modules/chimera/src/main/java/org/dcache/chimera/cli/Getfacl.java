@@ -5,6 +5,7 @@ import java.util.List;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.FileSystemProvider;
+import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 
 /**

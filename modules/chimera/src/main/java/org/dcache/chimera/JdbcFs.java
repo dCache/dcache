@@ -16,7 +16,7 @@
  */
 package org.dcache.chimera;
 
-import com.jolbox.bonecp.BoneCPDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -2704,8 +2704,8 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void close() throws IOException {
-        if (_dbConnectionsPool instanceof BoneCPDataSource) {
-            ((BoneCPDataSource) _dbConnectionsPool).close();
+        if (_dbConnectionsPool instanceof HikariDataSource) {
+            ((HikariDataSource) _dbConnectionsPool).shutdown();
         } else if (_dbConnectionsPool instanceof Closeable) {
             ((Closeable) _dbConnectionsPool).close();
         }

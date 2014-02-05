@@ -2,9 +2,11 @@
 
 package diskCacheV111.replicaManager;
 
-import com.jolbox.bonecp.BoneCPDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
 
@@ -22,6 +24,8 @@ import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellAdapter;
+
+import org.dcache.chimera.JdbcFs;
 
 import static org.dcache.commons.util.SqlHelper.tryToClose;
 
@@ -1148,27 +1152,21 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Setup method to create connection to the database and the datasource
      *
      * @param connectURI
-     * @param jdbcClass
      * @param user
      * @param password
      */
     public final static void setup(String connectURI, String user, String password) {
-        final BoneCPDataSource ds = new BoneCPDataSource();
-        ds.setJdbcUrl(connectURI);
-        ds.setUsername(user);
-        ds.setPassword(password);
-        ds.setIdleConnectionTestPeriodInMinutes(60);
-        ds.setIdleMaxAgeInMinutes(240);
-        ds.setMaxConnectionsPerPartition(10);
-        ds.setPartitionCount(3);
-        ds.setAcquireIncrement(5);
-        ds.setStatementsCacheSize(100);
+        HikariConfig config = new HikariConfig();
+        config.setDataSource(new DriverManagerDataSource(connectURI, user, password));
+        config.setMinimumPoolSize(1);
+        config.setMaximumPoolSize(30);
+        final HikariDataSource ds = new HikariDataSource(config);
 
-        Runtime.getRuntime().addShutdownHook(new Thread("replica-bonecp-shutdown-hook") {
+        Runtime.getRuntime().addShutdownHook(new Thread("replica-hikaricp-shutdown-hook") {
             @Override
             public void run()
             {
-                ds.close();
+                ds.shutdown();
             }
         });
 

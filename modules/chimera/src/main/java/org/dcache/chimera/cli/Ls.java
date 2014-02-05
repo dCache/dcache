@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileSystemProvider;
+import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.UnixPermission;

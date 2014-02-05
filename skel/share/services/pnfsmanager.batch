@@ -20,7 +20,10 @@ check -strong pnfsmanager.cell.export
 check -strong pnfsmanager.db.dialect
 check -strong pnfsmanager.db.user
 check -strong pnfsmanager.db.url
+check -strong pnfsmanager.db.connections.min
+check -strong pnfsmanager.db.connections.max
 check pnfsmanager.db.password
+check pnfsmanager.db.password.file
 
 create org.dcache.cells.UniversalSpringCell ${pnfsmanager.cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \

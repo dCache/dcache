@@ -2,14 +2,16 @@
 package diskCacheV111.services;
 
 import com.google.common.base.Strings;
-import com.jolbox.bonecp.BoneCPDataSource;
+import com.google.common.collect.Maps;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import org.datanucleus.api.jdo.JDOPersistenceManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
-import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Transaction;
 
 import java.io.PrintWriter;
@@ -78,6 +80,7 @@ public abstract class TransferManager extends AbstractCell
     private final Map<Long, TimerTask> _moverTimeoutTimerTasks =
             new ConcurrentHashMap<>();
     private String _ioQueueName; // multi io queue option
+    private HikariDataSource ds;
     private JobIdGenerator idGenerator;
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
     private String _poolProxy;
@@ -130,37 +133,7 @@ public abstract class TransferManager extends AbstractCell
 
         if (doDbLogging()) {
             try {
-                Properties properties = new Properties();
-                properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
-                        "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-                properties.setProperty("javax.jdo.option.ConnectionDriverName", "java.lang.String"); // dummy value - JDBC 4 drivers auto-load
-                properties.setProperty("javax.jdo.option.ConnectionURL", _jdbcUrl);
-                properties.setProperty("javax.jdo.option.ConnectionUserName", _user);
-                properties.setProperty("javax.jdo.option.ConnectionPassword", _pass);
-                properties.setProperty("javax.jdo.option.DetachAllOnCommit", "true");
-                properties.setProperty("javax.jdo.option.Optimistic", "true");
-                properties.setProperty("javax.jdo.option.NontransactionalRead", "true");
-                // 		properties.setProperty("javax.jdo.option.NontransactionalWrite","true");
-                properties.setProperty("javax.jdo.option.RetainValues", "true");
-                properties.setProperty("javax.jdo.option.Multithreaded", "true");
-                //   javax.jdo.option.Optimistic: false
-                //   javax.jdo.option.RetainValues: false
-                //   javax.jdo.option.NontransactionalRead: true
-                //   javax.jdo.option.NontransactionalWrite: false
-                //   javax.jdo.option.RestoreValues: false
-                //   javax.jdo.option.IgnoreCache: false
-                //   javax.jdo.option.Multithreaded: false
-                properties.setProperty("datanucleus.autoCreateSchema", "true");
-                properties.setProperty("datanucleus.validateTables", "false");
-                properties.setProperty("datanucleus.validateConstraints", "false");
-                properties.setProperty("datanucleus.autoCreateColumns", "true");
-
-                // below is default, supported are "LowerCase", "PreserveCase"
-                //  properties.setProperty("datanucleus.identifier.case","UpperCase");
-
-                PersistenceManagerFactory pmf =
-                        JDOHelper.getPersistenceManagerFactory(properties);
-                _pm = pmf.getPersistenceManager();
+                _pm = createPersistenceManager();
             } catch (Exception e) {
                 log.error("Failed to initialize Data Base connection using default values");
                 log.error("jdbcUrl=" + _jdbcUrl + " dbUser=" + _user + " dbPass=" + _pass + " pgPass=" + _pwdFile);
@@ -190,19 +163,23 @@ public abstract class TransferManager extends AbstractCell
         _poolMgrPath = new CellPath(_poolManager);
     }
 
+    @Override
+    public void cleanUp()
+    {
+        super.cleanUp();
+        if (ds != null) {
+            ds.shutdown();
+        }
+    }
+
     private void initIdGenerator()
     {
         try {
-            final BoneCPDataSource ds = new BoneCPDataSource();
-            ds.setJdbcUrl(_jdbcUrl);
-            ds.setUsername(_user);
-            ds.setPassword(_pass);
-            ds.setIdleConnectionTestPeriodInMinutes(60);
-            ds.setIdleMaxAgeInMinutes(240);
-            ds.setMaxConnectionsPerPartition(50);
-            ds.setPartitionCount(1);
-            ds.setAcquireIncrement(5);
-            ds.setStatementsCacheSize(100);
+            HikariConfig config = new HikariConfig();
+            config.setDataSource(new DriverManagerDataSource(_jdbcUrl, _user, _pass));
+            config.setMaximumPoolSize(50);
+            config.setMinimumPoolSize(1);
+            ds = new HikariDataSource(config);
 
             RequestsPropertyStorage.initPropertyStorage(
                     new DataSourceTransactionManager(ds), ds, "srmnextrequestid");
@@ -260,31 +237,10 @@ public abstract class TransferManager extends AbstractCell
             return "unrecognized value : \"" + logString + "\" only true or false are allowed";
         }
         if (doDbLogging() == true && _pm == null) {
-            sb.append(getCellName())
-                    .append(" has been started w/ db logging disabed\n");
-            sb.append("Attempting to initialize JDO Peristsency Manager using parameters provided at startup\n");
+            sb.append(getCellName()).append(" has been started w/ db logging disabled\n");
+            sb.append("Attempting to initialize JDO Persistence Manager using parameters provided at startup\n");
             try {
-                Properties properties = new Properties();
-                properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
-                        "org.datanucleus.api.jdo.JDOPersistenceManagerFactory");
-                properties.setProperty("javax.jdo.option.ConnectionDriverName", "java.lang.String"); // dummy value - JDBC 4 drivers auto-load
-                properties.setProperty("javax.jdo.option.ConnectionURL", _jdbcUrl);
-                properties.setProperty("javax.jdo.option.ConnectionUserName", _user);
-                properties.setProperty("javax.jdo.option.ConnectionPassword", _pass);
-                properties.setProperty("javax.jdo.option.DetachAllOnCommit", "true");
-                properties.setProperty("javax.jdo.option.Optimistic", "true");
-                properties.setProperty("javax.jdo.option.NontransactionalRead", "true");
-                properties.setProperty("javax.jdo.option.RetainValues", "true");
-                properties.setProperty("javax.jdo.option.Multithreaded", "true");
-                properties.setProperty("datanucleus.autoCreateSchema", "true");
-                properties.setProperty("datanucleus.validateTables", "false");
-                properties.setProperty("datanucleus.validateConstraints", "false");
-                properties.setProperty("datanucleus.autoCreateColumns", "true");
-// below is default, supported are "LowerCase", "PreserveCase"
-//                properties.setProperty("datanucleus.identifier.case","UpperCase");
-                PersistenceManagerFactory pmf =
-                        JDOHelper.getPersistenceManagerFactory(properties);
-                _pm = pmf.getPersistenceManager();
+                _pm = createPersistenceManager();
                 sb.append("Success...\n");
             } catch (Exception e) {
                 log.error(e.toString());
@@ -296,6 +252,30 @@ public abstract class TransferManager extends AbstractCell
             }
         }
         return sb.toString();
+    }
+
+    private PersistenceManager createPersistenceManager()
+    {
+        // FIXME: Close connection pool and pmf
+        Properties properties = new Properties();
+        properties.setProperty("javax.jdo.option.DetachAllOnCommit", "true");
+        properties.setProperty("javax.jdo.option.Optimistic", "true");
+        properties.setProperty("javax.jdo.option.NontransactionalRead", "true");
+        properties.setProperty("javax.jdo.option.RetainValues", "true");
+        properties.setProperty("javax.jdo.option.Multithreaded", "true");
+        properties.setProperty("datanucleus.autoCreateSchema", "true");
+        properties.setProperty("datanucleus.validateTables", "false");
+        properties.setProperty("datanucleus.validateConstraints", "false");
+        properties.setProperty("datanucleus.autoCreateColumns", "true");
+        properties.setProperty("datanucleus.connectionPoolingType", "None");
+// below is default, supported are "LowerCase", "PreserveCase"
+//                properties.setProperty("datanucleus.identifier.case","UpperCase");
+        HikariConfig config = new HikariConfig();
+        config.setDataSource(new DriverManagerDataSource(_jdbcUrl, _user, _pass));
+        JDOPersistenceManagerFactory pmf = new JDOPersistenceManagerFactory(
+                Maps.<String, Object>newHashMap(Maps.fromProperties(properties)));
+        pmf.setConnectionFactory(new HikariDataSource(config));
+        return pmf.getPersistenceManager();
     }
 
     public String ac_set_maxNumberOfDeleteRetries_$_1(Args args)

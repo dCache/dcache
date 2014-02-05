@@ -1,7 +1,6 @@
 package org.dcache.tests.repository;
 
 import com.google.common.io.Resources;
-import com.jolbox.bonecp.BoneCPDataSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,11 +14,15 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.UUID;
 import javax.sql.DataSource;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import liquibase.Liquibase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
@@ -41,7 +44,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         Properties dbProperties = new Properties();
         dbProperties.load(Resources.newInputStreamSupplier(DB_TEST_PROPERTIES).getInput());
 
-        DataSource ds = getFileSystemProvider(
+        DataSource ds = getDataSource(
                 dbProperties.getProperty("chimera.db.url") + ":" + UUID.randomUUID(),
                 dbProperties.getProperty("chimera.db.user"),
                 dbProperties.getProperty("chimera.db.password"));
@@ -122,15 +125,11 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         return entries;
     }
 
-    public static BoneCPDataSource getFileSystemProvider(String url, String user, String pass) {
-
-        BoneCPDataSource ds = new BoneCPDataSource();
-        ds.setJdbcUrl(url);
-        ds.setUsername(user);
-        ds.setPassword(pass);
-        ds.setMaxConnectionsPerPartition(3); // looks like we need >= 3
-        ds.setPartitionCount(1);
-
-        return ds;
+    public static HikariDataSource getDataSource(String url, String user, String pass) {
+        HikariConfig config = new HikariConfig();
+        config.setDataSource(new DriverManagerDataSource(url, user, pass));
+        config.setMinimumPoolSize(1);
+        config.setMaximumPoolSize(3);
+        return new HikariDataSource(config);
     }
 }

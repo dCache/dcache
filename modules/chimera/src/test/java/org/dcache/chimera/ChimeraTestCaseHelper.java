@@ -44,7 +44,7 @@ public abstract class ChimeraTestCaseHelper {
          */
 
         liquibase.update("");
-        _fs = ChimeraFsHelper.getFileSystemProvider(
+        _fs = FsFactory.getFileSystemProvider(
                 dbProperties.getProperty("chimera.db.url"),
                 dbProperties.getProperty("chimera.db.user"),
                 dbProperties.getProperty("chimera.db.password"),

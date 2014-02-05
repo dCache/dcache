@@ -1,6 +1,7 @@
 package org.dcache.chimera.namespace;
 
-import com.jolbox.bonecp.BoneCPDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -10,6 +11,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.io.PrintWriter;
 import java.net.URI;
@@ -179,7 +181,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _cleanerTask;
     private PoolInformationBase _pools = new PoolInformationBase();
-    private BoneCPDataSource _dataSource;
+    private HikariDataSource _dataSource;
     private JdbcTemplate _db;
     private BroadcastRegistrationTask _broadcastRegistration;
     private CellStub _broadcasterStub;
@@ -273,19 +275,12 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             throw new IllegalArgumentException("Not enough arguments to Init SQL database");
         }
 
-        BoneCPDataSource ds = new BoneCPDataSource();
-        ds.setJdbcUrl(jdbcUrl);
-        ds.setUsername(user);
-        ds.setPassword(pass);
-        ds.setIdleConnectionTestPeriodInMinutes(60);
-        ds.setIdleMaxAgeInMinutes(240);
-        ds.setMaxConnectionsPerPartition(30);
-        ds.setMaxConnectionsPerPartition(10);
-        ds.setPartitionCount(3);
-        ds.setAcquireIncrement(5);
-        ds.setStatementsCacheSize(100);
+        HikariConfig config = new HikariConfig();
+        config.setDataSource(new DriverManagerDataSource(jdbcUrl, user, pass));
+        config.setMinimumPoolSize(1);
+        config.setMaximumPoolSize(10);
 
-        _dataSource = ds;
+        _dataSource = new HikariDataSource(config);
         _db = new JdbcTemplate(_dataSource);
 
         _log.info("Database connection with jdbcUrl={}; user={}",
@@ -299,7 +294,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             _executor.shutdownNow();
         }
         if (_dataSource != null) {
-            _dataSource.close();
+            _dataSource.shutdown();
         }
         if (_broadcastRegistration != null) {
             _broadcastRegistration.unregister();

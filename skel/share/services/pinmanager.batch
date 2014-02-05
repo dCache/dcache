@@ -11,8 +11,8 @@ check pinmanager.db.password.file
 check -strong pinmanager.limits.pin-duration
 check -strong pinmanager.limits.pin-duration.unit
 check -strong pinmanager.expiration-period
-check -strong pinmanager.db.connections.max-per-partition
-check -strong pinmanager.db.connections.min-per-partition
+check -strong pinmanager.db.connections.max
+check -strong pinmanager.db.connections.min
 check -strong pinmanager.service.poolmanager
 check -strong pinmanager.service.poolmanager.timeout
 check -strong pinmanager.service.poolmanager.timeout.unit
