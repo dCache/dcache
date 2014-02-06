@@ -844,7 +844,8 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                            final long sizeInBytes,
                            final long lifetime,
                            final FsPath path,
-                           final PnfsId pnfsId)
+                           final PnfsId pnfsId,
+                           final FileState state)
             throws DataAccessException, SpaceException
     {
         final long creationTime = System.currentTimeMillis();
@@ -887,7 +888,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                 stmt.setObject(6, (lifetime == -1) ? null : creationTime + lifetime);
                 stmt.setString(7, Objects.toString(path, null));
                 stmt.setString(8, Objects.toString(pnfsId, null));
-                stmt.setInt(9, FileState.ALLOCATED.getStateId());
+                stmt.setInt(9, state.getStateId());
                 return stmt;
             }
         }, keyHolder);

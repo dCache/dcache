@@ -360,7 +360,7 @@ public final class SpaceManagerService
         {
                 return (message instanceof PoolMgrSelectWritePoolMsg && ((PoolMgrSelectWritePoolMsg) message).getPnfsPath() != null && !message.isReply())
                        || message instanceof DoorTransferFinishedMessage
-                       || (message instanceof PoolAcceptFileMessage && ((PoolAcceptFileMessage) message).getFileAttributes().getStorageInfo().getKey("LinkGroup") != null);
+                       || (message instanceof PoolAcceptFileMessage && ((PoolAcceptFileMessage) message).getFileAttributes().getStorageInfo().getKey("LinkGroup") != null && (!message.isReply() || message.getReturnCode() != 0));
         }
 
         public void messageArrived(final CellMessage envelope,
@@ -626,7 +626,8 @@ public final class SpaceManagerService
                                        use.getSizeInBytes(),
                                        use.getLifetime(),
                                        path,
-                                       null);
+                                       null,
+                                       FileState.ALLOCATED);
                 use.setFileId(fileId);
         }
 
@@ -647,6 +648,7 @@ public final class SpaceManagerService
                 if (f.getPnfsId() != null) {
                     throw new SpaceException("The file is locked by space management for another upload.");
                 }
+                f.setState(FileState.TRANSFERRING);
                 f.setPnfsId(pnfsId);
                 db.updateFile(f);
             } else if (spaceToken != null) {
@@ -659,7 +661,8 @@ public final class SpaceManagerService
                         message.getPreallocated(),
                         lifetime,
                         null,
-                        pnfsId);
+                        pnfsId,
+                        FileState.TRANSFERRING);
             } else {
                 LOGGER.trace("transferStarting: file is not found, no prior reservations for this file");
 
@@ -686,7 +689,8 @@ public final class SpaceManagerService
                               sizeInBytes,
                               lifetime,
                               null,
-                              pnfsId);
+                              pnfsId,
+                              FileState.TRANSFERRING);
 
                 /* One could inject SpaceToken and SpaceTokenDescription into storage
                  * info at this point, but since the space reservation is implicit and
@@ -698,34 +702,17 @@ public final class SpaceManagerService
         private void transferStarted(PnfsId pnfsId,boolean success)
                 throws DataAccessException
         {
-            try {
-                LOGGER.trace("transferStarted({},{})", pnfsId, success);
-                File f = db.selectFileForUpdate(pnfsId);
-                if (f.getState() == FileState.ALLOCATED) {
-                    if(!success) {
-                            if (f.getPath() != null) {
-                                f.setPnfsId(null);
-                                db.updateFile(f);
-                            } else {
-                                /* This reservation was created by space manager
-                                 * when the transfer started. Delete it.
-                                 */
-                                db.removeFile(f.getId());
-
-                                /* TODO: If we also created the reservation, we should
-                                 * release it at this point, but at the moment we cannot
-                                 * know who created it. It will eventually expire
-                                 * automatically.
-                                 */
-                            }
-                    } else {
-                            f.setState(FileState.TRANSFERRING);
-                            db.updateFile(f);
-                    }
+                try {
+                        LOGGER.trace("transferStarted({},{})", pnfsId, success);
+                        if (!success) {
+                                File f = db.selectFileForUpdate(pnfsId);
+                                if (f.getState() == FileState.TRANSFERRING) {
+                                    transferFailed(f);
+                                }
+                        }
+                } catch (EmptyResultDataAccessException e) {
+                    LOGGER.trace("transferStarted failed: {}", e.getMessage());
                 }
-            } catch (EmptyResultDataAccessException e) {
-                LOGGER.trace("transferStarted failed: {}", e.getMessage());
-            }
         }
 
         private void transferFinished(DoorTransferFinishedMessage finished)
@@ -770,28 +757,33 @@ public final class SpaceManagerService
                                 }
                         }
                         else {
-                                if (f.getPath() != null) {
-                                    f.setPnfsId(null);
-                                    f.setState(FileState.ALLOCATED);
-                                    db.updateFile(f);
-                                } else {
-                                    /* This reservation was created by space manager
-                                     * when the transfer started. Delete it.
-                                     */
-                                    db.removeFile(f.getId());
-
-                                    /* TODO: If we also created the reservation, we should
-                                     * release it at this point, but at the moment we cannot
-                                     * know who created it. It will eventually expire
-                                     * automatically.
-                                     */
-                                }
+                            transferFailed(f);
                         }
                 }
                 else {
                         LOGGER.trace("transferFinished({}): file state={}",
                                      pnfsId, f.getState());
                 }
+        }
+
+        private void transferFailed(File f)
+        {
+            if (f.getPath() != null) {
+                f.setPnfsId(null);
+                f.setState(FileState.ALLOCATED);
+                db.updateFile(f);
+            } else {
+                /* This reservation was created by space manager
+                 * when the transfer started. Delete it.
+                 */
+                db.removeFile(f.getId());
+
+                /* TODO: If we also created the reservation, we should
+                 * release it at this point, but at the moment we cannot
+                 * know who created it. It will eventually expire
+                 * automatically.
+                 */
+            }
         }
 
         private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws DataAccessException
@@ -1038,7 +1030,8 @@ public final class SpaceManagerService
                               long sizeInBytes,
                               long lifetime,
                               FsPath path,
-                              PnfsId pnfsId)
+                              PnfsId pnfsId,
+                              FileState state)
                 throws DataAccessException, SpaceException
         {
             String effectiveGroup;
@@ -1058,7 +1051,8 @@ public final class SpaceManagerService
                                  sizeInBytes,
                                  lifetime,
                                  path,
-                                 pnfsId);
+                                 pnfsId,
+                                 state);
         }
 
         /**

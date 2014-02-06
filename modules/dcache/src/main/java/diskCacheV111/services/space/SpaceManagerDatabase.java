@@ -35,7 +35,8 @@ public interface SpaceManagerDatabase
                     long sizeInBytes,
                     long lifetime,
                     @Nullable FsPath path,
-                    @Nullable PnfsId pnfsId)
+                    @Nullable PnfsId pnfsId,
+                    FileState state)
             throws DataAccessException, SpaceException;
 
     void expire(SpaceCriterion criterion);
