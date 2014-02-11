@@ -380,10 +380,11 @@
                 <artifactId>datanucleus-rdbms</artifactId>
                 <version>3.2.10</version>
             </dependency>
+            <!-- 3.2.1 has a saxon/XSLT bug -->
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-xml</artifactId>
-                <version>3.2.1</version>
+                <version>3.2.0-release</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
