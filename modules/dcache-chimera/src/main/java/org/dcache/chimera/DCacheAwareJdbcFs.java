@@ -61,41 +61,38 @@ package org.dcache.chimera;
 
 import javax.sql.DataSource;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+import diskCacheV111.vehicles.ProtocolInfo;
 
 import org.dcache.acl.enums.AccessMask;
-import org.dcache.alarms.IAlarms;
 import org.dcache.cells.CellStub;
+import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.nfs.v4.Stateids;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.vehicles.FileAttributes;
 
 /**
  * Overrides protected methods so as to be able to provide live locality
  * information if requested; the latter calls the PNFS and Pool managers.
+ * Also implements requests to pin manager for STAGE command.
  *
  * @author arossi
  */
 public class DCacheAwareJdbcFs extends JdbcFs {
-    private static String host;
-
-    static {
-        try {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            host = IAlarms.UNKNOWN_HOST;
-        }
-    }
-
     private CellStub poolManagerStub;
+    private CellStub pinManagerStub;
     private PnfsHandler pnfsHandler;
 
     public DCacheAwareJdbcFs(DataSource dataSource, String dialect) {
@@ -114,10 +111,56 @@ public class DCacheAwareJdbcFs extends JdbcFs {
         this.poolManagerStub = poolManagerStub;
     }
 
+    public void setPinManagerStub(CellStub pinManagerStub) {
+        this.pinManagerStub = pinManagerStub;
+    }
+
     @Override
     public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException {
         FsInode pathInode = new FsInode(DCacheAwareJdbcFs.this, node.toString());
         return getFileLocality(inode2path(pathInode));
+    }
+
+    /**
+     * This method sends a request to the pin manager to pin
+     * a given file.
+     */
+    @Override
+    public void pin(String pnfsid, long lifetime) throws ChimeraFsException {
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(new PnfsId(pnfsid));
+        /*
+         * TODO improve code to pass in the actual InetAddress of the
+         * client so that link net masks do not interfere; note that SRM uses
+         * "localhost", so it is not a deviation from existing behavior.
+         */
+        ProtocolInfo protocolInfo
+            = new NFS4ProtocolInfo(new InetSocketAddress("localhost", 0),
+                                   new stateid4(Stateids.invalidStateId()));
+        PinManagerPinMessage message
+            = new PinManagerPinMessage(attributes, protocolInfo, null, lifetime);
+
+        try {
+            pinManagerStub.sendAndWait(message);
+        } catch (CacheException | InterruptedException t) {
+            throw new ChimeraFsException("pin", t);
+        }
+    }
+
+    /**
+     * This method sends a request to the pin manager to unpin
+     * a given file.
+     */
+    @Override
+    public void unpin(String pnfsid) throws ChimeraFsException {
+        PinManagerUnpinMessage message
+            = new PinManagerUnpinMessage(new PnfsId(pnfsid));
+
+        try {
+            pinManagerStub.sendAndWait(message);
+        } catch (CacheException | InterruptedException t) {
+            throw new ChimeraFsException("unpin", t);
+        }
     }
 
     /**
@@ -141,7 +184,12 @@ public class DCacheAwareJdbcFs extends JdbcFs {
             FileAttributes attributes
                 = pnfsHandler.getFileAttributes(filePath, requestedAttributes,
                                                 accessMask);
-            locality = _poolMonitor.getFileLocality(attributes, host);
+            /*
+             * TODO improve code to pass in the actual InetAddress of the
+             * client so that link net masks do not interfere; note that SRM uses
+             * "localhost", so it is not a deviation from existing behavior.
+             */
+            locality = _poolMonitor.getFileLocality(attributes, "localhost");
         } catch (CacheException | InterruptedException t) {
             throw new ChimeraFsException("getFileLocality", t);
         }

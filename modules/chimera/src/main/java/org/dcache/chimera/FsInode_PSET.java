@@ -17,11 +17,18 @@
 package org.dcache.chimera;
 
 import com.google.common.base.Charsets;
+
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.chimera.posix.Stat;
 
 public class FsInode_PSET extends FsInode {
+    private static final String SIZE = "size";
+    private static final String IO = "io";
+    private static final String ONLN = "bringonline";
+    private static final String STG = "stage";
+    private static final String PIN = "pin";
 
     private final String[] _args;
 
@@ -58,19 +65,25 @@ public class FsInode_PSET extends FsInode {
 
     @Override
     public void setMTime(long mtime) throws ChimeraFsException {
-
-        if (_args[0].equals("size")) {
-            try {
-                _fs.setFileSize(this, Long.parseLong(_args[1]));
-            } catch (NumberFormatException ignored) {
-                // Bad values ignored
-            }
-            super.setMTime(mtime);
-            return;
-        }
-
-        if (_args[0].equals("io")) {
-            _fs.setInodeIo(this, _args[1].equals("on"));
+        switch(_args[0]) {
+            case SIZE:
+                try {
+                    _fs.setFileSize(this, Long.parseLong(_args[1]));
+                } catch (NumberFormatException ignored) {
+                    // Bad values ignored
+                }
+                super.setMTime(mtime);
+                break;
+            case IO:
+                _fs.setInodeIo(this, _args[1].equals("on"));
+                break;
+            case ONLN:
+            case STG:
+            case PIN:
+                handlePinRequest();
+                break;
+            default:
+                break;
         }
     }
 
@@ -84,10 +97,10 @@ public class FsInode_PSET extends FsInode {
 
     @Override
     public void setStat(Stat newStat) {
-	try {
-	    this.setMTime(newStat.getMTime());
-	} catch (ChimeraFsException ignored) {
-	}
+        try {
+            this.setMTime(newStat.getMTime());
+        } catch (ChimeraFsException ignored) {
+        }
     }
 
     @Override
@@ -120,9 +133,6 @@ public class FsInode_PSET extends FsInode {
         return -1;
     }
 
-    /* (non-Javadoc)
-     * @see org.dcache.chimera.FsInode#equals(java.lang.Object)
-     */
     @Override
     public boolean equals(Object o) {
 
@@ -137,12 +147,29 @@ public class FsInode_PSET extends FsInode {
         return super.equals(o) && Arrays.equals(_args, ((FsInode_PSET) o)._args);
     }
 
+    private void handlePinRequest() throws ChimeraFsException {
+        long lifetime;
+        TimeUnit unit = TimeUnit.SECONDS;
+        if (_args.length > 1) {
+            lifetime = Long.parseLong(_args[1]);
+            if (lifetime < 0) {
+                throw new ChimeraFsException("Negative values are not allowed;"
+                                + " please use a positive value for pin lifetime,"
+                                + " or 0 to unpin the file");
+            }
+        } else {
+            lifetime = 0;
+        }
 
-    /* (non-Javadoc)
-     * @see org.dcache.chimera.FsInode#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        return 17;
+        if (_args.length > 2) {
+            unit = TimeUnit.valueOf(_args[2]);
+        }
+        lifetime = unit.toMillis(lifetime);
+
+        if (lifetime == 0) {
+            _fs.unpin(_id);
+        } else {
+            _fs.pin(_id, lifetime);
+        }
     }
 }
