@@ -124,7 +124,11 @@ public class Shell implements Closeable
     {
         fs = FsFactory.createFileSystem(args);
         pwd = fs.path2inode(path);
-        commandInterpreter = new CommandInterpreter(this);
+        commandInterpreter = new CommandInterpreter(this) {
+            {
+                addCommandListener(new HelpCommands());
+            }
+        };
         hasConsole = System.console() != null;
         isAnsiSupported = console.getTerminal().isANSISupported() && hasConsole;
     }
