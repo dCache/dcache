@@ -747,8 +747,8 @@ public class PoolV4
             } else {
                 Set<Repository.OpenFlags> openFlags =
                         message.isPool2Pool()
-                                ? EnumSet.noneOf(Repository.OpenFlags.class)
-                                : EnumSet.of(Repository.OpenFlags.NOATIME);
+                                ? EnumSet.of(Repository.OpenFlags.NOATIME)
+                                : EnumSet.noneOf(Repository.OpenFlags.class);
                 handle = _repository.openEntry(pnfsId, openFlags);
             }
         } catch (FileNotInCacheException e) {
