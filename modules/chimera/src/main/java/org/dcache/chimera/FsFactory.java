@@ -35,8 +35,8 @@ public class FsFactory
 
     public static FileSystemProvider createFileSystem(String[] args)
     {
-        if (args.length < 5) {
-            throw new IllegalArgumentException();
+        if (args.length < ARGC) {
+            throw new IllegalArgumentException("Required argument missing: " + USAGE);
         }
         return getFileSystemProvider(args[0], args[2], args[3], args[1]);
     }
