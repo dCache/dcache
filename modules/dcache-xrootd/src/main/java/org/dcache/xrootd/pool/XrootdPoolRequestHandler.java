@@ -1,3 +1,20 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.xrootd.pool;
 
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -15,14 +32,20 @@ import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.Checksum;
+import org.dcache.util.Checksums;
+import org.dcache.util.Version;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
-import org.dcache.xrootd.core.XrootdRequestHandler;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.AuthenticationRequest;
@@ -34,8 +57,8 @@ import org.dcache.xrootd.protocol.messages.MkDirRequest;
 import org.dcache.xrootd.protocol.messages.MvRequest;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
 import org.dcache.xrootd.protocol.messages.OpenResponse;
-import org.dcache.xrootd.protocol.messages.ProtocolRequest;
-import org.dcache.xrootd.protocol.messages.ProtocolResponse;
+import org.dcache.xrootd.protocol.messages.QueryRequest;
+import org.dcache.xrootd.protocol.messages.QueryResponse;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
@@ -64,7 +87,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.*;
  * Synchronisation is currently not ensured by the handler; it relies
  * on the synchronization by the underlying channel execution handler.
  */
-public class XrootdPoolRequestHandler extends XrootdRequestHandler
+public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 {
     private final static Logger _log =
         LoggerFactory.getLogger(XrootdPoolRequestHandler.class);
@@ -188,43 +211,22 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
      * file descriptor is stored for subsequent access.
      */
     @Override
-    protected AbstractResponseMessage
+    protected Object
         doOnOpen(ChannelHandlerContext ctx, MessageEvent event,
                  OpenRequest msg)
         throws XrootdException
     {
         try {
-            Map<String,String> opaque;
-            try {
-                opaque = OpaqueStringParser.getOpaqueMap(msg.getOpaque());
-            } catch (ParseException e) {
-                _log.warn("Could not parse the opaque information in {}: {}",
-                        msg, e.getMessage());
-                throw new XrootdException(kXR_NotAuthorized,
-                        "Cannot parse opaque data: " + e.getMessage());
-            }
-
-            String uuidString = opaque.get(XrootdProtocol.UUID_PREFIX);
-            if (uuidString == null) {
+            UUID uuid = getUuid(msg.getOpaque());
+            if (uuid == null) {
                 _log.warn("Request contains no UUID: {}", msg);
-                throw new XrootdException(kXR_NotAuthorized,
-                        XrootdProtocol.UUID_PREFIX + " is missing. Contact redirector to obtain a new UUID.");
-            }
-
-            UUID uuid;
-            try {
-                uuid = UUID.fromString(uuidString);
-            } catch (IllegalArgumentException e) {
-                _log.warn("Failed to parse UUID in {}: {}", msg, e.getMessage());
-                throw new XrootdException(kXR_NotAuthorized,
-                        "Cannot parse " + uuidString + ": " + e.getMessage());
+                return redirectToDoor(ctx, event, msg);
             }
 
             MoverChannel<XrootdProtocolInfo> file = _server.open(uuid, false);
             if (file == null) {
                 _log.warn("No mover found for {}", msg);
-                throw new XrootdException(kXR_NotAuthorized,
-                        "Request UUID is no longer valid. Contact redirector to obtain a new UUID.");
+                return redirectToDoor(ctx, event, msg);
             }
 
             try {
@@ -262,6 +264,34 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         }  catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
+    }
+
+    private UUID getUuid(String opaque) throws XrootdException
+    {
+        Map<String,String> map;
+        try {
+            map = OpaqueStringParser.getOpaqueMap(opaque);
+        } catch (ParseException e) {
+            _log.warn("Could not parse the opaque information {}: {}",
+                      opaque, e.getMessage());
+            throw new XrootdException(kXR_NotAuthorized,
+                    "Cannot parse opaque data: " + e.getMessage());
+        }
+
+        String uuidString = map.get(XrootdProtocol.UUID_PREFIX);
+        if (uuidString == null) {
+            return null;
+        }
+
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(uuidString);
+        } catch (IllegalArgumentException e) {
+            _log.warn("Failed to parse UUID {}: {}", opaque, e.getMessage());
+            throw new XrootdException(kXR_NotAuthorized,
+                    "Cannot parse " + uuidString + ": " + e.getMessage());
+        }
+        return uuid;
     }
 
     /**
@@ -516,12 +546,60 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnProtocolRequest(ChannelHandlerContext ctx,
-                            MessageEvent event, ProtocolRequest msg)
-        throws XrootdException
+    protected Object doOnQuery(ChannelHandlerContext ctx, MessageEvent event, QueryRequest msg) throws XrootdException
     {
-        return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER);
+        switch (msg.getReqcode()) {
+        case kXR_Qconfig:
+            StringBuilder s = new StringBuilder();
+            for (String name: msg.getArgs().split(" ")) {
+                switch (name) {
+                case "bind_max":
+                    s.append(0);
+                    break;
+                case "readv_ior_max":
+                    s.append(_server.getMaxFrameSize());
+                    break;
+                case "readv_iov_max":
+                    s.append(Integer.MAX_VALUE);
+                    break;
+                case "version":
+                    s.append("dCache ").append(Version.of(XrootdPoolRequestHandler.class).getVersion());
+                    break;
+                default:
+                    s.append(name);
+                    break;
+                }
+                s.append('\n');
+            }
+            return new QueryResponse(msg, s.toString());
+
+        case kXR_Qcksum:
+            String args = msg.getArgs();
+            int pos = args.indexOf(OPAQUE_DELIMITER);
+            if (pos == -1) {
+                return redirectToDoor(ctx, event, msg);
+            }
+            UUID uuid = getUuid(args.substring(pos + 1));
+            if (uuid == null) {
+                /* The spec isn't clear about whether the path includes the opaque information or not.
+                 * Thus we cannot rely on there being a uuid and without the uuid we cannot lookup the
+                 * file attributes in the pool.
+                 */
+                return redirectToDoor(ctx, event, msg);
+            }
+            FileAttributes attributes = _server.getFileAttributes(uuid);
+            if (attributes == null) {
+                return redirectToDoor(ctx, event, msg);
+            }
+            if (attributes.isUndefined(FileAttribute.CHECKSUM) || attributes.getChecksums().isEmpty()) {
+                throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
+            }
+            Checksum checksum = Checksums.preferrredOrder().min(attributes.getChecksums());
+            return new QueryResponse(msg, checksum.getType().getName() + " " + checksum.getValue());
+
+        default:
+            return super.doOnQuery(ctx, event, msg);
+        }
     }
 
     /**

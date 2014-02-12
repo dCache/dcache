@@ -6,6 +6,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps.EntryTransformer;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,9 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Maps.transformEntries;
+import static org.dcache.util.ChecksumType.ADLER32;
+import static org.dcache.util.ChecksumType.MD4_TYPE;
+import static org.dcache.util.ChecksumType.MD5_TYPE;
 
 /**
  * Class containing utility methods for operating on checksum values
@@ -61,6 +65,18 @@ public class Checksums
                     return null;
                 }
             }};
+    private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDERING =
+            Ordering.explicit(MD5_TYPE, ADLER32, MD4_TYPE);
+    private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
+                    PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(
+                            new Function<Checksum, ChecksumType>()
+                            {
+                                @Override
+                                public ChecksumType apply(Checksum checksum)
+                                {
+                                    return checksum.getType();
+                                }
+                            });
 
 
     private Checksums()
@@ -125,5 +141,10 @@ public class Checksums
                 RFC3230_TO_CHECKSUM);
 
         return Sets.newHashSet(filter(checksums.values(), notNull()));
+    }
+
+    public static Ordering<Checksum> preferrredOrder()
+    {
+        return PREFERRED_CHECKSUM_ORDERING;
     }
 }

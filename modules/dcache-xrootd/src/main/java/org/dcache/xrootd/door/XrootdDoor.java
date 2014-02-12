@@ -1,3 +1,20 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.xrootd.door;
 
 import com.google.common.base.Splitter;
@@ -57,6 +74,7 @@ import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
+import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.Transfer;
@@ -830,6 +848,15 @@ public class XrootdDoor
             break;
         }
         return flags;
+    }
+
+    public Set<Checksum> getChecksums(FsPath fullPath, Subject subject) throws CacheException
+    {
+        PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
+        Set<FileAttribute> requestedAttributes = EnumSet.of(CHECKSUM);
+        FileAttributes attributes =
+                pnfsHandler.getFileAttributes(fullPath.toString(), requestedAttributes);
+        return attributes.getChecksums();
     }
 
     public FileStatus getFileStatus(FsPath fullPath, Subject subject, String clientHost) throws CacheException
