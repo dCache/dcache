@@ -20,6 +20,7 @@ package org.dcache.chimera.cli;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.LineProcessor;
+import com.google.common.primitives.Booleans;
 import jline.ANSIBuffer;
 import jline.ConsoleReader;
 
@@ -53,6 +54,7 @@ import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.HelpFormat;
+import dmg.util.command.Option;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACLException;
@@ -357,6 +359,8 @@ public class Shell implements Closeable
     @Command(name = "ls", hint = "list directory contents")
     public class LsCommand implements Callable<Serializable>
     {
+        private static final String DEFAULT_TIME = "mtime";
+
         /* The block size is purely nominal; we use 1k here as historically
          * filesystems have used a 1k block size. */
         private final int BLOCK_SIZE = 1024;
@@ -378,11 +382,34 @@ public class Shell implements Closeable
         private final long sixMonthsInPast = sixMonthsInPast();
         private final long oneHourInFuture = oneHourInFuture();
 
+        @Option(name = "time", values = { "access", "use", "atime", "status", "ctime", "modify", "mtime", "create" },
+                usage = "Show alternative time instead of modification time: access/use/atime is the last access time, " +
+                        "status/ctime is the last file status modification time, modify/mtime is the last write time, " +
+                        "create is the creation time.")
+        String time = DEFAULT_TIME;
+
+        @Option(name = "c",
+                usage = "Use time of last modification of the file status information instead of last modification " +
+                        "of the file itself.")
+        boolean ctime;
+
+        @Option(name = "u",
+                usage = "Use time of last access instead of last modification of the file.")
+        boolean atime;
+
         @Argument(required = false)
         File path;
 
         public Serializable call() throws IOException
         {
+            checkArgument(Booleans.countTrue(atime, ctime, time != DEFAULT_TIME) <= 1,
+                          "Conflicting time arguments.");
+            if (ctime) {
+                time = "ctime";
+            } else if (atime) {
+                time = "atime";
+            }
+
             List<HimeraDirectoryEntry> entries = new LinkedList<>();
 
             long totalBlocks = 0;
@@ -427,13 +454,34 @@ public class Shell implements Closeable
         {
             if (entry != null) {
                 Stat stat = entry.getStat();
+                long time;
+                switch (this.time) {
+                case "access":
+                case "atime":
+                case "use":
+                    time = stat.getATime();
+                    break;
+                case "status":
+                case "ctime":
+                    time = stat.getCTime();
+                    break;
+                case "modify":
+                case "mtime":
+                    time = stat.getMTime();
+                    break;
+                case "created":
+                    time = stat.getCrTime();
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown time field: " + this.time);
+                }
                 String s = String.format("%s %s %s %s %s %s %s",
                                          permissionsFor(stat),
                                          pad(stat.getNlink(), nlinkWidth),
                                          pad(stat.getUid(), uidWidth),
                                          pad(stat.getGid(), gidWidth),
                                          pad(stat.getSize(), sizeWidth),
-                                         dateOf(stat.getMTime()),
+                                         dateOf(time),
                                          entry.getName());
 
                 console.printString(s);
