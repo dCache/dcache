@@ -257,6 +257,7 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
 
         if (url.startsWith("xml:")) {
             initializeXmlFile(path);
+            properties.setProperty("datanucleus.ConnectionURL", url);
         } else if (url.startsWith("jdbc:")) {
             HikariConfig config = new HikariConfig();
             config.setDataSource(new DriverManagerDataSource(url, user, password));
