@@ -119,29 +119,24 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
         }
     }
 
-    @Required
     public void setAlarmsCleanerDeleteThreshold(
             int alarmCleanerDeleteThreshold) {
         this.alarmCleanerDeleteThreshold = alarmCleanerDeleteThreshold;
     }
 
-    @Required
     public void setAlarmsCleanerDeleteThresholdUnit(TimeUnit timeUnit) {
         alarmCleanerDeleteThresholdUnit = checkNotNull(timeUnit);
     }
 
-    @Required
     public void setAlarmsCleanerEnabled(boolean alarmCleanerEnabled) {
         this.alarmCleanerEnabled = alarmCleanerEnabled;
     }
 
-    @Required
     public void setAlarmsCleanerSleepInterval(
             int alarmCleanerSleepInterval) {
         this.alarmCleanerSleepInterval = alarmCleanerSleepInterval;
     }
 
-    @Required
     public void setAlarmsCleanerSleepIntervalUnit(TimeUnit timeUnit) {
         alarmCleanerSleepIntervalUnit = checkNotNull(timeUnit);
     }
@@ -150,7 +145,6 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
         this.alarmsXMLPath = alarmsXMLPath;
     }
 
-    @Required
     public void setPersistenceManagerFactory(PersistenceManagerFactory pmf)
     {
         this.pmf = pmf;
