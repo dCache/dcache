@@ -218,10 +218,11 @@
                 <artifactId>jna</artifactId>
                 <version>3.4.0</version>
             </dependency>
+            <!-- xacml client incompatible with the newer opensaml library -->
             <dependency>
                 <groupId>org.opensaml</groupId>
                 <artifactId>opensaml</artifactId>
-                <version>2.6.0</version>
+                <version>2.4.1</version>
                 <exclusions>
                     <exclusion>
                         <!-- We manually pull in a different variant -->
@@ -233,11 +234,6 @@
                         <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.opensaml</groupId>
-                <artifactId>opensaml1</artifactId>
-                <version>1.1</version>
             </dependency>
             <dependency>
                 <groupId>javax.xml</groupId>
