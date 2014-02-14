@@ -443,15 +443,20 @@ public class UniversalSpringCell
         String controller = args.getOpt("sc");
         String file = args.getOpt("file");
 
+        File path;
         if ("none".equals(controller)) {
             controller = null;
-            file = _setupFile.getPath();
+            path = _setupFile;
         } else if (file == null && controller == null) {
             controller = _setupController;
-            file = _setupFile.getPath();
+            path = _setupFile;
+        } else if (file != null) {
+            path = new File(file);
+        } else {
+            path = null;
         }
 
-        checkArgument(file != null || controller != null,
+        checkArgument(path != null || controller != null,
                 "Either a setup controller or setup file must be specified");
 
         if (controller != null) {
@@ -472,8 +477,7 @@ public class UniversalSpringCell
             }
         }
 
-        if (file != null) {
-            File path = new File(file).getAbsoluteFile();
+        if (path != null) {
             File directory = path.getParentFile();
             File temp = File.createTempFile(path.getName(), null, directory);
             temp.deleteOnExit();
