@@ -76,26 +76,51 @@ layout is significantly different in the tarball.
 The system-test module
 ----------------------
 
-The _packages/system-test_ module generates a ready-to-run single
-domain dCache instance suitable for testing. It is configured to use
-an embedded database and thus to run without postgresql. To build it
-simply run:
+The _packages/system-test_ module generates a ready-to-run single domain dCache
+instance suitable for testing. It is configured to use an embedded database and
+thus to run without postgresql. To build it simply run:
 
     mvn clean package -am -pl packages/system-test
 
-This entires a completely self-contained dCache instance in
+This entails a completely self-contained dCache instance in
 `packages/system-test/target/dcache`. It can be started using:
 
-    packages/system-test/target/dcache/bin/dcache start
+    packages/system-test/target/bin/ctlcluster start
 
-To use GSI and TLS protocols, you may have to copy the test CA
-certificates into your `/etc/grid-security/certificates/`
-directory. Follow the instructions shown at the end of the build.
+To use GSI and TLS protocols, you may have to copy the test CA certificates
+into your `/etc/grid-security/certificates/` directory. Follow the instructions
+shown at the end of the build.
 
-A test script is provided in
-`packages/system-test/target/dcache/bin/test` to execute various test
-transfers. This script is not intended for automatic testing. It
+A test script is provided in `packages/system-test/target/bin/test` to execute
+various test transfers. This script is not intended for automatic testing. It
 requires that various grid-related tools are available on the host.
+
+
+An interactive database console for the embedded database can be started using
+
+    packages/system-test/target/bin/hsqldb DATABASE
+
+where DATABASE is the database to inspect, usually a service name, eg. space
+manager or pin manager. The embedded database is single process, and thus the
+console can only be started if dCache is not running.
+
+
+Multible versions of dCache can be tested for compatibility by installing
+older versions using
+
+    packages/system-test/target/bin/ctlcluster install VERSION
+
+This will download a tarball release of that version and install it in
+`packages/system-test/target`. The `ctlcluster` utility can be used to control
+all versions at once. Using the switch subcommand, particular services can
+be moved between versions, eg.
+
+    packages/system-test/target/bin/ctlcluster switch pool.name=pool_write 2.7.5
+
+will move the pool_write pool to version 2.7.5. The utility can however not
+compensate for changes in configuration properties or database schemas between
+versions. Such incompatibilities have to be resolved manually.
+
 
 Unit tests
 ----------
@@ -104,5 +129,3 @@ By default Maven executes all unit tests while building. This can be
 time consuming and will fail if no internet connection is
 available. The unit tests can be disabled by appending the `-DskipTests`
 option to any mvn command.
-
-

@@ -6,7 +6,9 @@ uid=$(id -u)
 gid=1000
 username=$(id -u -n)
 
-bin/dcache stop
+@TARGET@/bin/ctlcluster stop
+
+cd @TARGET@/dcache
 
 if [ ! -f etc/dcache.kpwd ]; then
     if [ -f ~/.globus/usercert.pem ]; then

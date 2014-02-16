@@ -1,0 +1,181 @@
+#!/bin/bash
+
+set -e
+
+usage()
+{
+    echo "Usage: $(basename $0) COMMAND"
+    echo
+    echo "Valid commands are:"
+    echo "   install FILE"
+    echo "   install URL"
+    echo "   install VERSION"
+    echo "   switch SERVICE [VERSION]"
+    echo "   switch KEY=VALUE [VERSION]"
+    echo
+    echo "Any other command is applied to every dCache version installed in"
+    echo "the cluster."
+    exit 2
+} 1>&2
+
+version()
+{
+    local version
+    version="$1"
+    version="${version##*dcache-}"
+    version="${version%%.tar.gz}"
+    echo "${version%%-1}"
+}
+
+fail()
+{
+   echo $1
+   exit 1
+} 1>&2
+
+instances()
+{
+    find "@TARGET@" -maxdepth 1 -name "dcache*" -print
+}
+
+if [ $# -eq 0 ]; then
+    usage
+fi
+
+case "$1" in
+    install)
+        shift
+
+        if [ $# -lt 1 ]; then
+            usage
+        fi
+
+        # Install
+        case "$1" in
+        http://*dcache-*.tar.gz)
+            VERSION=$(version "$1")
+            DIR="@TARGET@/dcache-${VERSION}"
+            [ ! -e "$DIR" ] || fail "$DIR exists"
+            mkdir "$DIR"
+            curl --fail --progress-bar --location "$1" | tar -x -z --strip-components 1 -C "$DIR"
+            ;;
+        *dcache-*.tar.gz)
+            VERSION=$(version "$1")
+            DIR="@TARGET@/dcache-${VERSION}"
+            [ ! -e "$DIR" ] || fail "$DIR exists"
+            mkdir "$DIR"
+            tar -x -z --strip-components 1 -C "$DIR" -f "$1"
+            ;;
+        ?.*.*)
+            VERSION="$1"
+            BRANCH="${VERSION%.*}"
+            URL1="http://www.dcache.org/downloads/1.9/repo/${BRANCH}/dcache-$1.tar.gz"
+            URL2="http://www.dcache.org/downloads/1.9/repo/${BRANCH}/dcache-$1-1.tar.gz"
+            if curl --output /dev/null --silent --location --head --fail "$URL1"; then
+              URL="$URL1"
+            elif curl --output /dev/null --silent --location --head --fail "$URL2"; then
+              URL="$URL2"
+            else
+               echo "$VERSION not found"
+               exit 1
+            fi
+            DIR="@TARGET@/dcache-${VERSION}"
+            [ ! -e "$DIR" ] || fail "$DIR exists"
+            mkdir "$DIR"
+            curl --fail --progress-bar --location "$URL" | tar -x -z --strip-components 1 -C "$DIR"
+            ;;
+        esac
+
+        # Add base config
+		CAT > "${DIR}/etc/dcache.conf" <<-EOF
+			dcache.layout=system-test
+		EOF
+
+        CAT > "${DIR}/etc/layouts/system-test.conf" <<-EOF
+			system-test.home=@TARGET@/dcache
+			dcache.pid.dir=/tmp
+			dcache.java.memory.heap=256m
+			dcache.java.memory.direct=32m
+			dcache.net.listen=127.0.0.1
+			dcache.paths.grid-security=${system-test.home}/etc/grid-security
+			dcache.paths.plugins=${system-test.home}/plugins
+			pool.plugins.meta=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
+			hsqldb.path=${system-test.home}/var/db
+			alarms.db.type=xml
+			billing.enable.db=true
+
+			[${VERSION}-Domain]
+		EOF
+
+        # Enable cell communication
+        sed -i '' -e "/dcache.broker.scheme=none/d" "@TARGET@/dcache/etc/layouts/system-test.conf"
+        ;;
+
+    switch)
+        shift
+
+        if [ $# -lt 1 ]; then
+            usage
+        fi
+
+        # Regular expression for matching service definition - not perfect, but good enough.
+        #
+        # Later we replace newlines by NUL to allow multiline matches, so any NUL match is
+        # really a newline.
+        #
+        # The service type is wrapped in a group and can be referenced as the first back
+        # reference. The body of the service definition is wrapped in a group and can be
+        # referenced as the second back reference.
+        #
+        # Writing the expressions in an alternate syntax without newline substitution makes
+        # them easier to read:
+        #
+        #      '[' [^]/]* '/' ( [^]]* ) ']' ( ( '\n' [^[]* )? '\n' WS* KEY '=' VALUE WS* ( '\n' [^[]* )? )
+        #
+        # and
+        #
+        #      '[' [^]/]* '/' ( SERVICE ) ']' ( [^[]* )
+        #
+        case "$1" in
+            *=*)
+                KEY="${1%%=*}"
+                VALUE="${1#*=}"
+                REGEX="\[[^]/]*/\([^]]*\)\]\(\("$'\000'"[^[]*\)\{0,1\}"$'\000'"${KEY}\s*=\s*${VALUE}\("$'\000'"[^[]*\)\{0,1\}\)"
+                ;;
+            *)
+                REGEX="\[[^]/]*/\(${1}\)\]\([^[]*\)"
+                ;;
+        esac
+
+        # Determine destination
+        if [ $# -lt 2 ]; then
+            TO="@TARGET@/dcache/etc/layouts/system-test.conf"
+            DOMAIN="dCacheDomain"
+        else
+            TO="@TARGET@/dcache-$2/etc/layouts/system-test.conf"
+            DOMAIN="$2-Domain"
+        fi
+        [ -f "$TO" ] || fail "$TO not found"
+
+        # Mover service
+        for path in $(instances); do
+            if cat "$path/etc/layouts/system-test.conf" | tr '\n' '\000' | grep -q -e "$REGEX"; then
+                FROM="$path/etc/layouts/system-test.conf"
+                if [ "$FROM" != "$TO" ]; then
+                    # Move service definition
+                    cat "$FROM" | tr '\n' '\000' | sed -e "s:.*${REGEX}.*:[${DOMAIN}/\1]\2:" | tr '\000' '\n' >> "$TO"
+                    cat "$FROM" | tr '\n' '\000' | sed -e "s:${REGEX}::" | tr '\000' '\n' > "$FROM".new
+                    mv -f "$FROM".new "$FROM"
+                fi
+                break
+            fi
+        done
+        [ -n "$FROM" ] || fail "Service definition not found."
+        ;;
+
+    *)
+        for path in $(instances); do
+          "$path/bin/dcache" "$@" || :
+        done
+        ;;
+esac
