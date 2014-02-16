@@ -16,6 +16,7 @@ import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
+import org.dcache.util.FireAndForgetTask;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -106,7 +107,7 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
 
     public void init()
     {
-        _executor.submit(new Runnable()
+        _executor.submit(new FireAndForgetTask(new Runnable()
         {
             private static final double ERRORS_PER_SECOND = 1.0 / 60.0;
             private final RateLimiter rate = RateLimiter.create(ERRORS_PER_SECOND);
@@ -126,7 +127,7 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
                 } catch (InterruptedException ignored) {
                 }
             }
-        });
+        }));
     }
 
     @Override
