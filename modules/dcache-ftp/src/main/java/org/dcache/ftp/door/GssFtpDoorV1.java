@@ -52,7 +52,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         try{
             data = _serviceContext.wrap(data, 0, data.length, prop);
         } catch ( GSSException e ) {
-            println("500 Reply encryption error: " + e);
+            reply("500 Reply encryption error: " + e);
             return;
         }
         println(code + " " + Base64.byteArrayToBase64(data));
@@ -174,6 +174,12 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
         String msg = new String(data, 0, i, UTF8);
         msg = msg.trim();
+
+        if (msg.toLowerCase().startsWith("pass") && msg.length() != 4) {
+            _currentCmdLine = sectype.toUpperCase() + "{" + msg.substring(0, 4) + " ...}";
+        } else {
+            _currentCmdLine = sectype.toUpperCase() + "{" + msg + "}";
+        }
 
         if ( msg.equalsIgnoreCase("CCC") ) {
             _gReplyType = "clear";

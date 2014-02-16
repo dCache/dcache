@@ -54,12 +54,12 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
     public void ftp_user(String arg)
     {
         if (arg.equals("")){
-            println(err("USER",arg));
+            reply(err("USER",arg));
             return;
         }
         _user = arg;
 
-        println("331 Password required for "+_user+".");
+        reply("331 Password required for "+_user+".");
     }
 
     @Override
@@ -71,13 +71,13 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
             login(subject);
         } catch (PermissionDeniedCacheException e) {
             LOGGER.warn("Login denied for {}", subject);
-            println("530 Login denied");
+            reply("530 Login denied");
         } catch (CacheException e) {
             LOGGER.error("Login failed for {}: {}", subject, e);
-            println("530 Login failed: " + e.getMessage());
+            reply("530 Login failed: " + e.getMessage());
         }
 
-        println("230 User " + _user + " logged in");
+        reply("230 User " + _user + " logged in");
     }
 
     @Override

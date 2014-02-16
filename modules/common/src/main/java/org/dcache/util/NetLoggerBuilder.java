@@ -1,5 +1,8 @@
 package org.dcache.util;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.escape.CharEscaperBuilder;
+import com.google.common.escape.Escaper;
 import org.slf4j.Logger;
 
 import java.text.SimpleDateFormat;
@@ -23,6 +26,15 @@ public class NetLoggerBuilder
     private final StringBuilder s = new StringBuilder(256);
     private boolean omitNullValues;
     private Level level;
+
+    private static final Escaper AS_QUOTED_VALUE = new CharEscaperBuilder().
+            addEscape('\\', "\\\\").
+            addEscape('\"', "\\\"").
+            addEscape('\n', "\\n").
+            addEscape('\r', "\\r").
+            toEscaper();
+
+    private static final CharMatcher NEEDS_QUOTING = CharMatcher.anyOf(" \"\n\r");
 
     public enum Level
     {
@@ -53,16 +65,44 @@ public class NetLoggerBuilder
         return this;
     }
 
+    /**
+     * Add a key-value pair.  If {@literal value} is such that the resulting
+     * output is somehow ambiguous (e.g., containing a space) then the value
+     * is escaped and placed in quotes, otherwise the value is appended
+     * directly after the '=' sign.
+     * <p>
+     * A null value is handled in one of two ways: by default, a null value is
+     * equivalent to the empty string; however, if omitNullValues is specified
+     * then this method does nothing when value is null.
+     */
     public NetLoggerBuilder add(String name, Object value) {
         if (!omitNullValues || value != null) {
             s.append(' ').append(name).append('=');
             if (value != null) {
-                String valueString = value.toString();
-                if (valueString.indexOf(' ') > -1) {
-                    s.append('"').append(valueString.replace("\"", "\\\"")).append('"');
+                String stringValue = value.toString();
+                if (NEEDS_QUOTING.matchesAnyOf(stringValue)) {
+                    s.append('"').append(AS_QUOTED_VALUE.escape(stringValue)).append('"');
                 } else {
-                    s.append(valueString);
+                    s.append(stringValue);
                 }
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Add a key-value pair.  If the value is not null then value's string value
+     * is escaped and written in quotes.
+     * <p>
+     * A null value is handled in one of two ways: by default, a null value is
+     * equivalent to the empty string; however, if omitNullValues is specified
+     * then this method does nothing when value is null.
+     */
+    public NetLoggerBuilder addInQuotes(String name, Object value) {
+        if (!omitNullValues || value != null) {
+            s.append(' ').append(name).append('=');
+            if (value != null) {
+                s.append('"').append(AS_QUOTED_VALUE.escape(value.toString())).append('"');
             }
         }
         return this;

@@ -173,7 +173,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
             }
         } catch (GSSException | CertificateException | AuthenticationException e) {
             LOGGER.error("Failed to extract X509 chain: {}", e.toString());
-            println("530 Login failed: " + e.getMessage());
+            reply("530 Login failed: " + e.getMessage());
         }
     }
 }

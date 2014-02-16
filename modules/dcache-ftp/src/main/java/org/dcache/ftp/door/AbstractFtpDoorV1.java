@@ -185,6 +185,7 @@ import org.dcache.util.AsynchronousRedirectedTransfer;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
+import org.dcache.util.NetLoggerBuilder;
 import org.dcache.util.PortRange;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.list.DirectoryEntry;
@@ -195,7 +196,9 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.lang.Math.min;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 
 @Inherited
 @Retention(RUNTIME)
@@ -267,6 +270,7 @@ public abstract class AbstractFtpDoorV1
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
+    private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.ftp");
 
     protected InetSocketAddress _localAddress;
     protected InetSocketAddress _remoteAddress;
@@ -677,6 +681,8 @@ public abstract class AbstractFtpDoorV1
 
     protected int            _commandCounter;
     protected String         _lastCommand    = "<init>";
+    protected String _currentCmdLine;
+    private boolean _isHello = true;
 
     protected InetSocketAddress _clientDataAddress;
     protected volatile Socket _dataSocket;
@@ -1371,12 +1377,9 @@ public abstract class AbstractFtpDoorV1
 
         // most of the ic is handled in the ftp_ functions but a few
         // commands need special handling
-        if (cmd.equals("mic" ) || cmd.equals("conf") || cmd.equals("enc") ||
-            cmd.equals("adat") || cmd.equals("pass")) {
-            LOGGER.info("ftpcommand <{} ...>", cmd);
-        } else {
+        if (!cmd.equals("mic" ) && !cmd.equals("conf") && !cmd.equals("enc") &&
+            !cmd.equals("adat") && !cmd.equals("pass")) {
             _lastCommand = cmdline;
-            LOGGER.info("ftpcommand <{}>", cmdline);
         }
 
         // If a transfer is in progress, only permit ABORT and a few
@@ -1452,7 +1455,7 @@ public abstract class AbstractFtpDoorV1
         closePassiveModeServerSocket();
     }
 
-    public void println(String str)
+    protected void println(String str)
     {
         PrintWriter out = _out;
         synchronized (out) {
@@ -1465,11 +1468,16 @@ public abstract class AbstractFtpDoorV1
     public void execute(String command)
             throws CommandExitException
     {
-        if (command.equals("")) {
-            reply(err("",""));
-        } else {
-            _commandCounter++;
-            ftpcommand(command);
+        _currentCmdLine = command;
+        try {
+            if (command.equals("")) {
+                reply(err("",""));
+            } else {
+                _commandCounter++;
+                ftpcommand(command);
+            }
+        } finally {
+            _currentCmdLine = null;
         }
     }
 
@@ -1545,12 +1553,7 @@ public abstract class AbstractFtpDoorV1
 
     protected void reply(String answer, boolean resetReply)
     {
-        if (answer.startsWith("335 ADAT=")) {
-            LOGGER.info("REPLY(reset={} GReplyType={}): <335 ADAT=...>",
-                    resetReply, _gReplyType);
-        } else {
-            LOGGER.info("REPLY(reset={} GReplyType={}): <{}>", resetReply, _gReplyType, answer);
-        }
+        logReply(answer);
         switch (_gReplyType) {
         case "clear":
             println(answer);
@@ -1567,6 +1570,42 @@ public abstract class AbstractFtpDoorV1
         }
         if (resetReply) {
             _gReplyType = "clear";
+        }
+    }
+
+    private void logReply(String response)
+    {
+        if (ACCESS_LOGGER.isInfoEnabled()) {
+            String event = _isHello ? "org.dcache.ftp.hello" :
+                    "org.dcache.ftp.response";
+
+            String commandLine = _currentCmdLine;
+            if (commandLine != null) {
+                // For some commands we don't want to log the arguments.
+                String command = commandLine.substring(0, min(commandLine.length(), 4)).trim();
+                if (command.equalsIgnoreCase("ADAT") ||
+                        command.equalsIgnoreCase("PASS")) {
+                    commandLine = command + " ...";
+                }
+            }
+
+            if (response.startsWith("335 ADAT=")) {
+                response = "335 ADAT=...";
+            }
+
+            if (!_gReplyType.equals("clear")) {
+                response = _gReplyType.toUpperCase() + "{" + response + "}";
+            }
+
+            NetLoggerBuilder log = new NetLoggerBuilder(INFO, event).omitNullValues();
+            log.add("host.remote", _remoteAddress);
+            log.add("session", CDC.getSession());
+            log.addInQuotes("command", commandLine);
+            log.addInQuotes("reply", response);
+            log.toLogger(ACCESS_LOGGER);
+
+            _isHello = false;
+            _currentCmdLine = null;
         }
     }
 
