@@ -17,9 +17,9 @@ public class DirectDigestThread extends DigestThread
     @Override
     public void run()
     {
-	try {
+        try {
             ByteBuffer buffer = ByteBuffer.allocate(BLOCK_SIZE);
-	    long position = 0;
+            long position = 0;
             long read;
 
             advance(position + BLOCK_SIZE);
@@ -33,8 +33,8 @@ public class DirectDigestThread extends DigestThread
                 advance(position + BLOCK_SIZE);
                 read = _channel.read(buffer, position);
             }
-	} catch (Exception e) {
-	    _error = e;
-	}
+        } catch (Exception e) {
+            _error = e;
+        }
     }
 }

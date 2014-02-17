@@ -14,9 +14,9 @@ public abstract class DigestThread extends Thread
 
     public DigestThread(RepositoryChannel channel, BlockLog log, MessageDigest digest)
     {
-	_channel = channel;
-	_log     = log;
-	_digest  = digest;
+        _channel = channel;
+        _log     = log;
+        _digest  = digest;
         _readahead = Long.MAX_VALUE;
     }
 
@@ -25,12 +25,12 @@ public abstract class DigestThread extends Thread
      * been transferred, or the end of the file was reached.
      */
     protected void advance(long position)
-        throws InterruptedException
+            throws InterruptedException
     {
         _log.setLimit(_readahead == Long.MAX_VALUE
-                      ? Long.MAX_VALUE
-                      : position + _readahead);
-	_log.waitCompleted(position);
+                              ? Long.MAX_VALUE
+                              : position + _readahead);
+        _log.waitCompleted(position);
     }
 
     /**
@@ -57,6 +57,6 @@ public abstract class DigestThread extends Thread
 
     public Exception getLastError()
     {
-	return _error;
+        return _error;
     }
 }
