@@ -14,7 +14,6 @@ import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractCell;
@@ -39,7 +38,6 @@ public class DcapProxyIoFactory extends AbstractCell {
      * small too.
      */
     private final static long NFS_RETRY_PERIOD = 500; // In millis
-    private final AtomicInteger _session = new AtomicInteger();
 
     private final ConcurrentHashMap<Integer, DcapTransfer> _pendingIO =
             new ConcurrentHashMap<>();
@@ -78,15 +76,16 @@ public class DcapProxyIoFactory extends AbstractCell {
 
     ProxyIoAdapter getAdapter(Inode inode, Subject subject, InetSocketAddress client) throws CacheException, InterruptedException, IOException {
 
-        final int session = nextSession();
         final DCapProtocolInfo protocolInfo = new DCapProtocolInfo("DCap", 3, 0, client);
         protocolInfo.door( new CellPath(new CellAddressCore(getCellName(), getCellDomainName())));
-        protocolInfo.setSessionId(session);
         protocolInfo.isPassive(true);
 
         final PnfsId  pnfsId = new PnfsId(_fileFileSystemProvider.inodeFromBytes(inode.getFileId()).toString());
         final DcapTransfer transfer = new DcapTransfer(_pnfsHandler, subject);
         DcapTransfer.initSession();
+	final int session = (int)transfer.getSessionId();
+	protocolInfo.setSessionId(session);
+
         transfer.setProtocolInfo(protocolInfo);
         transfer.setCellName(getCellName());
         transfer.setDomainName(getCellDomainName());
@@ -121,10 +120,6 @@ public class DcapProxyIoFactory extends AbstractCell {
 
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
         // nop
-    }
-
-    private int nextSession() {
-        return _session.getAndIncrement();
     }
 
     private static class DcapTransfer extends RedirectedTransfer<PoolPassiveIoFileMessage<byte[]>> {
