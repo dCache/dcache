@@ -11,6 +11,9 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
+import dmg.cells.nucleus.CDC;
+
+import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
@@ -41,8 +44,8 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
     public void process(CompoundContext context, nfs_resop4 result) {
         final READ4res res = result.opread;
 
-        try {
-
+        try (CDC ignored = new CDC()) {
+	    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             Inode inode = context.currentInode();
             if (!context.getFs().hasIOLayout(inode)) {
                 /*
