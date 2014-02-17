@@ -20,6 +20,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.commons.util.NDC;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -85,6 +86,7 @@ public class DcapProxyIoFactory extends AbstractCell {
         protocolInfo.isPassive(true);
 
         final PnfsId  pnfsId = new PnfsId(_fileFileSystemProvider.inodeFromBytes(inode.getFileId()).toString());
+	NDC.push(pnfsId.toString());
         final DcapTransfer transfer = new DcapTransfer(_pnfsHandler, subject);
         DcapTransfer.initSession();
         transfer.setProtocolInfo(protocolInfo);
