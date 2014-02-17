@@ -426,8 +426,10 @@ public class NFSv41Door extends AbstractCellComponent implements
             return new Layout(true, stateid, new layout4[]{layout});
 
         } catch (FileInCacheException e) {
+	    _ioMessages.remove(stateid);
             throw new ChimeraNFSException(nfsstat.NFSERR_IO, e.getMessage());
         } catch (InterruptedException | CacheException e) {
+	    _ioMessages.remove(stateid);
             throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTTRYLATER,
                     e.getMessage());
         }
