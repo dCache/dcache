@@ -475,16 +475,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             GFtpTransferStartedMessage message;
 
             if (passive) {
-                /* When using true passive mode, we open a server
-                 * socket and send a message containing the port
-                 * number back to the door.
-                 */
-                ServerSocketChannel channel = ServerSocketChannel.open();
-                if (bufferSize > 0) {
-                    channel.socket().setReceiveBufferSize(bufferSize);
-                }
-                _portRange.bind(channel.socket(), 128);
-
                 /* When in passive mode, the door passes us the host
                  * from which the control channel was created. It
                  * seems like a safe assumption that the data channel
@@ -494,14 +484,21 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                         InetAddress.getByName(gftpProtocolInfo.getClientAddress());
                 InetAddress localAddress =
                         NetworkUtils.getLocalAddress(clientAddress);
-                String localHostName =
-                        localAddress.getCanonicalHostName();
-                int localPort =
-                        channel.socket().getLocalPort();
+
+                /* When using true passive mode, we open a server
+                 * socket and send a message containing the port
+                 * number back to the door.
+                 */
+                ServerSocketChannel channel = ServerSocketChannel.open();
+                if (bufferSize > 0) {
+                    channel.socket().setReceiveBufferSize(bufferSize);
+                }
+                _portRange.bind(channel.socket(), localAddress, 128);
+
                 message =
                         new GFtpTransferStartedMessage(fileAttributes.getPnfsId().getId(),
-                                                       localHostName,
-                                                       localPort);
+                                                       channel.socket().getInetAddress().getHostAddress(),
+                                                       channel.socket().getLocalPort());
                 mode.setPassive(channel);
             } else {
                 /* If passive mode is disabled, then fall back to
