@@ -483,7 +483,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 if (bufferSize > 0) {
                     channel.socket().setReceiveBufferSize(bufferSize);
                 }
-                _portRange.bind(channel.socket());
+                _portRange.bind(channel.socket(), 128);
 
                 /* When in passive mode, the door passes us the host
                  * from which the control channel was created. It
