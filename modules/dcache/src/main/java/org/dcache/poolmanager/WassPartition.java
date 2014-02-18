@@ -150,7 +150,7 @@ public class WassPartition extends ClassicPartition
         }
 
         /* The target pool must be below specified cost limits;
-         * otherwise we woulnd't be able to read the file afterwards
+         * otherwise we wouldn't be able to read the file afterwards
          * without triggering another p2p.
          */
         double maxTargetCost =
