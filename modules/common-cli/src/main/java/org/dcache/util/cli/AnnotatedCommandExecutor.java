@@ -1,4 +1,4 @@
-package dmg.util.command;
+package org.dcache.util.cli;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -23,9 +23,16 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import dmg.util.CommandException;
-import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
+import dmg.util.command.AnnotatedCommandHelpPrinter;
+import dmg.util.command.AnsiHelpPrinter;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
+import dmg.util.command.HelpFormat;
+import dmg.util.command.Option;
+import dmg.util.command.PlainHelpPrinter;
 
 import org.dcache.util.Args;
 
@@ -103,25 +110,12 @@ public class AnnotatedCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public Serializable execute(Object arguments, int methodType)
-            throws CommandException
+    public Serializable execute(Args arguments) throws CommandException
     {
         Callable<? extends Serializable> command = createInstance();
-
         try {
-            Args args;
-            if (arguments instanceof Args) {
-                args = (Args) arguments;
-            } else if (arguments instanceof CommandRequestable) {
-                args = argsFromCommandRequestable(
-                        (CommandRequestable) arguments);
-            } else {
-                throw new RuntimeException("This is a bug. Please notify " +
-                        "support@dcache.org. AnnotatedCommandExecutor " +
-                        "cannot process " + arguments.getClass());
-            }
             for (Handler handler: _handlers) {
-                handler.apply(command, args);
+                handler.apply(command, arguments);
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException("This is a bug. Please notify " +
@@ -161,15 +155,6 @@ public class AnnotatedCommandExecutor implements CommandExecutor
             throw new CommandThrowableException(
                     e.toString() + " from " + _command.name(), e);
         }
-    }
-
-    private Args argsFromCommandRequestable(CommandRequestable request)
-    {
-        String[] arguments = new String[request.getArgc()];
-        for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = request.getArgv(i).toString();
-        }
-        return new Args(arguments);
     }
 
     private Callable<? extends Serializable> createInstance()

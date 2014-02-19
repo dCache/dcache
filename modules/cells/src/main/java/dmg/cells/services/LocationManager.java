@@ -412,8 +412,8 @@ public class LocationManager extends CellAdapter {
           }
           String message = new String( data , 0 , datalen ) ;
           _log.info( "server query : ["+address+"] "+"("+message.length()+") "+message) ;
-
-          message = (String)command( new Args( message ) ) ;
+          Args args = new Args(message);
+          message = args.argc() == 0 ? "" : (String)command(args);
 
           _log.info( "server reply : "+message ) ;
           data = message.getBytes() ;

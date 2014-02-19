@@ -43,7 +43,6 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
-import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.Exceptions;
@@ -62,8 +61,7 @@ import org.dcache.util.Args;
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      CellShell
-       extends    CommandInterpreter
+public class CellShell extends CommandInterpreter
        implements Replaceable, ClassDataProvider
 {
     private final static Logger _log =
@@ -215,12 +213,17 @@ public class      CellShell
           return "";
       }
       try{
+          Args args = new Args(str);
+
+          if (args.argc() == 0) {
+              return "";
+          }
 
          Serializable o;
          if( _externalInterpreter != null ){
-            o =  _externalInterpreter.command( new Args( str ) ) ;
+            o =  _externalInterpreter.command(args);
          }else{
-            o =  command( new Args( str ) ) ;
+            o =  command(args);
          }
          _errorCode = 0 ;
          _errorMsg  = null ;
@@ -240,12 +243,17 @@ public class      CellShell
           return "";
       }
       try{
+          Args args = new Args(strin);
+
+          if (args.argc() == 0) {
+              return "";
+          }
 
          Object o;
          if( _externalInterpreter != null ){
-            o =  _externalInterpreter.command( new Args( str ) ) ;
+            o =  _externalInterpreter.command(args) ;
          }else{
-            o =  command( new Args( str ) ) ;
+            o =  command(args) ;
          }
          _errorCode = 0 ;
          _errorMsg  = null ;
@@ -1095,33 +1103,7 @@ public class      CellShell
    public String ac_id( Args args ){
       return _nucleus.getCellDomainName()+"\n" ;
    }
-   ////////////////////////////////////////////////////////////
-   //
-   // setting the context/environment
-   //
-   public Object ac_set_context_$_2( CommandRequestable request )
-          throws CommandException {
 
-        Map<String,Object> dict = _nucleus.getDomainContext() ;
-        Object contextName = request.getArgv(0) ;
-        if( ! ( contextName instanceof String ) ) {
-            throw new CommandException(67, "ContextName not a string");
-        }
-
-        dict.put((String) contextName , request.getArgv(1) ) ;
-
-        Object o = dict.get( contextName ) ;
-        if( o == null ) {
-            throw new CommandException(68, "Setting of " + contextName + " failed");
-        }
-
-        Object [] answer = new Object[2] ;
-        answer[0] = contextName ;
-        answer[1] = o ;
-
-        return answer ;
-
-   }
    public static final String fh_check =
       " check [-strong] <var1> [<var2> [] ... ]\n"+
       "        checks if all of the specified variables are set.\n"+

@@ -1,8 +1,11 @@
-package dmg.util.command;
+package org.dcache.util.cli;
 
 import java.io.Serializable;
 
 import dmg.util.CommandException;
+import dmg.util.command.HelpFormat;
+
+import org.dcache.util.Args;
 
 /**
  * Implementations of this interface provides means to execute shell commands
@@ -42,11 +45,8 @@ public interface CommandExecutor
     /**
      * Executes the command on the specified arguments.
      *
-     * @param arguments Arguments if methodType is ASCII and
-     *                  CommandRequestable if methodType is BINARY
-     * @param methodType CommandInterpreter.ASCII or CommandInterpter.BINARY
+     * @param arguments The arguments for this execution.
      * @return Result of executing the command.
      */
-    Serializable execute(Object arguments, int methodType)
-            throws CommandException;
+    Serializable execute(Args arguments) throws CommandException;
 }

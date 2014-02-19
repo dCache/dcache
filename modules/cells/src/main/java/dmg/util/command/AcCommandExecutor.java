@@ -9,13 +9,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import dmg.util.CommandException;
-import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
-import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
-
 import org.dcache.util.Args;
+import org.dcache.util.cli.CommandExecutor;
 
 /**
  * Implements the legacy cell shell commands which use reflection
@@ -23,10 +21,10 @@ import org.dcache.util.Args;
  */
 class AcCommandExecutor implements CommandExecutor
 {
-    private final Method[] _method = new Method[2];
-    private final int[] _minArgs = new int[2];
-    private final int[] _maxArgs = new int[2];
     private final Object _listener;
+    private Method _method;
+    private int _minArgs;
+    private int _maxArgs;
     private Field _fullHelp;
     private Field _helpHint;
     private Field _acls;
@@ -36,11 +34,11 @@ class AcCommandExecutor implements CommandExecutor
         _listener = listener;
     }
 
-    public void setMethod(int methodType, Method m, int mn, int mx)
+    public void setMethod(Method m, int mn, int mx)
     {
-        _method[methodType] = m;
-        _minArgs[methodType] = mn;
-        _maxArgs[methodType] = mx;
+        _method = m;
+        _minArgs = mn;
+        _maxArgs = mx;
     }
 
     public void setFullHelpField(Field f) {
@@ -106,22 +104,18 @@ class AcCommandExecutor implements CommandExecutor
                     return hint.toString();
                 }
             } else {
-                int mt = CommandInterpreter.ASCII;
-                Method method = _method[mt];
-                if (method != null) {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < _minArgs[mt]; i++) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < _minArgs; i++) {
+                    sb.append(" <arg-").append(i).append(">");
+                }
+                if (_maxArgs != _minArgs) {
+                    sb.append(" [ ");
+                    for (int i = _minArgs; i < _maxArgs; i++) {
                         sb.append(" <arg-").append(i).append(">");
                     }
-                    if (_maxArgs[mt] != _minArgs[mt]) {
-                        sb.append(" [ ");
-                        for (int i = _minArgs[mt]; i < _maxArgs[mt]; i++) {
-                            sb.append(" <arg-").append(i).append(">");
-                        }
-                        sb.append(" ] ");
-                    }
-                    return sb.toString();
+                    sb.append(" ] ");
                 }
+                return sb.toString();
             }
         } catch (IllegalAccessException e) {
             throw Throwables.propagate(e);
@@ -130,23 +124,11 @@ class AcCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public Serializable execute(Object arguments, int methodType)
-            throws CommandException
+    public Serializable execute(Args arguments) throws CommandException
     {
-        Method method = _method[methodType];
-        if (method == null) {
-            throw new CommandSyntaxException("Command not found");
-        }
+        int params = arguments.argc();
 
-        int params;
-        if (methodType == CommandInterpreter.ASCII) {
-            params  = ((Args) arguments).argc();
-        } else {
-            params  = ((CommandRequestable) arguments).getArgc();
-        }
-
-        if ((params < _minArgs[methodType]) ||
-                (params > _maxArgs[methodType])) {
+        if ((params < _minArgs) || (params > _maxArgs)) {
             throw new CommandSyntaxException("Invalid number of arguments");
         }
 
@@ -155,7 +137,7 @@ class AcCommandExecutor implements CommandExecutor
         // so we invoke the selected function.
         //
         try {
-            return (Serializable) method.invoke(_listener, arguments);
+            return (Serializable) _method.invoke(_listener, arguments);
         } catch (InvocationTargetException e) {
             Throwable te = e.getTargetException();
 
@@ -171,7 +153,7 @@ class AcCommandExecutor implements CommandExecutor
                  * bugs and rethrow them.
                  */
                 boolean declared = false;
-                for (Class<?> clazz: method.getExceptionTypes()) {
+                for (Class<?> clazz: _method.getExceptionTypes()) {
                     if (clazz.isAssignableFrom(te.getClass())) {
                         declared = true;
                     }
@@ -182,11 +164,11 @@ class AcCommandExecutor implements CommandExecutor
                 }
             }
 
-            throw new CommandThrowableException(te.toString() + " from " + method.getName(),
+            throw new CommandThrowableException(te.toString() + " from " + _method.getName(),
                     te);
         } catch (IllegalAccessException e) {
             throw new CommandPanicException("Exception while invoking " +
-                    method.getName(), e);
+                    _method.getName() + ": " + e.toString(), e);
         }
     }
 
@@ -194,8 +176,7 @@ class AcCommandExecutor implements CommandExecutor
     public String toString()
     {
         return Objects.toStringHelper(this)
-                .addValue(_method[0])
-                .addValue(_method[1])
+                .addValue(_method)
                 .addValue(_fullHelp)
                 .addValue(_helpHint)
                 .addValue(_acls)

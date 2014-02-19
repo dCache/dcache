@@ -266,6 +266,10 @@ public class AclCommander extends CommandInterpreter {
     }
     public Object exec( String line ) throws Exception {
 
+      if (line.trim().isEmpty()) {
+        return "";
+      }
+
       if( _user.equals( "none" ) ) {
           return command(new Args(line));
       } else {

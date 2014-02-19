@@ -1,4 +1,4 @@
-package dmg.util.command;
+package org.dcache.util.cli;
 
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
@@ -8,6 +8,8 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+
+import dmg.util.command.Command;
 
 import static java.util.Arrays.asList;
 

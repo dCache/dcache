@@ -20,6 +20,7 @@ import java.awt.event.ItemListener;
 import dmg.cells.network.CellDomainNode;
 import dmg.cells.services.MessageObjectFrame;
 
+import org.dcache.util.Args;
 
 
 class ContextPanel
@@ -171,12 +172,9 @@ class ContextPanel
               return;
           }
 
-          SpyCommandRequest req =
-            new SpyCommandRequest( "set context" ,
-                                   _contextName ,
-                                   _contextText.getText() ) ;
-          _connection.send( _domainNode.getAddress() , req , this ) ;
-
+          String command = "set context " + _contextName + " " +
+                  Args.quote(_contextText.getText());
+          _connection.send(_domainNode.getAddress(), command, this);
        }
    }
    @Override

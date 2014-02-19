@@ -25,14 +25,12 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
-import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.Gate;
 import dmg.util.Pinboard;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
-import dmg.util.command.HelpFormat;
 import dmg.util.command.Option;
 import dmg.util.logback.FilterShell;
 
@@ -65,8 +63,7 @@ import org.dcache.util.Version;
  * @version 0.2.11, 10/22/1998
  */
 
-public class   CellAdapter
-    extends CommandInterpreter
+public class   CellAdapter extends CommandInterpreter
     implements Cell, CellEventListener, CellEndpoint
 {
     private final static Logger _log =
@@ -130,7 +127,6 @@ public class   CellAdapter
                        String  cellType,
                        Args    args,
                        boolean startNow) {
-
         _args      = args;
         _nucleus   = new CellNucleus(this, cellName, cellType);
         _autoSetup = cellName + "Setup";
@@ -194,6 +190,23 @@ public class   CellAdapter
         executeSetupContext();
         _startGate.open();
     }
+
+    @Override
+    public Serializable command(Args args) throws CommandException {
+        if (args.argc() == 0) {
+            return "";
+        }
+
+        //
+        // check for the NOOP command.
+        //
+        if (args.argc() > 0 && args.argv(0).equals("xyzzy")) {
+            return "Nothing happens.";
+        }
+
+        return super.command(args);
+    }
+
     /**
      *  Executes the ContextVariable :
      *  &lt;cellName&gt;Setup and "!&lt;setupContextName&gt;"
@@ -947,8 +960,7 @@ public class   CellAdapter
             if (msg.isFinalDestination()) {
                 if (_useInterpreter && (! msg.isReply()) &&
                     ((obj instanceof String) ||
-                     (obj instanceof AuthorizedString) ||
-                     (obj instanceof CommandRequestable))) {
+                     (obj instanceof AuthorizedString))) {
 
                     Serializable o;
                     UOID uoid = msg.getUOID();
@@ -1028,7 +1040,8 @@ public class   CellAdapter
         if (command instanceof Authorizable) {
 
             if (_returnCommandException) {
-                return command(new AuthorizedArgs((Authorizable)command));
+                AuthorizedArgs args = new AuthorizedArgs((Authorizable)command);
+                return command(args);
             } else {
                 return autoCommand(command);
             }
@@ -1036,13 +1049,11 @@ public class   CellAdapter
         } else if (command instanceof String) {
 
             if (_returnCommandException) {
-                return command(new Args((String)command));
+                Args args = new Args((String)command);
+                return command(args);
             } else {
                 return autoCommand(command);
             }
-
-        } else if (command instanceof CommandRequestable) {
-            return command((CommandRequestable)command);
         } else {
             throw new
                     CommandPanicException("Illegal CommandClass detected",
@@ -1055,9 +1066,11 @@ public class   CellAdapter
 
         try {
             if (command instanceof String) {
+                Args args = new Args((String) command);
                 return command(new Args((String) command));
             } else if (command instanceof AuthorizedString) {
-                return command(new AuthorizedArgs((AuthorizedString) command));
+                AuthorizedArgs args = new AuthorizedArgs((AuthorizedString) command);
+                return command(args);
             } else {
                 return "Panic : internal server error 14345";
             }
@@ -1083,9 +1096,20 @@ public class   CellAdapter
             return "??? : "+e.toString();
         }
     }
+
+    @Override
+    protected Serializable doExecute(CommandEntry entry, Args args,
+            String[] acls) throws CommandException
+    {
+        if (args instanceof Authorizable) {
+            checkAclPermission((Authorizable) args, args, acls);
+        }
+
+        return super.doExecute(entry, args, acls);
+    }
+
     private CellPath _aclPath    = new CellPath("acm");
     private long     _aclTimeout = 10000L;
-    @Override
     protected void checkAclPermission(Authorizable auth, Object command, String [] acls) throws CommandException {
 
         String user = auth.getAuthorizedPrincipal();

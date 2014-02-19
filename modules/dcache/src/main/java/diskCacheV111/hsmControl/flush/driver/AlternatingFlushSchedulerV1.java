@@ -542,6 +542,9 @@ import org.dcache.util.Args;
          if(_parameter._p_events) {
              _log.info("EVENT : command : " + args);
          }
+         if (args.argc() == 0) {
+             return;
+         }
          try{
              Object reply = _interpreter.command( args ) ;
              if( reply == null ) {

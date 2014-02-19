@@ -7,7 +7,7 @@ lib="$(getProperty dcache.paths.share.lib)"
 . ${lib}/services.sh
 
 classpath=$(printLimitedClassPath chimera HikariCP javassist \
-    guava jline dcache-common cells acl dcache-chimera \
+    guava jline common-cli dcache-common acl dcache-chimera \
     slf4j-api logback-classic logback-core logback-console-config \
     $(getProperty chimera.db.jar))
 

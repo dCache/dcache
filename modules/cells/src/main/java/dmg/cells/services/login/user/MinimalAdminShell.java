@@ -112,6 +112,9 @@ public class   MinimalAdminShell
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
        _log.info( "Loacal command "+args ) ;
+       if (args.argc() == 0) {
+           return "";
+       }
        try{
           return  command( args ) ;
        }catch( CommandThrowableException cte ){

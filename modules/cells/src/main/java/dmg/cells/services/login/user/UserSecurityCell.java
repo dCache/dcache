@@ -139,6 +139,10 @@ public class       UserSecurityCell
            throw new
                    Exception("Not authenticated");
        }
+
+       if (command.trim().isEmpty()) {
+           return "";
+       }
        try{
           return command( new Args( command + " -auth="+user ) ) ;
        }catch( CommandPanicException cte ){

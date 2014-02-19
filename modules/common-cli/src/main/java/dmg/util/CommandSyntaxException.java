@@ -21,7 +21,7 @@ public class CommandSyntaxException extends CommandException {
    public CommandSyntaxException( String errorType ,
                                   String helpText    ){ 
       super( 2 , errorType) ;
-      _helpText = helpText ; 
+      _helpText = helpText ;
    }
    public CommandSyntaxException( int errorCode ,
                                   String errorType ,

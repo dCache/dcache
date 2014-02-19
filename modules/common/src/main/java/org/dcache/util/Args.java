@@ -68,6 +68,13 @@ public class Args implements Serializable
         _oneChar = in._oneChar;
     }
 
+    public static CharSequence quote(String raw)
+    {
+        StringBuilder sb = new StringBuilder();
+        quote(raw, sb);
+        return sb;
+    }
+
     public boolean isOneCharOption(char c)
     {
         return _oneChar.indexOf(c) > -1;
@@ -253,7 +260,7 @@ public class Args implements Serializable
         return Objects.hashCode(_options, _arguments);
     }
 
-    private void quote(String in, StringBuilder out)
+    private static void quote(String in, StringBuilder out)
     {
         for (int i = 0; i < in.length(); i++) {
             switch (in.charAt(i)) {

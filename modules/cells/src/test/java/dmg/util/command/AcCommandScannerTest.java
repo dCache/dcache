@@ -6,14 +6,12 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
-import dmg.util.CommandInterpreter;
-import dmg.util.CommandRequestable;
 import dmg.util.CommandSyntaxException;
-
 import org.dcache.util.Args;
+import org.dcache.util.cli.CommandExecutor;
 
-import static dmg.util.command.HelpFormat.PLAIN;
 import static java.util.Arrays.asList;
+import static dmg.util.command.HelpFormat.PLAIN;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -107,7 +105,7 @@ public class AcCommandScannerTest
                     }
                 });
 
-        commands.get(asList("test")).execute(new Args("a"), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args("a"));
     }
 
     @Test(expected=CommandSyntaxException.class)
@@ -120,7 +118,7 @@ public class AcCommandScannerTest
                     }
                 });
 
-        commands.get(asList("test")).execute(new Args("a b"), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args("a b"));
     }
 
     @Test(expected=CommandSyntaxException.class)
@@ -133,7 +131,7 @@ public class AcCommandScannerTest
                     }
                 });
 
-        commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args(""));
     }
 
     @Test
@@ -146,7 +144,7 @@ public class AcCommandScannerTest
                     }
                 });
 
-        commands.get(asList("test")).execute(new Args("a"), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args("a"));
     }
 
     @Test
@@ -159,8 +157,8 @@ public class AcCommandScannerTest
                     }
                 });
 
-        commands.get(asList("test")).execute(new Args("a"), CommandInterpreter.ASCII);
-        commands.get(asList("test")).execute(new Args("a b"), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args("a"));
+        commands.get(asList("test")).execute(new Args("a b"));
     }
 
     @Test(expected=CommandSyntaxException.class)
@@ -173,7 +171,7 @@ public class AcCommandScannerTest
                     }
                 });
 
-        commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args(""));
     }
 
     @Test(expected=CommandSyntaxException.class)
@@ -186,7 +184,7 @@ public class AcCommandScannerTest
                     }
                 });
 
-        commands.get(asList("test")).execute(new Args("a b c"), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args("a b c"));
     }
 
     @Test
@@ -203,7 +201,7 @@ public class AcCommandScannerTest
                     }
                 });
 
-        commands.get(asList("test")).execute(new Args("-o a b"), CommandInterpreter.ASCII);
+        commands.get(asList("test")).execute(new Args("-o a b"));
     }
 
     @Test
@@ -217,44 +215,5 @@ public class AcCommandScannerTest
                 });
 
         assertThat(commands, hasKey(asList("test1", "test2")));
-    }
-
-    @Test
-    public void shouldAllowBothAsciiAndBinaryMethods() throws Exception
-    {
-        Map<List<String>,? extends CommandExecutor> commands =
-            _scanner.scan(new Object() {
-                public Object ac_test(Args args) {
-                    return null;
-                }
-
-                public Object ac_test(CommandRequestable request) {
-                    return null;
-                }
-            });
-
-        commands.get(asList("test")).execute(new Args(""), CommandInterpreter.ASCII);
-        commands.get(asList("test")).execute(new DummyCommandRequestable(), CommandInterpreter.BINARY);
-    }
-
-    private class DummyCommandRequestable implements CommandRequestable
-    {
-        @Override
-        public String getRequestCommand()
-        {
-            return null;
-        }
-
-        @Override
-        public int getArgc()
-        {
-            return 0;
-        }
-
-        @Override
-        public Object getArgv(int position)
-        {
-            return null;
-        }
     }
 }

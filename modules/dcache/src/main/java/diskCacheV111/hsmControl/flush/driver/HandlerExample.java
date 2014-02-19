@@ -95,6 +95,9 @@ public class HandlerExample implements HsmFlushSchedulable {
      @Override
      public void command( Args args  ){
          _log.info("command : "+args);
+         if (args.argc() == 0) {
+             return;
+         }
          try{
 
              Object reply = _interpreter.command( args ) ;

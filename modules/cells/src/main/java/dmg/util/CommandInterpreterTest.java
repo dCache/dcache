@@ -21,7 +21,11 @@ public class CommandInterpreterTest extends CommandInterpreter {
              if( line == null ) {
                  break;
              }
-             System.out.println( c.command( new Args( line ) ) ) ;
+             if (line.trim().isEmpty()) {
+                 System.out.println();
+             } else {
+                 System.out.println( c.command( new Args( line ) ) ) ;
+             }
           }
        }catch( CommandExitException cfe ){
           System.out.println( "Command interpreter finished with "+

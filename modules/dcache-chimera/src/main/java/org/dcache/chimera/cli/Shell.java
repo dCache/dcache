@@ -17,24 +17,13 @@
  */
 package org.dcache.chimera.cli;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.CharStreams;
-import com.google.common.io.LineProcessor;
 import com.google.common.primitives.Booleans;
-import jline.ANSIBuffer;
-import jline.ConsoleReader;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import java.io.BufferedInputStream;
-import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -42,18 +31,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import dmg.util.CommandException;
-import dmg.util.CommandExitException;
-import dmg.util.CommandInterpreter;
-import dmg.util.CommandSyntaxException;
-import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
-import dmg.util.command.HelpFormat;
 import dmg.util.command.Option;
 
 import org.dcache.acl.ACE;
@@ -72,20 +54,16 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.cli.ShellApplication;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.padStart;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static java.util.Arrays.asList;
 
-public class Shell implements Closeable
+public class Shell extends ShellApplication
 {
     private final FileSystemProvider fs;
-    private final CommandInterpreter commandInterpreter;
-    private final ConsoleReader console = new ConsoleReader();
-    private final boolean isAnsiSupported;
-    private final boolean hasConsole;
     private String path = "/";
     private FsInode pwd;
 
@@ -96,29 +74,11 @@ public class Shell implements Closeable
             System.exit(4);
         }
 
+        Args args = new Args(arguments);
+        args.shift(FsFactory.ARGC);
+
         try (Shell shell = new Shell(arguments)) {
-            Args args = new Args(arguments);
-            if (args.hasOption("h")) {
-                System.out.println("Usage: chimera [-e] [-f=<file>]|[-]|[COMMAND]");
-                System.out.println();
-                System.out.println("Use 'chimera help' for an overview of available commands.");
-                System.exit(0);
-            } else if (args.hasOption("f")) {
-                try (InputStream in = new FileInputStream(args.getOption("f"))) {
-                    shell.execute(new BufferedInputStream(in), System.out, args.hasOption("e"));
-                }
-            } else if (args.argc() > FsFactory.ARGC) {
-                args.shift(FsFactory.ARGC);
-                if (args.argc() == 1 && args.argv(0).equals("-")) {
-                    shell.execute(System.in, System.out, args.hasOption("e"));
-                } else {
-                    shell.execute(args);
-                }
-            } else if (!shell.hasConsole) {
-                shell.execute(System.in, System.out, args.hasOption("e"));
-            } else {
-                shell.console();
-            }
+            shell.start(args);
         }
     }
 
@@ -126,104 +86,24 @@ public class Shell implements Closeable
     {
         fs = FsFactory.createFileSystem(args);
         pwd = fs.path2inode(path);
-        commandInterpreter = new CommandInterpreter(this) {
-            {
-                addCommandListener(new HelpCommands());
-            }
-        };
-        hasConsole = System.console() != null;
-        isAnsiSupported = console.getTerminal().isANSISupported() && hasConsole;
+    }
+
+    @Override
+    protected String getCommandName()
+    {
+        return "chimera";
+    }
+
+    @Override
+    protected String getPrompt()
+    {
+        return "chimera:" + path + "# ";
     }
 
     @Override
     public void close() throws IOException
     {
         fs.close();
-    }
-
-    public void execute(InputStream in, final PrintStream out, final boolean echo) throws IOException
-    {
-        CharStreams.readLines(
-                new InputStreamReader(in, Charsets.US_ASCII),
-                new LineProcessor<Object>()
-                {
-                    @Override
-                    public boolean processLine(String line) throws IOException
-                    {
-                        try {
-                            if (echo) {
-                                out.println(line);
-                            }
-                            String s = Objects.toString(commandInterpreter.command(new Args(line)), null);
-                            if (!isNullOrEmpty(s)) {
-                                out.println(s);
-                            }
-                            return true;
-                        } catch (CommandException e) {
-                            throw new IOException(e);
-                        }
-                    }
-
-                    @Override
-                    public Object getResult()
-                    {
-                        return null;
-                    }
-                });
-    }
-
-    public void execute(Args args) throws Throwable
-    {
-        String out;
-        try {
-            if (isAnsiSupported && args.argc() > 0) {
-                if (args.argv(0).equals("help")) {
-                    args.shift();
-                    args = new Args("help -format=" + HelpFormat.ANSI + " " + args.toString());
-                }
-            }
-            try {
-                out = Objects.toString(commandInterpreter.command(args), null);
-            } catch (CommandThrowableException e) {
-                throw e.getCause();
-            }
-        } catch (ChimeraFsException e) {
-            out = new ANSIBuffer().red(e.getMessage()).toString(isAnsiSupported);
-        } catch (CommandSyntaxException e) {
-            ANSIBuffer sb = new ANSIBuffer();
-            sb.red("Syntax error: " + e.getMessage() + "\n");
-            String help  = e.getHelpText();
-            if (help != null) {
-                sb.append(help);
-            }
-            out = sb.toString(isAnsiSupported);
-        } catch (CommandExitException e) {
-            throw e;
-        } catch (Exception e) {
-            out = new ANSIBuffer().red(e.toString()).toString(isAnsiSupported);
-        }
-        if (!isNullOrEmpty(out)) {
-            console.printString(out);
-            if (out.charAt(out.length() - 1) != '\n') {
-                console.printNewline();
-            }
-            console.flushConsole();
-        }
-    }
-
-    public void console() throws Throwable
-    {
-        try {
-            while (true) {
-                String prompt = new ANSIBuffer().bold("chimera:" + path + "# ").toString(isAnsiSupported);
-                String str = console.readLine(prompt);
-                if (str == null) {
-                    break;
-                }
-                execute(new Args(str));
-            }
-        } catch (CommandExitException ignored) {
-        }
     }
 
     @Nonnull
@@ -235,16 +115,6 @@ public class Shell implements Closeable
             return fs.path2inode(path.toString());
         } else {
             return fs.path2inode(path.toString(), pwd);
-        }
-    }
-
-    @Command(name = "exit", hint = "exit chimera shell")
-    public class ExitComamnd implements Callable<Serializable>
-    {
-        @Override
-        public Serializable call() throws CommandExitException
-        {
-            throw new CommandExitException();
         }
     }
 
@@ -400,6 +270,7 @@ public class Shell implements Closeable
         @Argument(required = false)
         File path;
 
+        @Override
         public Serializable call() throws IOException
         {
             checkArgument(Booleans.countTrue(atime, ctime, time != DEFAULT_TIME) <= 1,

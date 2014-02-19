@@ -355,6 +355,9 @@ import org.dcache.util.Args;
          if(_evt) {
              _log.info("EVENT : command : " + args);
          }
+         if (args.argc() == 0) {
+             return;
+         }
          try{
              Object reply = _interpreter.command( args ) ;
              if( reply == null ) {

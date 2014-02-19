@@ -1184,6 +1184,7 @@
         <module>modules/logback-test-config</module>
         <module>modules/logback-console-config</module>
         <module>modules/common</module>
+        <module>modules/common-cli</module>
         <module>modules/cells</module>
         <module>modules/gplazma2</module>
         <module>modules/gplazma2-argus</module>

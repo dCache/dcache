@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dmg.util.AuthorizedString;
-import dmg.util.CommandException;
-import dmg.util.CommandRequestable;
 import dmg.util.DomainInterruptHandler;
 import dmg.util.Gate;
 import dmg.util.logback.FilterShell;
@@ -276,15 +274,6 @@ public class      SystemCell
            }
            _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
-           processed = true;
-        }else if( obj instanceof CommandRequestable ){
-           CommandRequestable request = (CommandRequestable)obj ;
-           try{
-               _log.info( "Command : "+request.getRequestCommand() ) ;
-              reply = _cellShell.command( request ) ;
-           }catch( CommandException cee ){
-              reply = cee ;
-           }
            processed = true;
         }
 

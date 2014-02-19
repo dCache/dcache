@@ -415,6 +415,9 @@ public class CommandTaskCell extends CellAdapter {
    }
    @Override
    public Serializable command( Args args )throws CommandException {
+      if (args.argc() == 0) {
+          return "";
+      }
       Args copyArgs = new Args(args);
       try{
           return super.command(args) ;
@@ -424,7 +427,9 @@ public class CommandTaskCell extends CellAdapter {
       }
    }
    private Serializable executeLocalCommand( Args args ) throws CommandException {
-
+       if (args.argc() == 0) {
+           return "";
+       }
       ClientInfo client = _clientHandler.getThisClient() ;
       if( ! client.isAttached() ) {
           throw new

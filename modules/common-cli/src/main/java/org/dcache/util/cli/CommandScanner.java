@@ -1,4 +1,4 @@
-package dmg.util.command;
+package org.dcache.util.cli;
 
 import java.util.List;
 import java.util.Map;
