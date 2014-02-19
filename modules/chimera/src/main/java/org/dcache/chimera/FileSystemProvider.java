@@ -18,6 +18,7 @@ package org.dcache.chimera;
 
 import java.io.Closeable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
@@ -225,6 +226,9 @@ public interface FileSystemProvider extends Closeable {
     public abstract List<StorageLocatable> getInodeLocations(FsInode inode,
             int type) throws ChimeraFsException;
 
+    public abstract List<StorageLocatable> getInodeLocations(FsInode inode)
+            throws ChimeraFsException;
+
     public abstract void addInodeLocation(FsInode inode, int type,
             String location) throws ChimeraFsException;
 
@@ -232,6 +236,8 @@ public interface FileSystemProvider extends Closeable {
             String location) throws ChimeraFsException;
 
     public abstract String[] tags(FsInode inode) throws ChimeraFsException;
+
+    Map<String, byte[]> getAllTags(FsInode inode) throws ChimeraFsException;
 
     public abstract void createTag(FsInode inode, String name)
             throws ChimeraFsException;

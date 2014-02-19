@@ -1,10 +1,12 @@
 package org.dcache.chimera.namespace;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.StringTokenizer;
 
 import diskCacheV111.util.AccessLatency;
@@ -14,9 +16,7 @@ import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FsInode;
 import org.dcache.chimera.StorageGenericLocation;
-import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 
@@ -29,34 +29,32 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
     }
 
     @Override
-    public StorageInfo getFileStorageInfo(FsInode inode) throws CacheException {
+    public StorageInfo getFileStorageInfo(ExtendedInode inode) throws CacheException {
 
         OSMStorageInfo info;
 
         try {
             Stat stat = inode.statCache();
-            FsInode level2 = new FsInode(inode.getFs(), inode.toString(), 2);
+            ExtendedInode level2 = inode.getLevel(2);
 
             boolean isNew = (stat.getSize() == 0) && (!level2.exists());
 
             if (!isNew) {
-                List<StorageLocatable> locations = inode.getFs().getInodeLocations(inode, StorageGenericLocation.TAPE);
+                ImmutableList<String> locations = inode.getLocations(StorageGenericLocation.TAPE);
 
                 if (locations.isEmpty()) {
                     info = (OSMStorageInfo) getDirStorageInfo(inode);
                 } else {
-                    InodeStorageInformation inodeStorageInfo = inode.getFs().getStorageInfo(inode);
+                    InodeStorageInformation inodeStorageInfo = inode.getStorageInfo();
 
                     info = new OSMStorageInfo(inodeStorageInfo.storageGroup(),
                             inodeStorageInfo.storageSubGroup());
 
-                    for (StorageLocatable location : locations) {
-                        if (location.isOnline()) {
-                            try {
-                                info.addLocation(new URI(location.location()));
-                            } catch (URISyntaxException e) {
-                                // bad URI
-                            }
+                    for (String location : locations) {
+                        try {
+                            info.addLocation(new URI(location));
+                        } catch (URISyntaxException e) {
+                            // bad URI
                         }
                     }
                 }
@@ -73,8 +71,8 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
     }
 
     @Override
-    public StorageInfo getDirStorageInfo(FsInode inode) throws CacheException {
-        FsInode dirInode;
+    public StorageInfo getDirStorageInfo(ExtendedInode inode) throws CacheException {
+        ExtendedInode dirInode;
         if (!inode.isDirectory()) {
             dirInode = inode.getParent();
         }
@@ -84,10 +82,9 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         try {
             HashMap<String, String> hash = new HashMap<>();
             String store = null;
-            String group = null;
-            String[] OSMTemplate = getTag(dirInode, "OSMTemplate");
-            if (OSMTemplate != null) {
-                for ( String line: OSMTemplate) {
+            ImmutableList<String> OSMTemplate = getTag(dirInode, "OSMTemplate");
+            if (!OSMTemplate.isEmpty()) {
+                for (String line: OSMTemplate) {
                     StringTokenizer st = new StringTokenizer(line);
                     if (st.countTokens() < 2) {
                         continue;
@@ -99,10 +96,9 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                     throw new CacheException(37, "StoreName not found in template");
                 }
             }
-            String [] sGroup = getTag(dirInode, "sGroup");
-            if( sGroup != null ) {
-                group = sGroup[0].trim();
-            }
+
+            ImmutableList<String> sGroup = getTag(dirInode, "sGroup");
+            String group = getFirstLine(sGroup).orNull();
             OSMStorageInfo info = new OSMStorageInfo(store, group);
             info.addKeys(hash);
             return info;

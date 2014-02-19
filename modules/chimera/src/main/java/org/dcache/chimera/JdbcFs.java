@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -1853,6 +1854,36 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
+    public List<StorageLocatable> getInodeLocations(FsInode inode) throws ChimeraFsException {
+
+        Connection dbConnection;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        List<StorageLocatable> locations = null;
+
+        try {
+
+            // read/write only
+            dbConnection.setAutoCommit(true);
+
+            locations = _sqlDriver.getInodeLocations(dbConnection, inode);
+
+        } catch (SQLException se) {
+            _log.error("getInodeLocations", se);
+            throw new IOHimeraFsException(se.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
+
+        return locations;
+    }
+
+    @Override
     public void addInodeLocation(FsInode inode, int type, String location) throws ChimeraFsException {
 
         Connection dbConnection;
@@ -1952,6 +1983,28 @@ public class JdbcFs implements FileSystemProvider {
         }
 
         return list;
+    }
+
+    @Override
+    public Map<String, byte[]> getAllTags(FsInode inode) throws ChimeraFsException {
+        Connection dbConnection;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        try {
+            // read only
+            dbConnection.setAutoCommit(true);
+            return _sqlDriver.getAllTags(dbConnection, inode);
+        } catch (SQLException | IOException e) {
+            _log.error("getAllTags", e);
+            throw new IOHimeraFsException(e.getMessage(), e);
+        } finally {
+            tryToClose(dbConnection);
+        }
     }
 
     @Override

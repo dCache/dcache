@@ -17,6 +17,8 @@
 package org.dcache.chimera;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
+import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +33,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -1377,7 +1381,7 @@ class FsSqlDriver {
     ////   Location info
     ////
     ////////////////////////////////////////////////////////////////////
-    private static final String sqlGetInodeLocations =
+    private static final String sqlGetInodeLocationsByType =
             "SELECT ilocation,ipriority,ictime,iatime  "
             + "FROM t_locationinfo WHERE itype=? AND ipnfsid=? AND istate=1 ORDER BY ipriority DESC";
 
@@ -1400,7 +1404,7 @@ class FsSqlDriver {
         PreparedStatement stGetInodeLocations = null;
         try {
 
-            stGetInodeLocations = dbConnection.prepareStatement(sqlGetInodeLocations);
+            stGetInodeLocations = dbConnection.prepareStatement(sqlGetInodeLocationsByType);
 
             stGetInodeLocations.setInt(1, type);
             stGetInodeLocations.setString(2, inode.toString());
@@ -1425,6 +1429,56 @@ class FsSqlDriver {
 
         return locations;
     }
+
+    private static final String sqlGetInodeLocations =
+            "SELECT itype,ilocation,ipriority,ictime,iatime  "
+            + "FROM t_locationinfo WHERE ipnfsid=? AND istate=1 ORDER BY ipriority DESC";
+
+    /**
+     *
+     *  returns a list of locations for the inode.
+     *  only 'online' locations is returned
+     *
+     * @param dbConnection
+     * @param inode
+     * @throws SQLException
+     * @return
+     */
+    List<StorageLocatable> getInodeLocations(Connection dbConnection, FsInode inode)
+            throws SQLException
+    {
+        List<StorageLocatable> locations = new ArrayList<>();
+        ResultSet rs = null;
+        PreparedStatement stGetInodeLocations = null;
+        try {
+
+            stGetInodeLocations = dbConnection.prepareStatement(sqlGetInodeLocations);
+
+            stGetInodeLocations.setString(1, inode.toString());
+
+            rs = stGetInodeLocations.executeQuery();
+
+            while (rs.next()) {
+
+                int type = rs.getInt("itype");
+                long ctime = rs.getTimestamp("ictime").getTime();
+                long atime = rs.getTimestamp("iatime").getTime();
+                int priority = rs.getInt("ipriority");
+                String location = rs.getString("ilocation");
+
+                StorageLocatable inodeLocation = new StorageGenericLocation(type, priority, location, ctime, atime, true);
+                locations.add(inodeLocation);
+            }
+
+        } finally {
+            SqlHelper.tryToClose(rs);
+            SqlHelper.tryToClose(stGetInodeLocations);
+        }
+
+        return locations;
+    }
+
+
     private static final String sqlAddInodeLocation = "INSERT INTO t_locationinfo VALUES(?,?,?,?,?,?,?)";
 
     /**
@@ -1545,6 +1599,27 @@ class FsSqlDriver {
         }
 
         return list;
+    }
+
+    private static final String sqlGetTags =
+            "SELECT t.itagname, i.ivalue, i.isize FROM t_tags t JOIN t_tags_inodes i ON t.itagid = i.itagid WHERE t.ipnfsid=?";
+
+    Map<String,byte[]> getAllTags(Connection dbConnection, FsInode inode) throws SQLException, IOException
+    {
+        Map<String,byte[]> tags = new HashMap<>();
+        try (PreparedStatement stGetAllTags = dbConnection.prepareStatement(sqlGetTags)) {
+            stGetAllTags.setString(1, inode.toString());
+            try (ResultSet rs = stGetAllTags.executeQuery()) {
+                while (rs.next()) {
+                    try (InputStream in = rs.getBinaryStream("ivalue")) {
+                        byte[] data = new byte[Ints.saturatedCast(rs.getLong("isize"))];
+                        ByteStreams.readFully(in, data);
+                        tags.put(rs.getString("itagname"), data);
+                    }
+                }
+            }
+        }
+        return tags;
     }
 
     /**
@@ -1743,7 +1818,7 @@ class FsSqlDriver {
             SqlHelper.tryToClose(ps);
         }
     }
-    private static final String sqlGetTag = "SELECT ivalue,isize FROM t_tags_inodes WHERE itagid=?";
+    private static final String sqlGetTag = "SELECT i.ivalue,i.isize FROM t_tags t JOIN t_tags_inodes i ON t.itagid = i.itagid WHERE t.ipnfsid=? AND t.itagname=?";
 
     /**
      * get content of the tag associated with name for inode
@@ -1764,34 +1839,31 @@ class FsSqlDriver {
         ResultSet rs = null;
         PreparedStatement stGetTag = null;
         try {
-
-            String tagId = getTagId(dbConnection, inode, tagName);
-
             stGetTag = dbConnection.prepareStatement(sqlGetTag);
-            stGetTag.setString(1, tagId);
+            stGetTag.setString(1, inode.toString());
+            stGetTag.setString(2, tagName);
             rs = stGetTag.executeQuery();
 
             if (rs.next()) {
+                try (InputStream in = rs.getBinaryStream("ivalue")) {
+                    /*
+                     * some databases (hsqldb in particular) fill a full record for
+                     * BLOBs and on read reads a full record, which is not what we expect.
+                     *
+                     */
+                    int size = Math.min(len, (int) rs.getLong("isize"));
 
-                InputStream in = rs.getBinaryStream("ivalue");
-                /*
-                 * some databases (hsqldb in particular) fill a full record for
-                 * BLOBs and on read reads a full record, which is not what we expect.
-                 *
-                 */
-                int size = Math.min(len, (int) rs.getLong("isize"));
+                    while (count < size) {
 
-                while (count < size) {
+                        int c = in.read();
+                        if (c == -1) {
+                            break;
+                        }
 
-                    int c = in.read();
-                    if (c == -1) {
-                        break;
+                        data[offset + count] = (byte) c;
+                        ++count;
                     }
-
-                    data[offset + count] = (byte) c;
-                    ++count;
                 }
-                in.close();
             }
 
         } finally {

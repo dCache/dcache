@@ -1,7 +1,8 @@
 package org.dcache.chimera.namespace;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriComponents;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -19,9 +20,7 @@ import diskCacheV111.vehicles.EnstoreStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FsInode;
 import org.dcache.chimera.StorageGenericLocation;
-import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 
@@ -34,13 +33,12 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
     }
 
     @Override
-    public StorageInfo getFileStorageInfo(FsInode inode) throws CacheException {
+    public StorageInfo getFileStorageInfo(ExtendedInode inode) throws CacheException {
         EnstoreStorageInfo info;
         Stat stat;
-        FsInode level2 = new FsInode(inode.getFs(), inode.toString(), 2);
+        ExtendedInode level2 = inode.getLevel(2);
         try {
-            List<StorageLocatable> locations = inode.getFs().getInodeLocations(inode,
-                                                                               StorageGenericLocation.TAPE );
+            List<String> locations = inode.getLocations(StorageGenericLocation.TAPE);
             EnstoreStorageInfo parentStorageInfo = (EnstoreStorageInfo) getDirStorageInfo(inode);
             if (locations.isEmpty()) {
                 info = parentStorageInfo;
@@ -50,14 +48,10 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                 info = new EnstoreStorageInfo(parentStorageInfo.getStorageGroup(),
                                               parentStorageInfo.getFileFamily());
                 info.setIsNew(false);
-                for(StorageLocatable location: locations) {
-                    if (!location.isOnline()) {
-                        continue;
-                    }
-                    String locationStr = location.location();
-                    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(locationStr);
+                for(String location: locations) {
+                    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(location);
                     try {
-                        URI uri = builder.build(isEncoded(locationStr)).toUri();
+                        URI uri = builder.build(isEncoded(location)).toUri();
                         info.addLocation(uri);
                         for (String part : uri.getQuery().split("&")) {
                             String[] data = part.split("=");
@@ -92,8 +86,8 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
     }
 
     @Override
-    public StorageInfo getDirStorageInfo(FsInode inode) throws CacheException {
-        FsInode dirInode;
+    public StorageInfo getDirStorageInfo(ExtendedInode inode) throws CacheException {
+        ExtendedInode dirInode;
         if (!inode.isDirectory()) {
             dirInode = inode.getParent();
         }
@@ -102,21 +96,18 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
         }
         try {
             Map<String, String> hash = new HashMap<>();
-            String [] OSMTemplate = getTag(dirInode,"OSMTemplate") ;
-            String [] group       = getTag(dirInode,"storage_group" ) ;
-            String [] family      = getTag(dirInode,"file_family" ) ;
+            ImmutableList<String> OSMTemplate = getTag(dirInode, "OSMTemplate");
+            ImmutableList<String> group       = getTag(dirInode, "storage_group");
+            ImmutableList<String> family      = getTag(dirInode, "file_family");
 
-            if (OSMTemplate != null) {
-                for ( String line: OSMTemplate) {
-                    StringTokenizer st = new StringTokenizer(line);
-                    if (st.countTokens() < 2) {
-                        continue;
-                    }
+            for (String line: OSMTemplate) {
+                StringTokenizer st = new StringTokenizer(line);
+                if (st.countTokens() >= 2) {
                     hash.put(st.nextToken(), st.nextToken());
                 }
             }
-            String sg = (group==null||group.length == 0)||(sg=group[0].trim()).equals("") ? "none" : sg;
-            String ff = (family==null||family.length == 0)||(ff=family[0].trim()).equals("") ? "none" : ff;
+            String sg = getFirstLine(group).or("none");
+            String ff = getFirstLine(family).or("none");
             EnstoreStorageInfo info = new EnstoreStorageInfo(sg,ff);
             info.addKeys(hash);
             return info;

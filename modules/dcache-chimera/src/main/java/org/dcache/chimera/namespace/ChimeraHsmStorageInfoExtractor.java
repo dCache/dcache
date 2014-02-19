@@ -1,14 +1,17 @@
 package org.dcache.chimera.namespace;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.CharArrayReader;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -20,7 +23,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.store.InodeStorageInformation;
 
@@ -57,35 +59,35 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     }
 
     @Override
-    public AccessLatency getAccessLatency(FsInode inode) throws CacheException
+    public AccessLatency getAccessLatency(ExtendedInode inode) throws CacheException
     {
         try {
-            if( !inode.exists() ) {
+            if (!inode.exists()) {
                 throw new FileNotFoundCacheException(inode.toString() + " does not exist");
             }
 
-            FsInode dirInode;
+            ExtendedInode dirInode;
             if (inode.isDirectory()) {
                 dirInode = inode;
             } else {
-                AccessLatency al = inode.getFs().getAccessLatency(inode);
-                if (al != null) {
-                    return AccessLatency.getAccessLatency(al.getId());
+                Optional<AccessLatency> al = inode.getAccessLatency();
+                if (al.isPresent()) {
+                    return al.get();
                 }
                 dirInode = inode.getParent();
             }
 
-            String[] accessLatency = getTag(dirInode, "AccessLatency");
-            if (accessLatency != null) {
+            Optional<String> accessLatency = getFirstLine(getTag(dirInode, "AccessLatency"));
+            if (accessLatency.isPresent()) {
                 try {
-                    return AccessLatency.getAccessLatency(accessLatency[0].trim());
+                    return AccessLatency.getAccessLatency(accessLatency.get());
                 } catch (IllegalArgumentException e) {
-                    LOGGER.error("Badly formated AccessLatency tag in {}: {}", dirInode, e.getMessage());
+                    LOGGER.error("Badly formatted AccessLatency tag in {}: {}", dirInode, e.getMessage());
                 }
             }
 
             return getDefaultAccessLatency();
-        }catch(FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage(), e);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to obtain AccessLatency: " + e.getMessage(), e);
@@ -95,35 +97,35 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     }
 
     @Override
-    public RetentionPolicy getRetentionPolicy(FsInode inode) throws CacheException
+    public RetentionPolicy getRetentionPolicy(ExtendedInode inode) throws CacheException
     {
         try {
-            if( !inode.exists() ) {
+            if (!inode.exists()) {
                 throw new FileNotFoundCacheException(inode.toString() + " does not exists");
             }
 
-            FsInode dirInode;
+            ExtendedInode dirInode;
             if (inode.isDirectory()) {
                 dirInode = inode;
             } else {
-                RetentionPolicy rp = inode.getFs().getRetentionPolicy(inode);
-                if (rp != null) {
-                    return RetentionPolicy.getRetentionPolicy(rp.getId());
+                Optional<RetentionPolicy> rp = inode.getRetentionPolicy();
+                if (rp.isPresent()) {
+                    return rp.get();
                 }
                 dirInode = inode.getParent();
             }
 
-            String[] retentionPolicy = getTag(dirInode, "RetentionPolicy");
-            if (retentionPolicy != null) {
+            Optional<String> retentionPolicy = getFirstLine(getTag(dirInode, "RetentionPolicy"));
+            if (retentionPolicy.isPresent()) {
                 try {
-                    return RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim());
+                    return RetentionPolicy.getRetentionPolicy(retentionPolicy.get());
                 } catch (IllegalArgumentException e) {
                     LOGGER.error("Badly formated RetentionPolicy tag in {}: {}", dirInode, e.getMessage());
                 }
             }
 
             return getDefaultRetentionPolicy();
-        }catch(FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage(), e);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to obtain RetentionPolicy: " + e.getMessage(), e);
@@ -140,7 +142,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
      */
 
     @Override
-    public StorageInfo getStorageInfo(FsInode inode)
+    public StorageInfo getStorageInfo(ExtendedInode inode)
             throws CacheException {
 
         try {
@@ -152,7 +154,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         }
 
         StorageInfo info;
-        FsInode dirInode;
+        ExtendedInode dirInode;
 
         if (inode.isDirectory()) {
             info =  getDirStorageInfo(inode);
@@ -164,20 +166,19 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
 
         try {
             // overwrite hsm type with hsmInstance tag
-            String[] hsmInstance;
-            hsmInstance = getTag(dirInode, "hsmInstance");
-            if( hsmInstance != null ) {
-                info.setHsm( hsmInstance[0].toLowerCase().trim());
+            Optional<String> hsmInstance = getFirstLine(getTag(dirInode, "hsmInstance"));
+            if (hsmInstance.isPresent()) {
+                info.setHsm(hsmInstance.get());
             }
 
-            String[] cacheClass = getTag(dirInode, "cacheClass");
-            if( cacheClass != null ) {
-                info.setCacheClass( cacheClass[0].trim());
+            Optional<String> cacheClass = getFirstLine(getTag(dirInode, "cacheClass"));
+            if (cacheClass.isPresent()) {
+                info.setCacheClass(cacheClass.get());
             }
 
-            String [] spaceToken = getTag(dirInode, "WriteToken");
-            if( spaceToken != null ) {
-                info.setKey("writeToken", spaceToken[0].trim());
+            Optional<String> spaceToken = getFirstLine(getTag(dirInode, "WriteToken"));
+            if (spaceToken.isPresent() ) {
+                info.setKey("writeToken", spaceToken.get());
             }
         } catch (IOException e) {
             throw new CacheException( 37, "Unable to fetch tags: " + e.getMessage());
@@ -186,8 +187,8 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         return info;
     }
 
-    public abstract StorageInfo getFileStorageInfo(FsInode inode) throws CacheException;
-    public abstract StorageInfo getDirStorageInfo(FsInode inode) throws CacheException;
+    public abstract StorageInfo getFileStorageInfo(ExtendedInode inode) throws CacheException;
+    public abstract StorageInfo getDirStorageInfo(ExtendedInode inode) throws CacheException;
 
     /*
      * (non-Javadoc)
@@ -237,37 +238,24 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
      * if tag does not exist or empty.
      * @throws IOException
      */
-    public static String[] getTag(FsInode dirInode, String tag)
-        throws IOException {
-
-        FsInode_TAG tagInode = new FsInode_TAG(dirInode.getFs(), dirInode
-                .toString(), tag);
-
-
-        if( !tagInode.exists() ) {
-            return null;
+    public static ImmutableList<String> getTag(ExtendedInode dirInode, String tag)
+        throws IOException
+    {
+        byte[] data = dirInode.getTags().get(tag);
+        if (data == null || data.length == 0) {
+            return ImmutableList.of();
         }
+        return ByteSource.wrap(data).asCharSource(Charsets.UTF_8).readLines();
+    }
 
-        byte[] buff = new byte[256];
-
-        int len = tagInode.read(0, buff, 0, buff.length);
-        /* empty and bad tags are treated as non existing tags */
-        if( len <= 0 ) {
-            return null;
+    protected static Optional<String> getFirstLine(ImmutableList<String> lines)
+    {
+        if (!lines.isEmpty()) {
+            String line = lines.get(0).trim();
+            if (!line.isEmpty()) {
+                return Optional.of(line);
+            }
         }
-
-        List<String> lines = new ArrayList<>();
-        CharArrayReader ca = new CharArrayReader(new String(buff, 0, len)
-                .toCharArray());
-
-        BufferedReader br = new BufferedReader(ca);
-
-        String line;
-        while ((line = br.readLine()) != null) {
-            lines.add(line);
-        }
-
-        return lines.toArray(new String[lines.size()]);
-
+        return Optional.absent();
     }
 }

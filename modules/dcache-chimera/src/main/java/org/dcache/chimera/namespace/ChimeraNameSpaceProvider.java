@@ -6,11 +6,15 @@ package org.dcache.chimera.namespace;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.File;
@@ -171,7 +175,7 @@ public class ChimeraNameSpaceProvider
             if (parentPath == null) {
                 throw new FileExistsCacheException("File exists: " + path);
             }
-            FsInode parent = pathToInode(subject, parentPath);
+            ExtendedInode parent = new ExtendedInode(pathToInode(subject, parentPath));
 
             if (!Subjects.isRoot(subject)) {
                 FileAttributes attributes
@@ -227,7 +231,7 @@ public class ChimeraNameSpaceProvider
             if (parentPath == null) {
                 throw new FileExistsCacheException("File exists: " + path);
             }
-            FsInode parent = pathToInode(subject, parentPath);
+            ExtendedInode parent = new ExtendedInode(pathToInode(subject, parentPath));
 
             if (!Subjects.isRoot(subject)) {
                 FileAttributes attributes
@@ -284,7 +288,7 @@ public class ChimeraNameSpaceProvider
             if (parentPath == null) {
                 throw new FileExistsCacheException("File exists: " + path);
             }
-            FsInode parent = pathToInode(subject, parentPath);
+            ExtendedInode parent = new ExtendedInode(pathToInode(subject, parentPath));
 
             if (!Subjects.isRoot(subject)) {
                 FileAttributes attributes
@@ -311,7 +315,7 @@ public class ChimeraNameSpaceProvider
             }
 
             inode = _fs.createLink(parent, newEntryFile.getName(), uid, gid,
-                    SYMLINK_MODE, dest.getBytes(Charsets.UTF_8));
+                                   SYMLINK_MODE, dest.getBytes(Charsets.UTF_8));
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);
         } catch (FileNotFoundHimeraFsException e) {
@@ -331,7 +335,7 @@ public class ChimeraNameSpaceProvider
         throws CacheException
     {
         try {
-            FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
+            ExtendedInode inode = new ExtendedInode(_fs, pnfsId);
 
             if (!Subjects.isRoot(subject)) {
                 FsInode inodeParent = _fs.getParentOf(inode);
@@ -376,7 +380,7 @@ public class ChimeraNameSpaceProvider
                 String parentPath = file.getParent();
 
                 if (parentPath != null) {
-                    FsInode inode = pathToInode(subject, path);
+                    ExtendedInode inode = new ExtendedInode(pathToInode(subject, path));
                     FsInode inodeParent = _fs.path2inode(parentPath);
 
                     FileAttributes parentAttributes =
@@ -666,15 +670,21 @@ public class ChimeraNameSpaceProvider
         return new PnfsId( inodeParent.toString() );
     }
 
-    private FileAttributes getFileAttributesForPermissionHandler(FsInode inode)
-        throws IOException, ChimeraFsException, CacheException
+    private FileAttributes getFileAttributesForPermissionHandler(@Nullable FsInode inode)
+        throws IOException, CacheException
     {
         return (inode == null)
                 ? null
-                : getFileAttributes(Subjects.ROOT, inode, _permissionHandler.getRequiredAttributes());
+                : getFileAttributesForPermissionHandler(new ExtendedInode(inode));
     }
 
-    private FileAttributes getFileAttributes(Subject subject, FsInode inode,
+    private FileAttributes getFileAttributesForPermissionHandler(@Nonnull ExtendedInode inode)
+        throws IOException, CacheException
+    {
+        return getFileAttributes(Subjects.ROOT, inode, _permissionHandler.getRequiredAttributes());
+    }
+
+    private FileAttributes getFileAttributes(Subject subject, ExtendedInode inode,
                                              Set<FileAttribute> attr)
         throws IOException, ChimeraFsException, CacheException
     {
@@ -689,9 +699,7 @@ public class ChimeraNameSpaceProvider
             switch (attribute) {
             case ACL:
                 if(_aclEnabled) {
-                    RsType rsType = inode.isDirectory() ? RsType.DIR : RsType.FILE;
-                    List<ACE> acl = _fs.getACL(inode);
-                    attributes.setAcl( new ACL(rsType, acl));
+                    attributes.setAcl(inode.getAcl());
                 } else {
                     attributes.setAcl(null);
                 }
@@ -731,32 +739,13 @@ public class ChimeraNameSpaceProvider
                 attributes.setGroup(stat.getGid());
                 break;
             case CHECKSUM:
-                Set<Checksum> checksums = new HashSet<>();
-                for (ChecksumType type: ChecksumType.values()) {
-                    String value = _fs.getInodeChecksum(inode, type.getType());
-                    if (value != null) {
-                        checksums.add(new Checksum(type,value));
-                    }
-                }
-                attributes.setChecksums(checksums);
+                attributes.setChecksums(Sets.newHashSet(inode.getChecksums()));
                 break;
             case LOCATIONS:
-                List<String> locations = new ArrayList<>();
-                List<StorageLocatable> localyManagerLocations =
-                    _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
-                for (StorageLocatable location: localyManagerLocations) {
-                    locations.add(location.location());
-                }
-                attributes.setLocations(locations);
+                attributes.setLocations(Lists.newArrayList(inode.getLocations(StorageGenericLocation.DISK)));
                 break;
             case FLAGS:
-                FsInode level2 = new FsInode(_fs, inode.toString(), 2);
-                ChimeraCacheInfo info = new ChimeraCacheInfo(level2);
-                Map<String,String> flags = new HashMap<>();
-                for (Map.Entry<String,String> e: info.getFlags().entrySet()) {
-                    flags.put(e.getKey(), e.getValue());
-                }
-                attributes.setFlags(flags);
+                attributes.setFlags(Maps.newHashMap(inode.getFlags()));
                 break;
             case SIMPLE_TYPE:
             case TYPE:
@@ -795,7 +784,7 @@ public class ChimeraNameSpaceProvider
         throws CacheException
     {
         try {
-            FsInode inode = new FsInode(_fs, pnfsId.toIdString());
+            ExtendedInode inode = new ExtendedInode(_fs, pnfsId);
 
             if (Subjects.isRoot(subject)) {
                 return getFileAttributes(subject, inode, attr);
@@ -836,7 +825,7 @@ public class ChimeraNameSpaceProvider
     {
         _log.debug("File attributes update: {}", attr.getDefinedAttributes());
 
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString());
+        ExtendedInode inode = new ExtendedInode(_fs, pnfsId);
 
         try {
             if (!Subjects.isRoot(subject)) {
@@ -984,7 +973,7 @@ public class ChimeraNameSpaceProvider
     {
         try {
             Pattern pattern = (glob == null) ? null : glob.toPattern();
-            FsInode dir = pathToInode(subject, path);
+            ExtendedInode dir = new ExtendedInode(pathToInode(subject, path));
             if (!dir.isDirectory()) {
                 throw new NotDirCacheException("Not a directory: " + path);
             }
@@ -1015,8 +1004,7 @@ public class ChimeraNameSpaceProvider
                             FileAttributes fa =
                                     attrs.isEmpty()
                                             ? null
-                                            : getFileAttributes(subject, entry
-                                            .getInode(), attrs);
+                                            : getFileAttributes(subject, new ExtendedInode(entry.getInode()), attrs);
                             handler.addEntry(name, fa);
                         }
                     } catch (FileNotFoundHimeraFsException e) {

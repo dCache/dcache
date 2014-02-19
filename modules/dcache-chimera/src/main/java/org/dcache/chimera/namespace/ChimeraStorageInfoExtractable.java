@@ -22,7 +22,7 @@ public interface ChimeraStorageInfoExtractable {
      * @return The AccessLatency of inode
      * @throws CacheException if the AccessLatency could not be read
      */
-    AccessLatency getAccessLatency(FsInode inode) throws CacheException;
+    AccessLatency getAccessLatency(ExtendedInode inode) throws CacheException;
 
     /**
      * Returns the RetentionPolicy of an inode.
@@ -31,7 +31,7 @@ public interface ChimeraStorageInfoExtractable {
      * @return The RetentionPolicy of inode
      * @throws CacheException if the RetentionPolicy could not be read
      */
-    RetentionPolicy getRetentionPolicy(FsInode inode) throws CacheException;
+    RetentionPolicy getRetentionPolicy(ExtendedInode inode) throws CacheException;
 
     /**
      * Returns the StorageInfo of an inode.
@@ -40,7 +40,7 @@ public interface ChimeraStorageInfoExtractable {
      * @return The StorageInfo of inode
      * @throws CacheException if the StorageInfo could not be read
      */
-    StorageInfo getStorageInfo(FsInode inode) throws CacheException;
+    StorageInfo getStorageInfo(ExtendedInode inode) throws CacheException;
 
     /**
      * Updates the StorageInfo of an inode.
