@@ -53,10 +53,6 @@
             <artifactId>opensaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.opensaml</groupId>
-            <artifactId>opensaml1</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>gplazma2-gsi</artifactId>
             <version>${project.version}</version>
