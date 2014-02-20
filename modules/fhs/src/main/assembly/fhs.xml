@@ -6,7 +6,7 @@
         <dependencySet>
             <excludes>
                 <exclude>*:*:war:*</exclude>
-                <exclude>saxon:saxon:*:*</exclude>
+                <exclude>*saxon:saxon*:*:*</exclude>
             </excludes>
             <outputDirectory>usr/share/dcache/classes</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
@@ -25,7 +25,7 @@
         </dependencySet>
         <dependencySet>
             <includes>
-                <include>saxon:saxon:*:*</include>
+                <include>*saxon:saxon*:*:*</include>
             </includes>
             <outputDirectory>usr/share/dcache/classes/saxon</outputDirectory>
             <fileMode>644</fileMode>
