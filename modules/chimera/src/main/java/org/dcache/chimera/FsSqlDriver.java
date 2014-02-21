@@ -463,21 +463,7 @@ class FsSqlDriver {
 
         try {
 
-            FsInode destInode = inodeOf(dbConnection, destDir, dest);
             FsInode srcInode = inodeOf(dbConnection, srcDir, source);
-
-            if (destInode != null) {
-
-                if (destInode.equals(srcInode)) {
-                    // according to POSIX, we are done
-                    return;
-                }
-
-                // remove old entry if exist
-                remove(dbConnection, destDir, dest);
-            }
-            incNlink(dbConnection, destDir);
-
             stMove = dbConnection.prepareStatement(sqlMove);
 
             stMove.setString(1, destDir.toString());
@@ -496,8 +482,6 @@ class FsSqlDriver {
                 stParentMove.setString(2, srcInode.toString());
                 stParentMove.executeUpdate();
             }
-
-            decNlink(dbConnection, srcDir);
 
         } finally {
             SqlHelper.tryToClose(stMove);
@@ -1048,29 +1032,12 @@ class FsSqlDriver {
 
         try {
 
-            FsInode destInode = inodeOf(dbConnection, dir, newName);
-            FsInode srcInode = inodeOf(dbConnection, dir, oldName);
-
-            if (destInode != null) {
-
-                if (destInode.equals(srcInode)) {
-                    // according to POSIX, we are done
-                    return;
-                }
-
-                // remove old entry if exist
-                remove(dbConnection, dir, newName);
-            }
-
             ps = dbConnection.prepareStatement(sqlSetFileName);
 
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.setString(3, dir.toString());
             ps.executeUpdate();
-
-            // update parent modification time
-            setFileMTime(dbConnection, dir, 0, System.currentTimeMillis());
 
         } finally {
             SqlHelper.tryToClose(ps);
