@@ -1755,6 +1755,7 @@ public class JdbcFs implements FileSystemProvider {
                 Stat statSrc = _sqlDriver.stat(dbConnection, srcInode);
                 if (destInode.equals(srcInode)) {
                    // according to POSIX, we are done
+                   dbConnection.commit();
                    return true;
                 }
 
