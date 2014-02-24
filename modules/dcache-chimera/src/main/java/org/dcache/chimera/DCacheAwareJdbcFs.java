@@ -69,15 +69,13 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.cells.CellStub;
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
-import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.nfs.v4.Stateids;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
@@ -135,8 +133,7 @@ public class DCacheAwareJdbcFs extends JdbcFs {
          * "localhost", so it is not a deviation from existing behavior.
          */
         ProtocolInfo protocolInfo
-            = new NFS4ProtocolInfo(new InetSocketAddress("localhost", 0),
-                                   new stateid4(Stateids.invalidStateId()));
+            =  new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress("localhost", 0));
         PinManagerPinMessage message
             = new PinManagerPinMessage(attributes, protocolInfo, null, lifetime);
 

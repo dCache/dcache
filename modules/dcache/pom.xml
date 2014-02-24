@@ -277,11 +277,6 @@
           <artifactId>gson</artifactId>
       </dependency>
 
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>nfs4j-core</artifactId>
-    </dependency>
-
   </dependencies>
 
   <build>
