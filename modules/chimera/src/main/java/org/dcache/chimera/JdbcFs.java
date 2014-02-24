@@ -1754,7 +1754,6 @@ public class JdbcFs implements FileSystemProvider {
             throw new BackEndErrorHimeraFsException(e.getMessage());
         }
 
-        boolean rc = false;
         try {
 
             // read/write only
@@ -1777,7 +1776,7 @@ public class JdbcFs implements FileSystemProvider {
                 if (destInode.equals(srcInode)) {
                    // according to POSIX, we are done
                    dbConnection.commit();
-                   return true;
+                   return false;
                 }
 
                /*
@@ -1803,7 +1802,6 @@ public class JdbcFs implements FileSystemProvider {
             }
 
             dbConnection.commit();
-            rc = true;
         } catch (SQLException e) {
             _log.error("move:", e);
             try {
@@ -1816,7 +1814,7 @@ public class JdbcFs implements FileSystemProvider {
             tryToClose(dbConnection);
         }
 
-        return rc;
+        return true;
     }
 
     /////////////////////////////////////////////////////////////////////

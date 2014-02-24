@@ -478,9 +478,9 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         boolean ok = _fs.move(base, "testCreateFile", base, "testCreateFile2");
 
-        assertTrue("rename of hardlink to itself should always return ok", ok);
+        assertFalse("rename of hardlink to itself should do nothing", ok);
         assertEquals("link count of base directory should not be modified in case of rename", preStatBase.getNlink(), base.stat().getNlink());
-        assertEquals("link count of file shold not be modified in case of rename", preStatFile.getNlink(), fileInode.stat().getNlink());
+        assertEquals("link count of file should not be modified in case of rename", preStatFile.getNlink(), fileInode.stat().getNlink());
 
     }
 
@@ -499,10 +499,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         boolean ok = _fs.move(base, "testCreateFile", base2, "testCreateFile2");
 
-        assertTrue("rename of hardlink to itself should always return ok", ok);
+        assertFalse("rename of hardlink to itself should do nothing", ok);
         assertEquals("link count of source directory should not be modified in case of rename", preStatBase.getNlink(), base.stat().getNlink());
         assertEquals("link count of destination directory should not be modified in case of rename", preStatBase2.getNlink(), base2.stat().getNlink());
-        assertEquals("link count of file shold not be modified in case of rename", preStatFile.getNlink(), fileInode.stat().getNlink());
+        assertEquals("link count of file should not be modified in case of rename", preStatFile.getNlink(), fileInode.stat().getNlink());
 
     }
 

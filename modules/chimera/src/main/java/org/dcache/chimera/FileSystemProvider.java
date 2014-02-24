@@ -203,6 +203,22 @@ public interface FileSystemProvider extends Closeable {
 
     public abstract boolean move(String source, String dest);
 
+    /**
+     * Move filesystem object from one directory into an other. If {@code source}
+     * and {@code dest} both refer to the  same  existing  file, the move performs no action.
+     * If destination object exists, then source object must be the same type.
+     *
+     * @param srcDir inode of the source directory
+     * @param source name of the file in srcDir
+     * @param destDir inode of the destination directory
+     * @param dest name of the new file in destDir
+     * @return true it underlying filesystem has been changed.
+     * @throws FileNotFoundHimeraFsException if source file does not exists
+     * @throws FileExistsChimeraFsException if destination exists and it not the
+     *	    same type as source
+     * @throws DirNotEmptyHimeraFsException if destination exists, is a directory
+     *	    and not empty
+     */
     public abstract boolean move(FsInode srcDir, String source,
             FsInode destDir, String dest) throws ChimeraFsException;
 
