@@ -76,6 +76,7 @@ package gov.fnal.srm.util;
 import org.globus.util.GlobusURL;
 
 import diskCacheV111.srm.ISRM;
+import diskCacheV111.srm.RequestStatus;
 
 import org.dcache.srm.Logger;
 /**
@@ -154,6 +155,24 @@ public class SRMV1CopyJob implements CopyJob {
                 return;
             }
         }
+
+        if(srm != null) {
+            if (success) {
+                logger.log("setting file request "+fileID +" status to Done");
+                RequestStatus status = srm.setFileStatus(requestID, fileID, "Done");
+                if (!status.state.equalsIgnoreCase("Done")) {
+                    success = false;
+                    error = status.errorMessage;
+                    logger.elog(error);
+                }
+            }
+            else
+            {
+                logger.log("setting file request "+fileID +" status to Failed");
+                srm.setFileStatus(requestID,fileID, "Failed");
+            }
+        }
+
         if(success) {
             if(isSrmPrepareToGet) {
                 client.setReportSucceeded(surl,null);
@@ -171,11 +190,6 @@ public class SRMV1CopyJob implements CopyJob {
                 client.setReportFailed(null,surl,error);
             }
 
-        }
-
-        if(srm != null) {
-            logger.log("setting file request "+fileID +" status to Done");
-            srm.setFileStatus(requestID,fileID,"Done");
         }
         synchronized(this) {
             isDone = true;
