@@ -497,6 +497,37 @@ public class Shell extends ShellApplication
         }
     }
 
+    @Command(name = "mv", hint = "move file",
+             description = "Renames or moves SOURCE to TARGET. If TARGET is a directory, the source " +
+                     "file is moved into TARGET.")
+    public class MvCommand implements Callable<Serializable>
+    {
+        @Argument(index = 0, metaVar = "source",
+                  usage = "File to move or rename.")
+        File source;
+
+        @Argument(index = 1, metaVar = "target",
+                  usage = "Target path or directory.")
+        File destination;
+
+        @Override
+        public Serializable call() throws ChimeraFsException
+        {
+            FsInode dst;
+            try {
+                dst = lookup(destination);
+            } catch (FileNotFoundHimeraFsException e) {
+                dst = null;
+            }
+            if (dst != null && dst.isDirectory()) {
+                fs.move(lookup(source.getParentFile()), source.getName(), lookup(destination), source.getName());
+            } else {
+                fs.move(lookup(source.getParentFile()), source.getName(), lookup(destination.getParentFile()), destination.getName());
+            }
+            return null;
+        }
+    }
+
     @Command(name = "rm", hint = "remove a file",
              description = "The rm command deletes the file.  If the file has data " +
                      "stored in dCache then dCache will remove that data in a " +
