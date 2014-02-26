@@ -118,6 +118,7 @@ import org.dcache.srm.v2_2.SrmSuspendRequestResponse;
 import org.dcache.srm.v2_2.SrmUpdateSpaceRequest;
 import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
 
+import static com.google.common.net.InetAddresses.isInetAddress;
 /**
  *
  * @author  timur
@@ -180,6 +181,10 @@ public class SRMClientV2 implements ISRM {
         }
         host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
+	if (isInetAddress(host) && host.indexOf(':') != -1) {
+	    // IPv6 without DNS record
+	    host = "[" + host + "]";
+	}
         int port = srmurl.getPort();
 
         if( port == 80) {

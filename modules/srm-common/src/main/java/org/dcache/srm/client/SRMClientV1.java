@@ -82,6 +82,8 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLConnection;
 
+import static com.google.common.net.InetAddresses.isInetAddress;
+
 public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     private static final Logger logger =
         LoggerFactory.getLogger(SRMClientV1.class);
@@ -187,6 +189,10 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
 
         host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
+	if (isInetAddress(host) && host.indexOf(':') != -1) {
+	    // IPv6 without DNS record
+	    host = "[" + host  + "]";
+	}
         int port = srmurl.getPort();
         if( port == 80) {
             /* FIXME: assigning the transport based on the port number is
