@@ -143,6 +143,7 @@
     <property name="address" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
     <property name="port" value="${srm.net.port}"/>
     <property name="loginBrokers" value="${srm.service.loginbroker}"/>
+    <property name="root" value="${srm.root}"/>
   </bean>
 
   <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
@@ -201,8 +202,6 @@
               value="${srm.protocols.population-size}"/>
     <property name="useCustomGetHostByAddress"
               value="${srm.enable.custom-get-host-by-address}"/>
-    <property name="httpRootPath" value="${srm.service.webdav.root}"/>
-    <property name="xrootdRootPath" value="${srm.service.xrootd.root}"/>
     <property name="configuration" ref="config"/>
     <property name="pinOnlineFiles" value="${srm.enable.pin-online-files}"/>
     <property name="srmPutNotSupportedProtocols" value="${srm.protocols.disallowed.put}"/>

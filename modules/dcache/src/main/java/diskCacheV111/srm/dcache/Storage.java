@@ -70,11 +70,20 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
+import com.google.common.collect.Sets;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.ietf.jgss.GSSCredential;
@@ -103,10 +112,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -218,7 +225,11 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.Iterables.filter;
 import static com.google.common.net.InetAddresses.isInetAddress;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.dcache.namespace.FileAttribute.*;
@@ -278,13 +289,14 @@ public final class Storage
     private Thread storageInfoUpdateThread;
     private boolean customGetHostByAddr; //falseByDefault
 
-    private FsPath _xrootdRootPath;
-    private FsPath _httpRootPath;
-
     private DirectoryListSource _listSource;
 
     private boolean _isOnlinePinningEnabled = true;
     private boolean _isSpaceManagerEnabled;
+
+    private Supplier<Multimap<String,LoginBrokerInfo>> loginBrokerInfo;
+    private final Random rand = new Random();
+    private int numDoorInRanSelection = 3;
 
     public Storage()
     {
@@ -352,18 +364,6 @@ public final class Storage
     }
 
     @Required
-    public void setHttpRootPath(String path)
-    {
-        _httpRootPath = new FsPath(path);
-    }
-
-    @Required
-    public void setXrootdRootPath(String path)
-    {
-        _xrootdRootPath = new FsPath(path);
-    }
-
-    @Required
     public void setConfiguration(Configuration config)
     {
         this.config = config;
@@ -413,9 +413,11 @@ public final class Storage
         _isOnlinePinningEnabled = value;
     }
 
+    @Required
     public void setLoginBrokerUpdatePeriod(long period)
     {
-        LOGINBROKERINFO_VALIDITYSPAN = period;
+        loginBrokerInfo =
+                Suppliers.memoizeWithExpiration(new LoginBrokerInfoSupplier(), period, TimeUnit.MILLISECONDS);
     }
 
     public void setNumberOfDoorsInRandomSelection(int value)
@@ -462,7 +464,7 @@ public final class Storage
     public void setLoginBrokerHandler(LoginBrokerHandler handler)
         throws UnknownHostException
     {
-        handler.setAddresses(Arrays.asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
+        handler.setAddresses(asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
         handler.setLoad(new LoginBrokerHandler.LoadProvider() {
                 @Override
                 public double getLoad() {
@@ -691,7 +693,7 @@ public final class Storage
                 sb.append("Copy Requests:\n");
                 srm.listCopyRequests(sb);
             }
-            if(copy) {
+            if(bring) {
                 sb.append("Bring Online Requests:\n");
                 srm.listBringOnlineRequests(sb);
             }
@@ -995,7 +997,7 @@ public final class Storage
         }
 
         UnpinCompanion.unpinFile(((DcacheUser) user).getSubject(),
-                                 new PnfsId(fileId), Long.parseLong(pinId), callbacks,_pinManagerStub);
+                                 new PnfsId(fileId), Long.parseLong(pinId), callbacks, _pinManagerStub);
     }
 
     @Override
@@ -1004,7 +1006,7 @@ public final class Storage
                                         String requestToken)
     {
         UnpinCompanion.unpinFileBySrmRequestId(((DcacheUser) user).getSubject(),
-                new PnfsId(fileId), requestToken, callbacks, _pinManagerStub);
+                                               new PnfsId(fileId), requestToken, callbacks, _pinManagerStub);
     }
 
     @Override
@@ -1024,24 +1026,24 @@ public final class Storage
         return selectProtocolFor(protocols, srmPutNotSupportedProtocols);
     }
 
-    private String selectProtocolFor(String[] protocols, String[] excludes)
+    private String selectProtocolFor(String[] includes, String[] excludes)
             throws SRMException
     {
-        Set<String> availableProtocols = listAvailableProtocols();
-        availableProtocols.retainAll(Arrays.asList(protocols));
+        Set<String> availableProtocols = Sets.newHashSet(getLoginBrokerInfos().keys());
+        availableProtocols.retainAll(Arrays.asList(includes));
         availableProtocols.removeAll(Arrays.asList(excludes));
         for (String protocol : srmPreferredProtocols) {
             if (availableProtocols.contains(protocol)) {
                 return protocol;
             }
         }
-        for (String protocol : protocols) {
+        for (String protocol : includes) {
             if (availableProtocols.contains(protocol)) {
                 return protocol;
             }
         }
         _log.warn("Cannot find suitable protocol. Client requested one of {}.",
-                Arrays.toString(protocols));
+                Arrays.toString(includes));
         throw new SRMException("Cannot find suitable transfer protocol.");
     }
 
@@ -1049,18 +1051,16 @@ public final class Storage
     public String[] supportedGetProtocols()
             throws SRMInternalErrorException
     {
-        Set<String> protocols = listAvailableProtocols();
-        protocols.removeAll(Arrays.asList(srmGetNotSupportedProtocols));
-        return protocols.toArray(new String[protocols.size()]);
+        return Iterables.toArray(filter(getLoginBrokerInfos().keySet(),
+                                        not(in(asList(srmGetNotSupportedProtocols)))), String.class);
     }
 
     @Override
     public String[] supportedPutProtocols()
             throws SRMInternalErrorException
     {
-        Set<String> protocols = listAvailableProtocols();
-        protocols.removeAll(Arrays.asList(srmPutNotSupportedProtocols));
-        return protocols.toArray(new String[protocols.size()]);
+        return Iterables.toArray(filter(getLoginBrokerInfos().keySet(),
+                                        not(in(asList(srmPutNotSupportedProtocols)))), String.class);
     }
 
     @Override
@@ -1079,7 +1079,7 @@ public final class Storage
         FsPath actualFilePath = getPath(surl);
         String host = previous_turl.getHost();
         int port = previous_turl.getPort();
-        return getTurl(actualFilePath, previous_turl.getScheme(), host, port, user);
+        return getTurl(actualFilePath, findDoor(previous_turl.getScheme(), host, port), user);
     }
 
     @Override
@@ -1098,7 +1098,7 @@ public final class Storage
         FsPath path = getPath(surl);
         String host = previous_turl.getHost();
         int port = previous_turl.getPort();
-        return getTurl(path, previous_turl.getScheme(), host, port, user);
+        return getTurl(path, findDoor(previous_turl.getScheme(), host, port), user);
     }
 
     private URI getTurl(FsPath path,String protocol,SRMUser user)
@@ -1107,44 +1107,32 @@ public final class Storage
         if (protocol == null) {
             throw new IllegalArgumentException("protocol is null");
         }
-        String hostPort = selectHost(protocol);
-        int index = hostPort.indexOf(':');
-        if (index > -1) {
-            String host = hostPort.substring(0, index);
-            int port = Integer.parseInt(hostPort.substring(index + 1));
-            return getTurl(path, protocol, host, port, user);
-        } else {
-            return getTurl(path, protocol, hostPort, 0, user);
-        }
+        LoginBrokerInfo door = selectDoor(protocol);
+        return getTurl(path, door, user);
     }
 
     private static boolean isHostAndPortNeeded(String protocol) {
         return !protocol.equalsIgnoreCase("file");
     }
 
-    private URI getTurl(FsPath path, String protocol,
-                        String host, int port, SRMUser user)
-        throws SRMException
+
+    private URI getTurl(FsPath path, LoginBrokerInfo door, SRMUser user)
+            throws SRMException
     {
         if (path == null) {
             throw new IllegalArgumentException("path is null");
         }
-        if (protocol == null) {
-            throw new IllegalArgumentException("protocol is null");
+        if (door == null) {
+            throw new IllegalArgumentException("door is null");
         }
-        if (host == null) {
-            throw new IllegalArgumentException("host is null");
-        }
-        String transfer_path = getTurlPath(path,protocol,user);
+        String transfer_path = getTurlPath(path,door,user);
         if (transfer_path == null) {
             throw new SRMException("cannot get transfer path");
         }
         try {
-            if (port == 0) {
-                port = -1;
-            }
+            String protocol = door.getProtocolFamily();
             URI turl = isHostAndPortNeeded(protocol) ?
-                    new URI(protocol, null, host, port, transfer_path, null, null):
+                    new URI(protocol, null, resolve(door), door.getPort(), transfer_path, null, null):
                     new URI(protocol, null, transfer_path, null);
 
             _log.debug("getTurl() returns turl={}", turl);
@@ -1186,7 +1174,7 @@ public final class Storage
                                          l.size()));
     }
 
-    private String getTurlPath(FsPath path, String protocol, SRMUser user)
+    private String getTurlPath(FsPath path, LoginBrokerInfo door, SRMUser user)
         throws SRMException
     {
         FsPath userRoot = new FsPath();
@@ -1198,98 +1186,49 @@ public final class Storage
             throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]", path, userRoot));
         }
 
-        String transferPath;
-        switch (protocol) {
-        case "gsiftp":
-            transferPath = stripRootPath(userRoot, path);
-            break;
-        case "http":
-        case "https":
-            transferPath = stripRootPath(_httpRootPath, path);
-            break;
-        case "root":
-            transferPath = stripRootPath(_xrootdRootPath, path);
-            break;
-        default:
-            transferPath = path.toString();
-            break;
-        }
+        FsPath root = door.getRoot() == null ? userRoot : new FsPath(door.getRoot());
+        String transferPath = stripRootPath(root, path);
 
-        _log.debug("getTurlPath(path=" + path + ",protocol=" + protocol +
+        _log.debug("getTurlPath(path=" + path + ",protocol=" + door.getProtocolFamily() +
             ",user=" + user + ") = " + transferPath);
 
         return transferPath;
     }
 
-    // These hashtables are used as a caching mechanizm for the login
-    // broker infos. Here we asume that no protocol called "null" is
-    // going to be ever used.
-    private final Map<String,LoginBrokerInfo[]> latestLoginBrokerInfos =
-        new HashMap<>();
-    private final Map<String,Long> latestLoginBrokerInfosTimes =
-        new HashMap<>();
-    private long LOGINBROKERINFO_VALIDITYSPAN = 30 * 1000;
-    private static final int MAX_LOGIN_BROKER_RETRIES = 5;
-
-    private LoginBrokerInfo[] getLoginBrokerInfos(String protocol)
+    private Multimap<String,LoginBrokerInfo> getLoginBrokerInfos()
         throws SRMInternalErrorException
     {
-        String key = (protocol == null) ? "null" : protocol;
-
-        synchronized (latestLoginBrokerInfosTimes) {
-            Long timestamp = latestLoginBrokerInfosTimes.get(key);
-            if (timestamp !=null) {
-                long age = System.currentTimeMillis() - timestamp;
-                if (age < LOGINBROKERINFO_VALIDITYSPAN) {
-                    LoginBrokerInfo[] infos = latestLoginBrokerInfos.get(key);
-                    if (infos != null) {
-                        return infos;
-                    }
-                }
-            }
-        }
-
-        String brokerMessage = "ls -binary";
-        if (protocol != null) {
-            brokerMessage = brokerMessage + " -protocol=" + protocol;
-        }
-
-        String error;
         try {
-            int retry = 0;
-            do {
-                _log.debug("getLoginBrokerInfos sending \"{}\" to LoginBroker", brokerMessage);
-                try {
-                    LoginBrokerInfo[] infos =
-                        _loginBrokerStub.sendAndWait(brokerMessage,
-                                                     LoginBrokerInfo[].class);
-                    synchronized (latestLoginBrokerInfosTimes) {
-                        latestLoginBrokerInfosTimes.put(key, System.currentTimeMillis());
-                        latestLoginBrokerInfos.put(key, infos);
-                    }
-                    return infos;
-                } catch (TimeoutCacheException e) {
-                    error = "LoginBroker is unavailable";
-                } catch (CacheException e) {
-                    error = e.getMessage();
-                }
-                Thread.sleep(5 * 1000);
-            } while (++retry < MAX_LOGIN_BROKER_RETRIES);
-        } catch (InterruptedException e) {
-            throw new SRMInternalErrorException("Request was interrupted", e);
+            return loginBrokerInfo.get();
+        } catch (RuntimeException e) {
+            throw new SRMInternalErrorException(e.getMessage(), e);
         }
-
-        throw new SRMInternalErrorException(error);
     }
 
-    public Set<String> listAvailableProtocols()
+    private Multimap<String, LoginBrokerInfo> getLoginBrokerInfos(final Collection<String> includes,
+                                                                  final Collection<String> excludes,
+                                                                  final DcacheUser user,
+                                                                  final FsPath path)
             throws SRMInternalErrorException
     {
-        Set<String> protocols = new HashSet<>();
-        for (LoginBrokerInfo info: getLoginBrokerInfos(null)) {
-            protocols.add(info.getProtocolFamily());
-        }
-        return protocols;
+        return Multimaps.filterEntries(
+                getLoginBrokerInfos(),
+                new Predicate<Map.Entry<String, LoginBrokerInfo>>()
+                {
+                    @Override
+                    public boolean apply(Map.Entry<String, LoginBrokerInfo> entry)
+                    {
+                        String protocol = entry.getKey();
+                        if (!includes.contains(protocol) || excludes.contains(protocol)) {
+                            return false;
+                        }
+                        FsPath root =
+                                (entry.getValue().getRoot() != null)
+                                        ? new FsPath(entry.getValue().getRoot())
+                                        : user.getRoot();
+                        return path.startsWith(root);
+                    }
+                });
     }
 
     @Override
@@ -1299,7 +1238,7 @@ public final class Storage
         String protocol = url.getScheme();
         String host = url.getHost();
         int port = url.getPort();
-        for (LoginBrokerInfo info: getLoginBrokerInfos(protocol)) {
+        for (LoginBrokerInfo info: getLoginBrokerInfos().get(protocol)) {
             if (info.getHost().equals(host) && info.getPort() == port) {
                 return true;
             }
@@ -1307,30 +1246,27 @@ public final class Storage
         return false;
     }
 
-
-    private String selectHost(String protocol)
+    private LoginBrokerInfo findDoor(String protocol, String host, int port)
             throws SRMInternalErrorException
     {
-        _log.trace("selectHost({})", protocol);
-        LoginBrokerInfo[] loginBrokerInfos = getLoginBrokerInfos(protocol);
-        Arrays.sort(loginBrokerInfos, LOAD_ORDER);
-        int len = loginBrokerInfos.length;
-        if (len <=0){
-            return null;
+        _log.trace("findDoor({})", protocol);
+        for (LoginBrokerInfo door : getLoginBrokerInfos().get(protocol)) {
+            if (door.getPort() == port && resolve(door).equals(host)) {
+                return door;
+            }
         }
-        int selected_indx;
-        synchronized (rand) {
-            selected_indx = rand.nextInt(Math.min(len, numDoorInRanSelection));
-        }
-        String doorHostPort = lbiToDoor(loginBrokerInfos[selected_indx]);
-
-        _log.trace("selectHost returns {}", doorHostPort);
-        return doorHostPort;
+        return null;
     }
 
-    private final Random rand = new Random();
-
-    private int numDoorInRanSelection = 3;
+    private LoginBrokerInfo selectDoor(String protocol)
+            throws SRMInternalErrorException
+    {
+        _log.trace("selectDoor({})", protocol);
+        List<LoginBrokerInfo> loginBrokerInfos =
+                LOAD_ORDER.leastOf(getLoginBrokerInfos().get(protocol), numDoorInRanSelection);
+        int selected_indx = rand.nextInt(Math.min(loginBrokerInfos.size(), numDoorInRanSelection));
+        return loginBrokerInfos.get(selected_indx);
+    }
 
     private final LoadingCache<String,String> doorToHostnameCache =
             CacheBuilder.newBuilder()
@@ -1349,23 +1285,22 @@ public final class Storage
                         }
                     });
 
-    private String lbiToDoor(LoginBrokerInfo lbi) throws SRMInternalErrorException
+    private String resolve(LoginBrokerInfo lbi) throws SRMInternalErrorException
     {
         try {
-            String resolvedHost = doorToHostnameCache.get(lbi.getHost());
-            return resolvedHost +":"+ lbi.getPort();
+            return doorToHostnameCache.get(lbi.getHost());
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             throw new SRMInternalErrorException("Failed to resolve door: " + cause, cause);
         }
     }
 
-    private static final Comparator<LoginBrokerInfo> LOAD_ORDER =
-        new Comparator<LoginBrokerInfo>() {
+    private static final Ordering<LoginBrokerInfo> LOAD_ORDER =
+        new Ordering<LoginBrokerInfo>() {
             @Override
             public int compare(LoginBrokerInfo info1, LoginBrokerInfo info2)
             {
-                return (int)Math.signum(info1.getLoad() - info2.getLoad());
+                return Double.compare(info1.getLoad(), info2.getLoad());
             }
         };
 
@@ -3043,6 +2978,40 @@ public final class Storage
             return path;
         } catch (UnknownHostException e) {
             throw new SRMInvalidPathException(e.getMessage());
+        }
+    }
+
+    private class LoginBrokerInfoSupplier implements Supplier<Multimap<String,LoginBrokerInfo>>
+    {
+        private static final int MAX_LOGIN_BROKER_RETRIES = 5;
+
+        @Override
+        public Multimap<String,LoginBrokerInfo> get()
+        {
+            String brokerMessage = "ls -binary";
+            String error;
+            try {
+                int retry = 0;
+                do {
+                    try {
+                        LoginBrokerInfo[] doors =
+                                _loginBrokerStub.sendAndWait(brokerMessage, LoginBrokerInfo[].class);
+                        Multimap<String,LoginBrokerInfo> map = ArrayListMultimap.create();
+                        for (LoginBrokerInfo door : doors) {
+                            map.put(door.getProtocolFamily(), door);
+                        }
+                        return map;
+                    } catch (TimeoutCacheException e) {
+                        error = "LoginBroker is unavailable";
+                    } catch (CacheException e) {
+                        error = e.getMessage();
+                    }
+                    Thread.sleep(5 * 1000);
+                } while (++retry < MAX_LOGIN_BROKER_RETRIES);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Request was interrupted", e);
+            }
+            throw new RuntimeException(error);
         }
     }
 }

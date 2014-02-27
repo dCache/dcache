@@ -53,6 +53,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -listen=${ftp.net.listen} \
    -prot=raw \
    -export=${ftp.cell.export} \
+   -root= \
    -clientDataPortRange=${ftp.net.port-range} \
    -protocolFamily=${ftp.service.loginbroker.family} \
    -protocolVersion=${ftp.service.loginbroker.version} \

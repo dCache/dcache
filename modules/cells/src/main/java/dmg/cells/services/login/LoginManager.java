@@ -1,6 +1,7 @@
 package dmg.cells.services.login;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
@@ -200,6 +201,7 @@ public class LoginManager
                 _loginBrokerHandler.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
                 _loginBrokerHandler.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
                 _loginBrokerHandler.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
+                _loginBrokerHandler.setRoot(Strings.emptyToNull(_args.getOption("root")));
                 _loginBrokerHandler.afterSetup();
                 _loginBrokerHandler.start();
                 _loginBrokerHandler.afterStart();

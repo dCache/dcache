@@ -13,6 +13,7 @@ public class LoginBrokerInfo implements Serializable {
    private String _protocolFamily ;
    private String _protocolVersion ;
    private String _protocolEngine ;
+   private String _root;
 
    private String [] _hosts = new String[0] ;
    private int       _port;
@@ -25,15 +26,16 @@ public class LoginBrokerInfo implements Serializable {
                            String domainName ,
                            String protocolFamily ,
                            String protocolVersion ,
-                           String protocolEngine  ){
+                           String protocolEngine,
+                           String root){
       _cellName        = cellName ;
       _domainName      = domainName ;
       _protocolFamily  = protocolFamily ;
       _protocolVersion = protocolVersion ;
       _protocolEngine  = protocolEngine ;
-
-
+      _root            = root;
    }
+
    public String getHost(){ return _hosts.length == 0 ? "" : _hosts[0] ; }
    public String [] getHosts(){ return _hosts ; }
    public int getPort(){ return _port ; }
@@ -42,6 +44,7 @@ public class LoginBrokerInfo implements Serializable {
    public String getProtocolFamily(){ return _protocolFamily ; }
    public String getProtocolVersion(){ return _protocolVersion  ; }
    public String getProtocolEngine(){ return _protocolEngine ; }
+   public String getRoot() { return _root; }
    public double getLoad(){ return _load ; }
    public long   getUpdateTime(){ return _update ; }
 

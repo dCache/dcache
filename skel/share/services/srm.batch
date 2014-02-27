@@ -185,8 +185,6 @@ check -strong srm.persistence.reserve-space.remove-expired-period.unit
 check -strong srm.limits.remove-batch-size
 
 check -strong srm.root
-check -strong srm.service.xrootd.root
-check -strong srm.service.webdav.root
 
 check -strong srm.service.gplazma
 check -strong srm.service.gplazma.timeout

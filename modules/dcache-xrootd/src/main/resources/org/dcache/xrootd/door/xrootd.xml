@@ -174,5 +174,6 @@
     <property name="port" value="${xrootd.net.port}"/>
     <property name="address" value="#{ '${xrootd.net.listen}'.equals('any') ? null : '${xrootd.net.listen}' }"/>
     <property name="loginBrokers" value="${xrootd.service.loginbroker}"/>
+    <property name="root" value="${xrootd.root}"/>
   </bean>
 </beans>

@@ -201,6 +201,7 @@
       <property name="address" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
       <property name="port" value="${webdav.net.port}"/>
       <property name="loginBrokers" value="${webdav.service.loginbroker}"/>
+      <property name="root" value="${webdav.root}"/>
   </bean>
 
     <bean id="banned-ciphers" class="org.dcache.util.Crypto"

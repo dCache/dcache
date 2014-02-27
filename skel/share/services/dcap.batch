@@ -42,6 +42,7 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -poolRetry=2700 \
              -prot=telnet \
              -keepPrincipal \
+             -root=/ \
              -read-only=${dcap.authz.readonly} \
              -truncate=${dcap.authz.truncate} \
              -maxLogin=${dcap.limits.clients} \

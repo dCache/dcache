@@ -150,6 +150,7 @@
         <property name="protocolFamily" value="${nfs.service.loginbroker.family}"/>
         <property name="port" value="${nfs.net.port}"/>
         <property name="loginBrokers" value="${nfs.service.loginbroker}"/>
+        <property name="root" value="/"/>
     </bean>
 
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
