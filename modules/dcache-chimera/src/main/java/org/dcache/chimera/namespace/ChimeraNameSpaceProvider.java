@@ -522,8 +522,8 @@ public class ChimeraNameSpaceProvider
         _log.debug ("add cache location {} for {}", cacheLocation, pnfsId);
 
         try {
-        	FsInode inode = new FsInode(_fs, pnfsId.toIdString());
-        	_fs.addInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
+            FsInode inode = new FsInode(_fs, pnfsId.toIdString());
+            _fs.addInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
         }catch(FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file: " + pnfsId);
         } catch (ChimeraFsException e){
@@ -557,18 +557,18 @@ public class ChimeraNameSpaceProvider
         _log.debug("clearCacheLocation : {} for {}", cacheLocation, pnfsId) ;
 
         try {
-        	FsInode inode = new FsInode(_fs, pnfsId.toIdString());
+            FsInode inode = new FsInode(_fs, pnfsId.toIdString());
 
-        	_fs.clearInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
+            _fs.clearInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
 
-        	if( removeIfLast ) {
-        	List<StorageLocatable> locations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
-        	    if( locations.isEmpty() ) {
+            if( removeIfLast ) {
+            List<StorageLocatable> locations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
+                if( locations.isEmpty() ) {
 
                         _log.debug("last location cleaned. removing file {}", inode) ;
-        	        _fs.remove(inode);
-        	    }
-        	}
+                    _fs.remove(inode);
+                }
+            }
 
         } catch (ChimeraFsException e){
             _log.error("Exception in clearCacheLocation for {} : {}", pnfsId, e);
@@ -582,7 +582,7 @@ public class ChimeraNameSpaceProvider
             FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
 
             if( ! inode.exists() ) {
-        	throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
+            throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
             }
             return _fs.inode2path(inode);
         } catch (ChimeraFsException e){
@@ -594,7 +594,7 @@ public class ChimeraNameSpaceProvider
     public PnfsId pathToPnfsid(Subject subject, String path, boolean followLink)
         throws CacheException
     {
-    	FsInode inode;
+        FsInode inode;
         try {
             inode = pathToInode(subject, path);
         } catch (FileNotFoundHimeraFsException e) {
@@ -664,7 +664,7 @@ public class ChimeraNameSpaceProvider
         }
 
         if (inodeParent == null) {
-        	throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
+            throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         }
 
         return new PnfsId( inodeParent.toString() );

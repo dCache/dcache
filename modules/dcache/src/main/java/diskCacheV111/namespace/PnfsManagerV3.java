@@ -658,21 +658,21 @@ public class PnfsManagerV3
             "<pnfsid> <new size> # changes registered file size";
     public String ac_set_file_size_$_2(Args args) throws Exception
     {
-    	PnfsId pnfsId = new PnfsId(args.argv(0));
+        PnfsId pnfsId = new PnfsId(args.argv(0));
 
         FileAttributes attributes = new FileAttributes();
         attributes.setSize(Long.valueOf(args.argv(1)));
 
-    	_nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
+        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
 
-    	return "";
+        return "";
     }
 
     public static final String hh_add_file_cache_location = "<pnfsid> <pool name>";
     public String ac_add_file_cache_location_$_2(Args args) throws Exception {
 
-    	PnfsId pnfsId = new PnfsId( args.argv(0));
-    	String cacheLocation = args.argv(1);
+        PnfsId pnfsId = new PnfsId( args.argv(0));
+        String cacheLocation = args.argv(1);
 
         /* At this point, the file is no longer new and should really
          * have level 2 set. Otherwise we would not be able to detect
@@ -693,88 +693,88 @@ public class PnfsManagerV3
          }
         */
 
-    	_cacheLocationProvider.addCacheLocation(ROOT, pnfsId, cacheLocation);
+        _cacheLocationProvider.addCacheLocation(ROOT, pnfsId, cacheLocation);
 
-    	return "";
+        return "";
 
     }
 
     public static final String hh_clear_file_cache_location = "<pnfsid> <pool name>";
     public String ac_clear_file_cache_location_$_2(Args args) throws Exception {
 
-    	PnfsId pnfsId = new PnfsId( args.argv(0));
-    	String cacheLocation = args.argv(1);
+        PnfsId pnfsId = new PnfsId( args.argv(0));
+        String cacheLocation = args.argv(1);
 
-    	_cacheLocationProvider.clearCacheLocation(ROOT, pnfsId, cacheLocation, false);
+        _cacheLocationProvider.clearCacheLocation(ROOT, pnfsId, cacheLocation, false);
 
-    	return "";
+        return "";
     }
 
     public static final String hh_add_file_checksum = "<pnfsid> <type> <checksum>";
     public String ac_add_file_checksum_$_3(Args args)
         throws CacheException
     {
-    	PnfsId pnfsId = new PnfsId(args.argv(0));
+        PnfsId pnfsId = new PnfsId(args.argv(0));
         ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
         Checksum checksum = new Checksum(type, args.argv(2));
         FileAttributes attributes = new FileAttributes();
         attributes.setChecksums(Collections.singleton(checksum));
         _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
-    	return "";
+        return "";
     }
 
     public static final String hh_clear_file_checksum = "<pnfsid> <type>";
     public String ac_clear_file_checksum_$_2(Args args) throws CacheException
     {
-    	PnfsId pnfsId = new PnfsId(args.argv(0));
+        PnfsId pnfsId = new PnfsId(args.argv(0));
         ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
-    	_nameSpaceProvider.removeChecksum(ROOT, pnfsId, type);
-    	return "";
+        _nameSpaceProvider.removeChecksum(ROOT, pnfsId, type);
+        return "";
     }
 
     public static final String hh_get_file_checksum = "<pnfsid> <type>";
     public String ac_get_file_checksum_$_2(Args args)
         throws CacheException, NoSuchAlgorithmException
     {
-    	PnfsId pnfsId = new PnfsId(args.argv(0));
+        PnfsId pnfsId = new PnfsId(args.argv(0));
         ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
         Checksum checksum = getChecksum(ROOT, pnfsId, type);
-    	return (checksum == null) ? "" : checksum.toString();
+        return (checksum == null) ? "" : checksum.toString();
     }
 
     public static final String hh_set_log_slow_threshold = "<timeout in ms>";
     public static final String fh_set_log_slow_threshold = "Set the threshold for reporting slow PNFS interactions.";
     public String ac_set_log_slow_threshold_$_1(Args args) {
 
-    	int newTimeout;
+        int newTimeout;
 
-    	try {
+        try {
             newTimeout = Integer.parseInt( args.argv(0));
-    	} catch ( NumberFormatException e) {
+        } catch ( NumberFormatException e) {
             return "Badly formatted number " + args.argv(0);
-    	}
+        }
 
-    	if( newTimeout <= 0) {
+        if( newTimeout <= 0) {
             return "Timeout must be greater than zero";
-    	}
+        }
 
-    	_logSlowThreshold = newTimeout;
+        _logSlowThreshold = newTimeout;
 
-    	return "";
+        return "";
     }
 
     public static final String fh_get_log_slow_threshold = "Return the current threshold for reporting slow PNFS interactions.";
     public String ac_get_log_slow_threshold_$_0( Args args) {
-    	if( _logSlowThreshold == THRESHOLD_DISABLED) {
+        if( _logSlowThreshold == THRESHOLD_DISABLED) {
                 return "disabled";
             }
-    	return String.valueOf(_logSlowThreshold) + " ms";
+        return String.valueOf(_logSlowThreshold) + " ms";
     }
 
     public static final String fh_set_log_slow_threshold_disabled = "Disable reporting of slow PNFS interactions.";
     public String ac_set_log_slow_threshold_disabled_$_0( Args args) {
-    	_logSlowThreshold = THRESHOLD_DISABLED;
-    	return "";
+        _logSlowThreshold = THRESHOLD_DISABLED;
+        return "";
     }
 
     public final static String fh_show_path_cache =
@@ -1443,8 +1443,8 @@ public class PnfsManagerV3
 
             boolean done = false;
             while( !done ){
-            	CellMessage message;
-            	try {
+                CellMessage message;
+                try {
                     message = _fifo.take();
                 } catch (InterruptedException e) {
                     done = true;
