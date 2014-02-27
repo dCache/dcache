@@ -1,17 +1,13 @@
 package org.dcache.chimera.namespace;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -77,7 +73,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 dirInode = inode.getParent();
             }
 
-            Optional<String> accessLatency = getFirstLine(getTag(dirInode, "AccessLatency"));
+            Optional<String> accessLatency = getFirstLine(dirInode.getTag("AccessLatency"));
             if (accessLatency.isPresent()) {
                 try {
                     return AccessLatency.getAccessLatency(accessLatency.get());
@@ -115,12 +111,12 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 dirInode = inode.getParent();
             }
 
-            Optional<String> retentionPolicy = getFirstLine(getTag(dirInode, "RetentionPolicy"));
+            Optional<String> retentionPolicy = getFirstLine(dirInode.getTag("RetentionPolicy"));
             if (retentionPolicy.isPresent()) {
                 try {
                     return RetentionPolicy.getRetentionPolicy(retentionPolicy.get());
                 } catch (IllegalArgumentException e) {
-                    LOGGER.error("Badly formated RetentionPolicy tag in {}: {}", dirInode, e.getMessage());
+                    LOGGER.error("Badly formatted RetentionPolicy tag in {}: {}", dirInode, e.getMessage());
                 }
             }
 
@@ -166,17 +162,17 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
 
         try {
             // overwrite hsm type with hsmInstance tag
-            Optional<String> hsmInstance = getFirstLine(getTag(dirInode, "hsmInstance"));
+            Optional<String> hsmInstance = getFirstLine(dirInode.getTag("hsmInstance"));
             if (hsmInstance.isPresent()) {
                 info.setHsm(hsmInstance.get());
             }
 
-            Optional<String> cacheClass = getFirstLine(getTag(dirInode, "cacheClass"));
+            Optional<String> cacheClass = getFirstLine(dirInode.getTag("cacheClass"));
             if (cacheClass.isPresent()) {
                 info.setCacheClass(cacheClass.get());
             }
 
-            Optional<String> spaceToken = getFirstLine(getTag(dirInode, "WriteToken"));
+            Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
             if (spaceToken.isPresent() ) {
                 info.setKey("writeToken", spaceToken.get());
             }
@@ -226,26 +222,6 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         }catch(ChimeraFsException he ) {
             throw new CacheException(he.getMessage() );
         }
-    }
-
-    /**
-     *
-     * get content of a virtual file named .(tag)(&lt;tagname&gt;).
-     *
-     * @param dirInode inode of directory
-     * @param tag tag name
-     * @return array of strings corresponding to lines of tag file or null
-     * if tag does not exist or empty.
-     * @throws IOException
-     */
-    public static ImmutableList<String> getTag(ExtendedInode dirInode, String tag)
-        throws IOException
-    {
-        byte[] data = dirInode.getTags().get(tag);
-        if (data == null || data.length == 0) {
-            return ImmutableList.of();
-        }
-        return ByteSource.wrap(data).asCharSource(Charsets.UTF_8).readLines();
     }
 
     protected static Optional<String> getFirstLine(ImmutableList<String> lines)

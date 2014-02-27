@@ -1,7 +1,6 @@
 package org.dcache.chimera.namespace;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
 import java.net.URI;
@@ -82,7 +81,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         try {
             HashMap<String, String> hash = new HashMap<>();
             String store = null;
-            ImmutableList<String> OSMTemplate = getTag(dirInode, "OSMTemplate");
+            ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
             if (!OSMTemplate.isEmpty()) {
                 for (String line: OSMTemplate) {
                     StringTokenizer st = new StringTokenizer(line);
@@ -97,7 +96,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                 }
             }
 
-            ImmutableList<String> sGroup = getTag(dirInode, "sGroup");
+            ImmutableList<String> sGroup = dirInode.getTag("sGroup");
             String group = getFirstLine(sGroup).orNull();
             OSMStorageInfo info = new OSMStorageInfo(store, group);
             info.addKeys(hash);

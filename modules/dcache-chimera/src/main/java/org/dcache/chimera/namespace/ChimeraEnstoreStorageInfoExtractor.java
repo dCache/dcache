@@ -1,7 +1,6 @@
 package org.dcache.chimera.namespace;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -96,9 +95,9 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
         }
         try {
             Map<String, String> hash = new HashMap<>();
-            ImmutableList<String> OSMTemplate = getTag(dirInode, "OSMTemplate");
-            ImmutableList<String> group       = getTag(dirInode, "storage_group");
-            ImmutableList<String> family      = getTag(dirInode, "file_family");
+            ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
+            ImmutableList<String> group       = dirInode.getTag("storage_group");
+            ImmutableList<String> family      = dirInode.getTag("file_family");
 
             for (String line: OSMTemplate) {
                 StringTokenizer st = new StringTokenizer(line);

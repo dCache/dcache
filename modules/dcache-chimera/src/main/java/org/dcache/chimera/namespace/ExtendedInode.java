@@ -17,12 +17,14 @@
  */
 package org.dcache.chimera.namespace;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteSource;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -114,6 +116,16 @@ public class ExtendedInode extends FsInode
             tags = ImmutableMap.copyOf(_fs.getAllTags(this));
         }
         return tags;
+    }
+
+    public ImmutableList<String> getTag(String tag)
+            throws IOException
+    {
+        byte[] data = getTags().get(tag);
+        if (data == null || data.length == 0) {
+            return ImmutableList.of();
+        }
+        return ByteSource.wrap(data).asCharSource(Charsets.UTF_8).readLines();
     }
 
     public ImmutableCollection<Checksum> getChecksums() throws ChimeraFsException
