@@ -43,7 +43,7 @@ public class SpaceSweeper2
     private final static Logger _log = LoggerFactory.getLogger(SpaceSweeper2.class);
 
     private final SimpleDateFormat __format =
-        new SimpleDateFormat("HH:mm-MM/dd");
+        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
     private final Set<PnfsId> _list  = new LinkedHashSet();
 
