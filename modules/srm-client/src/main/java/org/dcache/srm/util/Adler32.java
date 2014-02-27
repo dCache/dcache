@@ -15,13 +15,13 @@ import java.nio.channels.FileChannel;
  * @author  timur
  */
 public class Adler32 {
-    
+
     /** Creates a new instance of Adler32 */
     public Adler32() {
     }
-    
+
     public static final void main(String[] args) throws Exception{
-        if(args==null || args.length != 1 || 
+        if(args==null || args.length != 1 ||
         args[0].equalsIgnoreCase("-h")    ||
         args[0].equalsIgnoreCase("-help") ||
         args[0].equalsIgnoreCase("--h")   ||
