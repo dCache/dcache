@@ -9,6 +9,7 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.ExceptionEvent;
 import com.sleepycat.je.ExceptionListener;
 import com.sleepycat.je.RunRecoveryException;
+import com.sleepycat.je.config.EnvironmentParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,8 @@ public class MetaDataRepositoryDatabase
         envConfig.setTransactional(true);
         envConfig.setAllowCreate(true);
         envConfig.setReadOnly(readonly);
-        envConfig.setConfigParam("je.maxMemoryPercent", "20");
+        envConfig.setConfigParam(EnvironmentConfig.MAX_MEMORY_PERCENT, "20");
+        envConfig.setConfigParam(EnvironmentConfig.STATS_COLLECT, "false");
         envConfig.setExceptionListener(new ExceptionListener() {
                 @Override
                 public void exceptionThrown(ExceptionEvent event) {
