@@ -2066,10 +2066,10 @@ public final class Storage
                 RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
                         new RemoteGsiftpTransferProtocolInfo(
                                 "RemoteGsiftpTransfer",
-				1, 1,
+                1, 1,
                                 new InetSocketAddress(remoteTURL.getHost(), port),
-				remoteTURL.toString(),
-				getCellName(),
+                remoteTURL.toString(),
+                getCellName(),
                                 getCellDomainName(),
                                 config.getBuffer_size(),
                                 config.getTcp_buffer_size(),
