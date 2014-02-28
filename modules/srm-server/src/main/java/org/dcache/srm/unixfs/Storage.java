@@ -185,7 +185,7 @@ public class Storage
 
   /** */
   @Override
-  public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
+  public URI getPutTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
       throws SRMException {
     /**@todo # Implement getPutTurl() method */
 
@@ -202,36 +202,11 @@ public class Storage
           }
       }
     throw new SRMException("no sutable protocol found");
-    //SRMException srmEx = new SRMException(
-    //    "Method getPutTurl() not yet implemented.");
-    //logger.error(srmEx.toString());
-    //throw srmEx;
-  }
-
-  /**
-   * Not implemented.<br>
-   * This is a feature of dCache implementation of SRM SE for DCAP protocol.
-   * */
-
-  @Override
-  public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
-      throws SRMException {
-      return  getPutTurl(user,surl,new String[]{previous_turl.getScheme()});
-    /*
-    String erStr1 = "Method getPutTurl(..., previous_turl) not implemented.";
-    String erStr2 = "This method is a feature of implementation dCache SRM SE and "+
-        "it must not be called for the disk SE\n";
-
-    logger.error( erStr1 + "\n" + erStr2 );
-
-    SRMException srmEx = new SRMException( erStr1 );
-    throw srmEx;
-     */
   }
 
   /** */
   @Override
-  public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
+  public URI getGetTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
       throws SRMException {
     /**@todo # Implement getGetTurl() method */
     String filePath = getPath(surl);
@@ -247,30 +222,6 @@ public class Storage
 
       }
     throw new SRMException("no sutable protocol found");
-    /*SRMException srmEx = new SRMException(
-        "Method getGetTurl() not yet implemented.");
-    logger.error(srmEx.toString());
-    throw srmEx;*/
-  }
-
-  /**
-   * Not implemented.<br>
-   * This is a feature of dCache implementation of SRM SE for DCAP protocol.
-   * */
-
-  @Override
-  public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
-      throws SRMException {
-      return  getPutTurl(user,surl,new String[]{previous_turl.getScheme()});
-/*
-    String erStr1 = "Method getGetTurl(..., previous_turl) not implemented.";
-    String erStr2 = "This method is a feature of implementation dCache SRM SE and "+
-        "it must not be called for the disk SE\n";
-    logger.error( erStr1 + "\n" + erStr2 );
-
-    SRMException srmEx = new SRMException( erStr1 );
-    throw srmEx;
- */
   }
 
   /** */

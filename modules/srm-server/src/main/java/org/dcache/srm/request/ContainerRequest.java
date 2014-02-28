@@ -118,7 +118,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     // dcache  requires that once client created a connection to a dcache door,
     // it uses the same door to make all following dcap transfers
     // therefore we need to synchronize the recept of dcap turls
-    private String firstDcapTurl;
+    private URI previousTurl;
 
     private final List<R> fileRequests;
 
@@ -264,41 +264,19 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         }
     }
 
-
-
-    /**
-     * gets first dcap turl
-     * <p>
-     * in case of dcap protocol transfers all transfers performed
-     * by the same client should use the same dcap door,
-     * therefore we store the first dcap turl,
-     * and set the host and port of the rest dcap turls to
-     * host  and port of the first dcap turl
-     * @return
-     * first dcap turl
-     */
-    public String getFirstDcapTurl() {
+    public URI getPreviousTurl() {
         rlock();
         try {
-            return firstDcapTurl;
+            return previousTurl;
         } finally {
             runlock();
         }
     }
-    /**
-     * stores the first dcap turl
-     * in case of dcap protocol transfers all transfers performed
-     * by the same client should use the same dcap door,
-     * therefore we store the first dcap turl,
-     * and set the host and port of the rest dcap turls to
-     * host  and port of the first dcap turl
-     * @param s
-     * first dcap turl
-     */
-    public void setFirstDcapTurl(String s) {
+
+    public void setPreviousTurl(URI s) {
         wlock();
         try {
-            firstDcapTurl = s;
+            previousTurl = s;
         } finally {
             wunlock();
         }

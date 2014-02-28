@@ -480,22 +480,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     private void computeTurl() throws SRMException
     {
-        URI turl;
         GetRequest request = getContainerRequest();
-        String firstDcapTurl = request.getFirstDcapTurl();
-        if (firstDcapTurl != null) {
-            turl = getStorage().getGetTurl(getUser(),
-                    getSurl(),
-                    URI.create(firstDcapTurl));
-        } else {
-            turl = getStorage().getGetTurl(getUser(),
-                    getSurl(),
-                    request.protocols);
-            if (turl.getScheme().equals("dcap")) {
-                request.setFirstDcapTurl(turl.toString());
-            }
-        }
-
+        URI turl = getStorage().getGetTurl(request.getUser(), getSurl(), request.getProtocols(), request.getPreviousTurl());
+        request.setPreviousTurl(turl);
         setTurl(turl);
     }
 

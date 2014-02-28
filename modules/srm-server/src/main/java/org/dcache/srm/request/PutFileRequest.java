@@ -64,12 +64,6 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * FileRequest.java
- *
- * Created on July 5, 2002, 12:04 PM
- */
-
 package org.dcache.srm.request;
 
 import org.apache.axis.types.UnsignedLong;
@@ -568,20 +562,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     {
         PutRequest request = getContainerRequest();
         // do not synchronize on request, since it might cause deadlock
-        String firstDcapTurl = request.getFirstDcapTurl();
-        URI turl;
-        if (firstDcapTurl != null) {
-            turl = getStorage().getPutTurl(request.getUser(),
-                    getSurl(),
-                    URI.create(firstDcapTurl));
-        } else {
-            turl = getStorage().getPutTurl(getUser(), getSurl(),
-                    request.getProtocols());
-            if(turl.getScheme().equals("dcap")) {
-                request.setFirstDcapTurl(turl.toString());
-            }
-        }
-
+        URI turl = getStorage().getPutTurl(request.getUser(), getSurl(), request.getProtocols(), request.getPreviousTurl());
+        request.setPreviousTurl(turl);
         setTurl(turl);
     }
 

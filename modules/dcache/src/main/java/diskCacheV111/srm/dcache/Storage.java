@@ -198,6 +198,7 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMNonEmptyDirectoryException;
+import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallback;
@@ -1016,37 +1017,6 @@ public final class Storage
                                  new PnfsId(fileId), callbacks, _pinManagerStub);
     }
 
-    private String selectGetProtocol(String[] protocols)
-            throws SRMException {
-        return selectProtocolFor(protocols, srmGetNotSupportedProtocols);
-    }
-
-    private String selectPutProtocol(String[] protocols)
-            throws SRMException {
-        return selectProtocolFor(protocols, srmPutNotSupportedProtocols);
-    }
-
-    private String selectProtocolFor(String[] includes, String[] excludes)
-            throws SRMException
-    {
-        Set<String> availableProtocols = Sets.newHashSet(getLoginBrokerInfos().keys());
-        availableProtocols.retainAll(Arrays.asList(includes));
-        availableProtocols.removeAll(Arrays.asList(excludes));
-        for (String protocol : srmPreferredProtocols) {
-            if (availableProtocols.contains(protocol)) {
-                return protocol;
-            }
-        }
-        for (String protocol : includes) {
-            if (availableProtocols.contains(protocol)) {
-                return protocol;
-            }
-        }
-        _log.warn("Cannot find suitable protocol. Client requested one of {}.",
-                Arrays.toString(includes));
-        throw new SRMException("Cannot find suitable transfer protocol.");
-    }
-
     @Override
     public String[] supportedGetProtocols()
             throws SRMInternalErrorException
@@ -1064,78 +1034,48 @@ public final class Storage
     }
 
     @Override
-    public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
+    public URI getGetTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
         throws SRMException
     {
-        FsPath path = getPath(surl);
-        String protocol = selectGetProtocol(protocols);
-        return getTurl(path, protocol, user);
+        return getTurl((DcacheUser) user, getPath(surl), protocols, srmGetNotSupportedProtocols, previousTurl);
     }
 
     @Override
-    public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
+    public URI getPutTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
         throws SRMException
     {
-        FsPath actualFilePath = getPath(surl);
-        String host = previous_turl.getHost();
-        int port = previous_turl.getPort();
-        return getTurl(actualFilePath, findDoor(previous_turl.getScheme(), host, port), user);
-    }
-
-    @Override
-    public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
-        throws SRMException
-    {
-        FsPath path = getPath(surl);
-        String protocol = selectPutProtocol(protocols);
-        return getTurl(path, protocol, user);
-    }
-
-    @Override
-    public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
-        throws SRMException
-    {
-        FsPath path = getPath(surl);
-        String host = previous_turl.getHost();
-        int port = previous_turl.getPort();
-        return getTurl(path, findDoor(previous_turl.getScheme(), host, port), user);
-    }
-
-    private URI getTurl(FsPath path,String protocol,SRMUser user)
-        throws SRMException
-    {
-        if (protocol == null) {
-            throw new IllegalArgumentException("protocol is null");
-        }
-        LoginBrokerInfo door = selectDoor(protocol);
-        return getTurl(path, door, user);
+        return getTurl((DcacheUser) user, getPath(surl), protocols, srmPutNotSupportedProtocols, previousTurl);
     }
 
     private static boolean isHostAndPortNeeded(String protocol) {
         return !protocol.equalsIgnoreCase("file");
     }
 
-
-    private URI getTurl(FsPath path, LoginBrokerInfo door, SRMUser user)
-            throws SRMException
+    private URI getTurl(DcacheUser user, FsPath path, String[] includes, String[] excludes, URI previousTurl)
+            throws SRMAuthorizationException, SRMInternalErrorException, SRMNotSupportedException
     {
-        if (path == null) {
-            throw new IllegalArgumentException("path is null");
+        if (!verifyUserPathIsRootSubpath(path, user)) {
+            throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]",
+                                                              path, user.getRoot()));
+        }
+
+        LoginBrokerInfo door = null;
+        if (previousTurl != null && previousTurl.getScheme().equals("dcap")) {
+            door = findDoor(previousTurl);
         }
         if (door == null) {
-            throw new IllegalArgumentException("door is null");
+            door = selectDoor(includes, excludes, user, path);
         }
-        String transfer_path = getTurlPath(path,door,user);
-        if (transfer_path == null) {
-            throw new SRMException("cannot get transfer path");
-        }
+
+        FsPath root = (door.getRoot() != null) ? new FsPath(door.getRoot()) : user.getRoot();
+        String transferPath = stripRootPath(root, path);
+
         try {
             String protocol = door.getProtocolFamily();
-            URI turl = isHostAndPortNeeded(protocol) ?
-                    new URI(protocol, null, resolve(door), door.getPort(), transfer_path, null, null):
-                    new URI(protocol, null, transfer_path, null);
-
-            _log.debug("getTurl() returns turl={}", turl);
+            URI turl = isHostAndPortNeeded(protocol)
+                    ? new URI(protocol, null, resolve(door), door.getPort(), transferPath, null, null)
+                    : new URI(protocol, null, transferPath, null);
+            _log.debug("getTurl() returns {}", turl);
             return turl;
         } catch (URISyntaxException e) {
             throw new SRMInternalErrorException(e.getMessage());
@@ -1172,27 +1112,6 @@ public final class Storage
         List<String> l = path.getPathItemsList();
         return FsPath.toString(l.subList(root.getPathItemsList().size(),
                                          l.size()));
-    }
-
-    private String getTurlPath(FsPath path, LoginBrokerInfo door, SRMUser user)
-        throws SRMException
-    {
-        FsPath userRoot = new FsPath();
-        if (user != null) {
-            userRoot = ((DcacheUser) user).getRoot();
-        }
-
-        if (!verifyUserPathIsRootSubpath(path, user)) {
-            throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]", path, userRoot));
-        }
-
-        FsPath root = door.getRoot() == null ? userRoot : new FsPath(door.getRoot());
-        String transferPath = stripRootPath(root, path);
-
-        _log.debug("getTurlPath(path=" + path + ",protocol=" + door.getProtocolFamily() +
-            ",user=" + user + ") = " + transferPath);
-
-        return transferPath;
     }
 
     private Multimap<String,LoginBrokerInfo> getLoginBrokerInfos()
@@ -1246,26 +1165,50 @@ public final class Storage
         return false;
     }
 
-    private LoginBrokerInfo findDoor(String protocol, String host, int port)
+    private Collection<LoginBrokerInfo> selectDoors(String[] includes, String[] excludes, DcacheUser user, FsPath path)
+            throws SRMInternalErrorException, SRMNotSupportedException
+    {
+        Multimap<String, LoginBrokerInfo> doors =
+                getLoginBrokerInfos(asList(includes), asList(excludes), user, path);
+        for (String protocol : srmPreferredProtocols) {
+            if (doors.containsKey(protocol)) {
+                return doors.get(protocol);
+            }
+        }
+        for (String protocol : includes) {
+            if (doors.containsKey(protocol)) {
+                return doors.get(protocol);
+            }
+        }
+        _log.warn("Cannot find suitable protocol. Client requested one of {}.",
+                  Arrays.toString(includes));
+        throw new SRMNotSupportedException("Cannot find suitable transfer protocol.");
+    }
+
+    private LoginBrokerInfo selectDoor(String[] includes, String[] excludes, DcacheUser user, FsPath path)
+            throws SRMInternalErrorException, SRMNotSupportedException
+    {
+        Collection<LoginBrokerInfo> doors =
+                selectDoors(includes, excludes, user, path);
+        List<LoginBrokerInfo> loginBrokerInfos = LOAD_ORDER.leastOf(doors, numDoorInRanSelection);
+        int index = rand.nextInt(Math.min(loginBrokerInfos.size(), numDoorInRanSelection));
+        LoginBrokerInfo door = loginBrokerInfos.get(index);
+        _log.trace("selectDoor returns {}", door);
+        return door;
+    }
+
+    private LoginBrokerInfo findDoor(URI uri)
             throws SRMInternalErrorException
     {
-        _log.trace("findDoor({})", protocol);
+        String protocol = uri.getScheme();
+        String host = uri.getHost();
+        int port = uri.getPort();
         for (LoginBrokerInfo door : getLoginBrokerInfos().get(protocol)) {
-            if (door.getPort() == port && resolve(door).equals(host)) {
+            if (resolve(door).equals(host) && door.getPort() == port) {
                 return door;
             }
         }
         return null;
-    }
-
-    private LoginBrokerInfo selectDoor(String protocol)
-            throws SRMInternalErrorException
-    {
-        _log.trace("selectDoor({})", protocol);
-        List<LoginBrokerInfo> loginBrokerInfos =
-                LOAD_ORDER.leastOf(getLoginBrokerInfos().get(protocol), numDoorInRanSelection);
-        int selected_indx = rand.nextInt(Math.min(loginBrokerInfos.size(), numDoorInRanSelection));
-        return loginBrokerInfos.get(selected_indx);
     }
 
     private final LoadingCache<String,String> doorToHostnameCache =
@@ -1285,10 +1228,10 @@ public final class Storage
                         }
                     });
 
-    private String resolve(LoginBrokerInfo lbi) throws SRMInternalErrorException
+    private String resolve(LoginBrokerInfo door) throws SRMInternalErrorException
     {
         try {
-            return doorToHostnameCache.get(lbi.getHost());
+            return doorToHostnameCache.get(door.getHost());
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             throw new SRMInternalErrorException("Failed to resolve door: " + cause, cause);

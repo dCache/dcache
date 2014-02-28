@@ -520,7 +520,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
                             from =
                                 getStorage().getGetTurl(getUser(),
                                                         getFrom_surl(),
-                                                        new String[] {"gsiftp","http","ftp"});
+                                                        new String[] {"gsiftp","http","ftp"},
+                                                        null);
 			}
 		}
 		if(to == null && getLocal_to_path() != null) {
@@ -531,7 +532,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
                             to =
                                 getStorage().getPutTurl(getUser(),
                                                         getTo_surl(),
-                                                        new String[] {"gsiftp","http","ftp"});
+                                                        new String[] {"gsiftp","http","ftp"},
+                                                        null);
 			}
 		}
 		if(from ==null || to == null) {

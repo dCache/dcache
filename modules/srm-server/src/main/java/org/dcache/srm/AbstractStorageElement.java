@@ -130,47 +130,23 @@ public interface AbstractStorageElement {
      * @param user User ID
      * @param surl SURL
      * @param protocols List of SE supported protocols
+     * @param previousTurl The transport URL received from the previous call of getPutTurl
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
-        throws SRMException;
-
-    /** To accomodate the property of dcache that requires that the same client get all
-     * dcap transfers though the same dcap door, we put the get(Get/Put)Turl which has
-     * this siganture.
-     * The previous_turl is the turl that was obtained by the client before.
-     * @param user User ID
-     * @param surl SURL
-     * @param previous_turl The transport URL received from the previous call of getPutTurl
-     * @throws SRMException
-     * @return Transport URL for file operation
-     */
-    public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
+    URI getPutTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
         throws SRMException;
 
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
      * @param user User ID
-     * @param filePath File path
+     * @param surl Site url
      * @param protocols
+     * @param previousTurl The transport URL received from the previous call of getGetTurl
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
-        throws SRMException;
-
-    /** To accomodate the property of dcache that requires that the same client get all
-     * dcap transfers though the same dcap door, we put the get(Get/Put)Turl which has
-     * this siganture.
-     * The previous_turl is the turl that was obtained by the client before.
-     * @param user User ID
-     * @param surl SURL
-     * @param previous_turl The transport URL received from the previous call of getPutTurl
-     * @throws SRMException
-     * @return Transport URL for file operation
-     */
-    public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
+    URI getGetTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
         throws SRMException;
 
     /** Method must be nonblocking -- when called it creates thread and returns immediately,
