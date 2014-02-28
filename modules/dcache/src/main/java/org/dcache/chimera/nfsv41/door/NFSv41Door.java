@@ -293,7 +293,15 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.challange();
         NfsTransfer transfer = _ioMessages.get(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
-        transfer.redirect(device);
+        /*
+         * We got a notification for a transfer which was not
+         * started by us.
+         *
+         * Door reboot.
+         */
+        if(transfer != null) {
+            transfer.redirect(device);
+        }
     }
 
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
