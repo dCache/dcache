@@ -701,7 +701,7 @@ public abstract class Job  {
         }
     }
 
-    public long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
+    protected long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
         wlock();
         try {
             if (state.isFinal()){

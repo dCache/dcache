@@ -227,10 +227,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 SrmLsResponse response = new SrmLsResponse();
                 response.setReturnStatus(getTReturnStatus());
                 if (!response.getReturnStatus().getStatusCode().isProcessing()) {
-                    ArrayOfTMetaDataPathDetail details =
-                        new ArrayOfTMetaDataPathDetail();
-                    details.setPathDetailArray(getPathDetailArray());
-                    response.setDetails(details);
+                    response.setDetails(new ArrayOfTMetaDataPathDetail(getPathDetailArray()));
                 } else {
                     response.setDetails(null);
                 }
@@ -240,12 +237,8 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
 
         public final SrmStatusOfLsRequestResponse getSrmStatusOfLsRequestResponse()
         {
-                SrmStatusOfLsRequestResponse response = new SrmStatusOfLsRequestResponse();
-                response.setReturnStatus(getTReturnStatus());
-                ArrayOfTMetaDataPathDetail details = new ArrayOfTMetaDataPathDetail();
-                details.setPathDetailArray(getPathDetailArray());
-                response.setDetails(details);
-                return response;
+                return new SrmStatusOfLsRequestResponse(
+                        getTReturnStatus(), new ArrayOfTMetaDataPathDetail(getPathDetailArray()));
         }
 
         private String getTRequestToken() {

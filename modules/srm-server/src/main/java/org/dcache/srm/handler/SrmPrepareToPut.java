@@ -118,7 +118,7 @@ public class SrmPrepareToPut
         }
 
         URI[] surls = new URI[fileRequests.length];
-        long[] sizes = new long[fileRequests.length];
+        Long[] sizes = new Long[fileRequests.length];
         boolean[] wantPermanent = new boolean[fileRequests.length];
         for (int i = 0; i < fileRequests.length; ++i) {
             TPutFileRequest fileRequest = fileRequests[i];

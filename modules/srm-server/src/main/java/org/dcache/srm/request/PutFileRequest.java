@@ -71,6 +71,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nullable;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -100,22 +102,13 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-
-/**
- *
- * @author  timur
- * @version
- */
 public final class PutFileRequest extends FileRequest<PutRequest> {
-    private final static Logger logger = LoggerFactory.getLogger(PutFileRequest.class);
-    // this is anSurl path
-    private URI surl;
+    private static final Logger logger = LoggerFactory.getLogger(PutFileRequest.class);
+    private final URI surl;
+    private final Long size;
     private URI turl;
-    private long size;
-    // parent directory info
     private String fileId;
     private String parentFileId;
-    private transient FileMetaData fmd;
     private transient FileMetaData parentFmd;
     private String spaceReservationId;
     private boolean weReservedSpace;
@@ -126,12 +119,12 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     public PutFileRequest(long requestId,
             Long requestCredentalId,
             URI url,
-            long size,
+            @Nullable Long size,
             long lifetime,
             int maxNumberOfRetires,
-            String spaceReservationId,
-            TRetentionPolicy retentionPolicy,
-            TAccessLatency accessLatency)
+            @Nullable String spaceReservationId,
+            @Nullable TRetentionPolicy retentionPolicy,
+            @Nullable TAccessLatency accessLatency)
     {
         super(requestId,
                 requestCredentalId,
@@ -140,15 +133,9 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         this.surl = url;
         this.size = size;
         this.spaceReservationId = spaceReservationId;
-        if(accessLatency != null) {
-            this.accessLatency = accessLatency;
-        }
-        if(retentionPolicy != null ) {
-            this.retentionPolicy = retentionPolicy;
-        }
+        this.accessLatency = accessLatency;
+        this.retentionPolicy = retentionPolicy;
     }
-
-
 
     public PutFileRequest(
             long id,
@@ -167,29 +154,29 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             Long requestCredentalId,
             String statusCodeString,
             String SURL,
-            String TURL,
-            String fileId,
-            String parentFileId,
-            String spaceReservationId,
-            long size,
-            TRetentionPolicy retentionPolicy,
-            TAccessLatency accessLatency
+            @Nullable String TURL,
+            @Nullable String fileId,
+            @Nullable String parentFileId,
+            @Nullable String spaceReservationId,
+            @Nullable Long size,
+            @Nullable TRetentionPolicy retentionPolicy,
+            @Nullable TAccessLatency accessLatency
             ) {
         super(id,
-                nextJobId,
-                creationTime,
-                lifetime,
-                stateId,
-                errorMessage,
-                scheduelerId,
-                schedulerTimeStamp,
-                numberOfRetries,
-                maxNumberOfRetries,
-                lastStateTransitionTime,
-                jobHistoryArray,
-                requestId,
-                requestCredentalId,
-                statusCodeString);
+              nextJobId,
+              creationTime,
+              lifetime,
+              stateId,
+              errorMessage,
+              scheduelerId,
+              schedulerTimeStamp,
+              numberOfRetries,
+              maxNumberOfRetries,
+              lastStateTransitionTime,
+              jobHistoryArray,
+              requestId,
+              requestCredentalId,
+              statusCodeString);
 
         this.surl = URI.create(SURL);
         if (TURL != null && !TURL.equalsIgnoreCase("null")) {
@@ -218,16 +205,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
     }
 
-    public final void setSize(long size) {
-        wlock();
-        try {
-            this.size = size;
-        } finally {
-            wunlock();
-        }
-    }
-
-    public final long getSize() {
+    @Nullable
+    public final Long getSize() {
         rlock();
         try {
             return size;
@@ -272,7 +251,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         rfs.fileId = (int) getId();
 
         rfs.SURL = getSurlString();
-        rfs.size = getSize();
+        rfs.size = (getSize() == null) ? 0 : getSize();
         State state = getState();
         rfs.TURL = getTurlString();
         if(state == State.DONE) {
@@ -295,8 +274,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     public TPutRequestFileStatus getTPutRequestFileStatus()
             throws SRMInvalidRequestException {
         TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
-        fileStatus.setFileSize(new UnsignedLong(getSize()));
-
+        fileStatus.setFileSize(((getSize() == null) ? null : new UnsignedLong(getSize())));
 
         org.apache.axis.types.URI anSurl;
         try {
@@ -351,7 +329,9 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         if(longformat) {
             sb.append('\n').append("   SURL: ").append(getSurlString());
             sb.append('\n').append("   TURL: ").append(getTurlString());
-            sb.append('\n').append("   size: ").append(getSize());
+            if (getSize() != null) {
+                sb.append('\n').append("   size: ").append(getSize());
+            }
             sb.append('\n').append("   AccessLatency: ").append(getAccessLatency());
             sb.append('\n').append("   RetentionPolicy: ").append(getRetentionPolicy());
             sb.append('\n').append("   spaceReservation: ").append(getSpaceReservationId());
@@ -458,10 +438,10 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 if( getAccessLatency() == null && getParentFmd() != null && getParentFmd().retentionPolicyInfo != null ) {
                     setAccessLatency(getParentFmd().retentionPolicyInfo.getAccessLatency());
                 }
-                logger.debug("reserving space, size="+(getSize()==0?1L:getSize()));
+                logger.debug("reserving space, size="+(getSize() == null ? 1L : getSize()));
                     getStorage().srmReserveSpace(
                     getUser(),
-                    getSize()==0?1L:getSize(),
+                    getSize() == null ? 1L : getSize(),
                     remaining_lifetime,
                     getRetentionPolicy() ==null ? null: getRetentionPolicy().getValue(),
                     getAccessLatency() == null? null:getAccessLatency().getValue(),
@@ -476,7 +456,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
                     getStorage().srmMarkSpaceAsBeingUsed(getUser(),
                                 getSpaceReservationId(),getSurl(),
-                                getSize()==0?1:getSize(),
+                                getSize() == null ? 1 : getSize(),
                                 remaining_lifetime,
                                 getContainerRequest().isOverwrite(),
                                     callbacks );
@@ -644,6 +624,16 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
+    public void setStatus(SRMUser user, String status) throws SRMException
+    {
+        if (status.equalsIgnoreCase("Done")) {
+            done(user);
+        } else {
+            super.setStatus(user, status);
+        }
+    }
+
+    @Override
     public boolean isTouchingSurl(URI surl)
     {
         return surl.equals(getSurl());
@@ -745,18 +735,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     /**
-     * @param anSurl the anSurl to set
-     */
-    public final void setSurl(URI surl) {
-        wlock();
-        try {
-            this.surl = surl;
-        } finally {
-            wunlock();
-        }
-    }
-
-    /**
      * @return the aTurl
      */
     public final URI getTurl() {
@@ -769,36 +747,12 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     /**
-     * @param aTurl the aTurl to set
+     * @param turl the aTurl to set
      */
     public final void setTurl(URI turl) {
         wlock();
         try {
             this.turl = turl;
-        } finally {
-            wunlock();
-        }
-    }
-
-    /**
-     * @return the fmd
-     */
-    private FileMetaData getFmd() {
-        rlock();
-        try {
-            return fmd;
-        } finally {
-            runlock();
-        }
-    }
-
-    /**
-     * @param fmd the fmd to set
-     */
-    private void setFmd(FileMetaData fmd) {
-        wlock();
-        try {
-            this.fmd = fmd;
         } finally {
             wunlock();
         }
@@ -920,7 +874,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 if(state == State.ASYNCWAIT) {
                     logger.trace("Storage info arrived for file {}.", fr.getSurlString());
                     fr.setFileId(fileId);
-                    fr.setFmd(fmd);
                     fr.setParentFileId(parentFileId);
                     fr.setParentFmd(parentFmd);
 

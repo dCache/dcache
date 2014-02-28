@@ -232,7 +232,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         return (int) (getId() ^ getId() >> 32);
     }
 
-    public void setStatus(String status) throws SRMException {
+    public void setStatus(SRMUser user, String status) throws SRMException {
         logger.debug("("+status+")");
         try {
             wlock();

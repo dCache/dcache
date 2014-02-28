@@ -189,7 +189,10 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
         String FILEID = set.getString(next_index++);
         String PARENTFILEID = set.getString(next_index++);
         String SPACERESERVATIONID = set.getString(next_index++);
-        long SIZE = set.getLong(next_index++);
+        Long SIZE = set.getLong(next_index++);
+        if (set.wasNull()) {
+            SIZE = null;
+        }
         String RETENTIONPOLICY = set.getString(next_index++);
         String ACCESSLATENCY = set.getString(next_index++);
         TRetentionPolicy retentionPolicy =

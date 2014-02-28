@@ -77,6 +77,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -118,19 +119,19 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     private TOverwriteMode overwriteMode;
 
     public PutRequest(SRMUser user,
-    Long requestCredentialId,
-    URI[] surls,
-    long[] sizes,
-    boolean[] wantPermanent,
-    String[] protocols,
-    long lifetime,
-    long max_update_period,
-    int max_number_of_retries,
-    String client_host,
-    String spaceToken,
-    TRetentionPolicy retentionPolicy,
-    TAccessLatency accessLatency,
-    String description)
+        Long requestCredentialId,
+        URI[] surls,
+        Long[] sizes,
+        boolean[] wantPermanent,
+        String[] protocols,
+        long lifetime,
+        long max_update_period,
+        int max_number_of_retries,
+        String client_host,
+        @Nullable String spaceToken,
+        @Nullable TRetentionPolicy retentionPolicy,
+        @Nullable TAccessLatency accessLatency,
+        @Nullable String description)
     {
 
         super(user,

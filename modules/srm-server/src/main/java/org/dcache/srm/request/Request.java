@@ -79,6 +79,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nullable;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -110,7 +112,7 @@ public abstract class Request extends Job {
     int max_number_of_retries,
     long max_update_period,
     long lifetime,
-    String description,
+    @Nullable String description,
     String client_host
         ) {
         super(lifetime,max_number_of_retries);
@@ -232,6 +234,7 @@ public abstract class Request extends Job {
 
     public abstract String getMethod();
 
+    @Nullable
     private String description;
 
     public void addDebugHistoryEvent(String description) {
@@ -347,6 +350,7 @@ public abstract class Request extends Job {
         }
     }
 
+    @Nullable
     public final String getDescription() {
         rlock();
         try {

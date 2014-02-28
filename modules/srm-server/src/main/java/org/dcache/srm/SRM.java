@@ -820,7 +820,7 @@ public class SRM {
             RequestCredential credential,
             String[] sources,
             String[] dests,
-            long[] sizes,
+            Long[] sizes,
             boolean[] wantPerm,
             String[] protocols,
             String clientHost) {
@@ -940,27 +940,8 @@ public class SRM {
                 if (s.isFinal()) {
                     logger.debug("can not set status, the file status is already " + s);
                 } else {
-                    if (state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
-                            (s == State.READY || s == State.RUNNING)) {
-                        PutFileRequest pfr = (PutFileRequest) fr;
-                        if (pfr.getTurlString() != null) {
-                            try {
-                                if (storage.exists(user, pfr.getSurl())) {
-                                    fr.setStatus(state);
-                                } else {
-                                    pfr.setState(State.FAILED, "File transfer was not performed on SURL.");
-                                }
-                            } catch (SRMException srme) {
-                                pfr.setState(State.FAILED, "File transfer was not performed on SURL.");
-                            }
-                        }
-
-                    } else {
-
-                        // process request
-                        logger.debug(" calling fr.setStatus(\"" + state + "\")");
-                        fr.setStatus(state);
-                    }
+                    logger.debug(" calling fr.setStatus(\"" + state + "\")");
+                    fr.setStatus(user, state);
                 }
             }
 

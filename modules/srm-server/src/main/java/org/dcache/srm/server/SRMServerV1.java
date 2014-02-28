@@ -1,22 +1,11 @@
-/**
- * ISRMImpl.java
- *
- * This file was auto-generated from WSDL
- * by the Apache Axis 1.2RC2 Nov 16, 2004 (12:19:44 EST) WSDL2Java emitter.
- */
-
 package org.dcache.srm.server;
 
 import com.google.common.collect.Iterables;
-import org.glite.voms.PKIVerifier;
+import com.google.common.primitives.Longs;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
-import java.util.Collection;
-
-import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.srm.SRM;
@@ -95,8 +84,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
-
-             requestStatus = srm.put(user,requestCredential,arg0,arg1,arg2,arg3,arg4, userCred.clientHost);
+              Long[] sizes = Longs.asList(arg2).toArray(new Long[arg2.length]);
+              requestStatus = srm.put(user,requestCredential,arg0,arg1,sizes,arg3,arg4, userCred.clientHost);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm put failed", e);

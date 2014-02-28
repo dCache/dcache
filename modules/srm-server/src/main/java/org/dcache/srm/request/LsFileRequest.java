@@ -213,27 +213,22 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                 if (e instanceof SRMInternalErrorException) {
                                         status = new TReturnStatus(TStatusCode.SRM_FAILURE,
                                                                    msg);
-                                        setStatusCode(TStatusCode.SRM_FAILURE);
                                 }
                                 else if (e instanceof SRMTooManyResultsException) {
                                         status = new TReturnStatus(TStatusCode.SRM_TOO_MANY_RESULTS,
                                                                    msg);
-                                        setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
                                 }
                                 else if (e instanceof SRMAuthorizationException) {
                                         status =  new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
                                                                     msg);
-                                        setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
                                 }
                                 else if (e instanceof SRMInvalidPathException) {
                                         status = new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
                                                                    msg);
-                                        setStatusCode(TStatusCode.SRM_INVALID_PATH);
                                 }
                                 else if (e instanceof DataAccessException) {
                                     status = new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,
                                             msg);
-                                    setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
                                 }
                                 else {
                                         if (e instanceof RuntimeException) {
@@ -241,11 +236,11 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                         }
                                         status = new TReturnStatus(TStatusCode.SRM_FAILURE,
                                                                    msg);
-                                        setStatusCode(TStatusCode.SRM_FAILURE);
                                 }
                                 metaDataPathDetail =  new TMetaDataPathDetail();
                                 metaDataPathDetail.setPath(getPath(surl));
                                 metaDataPathDetail.setStatus(status);
+                                setStatusCode(status.getStatusCode());
                                 setState(State.FAILED, msg);
                         }
                         catch(IllegalStateTransition ist) {
@@ -321,7 +316,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 TMetaDataPathDetail aMetaDataPathDetail=
                         convertFileMetaDataToTMetaDataPathDetail(surl,
                                                                  fmd,
-                                                                 depth,
                                                                  longFormat);
                 if(!getContainerRequest().increaseResultsNumAndContinue()) {
                         return aMetaDataPathDetail;
@@ -380,7 +374,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         TMetaDataPathDetail dirMetaDataPathDetail=
                                 convertFileMetaDataToTMetaDataPathDetail(subpath,
                                                                          md,
-                                                                         1,
                                                                          longFormat);
                         if (!getContainerRequest().shouldSkipThisRecord()) {
                                 metadataPathDetailList.add(dirMetaDataPathDetail);
@@ -466,7 +459,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                 dirMetaDataPathDetail=
                                         convertFileMetaDataToTMetaDataPathDetail(subpath,
                                                                                  md,
-                                                                                 depth,
                                                                                  longFormat);
                         }
                         else {
@@ -479,7 +471,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                         }
                                         dirMetaDataPathDetail=convertFileMetaDataToTMetaDataPathDetail(subpath,
                                                                                                        fileMetaData,
-                                                                                                       depth, longFormat);
+                                                                                                       longFormat);
                                 }
                                 else {
                                         //
@@ -487,7 +479,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                         //
                                         dirMetaDataPathDetail=convertFileMetaDataToTMetaDataPathDetail(subpath,
                                                                                                        fileMetaData,
-                                                                                                       depth,
                                                                                                        false);
                                 }
                         }
@@ -603,7 +594,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         private TMetaDataPathDetail
                 convertFileMetaDataToTMetaDataPathDetail(final URI path,
                                                          final FileMetaData fmd,
-                                                         final int depth,
                                                          final boolean verbose)
                 throws SRMException {
                 TMetaDataPathDetail metaDataPathDetail =
