@@ -22,7 +22,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
-import org.dcache.chimera.ChimeraFsException;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFSv41Session;
@@ -57,7 +56,7 @@ public class NfsTransferService extends AbstractCellComponent
 
     private FaultListener _faultListener;
 
-    public void init() throws ChimeraFsException, IOException, GSSException, OncRpcException {
+    public void init() throws IOException, GSSException, OncRpcException {
 
         String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
         PortRange portRange;
