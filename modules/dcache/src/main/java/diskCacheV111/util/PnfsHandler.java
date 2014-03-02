@@ -535,12 +535,24 @@ public class PnfsHandler
      *
      * @param pnfsid
      * @param attr array of requested attributes.
-     * @return requested attributes
      */
     public void setFileAttributes(PnfsId pnfsid, FileAttributes attr)
         throws CacheException
     {
         pnfsRequest(new PnfsSetFileAttributes(pnfsid, attr));
+    }
+
+    /**
+     * Set file attributes by path. If <code>attr</code> is an empty array,
+     * file existence if checked.
+     *
+     * @param path location of file or directory to modify
+     * @param attr array of requested attributes.
+     */
+    public void setFileAttributes(FsPath path, FileAttributes attr)
+        throws CacheException
+    {
+        pnfsRequest(new PnfsSetFileAttributes(path.toString(), attr));
     }
 
     public void setChecksum(PnfsId pnfsId, Checksum checksum)

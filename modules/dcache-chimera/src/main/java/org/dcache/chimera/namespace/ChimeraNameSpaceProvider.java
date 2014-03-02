@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,9 +37,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
-import org.dcache.acl.enums.RsType;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirNotEmptyHimeraFsException;
@@ -49,7 +45,6 @@ import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.FsInode_PSET;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
@@ -868,6 +863,24 @@ public class ChimeraNameSpaceProvider
                         // the end-user doesn't provide.  This should
                         // be fixed in Chimera.
                         setModeOf(stat, attr.getMode());
+                        break;
+                    case CREATION_TIME:
+                        if (stat == null) {
+                            stat = inode.statCache();
+                        }
+                        stat.setCrTime(attr.getCreationTime());
+                        break;
+                    case CHANGE_TIME:
+                        if (stat == null) {
+                            stat = inode.statCache();
+                        }
+                        stat.setCTime(attr.getChangeTime());
+                        break;
+                    case MODIFICATION_TIME:
+                        if (stat == null) {
+                            stat = inode.statCache();
+                        }
+                        stat.setMTime(attr.getModificationTime());
                         break;
                     case ACCESS_TIME:
                         if (_atimeGap >= 0) {

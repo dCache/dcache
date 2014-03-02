@@ -105,9 +105,9 @@ import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -194,9 +194,9 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 
+import static java.lang.Math.min;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static java.lang.Math.min;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 
@@ -401,7 +401,10 @@ public abstract class AbstractFtpDoorV1
         "EOF", "PARALLEL", "MODE-E-PERF", "SIZE", "SBUF",
         "ERET", "ESTO", "GETPUT", "MDTM",
         "CKSUM " + buildChecksumList(),  "MODEX",
-        "TVFS"
+        "TVFS",
+        "MFMT",
+        "MFCT",
+        "MFF " + buildSemiColonList(Fact.MODIFY, Fact.CREATE, Fact.MODE)
         /*
          * do not publish DCAU as supported feature. This will force
          * some clients to always encrypt data channel
@@ -422,6 +425,15 @@ public abstract class AbstractFtpDoorV1
      */
     private final DateFormat TIMESTAMP_FORMAT =
         new SimpleDateFormat("yyyyMMddHHmmss");
+
+    private static String buildSemiColonList(Fact... facts)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (Fact fact : facts) {
+            sb.append(fact.getName()).append(';');
+        }
+        return sb.toString();
+    }
 
     private static String buildChecksumList(){
         String result = "";
@@ -2348,6 +2360,181 @@ public abstract class AbstractFtpDoorV1
             reply("200 Unsupported transfer mode");
         }
     }
+
+
+    /*
+     * The MFMT MFCT and MFF commands are not standards but are described in
+     * the 'draft-somers-ftp-mfxx-04' document, currently available here:
+     *
+     *     http://tools.ietf.org/html/draft-somers-ftp-mfxx-04
+     */
+
+
+    @Help("MFMT <SP> <time-val> <SP> <path> - Adjust modify timestamp")
+    public void ftp_mfmt(String arg) throws FTPCommandException
+    {
+        checkLoggedIn();
+
+        int spaceIndex = arg.indexOf(' ');
+        if (spaceIndex == -1) {
+            reply("500 missing time-val and pathname");
+            return;
+        }
+
+        String pathname = arg.substring(spaceIndex + 1);
+        String timeval = arg.substring(0, spaceIndex);
+        long when = parseTimeval(timeval, "");
+
+        FileAttributes updates = new FileAttributes();
+        updates.setModificationTime(when);
+        updateAttributesFromPath(pathname, updates);
+
+        String updatedTimeval =
+                TIMESTAMP_FORMAT.format(new Date(updates.getModificationTime()));
+
+        reply("213 Modify=" + updatedTimeval + "; " + pathname);
+    }
+
+
+    @Help("MFCT <SP> <time-val> <SP> <path> - Adjust creation timestamp")
+    public void ftp_mfct(String arg) throws FTPCommandException
+    {
+        checkLoggedIn();
+
+        int spaceIndex = arg.indexOf(' ');
+        if (spaceIndex == -1) {
+            reply("500 missing time-val and pathname");
+            return;
+        }
+
+        String pathname = arg.substring(spaceIndex + 1);
+        String timeval = arg.substring(0, spaceIndex);
+        long when = parseTimeval(timeval, "");
+
+        FileAttributes updates = new FileAttributes();
+        updates.setCreationTime(when);
+        updateAttributesFromPath(pathname, updates);
+
+        String updatedTimeval =
+                TIMESTAMP_FORMAT.format(new Date(updates.getCreationTime()));
+
+        reply("213 Create=" + updatedTimeval + "; " + pathname);
+    }
+
+
+    @Help("MFF <SP> <fact> = <value> ; [<fact> = <value> ; ...] <SP> <path> - Update facts about file or directory")
+    public void ftp_mff(String arg) throws FTPCommandException
+    {
+        checkLoggedIn();
+
+        int spaceIndex = arg.indexOf(' ');
+        if (spaceIndex == -1) {
+            reply("500 missing mff-facts and pathname");
+            return;
+        }
+
+        String pathname = arg.substring(spaceIndex + 1);
+        String facts = arg.substring(0, spaceIndex);
+
+        FileAttributes updates = new FileAttributes();
+        Map<String,String> changes = Splitter.on(';').omitEmptyStrings().
+                withKeyValueSeparator('=').split(facts);
+        for (Map.Entry<String,String> change : changes.entrySet()) {
+            Fact fact = Fact.find(change.getKey());
+            if (fact == null) {
+                reply("504 Unsupported fact " + change.getKey());
+                return;
+            }
+            switch (fact) {
+            case MODE:
+                try {
+                    updates.setMode(Integer.parseInt(change.getValue(), 8));
+                } catch (NumberFormatException e) {
+                    reply("504 value not in octal for UNIX.mode");
+                    return;
+                }
+                break;
+            case MODIFY:
+                updates.setModificationTime(parseTimeval(change.getValue(),
+                        " for MODIFY"));
+                break;
+            case CREATE:
+                updates.setCreationTime(parseTimeval(change.getValue(),
+                        " for CREATE"));
+                break;
+            default:
+                reply("504 Unmodifable fact " + change.getKey());
+                return;
+            }
+        }
+
+        updateAttributesFromPath(pathname, updates);
+
+        StringBuilder sb = new StringBuilder("213 ");
+        for (Map.Entry<String,String> change : changes.entrySet()) {
+            Fact fact = Fact.find(change.getKey());
+            sb.append(fact.getName()).append('=');
+            switch (fact) {
+            case MODE:
+                sb.append(Integer.toOctalString(updates.getMode() & 0777));
+                break;
+            case MODIFY:
+                sb.append(TIMESTAMP_FORMAT.format(new Date(updates.getModificationTime())));
+                break;
+            case CREATE:
+                sb.append(TIMESTAMP_FORMAT.format(new Date(updates.getCreationTime())));
+                break;
+            }
+            sb.append(';');
+        }
+        reply(sb.append(' ').append(pathname).toString());
+    }
+
+
+    private void updateAttributesFromPath(String path, FileAttributes updates)
+            throws FTPCommandException
+    {
+        try {
+            _pnfs.setFileAttributes(absolutePath(path), updates);
+
+        } catch (FileNotFoundCacheException e) {
+            throw new FTPCommandException(550, "file not found");
+        } catch (CacheException e) {
+            /* FIXME: we should distinguish between transitory and permanent
+             *        failures; however, the CacheException hierachy doesn't
+             *        make this easy.  So we mark all such failures as permanent.
+             */
+            throw new FTPCommandException(501, "internal problem: " +
+                    e.toString());
+        }
+    }
+
+    private long parseTimeval(String timeval, String errorSuffix)
+            throws FTPCommandException
+    {
+        String fractionalPart = null;
+        int dotIndex = timeval.indexOf('.');
+        if (dotIndex != -1) {
+            fractionalPart = timeval.substring(dotIndex);
+            timeval = timeval.substring(0, dotIndex);
+        }
+
+        long when;
+
+        try {
+            when = TIMESTAMP_FORMAT.parse(timeval).getTime();
+
+            if (dotIndex != -1) {
+                float seconds = Float.parseFloat(fractionalPart);
+                when += Math.floor(seconds * 1000);
+            }
+        } catch (NumberFormatException | ParseException e) {
+            throw new FTPCommandException(501, "bad timeval" + errorSuffix);
+        }
+
+        return when;
+    }
+
 
     /* The ncftp client checks for supported site commands by
      * parsing the response to the HELP SITE command.  Each line is
