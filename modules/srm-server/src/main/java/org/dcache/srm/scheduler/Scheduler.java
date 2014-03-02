@@ -856,9 +856,8 @@ public final class Scheduler
                         case RETRYWAIT:
                             try {
                                 LOGGER.debug("Scheduler(id={}) changing job state to running", getId());
-                                job.setState(State.RUNNING, "Processing request", false);
+                                job.setState(State.RUNNING, "Processing request");
                                 started();
-                                job.saveJob();
                             } catch (IllegalStateTransition ist) {
                                 LOGGER.error("Illegal State Transition : " + ist.getMessage());
                                 return;

@@ -311,28 +311,11 @@ public abstract class Job  {
     }
 
     /**
-     *  Changes the state of this job to a new state
-     * @param state
-     * @param description
-     * @throws IllegalStateTransition
+     * Changes the state of this job to a new state.
      */
-    public final void setState(State state,String description) throws
-    IllegalStateTransition {
-        setState(state,description,true);
-
-    }
-
-    /**
-         * Changes the state of this job to a new state
-         * @param newState
-         * @param description
-         * @param save
-         * if save is false we do not save state in database
-         * the caller of the save state needs to call saveJob then
-         * @throws IllegalStateTransition
-         */
-    public final void setState(State newState,String description, boolean save) throws
-       IllegalStateTransition {
+    public final void setState(State newState, String description)
+            throws IllegalStateTransition
+    {
         wlock();
         try {
             if (newState == this.state) {
@@ -359,9 +342,7 @@ public abstract class Job  {
                 throw new IllegalStateTransition("Scheduler ID is null");
             }
             stateChanged(oldState);
-            if(save || !oldState.isFinal() && newState.isFinal()) {
-                saveJob();
-            }
+            saveJob();
         } finally {
             wunlock();
         }
