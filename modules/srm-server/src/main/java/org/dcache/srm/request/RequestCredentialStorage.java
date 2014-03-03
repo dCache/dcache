@@ -72,6 +72,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import java.io.IOException;
+
 
 /**
  *
@@ -82,4 +84,20 @@ public interface RequestCredentialStorage {
     public RequestCredential getRequestCredential(Long requestCredentialId);
     public void saveRequestCredential(RequestCredential requestCredential);
     public RequestCredential getRequestCredential (String credentialName,String role);
+
+    /**
+     * Check where there is any stored credential for this user.  If role is
+     * non-null then the role must match.  If role is null then any stored
+     * credential for this user will match.
+     */
+    public boolean hasRequestCredential(String credentialName, String role)
+            throws IOException;
+
+    /**
+     * Delete all delegated credentials that match the credential name and
+     * role.  If role is null then only the credential name is used as a
+     * predicate.  Returns true if one or more credentials were deleted.
+     */
+    public boolean deleteRequestCredential(String credentialName, String role)
+            throws IOException;
 }

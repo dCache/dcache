@@ -64,61 +64,77 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * HashtableJobStorage.java
- *
- * Created on April 26, 2004, 3:31 PM
- */
-
 package org.dcache.srm.request;
-import java.util.HashMap;
+import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
- *
- * @author  timur
+ * A simple in-memory credential store.
  */
-public class HashtableRequestCredentialStorage implements RequestCredentialStorage {
+public class HashtableRequestCredentialStorage
+        implements RequestCredentialStorage
+{
+    private final Map<Long, RequestCredential> store = new ConcurrentHashMap<>();
 
-    /** Creates a new instance of HashtableJobStorage */
-    public HashtableRequestCredentialStorage() {
-    }
-    final Map<Long, RequestCredential> requestCreatorsTable = new HashMap<>();
-    @Override
-    public RequestCredential getRequestCredential(Long requestCredentialId) {
-        Object o;
-        synchronized(requestCreatorsTable) {
-            o =requestCreatorsTable.get(requestCredentialId);
-        }
-        if(o == null) {
-            return null;
-        }
-        return (RequestCredential) o;
-    }
-
-    @Override
-    public void saveRequestCredential(RequestCredential requestCredential) {
-        synchronized(requestCreatorsTable) {
-            requestCreatorsTable.put(requestCredential.getId(),requestCredential);
-        }
-    }
-
-    @Override
-    public RequestCredential getRequestCredential (String credentialName,String role)
+    /**
+     * Predicate for matching a specified name and role.
+     */
+    private class IsMatching implements Predicate<RequestCredential>
     {
-        synchronized(requestCreatorsTable) {
-            for (Object o : requestCreatorsTable.values()) {
-                RequestCredential cred = (RequestCredential) o;
-                String credName = cred.getCredentialName();
-                String credRole = cred.getRole();
-                if (credName.equals(credentialName)) {
-                    if ((role == null && credRole == null) || role != null && role
-                            .equals(credRole)) {
-                        return cred;
-                    }
-                }
-            }
+        String name;
+        String role;
+
+        public IsMatching(String name, String role)
+        {
+            this.name = name;
+            this.role = role;
         }
-        return null;
+
+        @Override
+        public boolean apply(RequestCredential credential)
+        {
+            String credName = credential.getCredentialName();
+            String credRole = credential.getRole();
+            return credName.equals(name) && Objects.equal(role, credRole);
+        }
     }
 
+    private Predicate<RequestCredential> isMatching(String name, String role)
+    {
+        return new IsMatching(name, role);
+    }
+
+    @Override
+    public RequestCredential getRequestCredential(Long requestCredentialId)
+    {
+        return store.get(requestCredentialId);
+    }
+
+    @Override
+    public void saveRequestCredential(RequestCredential requestCredential)
+    {
+        store.put(requestCredential.getId(), requestCredential);
+    }
+
+    @Override
+    public RequestCredential getRequestCredential (String name, String role)
+    {
+        return Iterables.find(store.values(), isMatching(name, role), null);
+    }
+
+    @Override
+    public boolean hasRequestCredential(String name, String role)
+    {
+        return getRequestCredential(name, role) != null;
+    }
+
+    @Override
+    public boolean deleteRequestCredential(String name, String role)
+    {
+        return Iterables.removeIf(store.values(), isMatching(name, role));
+    }
 }

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+
   <globalConfiguration>
     <parameter name="sendMultiRefs" value="false"/>
     <parameter name="disablePrettyXML" value="true"/>
     <parameter name="adminPassword" value="admin"/>
+    <!-- FIXME: attachments are saved in a fixed (and wrong) location; note
+                that attachments aren't used in SRM and GridSite. -->
     <parameter name="attachments.Directory" value="/opt/d-cache/srm-webapp/WEB-INF/attachments"/>
     <parameter name="dotNetSoapEncFix" value="true"/>
     <parameter name="enableNamespacePrefixOptimization" value="false"/>
@@ -12,23 +15,125 @@
     <parameter name="attachments.implementation" value="org.apache.axis.attachments.AttachmentsImpl"/>
     <requestFlow>
       <handler type="java:org.apache.axis.handlers.JWSHandler">
-	<parameter name="scope" value="session"/>
+       <parameter name="scope" value="session"/>
       </handler>
       <handler type="java:org.apache.axis.handlers.JWSHandler">
-	<parameter name="scope" value="request"/>
-	<parameter name="extension" value=".jwr"/>
+       <parameter name="scope" value="request"/>
+       <parameter name="extension" value=".jwr"/>
       </handler>
     </requestFlow>
   </globalConfiguration>
   <handler name="URLMapper" type="java:org.apache.axis.handlers.http.URLMapper"/>
   <handler name="LocalResponder" type="java:org.apache.axis.transport.local.LocalResponder"/>
   <handler name="Authenticate" type="java:org.apache.axis.handlers.SimpleAuthenticationHandler"/>
+
+  <!--+
+      |      The Admin service
+      +-->
   <service name="AdminService" provider="java:MSG">
     <parameter name="allowedMethods" value="AdminService"/>
     <parameter name="enableRemoteAdmin" value="false"/>
     <parameter name="className" value="org.apache.axis.utils.Admin"/>
     <namespace>http://xml.apache.org/axis/wsdd/</namespace>
   </service>
+
+  <!--+
+      |      The GridSite-Delegation service
+      +-->
+  <service name="delegation" provider="java:logging-RPC" style="wrapped" use="literal"
+	   xmlns:d1="http://www.gridsite.org/namespaces/delegation-1"
+	   xmlns:d="http://www.gridsite.org/namespaces/delegation-2"
+	   xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+      <parameter name="wsdlTargetNamespace" value="http://www.gridsite.org/namespaces/delegation-2"/>
+      <parameter name="wsdlServiceElement" value="DelegationService"/>
+      <parameter name="schemaQualified" value="http://www.gridsite.org/namespaces/delegation-2"/>
+      <parameter name="className" value="org.dcache.gridsite.ServletDelegation"/>
+      <parameter name="wsdlServicePort" value="gridsite-delegation"/>
+      <parameter name="wsdlPortType" value="Delegation"/>
+      <parameter name="typeMappingVersion" value="1.1"/>
+
+      <operation name="getVersion" qname="d:getVersion" returnQName="getVersionReturn" returnType="xsd:string"  soapAction="">
+        <fault name="DelegationException" qname="d:DelegationException"
+	       class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <operation name="getInterfaceVersion" qname="d:getInterfaceVersion"
+		 returnQName="getInterfaceVersionReturn" returnType="xsd:string" soapAction="" >
+	  <fault name="DelegationException" qname="d:DelegationException"
+		 class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <operation name="getServiceMetadata" qname="d:getServiceMetadata"
+		 returnQName="getServiceMetadataReturn" returnType="xsd:string" soapAction="">
+	  <parameter qname="key" type="xsd:string"/>
+	  <fault name="DelegationException" qname="d:DelegationException"
+		 class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <operation name="getProxyReq" qname="d:getProxyReq" returnQName="getProxyReqReturn"
+		 returnType="xsd:string" soapAction="">
+	  <parameter qname="delegationID" type="xsd:string"/>
+	  <fault name="DelegationException" qname="d:DelegationException"
+		 class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <operation name="getNewProxyReq" qname="d:getNewProxyReq" soapAction="">
+        <parameter qname="proxyRequest" type="xsd:string" mode="OUT"/>
+        <parameter qname="delegationID" type="xsd:string" mode="OUT"/>
+        <fault name="DelegationException" qname="d:DelegationException"
+	       class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <operation name="renewProxyReq" qname="d:renewProxyReq" returnQName="renewProxyReqReturn"
+		 returnType="xsd:string" soapAction="">
+	  <parameter qname="delegationID" type="xsd:string"/>
+	  <fault name="DelegationException" qname="d:DelegationException"
+		 class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <operation name="putProxy" qname="d:putProxy" soapAction="">
+        <parameter qname="delegationID" type="xsd:string"/>
+        <parameter qname="proxy" type="xsd:string"/>
+        <fault name="DelegationException" qname="d:DelegationException"
+	       class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <operation name="getTerminationTime" qname="d:getTerminationTime" returnQName="getTerminationTimeReturn"
+		 returnType="xsd:dateTime" soapAction="">
+	  <parameter qname="delegationID" type="xsd:string"/>
+	  <fault name="DelegationException" qname="d:DelegationException"
+		 class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <operation name="destroy" qname="d:destroy" soapAction="">
+	  <parameter qname="delegationID" type="xsd:string"/>
+	  <fault name="DelegationException" qname="d:DelegationException"
+		 class="org.dcache.delegation.gridsite2.DelegationException" type="d:>DelegationException"/>
+      </operation>
+
+      <parameter name="allowedMethods"
+		 value="destroy getServiceMetadata getVersion getTerminationTime getProxyReq getNewProxyReq putProxy renewProxyReq getInterfaceVersion"/>
+
+
+      <!-- Parameters for WSDL generation -->
+      <parameter name="wsdlServicePort" value="managerv2"/>
+      <parameter name="wsdlPortType" value="managerv2"/>
+
+      <parameter name="wsdlTargetNamespace" value="http://www.gridsite.org/namespaces/delegation-2"/>
+      <parameter name="scope" value="Application"/>
+      <parameter name="schemaUnqualified" value="http://www.gridsite.org/namespaces/delegation-2"/>
+
+      <typeMapping qname="d:>DelegationException" type="java:org.dcache.delegation.gridsite2.DelegationException"
+		   serializer="org.apache.axis.encoding.ser.BeanSerializerFactory"
+		   deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory"
+		   encodingStyle=""/>
+  </service>
+
+
+  <!--+
+      |      The SRM v2 service
+      +-->
   <service name="managerv2" provider="java:logging-RPC">
     <operation name="srmReserveSpace" qname="ns1:srmReserveSpace" returnQName="srmReserveSpaceResponse" returnType="ns1:srmReserveSpaceResponse" soapAction="" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager">
       <parameter name="srmReserveSpaceRequest" type="ns1:srmReserveSpaceRequest"/>
@@ -292,10 +397,18 @@
     <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns173:srmReleaseSpaceResponse" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.SrmReleaseSpaceResponse" xmlns:ns173="http://srm.lbl.gov/StorageResourceManager"/>
     <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns174:ArrayOfTPutFileRequest" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:org.dcache.srm.v2_2.ArrayOfTPutFileRequest" xmlns:ns174="http://srm.lbl.gov/StorageResourceManager"/>
   </service>
+
+  <!--+
+      |      The Version service
+      +-->
   <service name="Version" provider="java:RPC">
     <parameter name="allowedMethods" value="getVersion"/>
     <parameter name="className" value="org.apache.axis.Version"/>
   </service>
+
+  <!--+
+      |      The SRM v1 service
+      +-->
   <service name="managerv1" provider="java:logging-RPC">
     <operation name="put" qname="ns176:put" returnQName="Result" returnType="ns175:RequestStatus" soapAction="put" xmlns:ns175="http://www.themindelectric.com/package/diskCacheV111.srm/" xmlns:ns176="http://tempuri.org/diskCacheV111.srm.server.SRMServerV1">
       <parameter name="arg0" type="ns177:ArrayOfstring" xmlns:ns177="http://www.themindelectric.com/package/java.lang/"/>

@@ -2,10 +2,13 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
               http://www.springframework.org/schema/beans/spring-beans.xsd
               http://www.springframework.org/schema/context
-              http://www.springframework.org/schema/context/spring-context.xsd">
+              http://www.springframework.org/schema/context/spring-context.xsd
+              http://www.springframework.org/schema/util
+              http://www.springframework.org/schema/util/spring-util.xsd">
 
   <context:property-placeholder/>
   <context:annotation-config/>
@@ -535,6 +538,45 @@
     <constructor-arg value="${srm.authn.ciphers}"/>
   </bean>
 
+
+  <bean id="gridsite-credential-delegation-store"
+	class="org.dcache.gridsite.InMemoryCredentialDelegationStore"
+	init-method="start">
+      <description>Store for on-going GridSite delegations</description>
+
+      <property name="expireAfter"
+		value="#{T(java.util.concurrent.TimeUnit).MINUTES.toMillis(10)}"/>
+      <property name="maxOngoing"
+		value="10000"/>
+  </bean>
+
+
+  <bean id="gridsite-credential-store"
+	class="org.dcache.gridsite.SrmCredentialStore">
+      <description>Bridge between GridSite- and SRM- credential storage</description>
+
+      <property name="requestCredentialStorage"
+		value="#{srm.requestCredentialStorage}"/>
+  </bean>
+
+  <bean id="gridsite-credential-delegation-factory"
+	class="org.dcache.gridsite.BouncyCastleCredentialDelegationFactory">
+      <description>Generation of GridSite delegated credentials that uses BouncyCastle</description>
+
+      <property name="keyPairCache" ref="keypair-cache"/>
+  </bean>
+
+  <bean id="keypair-cache"
+	class="org.dcache.gridsite.KeyPairCache">
+      <description>Cache of key-pairs to reduce delegation overhead</description>
+
+      <constructor-arg value="3600"/> <!-- key-pair regeneration, in seconds -->
+  </bean>
+
+  <util:map id="gridsite-service-metadata">
+      <entry key="implementation" value="dCache"/>
+  </util:map>
+
   <bean id="server" class="org.eclipse.jetty.server.Server"
         init-method="start" destroy-method="stop">
     <description>Jetty server hosting the SRM web application</description>
@@ -575,6 +617,14 @@
                              value-ref="storage"/>
                       <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_SRM }"
                              value-ref="srm"/>
+                      <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_STORE }"
+			     value-ref="gridsite-credential-store"/>
+                      <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_DELEGATION_STORE }"
+			     value-ref="gridsite-credential-delegation-store"/>
+                      <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_DELEGATION_FACTORY }"
+			     value-ref="gridsite-credential-delegation-factory"/>
+                      <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_SERVICE_METADATA }"
+			     value-ref="gridsite-service-metadata"/>
                     </map>
                   </constructor-arg>
                 </bean>

@@ -75,6 +75,8 @@ package org.dcache.srm.request;
 import com.google.common.collect.MapMaker;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
 import java.util.List;
@@ -178,6 +180,24 @@ public class RequestCredential
         this.delegatedCredentialExpiration = delegatedCredentialExpiration;
         this.storage = storage;
         this.saved = true;
+    }
+
+    /**
+     * Create a new RequestCredential to wrap an existing GSSCredential.
+     */
+    public RequestCredential(String credentialName,
+                             String role,
+                             GSSCredential delegatedCredential,
+                             RequestCredentialStorage storage) throws GSSException
+    {
+        this.id = JobIdGeneratorFactory.getJobIdGeneratorFactory().getJobIdGenerator().getNextId();
+        this.creationtime = System.currentTimeMillis();
+        this.credentialName = credentialName;
+        this.role = role;
+        this.delegatedCredential = delegatedCredential;
+        this.delegatedCredentialExpiration = System.currentTimeMillis() +
+                    delegatedCredential.getRemainingLifetime() * 1000L;
+        this.storage = storage;
     }
 
     public synchronized GSSCredential getDelegatedCredential()

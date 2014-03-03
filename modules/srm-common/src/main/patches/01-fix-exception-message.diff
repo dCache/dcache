@@ -1,0 +1,20 @@
+--- org/dcache/delegation/gridsite2/DelegationException.java	2013-04-25 10:28:35.000000000 +0200
++++ org/dcache/delegation/gridsite2/DelegationException.java	2013-04-25 10:29:11.000000000 +0200
+@@ -16,6 +16,7 @@
+ 
+     public DelegationException(
+            java.lang.String msg) {
++        super(msg);
+         this.msg = msg;
+     }
+ 
+--- org/dcache/delegation/gridsite1/DelegationExceptionType.java	2014-02-22 15:25:32.000000000 +0100
++++ org/dcache/delegation/gridsite1/DelegationExceptionType.java	2014-02-22 15:25:48.000000000 +0100
+@@ -16,6 +16,7 @@
+ 
+     public DelegationExceptionType(
+            java.lang.String message1) {
++        super(message1);
+         this.message1 = message1;
+     }
+ 

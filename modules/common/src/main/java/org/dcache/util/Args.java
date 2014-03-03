@@ -1,4 +1,4 @@
-package org.dcache.util ;
+package org.dcache.util;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
@@ -6,10 +6,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultiset;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimaps;
 
 import java.io.Serializable;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
+import static java.util.Arrays.asList;
 
 /**
  * Argument parser.
@@ -68,11 +74,27 @@ public class Args implements Serializable
         _oneChar = in._oneChar;
     }
 
+    private Args(ImmutableList<String> arguments,
+            ImmutableListMultimap<String,String> options, String oneChar)
+    {
+        _arguments = arguments;
+        _options = options;
+        _oneChar = oneChar;
+    }
+
     public static CharSequence quote(String raw)
     {
         StringBuilder sb = new StringBuilder();
         quote(raw, sb);
         return sb;
+    }
+
+    public Args removeOptions(String... names)
+    {
+        ListMultimap<String,String> view =
+                Multimaps.filterKeys(_options, not(in(asList(names))));
+
+        return new Args(_arguments, ImmutableListMultimap.copyOf(view), _oneChar);
     }
 
     public boolean isOneCharOption(char c)

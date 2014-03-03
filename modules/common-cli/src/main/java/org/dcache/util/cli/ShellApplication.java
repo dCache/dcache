@@ -177,6 +177,7 @@ public abstract class ShellApplication implements Closeable
      */
     public void console() throws Throwable
     {
+        onInteractiveStart();
         try {
             while (true) {
                 String prompt = new ANSIBuffer().bold(getPrompt()).toString(isAnsiSupported);
@@ -189,6 +190,15 @@ public abstract class ShellApplication implements Closeable
             }
         } catch (CommandExitException ignored) {
         }
+    }
+
+    /**
+     * Method called exactly once when starting an interactive session.
+     */
+    protected void onInteractiveStart() throws IOException
+    {
+        console.printString("Type 'help' for help on commands.\n");
+        console.printString("Type 'exit' or Ctrl+D to exit.\n");
     }
 
     /**

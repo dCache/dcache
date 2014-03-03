@@ -13,6 +13,56 @@
 
   <name>SRM Common</name>
 
+  <build>
+    <plugins>
+      <plugin>
+       <groupId>org.codehaus.mojo</groupId>
+       <artifactId>axistools-maven-plugin</artifactId>
+       <version>1.4</version>
+
+       <configuration>
+          <packageSpace>org.dcache.delegation</packageSpace>
+          <subPackageByFileName>true</subPackageByFileName>
+          <testCases>false</testCases>
+          <serverSide>true</serverSide>
+          <wsdlFiles>
+              <wsdlFile>gridsite1.wsdl</wsdlFile>
+              <wsdlFile>gridsite2.wsdl</wsdlFile>
+          </wsdlFiles>
+       </configuration>
+
+       <executions>
+         <execution>
+           <goals>
+              <goal>wsdl2java</goal>
+           </goals>
+         </execution>
+       </executions>
+      </plugin>
+
+      <!-- Fix up Axis auto-generated code -->
+      <plugin>
+       <groupId>org.apache.maven.plugins</groupId>
+       <artifactId>maven-patch-plugin</artifactId>
+       <version>1.1.1</version>
+
+       <configuration>
+         <naturalOrderProcessing>true</naturalOrderProcessing>
+         <patchDirectory>src/main/patches</patchDirectory>
+         <targetDirectory>target/generated-sources/axistools/wsdl2java</targetDirectory>
+       </configuration>
+
+       <executions>
+         <execution>
+           <goals>
+              <goal>apply</goal>
+           </goals>
+         </execution>
+       </executions>
+      </plugin>
+    </plugins>
+  </build>
+
   <dependencies>
     <dependency>
       <groupId>org.slf4j</groupId>

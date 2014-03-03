@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions 
+    targetNamespace="http://www.gridsite.org/namespaces/delegation-1" 
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+    xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" 
+    xmlns:tns="http://www.gridsite.org/namespaces/delegation-1" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+ <wsdl:types>
+  <xsd:schema targetNamespace="http://www.gridsite.org/namespaces/delegation-1">
+   <xsd:complexType name="DelegationExceptionType">
+    <xsd:sequence>
+     <xsd:element name="message" type="xsd:string" nillable="true">
+        <xsd:annotation>
+            <xsd:documentation>
+                The cause of the delegation exception on the server side.
+            </xsd:documentation>
+        </xsd:annotation>
+     </xsd:element>
+    </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="DelegationException" type="tns:DelegationExceptionType"/>
+   <xsd:complexType name="NewProxyReq">
+    <xsd:annotation>
+        <xsd:documentation>
+            New proxy certificate request, containing the certificate
+            request and a generated delegation ID.
+        </xsd:documentation>
+    </xsd:annotation>
+    <xsd:sequence>
+     <xsd:element name="proxyRequest" nillable="true" type="xsd:string">
+        <xsd:annotation>
+            <xsd:documentation>
+                The new RFC 3280 style proxy certificate request 
+                in PEM format with Base64 encoding.
+            </xsd:documentation>
+        </xsd:annotation>
+     </xsd:element>
+     <xsd:element name="delegationID" nillable="true" type="xsd:string">
+        <xsd:annotation>
+            <xsd:documentation>
+                The ID associated with the new delegation session.
+            </xsd:documentation>
+        </xsd:annotation>
+     </xsd:element>
+    </xsd:sequence>
+   </xsd:complexType>
+  </xsd:schema>
+ </wsdl:types>
+
+   <wsdl:message name="getProxyReqRequest">
+      <wsdl:part name="delegationID" type="xsd:string">
+        <wsdl:documentation>
+            The ID of the new delegation session, specified by the client.
+            The ID can be empty.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+   <wsdl:message name="getProxyReqResponse">
+      <wsdl:part name="getProxyReqReturn" type="xsd:string">
+        <wsdl:documentation>
+            The new RFC 3280 style proxy certificate request 
+            in PEM format with Base64 encoding.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+
+   <wsdl:message name="putProxyRequest">
+      <wsdl:part name="delegationID" type="xsd:string">
+        <wsdl:documentation>
+            The ID of an already existing delegation session, 
+            initiated by getProxyReq() or getNewProxyReq().
+        </wsdl:documentation>
+      </wsdl:part>
+      <wsdl:part name="proxy" type="xsd:string">
+        <wsdl:documentation>
+            RFC 3280 style proxy certificate, signed by the
+            client, in PEM format with Base64 encoding.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+   <wsdl:message name="putProxyResponse"/>
+
+   <wsdl:message name="renewProxyReqRequest">
+      <wsdl:part name="delegationID" type="xsd:string">
+        <wsdl:documentation>
+            The ID of an already existing delegation session,
+            where the client wants to renew the delegated 
+            credential.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+   <wsdl:message name="renewProxyReqResponse">
+      <wsdl:part name="renewProxyReqReturn" type="xsd:string">
+        <wsdl:documentation>
+            The new RFC 3280 style proxy certificate request,
+            which is to replace the existing one,
+            in PEM format with Base64 encoding.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+
+   <wsdl:message name="getNewProxyReqRequest"/>
+   <wsdl:message name="getNewProxyReqResponse">
+      <wsdl:part name="getNewProxyReqReturn" type="tns:NewProxyReq">
+        <wsdl:documentation>
+            The server side generated ID of the new delegation
+            session and the new RFC 3280 style proxy certificate 
+            request in PEM format with Base64 encoding.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+
+   <wsdl:message name="getTerminationTimeRequest">
+      <wsdl:part name="delegationID" type="xsd:string">
+        <wsdl:documentation>
+            The ID of an already existing delegation session to be queried.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+   <wsdl:message name="getTerminationTimeResponse">
+      <wsdl:part name="getTerminationTimeReturn" type="xsd:dateTime">
+        <wsdl:documentation>
+            The date and time when the delegated credentials will expire.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+
+   <wsdl:message name="destroyRequest">
+      <wsdl:part name="delegationID" type="xsd:string">
+        <wsdl:documentation>
+            The ID of an already existing delegation session to be destroyed.
+        </wsdl:documentation>
+      </wsdl:part>
+   </wsdl:message>
+   <wsdl:message name="destroyResponse"/>
+
+   <wsdl:message name="DelegationException">
+      <wsdl:part name="fault" element="tns:DelegationException"/>
+   </wsdl:message>
+
+   <wsdl:portType name="Delegation">
+      <wsdl:documentation>
+        Delegation interface.
+      </wsdl:documentation>
+
+      <wsdl:operation name="getProxyReq" parameterOrder="delegationID">
+         <wsdl:documentation>
+            <para>
+                Starts the delegation procedure by asking for a certificate 
+                signing request from the server. The server answers with a
+                certificate signing request which includes the public key 
+                for the new delegated credentials. putProxy() has to be
+                called to finish the procedure.
+            </para>
+            <orderedlist>
+                <listitem><para>
+                    Check if a delegation ID was provided.  If not, generate a delegation
+                    id by hashing the client DN and client VOMS attributes.
+                </para></listitem>
+                <listitem><para>
+                    Check if the delegation ID already exists in the
+                    <emphasis>storage-area</emphasis>.  If it does 
+                    (a credential renewal is happening), check
+                    existing info (DN and VOMS attributes) against client info.
+                    Throw exception if they do not match.
+                </para></listitem>
+                <listitem><para>
+                    Create a new private/public key-pair (see also <emphasis>Key
+                    Generation Semantics</emphasis>).
+                </para></listitem>
+                <listitem><para>
+                    Generate a new proxy certificate request.
+                </para></listitem>
+                <listitem><para>
+                    Store private key and cert request in
+                    <emphasis>storage-cache-area</emphasis>, along with the
+                    requesting DN and VOMS attributes.
+                </para></listitem>
+            </orderedlist>
+         </wsdl:documentation>
+         <wsdl:input message="tns:getProxyReqRequest" name="getProxyReqRequest"/>
+         <wsdl:output message="tns:getProxyReqResponse" name="getProxyReqResponse"/>
+         <wsdl:fault message="tns:DelegationException" name="DelegationException">
+           <wsdl:documentation>
+                The client's DN and VOMS attributes do not match the stored ones, 
+                i.e. the client is not authorized.
+           </wsdl:documentation>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="getNewProxyReq">
+         <wsdl:documentation>
+            <para>
+                Starts the delegation procedure by asking for a certificate
+                signing request from the server. The server answers with a
+                certificate signing request which includes the public key
+                for the new delegated credentials. putProxy() has to be
+                called to finish the procedure.
+            </para>
+            <orderedlist>
+                <listitem><para>
+                    Generate a delegation
+                    ID by hashing the client DN and client VOMS attributes.
+                </para></listitem>
+                <listitem><para>
+                    Check if the delegation ID already exists in the
+                    <emphasis>storage-area</emphasis>.  If it does, check
+                    existing info (DN and VOMS attributes) against client info.
+                    Throw exception if they do not match, because then this is 
+                    the rare case of hash collision, i.e. two different clients 
+                    are mapped to the same delegation ID.
+                </para></listitem>
+                <listitem><para>
+                    Create a new private/public key-pair (see also <emphasis>Key
+                    Generation Semantics</emphasis>).
+                </para></listitem>
+                <listitem><para>
+                    Generate a new certificate request.
+                </para></listitem>
+                <listitem><para>
+                    Store private key and cert request in
+                    <emphasis>storage-cache-area</emphasis>, along with the
+                    requesting DN and VOMS attributes.
+                </para></listitem>
+            </orderedlist>
+         </wsdl:documentation>
+         <wsdl:input message="tns:getNewProxyReqRequest" name="getNewProxyReqRequest"/>
+         <wsdl:output message="tns:getNewProxyReqResponse" name="getNewProxyReqResponse"/>
+         <wsdl:fault message="tns:DelegationException" name="DelegationException">
+            <wsdl:documentation>
+                There were already credentials associated to the delegation ID.
+            </wsdl:documentation>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="putProxy" parameterOrder="delegationID proxy">
+         <wsdl:documentation>
+            <para>
+            Finishes the delegation procedure by sending the signed 
+            proxy certificate to the server.
+            </para>
+            <orderedlist>
+                <listitem><para>
+                    Check if a delegation ID was provided.  If not, generate a
+                    delegation id by hashing the client DN and client VOMS
+                    attributes.
+                </para></listitem>
+                <listitem><para>
+                    Check if the delegation ID already exists in the
+                    <emphasis>storage-area</emphasis>.  If it does, check
+                    existing info (DN and VOMS attributes) against client info.
+                    Throw exception if it does not match.
+                </para></listitem>
+                <listitem><para>
+                    Check, if client information matches proxy information.
+                </para></listitem>
+                <listitem><para>
+                    Check given proxy against private key of delegation ID in
+                    <emphasis>storage-cache-area</emphasis>.  If they do not
+                    match, throw exception.
+                </para></listitem>
+                <listitem><para>
+                    Store proxy in <emphasis>storage-area</emphasis>
+                    and clean up the <emphasis>storage-cache-area</emphasis>.
+                </para></listitem>
+            </orderedlist>
+         </wsdl:documentation>
+         <wsdl:input message="tns:putProxyRequest" name="putProxyRequest"/>
+         <wsdl:output message="tns:putProxyResponse" name="putProxyResponse"/>
+         <wsdl:fault message="tns:DelegationException" name="DelegationException">
+            <wsdl:documentation>
+                <para>
+                    There were no cached credentials associated to the delegation ID
+                    (neither <link linkend="Delegation.getNewProxyReq">
+                     getNewProxyReq()</link> nor 
+                     <link linkend="Delegation.renewProxyReq">
+                     renewProxyReq()</link> was called previously), 
+                    or the client's DN and VOMS attributes do not match the stored ones, 
+                    i.e. the client is not authorized.
+                </para>
+            </wsdl:documentation>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="renewProxyReq" parameterOrder="delegationID">
+         <wsdl:documentation>
+            <para>
+            Restarts the delegation procedure by asking for a certificate
+            signing request from the server for an already existing delegation ID.
+            The server answers with a certificate signing request which includes 
+            the public key for new delegated credentials. putProxy() has to be
+            called to finish the procedure.
+            </para>
+            <orderedlist>
+                <listitem><para>
+                    Check if a delegation ID was provided. If not, generate a delegation
+                    id by hashing the client DN and client VOMS attributes.
+                </para></listitem>
+                <listitem><para>
+                    Check if the delegation ID already exists in the
+                    <emphasis>storage-area</emphasis>. If it does
+                    not, then throw an exception.
+                </para></listitem>
+                <listitem><para>
+                    Check if the existing info (DN and VOMS attributes) against client info.
+                    Throw exception if they do not match.
+                </para></listitem>
+                <listitem><para>
+                    Create a new private/public key-pair (see also <emphasis>Key
+                    Generation Semantics</emphasis>).
+                </para></listitem>
+                <listitem><para>
+                    Generate a new certificate request.
+                </para></listitem>
+                <listitem><para>
+                    Store private key and cert request in
+                    <emphasis>storage-cache-area</emphasis>, along with the
+                    requesting DN and VOMS attributes.
+                </para></listitem>
+            </orderedlist>
+         </wsdl:documentation>
+         <wsdl:input message="tns:renewProxyReqRequest" name="renewProxyReqRequest"/>
+         <wsdl:output message="tns:renewProxyReqResponse" name="renewProxyReqResponse"/>
+         <wsdl:fault message="tns:DelegationException" name="DelegationException">
+            <wsdl:documentation>
+                There were no credentials associated to the delegation ID, or the
+                client's DN and VOMS attributes do not match the stored ones, i.e.
+                the client is not authorized.
+            </wsdl:documentation>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="getTerminationTime" parameterOrder="delegationID">
+         <wsdl:documentation>
+            Returns the termination (expiration) date and time of the credential,
+            associated with the given delegaion ID. If there was no delegation ID, 
+            then generate one by hashing the client DN and client VOMS attributes.
+         </wsdl:documentation>
+         <wsdl:input message="tns:getTerminationTimeRequest" name="getTerminationTimeRequest"/>
+         <wsdl:output message="tns:getTerminationTimeResponse" name="getTerminationTimeResponse"/>
+         <wsdl:fault message="tns:DelegationException" name="DelegationException">
+            <wsdl:documentation>
+                There were no credentials associated to the delegation ID, or the
+                client's DN and VOMS attributes do not match the stored ones, i.e.
+                the client is not authorized.
+            </wsdl:documentation>
+         </wsdl:fault>
+      </wsdl:operation>
+
+
+      <wsdl:operation name="destroy" parameterOrder="delegationID">
+         <wsdl:documentation>
+            Destroys the delegated credentials associated with the
+            given delegation ID immediately. If there was no delegation ID, 
+            then generate one by hashing the client DN and client VOMS attributes.
+         </wsdl:documentation>
+         <wsdl:input message="tns:destroyRequest" name="destroyRequest"/>
+         <wsdl:output message="tns:destroyResponse" name="destroyResponse"/>
+         <wsdl:fault message="tns:DelegationException" name="DelegationException">
+            <wsdl:documentation>
+                There were no credentials associated to the delegation ID, or the
+                client's DN and VOMS attributes do not match the stored ones, i.e.
+                the client is not authorized.
+            </wsdl:documentation>
+         </wsdl:fault>
+      </wsdl:operation>
+
+   </wsdl:portType>
+
+   <wsdl:binding name="DelegationSoapBinding" type="tns:Delegation">
+      <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+      <wsdl:operation name="getProxyReq">
+         <wsdlsoap:operation soapAction=""/>
+         <wsdl:input name="getProxyReqRequest">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:input>
+         <wsdl:output name="getProxyReqResponse">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:output>
+         <wsdl:fault name="DelegationException">
+            <wsdlsoap:fault name="DelegationException" use="literal"/>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="getNewProxyReq">
+         <wsdlsoap:operation soapAction=""/>
+         <wsdl:input name="getNewProxyReqRequest">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:input>
+         <wsdl:output name="getNewProxyReqResponse">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:output>
+         <wsdl:fault name="DelegationException">
+            <wsdlsoap:fault name="DelegationException" use="literal"/>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="renewProxyReq">
+         <wsdlsoap:operation soapAction=""/>
+         <wsdl:input name="renewProxyReqRequest">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:input>
+         <wsdl:output name="renewProxyReqResponse">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:output>
+         <wsdl:fault name="DelegationException">
+            <wsdlsoap:fault name="DelegationException" use="literal"/>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="putProxy">
+         <wsdlsoap:operation soapAction=""/>
+         <wsdl:input name="putProxyRequest">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:input>
+         <wsdl:output name="putProxyResponse">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:output>
+         <wsdl:fault name="DelegationException">
+            <wsdlsoap:fault name="DelegationException" use="literal"/>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="getTerminationTime">
+         <wsdlsoap:operation soapAction=""/>
+         <wsdl:input name="getTerminationTimeRequest">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:input>
+         <wsdl:output name="getTerminationTimeResponse">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:output>
+         <wsdl:fault name="DelegationException">
+            <wsdlsoap:fault name="DelegationException" use="literal"/>
+         </wsdl:fault>
+      </wsdl:operation>
+
+      <wsdl:operation name="destroy">
+         <wsdlsoap:operation soapAction=""/>
+         <wsdl:input name="destroyRequest">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:input>
+         <wsdl:output name="destroyResponse">
+            <wsdlsoap:body namespace="http://www.gridsite.org/namespaces/delegation-1" use="literal"/>
+         </wsdl:output>
+         <wsdl:fault name="DelegationException">
+            <wsdlsoap:fault name="DelegationException" use="literal"/>
+         </wsdl:fault>
+      </wsdl:operation>
+
+   </wsdl:binding>
+
+   <wsdl:service name="DelegationService">
+      <wsdl:port binding="tns:DelegationSoapBinding" name="gridsite-delegation">
+         <wsdlsoap:address location="https://localhost:8443/glite-security-delegation"/>
+      </wsdl:port>
+   </wsdl:service>
+
+</wsdl:definitions>

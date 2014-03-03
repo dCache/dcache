@@ -79,8 +79,11 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 
+import javax.sql.RowSet;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,6 +93,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.dcache.srm.request.RequestCredential;
@@ -235,11 +239,10 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
    @Override
    public RequestCredential getRequestCredential(String credentialName,
                                                  String role) throws DataAccessException {
-      if(role == null || role.equalsIgnoreCase("null")) {
-          return getRequestCredentialByCondition(SELECT_BY_NAME,credentialName);
-      }
-      else {
+      if (isRoleSpecified(role)) {
           return getRequestCredentialByCondition(SELECT_BY_NAME_AND_ROLE,credentialName,role);
+      } else {
+          return getRequestCredentialByCondition(SELECT_BY_NAME,credentialName);
       }
    }
 
@@ -328,5 +331,87 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                 stmt.setObject(i + 1, args[i]);
             }
             return  stmt;
+    }
+
+    private static boolean isRoleSpecified(String role)
+    {
+        return role != null && !role.equalsIgnoreCase("null");
+    }
+
+    private static final String COUNT_ROWS_MATCHING_NAME = "SELECT COUNT(1) FROM " +
+            requestCredentialTableName + " WHERE credentialname=?";
+
+    private static final String COUNT_ROWS_MATCHING_NAME_AND_ROLE =
+            "SELECT COUNT(1) FROM " + requestCredentialTableName +
+            " WHERE credentialname=? AND role=?";
+
+
+    @Override
+    public boolean hasRequestCredential(String name, String role)
+            throws IOException
+    {
+        if (isRoleSpecified(role)) {
+            return queryForInt(COUNT_ROWS_MATCHING_NAME_AND_ROLE, name, role) > 0;
+        } else {
+            return queryForInt(COUNT_ROWS_MATCHING_NAME, name) > 0;
+        }
+    }
+
+    public int queryForInt(String query, Object... args)
+    {
+        return jdbcTemplate.queryForObject(query, args, Integer.class);
+    }
+
+    private static final String DELETE_GIVEN_ID = "DELETE FROM " +
+            requestCredentialTableName + " WHERE id=?";
+
+    @Override
+    public boolean deleteRequestCredential(String name, String role)
+            throws IOException
+    {
+        boolean hasDeletedSomething = false;
+        boolean failedToDelete = false;
+
+        for (long id : idsMatching(name, role)) {
+            File dir = new File(credentialsDirectory);
+            File credentialFile = new File(dir, String.valueOf(id));
+
+            if (!credentialFile.exists()) {
+                logger.warn("cannot find credential file to delete it: {}",
+                        credentialFile.getAbsolutePath());
+            }
+
+            if (credentialFile.delete()) {
+                jdbcTemplate.update(DELETE_GIVEN_ID, id);
+                hasDeletedSomething = true;
+            } else {
+                logger.error("cannot delete credential file: {}",
+                        credentialFile.getAbsolutePath());
+                failedToDelete = true;
+            }
+        }
+
+        if (failedToDelete) {
+            throw new IOException("Internal problem prevented credential destruction");
+        }
+
+        return hasDeletedSomething;
+    }
+
+    /**
+     * Provide a (possibly empty) Iterable of IDs that match the supplied
+     * name and role.  If role is null then any role will match.
+     */
+    private Iterable<Long> idsMatching(String name, String role)
+    {
+        if (isRoleSpecified(role)) {
+            return jdbcTemplate.queryForList("SELECT id FROM " +
+                    requestCredentialTableName + " WHERE credentialname=? " +
+                    "AND role=?", Long.class, name, role);
+        } else {
+            return jdbcTemplate.queryForList("SELECT id FROM " +
+                    requestCredentialTableName + " WHERE credentialname=?",
+                    Long.class, name);
+        }
     }
 }

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+jar_dir=$(cd $(dirname $0)/../share/srm/lib; pwd)
+
+conf_dir=$(cd $jar_dir/../conf;pwd)
+
+if [ "$1" = "-debug" ]; then
+    logbackDefn=-Dlogback.configurationFile=$conf_dir/logback-all.xml
+    shift
+fi
+
+CLASSPATH="$jar_dir/*" java -Dlog=${DELEGATION_LOG:-warn} \
+    -client \
+    -Djava.awt.headless=true \
+    -DwantLog4jSetup=n \
+    $logbackDefn \
+    -XX:+TieredCompilation \
+    -XX:TieredStopAtLevel=0 \
+    org.dcache.srm.DelegationShell "$@"
