@@ -72,6 +72,7 @@ package org.dcache.srm.server;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
 import org.glite.voms.PKIVerifier;
@@ -207,7 +208,6 @@ public class SRMServerV2 implements ISRM  {
     private static final Logger LOGGER = LoggerFactory.getLogger(SRMServerV2.class);
 
     private final SrmAuthorizer srmAuth;
-    private final PKIVerifier pkiVerifier;
     private final AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerCounters;
     private final RequestExecutionTimeGauges<Class<?>> srmServerGauges;
@@ -215,24 +215,16 @@ public class SRMServerV2 implements ISRM  {
     private final RequestLogger[] loggers =
             { new RequestExecutionTimeGaugeLogger(), new CounterLogger(), new AccessLogger() };
 
-    public SRMServerV2() throws RemoteException{
-        try {
-            srm = Axis.getSRM();
-            storage = Axis.getStorage();
-            Configuration config = Axis.getConfiguration();
-            srmAuth = new SrmAuthorizer(config.getAuthorization(),
-                    srm.getRequestCredentialStorage(),
-                    config.isClientDNSLookup());
-            // use default locations for cacerts and vomdsdir
-            pkiVerifier
-                    = GSSUtils.getPkiVerifier(null, null, MDC.getCopyOfContextMap());
-            srmServerCounters = srm.getSrmServerV2Counters();
-            srmServerGauges = srm.getSrmServerV2Gauges();
-        } catch (IOException e) {
-            throw new RemoteException("Server initialization failed: " + e.getMessage(), e);
-        } catch (CRLException | CertificateException e) {
-            throw new RemoteException("Server initialization failed: " + e, e);
-        }
+    public SRMServerV2()
+    {
+        srm = Axis.getSRM();
+        storage = Axis.getStorage();
+        Configuration config = Axis.getConfiguration();
+        srmAuth = new SrmAuthorizer(config.getAuthorization(),
+                srm.getRequestCredentialStorage(),
+                config.isClientDNSLookup());
+        srmServerCounters = srm.getSrmServerV2Counters();
+        srmServerGauges = srm.getSrmServerV2Gauges();
     }
 
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
@@ -268,10 +260,8 @@ public class SRMServerV2 implements ISRM  {
             RequestCredential requestCredential;
             try {
                 userCred          = srmAuth.getUserCredentials();
-                Collection<String> roles
-                    = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context,
-                        pkiVerifier);
-                String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
+                Iterable<String> roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+                String role = Iterables.getFirst(roles, null);
                 LOGGER.debug("role is {}", role);
                 requestCredential = srmAuth.getRequestCredential(userCred,role);
                 user              = srmAuth.getRequestUser(requestCredential,

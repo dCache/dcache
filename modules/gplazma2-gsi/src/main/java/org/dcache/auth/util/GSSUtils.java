@@ -8,6 +8,8 @@ import org.glite.voms.ac.ACValidator;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.gridforum.jgss.ExtendedGSSContext;
+import org.gridforum.jgss.ExtendedGSSCredential;
+import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.slf4j.MDC;
 
@@ -16,7 +18,7 @@ import java.io.IOException;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -104,14 +106,12 @@ public class GSSUtils {
      * VOMSValidator.
      */
     @SuppressWarnings("deprecation")
-    public static Collection<String> getFQANsFromGSSContext(
-                    ExtendedGSSContext gssContext, PKIVerifier pkiVerifier)
+    public static Iterable<String> getFQANsFromGSSContext(ExtendedGSSContext gssContext)
                     throws AuthorizationException {
         X509Certificate[] chain;
 
         try {
-            chain = (X509Certificate[])
-                         gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+            chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
         } catch (GSSException gsse) {
             throw new AuthorizationException(
                             "Could not extract certificate chain from context "
@@ -119,10 +119,32 @@ public class GSSUtils {
                                             + gsse.getCause());
         }
 
+        return extractFQANs(chain);
+    }
+
+    /**
+     * Return some iterable of FQANs for this credential.  If the credential
+     * type is unknown or has not FQANs then an empty iterable is returned.
+     */
+    public static Iterable<String> getFQANsFromGSSCredential(GSSCredential credential)
+            throws GSSException, AuthorizationException
+    {
+        X509Certificate[] chain = null;
+
+        if (credential instanceof ExtendedGSSCredential) {
+            chain = (X509Certificate[]) ((ExtendedGSSCredential)credential).inquireByOid(GSSConstants.X509_CERT_CHAIN);
+        }
+
+        return (chain == null) ? Collections.<String>emptyList() : extractFQANs(chain);
+    }
+
+    public static Iterable<String> extractFQANs(X509Certificate[] chain)
+            throws AuthorizationException
+    {
         try {
-            VOMSValidator validator
-                = new VOMSValidator(null, new ACValidator(getPkiVerifier
-                                      (null, null, MDC.getCopyOfContextMap())));
+            VOMSValidator validator = new VOMSValidator(null,
+                    new ACValidator(getPkiVerifier(null, null,
+                    MDC.getCopyOfContextMap())));
             validator.setClientChain(chain).parse();
             List<VOMSAttribute> listOfAttributes = validator.getVOMSAttributes();
             return getFQANSfromVOMSAttributes(listOfAttributes);

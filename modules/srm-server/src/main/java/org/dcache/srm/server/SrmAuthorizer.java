@@ -238,11 +238,11 @@ public class SrmAuthorizer
         }
     }
 
-    static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext,
-            PKIVerifier pkiVerifier) throws SRMAuthorizationException
+    static Iterable<String> getFQANsFromContext(ExtendedGSSContext gssContext)
+            throws SRMAuthorizationException
     {
         try {
-            return GSSUtils.getFQANsFromGSSContext(gssContext, pkiVerifier);
+            return GSSUtils.getFQANsFromGSSContext(gssContext);
         } catch (AuthorizationException ae) {
             log.error("Could not extract FQANs from context",ae);
             throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());
