@@ -82,6 +82,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm;
 
+import org.dcache.srm.v2_2.TStatusCode;
+
 /**
  * A Superclass of all SRM exceptions
  * SRMException.java, Mon May 27 10:32:35 2002
@@ -110,6 +112,9 @@ public class SRMException extends Exception {
     public SRMException(Throwable cause) {
         super(cause);
     }
-    
-    
+
+    public TStatusCode getStatusCode()
+    {
+        return TStatusCode.SRM_FAILURE;
+    }
 }

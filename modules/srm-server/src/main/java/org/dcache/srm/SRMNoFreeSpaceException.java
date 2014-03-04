@@ -90,6 +90,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm;
 
+import org.dcache.srm.v2_2.TStatusCode;
+
 /**
  *
  * @author  timur
@@ -121,5 +123,11 @@ public class SRMNoFreeSpaceException extends SRMException {
     
     public SRMNoFreeSpaceException(Throwable cause) {
         super(cause);
+    }
+
+    @Override
+    public TStatusCode getStatusCode()
+    {
+        return TStatusCode.SRM_NO_FREE_SPACE;
     }
 }

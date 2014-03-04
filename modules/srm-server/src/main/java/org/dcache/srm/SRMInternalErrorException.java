@@ -11,6 +11,8 @@
 
 package org.dcache.srm;
 
+import org.dcache.srm.v2_2.TStatusCode;
+
 public class SRMInternalErrorException extends SRMException {
 
     private static final long serialVersionUID = 2849298429677728615L;
@@ -29,8 +31,10 @@ public class SRMInternalErrorException extends SRMException {
     public SRMInternalErrorException(Throwable cause) {
         super(cause);
     }
+
+    @Override
+    public TStatusCode getStatusCode()
+    {
+        return TStatusCode.SRM_INTERNAL_ERROR;
+    }
 }
-
-
-
-// $Log: not supported by cvs2svn $

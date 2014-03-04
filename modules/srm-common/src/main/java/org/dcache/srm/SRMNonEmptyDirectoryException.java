@@ -1,5 +1,7 @@
 package org.dcache.srm;
 
+import org.dcache.srm.v2_2.TStatusCode;
+
 public class SRMNonEmptyDirectoryException extends SRMException
 {
     public SRMNonEmptyDirectoryException()
@@ -19,5 +21,11 @@ public class SRMNonEmptyDirectoryException extends SRMException
     public SRMNonEmptyDirectoryException(Throwable cause)
     {
         super(cause);
+    }
+
+    @Override
+    public TStatusCode getStatusCode()
+    {
+        return TStatusCode.SRM_NON_EMPTY_DIRECTORY;
     }
 }

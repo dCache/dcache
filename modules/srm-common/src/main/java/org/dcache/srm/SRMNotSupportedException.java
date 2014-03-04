@@ -1,5 +1,7 @@
 package org.dcache.srm;
 
+import org.dcache.srm.v2_2.TStatusCode;
+
 public class SRMNotSupportedException extends SRMException
 {
     public SRMNotSupportedException()
@@ -19,5 +21,11 @@ public class SRMNotSupportedException extends SRMException
     public SRMNotSupportedException(Throwable cause)
     {
         super(cause);
+    }
+
+    @Override
+    public TStatusCode getStatusCode()
+    {
+        return TStatusCode.SRM_NOT_SUPPORTED;
     }
 }

@@ -87,6 +87,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm;
 
+import org.dcache.srm.v2_2.TStatusCode;
+
 /**
  *
  * @author  timur
@@ -117,5 +119,11 @@ public class SRMAbortedException extends SRMException {
     
     public SRMAbortedException(Throwable cause) {
         super(cause);
+    }
+
+    @Override
+    public TStatusCode getStatusCode()
+    {
+        return TStatusCode.SRM_ABORTED;
     }
 }

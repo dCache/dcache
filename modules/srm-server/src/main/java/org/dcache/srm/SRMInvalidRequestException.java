@@ -90,6 +90,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm;
 
+import org.dcache.srm.v2_2.TStatusCode;
+
 /**
  *
  * @author  timur
@@ -120,5 +122,11 @@ public class SRMInvalidRequestException extends SRMException {
     
     public SRMInvalidRequestException(Throwable cause) {
         super(cause);
+    }
+
+    @Override
+    public TStatusCode getStatusCode()
+    {
+        return TStatusCode.SRM_INVALID_REQUEST;
     }
 }
