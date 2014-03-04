@@ -715,6 +715,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
                      inodes);
     }
 
+    @Test(expected = FileExistsChimeraFsException.class)
+    public void testLinkWithExistingName() throws Exception {
+
+        FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
+        _rootInode.create("aLink", 0, 0, 055);
+        _rootInode.createLink("aLink", 0, 0, 055, "../testDir".getBytes());
+    }
+
     @Test
     public void testResolveLinkOnPathToIdAbsolute() throws Exception {
 

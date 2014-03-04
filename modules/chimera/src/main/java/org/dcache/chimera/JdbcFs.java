@@ -232,12 +232,16 @@ public class JdbcFs implements FileSystemProvider {
             dbConnection.commit();
 
         } catch (SQLException se) {
-            _log.error("createLink ", se);
             try {
                 dbConnection.rollback();
             } catch (SQLException e) {
                 _log.error("createLink rollback ", e);
             }
+            String sqlState = se.getSQLState();
+            if (_sqlDriver.isDuplicatedKeyError(sqlState)) {
+                throw new FileExistsChimeraFsException();
+            }
+            _log.error("createLink ", se);
             throw new IOHimeraFsException(se.getMessage());
         } finally {
             tryToClose(dbConnection);
