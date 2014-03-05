@@ -299,7 +299,13 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         }
 
         public TMetaDataPathDetail getMetaDataPathDetail() {
+            if (metaDataPathDetail != null) {
                 return metaDataPathDetail;
+            }
+            TMetaDataPathDetail detail =  new TMetaDataPathDetail();
+            detail.setPath(getPath(surl));
+            detail.setStatus(getReturnStatus());
+            return detail;
         }
 
         public final TMetaDataPathDetail getMetaDataPathDetail(URI surl,
