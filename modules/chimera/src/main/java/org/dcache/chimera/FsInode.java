@@ -366,7 +366,7 @@ public class FsInode {
         boolean rc = false;
 
         try {
-            if (exists() && ((_stat.getMode() & UnixPermission.S_IFDIR) == UnixPermission.S_IFDIR)) {
+            if (exists() && ((_stat.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR)) {
                 rc = true;
             }
         } catch(ChimeraFsException ignore) {

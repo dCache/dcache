@@ -424,7 +424,7 @@ public class JdbcFs implements FileSystemProvider {
                     throw new FileNotFoundHimeraFsException("parent=" + parent.toString());
                 }
 
-                if ((parentStat.getMode() & UnixPermission.S_IFDIR) != UnixPermission.S_IFDIR) {
+                if ((parentStat.getMode() & UnixPermission.F_TYPE) != UnixPermission.S_IFDIR) {
                     throw new NotDirChimeraException(parent);
                 }
 
@@ -1765,7 +1765,7 @@ public class JdbcFs implements FileSystemProvider {
             dbConnection.setAutoCommit(false);
 
             Stat destStat = _sqlDriver.stat(dbConnection, destDir);
-            if ((destStat.getMode() & UnixPermission.S_IFDIR) == 0) {
+            if ((destStat.getMode() & UnixPermission.F_TYPE) != UnixPermission.S_IFDIR) {
                 throw new NotDirChimeraException();
             }
 

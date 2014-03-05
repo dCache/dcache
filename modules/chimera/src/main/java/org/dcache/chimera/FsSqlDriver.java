@@ -480,7 +480,7 @@ class FsSqlDriver {
              * if moving a directory, point '..' to the new parent
              */
             Stat stat = stat(dbConnection, srcInode);
-            if ( (stat.getMode() & UnixPermission.S_IFDIR) != 0) {
+            if ( (stat.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR) {
                 stParentMove = dbConnection.prepareStatement(sqlSetParent);
                 stParentMove.setString(1, destDir.toString());
                 stParentMove.setString(2, srcInode.toString());
