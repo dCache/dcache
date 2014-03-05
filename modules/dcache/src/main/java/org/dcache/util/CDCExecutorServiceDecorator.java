@@ -93,7 +93,7 @@ public class CDCExecutorServiceDecorator extends ForwardingExecutorService
         _delegate.execute(wrap(command));
     }
 
-    private Runnable wrap(final Runnable task)
+    protected Runnable wrap(final Runnable task)
     {
         final CDC cdc = new CDC();
         return new Runnable()
@@ -111,7 +111,7 @@ public class CDCExecutorServiceDecorator extends ForwardingExecutorService
         };
     }
 
-    private <T> Callable<T> wrap(final Callable<T> task)
+    protected <T> Callable<T> wrap(final Callable<T> task)
     {
         final CDC cdc = new CDC();
         return new Callable<T>() {
@@ -128,7 +128,7 @@ public class CDCExecutorServiceDecorator extends ForwardingExecutorService
         };
     }
 
-    private <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks)
+    protected <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks)
     {
         return Lists.newArrayList(transform(tasks, new Function<Callable<T>, Callable<T>>()
                 {
