@@ -1,7 +1,5 @@
 package org.dcache.pool.migration;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import statemap.TransitionUndefinedException;
 
 import java.io.PrintWriter;
@@ -32,12 +30,12 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
+import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.ReflectionUtils;
 import org.dcache.vehicles.FileAttributes;
 
 public class Task
 {
-    private final static Logger _log = LoggerFactory.getLogger(Job.class);
     private final static AtomicInteger _counter = new AtomicInteger();
 
     private final TaskContext _fsm;
@@ -296,7 +294,7 @@ public class Task
             initiateCopy(selectPool());
         } catch (NoSuchElementException e) {
             _target = null;
-            _executor.execute(new LoggingTask(new Runnable() {
+            _executor.execute(new FireAndForgetTask(new Runnable() {
                     @Override
                     public void run() {
                         synchronized (Task.this) {
@@ -364,7 +362,7 @@ public class Task
     /** FSM Action */
     void notifyCancelled()
     {
-        _executor.execute(new LoggingTask(new Runnable() {
+        _executor.execute(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -376,7 +374,7 @@ public class Task
     /** FSM Action */
     void fail(final String message)
     {
-        _executor.execute(new LoggingTask(new Runnable() {
+        _executor.execute(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -388,7 +386,7 @@ public class Task
     /** FSM Action */
     void failPermanently(final String message)
     {
-        _executor.execute(new LoggingTask(new Runnable() {
+        _executor.execute(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -400,7 +398,7 @@ public class Task
     /** FSM Action */
     void notifyCompleted()
     {
-        _executor.execute(new LoggingTask(new Runnable() {
+        _executor.execute(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -427,7 +425,7 @@ public class Task
                 }
             };
         _timerTask =
-            _executor.schedule(new LoggingTask(task),
+            _executor.schedule(new FireAndForgetTask(task),
                                delay, TimeUnit.MILLISECONDS);
     }
 
@@ -498,7 +496,7 @@ public class Task
                 ReflectionUtils.resolve(_fsm.getClass(), _prefix + name,
                                         parameterTypes);
             if (m != null) {
-                _executor.execute(new LoggingTask(new Runnable() {
+                _executor.execute(new FireAndForgetTask(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -540,28 +538,6 @@ public class Task
         public void noroute(CellPath path)
         {
             transition("noroute");
-        }
-    }
-
-    protected class LoggingTask implements Runnable
-    {
-        private final Runnable _inner;
-
-        public LoggingTask(Runnable r)
-        {
-            _inner = r;
-        }
-
-        @Override
-        public void run()
-        {
-            try {
-                _inner.run();
-            } catch (RuntimeException | Error e) {
-                Thread me = Thread.currentThread();
-                me.getUncaughtExceptionHandler().uncaughtException(me, e);
-                fail(e.getMessage());
-            }
         }
     }
 }

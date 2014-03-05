@@ -33,6 +33,7 @@ import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.expression.Expression;
 
 /**
@@ -107,7 +108,7 @@ public class Job
         _state = State.INITIALIZING;
 
         _refreshTask =
-            executor.scheduleWithFixedDelay(new LoggingTask(new Runnable() {
+            executor.scheduleWithFixedDelay(new FireAndForgetTask(new Runnable() {
                     @Override
                     public void run()
                     {
@@ -116,7 +117,7 @@ public class Job
                     }
                 }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
 
-        executor.submit(new LoggingTask(new Runnable() {
+        executor.submit(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -365,7 +366,7 @@ public class Job
                 break;
 
             case SLEEPING:
-                _context.getExecutor().schedule(new LoggingTask(new Runnable() {
+                _context.getExecutor().schedule(new FireAndForgetTask(new Runnable() {
                         @Override
                         public void run()
                         {
@@ -379,7 +380,7 @@ public class Job
                 break;
 
             case PAUSED:
-                _context.getExecutor().schedule(new LoggingTask(new Runnable() {
+                _context.getExecutor().schedule(new FireAndForgetTask(new Runnable() {
                         @Override
                         public void run()
                         {
@@ -756,26 +757,6 @@ public class Job
         symbols.put(MigrationModule.CONSTANT_TARGETS,
                     _definition.poolList.getPools().size());
         return expression.evaluateBoolean(symbols);
-    }
-
-    protected class LoggingTask implements Runnable
-    {
-        private final Runnable _inner;
-
-        public LoggingTask(Runnable r)
-        {
-            _inner = r;
-        }
-
-        @Override
-        public void run()
-        {
-            try {
-                _inner.run();
-            } catch (Exception e) {
-                _log.error(e.toString(), e);
-            }
-        }
     }
 
     protected class Error
