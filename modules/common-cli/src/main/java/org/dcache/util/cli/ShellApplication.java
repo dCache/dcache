@@ -182,6 +182,7 @@ public abstract class ShellApplication implements Closeable
                 String prompt = new ANSIBuffer().bold(getPrompt()).toString(isAnsiSupported);
                 String str = console.readLine(prompt);
                 if (str == null) {
+                    console.printNewline();
                     break;
                 }
                 execute(new Args(str));
