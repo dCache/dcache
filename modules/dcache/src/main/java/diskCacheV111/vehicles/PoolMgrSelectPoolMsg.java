@@ -7,6 +7,7 @@ import javax.annotation.Nonnull;
 import java.util.EnumSet;
 
 import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.util.FsPath;
 
 import org.dcache.vehicles.FileAttributes;
 
@@ -55,12 +56,12 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     public void setIoQueueName( String ioQueueName ){ _ioQueueName = ioQueueName ; }
     public String getIoQueueName(){ return _ioQueueName ; }
 
-    public String getPnfsPath() {
-        return _pnfsPath;
+    public FsPath getPnfsPath() {
+        return _pnfsPath != null ? new FsPath(_pnfsPath) : null;
     }
 
-    public void setPnfsPath(String pnfsPath) {
-        this._pnfsPath = pnfsPath;
+    public void setPnfsPath(FsPath pnfsPath) {
+        this._pnfsPath = pnfsPath.toString();
     }
 
     public void setLinkGroup(String linkGroup) {

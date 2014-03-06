@@ -31,6 +31,7 @@ import diskCacheV111.util.Base64;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DCapUrl;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -2130,7 +2131,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes, _protocolInfo, getPreallocated());
                 getPoolMessage.setIoQueueName(_ioQueueName );
                 if( _path != null ) {
-                    getPoolMessage.setPnfsPath(_path);
+                    getPoolMessage.setPnfsPath(new FsPath(_path));
                 }
             }else{
                 //
@@ -2281,6 +2282,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return ;
             }
 
+            poolMessage.setPnfsPath(new FsPath(_path));
             poolMessage.setId( _sessionId ) ;
 
             // current request is a initiator for the pool request

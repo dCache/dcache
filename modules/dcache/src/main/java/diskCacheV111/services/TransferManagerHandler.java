@@ -22,6 +22,7 @@ import java.util.EnumSet;
 
 import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -324,6 +325,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
         pnfsId = create.getPnfsId();
         pnfsIdString = pnfsId.toString();
         info.setPnfsId(pnfsId);
+        info.setStorageInfo(create.getFileAttributes().getStorageInfo());
         selectPool();
     }
 
@@ -342,6 +344,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
         //
         pnfsId = msg.getPnfsId();
         info.setPnfsId(pnfsId);
+        info.setStorageInfo(msg.getFileAttributes().getStorageInfo());
         pnfsIdString = pnfsId.toString();
         manager.persist(this);
         if (store) {
@@ -373,7 +376,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
         PoolMgrSelectPoolMsg request = store
                 ? new PoolMgrSelectWritePoolMsg(fileAttributes, protocol_info, (size == null) ? 0L : size)
                 : new PoolMgrSelectReadPoolMsg(fileAttributes, protocol_info, _readPoolSelectionContext);
-        request.setPnfsPath(pnfsPath);
+        request.setPnfsPath(new FsPath(pnfsPath));
         request.setSubject(transferRequest.getSubject());
         log.debug("PoolMgrSelectPoolMsg: " + request);
         setState(WAITING_FOR_POOL_INFO_STATE);
@@ -430,6 +433,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
                 pool,
                 protocol_info,
                 fileAttributes);
+        poolMessage.setPnfsPath(new FsPath(pnfsPath));
         poolMessage.setSubject(transferRequest.getSubject());
         if (manager.getIoQueueName() != null) {
             poolMessage.setIoQueueName(manager.getIoQueueName());

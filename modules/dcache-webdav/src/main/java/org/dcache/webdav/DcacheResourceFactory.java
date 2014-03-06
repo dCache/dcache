@@ -836,7 +836,7 @@ public class DcacheResourceFactory
                 new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
             Subject subject = getSubject();
             infoRemove.setSubject(subject);
-            infoRemove.setPath(path.toString());
+            infoRemove.setPath(path);
             infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
             _billingStub.send(infoRemove);
         } catch (NoRouteToCellException e) {

@@ -1,7 +1,9 @@
 package diskCacheV111.vehicles;
 
 import java.util.EnumSet;
+import java.util.Objects;
 
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.vehicles.FileAttributes;
@@ -20,6 +22,7 @@ public class PoolIoFileMessage extends PoolMessage {
     private int          _moverId;
     private String       _initiator = "<undefined>";
     private boolean      _forceSourceMode;
+    private String _pnfsPath;
 
     private static final long serialVersionUID = -6549886547049510754L;
 
@@ -79,6 +82,16 @@ public class PoolIoFileMessage extends PoolMessage {
 
     public String getInitiator() {
         return _initiator;
+    }
+
+    public FsPath getPnfsPath()
+    {
+        return _pnfsPath != null ? new FsPath(_pnfsPath) : null;
+    }
+
+    public void setPnfsPath(FsPath path)
+    {
+        this._pnfsPath = Objects.toString(path, null);
     }
 
     public FileAttributes getFileAttributes()

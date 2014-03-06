@@ -22,6 +22,7 @@ import javax.security.auth.Subject;
 import java.nio.channels.CompletionHandler;
 import java.util.Set;
 
+import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
@@ -131,6 +132,11 @@ public interface Mover<T extends ProtocolInfo>
      * Returns any known-good checksums obtained from the client.
      */
     Set<Checksum> getExpectedChecksums();
+
+    /**
+     * Returns the name space path of the file being transferred.
+     */
+    FsPath getPath();
 
     /**
      * Initiates the actual transfer phase. The operation is asynchronous.

@@ -129,7 +129,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
   public String toString()
   {
     StringBuilder sb = new StringBuilder() ;
-    sb.append(getVersionString()) ;
+    sb.append(getVersionString()).append(" ");
     sb.append(addr.getAddress().getHostAddress());
     sb.append(':').append(addr.getPort()) ;
 
