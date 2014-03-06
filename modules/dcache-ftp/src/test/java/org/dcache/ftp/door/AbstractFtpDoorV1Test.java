@@ -56,7 +56,8 @@ public class AbstractFtpDoorV1Test {
     public void setUp()
     {
         MockitoAnnotations.initMocks(this);
-        door._pathRoot = new FsPath("pathRoot");
+        door._userRootPath = new FsPath("pathRoot");
+        door._doorRootPath = new FsPath("pathRoot");
         door._cwd = "/cwd";
         door._pnfs = pnfs;
     }

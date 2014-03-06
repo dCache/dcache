@@ -648,7 +648,9 @@ public abstract class AbstractFtpDoorV1
     )
     protected TimeUnit _performanceMarkerPeriodUnit;
 
-    protected final int _spaceManagerTimeout = 5 * 60;
+    @Option(name = "root",
+            description = "Root path")
+    protected String _root;
 
     protected PortRange _passiveModePortRange;
     protected ServerSocketChannel _passiveModeServerSocket;
@@ -673,8 +675,9 @@ public abstract class AbstractFtpDoorV1
 
     protected Subject _subject;
     protected boolean _isUserReadOnly;
-    protected FsPath _pathRoot = new FsPath();
-    protected String _cwd = "/";    // Relative to _pathRoot
+    protected FsPath _userRootPath = new FsPath();
+    protected FsPath _doorRootPath = new FsPath();
+    protected String _cwd = "/";    // Relative to _doorRootPath
     protected FsPath _filepath; // Absolute filepath to the file to be renamed
     protected String _xferMode = "S";
     protected CellStub _billingStub;
@@ -1226,7 +1229,7 @@ public abstract class AbstractFtpDoorV1
          */
         _parallel = _defaultStreamsPerClient;
 
-	_origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, _remoteAddress.getAddress());
+        _origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, _remoteAddress.getAddress());
 
         _readRetryPolicy =
             new TransferRetryPolicy(_maxRetries, _retryWait * 1000,
@@ -1236,6 +1239,8 @@ public abstract class AbstractFtpDoorV1
                                     Long.MAX_VALUE, _poolTimeoutUnit.toMillis(_poolTimeout));
 
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
+
+        _doorRootPath = new FsPath(_root);
 
         reply("220 " + ftpDoorName + " door ready");
     }
@@ -1247,7 +1252,8 @@ public abstract class AbstractFtpDoorV1
         throws CacheException
     {
         LoginReply login = _loginStrategy.login(subject);
-        _subject = login.getSubject();
+
+        Subject mappedSubject = login.getSubject();
 
         /* The origin ought to be part of the subject sent to the
          * LoginStrategy, however due to the policy that
@@ -1256,26 +1262,44 @@ public abstract class AbstractFtpDoorV1
          * result. We copy the subject because it could be read-only
          * resulting in failure to add origin.
          */
+        mappedSubject = new Subject(false,
+                                    mappedSubject.getPrincipals(),
+                                    mappedSubject.getPublicCredentials(),
+                                    mappedSubject.getPrivateCredentials());
+        mappedSubject.getPrincipals().add(_origin);
 
-        _subject = new Subject(false,
-                               _subject.getPrincipals(),
-                               _subject.getPublicCredentials(),
-                               _subject.getPrivateCredentials());
-        _subject.getPrincipals().add(_origin);
-
+        boolean isUserReadOnly = false;
+        FsPath userRootPath = new FsPath();
+        FsPath userHomePath = new FsPath();
         for (LoginAttribute attribute: login.getLoginAttributes()) {
             if (attribute instanceof RootDirectory) {
-                _pathRoot = new FsPath(((RootDirectory) attribute).getRoot());
+                userRootPath = new FsPath(((RootDirectory) attribute).getRoot());
             } else if (attribute instanceof HomeDirectory) {
-                _cwd = ((HomeDirectory) attribute).getHome();
+                userHomePath = new FsPath(((HomeDirectory) attribute).getHome());
             } else if (attribute instanceof ReadOnly) {
-                _isUserReadOnly = ((ReadOnly) attribute).isReadOnly();
+                isUserReadOnly = ((ReadOnly) attribute).isReadOnly();
             }
         }
+        FsPath doorRootPath;
+        if (_root == null) {
+            doorRootPath = userRootPath;
+        } else {
+            doorRootPath = new FsPath(_root);
+            if (!userRootPath.startsWith(doorRootPath)) {
+                throw new PermissionDeniedCacheException("User's files are not visible through this FTP service.");
+            }
+        }
+        String cwd = doorRootPath.relativize(new FsPath(userRootPath, userHomePath)).toString();
 
         _pnfs = new PnfsHandler(new CellStub(_cellEndpoint, new CellPath(_pnfsManager), _pnfsTimeout, _pnfsTimeoutUnit));
-        _pnfs.setSubject(_subject);
+        _pnfs.setSubject(mappedSubject);
         _listSource = new ListDirectoryHandler(_pnfs);
+
+        _subject = mappedSubject;
+        _cwd = cwd;
+        _doorRootPath = doorRootPath;
+        _userRootPath = userRootPath;
+        _isUserReadOnly = isUserReadOnly;
     }
 
     public static final String hh_get_door_info = "[-binary]";
@@ -1775,13 +1799,16 @@ public abstract class AbstractFtpDoorV1
     //                                                                       //
 
 
-    private FsPath absolutePath(String path)
+    private FsPath absolutePath(String path) throws FTPCommandException
     {
         FsPath relativePath = new FsPath(_cwd);
         relativePath.add(path);
-        return new FsPath(_pathRoot, relativePath);
+        FsPath absolutePath = new FsPath(_doorRootPath, relativePath);
+        if (!absolutePath.startsWith(_userRootPath)) {
+            throw new FTPCommandException(550, "Permission denied");
+        }
+        return absolutePath;
     }
-
 
     public void ftp_rmd(String arg)
         throws FTPCommandException
@@ -1954,7 +1981,7 @@ public abstract class AbstractFtpDoorV1
         try {
             FsPath newcwd = absolutePath(arg);
             checkIsDirectory(newcwd);
-            _cwd = _pathRoot.relativize(newcwd).toString();
+            _cwd = _doorRootPath.relativize(newcwd).toString();
             reply("250 CWD command succcessful. New CWD is <" + _cwd + ">");
         } catch (NotDirCacheException e) {
             reply("550 Not a directory: " + arg);
@@ -3985,7 +4012,7 @@ public abstract class AbstractFtpDoorV1
         {
             String name = entry.getName();
             FsPath path = (dir == null) ? new FsPath(name) : new FsPath(dir, name);
-            _out.print(_pathRoot.relativize(path));
+            _out.print(_doorRootPath.relativize(path));
         }
     }
 }

@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -27,7 +28,10 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.util.X509Utils;
 import org.dcache.cells.Option;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.util.CertPaths;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
 
@@ -154,19 +158,21 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
                 (X509Certificate[]) extendedcontext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
             subject.getPublicCredentials().add(cf.generateCertPath(asList(chain)));
 
-            login(subject);
-
-            _user = arg;
-
-            reply("200 User " + arg + " logged in");
-        } catch (GSSException | CertificateException e) {
+            try {
+                login(subject);
+                _user = arg;
+                reply("200 User " + arg + " logged in");
+            } catch (PermissionDeniedCacheException e) {
+                LOGGER.warn("Login denied for {}: {}",
+                            X509Utils.getSubjectFromX509Chain(chain, false), e.getMessage());
+                println("530 Login denied");
+            } catch (CacheException e) {
+                LOGGER.error("Login failed for {}: {}",
+                             X509Utils.getSubjectFromX509Chain(chain, false), e.getMessage());
+                println("530 Login failed: " + e.getMessage());
+            }
+        } catch (GSSException | CertificateException | AuthenticationException e) {
             LOGGER.error("Failed to extract X509 chain: {}", e.toString());
-            println("530 Login failed: " + e.getMessage());
-        } catch (PermissionDeniedCacheException e) {
-            LOGGER.warn("Login denied for {}: {}", subject, e.getMessage());
-            println("530 Login incorrect");
-        } catch (CacheException e) {
-            LOGGER.error("Login failed for {}: {}", subject, e.getMessage());
             println("530 Login failed: " + e.getMessage());
         }
     }

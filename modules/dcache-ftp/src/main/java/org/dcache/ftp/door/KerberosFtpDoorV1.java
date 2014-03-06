@@ -149,7 +149,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
             reply("200 User " + arg + " logged in");
         } catch (PermissionDeniedCacheException e) {
             LOGGER.warn("Login denied for {}", subject);
-            println("530 Login incorrect");
+            println("530 Login denied");
         } catch (CacheException e) {
             LOGGER.error("Login failed for {}: {}", subject, e.getMessage());
             println("530 Login failed: " + e.getMessage());
