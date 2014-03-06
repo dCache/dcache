@@ -1072,6 +1072,29 @@ public final class Storage
 
         try {
             String protocol = door.getProtocolFamily();
+            if (protocol.equals("gsiftp") || protocol.equals("ftp") || protocol.equals("gkftp")) {
+                /* According to RFC 1738 an FTP URL is relative to the FTP server's initial
+                 * working directory, which in dCache is the user's home directory.
+                 *
+                 * The spec compliant way to make it absolute would be to prefix it with %2F,
+                 * but our own SRM client doesn't handle that correctly. globus-url-copy (and
+                 * tools build on top of the same code base) interpret the URL as an absolute URL -
+                 * that's not spec compliant either. See
+                 *
+                 *     https://bugzilla.mcs.anl.gov/globus/show_bug.cgi?id=3413
+                 *
+                 * for a report on this issue.
+                 *
+                 * Adding an extra slash at the front works with both clients, although
+                 * globus-url-copy sends a pathname with a double slash to the FTP door.
+                 * Although undefined in RFC 3659, the double slash sequence isn't illegal
+                 * and our FTP door collapses it to a single slash.
+                 *
+                 * Neither globus-url-copy nor srmcp interpret the extra slash according to
+                 * the spec and this code will not work with a client that is spec compliant.
+                 */
+                transferPath = "/" + transferPath;
+            }
             URI turl = isHostAndPortNeeded(protocol)
                     ? new URI(protocol, null, resolve(door), door.getPort(), transferPath, null, null)
                     : new URI(protocol, null, transferPath, null);
