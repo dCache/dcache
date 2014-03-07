@@ -8,10 +8,6 @@
             <field name="id" primary-key="true" null-value="exception">
                 <column name="id" jdbc-type="BIGINT"   />
             </field>
-            <field name="spaceReservationId">
-		<column name="spacereservationid" jdbc-type="VARCHAR"   />
-		<index name="remotetransfers_spacereservationid_idx" unique="false"/>
-            </field>
             <field name="pool">
 		<column name="poolname" length="32672" jdbc-type="VARCHAR"   />
 		<index name="remotetransfers_poolname_idx" unique="false"/>
@@ -48,10 +44,6 @@
         <class name="TransferManagerHandlerBackup" detachable="true" identity-type="application" table="remotetransfers_b">
             <field name="id" primary-key="true" null-value="exception">
                 <column name="id" jdbc-type="BIGINT"   />
-            </field>
-            <field name="spaceReservationId">
-		<column name="spacereservationid" jdbc-type="VARCHAR"   />
-		<index name="remotetransfers_b_spacereservationid_idx" unique="false"/>
             </field>
             <field name="pool">
 		<column name="poolname" length="32672" jdbc-type="VARCHAR"   />

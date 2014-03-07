@@ -1,6 +1,7 @@
 package org.dcache.srm.request;
 
 
+import com.google.common.collect.Iterables;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -168,7 +169,9 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                 t0=System.currentTimeMillis();
                         }
 
-                        if (SRM.getSRM().isFileBusy(surl)) {
+                        PutFileRequest request =
+                            Iterables.getFirst(SRM.getSRM().getActiveFileRequests(PutFileRequest.class, surl), null);
+                        if (request != null) {
                             // [SRM 2.2, 4.4.3]
                             //
                             // SRM_FILE_BUSY
@@ -176,13 +179,18 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                             //     client requests for a file which there is an active
                             //     srmPrepareToPut (no srmPutDone is yet called) request for.
                             try {
+                                FileMetaData fmd = getStorage().getFileMetaData(getUser(),
+                                                                                surl,
+                                                                                request.getFileId());
                                 metaDataPathDetail =
-                                        getMetaDataPathDetail(surl, 0, 0, 0, 0, parent.getLongFormat());
+                                        convertFileMetaDataToTMetaDataPathDetail(surl,
+                                                                                 fmd,
+                                                                                 parent.getLongFormat());
                             } catch (SRMInvalidPathException e) {
                                 metaDataPathDetail = new TMetaDataPathDetail();
-                                metaDataPathDetail.setPath(getPath(surl));
                                 metaDataPathDetail.setType(TFileType.FILE);
                             }
+                            metaDataPathDetail.setPath(getPath(surl));
                             metaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
                                     "The requested SURL is locked by an upload."));
                         } else {

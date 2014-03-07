@@ -284,7 +284,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         }
     }
 
-    public void abort() throws IllegalStateTransition
+    public void abort() throws IllegalStateTransition, SRMException
     {
         wlock();
         try {

@@ -143,7 +143,7 @@
                      ${spacemanager.expire-space-reservation.period},
                      '${spacemanager.expire-space-reservation.period.unit}')}" />
     <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
-    <property name="shouldReserveSpaceForNonSrmTransfers" value="${spacemanager.enable.reserve-space-for-non-srm-transfers}" />
+    <property name="allowUnreservedUploadsToLinkGroups" value="${spacemanager.enable.unreserved-uploads-to-linkgroups}" />
     <property name="shouldDeleteStoredFileRecord" value="false" />
     <property name="shouldCleanupExpiredSpaceFiles" value="true" />
     <property name="shouldReturnFlushedSpaceToReservation" value="true" />

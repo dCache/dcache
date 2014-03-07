@@ -22,7 +22,6 @@ public class TransferManagerHandlerBackup {
 	private int state;
 	private long id;
 	private Integer moverId;
-	private String spaceReservationId;
 	private long creationTime;
 	private long lifeTime;
 	private Long credentialId;
@@ -42,7 +41,6 @@ public class TransferManagerHandlerBackup {
 		locked       = handler.getLocked();
 		remoteUrl    = handler.getRemoteUrl();
 		moverId      = handler.getMoverId();
-		spaceReservationId = handler.getSpaceReservationId();
 		state        = handler.getState();
 		credentialId = handler.getCredentialId();
 

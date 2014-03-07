@@ -44,6 +44,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,6 +53,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -95,6 +97,8 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.vehicles.FileAttributes;
@@ -119,7 +123,7 @@ public final class SpaceManagerService
         private AccessLatency defaultAccessLatency;
 
         private boolean shouldDeleteStoredFileRecord;
-        private boolean shouldReserveSpaceForNonSrmTransfers;
+        private boolean allowUnreservedUploadsToLinkGroups;
         private boolean shouldReturnFlushedSpaceToReservation;
         private boolean shouldCleanupExpiredSpaceFiles;
         private boolean isSpaceManagerEnabled;
@@ -173,9 +177,9 @@ public final class SpaceManagerService
         }
 
         @Required
-        public void setShouldReserveSpaceForNonSrmTransfers(boolean shouldReserveSpaceForNonSrmTransfers)
+        public void setAllowUnreservedUploadsToLinkGroups(boolean allowUnreservedUploadsToLinkGroups)
         {
-                this.shouldReserveSpaceForNonSrmTransfers = shouldReserveSpaceForNonSrmTransfers;
+                this.allowUnreservedUploadsToLinkGroups = allowUnreservedUploadsToLinkGroups;
         }
 
         @Required
@@ -249,8 +253,8 @@ public final class SpaceManagerService
                                     + shouldDeleteStoredFileRecord);
                 printWriter.println("defaultLatencyForSpaceReservations="
                                             + defaultAccessLatency);
-                printWriter.println("shouldReserveSpaceForNonSrmTransfers="
-                                            + shouldReserveSpaceForNonSrmTransfers);
+                printWriter.println("allowUnreservedUploadsToLinkGroups="
+                                            + allowUnreservedUploadsToLinkGroups);
                 printWriter.println("shouldReturnFlushedSpaceToReservation="
                                             + shouldReturnFlushedSpaceToReservation);
         }
@@ -287,6 +291,38 @@ public final class SpaceManagerService
                         }
                 }
 
+                /* Remove file reservations for files no longer in the name space. Under normal
+                 * circumstances this should never be necessary, but since notifications from
+                 * PnfsManager about deleted files may be lost, we need to recover in some way.
+                 * We ought to do this with any kind of file reservation, but that would be rather
+                 * expensive. This code is currently limited to reservations in the TRANSFERRING
+                 * state: It is easy to miss the notification for such files if space manager
+                 * or some other critical component gets restarted while having active uploads.
+                 */
+                SpaceManagerDatabase.FileCriterion oldTransfers = db.files()
+                        .whereStateIsIn(FileState.TRANSFERRING)
+                        .whereCreationTimeIsBefore(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1));
+                final int maximumNumberFilesToLoadAtOnce = 1000;
+                for (File file: db.get(oldTransfers, maximumNumberFilesToLoadAtOnce)) {
+                    try {
+                        if (!isRegularFile(file)) {
+                            db.removeFile(file.getId());
+                        }
+                    } catch (TransientDataAccessException e) {
+                            LOGGER.warn("Transient data access failure while deleting expired file {}: {}",
+                                         file, e.getMessage());
+                    } catch (DataAccessException e) {
+                            LOGGER.error("Data access failure while deleting expired file {}: {}",
+                                         file, e.getMessage());
+                            break;
+                    } catch (TimeoutCacheException e) {
+                            LOGGER.error("Failed to delete file {}: {}", file.getPnfsId(), e.getMessage());
+                            break;
+                    } catch (CacheException e) {
+                            LOGGER.error("Failed to delete file {}: {}", file.getPnfsId(), e.getMessage());
+                    }
+                }
+
                 db.expire(db.spaces()
                                   .whereStateIsIn(SpaceState.RESERVED)
                                   .thatExpireBefore(System.currentTimeMillis()));
@@ -299,6 +335,16 @@ public final class SpaceManagerService
                 db.remove(db.spaces()
                                   .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
                                   .thatHaveNoFiles());
+        }
+
+        private boolean isRegularFile(File file) throws CacheException
+        {
+                try {
+                        FileAttributes fileAttributes = pnfs.getFileAttributes(file.getPnfsId(), EnumSet.of(FileAttribute.TYPE));
+                        return (fileAttributes.getFileType() == FileType.REGULAR);
+                } catch (FileNotFoundCacheException e) {
+                        return false;
+                }
         }
 
         @Transactional(rollbackFor = { CacheException.class })
@@ -1106,7 +1152,12 @@ public final class SpaceManagerService
                 LOGGER.trace("selectPool: file is not " +
                                      "found, found default space " +
                                      "token, calling insertFile()");
-                Space space = db.getSpace(Long.parseLong(defaultSpaceToken));
+                Space space;
+                try {
+                    space = db.getSpace(Long.parseLong(defaultSpaceToken));
+                } catch (EmptyResultDataAccessException | NumberFormatException e) {
+                    throw new IllegalArgumentException("No such space reservation: " + defaultSpaceToken);
+                }
                 LinkGroup linkGroup = db.getLinkGroup(space.getLinkGroupId());
                 String linkGroupName = linkGroup.getName();
                 selectWritePool.setLinkGroup(linkGroupName);
@@ -1114,15 +1165,23 @@ public final class SpaceManagerService
                 StorageInfo storageInfo = selectWritePool.getStorageInfo();
                 storageInfo.setKey("SpaceToken", Long.toString(space.getId()));
                 storageInfo.setKey("LinkGroup", linkGroupName);
-                fileAttributes.setAccessLatency(space.getAccessLatency());
-                fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
+                if (!fileAttributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
+                    fileAttributes.setAccessLatency(space.getAccessLatency());
+                } else if (fileAttributes.getAccessLatency() != space.getAccessLatency()) {
+                    throw new IllegalArgumentException("Access latency conflicts with access latency defined by space reservation.");
+                }
+                if (!fileAttributes.isDefined(FileAttribute.RETENTION_POLICY)) {
+                    fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
+                } else if (fileAttributes.getRetentionPolicy() != space.getRetentionPolicy()) {
+                    throw new IllegalArgumentException("Retention policy conflicts with retention policy defined by space reservation.");
+                }
 
                 if (space.getDescription() != null) {
                     storageInfo.setKey("SpaceTokenDescription", space.getDescription());
                 }
                 LOGGER.trace("selectPool: found linkGroup = {}, " +
                                      "forwarding message", linkGroupName);
-            } else if (shouldReserveSpaceForNonSrmTransfers && hasIdentity) {
+            } else if (allowUnreservedUploadsToLinkGroups && hasIdentity) {
                 LOGGER.trace("selectPool: file is " +
                                      "not found, no prior " +
                                      "reservations for this file");
@@ -1144,9 +1203,9 @@ public final class SpaceManagerService
                 LOGGER.trace("selectPool: file is " +
                                      "not found, no prior " +
                                      "reservations for this file " +
-                                     "shouldReserveSpaceForNonSrmTransfers={} " +
+                                     "allowUnreservedUploadsToLinkGroups={} " +
                                      "subject={}",
-                             shouldReserveSpaceForNonSrmTransfers,
+                             allowUnreservedUploadsToLinkGroups,
                              subject.getPrincipals());
             }
         }
@@ -1171,16 +1230,14 @@ public final class SpaceManagerService
         }
 
         private void getSpaceMetaData(GetSpaceMetaData gsmd) throws IllegalArgumentException {
-                long[] tokens = gsmd.getSpaceTokens();
+                String[] tokens = gsmd.getSpaceTokens();
                 if(tokens == null) {
                         throw new IllegalArgumentException("null space tokens");
                 }
                 Space[] spaces = new Space[tokens.length];
                 for(int i=0;i<spaces.length; ++i){
-
-                        Space space = null;
                         try {
-                                space = db.getSpace(tokens[i]);
+                                Space space = db.getSpace(Long.parseLong(tokens[i]));
                                 // Expiration of space reservations is a background activity and is not immediate.
                                 // S2 tests however expect the state to be accurate at any point, hence we report
                                 // the state as EXPIRED even when the actual state has not been updated in the
@@ -1191,12 +1248,12 @@ public final class SpaceManagerService
                                                 space.setState(SpaceState.EXPIRED);
                                         }
                                 }
-                        }
-                        catch(EmptyResultDataAccessException e) {
+                                spaces[i] = space;
+                        } catch (NumberFormatException ignored) {
+                        } catch (EmptyResultDataAccessException e) {
                                 LOGGER.error("failed to find space reservation {}: {}",
                                              tokens[i], e.getMessage());
                         }
-                        spaces[i] = space;
                 }
                 gsmd.setSpaces(spaces);
         }

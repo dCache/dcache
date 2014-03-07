@@ -205,6 +205,7 @@ check -strong srm.service.poolmanager
 check -strong srm.service.poolmanager.timeout
 check -strong srm.service.poolmanager.timeout.unit
 
+check -strong srm.service.billing
 
 check -strong srm.enable.advisory-delete
 check -strong srm.enable.client-dns-lookup
@@ -214,8 +215,6 @@ check -strong srm.enable.overwrite-by-default
 check -strong srm.enable.pin-online-files
 check -strong srm.enable.recursive-directory-creation
 check -strong srm.enable.space-reservation
-check -strong srm.enable.space-reservation.implicit
-check -strong srm.enable.space-reservation.strict
 
 check -strong srm.user.credentials.directory
 
@@ -242,7 +241,6 @@ check -strong dcache.paths.share
 # disabled.
 #
 define env srmSpaceManagerOff.exe endExe
-  set env srm.enable.space-reservation.implicit false
   set env srm.enable.space-reservation.strict false
   set env srm.enable.space-reservation false
 endExe

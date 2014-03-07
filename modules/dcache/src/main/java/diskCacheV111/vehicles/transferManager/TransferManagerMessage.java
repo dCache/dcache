@@ -32,22 +32,9 @@ public abstract class TransferManagerMessage extends Message {
             String remoteUrl,
             boolean store,
             Long remoteCredentialId) {
-        this(pnfsPath, remoteUrl, store, remoteCredentialId,null,false,null);
-    }
-
-    public TransferManagerMessage(
-            String pnfsPath,
-            String remoteUrl,
-            boolean store,
-            Long remoteCredentialId,
-            String spaceReservationId,boolean spaceReservationStrict,
-            Long size) {
         this.pnfsPath = pnfsPath;
         this.remoteUrl = remoteUrl;
         this.store = store;
-        this.spaceReservationId =  spaceReservationId;
-        this.spaceReservationStrict = spaceReservationStrict;
-        this.size = size;
         this.credentialId = remoteCredentialId;
     }
 

@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -23,6 +24,17 @@ public class PoolMgrSelectWritePoolMsg extends PoolMgrSelectPoolMsg
     /**
      * @param fileAttributes FileAttributes of the file to read
      * @param protocolInfo ProtocolInfo describe the transfer
+     */
+    public PoolMgrSelectWritePoolMsg(FileAttributes fileAttributes,
+                                     ProtocolInfo protocolInfo)
+    {
+        this(fileAttributes, protocolInfo,
+             fileAttributes.isDefined(FileAttribute.SIZE) ? fileAttributes.getSize() : 0);
+    }
+
+    /**
+     * @param fileAttributes FileAttributes of the file to read
+     * @param protocolInfo ProtocolInfo describe the transfer
      * @param preallocated Space in bytes preallocated to the file, or
      *                     zero if no space is preallocated
      */
@@ -30,7 +42,7 @@ public class PoolMgrSelectWritePoolMsg extends PoolMgrSelectPoolMsg
                                      ProtocolInfo protocolInfo,
                                      long preallocated)
     {
-	super(fileAttributes, protocolInfo);
+        super(fileAttributes, protocolInfo);
         _preallocated = preallocated;
     }
 

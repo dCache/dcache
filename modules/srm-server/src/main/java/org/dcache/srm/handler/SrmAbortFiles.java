@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
@@ -83,7 +84,7 @@ public class SrmAbortFiles
         } catch (SRMFileRequestNotFoundException | URISyntaxException e) {
             return new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
                     "SURL does match any existing file request associated with the request token");
-        } catch (IllegalStateTransition e) {
+        } catch (SRMException | IllegalStateTransition e) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
         }
     }

@@ -100,9 +100,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
     private long id;
     private Integer moverId;
     private IpProtocolInfo protocol_info;
-    private String spaceReservationId;
-    private transient Long size;
-    private transient boolean space_reservation_strict;
     private long creationTime;
     private long lifeTime;
     private Long credentialId;
@@ -157,9 +154,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
         } catch (Exception e) {
             log.error("starting tlog failed :", e);
         }
-        this.spaceReservationId = transferRequest.getSpaceReservationId();
-        this.space_reservation_strict = transferRequest.isSpaceReservationStrict();
-        this.size = transferRequest.getSize();
         manager.addActiveTransfer(id, this);
         setState(INITIAL_STATE);
         permissionHandler =
@@ -319,9 +313,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
         manager.persist(this);
 
         fileAttributes = create.getFileAttributes();
-        if (size != null) {
-            fileAttributes.setSize(size);
-        }
         pnfsId = create.getPnfsId();
         pnfsIdString = pnfsId.toString();
         info.setPnfsId(pnfsId);
@@ -374,7 +365,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
     {
         protocol_info = manager.getProtocolInfo(transferRequest);
         PoolMgrSelectPoolMsg request = store
-                ? new PoolMgrSelectWritePoolMsg(fileAttributes, protocol_info, (size == null) ? 0L : size)
+                ? new PoolMgrSelectWritePoolMsg(fileAttributes, protocol_info)
                 : new PoolMgrSelectReadPoolMsg(fileAttributes, protocol_info, _readPoolSelectionContext);
         request.setPnfsPath(new FsPath(pnfsPath));
         request.setSubject(transferRequest.getSubject());
@@ -427,8 +418,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
                 ? new PoolAcceptFileMessage(
                 pool,
                 protocol_info,
-                fileAttributes,
-                (size == null) ? 0L : size)
+                fileAttributes)
                 : new PoolDeliverFileMessage(
                 pool,
                 protocol_info,
@@ -878,11 +868,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
     public Integer getMoverId()
     {
         return moverId;
-    }
-
-    public String getSpaceReservationId()
-    {
-        return spaceReservationId;
     }
 
     public long getCreationTime()

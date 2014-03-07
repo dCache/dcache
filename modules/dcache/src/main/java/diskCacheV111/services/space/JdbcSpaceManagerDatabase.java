@@ -1147,5 +1147,12 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             addClause("expirationtime < ?", millis);
             return this;
         }
+
+        @Override
+        public FileCriterion whereCreationTimeIsBefore(long millis)
+        {
+            addClause("creationtime < ?", millis);
+            return this;
+        }
     }
 }

@@ -14,7 +14,7 @@ check -strong spacemanager.db.connections.min
 check -strong spacemanager.db.connections.max
 check -strong spacemanager.limits.threads
 check -strong spacemanager.default-access-latency
-check -strong spacemanager.enable.reserve-space-for-non-srm-transfers
+check -strong spacemanager.enable.unreserved-uploads-to-linkgroups
 check spacemanager.authz.link-group-file-name
 check -strong spacemanager.enable.space-reservation
 check -strong spacemanager.service.poolmanager

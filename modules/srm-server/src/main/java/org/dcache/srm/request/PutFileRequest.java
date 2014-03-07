@@ -66,6 +66,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,23 +76,17 @@ import org.springframework.dao.DataAccessException;
 import javax.annotation.Nullable;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.Objects;
 
 import diskCacheV111.srm.RequestFileStatus;
 
-import org.dcache.srm.FileMetaData;
-import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
-import org.dcache.srm.SrmReleaseSpaceCallback;
-import org.dcache.srm.SrmReserveSpaceCallback;
-import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
@@ -108,13 +104,12 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     private final Long size;
     private URI turl;
     private String fileId;
-    private String parentFileId;
-    private transient FileMetaData parentFmd;
-    private String spaceReservationId;
-    private boolean weReservedSpace;
-    private TAccessLatency accessLatency ;//null by default
-    private TRetentionPolicy retentionPolicy;//null default value
-    private boolean spaceMarkedAsBeingUsed;
+    @Nullable
+    private final String spaceReservationId;
+    @Nullable
+    private final TAccessLatency accessLatency;
+    @Nullable
+    private final TRetentionPolicy retentionPolicy;
 
     public PutFileRequest(long requestId,
             Long requestCredentalId,
@@ -156,12 +151,11 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             String SURL,
             @Nullable String TURL,
             @Nullable String fileId,
-            @Nullable String parentFileId,
             @Nullable String spaceReservationId,
             @Nullable Long size,
             @Nullable TRetentionPolicy retentionPolicy,
-            @Nullable TAccessLatency accessLatency
-            ) {
+            @Nullable TAccessLatency accessLatency)
+    {
         super(id,
               nextJobId,
               creationTime,
@@ -186,22 +180,28 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
             this.fileId = fileId;
         }
-
-        if(parentFileId != null && (!parentFileId.equalsIgnoreCase("null"))) {
-            this.parentFileId = parentFileId;
-        }
         this.spaceReservationId = spaceReservationId;
         this.size = size;
         this.accessLatency = accessLatency;
         this.retentionPolicy = retentionPolicy;
     }
 
+    @Nullable
     public final String getFileId() {
         rlock();
         try {
             return fileId;
         } finally {
             runlock();
+        }
+    }
+
+    public final void setFileId(String fileId) {
+        wlock();
+        try {
+            this.fileId = fileId;
+        } finally {
+            wunlock();
         }
     }
 
@@ -213,10 +213,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         } finally {
             runlock();
         }
-    }
-
-    private void setTurl(String turl_string) throws URISyntaxException {
-        setTurl(new URI(turl_string));
     }
 
     public final URI getSurl() {
@@ -335,9 +331,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             sb.append('\n').append("   AccessLatency: ").append(getAccessLatency());
             sb.append('\n').append("   RetentionPolicy: ").append(getRetentionPolicy());
             sb.append('\n').append("   spaceReservation: ").append(getSpaceReservationId());
-            sb.append('\n').append("   isReservedByUs: ").append(isWeReservedSpace());
-            sb.append('\n').append("   isSpaceMarkedAsBeingUsed: ").
-                    append(isSpaceMarkedAsBeingUsed());
             sb.append('\n').append("   status code:").append(getStatusCode());
             sb.append('\n').append("   error message:").append(getErrorMessage());
             sb.append('\n').append("   History of State Transitions: \n");
@@ -350,7 +343,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     {
         addDebugHistoryEvent("run method is executed");
         try {
-            if (getFileId() == null && getParentFileId() == null) {
+            if (getFileId() == null) {
                 // [SRM 2.2, 5.5.2, t)] Upon srmPrepareToPut, SURL entry is inserted to the name space, and any
                 // methods that access the SURL such as srmLs, srmBringOnline and srmPrepareToGet must return
                 // SRM_FILE_BUSY at the file level. If another srmPrepareToPut or srmCopy is requested on
@@ -396,70 +389,17 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                     throw new FatalJobFailure("transfer protocols not supported");
                 }
 
-                //storage.getPutTurl(getUser(),path,request.protocols);
-                PutCallbacks callbacks = new PutCallbacks(this.getId());
                 setState(State.ASYNCWAIT, "Doing name space lookup.");
-                getStorage().prepareToPut(getUser(),getSurl(),callbacks,
-                        getContainerRequest().isOverwrite());
-                return;
-            }
-            long defaultSpaceReservationId=0;
-            if (getParentFmd().spaceTokens!=null) {
-                if (getParentFmd().spaceTokens.length>0) {
-                    defaultSpaceReservationId=getParentFmd().spaceTokens[0];
-                }
-            }
-            if (getSpaceReservationId()==null) {
-                if (defaultSpaceReservationId!=0) {
-                    if( getRetentionPolicy()==null&&getAccessLatency()==null) {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append(defaultSpaceReservationId);
-                        spaceReservationId=sb.toString();
-                    }
-                }
-            }
-
-            if (getConfiguration().isReserve_space_implicitely()&&getSpaceReservationId() == null) {
-                long remaining_lifetime;
-                setState(State.ASYNCWAIT, "Reserving space.");
-                remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
-                SrmReserveSpaceCallback callbacks = new PutReserveSpaceCallbacks(getId());
-                //
-                //the following code allows the inheritance of the
-                // retention policy from the directory metatada
-                //
-                if( getRetentionPolicy() == null && getParentFmd() != null && getParentFmd().retentionPolicyInfo != null ) {
-                    setRetentionPolicy(getParentFmd().retentionPolicyInfo.getRetentionPolicy());
-                }
-                //
-                //the following code allows the inheritance of the
-                // access latency from the directory metatada
-                //
-                if( getAccessLatency() == null && getParentFmd() != null && getParentFmd().retentionPolicyInfo != null ) {
-                    setAccessLatency(getParentFmd().retentionPolicyInfo.getAccessLatency());
-                }
-                logger.debug("reserving space, size="+(getSize() == null ? 1L : getSize()));
-                    getStorage().srmReserveSpace(
-                    getUser(),
-                    getSize() == null ? 1L : getSize(),
-                    remaining_lifetime,
-                    getRetentionPolicy() ==null ? null: getRetentionPolicy().getValue(),
-                    getAccessLatency() == null? null:getAccessLatency().getValue(),
-                        null,
-                    callbacks);
-                return;
-            }
-            if( getSpaceReservationId() != null &&
-            !   isSpaceMarkedAsBeingUsed()) {
-                setState(State.ASYNCWAIT, "Marking space as being used.");
-                long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
-                SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
-                    getStorage().srmMarkSpaceAsBeingUsed(getUser(),
-                                getSpaceReservationId(),getSurl(),
-                                getSize() == null ? 1 : getSize(),
-                                remaining_lifetime,
-                                getContainerRequest().isOverwrite(),
-                                    callbacks );
+                CheckedFuture<String, ? extends SRMException> future =
+                        getStorage().prepareToPut(
+                                getUser(),
+                                getSurl(),
+                                getSize(),
+                                Objects.toString(getAccessLatency(), null),
+                                Objects.toString(getRetentionPolicy(), null),
+                                getSpaceReservationId(),
+                                getContainerRequest().isOverwrite());
+                future.addListener(new PutCallbacks(getId(), future), MoreExecutors.sameThreadExecutor());
                 return;
             }
 
@@ -506,35 +446,14 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 logger.error(ire.toString());
             }
         }
-        SRMUser user;
-         try {
-             user = getUser();
-         }catch(SRMInvalidRequestException ire) {
-             logger.error(ire.toString());
-             return;
-         }
-        if(state.isFinal()) {
-            logger.debug("space reservation is "+getSpaceReservationId());
-
-            if ( getSpaceReservationId() != null &&
-                 isSpaceMarkedAsBeingUsed() ) {
-                SrmCancelUseOfSpaceCallbacks callbacks =
-                        new PutCancelUseOfSpaceCallbacks(getId());
-                getStorage().srmUnmarkSpaceAsBeingUsed(user,getSpaceReservationId(),getSurl(),
-                        callbacks);
-
+        try {
+            if (state == State.FAILED && getFileId() != null) {
+                String reason = getLastJobChange().getDescription();
+                getStorage().abortPut(getUser(), getFileId(), getSurl(), reason);
             }
-            if(getSpaceReservationId() != null && isWeReservedSpace()) {
-                logger.debug("storage.releaseSpace("+getSpaceReservationId()+"\"");
-                SrmReleaseSpaceCallback callbacks =
-                        new PutReleaseSpaceCallbacks(this.getId());
-                getStorage().srmReleaseSpace(  user,getSpaceReservationId(),
-                        null, //release all of space we reserved
-                        callbacks);
-
-            }
+        } catch (SRMException e) {
+            logger.error("Failed to abort put after failure: {}", e.getMessage());
         }
-
         super.stateChanged(oldState);
     }
 
@@ -542,13 +461,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     {
         PutRequest request = getContainerRequest();
         // do not synchronize on request, since it might cause deadlock
-        URI turl = getStorage().getPutTurl(request.getUser(), getSurl(), request.getProtocols(), request.getPreviousTurl());
+        URI turl = getStorage().getPutTurl(request.getUser(), getFileId(), request.getProtocols(), request.getPreviousTurl());
         request.setPreviousTurl(turl);
         setTurl(turl);
     }
 
     @Override
-    public void abort() throws IllegalStateTransition
+    public void abort() throws IllegalStateTransition, SRMException
     {
         wlock();
         try {
@@ -574,6 +493,9 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
              */
             State state = getState();
             if (!state.isFinal()) {
+                if (getFileId() != null) {
+                    getStorage().abortPut(getUser(), getFileId(), getSurl(), "Upload aborted by client.");
+                }
                 setState(State.CANCELED, "Request aborted.");
             } else if (state == State.DONE) {
                 throw new IllegalStateTransition("Put request completed successfully and cannot be aborted",
@@ -584,7 +506,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
     }
 
-    public TReturnStatus done(SRMUser user) throws SRMInternalErrorException
+    public TReturnStatus done(SRMUser user)
     {
         wlock();
         try {
@@ -592,15 +514,21 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             case READY:
             case TRANSFERRING:
                 try {
-                    if (getStorage().exists(user, getSurl())) {
-                        setState(State.DONE, "SrmPutDone called.");
-                        return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-                    } else {
-                        setStateAndStatusCode(State.FAILED, "SrmPutDone called when no file was uploaded.", TStatusCode.SRM_INVALID_PATH);
-                        return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "File does not exist.");
-                    }
+                    getStorage().putDone(user, getFileId(), getSurl(), getContainerRequest().isOverwrite());
+                    setState(State.DONE, "SrmPutDone called.");
+                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+                } catch (SRMAuthorizationException e) {
+                    setStateAndStatusCode(State.FAILED, e.getMessage(), TStatusCode.SRM_AUTHORIZATION_FAILURE);
+                    return new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+                } catch (SRMDuplicationException e) {
+                    setStateAndStatusCode(State.FAILED, e.getMessage(), TStatusCode.SRM_DUPLICATION_ERROR);
+                    return new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR, e.getMessage());
                 } catch (SRMInvalidPathException e) {
+                    setStateAndStatusCode(State.FAILED, e.getMessage(), TStatusCode.SRM_INVALID_PATH);
                     return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+                } catch (SRMException e) {
+                    setStateAndStatusCode(State.FAILED, e.getMessage(), TStatusCode.SRM_INTERNAL_ERROR);
+                    return new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
                 }
             case DONE:
                 return new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR, "File exists already.");
@@ -640,41 +568,16 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     /**
-     * Getter for property parentFileId.
-     * @return Value of property parentFileId.
-     */
-    public final String getParentFileId() {
-        rlock();
-        try {
-            return parentFileId;
-        } finally {
-            runlock();
-        }
-    }
-
-    /**
      * Getter for property spaceReservationId.
      * @return Value of property spaceReservationId.
      */
+    @Nullable
     public final String getSpaceReservationId() {
         rlock();
         try {
             return spaceReservationId;
         } finally {
             runlock();
-        }
-    }
-
-    /**
-     * Setter for property spaceReservationId.
-     * @param spaceReservationId New value of property spaceReservationId.
-     */
-    public final void setSpaceReservationId(String spaceReservationId) {
-        wlock();
-        try {
-            this.spaceReservationId = spaceReservationId;
-        } finally {
-            wunlock();
         }
     }
 
@@ -711,30 +614,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     /**
-     * @param fileId the fileId to set
-     */
-    public final void setFileId(String fileId) {
-        wlock();
-        try {
-            this.fileId = fileId;
-        } finally {
-            wunlock();
-        }
-    }
-
-    /**
-     * @param parentFileId the parentFileId to set
-     */
-    public final void setParentFileId(String parentFileId) {
-        wlock();
-        try {
-            this.parentFileId = parentFileId;
-        } finally {
-            wunlock();
-        }
-    }
-
-    /**
      * @return the aTurl
      */
     public final URI getTurl() {
@@ -758,590 +637,54 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
     }
 
-    /**
-     * @return the parentFmd
-     */
-    private FileMetaData getParentFmd() {
-        rlock();
-        try {
-            return parentFmd;
-        } finally {
-            runlock();
-        }
-    }
-
-    /**
-     * @param parentFmd the parentFmd to set
-     */
-    private void setParentFmd(FileMetaData parentFmd) {
-        wlock();
-        try {
-            this.parentFmd = parentFmd;
-        } finally {
-            wunlock();
-        }
-    }
-
-    private static class PutCallbacks implements PrepareToPutCallbacks {
-        private final long fileRequestJobId;
-
-        public PutCallbacks(long fileRequestJobId) {
-            this.fileRequestJobId = fileRequestJobId;
-        }
-
-        public PutFileRequest getPutFileRequest() throws SRMInvalidRequestException {
-            return Job.getJob(fileRequestJobId, PutFileRequest.class);
-        }
-
-        @Override
-        public void DuplicationError(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setStateAndStatusCode(
-                            State.FAILED,
-                            reason,
-                            TStatusCode.SRM_DUPLICATION_ERROR);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-            } catch(SRMInvalidRequestException e) {
-                logger.warn(e.toString());
-            }
-        }
-
-        @Override
-        public void Error(String error) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setState(State.FAILED, error);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-                logger.warn("PrepareToPut failed: {}", error);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void Exception( Exception e) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setState(State.FAILED, e.getMessage());
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-                logger.error("PrepareToPut failed",e);
-            } catch (SRMInvalidRequestException ire) {
-                logger.warn(ire.getMessage());
-            }
-        }
-
-        @Override
-        public void GetStorageInfoFailed(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setState(State.FAILED,reason);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-                logger.error("Name space lookup failed: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-
-        @Override
-        public void StorageInfoArrived(String fileId,FileMetaData fmd,String parentFileId, FileMetaData parentFmd) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                State state = fr.getState();
-                if(state == State.ASYNCWAIT) {
-                    logger.trace("Storage info arrived for file {}.", fr.getSurlString());
-                    fr.setFileId(fileId);
-                    fr.setParentFileId(parentFileId);
-                    fr.setParentFmd(parentFmd);
-
-                    Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                    try {
-                        scheduler.schedule(fr);
-                    } catch(Exception ie) {
-                        logger.error(ie.toString());
-                    }
-                }
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void Timeout() {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setState(State.FAILED, "Name space timeout.");
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-                logger.error("PrepareToPut timed out,");
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void InvalidPathError(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setStateAndStatusCode(
-                            State.FAILED,
-                            reason,
-                            TStatusCode.SRM_INVALID_PATH);
-                } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void AuthorizationError(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setStateAndStatusCode(
-                            State.FAILED,
-                            reason,
-                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-                logger.warn("Authorization error: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-    }
-
-    public static class PutReserveSpaceCallbacks implements SrmReserveSpaceCallback
+    private static class PutCallbacks implements Runnable
     {
+        private final CheckedFuture<String, ? extends SRMException> future;
         private final long fileRequestJobId;
 
-        public PutFileRequest getPutFileRequest()
-                throws SRMInvalidRequestException {
-            return Job.getJob(fileRequestJobId, PutFileRequest.class);
-        }
-
-
-        public PutReserveSpaceCallbacks(long fileRequestJobId) {
-            this.fileRequestJobId = fileRequestJobId;
-        }
-
-        @Override
-        public void failed(Exception e) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                String error = e.toString();
-                try {
-                    fr.setState(State.FAILED, error);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-                logger.error("Space reservation failed.", e);
-            } catch (SRMInvalidRequestException e1) {
-                logger.warn(e1.getMessage());
-            }
-        }
-
-        @Override
-        public void internalError(String reason)
+        public PutCallbacks(long fileRequestJobId, CheckedFuture<String, ? extends SRMException> future)
         {
-            failed(reason);
-        }
-
-        @Override
-        public void failed(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setState(State.FAILED, reason);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-                logger.error("Space reservation failed: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void noFreeSpace(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setStateAndStatusCode(
-                            State.FAILED,
-                            reason,
-                            TStatusCode.SRM_NO_FREE_SPACE);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-                logger.warn("Space reservation failed: "+ reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void success(String spaceReservationToken, long reservedSpaceSize) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                logger.debug("Space reserved (spaceReservationToken={}).", spaceReservationToken);
-                State state;
-                synchronized(fr) {
-                    state = fr.getState();
-                }
-                if(state == State.ASYNCWAIT) {
-                    fr.setWeReservedSpace(true);
-                    fr.setSpaceReservationId(spaceReservationToken);
-                    Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                    scheduler.schedule(fr);
-                }
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            } catch (InterruptedException e) {
-                logger.error(e.toString());
-            } catch (IllegalStateTransition e) {
-                logger.error(e.getMessage());
-            }
-        }
-    }
-
-    public static class PutReleaseSpaceCallbacks implements SrmReleaseSpaceCallback
-    {
-        private final long fileRequestJobId;
-
-        public PutFileRequest getPutFileRequest()
-                throws SRMInvalidRequestException {
-            return Job.getJob(fileRequestJobId, PutFileRequest.class);
-        }
-
-
-        public PutReleaseSpaceCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
+            this.future = future;
         }
 
         @Override
-        public void failed(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                logger.error("Releasing space failed: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void internalError(String reason)
+        public void run()
         {
-            failed(reason);
-        }
-
-        @Override
-        public void invalidRequest(String reason)
-        {
-            failed(reason);
-        }
-
-        @Override
-        public void success(String spaceReservationToken, long reservedSpaceSize) {
             try {
-                PutFileRequest fr = getPutFileRequest();
-                logger.debug("Space released, spaceReservationToken={}, remaining space={}", spaceReservationToken, reservedSpaceSize);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-    }
+                PutFileRequest fr = Job.getJob(fileRequestJobId, PutFileRequest.class);
 
-    public static class PutUseSpaceCallbacks implements SrmUseSpaceCallbacks {
-        private final long fileRequestJobId;
-
-        public PutFileRequest getPutFileRequest()
-                throws SRMInvalidRequestException {
-            return Job.getJob(fileRequestJobId, PutFileRequest.class);
-        }
-
-
-        public PutUseSpaceCallbacks(long fileRequestJobId) {
-            this.fileRequestJobId = fileRequestJobId;
-        }
-
-        @Override
-        public void SrmUseSpaceFailed( Exception e) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
                 try {
-                    fr.setState(State.FAILED, e.getMessage());
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
+                    String fileId = future.checkedGet();
+
+                    State state = fr.getState();
+                    if(state == State.ASYNCWAIT) {
+                        logger.trace("Storage info arrived for file {}.", fr.getSurlString());
+                        fr.setFileId(fileId);
+                        Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
+                        try {
+                            scheduler.schedule(fr);
+                        } catch(Exception ie) {
+                            logger.error(ie.toString());
+                        }
                     }
-                }
-                logger.error("Failed to mark space as being used space.", e);
-            } catch (SRMInvalidRequestException e1) {
-                logger.warn(e1.getMessage());
-            }
-        }
-
-        @Override
-        public void SrmUseSpaceFailed(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setState(State.FAILED,reason);
-                } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-                logger.error("Failed to mark space as being used space: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-        /**
-         * call this if space reservation exists, but has no free space
-         */
-        @Override
-        public void SrmNoFreeSpace(String reason){
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
+                } catch (SRMException e) {
                     fr.setStateAndStatusCode(
                             State.FAILED,
-                            reason,
-                            TStatusCode.SRM_NO_FREE_SPACE);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
+                            e.getMessage(),
+                            e.getStatusCode());
                 }
-                logger.warn("Failed to mark space as being used space: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        /**
-         * call this if space reservation exists, but has been released
-         */
-        @Override
-        public void SrmReleased(String reason){
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setStateAndStatusCode(
-                            State.FAILED,
-                            reason,
-                            TStatusCode.SRM_NO_FREE_SPACE);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-                logger.warn("Failed to mark space as being used space: {} ", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-
-        }
-
-        /**
-         * call this if space reservation exists, but has been released
-         */
-        @Override
-        public void SrmExpired(String reason){
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setStateAndStatusCode(
-                            State.FAILED,
-                            reason,
-                            TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
-                } catch (IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-                logger.warn("Using space failed: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-
-        }
-
-        /**
-         * call this if space reservation exists, but not authorized
-         */
-        @Override
-        public void SrmNotAuthorized(String reason){
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                try {
-                    fr.setStateAndStatusCode(
-                            State.FAILED,
-                            reason,
-                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                } catch(IllegalStateTransition ist) {
-                    if (!ist.getFromState().isFinal()) {
-                        logger.error(ist.getMessage());
-                    }
-                }
-
-                logger.warn("Using space failed: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-
-        }
-
-        @Override
-        public void SpaceUsed() {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                logger.debug("Space marked as being used.");
-                State state = fr.getState();
-                if(state == State.ASYNCWAIT) {
-                    fr.setSpaceMarkedAsBeingUsed(true);
-                    Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                    scheduler.schedule(fr);
+            } catch (IllegalStateTransition ist) {
+                if (!ist.getFromState().isFinal()) {
+                    logger.error(ist.getMessage());
                 }
             } catch (SRMInvalidRequestException e) {
                 logger.warn(e.getMessage());
-            } catch (InterruptedException e) {
-                logger.error(e.toString());
-            } catch (IllegalStateTransition e) {
-                logger.error(e.getMessage());
             }
         }
     }
 
-    public static class PutCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
-        private final long fileRequestJobId;
-
-        public PutFileRequest getPutFileRequest()
-                throws SRMInvalidRequestException {
-            return Job.getJob(fileRequestJobId, PutFileRequest.class);
-        }
-
-
-        public PutCancelUseOfSpaceCallbacks(long fileRequestJobId) {
-            this.fileRequestJobId = fileRequestJobId;
-        }
-
-        @Override
-        public void CancelUseOfSpaceFailed( Exception e) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                logger.error("Cancelling use of space failed.", e);
-            } catch (SRMInvalidRequestException e1) {
-                logger.warn(e1.getMessage());
-            }
-        }
-
-        @Override
-        public void CancelUseOfSpaceFailed(String reason) {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                logger.error("Cancelling use of space failed: {}", reason);
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-
-        @Override
-        public void UseOfSpaceSpaceCanceled() {
-            try {
-                PutFileRequest fr = getPutFileRequest();
-                logger.debug("Cancelled use of space.");
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            }
-        }
-    }
-
-    public final boolean isWeReservedSpace() {
-        rlock();
-        try {
-            return weReservedSpace;
-        } finally {
-            runlock();
-        }
-    }
-
-    public final void setWeReservedSpace(boolean weReservedSpace) {
-        wlock();
-        try {
-            this.weReservedSpace = weReservedSpace;
-        } finally {
-            wunlock();
-        }
-    }
-
-    public final boolean isSpaceMarkedAsBeingUsed() {
-        rlock();
-        try {
-            return spaceMarkedAsBeingUsed;
-        } finally {
-            runlock();
-        }
-    }
-
-    public final void setSpaceMarkedAsBeingUsed(boolean spaceMarkedAsBeingUsed) {
-        wlock();
-        try {
-            this.spaceMarkedAsBeingUsed = spaceMarkedAsBeingUsed;
-        } finally {
-            wunlock();
-        }
-    }
-
+    @Nullable
     public final TAccessLatency getAccessLatency() {
         rlock();
         try {
@@ -1351,30 +694,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
     }
 
-    public final void setAccessLatency(TAccessLatency accessLatency) {
-        wlock();
-        try {
-            this.accessLatency = accessLatency;
-        } finally {
-            wunlock();
-        }
-    }
-
+    @Nullable
     public final TRetentionPolicy getRetentionPolicy() {
         rlock();
         try {
             return retentionPolicy;
         } finally {
             runlock();
-        }
-    }
-
-    public final void setRetentionPolicy(TRetentionPolicy retentionPolicy) {
-        wlock();
-        try {
-            this.retentionPolicy = retentionPolicy;
-        } finally {
-            wunlock();
         }
     }
 
@@ -1399,22 +725,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         if(remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        String spaceToken =getSpaceReservationId();
-
-        if(!getConfiguration().isReserve_space_implicitely() ||
-           spaceToken == null ||
-           !isWeReservedSpace()) {
-            return extendLifetimeMillis(newLifetime);
-        }
-        newLifetime = extendLifetimeMillis(newLifetime);
-
-        if( remainingLifetime >= newLifetime) {
-            return remainingLifetime;
-        }
-        SRMUser user = getUser();
-        return getStorage().srmExtendReservationLifetime(user,spaceToken,newLifetime);
-
-
+        return extendLifetimeMillis(newLifetime);
     }
-
 }

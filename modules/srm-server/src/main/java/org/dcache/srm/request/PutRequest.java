@@ -278,6 +278,8 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
                     try {
                         file.abort();
                         hasSuccess = true;
+                    } catch (SRMException e) {
+                        hasFailure = true;
                     } catch (IllegalStateTransition e) {
                         if (e.getFromState() == State.DONE) {
                             hasCompleted = true;

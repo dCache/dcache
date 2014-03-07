@@ -63,7 +63,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
                                                       request.getSurlString(),
                                                       request.getTurlString(),
                                                       request.getFileId(),
-                                                      request.getParentFileId(),
+                                                      null, // parentFileId (unused)
                                                       request.getSpaceReservationId(),
                                                       request.getSize(),
                                                       (retentionPolicy!=null? retentionPolicy.getValue():null),
@@ -150,7 +150,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
                                                       request.getSurlString(),
                                                       request.getTurlString(),
                                                       request.getFileId(),
-                                                      request.getParentFileId(),
+                                                      null, // parentFileId (unused)
                                                       request.getSpaceReservationId(),
                                                       request.getSize(),
                                                       (retentionPolicy!=null? retentionPolicy.getValue():null),
@@ -223,7 +223,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
         SURL,
         TURL,
         FILEID,
-        PARENTFILEID,
         SPACERESERVATIONID,
         SIZE,
         retentionPolicy,

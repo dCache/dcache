@@ -236,8 +236,6 @@ public class Configuration {
     private boolean recursiveDirectoryCreation=false;
     private boolean advisoryDelete=false;
     private String nextRequestIdStorageTable = "srmnextrequestid";
-    private boolean reserve_space_implicitely;
-    private boolean space_reservation_strict;
     private long storage_info_update_period = TimeUnit.SECONDS.toMillis(30);
     private String qosPluginClass = null;
     private String qosConfigFile = null;
@@ -527,10 +525,6 @@ public class Configuration {
         put(document,root,"nextRequestIdStorageTable", nextRequestIdStorageTable,
                 "nextRequestIdStorageTable");
 
-        put(document,root,"reserve_space_implicitely",Boolean.toString(reserve_space_implicitely)," true or false");
-        put(document,root,
-                "space_reservation_strict",
-                Boolean.toString(space_reservation_strict)," true or false");
         put(document,root,
                 "storage_info_update_period",
                 Long.toString(storage_info_update_period),
@@ -732,12 +726,6 @@ public class Configuration {
             break;
         case "nextRequestIdStorageTable":
             nextRequestIdStorageTable = value;
-            break;
-        case "reserve_space_implicitely":
-            reserve_space_implicitely = Boolean.valueOf(value);
-            break;
-        case "space_reservation_strict":
-            space_reservation_strict = Boolean.valueOf(value);
             break;
         case "storage_info_update_period":
             storage_info_update_period = Long.parseLong(value);
@@ -1140,8 +1128,6 @@ public class Configuration {
             sb.append(parameters);
         }
 
-        sb.append("\n\treserve_space_implicitely=").append(this.reserve_space_implicitely);
-        sb.append("\n\tspace_reservation_strict=").append(this.space_reservation_strict);
         sb.append("\n\tstorage_info_update_period=").append(this.storage_info_update_period);
         sb.append("\n\tqosPluginClass=").append(this.qosPluginClass);
         sb.append("\n\tqosConfigFile=").append(this.qosConfigFile);
@@ -1882,40 +1868,6 @@ public class Configuration {
 
             break;
         }
-    }
-
-    /**
-     * Getter for property reserve_space_implicitely.
-     *
-     * @return Value of property reserve_space_implicitely.
-     */
-    public boolean isReserve_space_implicitely() {
-        return reserve_space_implicitely;
-    }
-
-    /**
-     * Setter for property reserve_space_implicitely.
-     *
-     * @param reserve_space_implicitely New value of property reserve_space_implicitely.
-     */
-    public void setReserve_space_implicitely(boolean reserve_space_implicitely) {
-        this.reserve_space_implicitely = reserve_space_implicitely;
-    }
-
-    /**
-     * Getter for property space_reservation_strict.
-     * @return Value of property space_reservation_strict.
-     */
-    public boolean isSpace_reservation_strict() {
-        return space_reservation_strict;
-    }
-
-    /**
-     * Setter for property space_reservation_strict.
-     * @param space_reservation_strict New value of property space_reservation_strict.
-     */
-    public void setSpace_reservation_strict(boolean space_reservation_strict) {
-        this.space_reservation_strict = space_reservation_strict;
     }
 
     /**

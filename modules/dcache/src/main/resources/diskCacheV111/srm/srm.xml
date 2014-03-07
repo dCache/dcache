@@ -70,6 +70,11 @@
     <property name="timeoutUnit" value="${srm.service.gplazma.timeout.unit}" />
   </bean>
 
+  <bean id="billing-stub" class="org.dcache.cells.CellStub">
+    <description>Billing communication stub</description>
+    <property name="destination" value="${srm.service.billing}"/>
+  </bean>
+
   <bean id="space-manager-stub" class="org.dcache.cells.CellStub">
     <description>Space manager communication stub</description>
     <property name="destination" value="${srm.service.spacemanager}" />
@@ -191,7 +196,7 @@
     <property name="transferManagerStub" ref="transfer-manager-stub"/>
     <property name="copyManagerStub" ref="copy-manager-stub"/>
     <property name="pinManagerStub" ref="pin-manager-stub"/>
-    <property name="gplazmaStub" ref="gplazma-stub"/>
+    <property name="billingStub" ref="billing-stub"/>
     <property name="isSpaceManagerEnabled"
               value="${dcache.enable.space-reservation}"/>
     <property name="loginBrokerUpdatePeriod"
@@ -255,10 +260,6 @@
     <property name="recursiveDirectoryCreation"
               value="${srm.enable.recursive-directory-creation}"/>
     <property name="advisoryDelete" value="${srm.enable.advisory-delete}"/>
-    <property name="reserve_space_implicitely"
-              value="${srm.enable.space-reservation.implicit}"/>
-    <property name="space_reservation_strict"
-              value="${srm.enable.space-reservation.strict}"/>
 
     <property name="getReqTQueueSize" value="${srm.request.get.thread-queue-size}"/>
     <property name="getThreadPoolSize" value="${srm.request.get.threads}"/>

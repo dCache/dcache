@@ -64,12 +64,6 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * SrmRequestHandler.java
- *
- * Created on January 10, 2003, 1:06 PM
- */
-
 package org.dcache.srm.request;
 
 import com.google.common.collect.HashMultimap;
@@ -368,7 +362,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
                 ! from_urls[i].getHost().equals(from_urls[0].getHost()) ||
                 ! (from_urls[i].getPort() == from_urls[0].getPort()) ) {
                     String err = "source url #"+i+" "+from_urls[i].getURL()+" and "+
-                    "source url #0"+from_urls[0].getURL()+" are not compartible";
+                    "source url #0"+from_urls[0].getURL()+" are not compatible";
                     logger.error(err);
                     throw new IOException(err);
                 }
@@ -378,7 +372,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
                 ! to_urls[i].getHost().equals(to_urls[0].getHost()) ||
                 ! (to_urls[i].getPort() == to_urls[0].getPort()) ) {
                     String err = "dest url #"+i+" "+to_urls[i].getURL()+" and "+
-                    "dest url #0"+to_urls[0].getURL()+" are not compartible";
+                    "dest url #0"+to_urls[0].getURL()+" are not compatible";
                     logger.error(err);
                     throw new IOException(err);
                 }

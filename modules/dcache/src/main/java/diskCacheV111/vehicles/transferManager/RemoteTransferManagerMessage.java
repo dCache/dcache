@@ -20,25 +20,6 @@ public class RemoteTransferManagerMessage extends TransferManagerMessage
         _protocolInfo = protocolInfo;
     }
 
-    public RemoteTransferManagerMessage(URI uri,
-                                        FsPath pnfsPath,
-                                        boolean store,
-                                        Long credentialId,
-                                        String spaceReservationId,
-                                        boolean spaceReservationStrict,
-                                        Long size,
-                                        IpProtocolInfo protocolInfo)
-    {
-        super(pnfsPath.toString(),
-              uri.toString(),
-              store,
-              credentialId,
-              spaceReservationId,
-              spaceReservationStrict,
-              size);
-        _protocolInfo = protocolInfo;
-    }
-
     public IpProtocolInfo getProtocolInfo()
     {
         return _protocolInfo;

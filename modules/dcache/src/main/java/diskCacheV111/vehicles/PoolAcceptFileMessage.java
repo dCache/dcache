@@ -7,12 +7,21 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
+import static org.dcache.namespace.FileAttribute.SIZE;
 
 public class PoolAcceptFileMessage extends PoolIoFileMessage
 {
     private static final long serialVersionUID = 7898737438685700742L;
 
     private final long _preallocated;
+
+    public PoolAcceptFileMessage(String pool,
+                                 ProtocolInfo protocolInfo,
+                                 FileAttributes fileAttributes)
+    {
+        this(pool, protocolInfo, fileAttributes,
+             fileAttributes.isDefined(SIZE) ? fileAttributes.getSize() : 0);
+    }
 
     public PoolAcceptFileMessage(String pool,
                                  ProtocolInfo protocolInfo,

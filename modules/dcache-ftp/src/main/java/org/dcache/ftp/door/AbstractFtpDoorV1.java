@@ -3021,6 +3021,9 @@ public abstract class AbstractFtpDoorV1
             case CacheException.NO_POOL_ONLINE:
                 transfer.abort(452, "File is unavailable", e);
                 break;
+            case CacheException.INVALID_ARGS:
+                transfer.abort(501, "Invalid request: " + e.getMessage(), e);
+                break;
             default:
                 transfer.abort(451, "Operation failed: " + e.getMessage(), e);
                 break;
@@ -3136,6 +3139,9 @@ public abstract class AbstractFtpDoorV1
                 break;
             case CacheException.NO_POOL_ONLINE:
                 transfer.abort(452, "No write pool available", e);
+                break;
+            case CacheException.INVALID_ARGS:
+                transfer.abort(501, "Invalid request: " + e.getMessage(), e);
                 break;
             default:
                 transfer.abort(451, "Operation failed: " + e.getMessage(), e);

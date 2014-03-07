@@ -77,6 +77,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -88,6 +89,7 @@ import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
 
 import org.dcache.commons.util.AtomicCounter;
+import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -147,7 +149,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                             int max_number_of_retries,
                             long max_update_period,
                             long lifetime,
-                            String description,
+                            @Nullable String description,
                             String client_host)
     {
          super(user ,
@@ -310,7 +312,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                     try {
                         file.abort();
                         hasSuccess = true;
-                    } catch (IllegalStateTransition e) {
+                    } catch (SRMException | IllegalStateTransition e) {
                         hasFailure = true;
                     }
                 }

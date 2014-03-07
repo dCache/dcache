@@ -10,6 +10,6 @@ package org.dcache.srm;
  * @author  timur
  */
 public interface CopyCallbacks {
-    public void copyComplete(FileMetaData fmd);
+    public void copyComplete();
     public void copyFailed(SRMException e);
 }

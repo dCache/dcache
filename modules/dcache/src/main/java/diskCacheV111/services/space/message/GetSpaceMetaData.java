@@ -18,20 +18,16 @@ import diskCacheV111.vehicles.Message;
  */
 public class GetSpaceMetaData extends Message{
     private static final long serialVersionUID = -7198244480807795469L;
-    private long[] spaceTokens;
+    private final String[] spaceTokens;
     private Space[] spaces;
-    /** Creates a new instance of Reserve */
-    public GetSpaceMetaData(long [] spaceTokens) {
+
+    public GetSpaceMetaData(String... spaceTokens) {
         this.spaceTokens = spaceTokens;
         setReplyRequired(true);
     }
 
-    public long[] getSpaceTokens() {
+    public String[] getSpaceTokens() {
         return spaceTokens;
-    }
-
-    public void setSpaceToken(long spaceTokens[]) {
-        this.spaceTokens = spaceTokens;
     }
 
     public Space[] getSpaces() {

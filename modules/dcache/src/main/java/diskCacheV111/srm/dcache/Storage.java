@@ -70,6 +70,8 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -83,7 +85,11 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
-import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
+import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.ietf.jgss.GSSCredential;
@@ -116,14 +122,17 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.pools.PoolCostInfo;
@@ -149,7 +158,11 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.ThreadManager;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.CopyManagerMessage;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.PnfsCancelUpload;
+import diskCacheV111.vehicles.PnfsCommitUpload;
+import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
@@ -160,6 +173,7 @@ import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
@@ -176,6 +190,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.commons.util.Strings;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
+import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
@@ -187,23 +202,22 @@ import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PinCallbacks;
-import org.dcache.srm.PrepareToPutCallbacks;
-import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.RemoveFileCallback;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
+import org.dcache.srm.SRMExceedAllocationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMNonEmptyDirectoryException;
 import org.dcache.srm.SRMNotSupportedException;
+import org.dcache.srm.SRMSpaceLifetimeExpiredException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallback;
 import org.dcache.srm.SrmReserveSpaceCallback;
-import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.RequestCredential;
@@ -218,6 +232,7 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.Args;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -230,9 +245,11 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.net.InetAddresses.isInetAddress;
+import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -275,7 +292,7 @@ public final class Storage
     private CellStub _transferManagerStub;
     private CellStub _pinManagerStub;
     private CellStub _loginBrokerStub;
-    private CellStub _gplazmaStub;
+    private CellStub _billingStub;
 
     private PnfsHandler _pnfs;
     private final PermissionHandler permissionHandler =
@@ -298,6 +315,58 @@ public final class Storage
     private Supplier<Multimap<String,LoginBrokerInfo>> loginBrokerInfo;
     private final Random rand = new Random();
     private int numDoorInRanSelection = 3;
+
+    /**
+     * A loading cache for looking up space reservations by space token.
+     *
+     * Used during  uploads to verify the availability of a space reservation. In case
+     * of stale data, a TURL may be handed out to the client even though the reservation
+     * doesn't exist or is full. In that case the upload to the TURL will fail. This is
+     * however a failure path to would exist in any case, as the reservation may expire
+     * after handing out the TURL.
+     */
+    private final LoadingCache<String,Optional<Space>> spaces =
+            CacheBuilder.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, MINUTES)
+                    .refreshAfterWrite(30, SECONDS)
+                    .build(
+                            new CacheLoader<String, Optional<Space>>()
+                            {
+                                @Override
+                                public Optional<Space> load(String token)
+                                        throws CacheException, NoRouteToCellException, InterruptedException
+                                {
+                                    Space space =
+                                            _spaceManagerStub.sendAndWait(new GetSpaceMetaData(token)).getSpaces()[0];
+                                    return Optional.fromNullable(space);
+                                }
+
+                                @Override
+                                public ListenableFuture<Optional<Space>> reload(String token, Optional<Space> oldValue)
+                                {
+                                    final SettableFuture<Optional<Space>> future = SettableFuture.create();
+                                    _spaceManagerStub.send(new GetSpaceMetaData(token), GetSpaceMetaData.class,
+                                                           new AbstractMessageCallback<GetSpaceMetaData>()
+                                                           {
+                                                               @Override
+                                                               public void success(GetSpaceMetaData message)
+                                                               {
+                                                                   future.set(Optional.fromNullable(message.getSpaces()[0]));
+                                                               }
+
+                                                               @Override
+                                                               public void failure(int rc, Object error)
+                                                               {
+                                                                   CacheException exception =
+                                                                           CacheExceptionFactory.exceptionOf(rc, Objects.toString(error, null));
+                                                                   future.setException(exception);
+                                                               }
+                                                           });
+                                    return future;
+                                }
+                            });
+
 
     public Storage()
     {
@@ -353,9 +422,9 @@ public final class Storage
     }
 
     @Required
-    public void setGplazmaStub(CellStub gplazmaStub)
+    public void setBillingStub(CellStub billingStub)
     {
-        _gplazmaStub = gplazmaStub;
+        _billingStub = billingStub;
     }
 
     @Required
@@ -905,35 +974,6 @@ public final class Storage
         return "ls-request-max-ready-requests="+value;
     }
 
-      public final static String fh_dir_creators_ls= " Syntax: dir creators ls [-l]  "+
-         "#will list all put companion waiting for the dir creation ";
-      public final static String hh_dir_creators_ls= " [-l] ";
-      public String ac_dir_creators_ls_$_0(Args args) {
-        try {
-            boolean longformat = args.hasOption("l");
-            StringBuilder sb = new StringBuilder();
-            PutCompanion.listDirectoriesWaitingForCreation(sb,longformat);
-            return sb.toString();
-         } catch(Throwable t) {
-            t.printStackTrace();
-            return t.toString();
-         }
-      }
-      public final static String fh_cancel_dir_creation= " Syntax:cancel dir creation <path>  "+
-         "#will fail companion waiting for the dir creation on <path> ";
-      public final static String hh_cancel_dir_creation= " <path>";
-      public String ac_cancel_dir_creation_$_1(Args args) {
-        try {
-            String pnfsPath = args.argv(0);
-            StringBuilder sb = new StringBuilder();
-            PutCompanion.failCreatorsForPath(pnfsPath,sb);
-            return sb.toString();
-         } catch(Throwable t) {
-            t.printStackTrace();
-            return t.toString();
-         }
-      }
-
       public final static String hh_print_srm_counters= "# prints the counters for all srm operations";
       public String ac_print_srm_counters_$_0(Args args) {
             return srm.getSrmServerV1Counters().toString()+
@@ -1037,14 +1077,19 @@ public final class Storage
     public URI getGetTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
         throws SRMException
     {
-        return getTurl((DcacheUser) user, getPath(surl), protocols, srmGetNotSupportedProtocols, previousTurl);
+        FsPath path = getPath(surl);
+        if (!verifyUserPathIsRootSubpath(path, user)) {
+            throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]",
+                                                              path, ((DcacheUser) user).getRoot()));
+        }
+        return getTurl((DcacheUser) user, path, protocols, srmGetNotSupportedProtocols, previousTurl);
     }
 
     @Override
-    public URI getPutTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
+    public URI getPutTurl(SRMUser user, String fileId, String[] protocols, URI previousTurl)
         throws SRMException
     {
-        return getTurl((DcacheUser) user, getPath(surl), protocols, srmPutNotSupportedProtocols, previousTurl);
+        return getTurl((DcacheUser) user, new FsPath(fileId), protocols, srmPutNotSupportedProtocols, previousTurl);
     }
 
     private static boolean isHostAndPortNeeded(String protocol) {
@@ -1054,11 +1099,6 @@ public final class Storage
     private URI getTurl(DcacheUser user, FsPath path, String[] includes, String[] excludes, URI previousTurl)
             throws SRMAuthorizationException, SRMInternalErrorException, SRMNotSupportedException
     {
-        if (!verifyUserPathIsRootSubpath(path, user)) {
-            throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]",
-                                                              path, user.getRoot()));
-        }
-
         LoginBrokerInfo door = null;
         if (previousTurl != null && previousTurl.getScheme().equals("dcap")) {
             door = findDoor(previousTurl);
@@ -1338,22 +1378,179 @@ public final class Storage
         }
 
     @Override
-    public void prepareToPut(SRMUser user,
-                             URI surl,
-                             PrepareToPutCallbacks callbacks,
-                             boolean overwrite)
+    public CheckedFuture<String, ? extends SRMException> prepareToPut(
+            final SRMUser user, URI surl,
+            Long size, String accessLatency, String retentionPolicy, String spaceToken,
+            boolean overwrite)
+    {
+        Subject subject = ((DcacheUser) user).getSubject();
+        try {
+            FsPath fullPath = getPath(surl);
+
+            if (!verifyUserPathIsRootSubpath(fullPath, user)) {
+                return immediateFailedCheckedFuture(new SRMAuthorizationException(
+                        String.format("Access denied: Path [%s] is outside user's root [%s]",
+                                      fullPath, ((DcacheUser) user).getRoot())));
+            }
+
+            if (spaceToken != null) {
+                if (!_isSpaceManagerEnabled) {
+                    return immediateFailedCheckedFuture(
+                            new SRMNotSupportedException(SPACEMANAGER_DISABLED_MESSAGE));
+                }
+
+                /* This check could and maybe should be done on the SRM side of AbstractStorageElement:
+                 * The targetSpaceToken is the same for all SURLs in an srmPrepareToPut request, and the
+                 * SRM_EXCEED_ALLOCATION should also be returned if the entire srmPrepareToPut request
+                 * is larger than available space in the reservation - that's a check we cannot possibly
+                 * to on an individual SURL.
+                 */
+                try {
+                    Optional<Space> optionalSpace = spaces.get(spaceToken);
+                    if (!optionalSpace.isPresent()) {
+                        return immediateFailedCheckedFuture(new SRMInvalidRequestException(
+                                "The space token " + spaceToken + " does not refer to an existing known space reservation."));
+                    }
+                    Space space = optionalSpace.get();
+                    if (space.getExpirationTime() != null && space.getExpirationTime() < System.currentTimeMillis()) {
+                        return immediateFailedCheckedFuture(new SRMSpaceLifetimeExpiredException(
+                                "Space reservation associated with the space token " + spaceToken + " is expired."));
+                    }
+                    if (size != null && space.getAvailableSpaceInBytes() < size) {
+                        return immediateFailedCheckedFuture(new SRMExceedAllocationException(
+                                "Space associated with the space token " + spaceToken + " is not enough to hold SURL."));
+                    }
+                } catch (ExecutionException e) {
+                    return immediateFailedCheckedFuture(new SRMException(
+                            "Failure while querying space reservation: " + e.getCause().getMessage()));
+                }
+            }
+
+            int uid = Ints.checkedCast(Subjects.getUid(subject));
+            int gid = Ints.checkedCast(Subjects.getPrimaryGid(subject));
+            AccessLatency al = (accessLatency != null) ? AccessLatency.valueOf(accessLatency) : null;
+            RetentionPolicy rp = (retentionPolicy != null) ? RetentionPolicy.valueOf(retentionPolicy) : null;
+            EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
+            if (overwrite) {
+                options.add(CreateOption.OVERWRITE_EXISTING);
+            }
+            if (config.isRecursiveDirectoryCreation()) {
+                options.add(CreateOption.CREATE_PARENTS);
+            }
+            PnfsCreateUploadPath msg =
+                    new PnfsCreateUploadPath(subject, fullPath,
+                                             uid, gid, NameSpaceProvider.DEFAULT, size,
+                                             al, rp, spaceToken,
+                                             options);
+
+            final SettableFuture<String> future = SettableFuture.create();
+            _pnfsStub.send(msg, PnfsCreateUploadPath.class,
+                           new AbstractMessageCallback<PnfsCreateUploadPath>()
+                           {
+                               @Override
+                               public void success(PnfsCreateUploadPath message)
+                               {
+                                   future.set(message.getUploadPath().toString());
+                               }
+
+                               @Override
+                               public void failure(int rc, Object error)
+                               {
+                                   String msg = Objects.toString(error, "");
+                                   switch (rc) {
+                                   case CacheException.PERMISSION_DENIED:
+                                       future.setException(new SRMAuthorizationException(msg));
+                                       break;
+                                   case CacheException.FILE_EXISTS:
+                                       future.setException(new SRMDuplicationException(msg));
+                                       break;
+                                   case CacheException.FILE_NOT_FOUND:
+                                       future.setException(new SRMInvalidPathException(msg));
+                                       break;
+                                   case CacheException.TIMEOUT:
+                                   default:
+                                       future.setException(new SRMInternalErrorException(msg));
+                                       break;
+                                   }
+                               }
+                           });
+            return Futures.makeChecked(future, new ToSRMException());
+        } catch (SRMInvalidPathException e) {
+            return immediateFailedCheckedFuture(e);
+        }
+    }
+
+    @Override
+    public void putDone(SRMUser user, String localTransferPath, URI surl, boolean overwrite) throws SRMException
     {
         try {
+            Subject subject = ((DcacheUser) user).getSubject();
+            FsPath fullPath = getPath(surl);
+            EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
+            if (overwrite) {
+                options.add(CreateOption.OVERWRITE_EXISTING);
+            }
+            PnfsCommitUpload msg =
+                    new PnfsCommitUpload(subject,
+                                         new FsPath(localTransferPath),
+                                         fullPath,
+                                         options,
+                                         EnumSet.of(SIZE, STORAGEINFO));
+            msg = _pnfsStub.sendAndWait(msg);
+
+            DoorRequestInfoMessage infoMsg =
+                    new DoorRequestInfoMessage(getCellAddress().toString());
+            infoMsg.setSubject(subject);
+            infoMsg.setPath(fullPath.toString());
+            infoMsg.setTransaction(CDC.getSession());
+            infoMsg.setPnfsId(msg.getPnfsId());
+            infoMsg.setResult(0, "");
+            infoMsg.setFileSize(msg.getFileAttributes().getSize());
+            infoMsg.setStorageInfo(msg.getFileAttributes().getStorageInfo());
+            infoMsg.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
+            _billingStub.send(infoMsg);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException(e.getMessage(), e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied.", e);
+        } catch (FileExistsCacheException e) {
+            throw new SRMDuplicationException(surl + " exists.", e);
+        } catch (CacheException e) {
+            throw new SRMInternalErrorException(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("Operation interrupted", e);
+        } catch (NoRouteToCellException e) {
+            _log.error(e.getMessage());
+        }
+    }
+
+    @Override
+    public void abortPut(SRMUser user, String localTransferPath, URI surl, String reason) throws SRMException
+    {
+        try {
+            Subject subject = ((DcacheUser) user).getSubject();
             FsPath actualPnfsPath = getPath(surl);
-            PutCompanion.PrepareToPutFile(((DcacheUser) user).getSubject(),
-                                          permissionHandler,
-                                          actualPnfsPath.toString(),
-                                          callbacks,
-                                          _pnfsStub,
-                                          config.isRecursiveDirectoryCreation(),
-                                          overwrite);
-        } catch (SRMInvalidPathException e) {
-            callbacks.InvalidPathError(e.getMessage());
+            PnfsCancelUpload msg =
+                    new PnfsCancelUpload(subject, new FsPath(localTransferPath), actualPnfsPath);
+            _pnfsStub.sendAndWait(msg);
+
+            DoorRequestInfoMessage infoMsg =
+                    new DoorRequestInfoMessage(getCellAddress().toString());
+            infoMsg.setSubject(subject);
+            infoMsg.setPath(actualPnfsPath.toString());
+            infoMsg.setTransaction(CDC.getSession());
+            infoMsg.setPnfsId(msg.getPnfsId());
+            infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, reason);
+            infoMsg.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
+            _billingStub.send(infoMsg);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException("Permission denied.", e);
+        } catch (CacheException e) {
+            throw new SRMInternalErrorException(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("Operation interrupted", e);
+        } catch (NoRouteToCellException e) {
+            _log.error(e.getMessage());
         }
     }
 
@@ -1387,14 +1584,25 @@ public final class Storage
         }
     }
 
-    @Override @Nonnull
-    public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read)
-        throws SRMException
+    @Nonnull
+    @Override
+    public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean checkReadPermissions)
+            throws SRMException
     {
-        _log.debug("getFileMetaData(" + surl + ")");
-        FsPath path = getPath(surl);
+        return getFileMetaData((DcacheUser) user, checkReadPermissions, getPath(surl));
+    }
+
+    @Nonnull
+    @Override
+    public FileMetaData getFileMetaData(SRMUser user, URI surl, String fileId) throws SRMException
+    {
+        return getFileMetaData((DcacheUser) user, false, new FsPath(fileId));
+    }
+
+    private FileMetaData getFileMetaData(DcacheUser user, boolean checkReadPermissions, FsPath path) throws SRMException
+    {
         PnfsHandler handler =
-            new PnfsHandler(_pnfs, ((DcacheUser) user).getSubject());
+            new PnfsHandler(_pnfs, user.getSubject());
         try {
             /* Fetch file attributes.
              */
@@ -1404,7 +1612,7 @@ public final class Storage
             requestedAttributes.addAll(PoolMonitorV5.getRequiredAttributesForFileLocality());
 
             Set<AccessMask> accessMask =
-                read
+                checkReadPermissions
                 ? EnumSet.of(AccessMask.READ_DATA)
                 : EnumSet.noneOf(AccessMask.class);
 
@@ -1469,11 +1677,11 @@ public final class Storage
     }
 
     @Override
-    public void localCopy(SRMUser user, URI fromSurl, URI toSurl)
+    public void localCopy(SRMUser user, URI fromSurl, String localTransferPath)
         throws SRMException
     {
         FsPath actualFromFilePath = getPath(fromSurl);
-        FsPath actualToFilePath = getPath(toSurl);
+        FsPath actualToFilePath = new FsPath(localTransferPath);
         long id = getNextMessageID();
         _log.debug("localCopy for user " + user +
                    "from actualFromFilePath to actualToFilePath");
@@ -1498,12 +1706,6 @@ public final class Storage
         } catch (InterruptedException e) {
             throw new SRMException("Request to CopyManager was interrupted", e);
         }
-    }
-
-    @Override
-    public void prepareToPutInReservedSpace(SRMUser user, String path, long size,
-        long spaceReservationToken, PrepareToPutInSpaceCallbacks callbacks) {
-        throw new UnsupportedOperationException("NotImplementedException");
     }
 
     @Override
@@ -1920,54 +2122,20 @@ public final class Storage
 
     }
 
-    /**
-     * @param user User ID
-     * @param remoteTURL
-     * @param surl
-     * @param remoteUser
-     * @param remoteCredentialId
-     * @param callbacks
-     * @throws SRMException
-     * @return copy handler id
-     */
     @Override
     public String getFromRemoteTURL(SRMUser user,
                                     URI remoteTURL,
-                                    URI surl,
-                                    SRMUser remoteUser,
-                                    Long remoteCredentialId,
-                                    String spaceReservationId,
-                                    long size,
-                                    CopyCallbacks callbacks)
-        throws SRMException
-    {
-        FsPath path = getPath(surl);
-        _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +path);
-        return performRemoteTransfer(user,remoteTURL,path,true,
-                remoteUser,
-                remoteCredentialId,
-                spaceReservationId,
-                size,
-                callbacks);
-
-    }
-
-    @Override
-    public String getFromRemoteTURL(SRMUser user,
-                                    URI remoteTURL,
-                                    URI surl,
+                                    String fileId,
                                     SRMUser remoteUser,
                                     Long remoteCredentialId,
                                     CopyCallbacks callbacks)
         throws SRMException
     {
-        FsPath path = getPath(surl);
-        _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +path);
+        FsPath path = new FsPath(fileId);
+        _log.debug("getFromRemoteTURL from {} to {}", remoteTURL, path);
         return performRemoteTransfer(user,remoteTURL,path,true,
                 remoteUser,
                 remoteCredentialId,
-                null,
-                null,
                 callbacks);
 
     }
@@ -1996,8 +2164,6 @@ public final class Storage
         return performRemoteTransfer(user,remoteTURL,path,false,
                 remoteUser,
                 remoteCredentialId,
-                null,
-                null,
                 callbacks);
 
 
@@ -2055,8 +2221,6 @@ public final class Storage
                                          boolean store,
                                          SRMUser remoteUser,
                                          Long remoteCredentialId,
-                                         String spaceReservationId,
-                                         Long size,
                                          CopyCallbacks callbacks)
         throws SRMException
     {
@@ -2115,33 +2279,19 @@ public final class Storage
             throw new SRMException("not implemented");
         }
 
-        RemoteTransferManagerMessage request;
-        if (store && spaceReservationId != null && size != null) {
-            // space reservation was performed for a file of known size
-            request =
-                new RemoteTransferManagerMessage(remoteTURL,
-                                                 actualFilePath,
-                                                 store,
-                                                 remoteCredentialId,
-                                                 spaceReservationId,
-                                                 config.isSpace_reservation_strict(),
-                                                 size,
-                                                 protocolInfo);
-        } else {
-            request =
+        RemoteTransferManagerMessage request =
                 new RemoteTransferManagerMessage(remoteTURL,
                                                  actualFilePath,
                                                  store,
                                                  remoteCredentialId,
                                                  protocolInfo);
-        }
         request.setSubject(subject);
         try {
             RemoteTransferManagerMessage reply =
                 _transferManagerStub.sendAndWait(request);
             long id = reply.getId();
             _log.debug("received first RemoteGsiftpTransferManagerMessage "
-                       + "reply from transfer manager, id ="+id);
+                               + "reply from transfer manager, id =" + id);
             TransferInfo info =
                 new TransferInfo(id, callbacks,
                                  _transferManagerStub.getDestinationPath());
@@ -2189,7 +2339,7 @@ public final class Storage
         }
 
         if (message instanceof TransferCompleteMessage ) {
-            info.callbacks.copyComplete(null);
+            info.callbacks.copyComplete();
             _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
         } else if (message instanceof TransferFailedMessage) {
@@ -2519,61 +2669,16 @@ public final class Storage
         if (_isSpaceManagerEnabled) {
             SrmReleaseSpaceCompanion.releaseSpace(((DcacheUser) user).getSubject(),
                     spaceToken, releaseSizeInBytes, callbacks, _spaceManagerStub);
+            spaces.invalidate(spaceToken);
         } else {
             callbacks.failed(SPACEMANAGER_DISABLED_MESSAGE);
-        }
-    }
-
-    @Override
-    public void srmMarkSpaceAsBeingUsed(SRMUser user,
-                                        String spaceToken,
-                                        URI surl,
-                                        long sizeInBytes,
-                                        long useLifetime,
-                                        boolean overwrite,
-                                        SrmUseSpaceCallbacks callbacks)
-    {
-        if (_isSpaceManagerEnabled) {
-            try {
-                SrmMarkSpaceAsBeingUsedCompanion.markSpace(((DcacheUser) user).getSubject(),
-                        Long.parseLong(spaceToken), getPath(surl).toString(),
-                        sizeInBytes, useLifetime, overwrite, callbacks,
-                        _spaceManagerStub);
-            } catch (SRMInvalidPathException e) {
-                callbacks.SrmUseSpaceFailed("Invalid path: " + e.getMessage());
-            } catch (NumberFormatException ignored){
-                callbacks.SrmUseSpaceFailed("invalid space token=" + spaceToken);
-            }
-        } else {
-            callbacks.SrmUseSpaceFailed(SPACEMANAGER_DISABLED_MESSAGE);
-        }
-    }
-
-    @Override
-    public void srmUnmarkSpaceAsBeingUsed(SRMUser user,
-                                          String spaceToken,
-                                          URI surl,
-                                          SrmCancelUseOfSpaceCallbacks callbacks)
-    {
-        if (_isSpaceManagerEnabled) {
-            try {
-                SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(((DcacheUser) user).getSubject(),
-                        Long.parseLong(spaceToken), getPath(surl).toString(),
-                        callbacks, _spaceManagerStub);
-            } catch (SRMInvalidPathException e) {
-                callbacks.CancelUseOfSpaceFailed("Invalid path: " + e.getMessage());
-            } catch (NumberFormatException ignored){
-                callbacks.CancelUseOfSpaceFailed("invalid space token="+spaceToken);
-            }
-        } else {
-            callbacks.CancelUseOfSpaceFailed(SPACEMANAGER_DISABLED_MESSAGE);
         }
     }
 
     private void guardSpaceManagerEnabled() throws SRMException
     {
         if (!_isSpaceManagerEnabled) {
-            throw new SRMException(SPACEMANAGER_DISABLED_MESSAGE);
+            throw new SRMNotSupportedException(SPACEMANAGER_DISABLED_MESSAGE);
         }
     }
 
@@ -2589,19 +2694,7 @@ public final class Storage
         throws SRMException
     {
         guardSpaceManagerEnabled();
-        long[] tokens = new long[spaceTokens.length];
-        for (int i = 0; i < spaceTokens.length; ++i) {
-            try {
-                tokens[i] = Long.parseLong(spaceTokens[i]);
-            } catch (NumberFormatException e) {
-                /* Space manager enumerates spaces starting at 0, so -1 will cause it to return
-                 * a null value below, which in turn will be reported as SRM_INVALID_REQUEST.
-                 */
-                tokens[i] = -1;
-            }
-        }
-
-        GetSpaceMetaData getSpaces = new GetSpaceMetaData(tokens);
+        GetSpaceMetaData getSpaces = new GetSpaceMetaData(spaceTokens);
         try {
             getSpaces = _spaceManagerStub.sendAndWait(getSpaces);
         } catch (TimeoutCacheException e) {
@@ -2810,6 +2903,7 @@ public final class Storage
             ExtendLifetime extendLifetime =
                 new ExtendLifetime(longSpaceToken, newReservationLifetime);
             extendLifetime = _spaceManagerStub.sendAndWait(extendLifetime);
+            spaces.invalidate(spaceToken);
             return extendLifetime.getNewLifetime();
         } catch (NumberFormatException e){
             throw new SRMException("Cannot parse space token: " +
@@ -2867,23 +2961,6 @@ public final class Storage
     @Override
     public String getStorageBackendVersion() {
         return VERSION.getVersion();
-    }
-
-    @Override
-    public boolean exists(SRMUser user, URI surl)
-            throws SRMInternalErrorException, SRMInvalidPathException
-    {
-        FsPath path = getPath(surl);
-        try {
-            return _pnfs.getPnfsIdByPath(path.toString()) != null;
-        } catch (FileNotFoundCacheException e) {
-            return false;
-        } catch (NotInTrashCacheException e) {
-            return false;
-        } catch (CacheException e) {
-            _log.error("Failed to find file by path : " + e.getMessage());
-            throw new SRMInternalErrorException("Failed to check existence of file: " + e.getMessage());
-        }
     }
 
     /**
@@ -2978,6 +3055,24 @@ public final class Storage
                 throw new RuntimeException("Request was interrupted", e);
             }
             throw new RuntimeException(error);
+        }
+    }
+
+    private static class ToSRMException implements Function<Exception, SRMException>
+    {
+        @Override
+        public SRMException apply(Exception from)
+        {
+            if (from instanceof InterruptedException) {
+                return new SRMInternalErrorException("SRM is shutting down.", from);
+            }
+            if (from instanceof CancellationException) {
+                return new SRMAbortedException("Request was aborted.", from);
+            }
+            if (from.getCause() instanceof SRMException) {
+                return (SRMException) from.getCause();
+            }
+            return new SRMInternalErrorException(from);
         }
     }
 }

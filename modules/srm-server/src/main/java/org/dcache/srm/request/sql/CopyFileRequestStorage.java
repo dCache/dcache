@@ -66,8 +66,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                   request.getLocal_from_path(),
                                   request.getLocal_to_path(),
                                   request.getSize(),//20
-                                  request.getFromFileId(),
-                                  request.getToFileId(),
+                                  null, // FromFileId (unused)
+                                  null, // ToFileId (unused)
                                   request.getRemoteRequestId(),
                                   request.getRemoteFileId(),
                                   request.getSpaceReservationId(),
@@ -168,8 +168,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                   request.getLocal_from_path(),
                                   request.getLocal_to_path(),
                                   request.getSize(),
-                                  request.getFromFileId(),
-                                  request.getToFileId(),
+                                  null, // FromFileId (unused)
+                                  null, // ToFileId (unused)
                                   request.getRemoteRequestId(),
                                   request.getRemoteFileId(),
                                   request.getSpaceReservationId(),

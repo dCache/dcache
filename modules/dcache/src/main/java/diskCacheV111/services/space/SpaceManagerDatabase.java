@@ -202,5 +202,7 @@ public interface SpaceManagerDatabase
         FileCriterion in(SpaceCriterion spaceCriterion);
 
         FileCriterion thatExpireBefore(long millis);
+
+        FileCriterion whereCreationTimeIsBefore(long millis);
     }
 }

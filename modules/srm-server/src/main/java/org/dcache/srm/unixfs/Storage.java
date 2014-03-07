@@ -14,6 +14,7 @@ package org.dcache.srm.unixfs;
  */
 
 
+import com.google.common.util.concurrent.CheckedFuture;
 import org.ietf.jgss.GSSCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,19 +41,17 @@ import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.PinCallbacks;
-import org.dcache.srm.PrepareToPutCallbacks;
-import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.ReleaseSpaceCallbacks;
 import org.dcache.srm.RemoveFileCallback;
 import org.dcache.srm.ReserveSpaceCallbacks;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallback;
 import org.dcache.srm.SrmReserveSpaceCallback;
-import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Configuration;
@@ -60,6 +60,9 @@ import org.dcache.srm.util.Permissions;
 import org.dcache.srm.util.ShellCommandExecuter;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TMetaDataSpace;
+
+import static com.google.common.util.concurrent.Futures.immediateCheckedFuture;
+import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
 
 //import java.io.*;
 //import java.net.URL;
@@ -185,20 +188,18 @@ public class Storage
 
   /** */
   @Override
-  public URI getPutTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
+  public URI getPutTurl(SRMUser user, String localTransferPath, String[] protocols, URI previousTurl)
       throws SRMException {
     /**@todo # Implement getPutTurl() method */
-
-    String filePath = getPath(surl);
 
       for (String protocol : protocols) {
           if (protocol.equals("gridftp") || protocol.equals("gsiftp")) {
               return URI
-                      .create("gsiftp://" + gridftphost + ":" + gridftpport + "/" + filePath);
+                      .create("gsiftp://" + gridftphost + ":" + gridftpport + "/" + localTransferPath);
           }
           if (protocol.equals("enstore")) {
               return URI
-                      .create("enstore://" + gridftphost + ":" + gridftpport + "/" + filePath);
+                      .create("enstore://" + gridftphost + ":" + gridftpport + "/" + localTransferPath);
           }
       }
     throw new SRMException("no sutable protocol found");
@@ -225,7 +226,7 @@ public class Storage
   }
 
   /** */
-  private void getFromRemoteTURL(SRMUser user, URI remoteTURL, URI surl, SRMUser remoteUser,
+  private void getFromRemoteTURL(SRMUser user, URI remoteTURL, String localTransferPath, SRMUser remoteUser,
     Long remoteCredentialId) throws SRMException {
           if(!(user instanceof UnixfsUser) ){
               throw new SRMException("user is not instance of UnixfsUser");
@@ -233,8 +234,7 @@ public class Storage
           }
           UnixfsUser duser = (UnixfsUser)user;
 
-          String path = getPath(surl);
-          try
+      try
           {
             /**@todo # Implement getFromRemoteTURL() method */
               if(!remoteTURL.getScheme().equalsIgnoreCase("gsiftp") &&
@@ -251,21 +251,21 @@ public class Storage
 
               try
               {
-		client.gridFTPRead(remoteTURL.getPath(), path, true, true);
+		client.gridFTPRead(remoteTURL.getPath(), localTransferPath, true, true);
               }
             finally {
                 client.close();
                 client = null;
             }
               // now file is copied, we need to change the owner/group to the user's
-              changeOwnership(path,duser.getUid(),duser.getGid());
+              changeOwnership(localTransferPath,duser.getUid(),duser.getGid());
 
 
           }
           catch(Exception e)
           {
               logger.error(e.toString());
-              throw new SRMException("remote turl "+remoteTURL+" to local file "+surl+" transfer failed",e);
+              throw new SRMException("remote turl "+remoteTURL+" to local file "+localTransferPath+" transfer failed",e);
           }
 
 
@@ -325,7 +325,7 @@ public class Storage
   @Override
   public void localCopy(SRMUser user,
                         URI fromSurl,
-                        URI toSurl)
+                        String localTransferPath)
       throws SRMException
   {
     /**@todo + localCopy() -- user; check path; set owner & group */
@@ -333,7 +333,7 @@ public class Storage
     String[] cmd = new String[3];
     cmd[0] = localCopyCommand;
     cmd[1] = getPath(fromSurl);
-    cmd[2] = getPath(toSurl);
+    cmd[2] = localTransferPath;
 
     Process proc;
 
@@ -461,7 +461,14 @@ public class Storage
     return _getFileMetaData(user, getPath(surl));
   }
 
-  /** */
+    @Nonnull
+    @Override
+    public FileMetaData getFileMetaData(SRMUser user, URI surl, String fileId) throws SRMException
+    {
+        return getFileMetaData(user, surl, false);
+    }
+
+    /** */
   private File _getFile(String fileId) {
     return new File(fileId);
   }
@@ -654,97 +661,55 @@ public class Storage
     return file.mkdir();
   }
 
-  /** */
   @Override
-  public void prepareToPut(SRMUser user, URI surl,
-                           PrepareToPutCallbacks callbacks,
-                           boolean overwrite )
+  public CheckedFuture<String, ? extends SRMException> prepareToPut(SRMUser user, URI surl,
+                                                                    Long size,
+                                                                    String accessLatency,
+                                                                    String retentionPolicy,
+                                                                    String spaceToken,
+                                                                    boolean overwrite)
   {
-   // the type of callback is already specified in the function declaration
-   // if( ! ( callbacks instanceof PrepareToPutCallbacks ) )
-   //   throw new java.lang.IllegalArgumentException(
-   //       "Method prepareToPut() has wrong callback argument type.");
-    String filePath;
-    try {
-      filePath = getPath(surl);
-    } catch (SRMInvalidPathException e) {
-      callbacks.InvalidPathError(e.getMessage());
-      return;
-    }
+      String filePath;
+      try {
+          filePath = getPath(surl);
+      } catch (SRMInvalidPathException e) {
+          return immediateFailedCheckedFuture(e);
+      }
 
-    String       parentPath;
-    File         file;
-
-    String       fileId;
-    FileMetaData fmd;
-
-    String parentFileId;
-    FileMetaData parentFmd;
-
-    String path = null;
-
-    try {
-      path   = filePath;           //for error report
-      file   = new File(filePath);
-
-      if( file.exists() ) {
-          if(overwrite) {
-                fmd    = _getFileMetaData( user, filePath );
-                fileId = filePath;//_getFileId( fmd );
-                parentFmd = null;
-                parentFileId = null;
-          } else {
-             String erStr = "file exists, can't overwrite";
-            callbacks.GetStorageInfoFailed( erStr );
-             return;
+      File file = new File(filePath);
+      if (file.exists()) {
+          if (!overwrite) {
+              return immediateFailedCheckedFuture(new SRMDuplicationException("file exists, can't overwrite."));
           }
       } else {
-        parentPath = file.getParent();  //for error report
-        path   = parentPath;
-        if(  _installPath(user,parentPath) ) {
-          fileId = null;
-          fmd = null; // ignored in callback
-          parentFmd = _getFileMetaData(user, parentPath);
-          parentFileId = parentPath;//_getFileId(parentFmd);
-        }else{
-          String erStr = "prepareToPut() can not get or create parent for the filePath="
-              +filePath +".";
-          callbacks.GetStorageInfoFailed( erStr );
-          return;
-        }
+          if (!_installPath(user, file.getParent()) ) {
+              return immediateFailedCheckedFuture(new SRMInternalErrorException(
+                      "prepareToPut() can not get or create parent for the filePath=" + filePath + "."));
+          }
       }
-    }
-    catch (Exception ex) {
-      logger.error(ex.toString());
-      String erStr = "prepareToPut() got exception for the filePath=" +path +".";
-      callbacks.GetStorageInfoFailed( erStr );
-      return;
-    }
 
-    logger.debug( "prepareToPut(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
-    callbacks.StorageInfoArrived(fileId, fmd,
-                                 parentFileId, parentFmd);
+      logger.debug( "prepareToPut(): {} ", filePath);
+      return immediateCheckedFuture(filePath);
   }
 
-  /**
-   * Not implemented.<br>
-   * This is a feature of SRM interface v2.0
-   * */
-  @Override
-  public void prepareToPutInReservedSpace(SRMUser user, String path, long size, long spaceReservationToken, PrepareToPutInSpaceCallbacks callbacks) {
-    /**@todo SRM v2.0 Implement prepareToPutInReservedSpace() */
-    if( ! ( callbacks instanceof PrepareToPutInSpaceCallbacks )  ) {
-        throw new IllegalArgumentException(
-                "Method prepareToPutInReservedSpace() has wrong callback argument type.");
+    @Override
+    public void putDone(SRMUser user, String localTransferPath, URI surl, boolean overwrite)
+    {
+        // Nothing to do
     }
 
-    Exception eex = new UnsupportedOperationException(
-        "Method prepareToPutInReservedSpace() not yet implemented, this is the feature of SRM interface v2.0.");
-    logger.error(eex.toString());
-    callbacks.Exception(eex);
-  }
+    @Override
+    public void abortPut(SRMUser user, String localTransferPath, URI surl, String reason)
+            throws SRMInternalErrorException
+    {
+        try {
+            Files.deleteIfExists(new File(localTransferPath).toPath());
+        } catch (IOException e) {
+            throw new SRMInternalErrorException(e.getMessage(), e);
+        }
+    }
 
-  /**
+    /**
    * Not implemented.<br>
    * This is a feature of SRM interface v2.0
    * */
@@ -794,31 +759,23 @@ public class Storage
   }
   private Map<String, Thread> copyThreads = new HashMap<>();
 
-  @Override
-  public String getFromRemoteTURL(SRMUser user, URI remoteTURL, URI surl, SRMUser remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
-   return this.getFromRemoteTURL( user,  remoteTURL,  surl,  remoteUser,  remoteCredentialId,  null,0, callbacks);
-
-  }
-
   /**
-     * @param user User ID
-     * @param remoteTURL
-     * @param surl
-     * @param remoteUser
-     * @param remoteCredetial
-     * @param callbacks
-     * @throws SRMException
+     *
+   * @param user User ID
+   * @param remoteTURL
+   * @param localTransferPath
+   * @param remoteUser
+   * @param callbacks
+   * @throws SRMException
      * @return transfer id
      */
     @Override
     public String getFromRemoteTURL(
         final SRMUser user,
         final URI remoteTURL,
-        final URI surl,
+        final String localTransferPath,
         final SRMUser remoteUser,
         final Long remoteCredentialId,
-        String spaceReservationId,
-        long size,
         final CopyCallbacks callbacks) throws SRMException{
         Thread t = new Thread(){
 
@@ -827,9 +784,9 @@ public class Storage
                 try
                 {
                     logger.debug("calling getFromRemoteTURL from a copy thread");
-                    getFromRemoteTURL(user, remoteTURL,surl, remoteUser, remoteCredentialId);
-                    logger.debug("calling callbacks.copyComplete for path="+surl);
-                    callbacks.copyComplete(getFileMetaData(user, surl, false));
+                    getFromRemoteTURL(user, remoteTURL, localTransferPath, remoteUser, remoteCredentialId);
+                    logger.debug("calling callbacks.copyComplete for path="+ localTransferPath);
+                    callbacks.copyComplete();
                 }
                 catch (Exception e){
                     callbacks.copyFailed(new SRMException(e));
@@ -837,7 +794,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        logger.debug("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+surl);
+        logger.debug("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+ localTransferPath);
 
         copyThreads.put(id, t);
         t.start();
@@ -864,9 +821,9 @@ public class Storage
                 try
                 {
                     logger.debug("calling putToRemoteTURL from a copy thread");
-                    putToRemoteTURL(user, surl,remoteTURL, remoteUser, remoteCredentialId);
+                    putToRemoteTURL(user, surl, remoteTURL, remoteUser, remoteCredentialId);
                     logger.debug("calling callbacks.copyComplete for path="+surl);
-                    callbacks.copyComplete(getFileMetaData(user,surl, true));
+                    callbacks.copyComplete();
                 }
                 catch (Exception e){
                     callbacks.copyFailed(new SRMException(e));
@@ -984,19 +941,8 @@ public class Storage
     }
 
     @Override
-    public void srmUnmarkSpaceAsBeingUsed(SRMUser user, String spaceToken, URI surl, SrmCancelUseOfSpaceCallbacks callbacks) {
-    }
-
-    @Override
     public void srmReleaseSpace(SRMUser user, String spaceToken, Long sizeInBytes, SrmReleaseSpaceCallback callbacks) {
     }
-
-    @Override
-    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, URI surl, long sizeInBytes, long useLifetime,
-        boolean overwrite,
-        SrmUseSpaceCallbacks callbacks) {
-    }
-
 
     /**
      *
@@ -1102,12 +1048,6 @@ public class Storage
             UnpinCallbacks callbacks) {
         callbacks.Unpinned(fileId);
 
-    }
-
-    @Override
-    public boolean exists(SRMUser user, URI surl)
-    {
-            return true;
     }
 
     /**
