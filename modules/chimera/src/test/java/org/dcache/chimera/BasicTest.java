@@ -2,6 +2,7 @@ package org.dcache.chimera;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -21,6 +22,7 @@ import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
 import org.dcache.chimera.posix.Stat;
 
+import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -69,6 +71,13 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals("setgid is not respected", dir2.stat().getGid(), 2);
         assertEquals("setgid is not respected",
                 dir2.stat().getMode() & UnixPermission.S_PERMS, 02755);
+    }
+
+    @Test
+    public void testMkDirWithTags() throws Exception {
+        byte[] bytes = "value".getBytes();
+        FsInode dir1 = _fs.mkdir(_rootInode, "junit", 1, 2, 02755, ImmutableMap.of("tag", bytes));
+        assertThat(_fs.getAllTags(dir1), hasEntry("tag", bytes));
     }
 
     @Test

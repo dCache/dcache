@@ -108,6 +108,7 @@
     <property name="door" ref="door"/>
     <property name="channelHandlerFactories" ref="channelhandler-factories"/>
     <property name="rootPath" value="${xrootd.root}"/>
+    <property name="uploadPath" value="${xrootd.authz.upload-directory}"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">

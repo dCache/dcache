@@ -7,9 +7,13 @@ import javax.security.auth.Subject;
 import java.util.List;
 import java.util.Set;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 
+import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
@@ -20,7 +24,8 @@ public class AbstractNameSpaceProvider
     implements NameSpaceProvider
 {
     @Override
-    public PnfsId createFile(Subject subject, String path, int uid, int gid, int mode)
+    public FileAttributes createFile(Subject subject, String path, int uid, int gid, int mode,
+                                     Set<FileAttribute> requestedAttributes)
         throws CacheException
     {
         throw new UnsupportedOperationException();
@@ -135,6 +140,27 @@ public class AbstractNameSpaceProvider
     public void list(Subject subject, String path, Glob glob, Range<Integer> range,
                      Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public FsPath createUploadPath(Subject subject, FsPath path, int uid, int gid, int mode,
+                                   Long size,
+                                   AccessLatency al, RetentionPolicy rp, String spaceToken,
+                                   Set<CreateOption> options) throws CacheException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PnfsId commitUpload(Subject subject, FsPath uploadPath, FsPath pnfsPath, Set<CreateOption> options)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void cancelUpload(Subject subject, FsPath uploadPath, FsPath path) throws CacheException
     {
         throw new UnsupportedOperationException();
     }

@@ -95,6 +95,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
         LoggerFactory.getLogger(XrootdRedirectHandler.class);
 
     private final XrootdDoor _door;
+    private final FsPath _uploadPath;
 
     private boolean _isReadOnly = true;
     private FsPath _userRootPath = new FsPath();
@@ -108,10 +109,11 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     private final Set<Thread> _threads =
         Collections.synchronizedSet(new HashSet<Thread>());
 
-    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath)
+    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, FsPath uploadPath)
     {
         _door = door;
         _rootPath = rootPath;
+        _uploadPath = uploadPath;
     }
 
     @Override
@@ -766,7 +768,8 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             throws PermissionDeniedCacheException
     {
         FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
-        if (!fullPath.startsWith(_userRootPath)) {
+        if (!fullPath.startsWith(_userRootPath) &&
+                (_uploadPath == null || !fullPath.startsWith(_uploadPath))) {
             throw new PermissionDeniedCacheException("Permission denied");
         }
         return fullPath;

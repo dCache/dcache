@@ -684,6 +684,12 @@ public abstract class AbstractFtpDoorV1
             description = "Root path")
     protected String _root;
 
+    @Option(
+            name = "upload",
+            description = "Upload directory"
+    )
+    protected FsPath _uploadPath;
+
     protected PortRange _passiveModePortRange;
     protected ServerSocketChannel _passiveModeServerSocket;
 
@@ -1325,7 +1331,7 @@ public abstract class AbstractFtpDoorV1
             doorRootPath = userRootPath;
         } else {
             doorRootPath = new FsPath(_root);
-            if (!userRootPath.startsWith(doorRootPath)) {
+            if (!userRootPath.startsWith(doorRootPath) && (_uploadPath == null || !_uploadPath.startsWith(doorRootPath))) {
                 throw new PermissionDeniedCacheException("User's files are not visible through this FTP service.");
             }
         }
@@ -1889,7 +1895,8 @@ public abstract class AbstractFtpDoorV1
         FsPath relativePath = new FsPath(_cwd);
         relativePath.add(path);
         FsPath absolutePath = new FsPath(_doorRootPath, relativePath);
-        if (!absolutePath.startsWith(_userRootPath)) {
+        if (!absolutePath.startsWith(_userRootPath) &&
+                (_uploadPath == null || !absolutePath.startsWith(_uploadPath))) {
             throw new FTPCommandException(550, "Permission denied");
         }
         return absolutePath;

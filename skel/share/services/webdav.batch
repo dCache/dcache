@@ -30,6 +30,7 @@ check -strong webdav.authz.allowed-paths
 check -strong webdav.authz.readonly
 check -strong webdav.authz.anonymous-operations
 check -strong webdav.authz.anonymous-listing
+check webdav.authz.upload-directory
 check -strong webdav.mover.kill-timeout
 check -strong webdav.mover.kill-timeout.unit
 check -strong webdav.mover.timeout

@@ -32,6 +32,14 @@ public class FsPath {
         addSingleItem(child);
     }
 
+    public FsPath(FsPath path, String... children)
+    {
+        this(path._list);
+        for (String child : children) {
+            addSingleItem(child);
+        }
+    }
+
     public FsPath(List<String> list)
     {
         _list = new ArrayList<>(list);

@@ -36,9 +36,12 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsCancelUpload;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
@@ -182,6 +185,9 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsListDirectoryMessage.class);
         _gauges.addGauge(PnfsRemoveChecksumMessage.class);
         _gauges.addGauge(PnfsCreateSymLinkMessage.class);
+        _gauges.addGauge(PnfsCreateUploadPath.class);
+        _gauges.addGauge(PnfsCommitUpload.class);
+        _gauges.addGauge(PnfsCancelUpload.class);
     }
 
     public PnfsManagerV3()
@@ -1028,9 +1034,9 @@ public class PnfsManagerV3
                       pnfsMessage.getAccessMask());
 
             pnfsId = _nameSpaceProvider.createDirectory(pnfsMessage.getSubject(),
-                    pnfsMessage.getPath(),
-                    pnfsMessage.getUid(), pnfsMessage.getGid(),
-                    pnfsMessage.getMode());
+                                                        pnfsMessage.getPath(),
+                                                        pnfsMessage.getUid(), pnfsMessage.getGid(),
+                                                        pnfsMessage.getMode());
 
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
@@ -1071,60 +1077,95 @@ public class PnfsManagerV3
 
     public void createEntry(PnfsCreateEntryMessage pnfsMessage){
 
-        PnfsId pnfsId;
         _log.info("create entry "+pnfsMessage.getPath());
         try {
             File file = new File(pnfsMessage.getPath());
             checkMask(pnfsMessage.getSubject(), file.getParent(),
                       pnfsMessage.getAccessMask());
 
-            pnfsId = _nameSpaceProvider.createFile(pnfsMessage.getSubject(),
-                    pnfsMessage.getPath(),
-                    pnfsMessage.getUid(),pnfsMessage.getGid(),
-                    pnfsMessage.getMode());
-
-            pnfsMessage.setPnfsId(pnfsId);
-            pnfsMessage.setSucceeded();
-
-            //
-            // FIXME : is it really true ?
-            //
-            // now we try to get the storageInfo out of the
-            // parent directory. If it fails, we don't care.
-            // We declare the request to be successful because
-            // the createEntry seem to be ok.
-
-            try{
-                _log.info( "Trying to get storageInfo for "+pnfsId) ;
-
-                Set<FileAttribute> requested =
+            Set<FileAttribute> requested =
                     pnfsMessage.getRequestedAttributes();
-                requested.add(FileAttribute.STORAGEINFO);
+            requested.add(FileAttribute.STORAGEINFO);
+            requested.add(FileAttribute.PNFSID);
 
-                /* If we were allowed to create the entry above, then
-                 * we also ought to be allowed to read it here. Hence
-                 * we use ROOT as the subject.
-                 */
-                FileAttributes attrs =
-                    _nameSpaceProvider.getFileAttributes(ROOT,
-                                                         pnfsId,
-                                                         requested);
+            FileAttributes attrs =
+                    _nameSpaceProvider.createFile(pnfsMessage.getSubject(),
+                                                  pnfsMessage.getPath(),
+                                                  pnfsMessage.getUid(),
+                                                  pnfsMessage.getGid(),
+                                                  pnfsMessage.getMode(),
+                                                  requested);
 
-                StorageInfo info = attrs.getStorageInfo();
-                info.setKey("path", pnfsMessage.getPath());
-                info.setKey("uid", Integer.toString(pnfsMessage.getUid()));
-                info.setKey("gid", Integer.toString(pnfsMessage.getGid()));
-
-                pnfsMessage.setFileAttributes(attrs);
-
-            } catch (CacheException e){
-                _log.warn("Can't determine storageInfo: " + e);
+            StorageInfo info = attrs.getStorageInfo();
+            if (attrs.getStorageInfo().getKey("path") == null) {
+                attrs.getStorageInfo().setKey("path", pnfsMessage.getPnfsPath());
             }
+            info.setKey("uid", Integer.toString(pnfsMessage.getUid()));
+            info.setKey("gid", Integer.toString(pnfsMessage.getGid()));
+
+            pnfsMessage.setFileAttributes(attrs);
+            pnfsMessage.setPnfsId(attrs.getPnfsId());
+            pnfsMessage.setSucceeded();
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
             _log.error("Create entry failed", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
+    }
+
+    private void createUploadPath(PnfsCreateUploadPath message)
+    {
+        try {
+            FsPath uploadPath = _nameSpaceProvider.createUploadPath(message.getSubject(),
+                                                                    message.getPath(),
+                                                                    message.getUid(),
+                                                                    message.getGid(),
+                                                                    message.getMode(),
+                                                                    message.getSize(),
+                                                                    message.getAccessLatency(),
+                                                                    message.getRetentionPolicy(),
+                                                                    message.getSpaceToken(),
+                                                                    message.getOptions());
+            message.setUploadPath(uploadPath);
+        } catch (CacheException e) {
+            message.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            _log.error("Create upload path failed", e);
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
+    }
+
+    private void commitUpload(PnfsCommitUpload message)
+    {
+        try {
+            PnfsId pnfsId = _nameSpaceProvider.commitUpload(message.getSubject(),
+                                                            message.getUploadPath(),
+                                                            message.getPath(),
+                                                            message.getOptions());
+            message.setPnfsId(pnfsId);
+            Set<FileAttribute> attributes = message.getRequestedAttributes();
+            if (!attributes.isEmpty()) {
+                message.setFileAttributes(
+                        _nameSpaceProvider.getFileAttributes(Subjects.ROOT, pnfsId, attributes));
+            }
+        } catch (CacheException e) {
+            message.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            _log.error("Create upload path failed", e);
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
+    }
+
+    private void cancelUpload(PnfsCancelUpload message)
+    {
+        try {
+            _nameSpaceProvider.cancelUpload(message.getSubject(), message.getUploadPath(), message.getPath());
+        } catch (CacheException e) {
+            message.setFailed(e.getRc(), e.getMessage());
+        } catch (RuntimeException e) {
+            _log.error("Create upload path failed", e);
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
 
@@ -1597,7 +1638,7 @@ public class PnfsManagerV3
             sendMessage(new CellMessage(_cacheModificationRelay, message));
         } catch (NoRouteToCellException e) {
             _log.error("Failed to relay " + message + " to " +
-                       _cacheModificationRelay + ": " + e.getMessage());
+                               _cacheModificationRelay + ": " + e.getMessage());
         }
     }
 
@@ -1623,20 +1664,29 @@ public class PnfsManagerV3
         else if (pnfsMessage instanceof PnfsCreateEntryMessage){
             createEntry((PnfsCreateEntryMessage)pnfsMessage);
         }
+        else if (pnfsMessage instanceof PnfsCreateUploadPath){
+            createUploadPath((PnfsCreateUploadPath) pnfsMessage);
+        }
+        else if (pnfsMessage instanceof PnfsCommitUpload){
+            commitUpload((PnfsCommitUpload) pnfsMessage);
+        }
+        else if (pnfsMessage instanceof PnfsCancelUpload){
+            cancelUpload((PnfsCancelUpload) pnfsMessage);
+        }
         else if (pnfsMessage instanceof PnfsDeleteEntryMessage){
-            deleteEntry((PnfsDeleteEntryMessage)pnfsMessage);
+            deleteEntry((PnfsDeleteEntryMessage) pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsMapPathMessage){
-            mapPath((PnfsMapPathMessage)pnfsMessage);
+            mapPath((PnfsMapPathMessage) pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsRenameMessage){
-            rename((PnfsRenameMessage)pnfsMessage);
+            rename((PnfsRenameMessage) pnfsMessage);
         }
         else if (pnfsMessage instanceof PnfsFlagMessage){
-            updateFlag((PnfsFlagMessage)pnfsMessage);
+            updateFlag((PnfsFlagMessage) pnfsMessage);
         }
         else if ( pnfsMessage instanceof PnfsSetChecksumMessage){
-            setChecksum((PnfsSetChecksumMessage)pnfsMessage);
+            setChecksum((PnfsSetChecksumMessage) pnfsMessage);
         }
         else if( pnfsMessage instanceof PoolFileFlushedMessage ) {
             processFlushMessage((PoolFileFlushedMessage) pnfsMessage);
@@ -1884,7 +1934,9 @@ public class PnfsManagerV3
                                                      requested);
 
             if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
-                attrs.getStorageInfo().setKey("path", message.getPnfsPath());
+                if (attrs.getStorageInfo().getKey("path") == null) {
+                    attrs.getStorageInfo().setKey("path", message.getPnfsPath());
+                }
                 attrs.getStorageInfo().setKey("uid",  Integer.toString(attrs.getOwner()));
                 attrs.getStorageInfo().setKey("gid", Integer.toString(attrs.getGroup()));
             }
@@ -1897,7 +1949,7 @@ public class PnfsManagerV3
             _log.warn("Error while retrieving file attributes: " + e.getMessage());
             message.setFailed(e.getRc(), e);
         } catch (RuntimeException e) {
-            _log.error("Error while retriving file attributes: " + e.getMessage(), e);
+            _log.error("Error while retrieving file attributes: " + e.getMessage(), e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }

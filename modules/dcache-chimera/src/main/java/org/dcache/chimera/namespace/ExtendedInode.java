@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 
@@ -101,6 +102,24 @@ public class ExtendedInode extends FsInode
     public ExtendedInode(FileSystemProvider fs)
     {
         super(fs);
+    }
+
+    @Override
+    public ExtendedInode mkdir(String newDir) throws ChimeraFsException
+    {
+        return new ExtendedInode(super.mkdir(newDir));
+    }
+
+    @Override
+    public ExtendedInode mkdir(String name, int owner, int group, int mode) throws ChimeraFsException
+    {
+        return new ExtendedInode(super.mkdir(name, owner, group, mode));
+    }
+
+    @Override
+    public ExtendedInode create(String name, int uid, int gid, int mode) throws ChimeraFsException
+    {
+        return new ExtendedInode(super.create(name, uid, gid, mode));
     }
 
     @Override
@@ -219,6 +238,11 @@ public class ExtendedInode extends FsInode
             storageInfo = _fs.getStorageInfo(this);
         }
         return storageInfo;
+    }
+
+    public FsPath getPath() throws ChimeraFsException
+    {
+        return new FsPath(_fs.inode2path(this));
     }
 
     private static class IsType implements Predicate<StorageLocatable>

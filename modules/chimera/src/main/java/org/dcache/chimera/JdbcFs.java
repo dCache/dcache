@@ -846,6 +846,57 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
+    public FsInode mkdir(FsInode parent, String name, int owner, int group, int mode, Map<String,byte[]> tags) throws ChimeraFsException
+    {
+        checkNameLength(name);
+
+        Connection dbConnection;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        FsInode inode = null;
+
+        try {
+
+            // read/write only
+            dbConnection.setAutoCommit(false);
+
+            if ((parent.statCache().getMode() & UnixPermission.S_ISGID) != 0) {
+                group = parent.statCache().getGid();
+                mode |= UnixPermission.S_ISGID;
+            }
+
+            inode = _sqlDriver.mkdir(dbConnection, parent, name, owner, group, mode, tags);
+            dbConnection.commit();
+        } catch (SQLException se) {
+
+            try {
+                dbConnection.rollback();
+            } catch (SQLException e) {
+                _log.error("mkdir", se);
+            }
+
+            // according to SQL-92 standard, class-code 23 is
+            // Constraint Violation, in our case
+            // same pool for the same file,
+            // which is OK
+            if (se.getSQLState().startsWith("23")) {
+                throw new FileExistsChimeraFsException(name);
+            }
+            _log.error("mkdir", se);
+            throw new ChimeraFsException(se.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
+
+        return inode;
+    }
+
+    @Override
     public FsInode path2inode(String path) throws ChimeraFsException {
         return path2inode(path, _rootInode);
     }

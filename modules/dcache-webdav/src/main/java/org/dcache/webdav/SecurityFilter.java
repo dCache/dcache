@@ -21,6 +21,7 @@ import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
@@ -36,6 +37,7 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.util.CertificateFactories;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Arrays.asList;
 
 /**
@@ -70,6 +72,7 @@ public class SecurityFilter implements Filter
     private LoginStrategy _loginStrategy;
     private FsPath _rootPath = new FsPath();
     private CertificateFactory _cf;
+    private FsPath _uploadPath;
 
     public SecurityFilter()
     {
@@ -165,7 +168,8 @@ public class SecurityFilter implements Filter
 
         String path = request.getAbsolutePath();
         FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
-        if (!fullPath.startsWith(userRoot)) {
+        if (!fullPath.startsWith(userRoot) &&
+                (_uploadPath == null || !fullPath.startsWith(_uploadPath))) {
             if (!path.equals("/")) {
                 throw new PermissionDeniedCacheException("Permission denied: " +
                         "path outside user's root");
@@ -289,13 +293,23 @@ public class SecurityFilter implements Filter
         _loginStrategy = loginStrategy;
     }
 
+    public void setRootPath(String path)
+    {
+        _rootPath = new FsPath(path);
+    }
+
     public String getRootPath()
     {
         return _rootPath.toString();
     }
 
-    public void setRootPath(String path)
+    public void setUploadPath(String uploadPath)
     {
-        _rootPath = new FsPath(path);
+        this._uploadPath = isNullOrEmpty(uploadPath) ? null : new FsPath(uploadPath);
+    }
+
+    public String getUploadPath()
+    {
+        return Objects.toString(_uploadPath, null);
     }
 }

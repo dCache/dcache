@@ -96,6 +96,7 @@
       <property name="readOnly" value="${webdav.authz.readonly}"/>
       <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
       <property name="rootPath" value="${webdav.root}"/>
+      <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
   </bean>
 
   <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">

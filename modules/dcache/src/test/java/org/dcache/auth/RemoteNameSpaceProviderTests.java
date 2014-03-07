@@ -46,6 +46,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
@@ -199,7 +200,7 @@ public class RemoteNameSpaceProviderTests
     {
         givenSuccessfulResponse();
 
-        _namespace.createFile(ROOT, "/path/to/file", 100, 200, 0644);
+        _namespace.createFile(ROOT, "/path/to/file", 100, 200, 0644, EnumSet.noneOf(FileAttribute.class));
 
         PnfsCreateEntryMessage sent =
                 getSingleSendAndWaitMessage(PnfsCreateEntryMessage.class);
@@ -217,7 +218,7 @@ public class RemoteNameSpaceProviderTests
     {
         givenFailureResponse(FILE_EXISTS);
 
-        _namespace.createFile(ROOT, "/path/to/file", 100, 200, 0644);
+        _namespace.createFile(ROOT, "/path/to/file", 100, 200, 0644, EnumSet.noneOf(FileAttribute.class));
     }
 
 

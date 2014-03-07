@@ -82,6 +82,10 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 }
             }
 
+            Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
+            if (spaceToken.isPresent() ) {
+                return null;
+            }
             return getDefaultAccessLatency();
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage(), e);
@@ -118,6 +122,11 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 } catch (IllegalArgumentException e) {
                     LOGGER.error("Badly formatted RetentionPolicy tag in {}: {}", dirInode, e.getMessage());
                 }
+            }
+
+            Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
+            if (spaceToken.isPresent() ) {
+                return null;
             }
 
             return getDefaultRetentionPolicy();
@@ -175,6 +184,11 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
             if (spaceToken.isPresent() ) {
                 info.setKey("writeToken", spaceToken.get());
+            }
+
+            Optional<String> path = getFirstLine(dirInode.getTag("Path"));
+            if (path.isPresent() ) {
+                info.setKey("path", path.get());
             }
         } catch (IOException e) {
             throw new CacheException( 37, "Unable to fetch tags: " + e.getMessage());

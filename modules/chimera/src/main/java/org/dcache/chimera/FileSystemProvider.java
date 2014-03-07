@@ -109,6 +109,24 @@ public interface FileSystemProvider extends Closeable {
     public abstract FsInode mkdir(FsInode parent, String name, int owner,
             int group, int mode) throws ChimeraFsException;
 
+    /**
+     * Create a new directory.
+     *
+     * In contrast to the other mkdir calls, the new directory does not inherit
+     * the parent tags. Instead the new directory is initialized with {@code tags}.
+     *
+     * @param parent Inode of parent directory
+     * @param name Name of new directory
+     * @param owner UID of owner
+     * @param group GID of group
+     * @param mode Permissions
+     * @param tags Tags to set on new directory
+     * @return Inode of newly created directory
+     * @throws ChimeraFsException
+     */
+    FsInode mkdir(FsInode parent, String name, int owner, int group, int mode, Map<String,byte[]> tags)
+            throws ChimeraFsException;
+
     public abstract FsInode path2inode(String path) throws ChimeraFsException;
 
     public abstract FsInode path2inode(String path, FsInode startFrom)

@@ -4,18 +4,25 @@ import com.google.common.collect.Range;
 
 import javax.security.auth.Subject;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
 import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.PnfsCancelUpload;
+import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 
+import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
@@ -26,7 +33,6 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
 import static diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation.REMOVE;
-import org.dcache.namespace.FileType;
 
 /**
  * The RemoteNameSpaceProvider uses the PnfsManager client stub to provide
@@ -52,13 +58,14 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public PnfsId createFile(Subject subject, String path, int uid, int gid, int mode)
-            throws CacheException {
+    public FileAttributes createFile(Subject subject, String path, int uid, int gid, int mode,
+                                     Set<FileAttribute> requestedAttributes)
+            throws CacheException
+    {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-
-        PnfsCreateEntryMessage returnMsg = pnfs.createPnfsEntry(path, uid, gid, mode);
-
-        return returnMsg.getPnfsId();
+        PnfsCreateEntryMessage returnMsg =
+                pnfs.pnfsRequest(new PnfsCreateEntryMessage(path, uid, gid, mode, requestedAttributes));
+        return returnMsg.getFileAttributes();
     }
 
     @Override
@@ -195,5 +202,36 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
         } catch (InterruptedException e) {
             throw new TimeoutCacheException(e.getMessage());
         }
+    }
+
+    @Override
+    public FsPath createUploadPath(Subject subject, FsPath path, int uid, int gid, int mode,
+                                   Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
+                                   Set<CreateOption> options)
+            throws CacheException
+    {
+        PnfsCreateUploadPath msg = new PnfsCreateUploadPath(subject, path,
+                                                            uid, gid, mode, size,
+                                                            al, rp, spaceToken,
+                                                            options);
+        return _pnfs.pnfsRequest(msg).getUploadPath();
+    }
+
+    @Override
+    public PnfsId commitUpload(Subject subject, FsPath uploadPath, FsPath pnfsPath, Set<CreateOption> options)
+            throws CacheException
+    {
+        PnfsCommitUpload msg = new PnfsCommitUpload(subject,
+                                                    uploadPath,
+                                                    pnfsPath,
+                                                    options,
+                                                    EnumSet.noneOf(FileAttribute.class));
+        return _pnfs.pnfsRequest(msg).getPnfsId();
+    }
+
+    @Override
+    public void cancelUpload(Subject subject, FsPath uploadPath, FsPath path) throws CacheException
+    {
+        _pnfs.pnfsRequest(new PnfsCancelUpload(subject, uploadPath, path));
     }
 }

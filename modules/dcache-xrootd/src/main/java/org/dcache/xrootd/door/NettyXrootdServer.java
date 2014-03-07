@@ -17,6 +17,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.FsPath;
@@ -27,6 +28,7 @@ import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
@@ -46,6 +48,7 @@ public class NettyXrootdServer
     private ConnectionTracker _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
     private FsPath _rootPath;
+    private FsPath _uploadPath;
     private InetAddress _address;
 
     /**
@@ -119,11 +122,6 @@ public class NettyXrootdServer
         _channelHandlerFactories = channelHandlerFactories;
     }
 
-    public String getRootPath()
-    {
-        return (_rootPath == null) ? null : _rootPath.toString();
-    }
-
     /**
      * Sets the root path of the name space exported by this xrootd door.
      */
@@ -131,6 +129,21 @@ public class NettyXrootdServer
     public void setRootPath(String s)
     {
         _rootPath = new FsPath(s);
+    }
+
+    public String getRootPath()
+    {
+        return Objects.toString(_rootPath, null);
+    }
+
+    public void setUploadPath(String uploadPath)
+    {
+        this._uploadPath = (isNullOrEmpty(uploadPath) ? null : new FsPath(uploadPath));
+    }
+
+    public String getUploadPath()
+    {
+        return Objects.toString(_uploadPath, null);
     }
 
     public void init()
@@ -156,7 +169,7 @@ public class NettyXrootdServer
                     for (ChannelHandlerFactory factory: _channelHandlerFactories) {
                         pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
                     }
-                    pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath));
+                    pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _uploadPath));
                     return pipeline;
                 }
             });

@@ -37,6 +37,7 @@ check -strong xrootd.plugins
 check -strong xrootd.authz.user
 check -strong xrootd.authz.read-paths
 check -strong xrootd.authz.write-paths
+check xrootd.authz.upload-directory
 
 onerror continue
 

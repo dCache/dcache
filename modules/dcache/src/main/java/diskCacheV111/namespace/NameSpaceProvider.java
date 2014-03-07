@@ -7,9 +7,13 @@ import javax.security.auth.Subject;
 import java.util.List;
 import java.util.Set;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 
+import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
@@ -59,10 +63,12 @@ public interface NameSpaceProvider
      * @param uid uid of new entry or -1 for default
      * @param gid gid of new entry or -1 for default
      * @param mode mode of new entry or -1 for default
-     * @return PnfsId of newly created object
+     * @param requestedAttributes Attributes of the new file to return
+     * @return FileAttributes of newly created file
      * @throws CacheException
      */
-    PnfsId createFile(Subject subject, String path, int uid, int gid, int mode) throws CacheException;
+    FileAttributes createFile(Subject subject, String path, int uid, int gid, int mode,
+                              Set<FileAttribute> requestedAttributes) throws CacheException;
 
     /**
      * Create a directory for a given path and type.
@@ -204,4 +210,52 @@ public interface NameSpaceProvider
     void list(Subject subject, String path, Glob glob, Range<Integer> range,
               Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException;
+
+    /**
+     * Set up a temporary upload location for a file.
+     *
+     * The file can can be written to the returned path and then moved to its final
+     * location using <code>commitUpload</code>. Alternatively the operation can be
+     * cancelled by calling <code>cancelUpload</code>.
+     *
+     * @param subject the subject of user who invoked this method
+     * @param path the path of the file to upload
+     * @param uid the UID of new file or -1 for default
+     * @param gid the GID of new file or -1 for default
+     * @param mode the permission mask of the new entry or -1 for default
+     * @param size optional expected size
+     * @param al optional access latency of new file
+     * @param rp optional retention policy of new file
+     * @param spaceToken optional token of space reservation to write file to
+     * @param options options specifying how the path should be created
+     * @return A temporary upload path that must eventually be committed or cancelled
+     */
+    FsPath createUploadPath(Subject subject, FsPath path, int uid, int gid, int mode,
+                            Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
+                            Set<CreateOption> options)
+            throws CacheException;
+
+    /**
+     * Move a file written to a temporary upload location to its final location.
+     *
+     * @param subject the subject of user who invoked this method
+     * @param uploadPath the temporary path as returned by createUploadPath
+     * @param path the path of file that is uploaded
+     * @param options options specifying how the path should be committed
+     * @return PnfsId of committed file
+     */
+    PnfsId commitUpload(Subject subject, FsPath uploadPath, FsPath path, Set<CreateOption> options) throws CacheException;
+
+    /**
+     * Remove temporary upload location.
+     *
+     * Removes the location previously created by a call to createUploadPath. Any
+     * file that was written is deleted and future writes to the temporary path
+     * will fail.
+     *
+     * @param subject the subject of user who invoked this method
+     * @param uploadPath the temporary path as returned by createUploadPath
+     * @param path the path of file that is uploaded
+     */
+    void cancelUpload(Subject subject, FsPath uploadPath, FsPath path) throws CacheException;
 }

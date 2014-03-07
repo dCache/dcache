@@ -28,6 +28,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.dcache.chimera.posix.Stat;
 import org.dcache.commons.util.SqlHelper;
@@ -51,6 +52,19 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
     protected PgSQLFsSqlDriver() {
         _log.info("Running PostgreSQL specific Driver");
     }
+
+    @Override
+    FsInode mkdir(Connection dbConnection, FsInode parent, String name, int owner, int group, int mode,
+                  Map<String, byte[]> tags) throws ChimeraFsException, SQLException
+    {
+        FsInode inode = mkdir(dbConnection, parent, name, owner, group, mode);
+        /* There is a trigger that copies tags on mkdir, but we don't want those tags.
+         */
+        removeTag(dbConnection, inode);
+        createTags(dbConnection, inode, owner, group, mode & 0666, tags);
+        return inode;
+    }
+
     private static final String sqlInode2Path = "SELECT inode2path(?)";
     private static final String sqlPath2Inode = "SELECT path2inode(?, ?)";
     private static final String sqlPath2Inodes = "SELECT ipnfsid,isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime from path2inodes(?, ?)";
