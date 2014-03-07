@@ -68,7 +68,7 @@ isJavaVersionOk()
 bootLoader()
 {
     CLASSPATH="${DCACHE_CLASSPATH}" "$JAVA" -client -XX:+TieredCompilation \
-	-XX:TieredStopAtLevel=0  "-Dlog=${DCACHE_LOG:-warn}" \
+	-XX:TieredStopAtLevel=1  "-Dlog=${DCACHE_LOG:-warn}" \
 	"-Ddcache.home=${DCACHE_HOME}" \
 	"-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" \
 	org.dcache.boot.BootLoader "$@"
