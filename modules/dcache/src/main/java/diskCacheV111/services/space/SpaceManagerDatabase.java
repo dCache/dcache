@@ -8,7 +8,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
@@ -22,8 +21,6 @@ public interface SpaceManagerDatabase
 
     File selectFileForUpdate(long id) throws DataAccessException;
 
-    File selectFileForUpdate(FsPath path);
-
     void removeFile(long fileId) throws DataAccessException;
 
     void updateFile(File f)
@@ -33,8 +30,6 @@ public interface SpaceManagerDatabase
                     @Nullable String voGroup,
                     @Nullable String voRole,
                     long sizeInBytes,
-                    long lifetime,
-                    @Nullable FsPath path,
                     @Nullable PnfsId pnfsId,
                     FileState state)
             throws DataAccessException, SpaceException;
@@ -94,14 +89,6 @@ public interface SpaceManagerDatabase
      *  if such a reservation is not found.
      */
     File findFile(PnfsId pnfsId) throws DataAccessException;
-
-    /**
-     * Returns the file reservation bound to path, or null if such
-     * a reservation is not found.
-     * */
-    File findFile(FsPath path) throws DataAccessException;
-
-
 
     /** Return a new link group criterion. */
     LinkGroupCriterion linkGroups();
@@ -193,15 +180,9 @@ public interface SpaceManagerDatabase
 
         FileCriterion whereStateIsIn(FileState... states);
 
-        FileCriterion whereDeletedIs(boolean b);
-
-        FileCriterion wherePathMatches(Glob pattern);
-
         FileCriterion wherePnfsIdIs(PnfsId pnfsId);
 
         FileCriterion in(SpaceCriterion spaceCriterion);
-
-        FileCriterion thatExpireBefore(long millis);
 
         FileCriterion whereCreationTimeIsBefore(long millis);
     }

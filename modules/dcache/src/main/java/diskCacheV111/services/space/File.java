@@ -4,7 +4,6 @@ import com.google.common.base.Function;
 
 import java.io.Serializable;
 
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 public class File implements Serializable {
@@ -12,14 +11,11 @@ public class File implements Serializable {
         private long id;
 	private String voGroup;
 	private String voRole;
-	private long spaceId;
+	private final long spaceId;
 	private long sizeInBytes;
     private long creationTime;
-	private Long expirationTime;
-	private FsPath path;
 	private PnfsId pnfsId;
 	private FileState state;
-	private boolean isDeleted;
 
 	public File(
 		long id,
@@ -28,11 +24,8 @@ public class File implements Serializable {
 		long spaceId,
 		long sizeInBytes,
 		long creationTime,
-		Long expirationTime,
-		FsPath path,
 		PnfsId pnfsId,
-		FileState state,
-		boolean isDeleted
+		FileState state
 		) {
 		this.id = id;
 		this.voGroup = voGroup;
@@ -40,11 +33,8 @@ public class File implements Serializable {
 		this.spaceId = spaceId;
 		this.sizeInBytes = sizeInBytes;
 		this.creationTime = creationTime;
-		this.expirationTime = expirationTime;
-		this.path = path;
 		this.pnfsId = pnfsId;
 		this.state = state;
-		this.isDeleted = isDeleted;
 	}
 
 	public FileState getState() {
@@ -68,10 +58,6 @@ public class File implements Serializable {
 		return spaceId;
 	}
 
-	public void setSpaceId(long spaceId) {
-		this.spaceId = spaceId;
-	}
-
 	public long getSizeInBytes() {
 		return sizeInBytes;
 	}
@@ -88,22 +74,6 @@ public class File implements Serializable {
 		this.creationTime = creationTime;
 	}
 
-	public Long getExpirationTime() {
-		return expirationTime;
-	}
-
-	public void setExpirationTime(Long expirationTime) {
-		this.expirationTime = expirationTime;
-	}
-
-	public FsPath getPath() {
-		return path;
-	}
-
-	public void setPath(FsPath path) {
-		this.path = path;
-	}
-
 	public PnfsId getPnfsId() {
 		return pnfsId;
 	}
@@ -118,12 +88,8 @@ public class File implements Serializable {
 			spaceId+" "+
 			sizeInBytes+" "+
 			creationTime+" "+
-			expirationTime+" "+
-                path +" "+
 			pnfsId+" "+
-			state+" "+
-                isDeleted +" ";
-
+			state;
 	}
 
 	public String getVoGroup() {
@@ -141,19 +107,6 @@ public class File implements Serializable {
 	public void setVoRole(String voRole) {
 		this.voRole = voRole;
 	}
-
-	public void setDeleted(boolean value) {
-		this.isDeleted = value;
-	}
-
-	public boolean isDeleted() {
-		return this.isDeleted;
-	}
-
-    public boolean isExpired()
-    {
-        return (state == FileState.ALLOCATED || state == FileState.TRANSFERRING) && expirationTime != null && expirationTime < System.currentTimeMillis();
-    }
 
     public static Function<File, Long> getSpaceToken =
             new Function<File, Long>()

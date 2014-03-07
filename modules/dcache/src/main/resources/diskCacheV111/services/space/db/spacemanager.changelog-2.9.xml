@@ -15,4 +15,44 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="2" author="behrmann">
+        <comment>Drop pnfspath column</comment>
+        <dropUniqueConstraint tableName="srmspacefile" constraintName="srmspacefile_pnfspath_unique"/>
+        <dropColumn tableName="srmspacefile" columnName="pnfspath"/>
+        <rollback>
+            <addColumn tableName="srmspacefile">
+                <column name="pnfspath" type="varchar(32672)" beforeColumn="pnfsid"/>
+            </addColumn>
+            <addUniqueConstraint tableName="srmspacefile" columnNames="pnfspath" constraintName="srmspacefile_pnfspath_unique"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="3" author="behrmann">
+        <comment>Delete all ALLOCATED file reservations</comment>
+        <sql>DELETE FROM srmspacefile WHERE state = 0</sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="4" author="behrmann">
+        <dropIndex tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx"/>
+        <dropColumn tableName="srmspacefile" columnName="expirationtime"/>
+        <rollback>
+            <addColumn tableName="srmspacefile">
+                <column name="expirationtime" type="bigint"/>
+            </addColumn>
+            <createIndex tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx">
+                <column name="expirationtime"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="5" author="behrmann">
+        <sql>DELETE FROM srmspacefile WHERE deleted = 1</sql>
+        <dropColumn tableName="srmspacefile" columnName="deleted"/>
+        <rollback>
+            <addColumn tableName="srmspacefile">
+                <column name="deleted" type="int"/>
+            </addColumn>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

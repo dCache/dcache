@@ -71,30 +71,20 @@ import com.google.common.base.Function;
 public enum FileState
 {
     /**
-     * ALLOCATED file reservations are bound to a path, but have not yet
-     * been created in the name space and thus do not have a PNFS ID.
-     * The space is tracked as allocated in the space reservation.
-     */
-    ALLOCATED(0),
-
-    /**
      * TRANSFERRING file reservations are bound to a PNFS ID, thus the
      * name space entry has been created, but the file has not finished
-     * uploading yet. If the file reservation was created in ALLOCATED
-     * first, then the reservation will also have path. The space is
-     * tracked as allocated in the space reservation.
+     * uploading yet. The space is tracked as allocated in the space
+     * reservation.
      */
     TRANSFERRING(1),
 
     /**
-     * STORED file reservations are bound to a PNFS ID and do not have a
-     * path. The file has been completely uploaded to dCache and resides
+     * The file has been completely uploaded to dCache and resides
      * on disk. The space is tracked as used in the space reservation.
      */
     STORED(2),
 
     /**
-     * FLUSHED file reservations are bound to a PNFS ID and not to a path.
      * The file has been flushed to tape and purged from the space. The
      * space is not tracked by the space reservation.
      */

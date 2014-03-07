@@ -520,23 +520,16 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
     @Command(name = "ls files", hint = "list file reservations",
              description = "If an argument is given, the command displays reserved files for which the " +
-                     "PNFS ID matches the argument, or the path matches the pattern. If no argument is " +
+                     "PNFS ID or path matches the argument. If no argument is " +
                      "given, all file reservations in a transient state are displayed. The list can be " +
                      "further expanded or restricted using the options.\n\n" +
 
                      "For each file reservation the following information may be displayed left to right: " +
-                     "Whether the name space entry has been deleted (d), current state [allocated(a), " +
-                     "transferring(t), stored(s), flushed(f)], space token, owner, size in bytes, creation " +
-                     "time, expiration time, PNFS ID, and path.\n\n" +
+                     "current state [transferring(t), stored(s), flushed(f)], space token, owner, size in " +
+                     "bytes, creation time, expiration time, PNFS ID, and path.\n\n" +
 
                      "A space reservation contains file reservations that consume the reserved space. " +
-                     "Each file reservation is in one of four states: ALLOCATED, TRANSFERRING, STORED, " +
-                     "or FLUSHED.\n\n" +
-
-                     "ALLOCATED files have been preregistered to be stored in this space reservation. " +
-                     "The file has however not yet been uploaded. Since such files have not yet been " +
-                     "created, no PNFS ID is associated with them. They are only identified by file " +
-                     "system path.\n\n" +
+                     "Each file reservation is in one of three states: TRANSFERRING, STORED, or FLUSHED.\n\n" +
 
                      "TRANSFERRING files are in the process of being uploaded. Such files have " +
                      "a PNFS ID associated with them.\n\n" +
@@ -544,12 +537,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                      "STORED files have finished uploading.\n\n" +
 
                      "FLUSHED files have been flushed to tape and no longer consume space in the " +
-                     "space reservation.\n\n" +
-
-                     "Files in the states ALLOCATED and TRANSFERRING have a limited lifetime. Unless " +
-                     "moved to the STORED or FLUSHED state, such entries will be deleted when they " +
-                     "expire. The associated name space entry of TRANSFERRING files will be deleted " +
-                     "too.")
+                     "space reservation.")
     public class ListFilesCommand extends AsyncCommand
     {
         @Option(name = "owner",
@@ -561,12 +549,8 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 usage = "Only show files in space reservation with this token.")
         Long token;
 
-        @Option(name = "l",
-                usage = "Include additional details.")
-        boolean verbose;
-
         @Option(name = "a",
-                usage = "Include stored, flushed and deleted files.")
+                usage = "Include stored and flushed files.")
         boolean all;
 
         @Option(name = "p",
@@ -586,13 +570,13 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         boolean humanReadable;
 
         @Option(name = "state",
-                values = { "allocated", "transferring", "stored", "flushed" },
+                values = { "transferring", "stored", "flushed" },
                 usage = "Only show files in one of these states.")
         FileState[] states;
 
         @Argument(required = false,
-                  usage = "Only show files with this PNFSID or a path matching this pattern.",
-                  valueSpec = "PNFSID|PATH|PATTERN")
+                  usage = "Only show files with this PNFSID or path.",
+                  valueSpec = "PNFSID|PATH")
         Glob pattern;
 
         @Override
@@ -600,28 +584,22 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         {
             ColumnWriter writer = new ColumnWriter()
                     .abbreviateBytes(humanReadable)
-                    .header("FLAGS").left("deleted").left("state")
+                    .header("STATE").left("state")
                     .space().header("TOKEN").right("token")
                     .space().header("OWNER").left("owner")
                     .space().header("SIZE").bytes("size")
                     .space().header("CREATED").date("created");
-            if (verbose) {
-                writer.space().header("EXPIRES").date("expires");
+            writer.space().header("PNFSID").left("pnfsid");
+            if (lookup) {
+                writer.space().header("PATH").left("path");
             }
-            writer.space().header("PNFSID").left("pnfsid")
-                    .space().header("PATH").left("path");
 
             Iterable<File> files;
             if (pattern != null) {
+                PnfsId pnfsId = pnfs.getPnfsIdByPath(pattern.toString());
+                files = db.get(filesWhereOptionsMatch().wherePnfsIdIs(pnfsId), limit);
                 try {
-                    PnfsId pnfsId = pnfs.getPnfsIdByPath(pattern.toString());
-                    files = db.get(filesWhereOptionsMatch().wherePnfsIdIs(pnfsId), limit);
-                } catch (FileNotFoundCacheException ignored) {
-                    files = db.get(filesWhereOptionsMatch().wherePathMatches(pattern), limit);
-                }
-                try {
-                    PnfsId pnfsId = new PnfsId(pattern.toString());
-                    List<File> moreFiles = db.get(filesWhereOptionsMatch().wherePnfsIdIs(pnfsId), limit);
+                    List<File> moreFiles = db.get(filesWhereOptionsMatch().wherePnfsIdIs(new PnfsId(pattern.toString())), limit);
                     files = concat(moreFiles, files);
                 } catch (IllegalArgumentException ignored) {
                 }
@@ -632,9 +610,6 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             for (File file : files) {
                 char state;
                 switch (file.getState()) {
-                case ALLOCATED:
-                    state = 'a';
-                    break;
                 case TRANSFERRING:
                     state = 't';
                     break;
@@ -651,9 +626,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 PnfsId pnfsId = file.getPnfsId();
                 FsPath path;
                 try {
-                    path = (pnfsId == null || !lookup || file.isDeleted()) ? file.getPath() : pnfs.getPathByPnfsId(pnfsId);
+                    path = lookup ? pnfs.getPathByPnfsId(pnfsId) : null;
                 } catch (FileNotFoundCacheException e) {
-                    path = file.getPath();
+                    path = null;
                 }
                 writer.row()
                         .value("owner", toOwner(file.getVoGroup(), file.getVoRole()))
@@ -662,10 +637,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                         .value("pnfsid", pnfsId)
                         .value("path", path)
                         .value("token", file.getSpaceId())
-                        .value("deleted", file.isDeleted() ? 'd' : '-')
-                        .value("state", state)
-                        .value("expires",
-                               state == 'a' || state == 't' ? file.getExpirationTime() : null);
+                        .value("state", state);
             }
 
             return writer.toString();
@@ -687,10 +659,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             if (states != null && states.length > 0) {
                 files.whereStateIsIn(states);
             } else if (!all && pattern == null) {
-                files.whereStateIsIn(FileState.ALLOCATED, FileState.TRANSFERRING);
-            }
-            if (!all && pattern == null) {
-                files.whereDeletedIs(false);
+                files.whereStateIsIn(FileState.TRANSFERRING);
             }
             return files;
         }
@@ -798,30 +767,15 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                      "reservation.")
     public class PurgeFileCommand extends AsyncCommand
     {
-        @Option(name = "pnfsid", usage = "PNFS ID of file.")
+        @Argument(metaVar = "pnfsid", usage = "PNFS ID of file.")
         PnfsId pnfsId;
-
-        @Option(name = "path",
-                usage = "File system path. Only applicable to reservations bound to a file " +
-                        "system path.")
-        FsPath path;
 
         @Override
         public String executeInTransaction() throws DataAccessException, CommandSyntaxException
         {
-            File f;
-            if (path != null) {
-                f = db.findFile(path);
-                if (f == null) {
-                    return "No such file reservation: " + path;
-                }
-            } else if (pnfsId != null) {
-                f = db.findFile(pnfsId);
-                if (f == null) {
-                    return "No such file reservation: " + pnfsId;
-                }
-            } else {
-                throw new CommandSyntaxException("Required option is missing.");
+            File f = db.findFile(pnfsId);
+            if (f == null) {
+                return "No such file reservation: " + pnfsId;
             }
             db.removeFile(f.getId());
             return "Purged " + f;
