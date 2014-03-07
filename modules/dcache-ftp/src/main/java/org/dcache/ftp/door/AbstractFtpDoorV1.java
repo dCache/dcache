@@ -293,6 +293,7 @@ public abstract class AbstractFtpDoorV1
     {
         SIZE("Size"),
         MODIFY("Modify"),
+        CREATE("Create"),
         TYPE("Type"),
         UNIQUE("Unique"),
         PERM("Perm"),
@@ -3727,6 +3728,10 @@ public abstract class AbstractFtpDoorV1
                     attributes.add(SIZE);
                     attributes.addAll(_pdp.getRequiredAttributes());
                     break;
+                case CREATE:
+                    attributes.add(CREATION_TIME);
+                    attributes.addAll(_pdp.getRequiredAttributes());
+                    break;
                 case MODIFY:
                     attributes.add(MODIFICATION_TIME);
                     attributes.addAll(_pdp.getRequiredAttributes());
@@ -3776,6 +3781,14 @@ public abstract class AbstractFtpDoorV1
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printSizeFact(attr);
                             }
+                        }
+                        break;
+                    case CREATE:
+                        access =
+                            _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                                  EnumSet.of(CREATION_TIME));
+                        if (access == AccessType.ACCESS_ALLOWED) {
+                            printCreateFact(attr);
                         }
                         break;
                     case MODIFY:
@@ -3844,6 +3857,13 @@ public abstract class AbstractFtpDoorV1
             _out.print('=');
             _out.print(value);
             _out.print(';');
+        }
+
+        /** Writes a RFC 3659 create fact to a writer. */
+        private void printCreateFact(FileAttributes attr)
+        {
+            long time = attr.getCreationTime();
+            printFact(Fact.CREATE, TIMESTAMP_FORMAT.format(new Date(time)));
         }
 
         /** Writes a RFC 3659 modify fact to a writer. */
