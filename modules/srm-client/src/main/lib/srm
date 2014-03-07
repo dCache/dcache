@@ -1,11 +1,5 @@
 #! /bin/sh
 
-#
-# $Id: srm,v 1.19 2007-07-03 13:25:39 tigran Exp $
-# $Author: tigran $
-#
-# changes by Neha - to make sure java exists.
-
 #DEBUG=true
 #SECURITY_DEBUG=true
 #DEBUG=false
@@ -16,36 +10,15 @@ correctjavapath=""
 version=0
 
 getVersion() {
-                javapath=$1/bin/java
-                version=`$javapath -version  2>&1 >/dev/null | tr -d "\"" | awk '/java version/{print $3 }'`
-                #echo "$version found in $javapath"
-		#echo ""
-                #echo "big before is $big"
-                compare $big $version
-                if [ $? != 1 ] ; then
-                        big=$version
-                        correctjavapath=$javapath
-                fi
+    javapath=$1/bin/java
+    version=$($javapath -version  2>&1 >/dev/null | tr -d '"' | awk '/java version/{print $3 }')
+    if $big -lt $version; then
+            big=$version
+            correctjavapath=$javapath
+    fi
 }
-
-
-compare() {
-        temp=$(for i in "$1" "$2" ; do echo $i ; done)
-        temp1=$(for i in "$1" "$2" ; do echo $i ; done | sort)
-        #echo "temp $temp"
-        #echo "temp1 $temp1"
-        if [ "$temp" = "$temp1" ] ; then
-                #echo "equal"
-                return 0
-        else
-                #echo "notequal"
-                return 1
-        fi
-}
-
 
 setjavalocation() {
-
   for i in /usr /usr/local /usr/java /usr/local/java /opt  /opt/java /opt ; do
       for j in $i/*sdk* $i/*jdk* $i/*java* $i/*jre* $i; do
          if [ -x $j/bin/java ] ; then
@@ -53,181 +26,123 @@ setjavalocation() {
          fi
       done
   done
-
-  #echo "The most recent java found is $correctjavapath"
   java_location=$correctjavapath
 }
 
 args=$*
 
 #Check if java already exists in PATH
-which java >/dev/null 2>&1
-is_java_in_path=$?
-if [ $is_java_in_path = 0 ]
-then
-	java_location=java
+if which java >/dev/null 2>&1; then
+    java_location=java
 else
-	#If not, then check if JAVA_HOME is defined
-	if [ "$JAVA_HOME" != "" ]
-	then
-		java_location=$JAVA_HOME/bin/java
-		ls $JAVA_HOME/bin/java
-		if [ $? = 1 ]
-		then
-			#echo "Either JAVA_HOME defined incorrectly or java doesnot exist under $JAVA_HOME/bin"
-			setjavalocation
-		fi
-	else
-		#If not, then check for java in usual places
-		#echo "java not in $PATH and JAVA_HOME not defined."
-		#echo "will look in other places..."
-		setjavalocation
-
-	fi
+    #If not, then check if JAVA_HOME is defined
+    if [ -z "$JAVA_HOME" ]; then
+        setjavalocation
+    elif [ -x "$JAVA_HOME/bin/java" ]; then
+        java_location="$JAVA_HOME/bin/java"
+    else
+        setjavalocation
+    fi
 fi
 #If we find any of the dir above
-if [ "$java_location" = "" ]; then
-	echo "JAVA_HOME not defined. java doesnot exist in PATH " >&2
-	echo "Also java not found in usual places" >&2
-	echo "Make sure java is installed. Exiting ..."  >&2
-	return 1
+if [ -z "$java_location" ]; then
+    echo "JAVA_HOME not defined. java doesnot exist in PATH " >&2
+    echo "Also java not found in usual places" >&2
+    echo "Make sure java is installed. Exiting ..."  >&2
+    return 1
 fi
 
 #echo "java_location is: $java_location"
-if [ "$SRM_PATH" = "" ]
-    then
+if [ -z "$SRM_PATH" ]; then
     echo SRM_PATH is not set >&2
     exit 1
 fi
 
-for i in $SRM_PATH/lib/*.jar
-  do
-  SRM_CP=$SRM_CP:$i
-done
-SRM_CP=${SRM_PATH}/conf:$SRM_CP
+SRM_CP="${SRM_PATH}/conf:${SRM_PATH}/lib/*"
 
-if [ "${SRM_JAVA_OPTIONS}" = "" ]
-    then
-    SRM_JAVA_OPTIONS="-Xms64m -Xmx64m"
+if [ -z "${SRM_JAVA_OPTIONS}" ]; then
+    SRM_JAVA_OPTIONS="-Xms64m -Xmx64m -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 fi
 
 OPTIONS=" ${SRM_JAVA_OPTIONS} -Djava.protocol.handler.pkgs=org.globus.net.protocol"
 
 SRMCP_OPTIONS=""
-if [ "$DEBUG" = "true" ]
-    then
+if [ "$DEBUG" = "true" ]; then
     OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=logback-axis.xml"
     OPTIONS=" ${OPTIONS} -Delectric.logging=SOAP,HTTP"
 fi
 
-if [ "$SECURITY_DEBUG" = "true" ]
-    then
+if [ "$SECURITY_DEBUG" = "true" ]; then
     OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=logback-security.properties"
 fi
 
-if [ "$SRM_CONFIG" != "" -a  "$SRM_CONFIG" != "NONE" -a  ! -f "$SRM_CONFIG" ]
-then
-    SRM_CONFIG_PARENT=`dirname $SRM_CONFIG`
-    mkdir -p $SRM_CONFIG_PARENT
+if [ -n "$SRM_CONFIG" -a  "$SRM_CONFIG" != "NONE" -a  ! -f "$SRM_CONFIG" ]; then
+    SRM_CONFIG_PARENT=$(dirname $SRM_CONFIG)
+    mkdir -p "$SRM_CONFIG_PARENT"
 fi
 
 
-    # if env variable for user proxy  is defined, use it
-if [ "$X509_USER_PROXY" != "" ]
-    then
-    x509_user_proxy=$X509_USER_PROXY
-else
-    if [ -r /tmp/x509up_u`id -u` ]
-	then
-	x509_user_proxy=/tmp/x509up_u`id -u`
-    fi
+# if env variable for user proxy  is defined, use it
+if [ -n "$X509_USER_PROXY" ]; then
+    x509_user_proxy="$X509_USER_PROXY"
+elif [ -r /tmp/x509up_u$(id -u) ]; then
+    x509_user_proxy=/tmp/x509up_u$(id -u)
 fi
 
-if [ "$x509_user_proxy" != "" ]
-    then
+if [ -n "$x509_user_proxy" ]; then
     SRMCP_OPTIONS="$SRMCP_OPTIONS -x509_user_proxy=$x509_user_proxy"
 fi
 
-if [ "$X509_CERT_DIR" != "" ]
-then
+if [ -n "$X509_CERT_DIR" ]; then
    x509_user_trusted_certs=$X509_CERT_DIR
+elif [ -d "$HOME/.globus/certificates" ]; then
+   x509_user_trusted_certs=$HOME/.globus/certificates
+elif [ -d /etc/grid-security/certificates ]; then
+   x509_user_trusted_certs=/etc/grid-security/certificates
 else
-   if [ -d $HOME/.globus/certificates ]
-   then
-      x509_user_trusted_certs=$HOME/.globus/certificates
-   else
-      if [ -d /etc/grid-security/certificates ]
-      then
-         x509_user_trusted_certs=/etc/grid-security/certificates
-      else
-         #use /etc/grid-security/certificates anyway
-         x509_user_trusted_certs=/etc/grid-security/certificates
-      fi
-   fi
+   #use /etc/grid-security/certificates anyway
+   x509_user_trusted_certs=/etc/grid-security/certificates
 fi
 
-if [ "$x509_user_proxy" != "" ]
-    then
+if [ -n "$x509_user_proxy" ]; then
     SRMCP_OPTIONS="$SRMCP_OPTIONS -x509_user_trusted_certificates=$x509_user_trusted_certs"
 fi
 
-if [ "$SRM_CONFIG" != "" -a "$SRM_CONFIG" != "NONE" ]
-then
-    if [ ! -f "$SRM_CONFIG" ]
-    then
+if [ -n "$SRM_CONFIG" -a "$SRM_CONFIG" != "NONE" ]; then
+    if [ ! -f "$SRM_CONFIG" ]; then
       echo configuration file not found, configuring srmcp >&2
       use_proxy=true
-      url_copy=$SRM_PATH/sbin/url-copy.sh
+      url_copy="$SRM_PATH/sbin/url-copy.sh"
       mapfile="${SRM_PATH}/conf/SRMServerV1.map"
 
       cmd="$java_location -cp $SRM_CP $OPTIONS gov.fnal.srm.util.SRMDispatcher \
-	    -mapfile=$mapfile \
-	    -urlcopy=$url_copy \
-	    -x509_user_proxy=$x509_user_proxy \
-	    -x509_user_key=$HOME/.globus/userkey.pem \
-	    -x509_user_cert=$HOME/.globus/usercert.pem \
-	    -x509_user_trusted_certificates=$x509_user_trusted_certs \
-	    -use_proxy=$use_proxy \
-	    -srmcphome=$SRM_PATH \
-	    -save_conf=$SRM_CONFIG \
-	    $args"
+        -mapfile=$mapfile \
+        -urlcopy=$url_copy \
+        -x509_user_proxy=$x509_user_proxy \
+        -x509_user_key=$HOME/.globus/userkey.pem \
+        -x509_user_cert=$HOME/.globus/usercert.pem \
+        -x509_user_trusted_certificates=$x509_user_trusted_certs \
+        -use_proxy=$use_proxy \
+        -srmcphome=$SRM_PATH \
+        -save_conf=$SRM_CONFIG \
+        $args"
 
-      if [ "$DEBUG" = "true" ]
-      then
-	  echo $cmd
+      if [ "$DEBUG" = "true" ]; then
+          echo $cmd
       fi
-      $cmd
-      return_code=$?
-      if [ $return_code = 0 ]
-      then
-	if /bin/false ; then
-	    if tty -s
-	    then
-		    echo would you like to view/edit configuration file?[y/n] >&2
-		    read -t 60 ANSWER
-		    if [ "$ANSWER" = "y" ]
-			then
-			${VISUAL:-${EDITOR:-vi}} $SRM_CONFIG
-		    fi
-	    fi
-	 else
-	    echo "created configuration file in $SRM_CONFIG" >&2
-	 fi
+
+      if $cmd; then
+         echo "created configuration file in $SRM_CONFIG" >&2
       fi
    fi
 fi
 
-URL_COPY=$SRM_PATH/sbin/url-copy.sh
-if [ "$SRM_CONFIG" != "" -a  "$SRM_CONFIG" != "NONE" ]
-then
-  if [  -f $SRM_CONFIG ]
-  then
+if [ -n "$SRM_CONFIG" -a  "$SRM_CONFIG" != "NONE" -a -f "$SRM_CONFIG" ]; then
     SRMCP_OPTIONS="-conf=$SRM_CONFIG $SRMCP_OPTIONS"
-  fi
 fi
+
 cmd="$java_location $OPTIONS gov.fnal.srm.util.SRMDispatcher $SRMCP_OPTIONS $args"
-if [ "$DEBUG" = "true" ]
-    then
+if [ "$DEBUG" = "true" ]; then
     echo "CLASSPATH: $SRM_CP"
     echo
     echo $cmd
