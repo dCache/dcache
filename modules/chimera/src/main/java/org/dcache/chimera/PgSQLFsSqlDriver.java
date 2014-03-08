@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -244,6 +245,37 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
 
         } finally {
             SqlHelper.tryToClose(stInserIntoParent);
+        }
+    }
+
+    private static final String ADD_INODE_LOCATION =
+            "INSERT INTO t_locationinfo (SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS " +
+                    "(SELECT 1 FROM T_LOCATIONINFO WHERE ipnfsid=? AND itype=? AND ilocation=?))";
+
+    @Override
+    void addInodeLocation(Connection dbConnection, FsInode inode, int type, String location) throws SQLException
+    {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        try (PreparedStatement stAddInodeLocation = dbConnection.prepareStatement(ADD_INODE_LOCATION)) {
+            stAddInodeLocation.setString(1, inode.toString());
+            stAddInodeLocation.setInt(2, type);
+            stAddInodeLocation.setString(3, location);
+            stAddInodeLocation.setInt(4, 10); // default priority
+            stAddInodeLocation.setTimestamp(5, now);
+            stAddInodeLocation.setTimestamp(6, now);
+            stAddInodeLocation.setInt(7, 1); // online
+            stAddInodeLocation.setString(8, inode.toString());
+            stAddInodeLocation.setInt(9, type);
+            stAddInodeLocation.setString(10, location);
+            int n = stAddInodeLocation.executeUpdate();
+            if (n == 0) {
+                /*
+                 * no updates as such entry already exists.
+                 * To be compatible with others, throw corresponding
+                 * SQL exception.
+                 */
+                throw new SQLException("Entry already exists", "2300");
+            }
         }
     }
 
