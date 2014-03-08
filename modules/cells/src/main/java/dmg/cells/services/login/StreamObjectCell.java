@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.CommandExitException;
 import dmg.util.CommandSyntaxException;
@@ -44,14 +45,8 @@ public class StreamObjectCell
     private static final String CONTROL_C_ANSWER =
         "Got interrupt. Please issue \'logoff\' from within the admin cell to end this session.\n";
 
-    //
-    // args.argv[0] must contain a class with the following signature.
-    //    <init>(Nucleus nucleus, Args args)     or
-    //    <init>(Nucleus nucleus) or
-    //    <init>(Args args) or
-    //    <init>()
-    //
     private static final Class<?>[][] CONST_SIGNATURE = {
+        { String.class, CellEndpoint.class, Args.class },
         { String.class, CellNucleus.class, Args.class },
         { CellNucleus.class, Args.class },
         { CellNucleus.class },
@@ -227,23 +222,29 @@ public class StreamObjectCell
         case 0:
             args = new Object[3];
             args[0] = firstNonNull(Subjects.getUserName(_subject), Subjects.UNKNOWN);
-            args[1] = getNucleus();
+            args[1] = this;
             args[2] = extArgs;
             break;
         case 1:
+            args = new Object[3];
+            args[0] = firstNonNull(Subjects.getUserName(_subject), Subjects.UNKNOWN);
+            args[1] = getNucleus();
+            args[2] = extArgs;
+            break;
+        case 2:
             args = new Object[2];
             args[0] = getNucleus();
             args[1] = extArgs;
             break;
-        case 2:
+        case 3:
             args = new Object[1];
             args[0] = getNucleus();
             break;
-        case 3:
+        case 4:
             args = new Object[1];
             args[0] = extArgs;
             break;
-        case 4:
+        case 5:
             args = new Object[0];
             break;
 
