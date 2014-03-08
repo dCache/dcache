@@ -72,6 +72,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
@@ -88,6 +89,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Inet4Address;
@@ -104,10 +108,12 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -188,7 +194,17 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 
 import static diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.dcache.namespace.FileAttribute.*;
+
+@Inherited
+@Retention(RUNTIME)
+@Target(METHOD)
+@interface Help
+{
+    String value();
+}
 
 /**
  * Exception indicating an error during processing of an FTP command.
@@ -655,6 +671,7 @@ public abstract class AbstractFtpDoorV1
 
     private final Map<String,Method>  _methodDict =
         new HashMap<>();
+    private final Map<String,Help>  _helpDict = new HashMap<>();
 
     protected int            _commandCounter;
     protected String         _lastCommand    = "<init>";
@@ -1156,8 +1173,13 @@ public abstract class AbstractFtpDoorV1
     {
         for (Method method : getClass().getMethods()) {
             String name = method.getName();
-            if (name.startsWith("ftp_")){
-                _methodDict.put(name.substring(4), method);
+            if (name.startsWith("ftp_")) {
+                String command = name.substring(4);
+                _methodDict.put(command, method);
+                Help help = method.getAnnotation(Help.class);
+                if (help != null) {
+                    _helpDict.put(command, help);
+                }
             }
         }
     }
@@ -1551,6 +1573,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("FEAT - List available features.")
     public void ftp_feat(String arg)
     {
         StringBuilder builder = new StringBuilder();
@@ -1658,6 +1681,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("OPTS <SP> <feat> [<SP> <arg>] - Select desired behaviour for a feature.")
     public void ftp_opts(String arg)
     {
         String[] st = arg.split("\\s+");
@@ -1676,6 +1700,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("DELE <SP> <pathname> - Delete a file or symbolic link.")
     public void ftp_dele(String arg)
         throws FTPCommandException
     {
@@ -1712,23 +1737,28 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("AUTH <SP> <arg> - Initiate secure context negotiation.")
     public abstract void ftp_auth(String arg);
 
 
+    @Help("ADAT <SP> <arg> - Supply context negotation data.")
     public abstract void ftp_adat(String arg);
 
+    @Help("MIC <SP> <arg> - Integrity protected command.")
     public void ftp_mic(String arg)
         throws CommandExitException
     {
         secure_command(arg, "mic");
     }
 
+    @Help("ENC <SP> <arg> - Privacy protected command.")
     public void ftp_enc(String arg)
         throws CommandExitException
     {
         secure_command(arg, "enc");
     }
 
+    @Help("CONF <SP> <arg> - Confidentiality protection command.")
     public void ftp_conf(String arg)
         throws CommandExitException
     {
@@ -1740,6 +1770,7 @@ public abstract class AbstractFtpDoorV1
 
 
 
+    @Help("CCC - Switch control channel to cleartext.")
     public void ftp_ccc(String arg)
     {
         // We should never received this, only through MIC, ENC or CONF,
@@ -1747,19 +1778,22 @@ public abstract class AbstractFtpDoorV1
         reply("533 CCC must be protected");
     }
 
+    @Help("USER <SP> <name> - Authentication username.")
     public abstract void ftp_user(String arg);
 
 
+    @Help("PASS <SP> <password> - Authentication password.")
     public abstract void ftp_pass(String arg);
 
 
 
-
+    @Help("PBSZ <SP> <size> - Protection buffer size.")
     public void ftp_pbsz(String arg)
     {
         reply("200 OK");
     }
 
+    @Help("PROT <SP> <level> - Set data channel protection level.")
     public void ftp_prot(String arg)
     {
         if (!arg.equals("C")) {
@@ -1783,6 +1817,7 @@ public abstract class AbstractFtpDoorV1
     }
 
 
+    @Help("RMD <SP> <path> - Remove an empty directory.")
     public void ftp_rmd(String arg)
         throws FTPCommandException
     {
@@ -1822,6 +1857,7 @@ public abstract class AbstractFtpDoorV1
     }
 
 
+    @Help("MKD <SP> <path> - Create a directory.")
     public void ftp_mkd(String arg)
         throws FTPCommandException
     {
@@ -1887,21 +1923,84 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("HELP [<SP> <string>] - Help about a command, or all commands if <string> isn't specified.")
     public void ftp_help(String arg)
     {
-        reply("214 No help available");
+        StringWriter sr = new StringWriter();
+        PrintWriter pw = new PrintWriter(sr);
+
+        if (arg.isEmpty()) {
+            pw.print("214-The following commands are supported:\r\n");
+
+            List<String> commands =
+                    Ordering.natural().sortedCopy(_methodDict.keySet());
+
+            StringBuilder sb = new StringBuilder();
+            for (String command : commands) {
+                if (command.indexOf('_') != -1) {
+                    continue;
+                }
+                if (sb.length() != 0) {
+                    sb.append(' ');
+                }
+                sb.append(command.toUpperCase());
+                if (sb.length() > 65) {
+                    pw.print(sb.append("\r\n"));
+                    sb = new StringBuilder();
+                } else if (command.length() != 4) {
+                    sb.append(' ');
+                }
+            }
+            if (sb.length() != 0) {
+                pw.print(sb.append("\r\n"));
+            }
+            pw.print("214 Direct comments to support@dcache.org.");
+        } else {
+            String command = arg.toUpperCase();
+            String lowerCaseCmd = arg.toLowerCase();
+
+            if (arg.indexOf('_') == -1 && _methodDict.containsKey(lowerCaseCmd)) {
+                Help help = _helpDict.get(lowerCaseCmd);
+                String message = help == null ? command : help.value();
+
+                Iterator<String> i = Splitter.on("\r\n").split(message).iterator();
+                boolean isFirstLine = true;
+                while (i.hasNext()) {
+                    String line = i.next();
+
+                    if (isFirstLine) {
+                        if (i.hasNext()) {
+                            pw.print("214-" + line + "\r\n");
+                        } else {
+                            pw.print("214 " + line);
+                        }
+                    } else if (i.hasNext()) {
+                        pw.print(line + "\r\n");
+                    } else {
+                        pw.print("214 " + line);
+                    }
+                }
+            } else {
+                pw.print("501 Unknown command " + command);
+            }
+        }
+
+        reply(sr.toString());
     }
 
+    @Help("SYST - Return system type.")
     public void ftp_syst(String arg)
     {
         reply("215 UNIX Type: L8 Version: FTPDoor");
     }
 
+    @Help("TYPE - Sets the transfer mode.")
     public void ftp_type(String arg)
     {
         reply("200 Type set to I");
     }
 
+    @Help("NOOP - Does nothing.")
     public void ftp_noop(String arg)
     {
         reply(ok("NOOP"));
@@ -1910,6 +2009,7 @@ public abstract class AbstractFtpDoorV1
     private static final Pattern ALLO_PATTERN =
         Pattern.compile("(\\d+)( R \\d+)?");
 
+    @Help("ALLO <SP> <size> [<SP> R <SP> <size>] - Allocate sufficient disk space to receive a file.")
     public void ftp_allo(String arg)
         throws FTPCommandException
     {
@@ -1934,6 +2034,7 @@ public abstract class AbstractFtpDoorV1
         reply(ok("ALLO"));
     }
 
+    @Help("PWD - Returns the current directory of the host.")
     public void ftp_pwd(String arg)
         throws FTPCommandException
     {
@@ -1946,6 +2047,7 @@ public abstract class AbstractFtpDoorV1
         reply("257 \"" + _cwd + "\" is current directory");
     }
 
+    @Help("CWD <SP> <path> - Change working directory.")
     public void ftp_cwd(String arg)
         throws FTPCommandException
     {
@@ -1966,6 +2068,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("CDUP - Change to parent directory.")
     public void ftp_cdup(String arg)
         throws FTPCommandException
     {
@@ -2078,6 +2181,7 @@ public abstract class AbstractFtpDoorV1
                 .getInterfaceAddresses();
     }
 
+    @Help("PORT <SP> <target> - The address and port to which the server should connect.")
     public void ftp_port(String arg)
         throws FTPCommandException
     {
@@ -2094,6 +2198,7 @@ public abstract class AbstractFtpDoorV1
         reply(ok("PORT"));
     }
 
+    @Help("PASV - Enter passive mode.")
     public void ftp_pasv(String arg)
         throws FTPCommandException
     {
@@ -2124,6 +2229,7 @@ public abstract class AbstractFtpDoorV1
               port % 256 + ")");
     }
 
+    @Help("EPRT <SP> <target> - The extended address and port to which the server should connect.")
     public void ftp_eprt(String arg)
             throws FTPCommandException
     {
@@ -2135,6 +2241,7 @@ public abstract class AbstractFtpDoorV1
         reply(ok("EPRT"));
     }
 
+    @Help("EPSV - Enter extended passive mode.")
     public void ftp_epsv(String arg)
         throws FTPCommandException
     {
@@ -2176,6 +2283,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("MODE <SP> <mode> - Sets the transfer mode.")
     public void ftp_mode(String arg)
     {
         if (arg.equalsIgnoreCase("S")) {
@@ -2192,6 +2300,17 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    /* The ncftp client checks for supported site commands by
+     * parsing the response to the HELP SITE command.  Each line is
+     * checked for the client-supported site command names, in
+     * capitals, as a simple string [see strstr(3)].
+     */
+
+    @Help("The following site-specific commands are supported:\r\n" +
+            "SITE <SP> HELP - Information about SITE commands\r\n" +
+            "SITE <SP> BUFSIZE <SP> <size> - Set network buffer to <size>\r\n" +
+            "SITE <SP> CHKSUM <SP> <value> - Fail upload if ADLER32 checksum isn't <value>\r\n" +
+            "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>")
     public void ftp_site(String arg)
         throws FTPCommandException
     {
@@ -2204,7 +2323,18 @@ public abstract class AbstractFtpDoorV1
 
         String args[] = arg.split(" ");
 
-        if (args[0].equalsIgnoreCase("BUFSIZE")) {
+        if (args[0].equalsIgnoreCase("HELP")) {
+            /* The Globus FTP client uses the SITE HELP command to discover
+             * which commands are available (globus_l_ftp_client_parse_site_help
+             * in globus_ftp_client_state.c).  The algorithm parses each line
+             * looking for expected commands in upper-case as a simple substring
+             * [see strstr(3)].  For some commands it checks, if there's a
+             * match, that the preceding character is not upper-case.
+             *
+             * We provide the same output as the HELP SITE command.
+             */
+            ftp_help("SITE");
+        } else if (args[0].equalsIgnoreCase("BUFSIZE")) {
             if (args.length != 2) {
                 reply("500 command must be in the form 'SITE BUFSIZE <number>'");
                 return;
@@ -2227,6 +2357,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("CKSM <SP> <alg> <SP> <off> <SP> <len> <SP> <path> - Return checksum of file.")
     public void ftp_cksm(String arg)
         throws FTPCommandException
     {
@@ -2296,6 +2427,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("SCKS <SP> <alg> <SP> <value> - Fail next upload if checksum does not match.")
     public void ftp_scks(String arg)
         throws FTPCommandException
     {
@@ -2362,6 +2494,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("SBUF <SP> <size> - Set buffer size.")
     public void ftp_sbuf(String arg)
     {
         if (arg.equals("")) {
@@ -2386,6 +2519,7 @@ public abstract class AbstractFtpDoorV1
         reply("200 bufsize set to " + arg);
     }
 
+    @Help("ERET <SP> <mode> <SP> <path> - Extended file retreval.")
     public void ftp_eret(String arg)
     {
         String[] st = arg.split("\\s+");
@@ -2411,6 +2545,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("ESTO <SP> <mode> <SP> <path> - Extended store.")
     public void ftp_esto(String arg)
     {
         String[] st = arg.split("\\s+");
@@ -2519,6 +2654,7 @@ public abstract class AbstractFtpDoorV1
         ftp_retr(filename);
     }
 
+    @Help("RETR <SP> <path> - Retrieve a copy of the file.")
     public void ftp_retr(String arg)
         throws FTPCommandException
     {
@@ -2662,6 +2798,7 @@ public abstract class AbstractFtpDoorV1
 
     public abstract void startTlog(FTPTransactionLog log, String path, String action);
 
+    @Help("STOR <SP> <path> - Tell server to start accepting data.")
     public void ftp_stor(String arg)
         throws FTPCommandException
     {
@@ -2771,6 +2908,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("SIZE <SP> <path> - Return the size of a file.")
     public void ftp_size(String arg)
         throws FTPCommandException
     {
@@ -2797,6 +2935,7 @@ public abstract class AbstractFtpDoorV1
         reply("213 " + filelength);
     }
 
+    @Help("MDTM <SP> <path> - Return the last-modified time of a specified file.")
     public void ftp_mdtm(String arg)
         throws FTPCommandException
     {
@@ -2864,6 +3003,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("LIST [<SP> <path>] - Returns information on <path> or the current working directory.")
     public void ftp_list(String arg)
         throws FTPCommandException
     {
@@ -2942,6 +3082,7 @@ public abstract class AbstractFtpDoorV1
     private static final Pattern GLOB_PATTERN =
         Pattern.compile("[*?]");
 
+    @Help("NLST [<SP> <path>] - Returns a list of file names in a specified directory.")
     public void ftp_nlst(String arg)
         throws FTPCommandException
     {
@@ -3013,6 +3154,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("MLST [<SP> <path>] - Returns data about exactly one object.")
     public void ftp_mlst(String arg)
         throws FTPCommandException
     {
@@ -3044,6 +3186,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("MLSD [<SP> <path>] - Lists the contents of a directory.")
     public void ftp_mlsd(String arg)
         throws FTPCommandException
     {
@@ -3101,6 +3244,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("RNFR <SP> <path> - Rename from <path>.")
     public void ftp_rnfr(String arg) throws FTPCommandException {
         checkLoggedIn();
 
@@ -3123,6 +3267,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("RNTO <SP> <path> - Rename file specified by RNTO to <path>.")
     public void ftp_rnto(String arg) throws FTPCommandException {
         checkLoggedIn();
 
@@ -3150,6 +3295,7 @@ public abstract class AbstractFtpDoorV1
     // DCAU: data channel authtication
     // currentrly ( 07.04.2008 ) it's not supported
     //----------------------------------------------
+    @Help("DCAU <SP> <enable> - Data channel authentication.")
     public void ftp_dcau(String arg)
     {
         if(arg.equalsIgnoreCase("N")) {
@@ -3165,6 +3311,7 @@ public abstract class AbstractFtpDoorV1
     //      The delayed QUIT has not been directly implemented yet, instead...
     // Equivalent: let the data channel and pnfs entry clean-up code take care of clean-up.
     // ---------------------------------------------
+    @Help("QUIT - Disconnect.")
     public void ftp_quit(String arg)
         throws CommandExitException
     {
@@ -3193,6 +3340,7 @@ public abstract class AbstractFtpDoorV1
     // --------------------------------------------
     // BYE: synonym for QUIT
     // ---------------------------------------------
+    @Help("BYE - Disconnect.")
     public void ftp_bye( String arg ) throws CommandExitException
     {
         ftp_quit(arg);
@@ -3201,6 +3349,7 @@ public abstract class AbstractFtpDoorV1
     // --------------------------------------------
     // ABOR: close data channels, but leave command channel open
     // ---------------------------------------------
+    @Help("ABOR - Abort transfer.")
     public void ftp_abor(String arg)
         throws FTPCommandException
     {
@@ -3511,6 +3660,7 @@ public abstract class AbstractFtpDoorV1
      *
      * @param arg the argument string of the GET command.
      */
+    @Help("GET <SP> <args> - Flexible transfer of data to client.")
     public void ftp_get(String arg)
     {
         try {
@@ -3561,6 +3711,7 @@ public abstract class AbstractFtpDoorV1
      *
      * @param arg the argument string of the PUT command.
      */
+    @Help("PUT <SP> <args> - Flexible transfer of data to server.")
     public void ftp_put(String arg)
     {
         boolean reply127 = false;
