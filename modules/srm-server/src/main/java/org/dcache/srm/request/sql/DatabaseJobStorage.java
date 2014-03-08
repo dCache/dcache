@@ -274,22 +274,22 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
     private void insertStates() throws DataAccessException
     {
-        String insertState = "INSERT INTO " + srmStateTableName + " VALUES (?, ?)";
+        final String insertState = "INSERT INTO " + srmStateTableName +
+                " (SELECT * FROM (VALUES (?,?)) AS new WHERE NOT EXISTS (SELECT 1 FROM " + srmStateTableName + " WHERE ID=? AND STATE=?))";
         for (final State state : State.values()) {
-            try {
-                logger.debug("inserting into {} values: {} {}",
-                        srmStateTableName, state.getStateId(), state);
-                jdbcTemplate.update(insertState, new PreparedStatementSetter()
+            logger.debug("inserting into {} values: {} {}",
+                    srmStateTableName, state.getStateId(), state);
+            jdbcTemplate.update(insertState, new PreparedStatementSetter()
+            {
+                @Override
+                public void setValues(PreparedStatement ps) throws SQLException
                 {
-                    @Override
-                    public void setValues(PreparedStatement ps) throws SQLException
-                    {
-                        ps.setInt(1, state.getStateId());
-                        ps.setString(2, state.toString());
-                    }
-                });
-            } catch (DuplicateKeyException ignored) {
-            }
+                    ps.setInt(1, state.getStateId());
+                    ps.setString(2, state.toString());
+                    ps.setInt(3, state.getStateId());
+                    ps.setString(4, state.toString());
+                }
+            });
         }
     }
 
