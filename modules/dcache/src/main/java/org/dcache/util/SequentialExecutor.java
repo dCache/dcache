@@ -7,11 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,13 +32,7 @@ public class SequentialExecutor extends AbstractExecutorService
         }
     };
 
-    private final RunnableFuture<Void> worker =
-            new FutureTask<Void>(new Worker()) {
-                public void run()
-                {
-                    runAndReset();
-                }
-            };
+    private final Worker worker = new Worker();
     private boolean isShutdown;
     private boolean isRunning;
 
@@ -132,8 +123,8 @@ public class SequentialExecutor extends AbstractExecutorService
             }
             tasks.add(task);
             if (!isRunning) {
-                isRunning = true;
                 executor.execute(worker);
+                isRunning = true;
             }
         } finally {
             monitor.leave();
@@ -155,10 +146,10 @@ public class SequentialExecutor extends AbstractExecutorService
         }
     }
 
-    private class Worker implements Callable<Void>
+    private class Worker implements Runnable
     {
         @Override
-        public Void call()
+        public void run()
         {
             Runnable task = getTask();
             while (task != null) {
@@ -170,7 +161,6 @@ public class SequentialExecutor extends AbstractExecutorService
                 }
                 task = getTask();
             }
-            return null;
         }
     }
 }
