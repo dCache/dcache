@@ -253,6 +253,9 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
                 else if(status.equalsIgnoreCase("Running")) {
                     setState(State.TRANSFERRING, "SRM client set state to Running.");
                 }
+                else if(status.equalsIgnoreCase("Failed")) {
+                    setState(State.FAILED, "SRM client set state to Failed.");
+                }
                 else {
                     String error =  "Can't set Status to "+status;
                     logger.error(error);
