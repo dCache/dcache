@@ -61,7 +61,7 @@ create dmg.cells.services.login.LoginManager ${ssh1.cell.name} \
       "${ssh1.net.port}  \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
-       -history=${ssh1.paths.histor} \
+       -history=${ssh1.paths.history} \
        -listen=${ssh1.net.listen} \
        -useColors=${ssh1.enable.colors} \
        diskCacheV111.admin.UserAdminShell"
